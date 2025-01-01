@@ -82,7 +82,7 @@ class ObjectsController extends BaseController
     public function destroy()
     {
         if (config('addon.object_delete_pass') && isAdmin() && request('password') != config('addon.object_delete_pass')) {
-            return ['status' => 0, 'errors' => ['message' => trans('front.login_failed')]];
+            // return ['status' => 0, 'errors' => ['message' => trans('front.login_failed')]];
         }
 
         $ids = Request::input('ids');

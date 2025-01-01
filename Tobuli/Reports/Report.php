@@ -91,7 +91,7 @@ abstract class Report implements Arrayable
 
         $userReports = Cache::store('array')->sear(
             'user.' . $user->id . '.report_types',
-            fn () => UserReportTypePivot::where('user_id', $user->id)->pluck('report_type_id', 'report_type_id')
+            fn() => UserReportTypePivot::where('user_id', $user->id)->pluck('report_type_id', 'report_type_id')
         );
 
         return ($userReports->isEmpty() && $default) || $userReports->has(static::TYPE_ID);
@@ -165,7 +165,7 @@ abstract class Report implements Arrayable
 
     public function getSpeedLimit()
     {
-       return $this->speed_limit;
+        return $this->speed_limit;
     }
 
     public function setZonesInstead($value)
@@ -252,7 +252,7 @@ abstract class Report implements Arrayable
         ];
 
         if (config('addon.report_send_to_ftp')) {
-            $rules['send_to_ftp'] = 'url|starts_with:ftp,sftp';
+            $rules['send_to_ftp'] = 'starts_with:ftp,sftp';
         }
 
         return $rules;
@@ -393,7 +393,7 @@ abstract class Report implements Arrayable
         $file = fopen($filePath, 'wb');
 
         // UTF-8 BOM
-        fwrite($file,"\xEF\xBB\xBF");
+        fwrite($file, "\xEF\xBB\xBF");
 
         $this->toCSVData($file);
 
@@ -402,7 +402,8 @@ abstract class Report implements Arrayable
         return $filePath;
     }
 
-    protected function toCSVData($file) {
+    protected function toCSVData($file)
+    {
         return;
     }
 
@@ -435,13 +436,13 @@ abstract class Report implements Arrayable
 
             case 'xls':
                 $export = new ReportXlsViewExport($this->getView(), ['report' => $this]);
-                Excel::store($export, $filename.'.xls', 'storage_cache', \Maatwebsite\Excel\Excel::XLS);
+                Excel::store($export, $filename . '.xls', 'storage_cache', \Maatwebsite\Excel\Excel::XLS);
 
                 return $filePath . '.xls';
 
             case 'xlsx':
                 $export = new ReportXlsViewExport($this->getView(), ['report' => $this]);
-                Excel::store($export, $filename.'.xlsx', 'storage_cache', \Maatwebsite\Excel\Excel::XLSX);
+                Excel::store($export, $filename . '.xlsx', 'storage_cache', \Maatwebsite\Excel\Excel::XLSX);
 
                 return $filePath . '.xlsx';
 
@@ -481,12 +482,12 @@ abstract class Report implements Arrayable
             case 'xls':
                 $export = new ReportXlsViewExport($this->getView(), ['report' => $this]);
 
-                return Excel::download($export, $this->getFilename().'.xls', \Maatwebsite\Excel\Excel::XLS);
+                return Excel::download($export, $this->getFilename() . '.xls', \Maatwebsite\Excel\Excel::XLS);
 
             case 'xlsx':
                 $export = new ReportXlsViewExport($this->getView(), ['report' => $this]);
 
-                return Excel::download($export, $this->getFilename().'.xlsx', \Maatwebsite\Excel\Excel::XLSX);
+                return Excel::download($export, $this->getFilename() . '.xlsx', \Maatwebsite\Excel\Excel::XLSX);
 
             case 'csv':
                 $headers = array();
@@ -545,7 +546,7 @@ abstract class Report implements Arrayable
         if ($this->zones_instead)
             $address = $this->getGeofencesNames($position);
 
-        if ($this->show_addresses && ! $address ) {
+        if ($this->show_addresses && ! $address) {
             $address = $this->geoLocation->resolveAddress($position->latitude, $position->longitude);
         }
 
@@ -560,7 +561,7 @@ abstract class Report implements Arrayable
         if (empty($this->geofences))
             return [];
 
-        return $this->geofences->filter(function($geofence) use ($position) {
+        return $this->geofences->filter(function ($geofence) use ($position) {
             return $geofence->pointIn($position);
         });
     }
@@ -569,7 +570,7 @@ abstract class Report implements Arrayable
     {
         $geofences = $this->getGeofencesIn($position);
 
-        if ( ! $geofences)
+        if (! $geofences)
             return null;
 
         return $geofences->implode('name', ', ');
@@ -587,7 +588,7 @@ abstract class Report implements Arrayable
 
         $list = ReportManager::getMetaList($this->user);
 
-        $list = array_filter($list, function($title, $key) use ($data){
+        $list = array_filter($list, function ($title, $key) use ($data) {
             return in_array($key, $data);
         }, ARRAY_FILTER_USE_BOTH);
 

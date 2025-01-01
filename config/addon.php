@@ -33,7 +33,7 @@ return [
     'inaccuracy' => env('ENABLE_INACCURACY', false),
     'plan_templates' => env('ENABLE_PLAN_TEMPLATES', false),
     'device_models' => env('ENABLE_DEVICE_MODELS', false),
-    'report_send_to_ftp' => env('ENABLE_REPORT_SEND_TO_FTP', false),
+    'report_send_to_ftp' => env('ENABLE_REPORT_SEND_TO_FTP', true),
     'lbs' => env('ENABLE_LBS', false),
     'custom_overlays_map' => env('ENABLE_CUSTOM_OVERLAYS_MAP', false),
     'object_filter' => env('TMP_OBJECT_FILTER', false),

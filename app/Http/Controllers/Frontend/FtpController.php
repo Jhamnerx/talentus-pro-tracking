@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\RemoteFileManager\ClientProvider;
@@ -30,15 +31,16 @@ class FtpController extends Controller
     public function store()
     {
         Validator::validate($this->data, [
-            'url' => 'required|url|starts_with:ftp,sftp',
+            'url' => 'required|starts_with:ftp,sftp',
             'path' => 'required',
         ]);
-
         try {
+
             $this->clientProvider
                 ->fromUrl($this->data['url'])
                 ->upload($this->data['path']);
         } catch (\Exception $e) {
+
             throw new ValidationException($e->getMessage());
         }
 

@@ -1,10 +1,13 @@
-<?php namespace Tobuli\Validation;
+<?php
+
+namespace Tobuli\Validation;
 
 use Illuminate\Validation\Factory as IlluminateValidator;
 use Illuminate\Validation\Rule;
 use Tobuli\Reports\ReportManager;
 
-class ReportFormValidator extends Validator {
+class ReportFormValidator extends Validator
+{
 
     /**
      * @var array Validation rules for the test form, they can contain in-built Laravel rules or our custom rules
@@ -27,7 +30,6 @@ class ReportFormValidator extends Validator {
 
         $this->rules['create']['format'] = 'required|' . Rule::in(array_keys(ReportManager::getFormats()));
     }
-
 }   //end of class
 
 

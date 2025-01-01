@@ -687,7 +687,6 @@
                     msgPanel.hide();
                 },
                 success: function(res) {
-                    console.log(res);
                     testBtn.removeAttr('disabled');
 
                     $('.input_error_send_to_ftp').remove();
@@ -698,7 +697,6 @@
                         msgPanel.show().removeClass('alert-success').addClass('alert-danger').html(res.message);
                 },
                 error: function(jqXHR) {
-                    console.log(jqXHR);
                     const res = JSON.parse(jqXHR.responseText);
                     const message = res ? res.message : '{{ trans('front.unexpected_error') }}';
 
