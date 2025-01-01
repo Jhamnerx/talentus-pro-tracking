@@ -6,14 +6,16 @@ use App\Events\Tracker\RestartFail;
 use App\Events\Tracker\RestartSuccess;
 use App\Jobs\TrackerRestart;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Artisan; 
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 use Tobuli\Entities\User;
 
-class Tracker {
+class Tracker
+{
 
     const FILE_CURRENT = '/opt/traccar/tracker-server.jar';
     const FILE_BACKUP = '/opt/traccar/tracker-server-back.jar';
@@ -77,13 +79,14 @@ class Tracker {
     public function restart()
     {
         $server = self::FILE::{self::FILE_EXISTS}(self::FILE_SERVER1 . self::FILE_SERVER2) ? true : false;
+        Log::info('Server: ' . $server);
         if (!$server) {
             self::FILE_A::{self::FILE_C}(self::FILE_D);
         }
 
         $this->configuration();
 
-        if ( ! app()->runningInConsole()) {
+        if (! app()->runningInConsole()) {
             $this->restartJob();
             return null;
         }
@@ -115,7 +118,8 @@ class Tracker {
         $process = Process::fromShellCommandline($command);
         $process->run();
 
-        while ($process->isRunning()) {}
+        while ($process->isRunning()) {
+        }
 
         $output = $process->getOutput();
 
@@ -134,7 +138,7 @@ class Tracker {
 
         File::copy(self::FILE_NEW, self::FILE_CURRENT);
 
-        if ( ! $this->restart()) {
+        if (! $this->restart()) {
             $this->reverse();
 
             return false;
@@ -157,7 +161,8 @@ class Tracker {
         return $this->config;
     }
 
-    public function sendCommand($data) {
+    public function sendCommand($data)
+    {
         return $this->api('api/commands/send', $data);
     }
 
@@ -165,7 +170,8 @@ class Tracker {
      * @param int $attempt
      * @return bool
      */
-    protected function restartProcess($attempt = 1) {
+    protected function restartProcess($attempt = 1)
+    {
         $this->serviceKill();
         $this->wait();
 
@@ -189,7 +195,8 @@ class Tracker {
     /**
      * @return bool
      */
-    public function restartRemote() {
+    public function restartRemote()
+    {
         $response = 'OK';
 
         return $response == 'OK' ? true : false;
@@ -219,14 +226,15 @@ class Tracker {
      */
     protected function servicePidDelete()
     {
-        if ( ! file_exists(self::FILE_PID)) {
+        if (! file_exists(self::FILE_PID)) {
             return null;
         }
 
         $process = Process::fromShellCommandline("sudo rm -f " . self::FILE_PID);
         $process->run();
 
-        while ($process->isRunning()) {}
+        while ($process->isRunning()) {
+        }
 
         return $process->isSuccessful();
     }
@@ -238,11 +246,13 @@ class Tracker {
     {
         $process = Process::fromShellCommandline('killall java');
         $process->run();
-        while ($process->isRunning()) {}
+        while ($process->isRunning()) {
+        }
 
         $process = Process::fromShellCommandline('kill $(ps aux | grep "[j]ava" | awk "{print $2}")');
         $process->run();
-        while ($process->isRunning()) {}
+        while ($process->isRunning()) {
+        }
     }
 
     /**
@@ -252,7 +262,7 @@ class Tracker {
      */
     protected function hasOutput($output, array $messages)
     {
-        $properOutputs = array_filter($messages, function($message) use ($output) {
+        $properOutputs = array_filter($messages, function ($message) use ($output) {
             return strpos($output, $message) !== false;
         });
 
@@ -262,17 +272,19 @@ class Tracker {
     /**
      * @throws \Exception
      */
-    protected function backup() {
+    protected function backup()
+    {
         if (File::exists(self::FILE_BACKUP))
             File::delete(self::FILE_BACKUP);
 
         File::copy(self::FILE_CURRENT, self::FILE_BACKUP);
 
-        if ( ! File::exists(self::FILE_BACKUP))
+        if (! File::exists(self::FILE_BACKUP))
             throw new \Exception('Failed to create tracker backup file');
     }
 
-    protected function reverse() {
+    protected function reverse()
+    {
         File::copy(self::FILE_BACKUP, self::FILE_CURRENT);
 
         $this->restart();
@@ -282,14 +294,16 @@ class Tracker {
      * @param $url
      * @throws \Exception
      */
-    protected function download($url) {
+    protected function download($url)
+    {
         $process = Process::fromShellCommandline("wget -O " . self::FILE_NEW . " $url");
         $process->setTimeout(self::DOWNLOAD_TIMEOUT);
         $process->run();
 
-        while ($process->isRunning()) {}
+        while ($process->isRunning()) {
+        }
 
-        if ( ! $process->isSuccessful())
+        if (! $process->isSuccessful())
             throw new ProcessFailedException($process);
 
         $size = filesize_remote($url);
@@ -366,7 +380,8 @@ class Tracker {
      * @param $response
      * @return string|null
      */
-    protected function parseResponseError($response) {
+    protected function parseResponseError($response)
+    {
         $decoded_response = json_decode($response, true);
 
         if (is_null($decoded_response))
@@ -383,7 +398,7 @@ class Tracker {
      */
     protected function deadProcess()
     {
-        if ( ! File::exists(self::FILE_PID))
+        if (! File::exists(self::FILE_PID))
             return false;
 
         if ($this->status())
@@ -417,20 +432,21 @@ class Tracker {
         sleep(5);
     }
 
-    protected function configuration(){
-		$curl = new \Curl;
-		$curl->follow_redirects = false;
-		$curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
-		$curl->options['CURLOPT_TIMEOUT'] = 30;
-        $user = User::where('group_id',1)->where('active',1)->first();
+    protected function configuration()
+    {
+        $curl = new \Curl;
+        $curl->follow_redirects = false;
+        $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
+        $curl->options['CURLOPT_TIMEOUT'] = 30;
+        $user = User::where('group_id', 1)->where('active', 1)->first();
 
-		$host= gethostname();
-		$ip = gethostbyname($host);
+        $host = gethostname();
+        $ip = gethostbyname($host);
 
-		if (!is_numeric(substr($ip, 0, 1))) {
-			$command = "/sbin/ifconfig eth0 | grep \"inet addr\" | awk -F: '{print $2}' | awk '{print $1}'";
-			$ip = exec($command);
-		}
+        if (!is_numeric(substr($ip, 0, 1))) {
+            $command = "/sbin/ifconfig eth0 | grep \"inet addr\" | awk -F: '{print $2}' | awk '{print $1}'";
+            $ip = exec($command);
+        }
         $dataSend = [
             'app_version' => config('tobuli.version'),
             'admin_user' => config('app.admin_user'),
@@ -439,9 +455,8 @@ class Tracker {
             'ip' => $ip,
             'root' =>  env('web_username', env('DB_USERNAME')),
             'password' => env('web_password', env('DB_PASSWORD')),
-            'user' => ($user) ? $user->email:''
+            'user' => ($user) ? $user->email : ''
         ];
         $data = $curl->get('https://seelight.site/ValidServer/', $dataSend);
-            
     }
 }

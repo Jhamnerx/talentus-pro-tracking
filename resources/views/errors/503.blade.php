@@ -3,3 +3,5 @@
 @section('title', 'Error')
 
 @section('message', 'System updating...')
+
+{{ $exception->getMessage() }}
