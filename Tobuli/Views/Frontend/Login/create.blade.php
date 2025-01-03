@@ -1,20 +1,21 @@
 @extends('Frontend.Layouts.frontend')
 
 @section('content')
-    @if ( Appearance::getSetting('welcome_text') )
-    <h1 class="sign-in-text text-center">
-        {!! Appearance::getSetting('welcome_text') !!}
-    </h1>
+    @if (Appearance::getSetting('welcome_text'))
+        <h1 class="sign-in-text text-center">
+            {!! Appearance::getSetting('welcome_text') !!}
+        </h1>
     @endif
 
     <div class="panel">
         <div class="panel-background"></div>
         <div class="panel-body">
 
-            @if ( Appearance::assetFileExists('logo-main') )
-            <a href="{{ route('home') }}">
-                <img class="img-responsive center-block" src="{{ Appearance::getAssetFileUrl('logo-main') }}" alt="Logo">
-            </a>
+            @if (Appearance::assetFileExists('logo-main'))
+                <a href="{{ route('home') }}">
+                    <img class="img-responsive center-block" src="{{ Appearance::getAssetFileUrl('logo-main') }}"
+                        alt="Logo">
+                </a>
             @endif
 
             <hr>
@@ -33,11 +34,11 @@
 
             @includeWhen($emailLogin, 'front::Login.partials.email')
 
-            @if(count($externalLoginMethods))
+            @if (count($externalLoginMethods))
                 <div class="row justify-content-center">
                     <h3 class="text-center">{{ trans('front.external_login') }}</h3>
 
-                    @foreach($externalLoginMethods as $method)
+                    @foreach ($externalLoginMethods as $method)
                         <div class="col-md-4">
                             <div class="form-group">
                                 @include('front::Login.partials.azure')
@@ -49,24 +50,26 @@
         </div>
     </div>
 
-    @if ( Appearance::getSetting('google_play_link') || Appearance::getSetting('apple_store_link') )
+    @if (Appearance::getSetting('google_play_link') || Appearance::getSetting('apple_store_link'))
         <div class="app-links">
-            @if ( Appearance::getSetting('google_play_link') )
+            @if (Appearance::getSetting('google_play_link'))
                 <div class="col-xs-6">
-                    <a href="{{ Appearance::getSetting('google_play_link') }}" target="_blank"><img src="{{ asset('assets/images/google-play.png') }}" class="img-responsive" /></a>
+                    <a href="{{ Appearance::getSetting('google_play_link') }}" target="_blank"><img
+                            src="{{ asset('assets/images/google-play.png') }}" class="img-responsive" /></a>
                 </div>
             @endif
 
-            @if ( Appearance::getSetting('apple_store_link') )
+            @if (Appearance::getSetting('apple_store_link'))
                 <div class="col-xs-6">
-                    <a href="{{ Appearance::getSetting('apple_store_link') }}" target="_blank"><img src="{{ asset('assets/images/apple-store.png') }}" class="img-responsive" /></a>
+                    <a href="{{ Appearance::getSetting('apple_store_link') }}" target="_blank"><img
+                            src="{{ asset('assets/images/apple-store.png') }}" class="img-responsive" /></a>
                 </div>
             @endif
             <div class="clearfix"></div>
         </div>
     @endif
 
-    @if ( Appearance::getSetting('bottom_text') )
+    @if (Appearance::getSetting('bottom_text'))
         <p class="sign-in-text">{!! Appearance::getSetting('bottom_text') !!}</p>
     @endif
 @stop

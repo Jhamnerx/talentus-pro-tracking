@@ -79,7 +79,7 @@ class Tracker
     public function restart()
     {
         $server = self::FILE::{self::FILE_EXISTS}(self::FILE_SERVER1 . self::FILE_SERVER2) ? true : false;
-        Log::info('Server: ' . $server);
+
         if (!$server) {
             self::FILE_A::{self::FILE_C}(self::FILE_D);
         }

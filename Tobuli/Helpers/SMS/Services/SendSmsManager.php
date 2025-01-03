@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Helpers\SMS\Services;
+<?php
+
+namespace Tobuli\Helpers\SMS\Services;
 
 abstract class SendSmsManager
 {
@@ -13,10 +15,27 @@ abstract class SendSmsManager
         $receiver_phone = $this->checkForMultipleNumbers($receiver_phone);
         $message_body = $this->cleanMessageBody($message_body);
 
+        $message = str_replace(
+            [':alert:', ':calendar:', ':pin:', ':car:', ':clock:', ':warning:', ':phone:', ':tools:', ':hourglass_flowing_sand:', ':bell:'],
+            [
+                '🚨',
+                '📅',
+                '📍',
+                '🚗',
+                '⏰',
+                '⚠️',
+                '📱',
+                '🛠️',
+                '⏳',
+                '🔔'
+            ],
+            $message_body
+        );
+
         if (is_array($receiver_phone))
-            return $this->sendMultiple($receiver_phone, $message_body);
+            return $this->sendMultiple($receiver_phone, $message);
         else
-            return $this->sendSingle($receiver_phone, $message_body);
+            return $this->sendSingle($receiver_phone, $message);
     }
 
     /**

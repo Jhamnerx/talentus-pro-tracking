@@ -4,7 +4,8 @@ namespace Tobuli\Helpers\Settings;
 
 use Cache;
 
-abstract class Settings {
+abstract class Settings
+{
 
     protected $prefix;
 
@@ -26,7 +27,7 @@ abstract class Settings {
     {
         return $this->cache->rememberForever(
             $this->getCahceKey($key),
-            function() use($key, $withParent) {
+            function () use ($key, $withParent) {
                 return $withParent ? $this->withParent($key) : $this->_get($key);
             }
         );
@@ -108,7 +109,7 @@ abstract class Settings {
 
     protected function isMergeable($value)
     {
-        if ( ! is_array($value))
+        if (! is_array($value))
             return false;
 
         return true;

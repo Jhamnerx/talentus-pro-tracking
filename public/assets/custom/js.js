@@ -1940,6 +1940,7 @@ body.sign-in-layout .panel-background {
 
 body.sign-in-layout .sign-in-text {
 	 text-align: center;
+	 font-weight: 700;
 	
 }
 

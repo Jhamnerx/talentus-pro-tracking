@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\Searchable;
 
@@ -24,6 +25,7 @@ class Event extends AbstractEntity implements DisplayInterface
     const TYPE_EXPIRED_SIM = 'expired_sim';
     const TYPE_ZONE_IN = 'zone_in';
     const TYPE_ZONE_OUT = 'zone_out';
+    const TYPE_ZONE_OVERSPEED = 'geofence_overspeed';
     const TYPE_DRIVER = 'driver';
     const TYPE_DRIVER_UNAUTHORIZED = 'driver_unauthorized';
     const TYPE_DRIVER_AUTHORIZED = 'driver_authorized';
@@ -98,23 +100,28 @@ class Event extends AbstractEntity implements DisplayInterface
         return $this->device->name . ' ' . $this->name;
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo('Tobuli\Entities\User', 'user_id', 'id');
     }
 
-    public function geofence() {
+    public function geofence()
+    {
         return $this->hasOne('Tobuli\Entities\Geofence', 'id', 'geofence_id');
     }
 
-    public function poi() {
+    public function poi()
+    {
         return $this->hasOne('Tobuli\Entities\Poi', 'id', 'poi_id');
     }
 
-    public function alert() {
+    public function alert()
+    {
         return $this->hasOne('Tobuli\Entities\Alert', 'id', 'alert_id');
     }
 
-    public function device() {
+    public function device()
+    {
         return $this->hasOne('Tobuli\Entities\Device', 'id', 'device_id');
     }
 
@@ -154,7 +161,7 @@ class Event extends AbstractEntity implements DisplayInterface
         return $query->where(function (Builder $query) use ($user) {
             $query->userOwned($user);
 
-            $query->orWhere(function(Builder $q) use ($user) {
+            $query->orWhere(function (Builder $q) use ($user) {
                 $q->whereExists(function ($query) use ($user) {
                     $query->select("alert_user.user_id")
                         ->from('alert_user')
@@ -227,13 +234,19 @@ class Event extends AbstractEntity implements DisplayInterface
         return $this->formatMessage();
     }
 
-    public function getDetailAttribute() {
+    public function getDetailAttribute()
+    {
         $detail = null;
 
-        switch($this->type) {
+        switch ($this->type) {
             case Event::TYPE_ZONE_IN:
             case Event::TYPE_ZONE_OUT:
                 $detail = Arr::get($this->additional, 'geofence');
+                break;
+            case Event::TYPE_ZONE_OVERSPEED:
+                $speed  = Arr::get($this->additional, 'geofence', 0);
+                $exceso  = Arr::get($this->additional, 'exceso', 0);
+                $detail = Arr::get($this->additional, 'geofence') . ": Exceso" . Formatter::speed()->human($exceso);
                 break;
             case Event::TYPE_DRIVER:
             case Event::TYPE_DRIVER_UNAUTHORIZED:
@@ -246,27 +259,27 @@ class Event extends AbstractEntity implements DisplayInterface
                 break;
             case Event::TYPE_STOP_DURATION:
                 $duration = Arr::get($this->additional, 'stop_duration', 0);
-                $detail   = $duration.' '. trans('front.minutes');
+                $detail   = $duration . ' ' . trans('front.minutes');
                 break;
             case Event::TYPE_TIME_DURATION:
                 $duration = Arr::get($this->additional, 'time_duration', 0);
-                $detail   = $duration.' '. trans('front.minutes');
+                $detail   = $duration . ' ' . trans('front.minutes');
                 break;
             case Event::TYPE_OFFLINE_DURATION:
                 $duration = Arr::get($this->additional, 'offline_duration', 0);
-                $detail   = $duration.' '. trans('front.minutes');
+                $detail   = $duration . ' ' . trans('front.minutes');
                 break;
             case Event::TYPE_MOVE_DURATION:
                 $duration = Arr::get($this->additional, 'move_duration', 0);
-                $detail   = $duration.' '. trans('front.minutes');
+                $detail   = $duration . ' ' . trans('front.minutes');
                 break;
             case Event::TYPE_IDLE_DURATION:
                 $duration = Arr::get($this->additional, 'idle_duration', 0);
-                $detail   = $duration.' '. trans('front.minutes');
+                $detail   = $duration . ' ' . trans('front.minutes');
                 break;
             case Event::TYPE_IGNITION_DURATION:
                 $duration = Arr::get($this->additional, 'ignition_duration', 0);
-                $detail   = $duration.' '. trans('front.minutes');
+                $detail   = $duration . ' ' . trans('front.minutes');
                 break;
             case Event::TYPE_FUEL_FILL:
             case Event::TYPE_FUEL_THEFT:
@@ -300,10 +313,13 @@ class Event extends AbstractEntity implements DisplayInterface
 
     public function getNameAttribute()
     {
-        switch($this->type) {
+        switch ($this->type) {
             case Event::TYPE_ZONE_IN:
             case Event::TYPE_ZONE_OUT:
-                $name = trans('front.'.$this->type);
+                $name = trans('front.' . $this->type);
+                break;
+            case Event::TYPE_ZONE_OVERSPEED:
+                $name = 'Exceso de Velocidad Geocerca';
                 break;
             case Event::TYPE_DRIVER:
                 $name = trans('front.driver');
@@ -430,11 +446,11 @@ class Event extends AbstractEntity implements DisplayInterface
         return collect([
             [
                 'type' => Event::TYPE_ZONE_IN,
-                'title' => trans('front.'.Event::TYPE_ZONE_IN),
+                'title' => trans('front.' . Event::TYPE_ZONE_IN),
             ],
             [
                 'type' => Event::TYPE_ZONE_OUT,
-                'title' => trans('front.'.Event::TYPE_ZONE_OUT),
+                'title' => trans('front.' . Event::TYPE_ZONE_OUT),
             ],
             [
                 'type' => Event::TYPE_DRIVER,

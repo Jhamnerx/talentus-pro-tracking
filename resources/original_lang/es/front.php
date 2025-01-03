@@ -551,7 +551,7 @@ return [
     'blue' => 'Azul',
     'orange' => 'Naranja',
     'black' => 'Negro',
-    'offline' => 'En Reposo',
+    'offline' => 'Desconectado',
     'data_log' => 'Registro de datos',
     'collapse' => 'colapsar',
     'show_names' => 'Mostrar nombres',

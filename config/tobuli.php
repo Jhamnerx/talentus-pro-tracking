@@ -23,10 +23,12 @@ return [
         'status_colors' => [
             'colors' => [
                 'moving' => 'green',
-                'stopped' => 'yellow',
-                'offline' => 'red',
-                'engine' => 'yellow',
+                'stopped' => 'gray',
+                'offline' => 'yellow',
+                'engine' => 'orange',
                 'blocked' => 'black',
+                'disconnected' => 'white',
+                'excessive_speed' => 'red',
             ]
         ],
         'tail' => [
@@ -77,7 +79,7 @@ return [
         'default_object_online_timeout' => 5,
         'default_object_inactive_timeout' => 7200, //5 days in minutes
         'default_fuel_avg_per' => 'distance',
-        'allow_users_registration' => 0,
+        'allow_users_registration' => false,
 
         'devices_limit' => 10,
         'subscription_expiration_after_days' => 30,

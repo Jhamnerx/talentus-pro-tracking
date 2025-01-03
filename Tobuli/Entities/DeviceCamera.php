@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Entities;
+<?php
+
+namespace Tobuli\Entities;
 
 use App\Jobs\DeviceCameraCreate;
 use App\Jobs\DeviceCameraDelete;
@@ -23,7 +25,8 @@ class DeviceCamera extends AbstractEntity implements DisplayInterface
 
     public $timestamps = true;
 
-    protected static function boot() {
+    protected static function boot()
+    {
         parent::boot();
 
         static::created(function ($camera) {
@@ -37,9 +40,10 @@ class DeviceCamera extends AbstractEntity implements DisplayInterface
         static::deleted(function (DeviceCamera $camera) {
             dispatch(new DeviceCameraDelete($camera->ftp_username));
         });
-      }
+    }
 
-    public function device() {
+    public function device()
+    {
         return $this->belongsTo('Tobuli\Entities\Device', 'device_id', 'id');
     }
 

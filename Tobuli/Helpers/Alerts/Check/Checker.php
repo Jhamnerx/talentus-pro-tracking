@@ -5,7 +5,8 @@ namespace Tobuli\Helpers\Alerts\Check;
 use Illuminate\Support\Str;
 use Tobuli\Entities\Alert;
 
-class Checker {
+class Checker
+{
 
     protected $alerts;
     protected $device;
@@ -72,11 +73,13 @@ class Checker {
         }
     }
 
-    protected function alertChecker(Alert $alert) {
-        switch($alert->type) {
+    protected function alertChecker(Alert $alert)
+    {
+        switch ($alert->type) {
             case 'geofence_in':
             case 'geofence_out':
             case 'geofence_inout':
+            case 'geofence_overspeed':
                 $checker = new GeofenceAlertCheck($this->device, $alert);
                 break;
             case 'custom':
@@ -91,8 +94,8 @@ class Checker {
             default:
                 $class = 'Tobuli\Helpers\Alerts\Check\\' . ucfirst(Str::camel($alert->type)) . 'AlertCheck';
 
-                if ( ! class_exists($class, true)) {
-                    throw new \Exception('Alert type "'.$alert->type.'" doesnt have check class.');
+                if (! class_exists($class, true)) {
+                    throw new \Exception('Alert type "' . $alert->type . '" doesnt have check class.');
                 }
 
                 $checker = new $class($this->device, $alert);

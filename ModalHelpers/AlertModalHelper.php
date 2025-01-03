@@ -507,6 +507,7 @@ class AlertModalHelper extends ModalHelper
                 case 'geofence_in':
                 case 'geofence_out':
                 case 'geofence_inout':
+                case 'geofence_overspeed':
                     $type['attributes'] = AttributesCollection::make([
                         Field::multiSelect(
                             'geofences',
@@ -680,6 +681,10 @@ class AlertModalHelper extends ModalHelper
             [
                 'type'  => 'geofence_inout',
                 'title' => trans('front.geofence') . ' ' . trans('global.in') . '/' . trans('global.out'),
+            ],
+            [
+                'type'  => 'geofence_overspeed',
+                'title' => 'Exceso de velocidad en geocerca',
             ],
             [
                 'type'  => 'custom',

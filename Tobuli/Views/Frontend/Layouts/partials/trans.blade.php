@@ -58,6 +58,8 @@
         status_online: '{{ trans('global.online') }}',
         status_ack: '{{ trans('global.ack') }}',
         status_engine: '{{ trans('global.engine') }}',
+        status_excessive_speed: '{{ trans('global.excessive_speed') }}',
+        status_disconnected: '{{ trans('global.disconnected') }}',
         alert: '{{ trans('global.alert') }}',
         short_h: '{{ trans('front.hour_short') }}',
         short_m: '{{ trans('front.minute_short') }}',

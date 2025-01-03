@@ -70,6 +70,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     const STATUS_ENGINE_ON = 'engine_on';
     const STATUS_ENGINE_OFF = 'engine_off';
     const STATUS_BLOCKED = 'blocked';
+    const STATUS_EXCESSIVE_SPEED  = 'excessive_speed';
 
     const SCOPE_STATUSES = [
         self::STATUS_EXPIRED,
@@ -83,6 +84,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         self::STATUS_ENGINE_ON,
         self::STATUS_ENGINE_OFF,
         self::STATUS_BLOCKED,
+        self::STATUS_EXCESSIVE_SPEED
     ];
 
     const KIND_GENERAL = 0;
@@ -290,7 +292,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function positionTraccar()
     {
-        if ( ! $this->traccar) {
+        if (! $this->traccar) {
             return null;
         }
 
@@ -319,8 +321,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         if (Schema::connection($connection)->hasTable($tableName))
             throw new \Exception(trans('global.cant_create_device_database'));
 
-        Schema::connection($connection)->create($tableName, function(Blueprint $table)
-        {
+        Schema::connection($connection)->create($tableName, function (Blueprint $table) {
             $table->bigIncrements('id')->startingValue($this->traccar->latestPosition_id ?? 1);
             $table->double('altitude')->nullable();
             $table->double('course')->nullable();
@@ -364,7 +365,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     {
         return $this->belongsToMany('Tobuli\Entities\Alert', 'alert_device', 'device_id', 'alert_id')
             // escape deattached users devices
-            ->when(config('tobuli.alerts_throw_user_device'), function($query) {
+            ->when(config('tobuli.alerts_throw_user_device'), function ($query) {
                 $query->join('user_device_pivot', function ($join) {
                     $join
                         ->on('user_device_pivot.device_id', '=', 'alert_device.device_id')
@@ -395,19 +396,23 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->belongsToMany('Tobuli\Entities\User', 'user_device_pivot', 'device_id', 'user_id')->withPivot('group_id');
     }
 
-    public function driver() {
+    public function driver()
+    {
         return $this->hasOne('Tobuli\Entities\UserDriver', 'id', 'current_driver_id');
     }
 
-    public function drivers() {
+    public function drivers()
+    {
         return $this->hasMany('Tobuli\Entities\UserDriver', 'device_id');
     }
 
-    public function sensors() {
+    public function sensors()
+    {
         return $this->hasMany('Tobuli\Entities\DeviceSensor', 'device_id');
     }
 
-    public function services() {
+    public function services()
+    {
         return $this->hasMany('Tobuli\Entities\DeviceService', 'device_id');
     }
 
@@ -421,7 +426,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasOne('Tobuli\Entities\Timezone', 'id', 'timezone_id');
     }
 
-    public function deviceCameras() {
+    public function deviceCameras()
+    {
         return $this->hasMany('Tobuli\Entities\DeviceCamera', 'device_id');
     }
 
@@ -496,7 +502,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         if (!$display_sim_expired)
             return false;
 
-        if ( ! $this->hasSimExpireDate())
+        if (! $this->hasSimExpireDate())
             return false;
 
         return  strtotime($this->sim_expiration_date) < time();
@@ -504,7 +510,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function hasSimExpireDate()
     {
-        if ( ! $this->sim_expiration_date)
+        if (! $this->sim_expiration_date)
             return false;
 
         if ($this->sim_expiration_date == '0000-00-00')
@@ -515,7 +521,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function isExpiredWithoutExtra()
     {
-        if ( ! $this->hasExpireDate())
+        if (! $this->hasExpireDate())
             return false;
 
         return  strtotime($this->expiration_date) < time();
@@ -538,7 +544,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function hasExpireDate()
     {
-        if ( ! $this->expiration_date)
+        if (! $this->expiration_date)
             return false;
 
         if ($this->expiration_date == '0000-00-00 00:00:00')
@@ -589,12 +595,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function setParameters($value)
     {
-        if ( is_array($value))
-        {
+        if (is_array($value)) {
             $xml = '<info>';
 
-            foreach ($value as $key => $val)
-            {
+            foreach ($value as $key => $val) {
                 if (is_numeric($key)) continue;
                 if (is_array($val)) continue;
 
@@ -612,7 +616,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function getParameters()
     {
-        if ( ! isset($this->traccar->other))
+        if (! isset($this->traccar->other))
             return [];
 
         $parameters = parseXMLToArray($this->traccar->other);
@@ -640,7 +644,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return Formatter::distance()->format($distance);
     }
 
-    public function getSpeed($position = null) {
+    public function getSpeed($position = null)
+    {
         $speed = 0;
 
         if (is_null($position) && $this->getTimeoutStatus() != self::STATUS_ONLINE)
@@ -676,7 +681,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $serverTime > $ackTime ? self::STATUS_ONLINE : self::STATUS_ACK;
     }
 
-    public function getStatusAttribute() {
+    public function getStatusAttribute()
+    {
         return $this->getStatus();
     }
 
@@ -699,6 +705,9 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
         $speed = $this->getSpeed();
 
+        if ($speed >= 90)
+            return self::STATUS_EXCESSIVE_SPEED;
+
         if ($speed >= $this->min_moving_speed)
             return self::STATUS_ONLINE;
 
@@ -714,7 +723,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return self::STATUS_ACK;
     }
 
-    public function getStatusColorAttribute() {
+    public function getStatusColorAttribute()
+    {
         return $this->getStatusColor();
     }
 
@@ -733,6 +743,9 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 break;
             case self::STATUS_ENGINE:
                 $icon_status = 'engine';
+                break;
+            case self::STATUS_EXCESSIVE_SPEED:
+                $icon_status = 'excessive_speed';
                 break;
             case self::STATUS_BLOCKED:
                 $icon_status = 'blocked';
@@ -915,8 +928,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
         $query = $this->positions()->whereBetween('time', [$dateFrom, $dateTo])->limit(1);
 
-        if ( ! is_null($odometer) && $odometer->shown_value_by != 'virtual_odometer') {
-            $query->where('sensors_values', 'like', '%'.$odometer->id.'%');
+        if (! is_null($odometer) && $odometer->shown_value_by != 'virtual_odometer') {
+            $query->where('sensors_values', 'like', '%' . $odometer->id . '%');
         }
 
         $first     = (clone $query)->orderBy('time', 'asc');
@@ -925,7 +938,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         if ($positions->count() < 2)
             return 0;
 
-        if ( ! is_null($odometer) && $odometer->shown_value_by != 'virtual_odometer') {
+        if (! is_null($odometer) && $odometer->shown_value_by != 'virtual_odometer') {
             $to = (float)$odometer->getValuePosition($positions[0]);
             $from = (float)$odometer->getValuePosition($positions[1]);
 
@@ -1005,21 +1018,22 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             return NULL;
 
         if ($this->isMove())
-            return trans('front.moving').' '.$this->moved_duration;
-            
+            return trans('front.moving') . ' ' . $this->moved_duration;
+
         if ($this->isIdle())
-            return trans('front.idle').' '.$this->idle_duration;
+            return trans('front.idle') . ' ' . $this->idle_duration;
 
         if ($this->isStop())
-            return trans('front.stopped').' '.$this->stop_duration;
+            return trans('front.stopped') . ' ' . $this->stop_duration;
 
         if ($this->isOffline())
-            return trans('front.offline').' '.$this->stop_duration;
+            return trans('front.offline') . ' ' . $this->stop_duration;
 
         return $timeFormat;
     }
 
-    public function getOnlineAttribute() {
+    public function getOnlineAttribute()
+    {
         return $this->getStatus();
     }
 
@@ -1057,7 +1071,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return isset($this->traccar->lastValidLongitude) ? cord($this->traccar->lastValidLongitude) : null;
     }
 
-    public function getCourseAttribute() {
+    public function getCourseAttribute()
+    {
         $course = 0;
 
         if (isset($this->traccar->course))
@@ -1066,7 +1081,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return round($course);
     }
 
-    public function getAltitudeAttribute() {
+    public function getAltitudeAttribute()
+    {
         $altitude = 0;
 
         if (isset($this->traccar->altitude))
@@ -1075,7 +1091,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return Formatter::altitude()->format($altitude);
     }
 
-    public function getTailAttribute() {
+    public function getTailAttribute()
+    {
         $length = $this->tail_length;
 
         if (!$length)
@@ -1098,77 +1115,90 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                     'lat' => $lat,
                     'lng' => $lng
                 ]);
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+            }
         }
 
         return $tail;
     }
 
-    public function getLatestPositionsAttribute() {
+    public function getLatestPositionsAttribute()
+    {
         return isset($this->traccar->latest_positions) ? $this->traccar->latest_positions : null;
     }
 
-    public function getTimestampAttribute() {
+    public function getTimestampAttribute()
+    {
         if ($this->isExpired())
             return 0;
 
         return isset($this->traccar->server_time) ? strtotime($this->traccar->server_time) : 0;
     }
 
-    public function getServerTimestampAttribute() {
+    public function getServerTimestampAttribute()
+    {
         if ($this->isExpired())
             return 0;
 
         return isset($this->traccar->server_time) ? strtotime($this->traccar->server_time) : 0;
     }
 
-    public function getAckTimestampAttribute() {
+    public function getAckTimestampAttribute()
+    {
         if ($this->isExpired())
             return 0;
 
         return isset($this->traccar->ack_time) ? strtotime($this->traccar->ack_time) : 0;
     }
 
-    public function getAckTimeAttribute() {
+    public function getAckTimeAttribute()
+    {
         if ($this->isExpired())
             return null;
 
         return isset($this->traccar->ack_time) ? $this->traccar->ack_time : null;
     }
 
-    public function getServerTimeAttribute() {
+    public function getServerTimeAttribute()
+    {
         if ($this->isExpired())
             return null;
 
         return isset($this->traccar->server_time) ? $this->traccar->server_time : null;
     }
 
-    public function getMovedAtAttribute() {
+    public function getMovedAtAttribute()
+    {
         if ($this->isExpired())
             return null;
 
         return isset($this->traccar->moved_at) ? $this->traccar->moved_at : null;
     }
 
-    public function getMovedTimestampAttribute() {
+    public function getMovedTimestampAttribute()
+    {
         return $this->moved_at ? strtotime($this->moved_at) : 0;
     }
 
-    public function getLastConnectTimeAttribute() {
+    public function getLastConnectTimeAttribute()
+    {
         $lastConnect = $this->getLastConnectTimestampAttribute();
 
         return $lastConnect ? date('Y-m-d H:i:s', $lastConnect) : null;
     }
 
-    public function getLastConnectTimestampAttribute() {
+    public function getLastConnectTimestampAttribute()
+    {
         return max($this->server_timestamp, $this->ack_timestamp);
     }
 
-    public function getOtherAttribute() {
+    public function getOtherAttribute()
+    {
         return isset($this->traccar->other) ? $this->traccar->other : null;
     }
 
-    public function getSpeedAttribute() {
+    public function getSpeedAttribute()
+    {
         return Formatter::speed()->format($this->getSpeed());
     }
 
@@ -1181,10 +1211,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         $server_time   = isset($this->traccar->server_time) ? strtotime($this->traccar->server_time) : 0;
         $engine_changed_at = isset($this->traccar->engine_changed_at) ? strtotime($this->traccar->engine_changed_at) : 0;
 
-        if ( ! $moved_at)
+        if (! $moved_at)
             return 0;
 
-        if ( ! $engine_off_at)
+        if (! $engine_off_at)
             return 0;
 
         if ($engine_on_at < $engine_off_at)
@@ -1247,15 +1277,15 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         $server_time = isset($this->traccar->server_time) ? strtotime($this->traccar->server_time) : 0;
         $ack_time    = isset($this->traccar->ack_time) ? strtotime($this->traccar->ack_time) : 0;
 
-        if ( ! $moved_at)
+        if (! $moved_at)
             return null;
 
         $last_time = max($server_time, $ack_time);
-        if ($time > $last_time )
+        if ($time > $last_time)
             return time() - $moved_at + ($time - $last_time);
 
         //device send incorrect self timestamp
-        if ($time > $server_time )
+        if ($time > $server_time)
             return time() - $moved_at + ($time - $server_time);
 
         return time() - $moved_at;
@@ -1280,13 +1310,13 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         $engine_changed_at = isset($this->traccar->engine_changed_at) ? strtotime($this->traccar->engine_changed_at) : NULL;
         $moved_at = isset($this->traccar->moved_at) ? strtotime($this->traccar->moved_at) : NULL;
 
-        if ( ! $moved_at)
+        if (! $moved_at)
             return null;
 
         $moved_durationArray = array_filter([$engine_on_at, $engine_changed_at, $moved_at]);
-        if (empty($moved_durationArray)) 
+        if (empty($moved_durationArray))
             return null;
-            
+
         $moved_duration = min($moved_durationArray);
 
         return abs(time() - $moved_duration);
@@ -1299,7 +1329,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return Formatter::duration()->human($duration);
     }
 
-    public function generateTail() {
+    public function generateTail()
+    {
         $limit = 15;
 
         $positions = $this->positions()
@@ -1311,7 +1342,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         $tail_positions = [];
 
         foreach ($positions as $position) {
-            $tail_positions[] = $position->latitude.'/'.$position->longitude;
+            $tail_positions[] = $position->latitude . '/' . $position->longitude;
         }
 
         $this->traccar->update([
@@ -1321,7 +1352,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function applyPositionsTimezone()
     {
-        if ( !$this->timezone_id || $this->timezone_id == 57 ) {
+        if (!$this->timezone_id || $this->timezone_id == 57) {
             $value = 'device_time';
         } else {
             list($hours, $minutes) = explode(' ', $this->timezone->time);
@@ -1340,8 +1371,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     {
         $change = 900; //15 mins
 
-        $server_time = strtotime( $this->getServerTime() );
-        $device_time = strtotime( $this->getDeviceTime() );
+        $server_time = strtotime($this->getServerTime());
+        $device_time = strtotime($this->getDeviceTime());
 
         if ($server_time && (abs($server_time - $device_time) < $change))
             return true;
@@ -1374,17 +1405,16 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         $table = ($this->getTable());
 
         // initialize MySQL variables inline
-        $query->from( DB::raw("(SELECT @rank:=0, @group:=0) as vars, {$table}") );
+        $query->from(DB::raw("(SELECT @rank:=0, @group:=0) as vars, {$table}"));
 
         // if no columns already selected, let's select *
-        if ( ! $query->getQuery()->columns)
-        {
+        if (! $query->getQuery()->columns) {
             $query->select("{$table}.*");
         }
 
         // make sure column aliases are unique
-        $groupAlias = 'group_'.md5(time());
-        $rankAlias  = 'rank_'.md5(time());
+        $groupAlias = 'group_' . md5(time());
+        $rankAlias  = 'rank_' . md5(time());
 
         // apply mysql variables
         $query->addSelect(DB::raw(
@@ -1431,7 +1461,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         if (is_null($position))
             return;
 
-        $alerts = $this->alerts->filter(function($item){
+        $alerts = $this->alerts->filter(function ($item) {
             return $item->type == 'driver';
         });
 
@@ -1490,7 +1520,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         //need join outside where closure
         $query->traccarJoin();
 
-        return $query->where(function($q) {
+        return $query->where(function ($q) {
             $q->protocol('osmand');
             $q->orWhere('app_tracker_login', 1);
         });
@@ -1498,7 +1528,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function scopeHasExpiration($query)
     {
-        return $query->where(function($q) {
+        return $query->where(function ($q) {
             $q->whereNotNull('expiration_date');
             $q->where('expiration_date', '!=', '0000-00-00');
             $q->where('expiration_date', '!=', '0000-00-00 00:00:00');
@@ -1507,7 +1537,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function scopeHasntExpiration($query)
     {
-        return $query->where(function($q) {
+        return $query->where(function ($q) {
             $q->whereNull('expiration_date');
             $q->orWhere('expiration_date', '=', '0000-00-00');
             $q->orWhere('expiration_date', '=', '0000-00-00 00:00:00');
@@ -1576,9 +1606,9 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         }
 
         return $query
-            ->where(function($q) use ($date) {
+            ->where(function ($q) use ($date) {
                 $q->hasntExpiration();
-                $q->orWhere(function($q2) use ($date) {
+                $q->orWhere(function ($q2) use ($date) {
                     $q2->hasExpiration()->where('expiration_date', '>', $date);
                 });
             });
@@ -1586,7 +1616,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function scopeHasSimExpiration($query)
     {
-        return $query->where(function($q) {
+        return $query->where(function ($q) {
             $q->whereNotNull('sim_expiration_date');
             $q->where('sim_expiration_date', '!=', '0000-00-00');
             $q->where('sim_expiration_date', '!=', '0000-00-00 00:00:00');
@@ -1608,8 +1638,9 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             ->where('sim_expiration_date', '<=', Carbon::now()->subDays($days));
     }
 
-    public function scopeFilterUserAbility($query, User $user, $ability = 'own') {
-        return $query->with('users')->get()->filter(function($device) use ($user, $ability) {
+    public function scopeFilterUserAbility($query, User $user, $ability = 'own')
+    {
+        return $query->with('users')->get()->filter(function ($device) use ($user, $ability) {
             return $user->can($ability, $device);
         });
     }
@@ -1671,7 +1702,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     {
         return $this
             ->users
-            ->filter(function($user){
+            ->filter(function ($user) {
                 return auth()->user()->can('show', $user);
             })
             ->implode('email', ', ');
@@ -1695,22 +1726,26 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function getNameWithSimNumberAttribute()
     {
-        return $this->name." ({$this->sim_number})";
+        return $this->name . " ({$this->sim_number})";
     }
 
-    public function isMove() {
+    public function isMove()
+    {
         return $this->getStatus() == self::STATUS_ONLINE;
     }
 
-    public function isIdle() {
+    public function isIdle()
+    {
         return $this->getStatus() == self::STATUS_ENGINE;
     }
 
-    public function isStop() {
+    public function isStop()
+    {
         return $this->getStatus() == self::STATUS_ACK;
     }
 
-    public function isOffline() {
+    public function isOffline()
+    {
         return $this->getTimeoutStatus() === self::STATUS_OFFLINE;
     }
 
@@ -1719,28 +1754,32 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->isStop() && ! $this->isIdle();
     }
 
-    public function isOfflineFrom($date) {
-        $time = strtotime( max($this->getServerTime(), $this->getAckTime()) );
+    public function isOfflineFrom($date)
+    {
+        $time = strtotime(max($this->getServerTime(), $this->getAckTime()));
 
         return Carbon::parse($date)->timestamp > $time;
     }
 
     public function isInactive()
     {
-        $time = strtotime( max($this->getServerTime(), $this->getAckTime()) );
+        $time = strtotime(max($this->getServerTime(), $this->getAckTime()));
 
         return Carbon::now()->subMinutes(settings('main_settings.default_object_inactive_timeout'))->timestamp > $time;
     }
 
-    public function isNeverConnected() {
+    public function isNeverConnected()
+    {
         return is_null($this->getServerTime()) && is_null($this->getAckTime());
     }
 
-    public function wasConnected() {
+    public function wasConnected()
+    {
         return ! $this->isNeverConnected();
     }
 
-    public function scopeTraccarJoin($query) {
+    public function scopeTraccarJoin($query)
+    {
         if ($query->isJoined("traccar_devices"))
             return $query;
 
@@ -1753,25 +1792,29 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $query->leftJoin("traccar_devices", 'devices.traccar_device_id', '=', 'traccar_devices.id');
     }
 
-    public function scopeWasConnected($query) {
+    public function scopeWasConnected($query)
+    {
         return $query
             ->traccarJoin()
             ->whereNotNull('traccar_devices.server_time');
     }
 
-    public function scopeNeverConnected($query) {
+    public function scopeNeverConnected($query)
+    {
         return $query
             ->traccarJoin()
             ->whereNull('traccar_devices.server_time');
     }
 
-    public function scopeConnectedAfter($query, $time) {
+    public function scopeConnectedAfter($query, $time)
+    {
         return $query
             ->traccarJoin()
             ->where('traccar_devices.server_time', '>=', $time);
     }
 
-    public function scopeConnectedBefore($query, $time) {
+    public function scopeConnectedBefore($query, $time)
+    {
         return $query
             ->traccarJoin()
             ->where('traccar_devices.server_time', '<', $time);
@@ -1833,7 +1876,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         $query->offline($value);
     }
 
-    public function scopeOnline($query, $minutes = null) {
+    public function scopeOnline($query, $minutes = null)
+    {
         if (is_null($minutes))
             $minutes = settings('main_settings.default_object_online_timeout');
 
@@ -1842,7 +1886,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $query->connectedAfter($time);
     }
 
-    public function scopeOffline($query, $minutes = null) {
+    public function scopeOffline($query, $minutes = null)
+    {
         if (is_null($minutes))
             $minutes = settings('main_settings.default_object_online_timeout');
 
@@ -1851,7 +1896,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $query->connectedBefore($time);
     }
 
-    public function scopeInactive($query, $minutes = null) {
+    public function scopeInactive($query, $minutes = null)
+    {
         if (is_null($minutes))
             $minutes = settings('main_settings.default_object_inactive_timeout');
 
@@ -1865,7 +1911,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         });
     }
 
-    public function scopeMove($query) {
+    public function scopeMove($query)
+    {
 
         return $query
             ->traccarJoin()
@@ -1874,11 +1921,12 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             ->whereRaw('traccar_devices.moved_at > COALESCE(traccar_devices.stoped_at, 0)');
     }
 
-    public function scopeStop($query) {
+    public function scopeStop($query)
+    {
         return $query
             ->traccarJoin()
             ->wasConnected()
-            ->where(function($q) {
+            ->where(function ($q) {
                 $q->whereNull('traccar_devices.moved_at');
                 $q->orWhereRaw('COALESCE(traccar_devices.stoped_at, 0) > traccar_devices.moved_at');
             });
@@ -1893,21 +1941,24 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             ->where('traccar_devices.stop_begin_at', '<', $time);
     }
 
-    public function scopePark($query) {
+    public function scopePark($query)
+    {
         return $query
             ->engineOff()
             ->stop()
             ->online();
     }
 
-    public function scopeIdle($query) {
+    public function scopeIdle($query)
+    {
         return $query
             ->engineOn()
             ->stopDuration(self::STOP_DURATION_OFFSET)
             ->online();
     }
 
-    public function scopeEngineOn($query) {
+    public function scopeEngineOn($query)
+    {
         return $query
             ->traccarJoin()
             ->online()
@@ -1915,7 +1966,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             ->whereRaw('traccar_devices.engine_on_at > COALESCE(traccar_devices.engine_off_at, 0)');
     }
 
-    public function scopeEngineOff($query) {
+    public function scopeEngineOff($query)
+    {
         return $query
             ->traccarJoin()
             ->online()
@@ -2023,12 +2075,15 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         string $alias = 'users_list',
         string $separator = ', '
     ): Builder {
-        return $query->selectSub(fn (QueryBuilder $query) => $query
-            ->selectRaw("GROUP_CONCAT(tmp_u.email SEPARATOR \"$separator\")")
-            ->from('users', 'tmp_u')
-            ->join('user_device_pivot AS tmp_p', 'tmp_p.user_id', '=', 'tmp_u.id')
-            ->when($user, fn (QueryBuilder $query) => User::queryAccessible($query, $user, 'tmp_u'))
-            ->whereColumn('tmp_p.device_id', '=', 'devices.id') // putting it in join, causes error on MySQL 5.5
-            , $alias);
+        return $query->selectSub(
+            fn(QueryBuilder $query) => $query
+                ->selectRaw("GROUP_CONCAT(tmp_u.email SEPARATOR \"$separator\")")
+                ->from('users', 'tmp_u')
+                ->join('user_device_pivot AS tmp_p', 'tmp_p.user_id', '=', 'tmp_u.id')
+                ->when($user, fn(QueryBuilder $query) => User::queryAccessible($query, $user, 'tmp_u'))
+                ->whereColumn('tmp_p.device_id', '=', 'devices.id') // putting it in join, causes error on MySQL 5.5
+            ,
+            $alias
+        );
     }
 }

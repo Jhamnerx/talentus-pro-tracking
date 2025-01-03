@@ -5,7 +5,7 @@ return [
     'cancel' => 'Cancelar',
     'save' => 'Guardar',
     'unexpected_db_error' => 'Error inesperado de base de datos.',
-    'offline' => 'En Reposo',
+    'offline' => 'Desconectado',
     'online' => 'En Movimiento',
     'try_again' => 'Intentar de nuevo',
     'close' => 'Cerrar',

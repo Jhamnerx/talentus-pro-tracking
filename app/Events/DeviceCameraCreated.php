@@ -12,23 +12,26 @@ class DeviceCameraCreated extends Event implements ShouldBroadcast
 
     public $message, $camera;
 
-    public function __construct($camera, $message) {
+    public function __construct($camera, $message)
+    {
         $this->camera = $camera;
         $this->message = $message;
     }
 
-    public function broadcastOn() {
+    public function broadcastOn()
+    {
         $channels = [];
         $users = $this->camera->device->users;
 
         foreach ($users as $user) {
-            $channels[] = md5('user_'.$user->id);
+            $channels[] = md5('user_' . $user->id);
         }
 
         return $channels;
     }
 
-    public function broadcastAs() {
+    public function broadcastAs()
+    {
         return 'device_camera_create';
     }
 

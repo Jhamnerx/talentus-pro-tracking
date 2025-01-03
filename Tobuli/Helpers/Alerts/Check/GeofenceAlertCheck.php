@@ -19,32 +19,52 @@ class GeofenceAlertCheck extends AlertCheck
 
     public function checkEvents($position, $prevPosition)
     {
-        if ( ! $position)
+        if (! $position)
             return null;
 
-        if ( ! $position->isValid())
+        if (! $position->isValid())
             return null;
 
         $prevPosition = $this->device->positionTraccar();
 
-        if ( ! $this->preCheck($position, $prevPosition))
+        if (! $this->preCheck($position, $prevPosition))
             return null;
 
         $events = [];
 
-        foreach ($this->alert->geofences as $geofence)
-        {
-            if ( ! $type = $this->check($position, $prevPosition, $geofence))
+        foreach ($this->alert->geofences as $geofence) {
+            if (! $type = $this->check($position, $prevPosition, $geofence))
                 continue;
 
             $event = $this->getEvent();
 
-            $type = $type == 'geofence_in' ? Event::TYPE_ZONE_IN : Event::TYPE_ZONE_OUT;
+            if ($type == 'geofence_in') {
+                $type = Event::TYPE_ZONE_IN;
+            } elseif ($type == 'geofence_out') {
+                $type = Event::TYPE_ZONE_OUT;
+            } elseif ($type == 'geofence_overspeed') {
+                $type = Event::TYPE_ZONE_OVERSPEED;
+            }
 
             $event->type = $type;
             $event->message = $type;
             $event->geofence_id = $geofence->id;
             $event->setAdditional('geofence', $geofence->name);
+
+            if ($type == Event::TYPE_ZONE_OVERSPEED) {
+                // $startTime = Cache::get('overspeed_start_' . $this->device->id);
+                // $endTime = Cache::get('overspeed_end_' . $this->device->id);
+
+                // if ($startTime && $endTime) {
+                //     $duration = $startTime->diffInSeconds($endTime);
+                //     $formattedDuration = $duration < 60 ? "{$duration} segundos" : round($duration / 60, 2) . " minutos";
+                //     $event->setAdditional('overspeed_duration', $formattedDuration);
+                //     Cache::forget('overspeed_start_' . $this->device->id);  // Clear the start time from cache
+                //     Cache::forget('overspeed_end_' . $this->device->id);    // Clear the end time from cache
+                // }
+
+                $event->setAdditional('exceso', ($position->speed - $geofence->speed_limit));
+            }
 
             $this->silent($event);
 
@@ -62,7 +82,7 @@ class GeofenceAlertCheck extends AlertCheck
 
         switch ($this->alert->type) {
             case 'geofence_in':
-                if ( ! $this->checkGeofenceWithSchedules($position, $geofence))
+                if (! $this->checkGeofenceWithSchedules($position, $geofence))
                     return false;
                 if ($this->checkGeofenceWithSchedules($prevPosition, $geofence))
                     return false;
@@ -75,7 +95,7 @@ class GeofenceAlertCheck extends AlertCheck
                     return false;
 
                 //is previous in
-                if ( ! $this->checkGeofence($prevPosition, $geofence))
+                if (! $this->checkGeofence($prevPosition, $geofence))
                     return false;
 
                 return 'geofence_out';
@@ -90,18 +110,46 @@ class GeofenceAlertCheck extends AlertCheck
                     return 'geofence_out';
 
                 return false;
+            case 'geofence_overspeed':
+                if (!$this->checkGeofenceWithSchedules($position, $geofence)) {
+                    return false;
+                }
 
+                $isCurrentIn = $this->checkGeofence($position, $geofence);
+
+                // Si la velocidad excede el límite y no hemos comenzado a rastrear, establecer la hora de inicio
+                if ($this->checkSpeed($position, $geofence) &&  $isCurrentIn) {
+                    return 'geofence_overspeed';
+                }
+
+                return false;
             default:
                 return false;
         }
     }
+    public function checkSpeed($position, $geofence)
+    {
+        if (!$position)
+            return false;
+
+        if (!$position->isValid())
+            return false;
+
+        if (!$geofence->speed_limit)
+            return false;
+
+        if ($position->speed <= $geofence->speed_limit)
+            return false;
+
+        return true;
+    }
 
     protected function checkGeofence($position, $geofence)
     {
-        if ( ! $position)
+        if (! $position)
             return false;
 
-        if ( ! $position->isValid())
+        if (! $position->isValid())
             return false;
 
         return $geofence->pointIn($position);
@@ -109,7 +157,7 @@ class GeofenceAlertCheck extends AlertCheck
 
     protected function checkGeofenceWithSchedules($position, $geofence)
     {
-        if ( ! $this->checkSchedules($position->time))
+        if (! $this->checkSchedules($position->time))
             return false;
 
         return $this->checkGeofence($position, $geofence);
@@ -117,10 +165,10 @@ class GeofenceAlertCheck extends AlertCheck
 
     protected function isPointEqual($position, $prevPosition)
     {
-        if ( ! $position)
+        if (! $position)
             return false;
 
-        if ( ! $prevPosition)
+        if (! $prevPosition)
             return false;
 
         if ($position->latitude != $prevPosition->latitude)
@@ -140,7 +188,7 @@ class GeofenceAlertCheck extends AlertCheck
         switch ($this->alert->type) {
             case 'geofence_out':
             case 'geofence_inout':
-                if ( ! $this->checkSchedules($position->time))
+                if (! $this->checkSchedules($position->time))
                     return false;
                 break;
         }

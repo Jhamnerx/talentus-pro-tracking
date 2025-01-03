@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 use App\Exceptions\DeviceLimitException;
 use App\Exceptions\PermissionException;
@@ -128,6 +130,10 @@ class DeviceModalHelper extends ModalHelper
             'blue'   => trans('front.blue'),
             'orange' => trans('front.orange'),
             'black'  => trans('front.black'),
+            'gray' => trans('front.gray'),
+            'cyan' => trans('front.cyan'),
+            'white' => trans('front.white'),
+
         ];
 
         $this->fuel_detect_stop_durations = [
@@ -152,7 +158,8 @@ class DeviceModalHelper extends ModalHelper
         $this->usersLoader->setRequestKey('user_id');
     }
 
-    public function createData() {
+    public function createData()
+    {
         $perm = request()->get('perm');
 
         if ($perm == null || ($perm != null && $perm != 1)) {
@@ -174,7 +181,9 @@ class DeviceModalHelper extends ModalHelper
 
         $device_icons = DeviceIconRepo::getMyIcons($this->user->id);
         $device_icons_grouped = $device_icons
-            ->filter(function($icon) { return $icon->type != 'arrow'; })
+            ->filter(function ($icon) {
+                return $icon->type != 'arrow';
+            })
             ->groupBy('type');
 
         $users = [];
@@ -187,14 +196,16 @@ class DeviceModalHelper extends ModalHelper
         $timezones = TimezoneRepo::order()
             ->pluck('title', 'id')
             ->prepend(trans('front.default'), '0')
-            ->map(function($timezone) { return str_replace('UTC ', '', $timezone); })
+            ->map(function ($timezone) {
+                return str_replace('UTC ', '', $timezone);
+            })
             ->all();
 
         $sensor_groups = isAdmin()
             ? SensorGroupRepo::getWhere([], 'title')
-                ->pluck('title', 'id')
-                ->prepend(trans('front.none'), '0')
-                ->all()
+            ->pluck('title', 'id')
+            ->prepend(trans('front.none'), '0')
+            ->all()
             : [];
 
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
@@ -232,11 +243,23 @@ class DeviceModalHelper extends ModalHelper
         $item->tail_length = settings('device.tail.length');
         $item->tail_color = settings('device.tail.color');
 
-        return compact('device_groups', 'sensor_groups', 'item',
-            'device_fuel_measurements', 'device_icons', 'users', 'timezones',
-            'expiration_date_select', 'device_fuel_measurements_select',
-            'icons_type', 'device_icons_grouped', 'device_icon_colors',
-            'device_configs', 'apn_configs', 'device_types', 'fuel_detect_sec_after_stop_options',
+        return compact(
+            'device_groups',
+            'sensor_groups',
+            'item',
+            'device_fuel_measurements',
+            'device_icons',
+            'users',
+            'timezones',
+            'expiration_date_select',
+            'device_fuel_measurements_select',
+            'icons_type',
+            'device_icons_grouped',
+            'device_icon_colors',
+            'device_configs',
+            'apn_configs',
+            'device_types',
+            'fuel_detect_sec_after_stop_options',
             'models'
         );
     }
@@ -305,7 +328,8 @@ class DeviceModalHelper extends ModalHelper
         return ['status' => 1, 'id' => $device->id,];
     }
 
-    public function editData() {
+    public function editData()
+    {
         $device_id = $this->data['id']
             ?? request()->route('id')
             ?? $this->data['device_id']
@@ -326,7 +350,7 @@ class DeviceModalHelper extends ModalHelper
         $device_fuel_measurements_select = Arr::pluck($this->device_fuel_measurements, 'title', 'id');
 
         $device_icons = DeviceIconRepo::getMyIcons($this->user->id);
-        
+
         $device_icons_grouped = [];
 
         foreach ($device_icons as $dicon) {
@@ -358,14 +382,16 @@ class DeviceModalHelper extends ModalHelper
         $timezones = TimezoneRepo::order()
             ->pluck('title', 'id')
             ->prepend(trans('front.default'), '0')
-            ->map(function($timezone) { return str_replace('UTC ', '', $timezone); })
+            ->map(function ($timezone) {
+                return str_replace('UTC ', '', $timezone);
+            })
             ->all();
 
         $sensor_groups = isAdmin()
             ? SensorGroupRepo::getWhere([], 'title')
-                ->pluck('title', 'id')
-                ->prepend(trans('front.none'), '0')
-                ->all()
+            ->pluck('title', 'id')
+            ->prepend(trans('front.none'), '0')
+            ->all()
             : [];
 
         $models = $this->getDeviceModels($item);
@@ -384,14 +410,33 @@ class DeviceModalHelper extends ModalHelper
 
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
 
-        return compact('device_id', 'engine_hours', 'detect_engine', 'detect_distance', 'detect_speed',
-            'device_groups', 'sensor_groups', 'item',
-            'device_fuel_measurements', 'device_icons', 'sensors', 'services',
-            'expiration_date_select', 'timezones',
-            'users', 'sel_users', 'group_id', 'timezone_id',
-            'device_fuel_measurements_select', 'icons_type',
-            'device_icons_grouped', 'device_icon_colors', 'device_cameras', 'device_types',
-            'fuel_detect_sec_after_stop_options', 'models'
+        return compact(
+            'device_id',
+            'engine_hours',
+            'detect_engine',
+            'detect_distance',
+            'detect_speed',
+            'device_groups',
+            'sensor_groups',
+            'item',
+            'device_fuel_measurements',
+            'device_icons',
+            'sensors',
+            'services',
+            'expiration_date_select',
+            'timezones',
+            'users',
+            'sel_users',
+            'group_id',
+            'timezone_id',
+            'device_fuel_measurements_select',
+            'icons_type',
+            'device_icons_grouped',
+            'device_icon_colors',
+            'device_cameras',
+            'device_types',
+            'fuel_detect_sec_after_stop_options',
+            'models'
         );
     }
 
@@ -408,7 +453,7 @@ class DeviceModalHelper extends ModalHelper
         if ($item->isBeacon())
             throw new ValidationException(['id' => 'Device is kind of beacon.']);
 
-        if ( ! empty($this->data['timezone_id']) && $this->data['timezone_id'] != 57 && $item->isCorrectUTC()) {
+        if (! empty($this->data['timezone_id']) && $this->data['timezone_id'] != 57 && $item->isCorrectUTC()) {
             throw new ValidationException(['timezone_id' => 'Device time is correct. Check your timezone Setup -> Main -> Timezone']);
         }
 
@@ -527,7 +572,7 @@ class DeviceModalHelper extends ModalHelper
             $eventTime = ($now - $time > 300) ? $now - 300 : $time;
 
             $events = Event::userAccessible($this->user)->higherTime($eventTime, $this->data['id'] ?? null)->get();
-            $events = $events->filter(fn ($event) => Arr::get($event, 'alert.notifications.popup.active', true));
+            $events = $events->filter(fn($event) => Arr::get($event, 'alert.notifications.popup.active', true));
             $events = $this->transformerService->collection($events, EventLatestTransformer::class)->toArray();
         } else {
             $events = [];
@@ -548,7 +593,7 @@ class DeviceModalHelper extends ModalHelper
         }
 
         return DeviceModel::where(
-            fn (Builder $query) => $query->where('active', 1)->orWhere('id', $item->model_id)
+            fn(Builder $query) => $query->where('active', 1)->orWhere('id', $item->model_id)
         )
             ->pluck('title', 'id')
             ->prepend(trans('front.none'), '')
@@ -603,11 +648,11 @@ class DeviceModalHelper extends ModalHelper
             unset($this->data['user_id']);
         }
 
-        if (!(isAdmin() && $this->user->can('edit', new User()))){
+        if (!(isAdmin() && $this->user->can('edit', new User()))) {
             unset($this->data['user_id']);
         }
 
-        if (is_null($device) && empty($this->data['user_id']) ) {
+        if (is_null($device) && empty($this->data['user_id'])) {
             $this->data['user_id'] = [$this->user->id];
         }
 
