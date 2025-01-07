@@ -98,6 +98,9 @@ class ReportManager
         76 => Reports\FuelTankUsageDriverReport::class,
         79 => Reports\DriverDailyDistanceReport::class,
         82 => Reports\DriverMaxRpmReport::class,
+        92 => Reports\DevicesAlerts::class,
+        93 => Reports\ObjectHistoryMovementReport::class,
+        94 => Reports\OverspeedsInGeofenceCustomReport::class,
     ];
 
     /**
@@ -121,8 +124,8 @@ class ReportManager
             'history.drivers' => trans('front.drivers'),
         ];
 
-        $list = array_filter($list, function($stat, $key) use ($user){
-            list($model,$attribute) = explode('.', $key);
+        $list = array_filter($list, function ($stat, $key) use ($user) {
+            list($model, $attribute) = explode('.', $key);
 
             if ($model === 'device')
                 return $user->can('view', new Device(), $attribute);
@@ -170,17 +173,17 @@ class ReportManager
 
     public function getAvailableList(): array
     {
-        return $this->getFilteredList(fn ($class) => !$class::isAvailable());
+        return $this->getFilteredList(fn($class) => !$class::isAvailable());
     }
 
     public function getReasonableList(): array
     {
-        return $this->getFilteredList(fn ($class) => !$class::isAvailable() || !$class::isReasonable());
+        return $this->getFilteredList(fn($class) => !$class::isAvailable() || !$class::isReasonable());
     }
 
     public function getUsableList(User $user): array
     {
-        return $this->getFilteredList(fn ($class) => !$class::checkUsable($user));
+        return $this->getFilteredList(fn($class) => !$class::checkUsable($user));
     }
 
     /**
@@ -262,21 +265,21 @@ class ReportManager
         $data['date_to'] = Formatter::time()->reverse($data['date_to']);
         $data['user'] = $user;
 
-        if ( ! empty($data['devices']))
+        if (! empty($data['devices']))
             $data['devices'] = $user->devices()
                 ->with('sensors')
-                ->when(!$user->isAdmin(), function($query) {
+                ->when(!$user->isAdmin(), function ($query) {
                     return $query->unexpired();
                 })
                 ->whereIn('id', $data['devices']);
 
-        if ( ! empty($data['devices_query']))
+        if (! empty($data['devices_query']))
             $data['devices'] = $data['devices_query'];
 
-        if ( ! empty($data['geofences']))
+        if (! empty($data['geofences']))
             $data['geofences'] = Geofence::userAccessible($user)->whereIn('id', $data['geofences'])->get();
 
-        if ( ! empty($data['pois']))
+        if (! empty($data['pois']))
             $data['pois'] = $user->pois()->whereIn('id', $data['pois'])->get();
 
         return $this->from($data);
@@ -306,7 +309,7 @@ class ReportManager
         }
         $data['devices'] = $deviceQuery
             ->with('sensors')
-            ->when(!$data['user']->isAdmin(), function($query) {
+            ->when(!$data['user']->isAdmin(), function ($query) {
                 return $query->unexpired();
             });
 
@@ -323,25 +326,25 @@ class ReportManager
         $report->setFormat($data['format']);
         $report->setRange($data['date_from'], $data['date_to']);
 
-        if ( ! empty($data['metas']))
+        if (! empty($data['metas']))
             $report->setMetas($data['metas']);
-        if ( ! empty($data['devices']))
+        if (! empty($data['devices']))
             $report->setDevicesQuery($data['devices']);
-        if ( ! empty($data['geofences']))
+        if (! empty($data['geofences']))
             $report->setGeofences($data['geofences']);
-        if ( ! empty($data['pois']))
+        if (! empty($data['pois']))
             $report->setPois($data['pois']);
-        if ( ! empty($data['parameters']))
+        if (! empty($data['parameters']))
             $report->setParameters($data['parameters']);
-        if ( ! empty($data['speed_limit']))
+        if (! empty($data['speed_limit']))
             $report->setSpeedLimit(Formatter::speed()->reverse($data['speed_limit']));
-        if ( ! empty($data['stops']))
+        if (! empty($data['stops']))
             $report->setStopSeconds($data['stops']);
-        if ( ! empty($data['show_addresses']))
+        if (! empty($data['show_addresses']))
             $report->setShowAddresses(true);
-        if ( ! empty($data['zones_instead']))
+        if (! empty($data['zones_instead']))
             $report->setZonesInstead(true);
-        if ( ! empty($data['skip_blank_results']))
+        if (! empty($data['skip_blank_results']))
             $report->setSkipBlankResults(true);
 
         return $report;

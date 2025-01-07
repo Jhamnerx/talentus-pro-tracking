@@ -21,7 +21,7 @@ use Tobuli\InputFields\AbstractField;
 abstract class Report implements Arrayable
 {
     protected $formats = ['html', 'json', 'xls', 'xlsx', 'pdf', 'pdf_land'];
-    protected $disabledFormats = [];
+    protected $disabledFormats = ['xlsx'];
     protected $enableFields = ['devices', 'geofences', 'metas', 'speed_limit', 'stops', 'show_addresses', 'zones_instead'];
     protected $disableFields = [];
     protected $validation = [];

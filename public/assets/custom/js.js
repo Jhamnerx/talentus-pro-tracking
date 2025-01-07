@@ -14,7 +14,7 @@ styleSheet.innerText = `:root .black {
 
 :root .blue {
 	 --inverso-base: #1B99BD;
-	 --base: #1B99BD;
+	 --base: #052062;
 	 --light: #1CA4C9;
 	 --medium: #1785A3;
 	 --dark: #11667D;
