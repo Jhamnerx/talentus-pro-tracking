@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Admin;
+<?php
+
+namespace App\Http\Controllers\Admin;
 
 use App\Exceptions\DeviceLimitException;
 use App\Exceptions\PermissionException;
@@ -7,10 +9,12 @@ use CustomFacades\Validators\ObjectsListSettingsFormValidator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\View;
+use PgSql\Lob;
 use Tobuli\Entities\Company;
 use Tobuli\Entities\EmailTemplate;
 use Tobuli\Entities\MapIcon;
@@ -123,7 +127,7 @@ class ClientsController extends BaseController
             ->search($input['search_phrase'] ?? '')
             ->filter($input['filter'] ?? [])
             ->when(!empty($input['search_device']), function (Builder $query) use ($input) {
-                $query->whereHas('devices', function(Builder $query) use ($input){
+                $query->whereHas('devices', function (Builder $query) use ($input) {
                     $query->where('devices.imei', 'LIKE', '%' . $input['search_device'] . '%');
                 });
             })
@@ -134,7 +138,7 @@ class ClientsController extends BaseController
         return $this->api
             ? $items
             : View::make('admin::' . ucfirst($this->section) . '.' . (Request::ajax() ? 'table' : 'index'))
-                ->with(compact('items', 'input', 'section'));
+            ->with(compact('items', 'input', 'section'));
     }
 
     public function create(BillingPlan $billingPlanRepo)
@@ -177,14 +181,23 @@ class ClientsController extends BaseController
         listviewTrans(null, $settings, $fields);
 
         $companies = Company::orderBy('name')
-                ->userAccessible($this->user)
-                ->pluck('name', 'id')
-                ->prepend('-- ' . trans('admin.select') . ' --', '')
-                ->all();
+            ->userAccessible($this->user)
+            ->pluck('name', 'id')
+            ->prepend('-- ' . trans('admin.select') . ' --', '')
+            ->all();
 
         return View::make('admin::' . ucfirst($this->section) . '.create')->with(compact(
-            'managers', 'maps', 'plans', 'objects_limit', 'grouped_permissions', 'devices', 'fields',
-            'settings', 'numeric_sensors', 'permission_values', 'companies'
+            'managers',
+            'maps',
+            'plans',
+            'objects_limit',
+            'grouped_permissions',
+            'devices',
+            'fields',
+            'settings',
+            'numeric_sensors',
+            'permission_values',
+            'companies'
         ));
     }
 
@@ -232,12 +245,14 @@ class ClientsController extends BaseController
             ? $billingPlanRepo->find($input['billing_plan_id'])
             : null;
 
-        if ( ! empty($plan)) {
+        if (! empty($plan)) {
             $input['devices_limit'] = $plan->objects;
 
             if (empty($input['subscription_expiration'])) {
-                $input['subscription_expiration'] = date('Y-m-d H:i:s',
-                    strtotime(date('Y-m-d H:i:s') . " + {$plan->duration_value} {$plan->duration_type}"));
+                $input['subscription_expiration'] = date(
+                    'Y-m-d H:i:s',
+                    strtotime(date('Y-m-d H:i:s') . " + {$plan->duration_value} {$plan->duration_type}")
+                );
             }
         }
 
@@ -302,7 +317,7 @@ class ClientsController extends BaseController
             throw $e;
         }
 
-        if ( ! empty($input['account_created'])) {
+        if (! empty($input['account_created'])) {
             $this->notifyUser($input, 'account_created');
         }
 
@@ -316,7 +331,7 @@ class ClientsController extends BaseController
         $this->checkException('users', 'edit', $item);
 
         $managers = UserRepo::getOtherManagers($item->id)
-            ->pluck('email','id')
+            ->pluck('email', 'id')
             ->prepend('-- ' . trans('admin.select') . ' --', '0')
             ->all();
         $maps = getAvailableMaps();
@@ -353,8 +368,18 @@ class ClientsController extends BaseController
             ->all();
 
         return View::make('admin::' . ucfirst($this->section) . '.edit')->with(compact(
-            'item', 'permission_values', 'managers', 'maps', 'plans', 'objects_limit', 'grouped_permissions',
-            'devices', 'fields', 'settings', 'numeric_sensors', 'companies'
+            'item',
+            'permission_values',
+            'managers',
+            'maps',
+            'plans',
+            'objects_limit',
+            'grouped_permissions',
+            'devices',
+            'fields',
+            'settings',
+            'numeric_sensors',
+            'companies'
         ));
     }
 
@@ -392,7 +417,7 @@ class ClientsController extends BaseController
             unset($input['password']);
         }
 
-        if ( ! empty($input['manager_id']) && $this->managerInfinity($item, $input['manager_id'])) {
+        if (! empty($input['manager_id']) && $this->managerInfinity($item, $input['manager_id'])) {
             throw new ValidationException([
                 'manager_id' => 'Managers infinity loop'
             ]);
@@ -428,8 +453,10 @@ class ClientsController extends BaseController
                     $input['devices_limit'] = $plan->objects;
 
                     if (empty($input['subscription_expiration'])) {
-                        $input['subscription_expiration'] = date('Y-m-d H:i:s',
-                            strtotime(date('Y-m-d H:i:s') . " + {$plan->duration_value} {$plan->duration_type}"));
+                        $input['subscription_expiration'] = date(
+                            'Y-m-d H:i:s',
+                            strtotime(date('Y-m-d H:i:s') . " + {$plan->duration_value} {$plan->duration_type}")
+                        );
                     }
                 } else {
                     $input['billing_plan_id'] = null;
@@ -561,7 +588,7 @@ class ClientsController extends BaseController
 
         $validator = Validator::make(request()->all(), [
             'file'       => 'required|file',
-            'map_icon_id'=> 'required',
+            'map_icon_id' => 'required',
             'user_id'    => 'required|array',
         ]);
 
@@ -598,7 +625,8 @@ class ClientsController extends BaseController
         return View::make('admin::' . ucfirst($this->section) . '.import_geofences')->with(compact('users'));
     }
 
-    public function importGeofencesSet(GeofenceImportManager $importManager) {
+    public function importGeofencesSet(GeofenceImportManager $importManager)
+    {
         $this->checkException('geofences', 'store');
 
         $validator = Validator::make(request()->all(), [
@@ -638,7 +666,8 @@ class ClientsController extends BaseController
         return View::make('admin::' . ucfirst($this->section) . '.import_routes')->with(compact('users'));
     }
 
-    public function importRoutesSet(RouteImportManager $importManager) {
+    public function importRoutesSet(RouteImportManager $importManager)
+    {
         $this->checkException('routes', 'store');
 
         $validator = Validator::make(request()->all(), [
@@ -695,14 +724,14 @@ class ClientsController extends BaseController
             return Response::json(['status' => 1]);
         }
 
-        if ( ! is_array($ids)) {
+        if (! is_array($ids)) {
             $ids = [$ids];
         }
 
         $users = \Tobuli\Entities\User::whereIn('id', $ids)->get();
 
         foreach ($users as $user) {
-            if ( ! $this->user->can('remove', $user)) {
+            if (! $this->user->can('remove', $user)) {
                 continue;
             }
 
@@ -727,7 +756,7 @@ class ClientsController extends BaseController
 
         $this->checkException('users', 'login_as', $item);
 
-        if ( ! empty($item)) {
+        if (! empty($item)) {
             session()->put('previous_user', $this->user->id);
             auth()->logout();
             auth()->loginUsingId($item->id);
@@ -741,7 +770,7 @@ class ClientsController extends BaseController
         $user = User::find(request('user_id'));
         $plan = $billingPlanRepo->find(request('id'));
 
-        if ( ! is_null($user)) {
+        if (! is_null($user)) {
             $this->checkException('users', 'show', $user);
             $permissions = $this->permissionService->getByUser($user);
         } else {
@@ -750,11 +779,11 @@ class ClientsController extends BaseController
                 $this->permissionService->getByUserRole();
         }
 
-        $is_plan_set = ( ! is_null($plan));
+        $is_plan_set = (! is_null($plan));
 
         $item = $is_plan_set ? $plan : $user;
 
-        if ( ! is_null($item)) {
+        if (! is_null($item)) {
             $permission_values = $item->getPermissions();
         } else {
             $permission_values = (request()->filled('group_id')) ?
@@ -867,11 +896,11 @@ class ClientsController extends BaseController
 
         $manager = \Tobuli\Entities\User::find($manager_id);
 
-        if ( ! $manager) {
+        if (! $manager) {
             return false;
         }
 
-        if ( ! $manager->manager_id) {
+        if (! $manager->manager_id) {
             return false;
         }
 
@@ -912,7 +941,7 @@ class ClientsController extends BaseController
     private function syncDevices($user, $input)
     {
         if ($this->api) {
-            if ( isset($input['objects'])) {
+            if (isset($input['objects'])) {
                 if (empty($input['objects'])) $input['objects'] = [];
 
                 $user->devices()->sync($input['objects']);

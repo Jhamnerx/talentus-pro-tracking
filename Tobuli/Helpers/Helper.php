@@ -4,6 +4,7 @@ use Carbon\Carbon;
 use CustomFacades\Appearance;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceSensor;
@@ -14,7 +15,8 @@ use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\SMS\SMSGatewayManager;
 use Tobuli\Sensors\SensorsManager;
 
-function solveEquation(array $values, $formula) {
+function solveEquation(array $values, $formula)
+{
     $equation = $formula;
 
     foreach ($values as $placeholder => $value) {
@@ -24,14 +26,14 @@ function solveEquation(array $values, $formula) {
     $eos = new eqEOS();
     try {
         $result = $eos->solveIF($equation);
-    }
-    catch(\Exception $e) {
+    } catch (\Exception $e) {
         $result = null;
     }
     return $result;
 }
 
-function getPrc($nr1, $nr2) {
+function getPrc($nr1, $nr2)
+{
     if (empty($nr1))
         return 0;
 
@@ -40,7 +42,7 @@ function getPrc($nr1, $nr2) {
 
     if ($nr1 < $nr2)
         return 100;
-    return float(($nr2/$nr1) * 100);
+    return float(($nr2 / $nr1) * 100);
 }
 
 function isDemoUser($user = NULL)
@@ -89,7 +91,8 @@ function modal($message, $type = 'warning')
     ]);
 }
 
-function isAdmin() {
+function isAdmin()
+{
     return Auth::User() && (Auth::User()->isAdmin() || Auth::User()->isManager());
 }
 
@@ -170,10 +173,10 @@ function sendTemplateSMS($to, SmsTemplate $template, $data, $user)
     if (empty($to) || empty($user))
         return;
 
-    if ( ! $user instanceof User)
+    if (! $user instanceof User)
         $user = User::find($user);
 
-    if ( ! $user)
+    if (! $user)
         return;
 
     $sms = $template->buildTemplate($data);
@@ -194,7 +197,7 @@ function sendSMS($to, $body, $user)
     if (empty($user))
         return;
 
-    if ( ! $user->perm('sms_gateway', 'view'))
+    if (! $user->perm('sms_gateway', 'view'))
         return;
 
     $sms_manager = new SMSGatewayManager();
@@ -404,9 +407,9 @@ function getAvailableMaps()
     $maps = getMaps();
     $available_maps = settings('main_settings.available_maps');
 
-    return array_filter($maps, function($map_id) use ($available_maps){
+    return array_filter($maps, function ($map_id) use ($available_maps) {
         return in_array($map_id, $available_maps);
-    }, ARRAY_FILTER_USE_KEY );
+    }, ARRAY_FILTER_USE_KEY);
 }
 
 function images_path($path = '')
@@ -556,7 +559,7 @@ function apiArray($arr)
     return $result;
 }
 
-function toOptions(Array $array)
+function toOptions(array $array)
 {
     $result = [];
 
@@ -574,7 +577,7 @@ function snapToRoad($positions)
     if (count($positions) < 2)
         return $positions;
 
-    $path = implode('|', array_map(function($position) {
+    $path = implode('|', array_map(function ($position) {
         return "{$position->latitude},{$position->longitude}";
     }, $positions));
 
@@ -597,7 +600,6 @@ function snapToRoad($positions)
             if ($snapped && !isset($snapped['originalIndex'])) {
                 $result[] = $position;
             }
-
         } while ($snapped && !isset($snapped['originalIndex']));
 
         $result[] = $position;
@@ -625,7 +627,7 @@ function callSnapToRoad($path)
 
     curl_close($ch);
 
-    if ( ! isset($response['snappedPoints']))
+    if (! isset($response['snappedPoints']))
         return null;
 
     return $response;
@@ -680,7 +682,8 @@ function stripInvalidXml($value)
             ($current == 0xD) ||
             (($current >= 0x20) && ($current <= 0xD7FF)) ||
             (($current >= 0xE000) && ($current <= 0xFFFD)) ||
-            (($current >= 0x10000) && ($current <= 0x10FFFF))) {
+            (($current >= 0x10000) && ($current <= 0x10FFFF))
+        ) {
             $ret .= chr($current);
         } else {
             $ret .= " ";
@@ -720,7 +723,7 @@ function parsePorts($ports = NULL)
         $curl->follow_redirects = false;
         $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
 
-        $ports = json_decode($curl->get($url.'/data/ports.php'), TRUE);
+        $ports = json_decode($curl->get($url . '/data/ports.php'), TRUE);
     }
     $arr = [];
     foreach ($ports as $port)
@@ -789,7 +792,6 @@ function updateUsersBillingPlan($current_plan_id, $new_plan_id)
             ->whereNull('billing_plan_id')
             ->where('group_id', '=', 2)
             ->update($update);
-
     } else {
         DB::table('users')
             ->where('billing_plan_id', $current_plan_id)
@@ -849,10 +851,10 @@ function array_merge_recursive_distinct(array &$array1, array &$array2)
     $merged = $array1;
 
     foreach ($array2 as $key => &$value) {
-        if (is_array($value) && is_array_assoc($value) && isset ($merged [$key]) && is_array($merged [$key])) {
-            $merged [$key] = array_merge_recursive_distinct($merged [$key], $value);
+        if (is_array($value) && is_array_assoc($value) && isset($merged[$key]) && is_array($merged[$key])) {
+            $merged[$key] = array_merge_recursive_distinct($merged[$key], $value);
         } else {
-            $merged [$key] = $value;
+            $merged[$key] = $value;
         }
     }
 
@@ -1080,7 +1082,7 @@ function onlyEditables($entity, $user, $input)
         return $input;
 
     foreach ($not_editables as $property) {
-        if ( ! array_key_exists($property, $input))
+        if (! array_key_exists($property, $input))
             continue;
 
         unset($input[$property]);
@@ -1192,11 +1194,11 @@ function runCacheEntity($entityClass, $ids)
     if (empty($ids))
         return $list;
 
-    if ( ! is_array($ids))
+    if (! is_array($ids))
         $ids = [$ids];
 
     foreach ($ids as $id) {
-        $entity = Cache::store('array')->rememberForever("$entityClass.$id", function() use ($entityClass, $id) {
+        $entity = Cache::store('array')->rememberForever("$entityClass.$id", function () use ($entityClass, $id) {
             return $entityClass::find($id);
         });
 
@@ -1210,9 +1212,9 @@ function runCacheEntity($entityClass, $ids)
 function groupDevices($devices, $user)
 {
     $device_groups = CustomFacades\Repositories\DeviceGroupRepo::getWhere(['user_id' => $user->id], 'title')
-            ->pluck('title', 'id')
-            ->prepend(trans('front.ungrouped'), '0')
-            ->all();
+        ->pluck('title', 'id')
+        ->prepend(trans('front.ungrouped'), '0')
+        ->all();
 
     $grouped = [];
 
@@ -1261,8 +1263,7 @@ function expensesTypesExist()
 {
     $count = Illuminate\Support\Facades\Cache::get('expenses_types_count');
 
-    if (is_null($count))
-    {
+    if (is_null($count)) {
         $count = \Tobuli\Entities\DeviceExpensesType::count();
 
         Illuminate\Support\Facades\Cache::put('expenses_types_count', $count, 1440 * 60);
@@ -1274,7 +1275,8 @@ function expensesTypesExist()
     return false;
 }
 
-function removeEmoji($string) {
+function removeEmoji($string)
+{
 
     // Match Emoticons
     $regex_emoticons = '/[\x{1F600}-\x{1F64F}]/u';
@@ -1323,15 +1325,15 @@ function exportVar($var, $replaceNewlines = "\n", $indent = '')
 {
     switch (gettype($var)) {
         case "string":
-            return "'". addcslashes(replaceNewlines($var, $replaceNewlines), "'") . "'";
+            return "'" . addcslashes(replaceNewlines($var, $replaceNewlines), "'") . "'";
         case "array":
             $indexed = array_keys($var) === range(0, count($var) - 1);
             $r = [];
 
             foreach ($var as $key => $value) {
                 $r[] = "$indent    "
-                        . ($indexed ? "" : exportVar($key, $replaceNewlines) . " => ")
-                        . exportVar($value, $replaceNewlines, "$indent    ");
+                    . ($indexed ? "" : exportVar($key, $replaceNewlines) . " => ")
+                    . exportVar($value, $replaceNewlines, "$indent    ");
             }
 
             return "[\n" . implode(",\n", $r) . ",\n" . $indent . "]";
@@ -1427,7 +1429,7 @@ function cameras_media_path($path = '')
 {
     $config = config('tracker');
 
-    return Str::finish($config['media.path'], '/').($path ?? '');
+    return Str::finish($config['media.path'], '/') . ($path ?? '');
 }
 
 function listsTranslations()
@@ -1455,66 +1457,66 @@ function listsTranslations()
         'ft' => trans('front.feet')
     ]);
     Config::set('tobuli.object_online_timeouts', [
-        '1' => '1 '.trans('front.minute_short'),
-        '2' => '2 '.trans('front.minute_short'),
-        '3' => '3 '.trans('front.minute_short'),
-        '5' => '5 '.trans('front.minute_short'),
-        '6' => '6 '.trans('front.minute_short'),
-        '7' => '7 '.trans('front.minute_short'),
-        '8' => '8 '.trans('front.minute_short'),
-        '9' => '9 '.trans('front.minute_short'),
-        '10' => '10 '.trans('front.minute_short'),
-        '15' => '15 '.trans('front.minute_short'),
-        '30' => '30 '.trans('front.minute_short'),
-        '45' => '45 '.trans('front.minute_short'),
-        '60' => '1 '.trans('front.hour_short'),
-        '120' => '2 '.trans('front.hour_short'),
-        '180' => '3 '.trans('front.hour_short'),
-        '240' => '4 '.trans('front.hour_short'),
-        '300' => '5 '.trans('front.hour_short'),
-        '360' => '6 '.trans('front.hour_short'),
-        '420' => '7 '.trans('front.hour_short'),
-        '480' => '8 '.trans('front.hour_short'),
-        '540' => '9 '.trans('front.hour_short'),
-        '600' => '10 '.trans('front.hour_short'),
-        '660' => '11 '.trans('front.hour_short'),
-        '720' => '12 '.trans('front.hour_short'),
-        '900' => '15 '.trans('front.hour_short'),
-        '1080' => '18 '.trans('front.hour_short'),
-        '1260' => '21 '.trans('front.hour_short'),
-        '1440' => '24 '.trans('front.hour_short'),
+        '1' => '1 ' . trans('front.minute_short'),
+        '2' => '2 ' . trans('front.minute_short'),
+        '3' => '3 ' . trans('front.minute_short'),
+        '5' => '5 ' . trans('front.minute_short'),
+        '6' => '6 ' . trans('front.minute_short'),
+        '7' => '7 ' . trans('front.minute_short'),
+        '8' => '8 ' . trans('front.minute_short'),
+        '9' => '9 ' . trans('front.minute_short'),
+        '10' => '10 ' . trans('front.minute_short'),
+        '15' => '15 ' . trans('front.minute_short'),
+        '30' => '30 ' . trans('front.minute_short'),
+        '45' => '45 ' . trans('front.minute_short'),
+        '60' => '1 ' . trans('front.hour_short'),
+        '120' => '2 ' . trans('front.hour_short'),
+        '180' => '3 ' . trans('front.hour_short'),
+        '240' => '4 ' . trans('front.hour_short'),
+        '300' => '5 ' . trans('front.hour_short'),
+        '360' => '6 ' . trans('front.hour_short'),
+        '420' => '7 ' . trans('front.hour_short'),
+        '480' => '8 ' . trans('front.hour_short'),
+        '540' => '9 ' . trans('front.hour_short'),
+        '600' => '10 ' . trans('front.hour_short'),
+        '660' => '11 ' . trans('front.hour_short'),
+        '720' => '12 ' . trans('front.hour_short'),
+        '900' => '15 ' . trans('front.hour_short'),
+        '1080' => '18 ' . trans('front.hour_short'),
+        '1260' => '21 ' . trans('front.hour_short'),
+        '1440' => '24 ' . trans('front.hour_short'),
     ]);
     Config::set('tobuli.stops_minutes', [
-        '1' => '> 1 '.trans('front.minute_short'),
-        '2' => '> 2 '.trans('front.minute_short'),
-        '3' => '> 3 '.trans('front.minute_short'),
-        '4' => '> 4 '.trans('front.minute_short'),
-        '5' => '> 5 '.trans('front.minute_short'),
-        '10' => '> 10 '.trans('front.minute_short'),
-        '15' => '> 15 '.trans('front.minute_short'),
-        '20' => '> 20 '.trans('front.minute_short'),
-        '30' => '> 30 '.trans('front.minute_short'),
-        '60' => '> 1 '.trans('front.hour_short'),
-        '120' => '> 2 '.trans('front.hour_short'),
-        '300' => '> 5 '.trans('front.hour_short'),
+        '1' => '> 1 ' . trans('front.minute_short'),
+        '2' => '> 2 ' . trans('front.minute_short'),
+        '3' => '> 3 ' . trans('front.minute_short'),
+        '4' => '> 4 ' . trans('front.minute_short'),
+        '5' => '> 5 ' . trans('front.minute_short'),
+        '10' => '> 10 ' . trans('front.minute_short'),
+        '15' => '> 15 ' . trans('front.minute_short'),
+        '20' => '> 20 ' . trans('front.minute_short'),
+        '30' => '> 30 ' . trans('front.minute_short'),
+        '60' => '> 1 ' . trans('front.hour_short'),
+        '120' => '> 2 ' . trans('front.hour_short'),
+        '300' => '> 5 ' . trans('front.hour_short'),
     ]);
     Config::set('tobuli.stops_seconds', [
-        '5' => '> 5 '.trans('front.second_short'),
-        '10' => '> 10 '.trans('front.second_short'),
-        '15' => '> 15 '.trans('front.second_short'),
-        '30' => '> 30 '.trans('front.second_short'),
-        '60' => '> 1 '.trans('front.minute_short'),
-        '120' => '> 2 '.trans('front.minute_short'),
-        '180' => '> 3 '.trans('front.minute_short'),
-        '240' => '> 4 '.trans('front.minute_short'),
-        '300' => '> 5 '.trans('front.minute_short'),
-        '600' => '> 10 '.trans('front.minute_short'),
-        '900' => '> 15 '.trans('front.minute_short'),
-        '1200' => '> 20 '.trans('front.minute_short'),
-        '1800' => '> 30 '.trans('front.minute_short'),
-        '3600' => '> 1 '.trans('front.hour_short'),
-        '7200' => '> 2 '.trans('front.hour_short'),
-        '18000' => '> 5 '.trans('front.hour_short'),
+        '5' => '> 5 ' . trans('front.second_short'),
+        '10' => '> 10 ' . trans('front.second_short'),
+        '15' => '> 15 ' . trans('front.second_short'),
+        '30' => '> 30 ' . trans('front.second_short'),
+        '60' => '> 1 ' . trans('front.minute_short'),
+        '120' => '> 2 ' . trans('front.minute_short'),
+        '180' => '> 3 ' . trans('front.minute_short'),
+        '240' => '> 4 ' . trans('front.minute_short'),
+        '300' => '> 5 ' . trans('front.minute_short'),
+        '600' => '> 10 ' . trans('front.minute_short'),
+        '900' => '> 15 ' . trans('front.minute_short'),
+        '1200' => '> 20 ' . trans('front.minute_short'),
+        '1800' => '> 30 ' . trans('front.minute_short'),
+        '3600' => '> 1 ' . trans('front.hour_short'),
+        '7200' => '> 2 ' . trans('front.hour_short'),
+        '18000' => '> 5 ' . trans('front.hour_short'),
     ]);
 
     Config::set('tobuli.listview_fields_trans', [
@@ -1566,7 +1568,7 @@ function listsTranslations()
         'driver' => trans('front.driver'),
     ];
 
-    if ( ! settings('main_settings.streetview_key') && (settings('main_settings.streetview_api') != 'default')) {
+    if (! settings('main_settings.streetview_key') && (settings('main_settings.streetview_api') != 'default')) {
         unset($widgetsData[array_search('streetview', $widgetsData)]);
     }
 
@@ -1581,10 +1583,10 @@ function listsTranslations()
     Config::set('lists.widgets', $widgetsData);
 
     $minutes = [];
-    for($i = 0; $i < 16; $i += 1){
+    for ($i = 0; $i < 16; $i += 1) {
         $minutes[$i] = $i . ' ' . trans('front.minute_short');
     }
-    for($i = 15; $i < 65; $i += 5){
+    for ($i = 15; $i < 65; $i += 5) {
         $minutes[$i] = $i . ' ' . trans('front.minute_short');
     }
     Config::set('tobuli.minutes', $minutes);
@@ -1625,190 +1627,190 @@ function getJsConfig()
     if (config('addon.google_styled')) {
         $googleQueryParam['region'] = 'MA';
     }
-    
+
     $mapControls = settings('map_controls');
 
     return [
-            'debug' => false,
-            'user_id' => $user->id,
-            'version' => config('tobuli.version'),
-            'firstLogin' => $user && ! $user->isLoggedBefore(),
-            'offlineTimeout' => settings('main_settings.default_object_online_timeout') * 60,
-            'checkFrequency' => config('tobuli.check_frequency'),
-            'checkChatFrequency' => config('tobuli.check_chat_frequency'),
-            'checkChatUnreadFrequency' => config('tobuli.check_chat_unread_frequency'),
-            'lang' => Language::get(),
-            'object_listview' => settings('plugins.object_listview.status'),
-            'channels' => [
-                'userChannel' => md5('user_'.$user->id),
-            ],
-            'settings' => [
-                'units' => [
-                    'speed'    => [
-                        'unit' => Formatter::speed()->getUnit(),
-                        'radio' => Formatter::speed()->getRatio()
-                    ],
-                    'distance' => [
-                        'unit' => Formatter::distance()->getUnit(),
-                        'radio' => Formatter::distance()->getRatio()
-                    ],
-                    'altitude' => [
-                        'unit' => Formatter::altitude()->getUnit(),
-                        'radio' => Formatter::altitude()->getRatio()
-                    ],
-                    'capacity' => [
-                        'unit' => Formatter::capacity()->getUnit(),
-                        'radio' => Formatter::capacity()->getRatio()
-                    ],
+        'debug' => false,
+        'user_id' => $user->id,
+        'version' => config('tobuli.version'),
+        'firstLogin' => $user && ! $user->isLoggedBefore(),
+        'offlineTimeout' => settings('main_settings.default_object_online_timeout') * 60,
+        'checkFrequency' => config('tobuli.check_frequency'),
+        'checkChatFrequency' => config('tobuli.check_chat_frequency'),
+        'checkChatUnreadFrequency' => config('tobuli.check_chat_unread_frequency'),
+        'lang' => Language::get(),
+        'object_listview' => settings('plugins.object_listview.status'),
+        'channels' => [
+            'userChannel' => md5('user_' . $user->id),
+        ],
+        'settings' => [
+            'units' => [
+                'speed'    => [
+                    'unit' => Formatter::speed()->getUnit(),
+                    'radio' => Formatter::speed()->getRatio()
                 ],
-                'durationFormat' => Formatter::duration()->getFormat(),
-                'timeFormat' => convertPHPToMomentFormat(Appearance::getSetting('default_time_format')),
-                'dateFormat' => convertPHPToMomentFormat(Appearance::getSetting('default_date_format')),
-                'weekStart' => $user->week_start_day,
-                'mapCenter' => [
-                    'lat' => floatval(Appearance::getSetting('map_center_latitude')),
-                    'lng' => floatval(Appearance::getSetting('map_center_longitude'))
+                'distance' => [
+                    'unit' => Formatter::distance()->getUnit(),
+                    'radio' => Formatter::distance()->getRatio()
                 ],
-                'mapZoom' => Appearance::getSetting('map_zoom_level'),
-                'map_id' => $user->map_id,
-                'availableMaps' => $user->available_maps,
-                'toggleSidebar' => false,
-
-                'showTotalDistance' => settings('plugins.device_widget_total_distance.status'),
-                'animateDeviceMove' =>  settings('plugins.device_move_animation.status'),
-                'showGeofenceSize' => settings('plugins.geofence_size.status'),
-                'showEventSectionAddress' => settings('plugins.event_section_address.status'),
-                'clusterDevice' => Arr::get($user->map_controls, 'm_objects_cluster', $mapControls['clusterDevice'] ?? null),
-                'showTraffic' => Arr::get($user->map_controls, 'm_traffic', $mapControls['showTraffic'] ?? null),
-                'showDevice' => Arr::get($user->map_controls, 'm_objects', $mapControls['showDevice'] ?? null),
-                'showGeofences' => Arr::get($user->map_controls, 'm_geofences', $mapControls['showGeofences'] ?? null),
-                'showRoutes' => Arr::get($user->map_controls, 'm_routes', $mapControls['showRoutes'] ?? null),
-                'showPoi' => Arr::get($user->map_controls, 'm_poi', $mapControls['showPoi'] ?? null),
-                'showTail' => Arr::get($user->map_controls, 'm_show_tails', $mapControls['showTail'] ?? null),
-                'showNames' => Arr::get($user->map_controls, 'm_show_names', $mapControls['showNames'] ?? null),
-                'showHistoryRoute' => Arr::get($user->map_controls, 'history_control_route ', $mapControls['showHistoryRoute'] ?? null),
-                'showHistoryArrow' => Arr::get($user->map_controls, 'history_control_arrows', $mapControls['showHistoryArrow'] ?? null),
-                'showHistoryStop' => Arr::get($user->map_controls, 'history_control_stops ', $mapControls['showHistoryStop'] ?? null),
-                'showHistoryEvent' => Arr::get($user->map_controls, 'history_control_events', $mapControls['showHistoryEvent'] ?? null),
-                'keys' => [
-                    'google_maps_key' => settings('main_settings.google_maps_key'),
-                    'here_map_id' => settings('main_settings.here_map_id'),
-                    'here_map_code' => settings('main_settings.here_map_code'),
-                    'here_api_key' => settings('main_settings.here_api_key'),
-                    'mapbox_access_token' => settings('main_settings.mapbox_access_token'),
-                    'bing_maps_key' => settings('main_settings.bing_maps_key'),
-                    'maptiler_key' => settings('main_settings.maptiler_key'),
-                    'tomtom_key' => settings('main_settings.tomtom_key'),
-                    'azure_maps_key' => settings('main_settings.azure_maps_key'),
+                'altitude' => [
+                    'unit' => Formatter::altitude()->getUnit(),
+                    'radio' => Formatter::altitude()->getRatio()
                 ],
-                'googleQueryParam' => $googleQueryParam,
-                'openmaptiles_url' => settings('main_settings.openmaptiles_url'),
-                'showStreetView' => ( ! settings('main_settings.streetview_key') && (settings('main_settings.streetview_api') != 'default'))
-                    ? false
-                    : true,
+                'capacity' => [
+                    'unit' => Formatter::capacity()->getUnit(),
+                    'radio' => Formatter::capacity()->getRatio()
+                ],
             ],
-            'urls' => [
-                'asset' => asset(''),
-                'streetView' => route('streetview'),
-                'geoAddress' => $addressUrl,
-                'streetViewEnable' => route('streetViewEnable'),
-                'streetViewFrame' => route('streetViewFrame'),
-
-                'events' => route('events.index'),
-                'eventDoDelete' => route('events.do_destroy'),
-
-                'history' => route('history.index'),
-                'historyExport' => route('history.export'),
-                'historyPosition' => route('history.position'),
-                'historyPositions' => route('history.positions'),
-                'historyPositionsDelete' => route('history.delete_positions'),
-
-                'check' => $checkUrl,
-                'devicesMap' => $devicesUrl,
-                'devicesSidebar' => route('objects.sidebar'),
-                'deviceDelete' => route('objects.destroy'),
-                'deviceChangeActive' => route('devices.change_active'),
-                'deviceToggleGroup' => route('objects.change_group_status'),
-                'deviceStopTime' => route('objects.stop_time').'/',
-                'deviceFollow' => route('devices.follow_map').'/',
-                'devicesSensorCreate' => route('sensors.create').'/',
-                'devicesServiceCreate' => route('services.create').'/',
-                'devicesServices' => route('services.index').'/',
-                'devicesCommands' => route('devices.commands'),
-                'deviceImages' => route('device_media.get_images').'/',
-                'deviceImage' => route('device_media.get_image').'/',
-                'deleteImage' => route('device_media.delete_image').'/',
-                'deviceSendGprsCommand' => route('send_command.gprs'),
-                'deviceWidgetLocation' => route('device.widgets.location').'/',
-                'deviceWidgetCameras' => route('device.widgets.cameras').'/',
-                'deviceWidgetImage' => route('device.widgets.image').'/',
-                'deviceWidgetUploadImage' => route('device.image_upload').'/',
-                'deviceWidgetFuelGraph' => route('device.widgets.fuel_graph').'/',
-                'deviceWidgetGprsCommand' => route('device.widgets.gprs_command').'/',
-                'deviceWidgetRecentEvents' => route('device.widgets.recent_events').'/',
-                'deviceWidgetTemplateWebhook' => route('device.widgets.template_webhook').'/',
-
-                'geofencesMap' => route('geofences.index'),
-                'geofencesSidebar' => route('geofences.sidebar'),
-                'geofenceCreate' => route('geofences.create'),
-                'geofenceEdit' => route('geofences.edit'),
-                'geofenceChangeActive' => route('geofences.change_active'),
-                'geofenceDelete' => route('geofences.destroy', ['action' => 'proceed']),
-                'geofencesExportType' => route('geofences.export_type'),
-                'geofenceDevices' => route('geofences.devices'),
-                'geofencesImport' => route('geofences.import'),
-                'geofenceToggleGroup' => route('geofences_groups.change_status'),
-
-                'routesSidebar' => route('routes.sidebar'),
-                'routesMap' => route('routes.index'),
-                'routesCreate' => route('routes.create'),
-                'routesEdit' => route('routes.edit'),
-                'routeChangeActive' => route('routes.change_active'),
-                'routeDelete' => route('routes.destroy', ['action' => 'proceed']),
-                'routesExportType' => route('routes.export_type'),
-                'routeToggleGroup' => route('route_groups.change_status'),
-
-                'alerts' => route('alerts.index'),
-                'alertEdit' => route('alerts.edit'),
-                'alertChangeActive' => route('alerts.change_active'),
-                'alertDelete' => route('alerts.destroy'),
-                'alertGetEventsByDevice' => route('alerts.custom_events'),
-                'alertGetCommands' => route('alerts.commands'),
-
-                'poisMap' => route('pois.index'),
-                'poisSidebar' => route('pois.sidebar'),
-                'poisCreate' => route('pois.create'),
-                'poisEdit' => route('pois.edit'),
-                'poisDelete' => route('pois.destroy', ['action' => 'proceed']),
-                'poisChangeActive' => route('pois.change_active'),
-                'poisExportType' => route('pois.export_type'),
-                'poisToggleGroup' => route('pois_groups.change_status'),
-
-                'changeMap' => route('my_account.change_map'),
-                'changeMapSettings' => route('my_account_settings.change_map_settings'),
-
-                'clearQueue' => route('sms_gateway.clear_queue'),
-
-                'dashboard' => route('dashboard'),
-                'dashboardBlockContent' => route('dashboard.block_content'),
-
-                'lockHistory' => route('lock_status.history').'/',
-                'lockStatus' => route('lock_status.status').'/',
-                'unlockLock' => route('lock_status.unlock').'/',
-
-                'checklistUpdateRowStatus' => route('checklists.update_row_status').'/',
-                'checklistUpdateRowOutcome' => route('checklists.update_row_outcome').'/',
-                'checklistUploadFile' => route('checklists.upload_file').'/',
-                'checklistSign' => route('checklists.sign_checklist').'/',
-                'checklistGetRow' => route('checklists.get_row').'/',
-
-                'deviceConfigApnData' => route('device_config.get_apn_data').'/',
-
-                'importGetFields' => route('import.get_fields'),
-
-                'chatUnreadMsgTotalCount' => route('chat.unread_msg_count'),
+            'durationFormat' => Formatter::duration()->getFormat(),
+            'timeFormat' => convertPHPToMomentFormat(Appearance::getSetting('default_time_format')),
+            'dateFormat' => convertPHPToMomentFormat(Appearance::getSetting('default_date_format')),
+            'weekStart' => $user->week_start_day,
+            'mapCenter' => [
+                'lat' => floatval(Appearance::getSetting('map_center_latitude')),
+                'lng' => floatval(Appearance::getSetting('map_center_longitude'))
             ],
-        ];
+            'mapZoom' => Appearance::getSetting('map_zoom_level'),
+            'map_id' => $user->map_id,
+            'availableMaps' => $user->available_maps,
+            'toggleSidebar' => false,
+
+            'showTotalDistance' => settings('plugins.device_widget_total_distance.status'),
+            'animateDeviceMove' =>  settings('plugins.device_move_animation.status'),
+            'showGeofenceSize' => settings('plugins.geofence_size.status'),
+            'showEventSectionAddress' => settings('plugins.event_section_address.status'),
+            'clusterDevice' => Arr::get($user->map_controls, 'm_objects_cluster', $mapControls['clusterDevice'] ?? null),
+            'showTraffic' => Arr::get($user->map_controls, 'm_traffic', $mapControls['showTraffic'] ?? null),
+            'showDevice' => Arr::get($user->map_controls, 'm_objects', $mapControls['showDevice'] ?? null),
+            'showGeofences' => Arr::get($user->map_controls, 'm_geofences', $mapControls['showGeofences'] ?? null),
+            'showRoutes' => Arr::get($user->map_controls, 'm_routes', $mapControls['showRoutes'] ?? null),
+            'showPoi' => Arr::get($user->map_controls, 'm_poi', $mapControls['showPoi'] ?? null),
+            'showTail' => Arr::get($user->map_controls, 'm_show_tails', $mapControls['showTail'] ?? null),
+            'showNames' => Arr::get($user->map_controls, 'm_show_names', $mapControls['showNames'] ?? null),
+            'showHistoryRoute' => Arr::get($user->map_controls, 'history_control_route ', $mapControls['showHistoryRoute'] ?? null),
+            'showHistoryArrow' => Arr::get($user->map_controls, 'history_control_arrows', $mapControls['showHistoryArrow'] ?? null),
+            'showHistoryStop' => Arr::get($user->map_controls, 'history_control_stops ', $mapControls['showHistoryStop'] ?? null),
+            'showHistoryEvent' => Arr::get($user->map_controls, 'history_control_events', $mapControls['showHistoryEvent'] ?? null),
+            'keys' => [
+                'google_maps_key' => settings('main_settings.google_maps_key'),
+                'here_map_id' => settings('main_settings.here_map_id'),
+                'here_map_code' => settings('main_settings.here_map_code'),
+                'here_api_key' => settings('main_settings.here_api_key'),
+                'mapbox_access_token' => settings('main_settings.mapbox_access_token'),
+                'bing_maps_key' => settings('main_settings.bing_maps_key'),
+                'maptiler_key' => settings('main_settings.maptiler_key'),
+                'tomtom_key' => settings('main_settings.tomtom_key'),
+                'azure_maps_key' => settings('main_settings.azure_maps_key'),
+            ],
+            'googleQueryParam' => $googleQueryParam,
+            'openmaptiles_url' => settings('main_settings.openmaptiles_url'),
+            'showStreetView' => (! settings('main_settings.streetview_key') && (settings('main_settings.streetview_api') != 'default'))
+                ? false
+                : true,
+        ],
+        'urls' => [
+            'asset' => asset(''),
+            'streetView' => route('streetview'),
+            'geoAddress' => $addressUrl,
+            'streetViewEnable' => route('streetViewEnable'),
+            'streetViewFrame' => route('streetViewFrame'),
+
+            'events' => route('events.index'),
+            'eventDoDelete' => route('events.do_destroy'),
+
+            'history' => route('history.index'),
+            'historyExport' => route('history.export'),
+            'historyPosition' => route('history.position'),
+            'historyPositions' => route('history.positions'),
+            'historyPositionsDelete' => route('history.delete_positions'),
+
+            'check' => $checkUrl,
+            'devicesMap' => $devicesUrl,
+            'devicesSidebar' => route('objects.sidebar'),
+            'deviceDelete' => route('objects.destroy'),
+            'deviceChangeActive' => route('devices.change_active'),
+            'deviceToggleGroup' => route('objects.change_group_status'),
+            'deviceStopTime' => route('objects.stop_time') . '/',
+            'deviceFollow' => route('devices.follow_map') . '/',
+            'devicesSensorCreate' => route('sensors.create') . '/',
+            'devicesServiceCreate' => route('services.create') . '/',
+            'devicesServices' => route('services.index') . '/',
+            'devicesCommands' => route('devices.commands'),
+            'deviceImages' => route('device_media.get_images') . '/',
+            'deviceImage' => route('device_media.get_image') . '/',
+            'deleteImage' => route('device_media.delete_image') . '/',
+            'deviceSendGprsCommand' => route('send_command.gprs'),
+            'deviceWidgetLocation' => route('device.widgets.location') . '/',
+            'deviceWidgetCameras' => route('device.widgets.cameras') . '/',
+            'deviceWidgetImage' => route('device.widgets.image') . '/',
+            'deviceWidgetUploadImage' => route('device.image_upload') . '/',
+            'deviceWidgetFuelGraph' => route('device.widgets.fuel_graph') . '/',
+            'deviceWidgetGprsCommand' => route('device.widgets.gprs_command') . '/',
+            'deviceWidgetRecentEvents' => route('device.widgets.recent_events') . '/',
+            'deviceWidgetTemplateWebhook' => route('device.widgets.template_webhook') . '/',
+
+            'geofencesMap' => route('geofences.index'),
+            'geofencesSidebar' => route('geofences.sidebar'),
+            'geofenceCreate' => route('geofences.create'),
+            'geofenceEdit' => route('geofences.edit'),
+            'geofenceChangeActive' => route('geofences.change_active'),
+            'geofenceDelete' => route('geofences.destroy', ['action' => 'proceed']),
+            'geofencesExportType' => route('geofences.export_type'),
+            'geofenceDevices' => route('geofences.devices'),
+            'geofencesImport' => route('geofences.import'),
+            'geofenceToggleGroup' => route('geofences_groups.change_status'),
+
+            'routesSidebar' => route('routes.sidebar'),
+            'routesMap' => route('routes.index'),
+            'routesCreate' => route('routes.create'),
+            'routesEdit' => route('routes.edit'),
+            'routeChangeActive' => route('routes.change_active'),
+            'routeDelete' => route('routes.destroy', ['action' => 'proceed']),
+            'routesExportType' => route('routes.export_type'),
+            'routeToggleGroup' => route('route_groups.change_status'),
+
+            'alerts' => route('alerts.index'),
+            'alertEdit' => route('alerts.edit'),
+            'alertChangeActive' => route('alerts.change_active'),
+            'alertDelete' => route('alerts.destroy'),
+            'alertGetEventsByDevice' => route('alerts.custom_events'),
+            'alertGetCommands' => route('alerts.commands'),
+
+            'poisMap' => route('pois.index'),
+            'poisSidebar' => route('pois.sidebar'),
+            'poisCreate' => route('pois.create'),
+            'poisEdit' => route('pois.edit'),
+            'poisDelete' => route('pois.destroy', ['action' => 'proceed']),
+            'poisChangeActive' => route('pois.change_active'),
+            'poisExportType' => route('pois.export_type'),
+            'poisToggleGroup' => route('pois_groups.change_status'),
+
+            'changeMap' => route('my_account.change_map'),
+            'changeMapSettings' => route('my_account_settings.change_map_settings'),
+
+            'clearQueue' => route('sms_gateway.clear_queue'),
+
+            'dashboard' => route('dashboard'),
+            'dashboardBlockContent' => route('dashboard.block_content'),
+
+            'lockHistory' => route('lock_status.history') . '/',
+            'lockStatus' => route('lock_status.status') . '/',
+            'unlockLock' => route('lock_status.unlock') . '/',
+
+            'checklistUpdateRowStatus' => route('checklists.update_row_status') . '/',
+            'checklistUpdateRowOutcome' => route('checklists.update_row_outcome') . '/',
+            'checklistUploadFile' => route('checklists.upload_file') . '/',
+            'checklistSign' => route('checklists.sign_checklist') . '/',
+            'checklistGetRow' => route('checklists.get_row') . '/',
+
+            'deviceConfigApnData' => route('device_config.get_apn_data') . '/',
+
+            'importGetFields' => route('import.get_fields'),
+
+            'chatUnreadMsgTotalCount' => route('chat.unread_msg_count'),
+        ],
+    ];
 }
 
 /**
@@ -1874,7 +1876,7 @@ function getPeriodByPhrase(string $phrase): array
             break;
         default:
             throw new \Tobuli\Exceptions\ValidationException([
-                'phrase' => 'Unknown phrase: '.$phrase,
+                'phrase' => 'Unknown phrase: ' . $phrase,
             ]);
 
             break;
@@ -1932,7 +1934,7 @@ function base64ToImage(string $string): ?\Symfony\Component\HttpFoundation\File\
     $imageType = $imageType[1];
 
     $name = uniqid('image_');
-    $path = sys_get_temp_dir()."/{$name}.{$imageType}";
+    $path = sys_get_temp_dir() . "/{$name}.{$imageType}";
     file_put_contents($path, base64_decode($imageData));
 
     return new \Symfony\Component\HttpFoundation\File\UploadedFile(
@@ -1941,7 +1943,8 @@ function base64ToImage(string $string): ?\Symfony\Component\HttpFoundation\File\
         File::mimeType($path),
         File::size($path),
         null,
-        true);
+        true
+    );
 }
 
 /**
@@ -2041,7 +2044,8 @@ function getDSTCountries()
         ->pluck('country', 'id')->all();
 }
 
-function filesize_remote($url) {
+function filesize_remote($url)
+{
     static $regex = '/^Content-Length: *+\K\d++$/im';
     if (!$fp = @fopen($url, 'rb')) {
         return false;

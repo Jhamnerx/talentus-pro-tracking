@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Entities;
+<?php
+
+namespace Tobuli\Entities;
 
 use Illuminate\Support\Facades\Cache;
 use Tobuli\Helpers\Templates\TemplateManager;
@@ -8,7 +10,7 @@ class EmailTemplate extends AbstractEntity
 {
     use Searchable;
 
-	protected $table = 'email_templates';
+    protected $table = 'email_templates';
 
     protected $fillable = array('title', 'note');
 
@@ -42,7 +44,7 @@ class EmailTemplate extends AbstractEntity
 
     public function scopeUserBy($query, $user_id)
     {
-        return $query->where(function($query) use ($user_id) {
+        return $query->where(function ($query) use ($user_id) {
             $query->whereNull("{$this->table}.user_id");
             $query->orWhere("{$this->table}.user_id", $user_id);
         });
@@ -63,7 +65,7 @@ class EmailTemplate extends AbstractEntity
 
         $key = "email_template.$name." . $manager_id ?? 0;
 
-        $template = Cache::store('array')->rememberForever($key, function() use ($name, $manager_id) {
+        $template = Cache::store('array')->rememberForever($key, function () use ($name, $manager_id) {
             if ($manager_id && $manager = User::getManagerTopFirst($manager_id))
                 $manager_id = $manager->id;
 

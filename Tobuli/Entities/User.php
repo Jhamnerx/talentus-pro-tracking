@@ -22,6 +22,7 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
+use Illuminate\Support\Facades\Log;
 use Tobuli\Helpers\Settings\Settingable;
 use Tobuli\Services\NotificationService;
 use Tobuli\Traits\ChangeLogs;
@@ -44,9 +45,20 @@ class User extends AbstractEntity implements
 {
     const VERIFY_EMAIL_TIMEOUT_MIN = 5;
 
-    use Authenticatable, CanResetPassword, Settingable, Notifiable, Chattable,
-        EventLoggable, SentCommandActor, Searchable, Filterable, Customizable,
-        FcmTokensTrait, HasFactory, ChangeLogs, DisplayTrait;
+    use Authenticatable,
+        CanResetPassword,
+        Settingable,
+        Notifiable,
+        Chattable,
+        EventLoggable,
+        SentCommandActor,
+        Searchable,
+        Filterable,
+        Customizable,
+        FcmTokensTrait,
+        HasFactory,
+        ChangeLogs,
+        DisplayTrait;
 
     public static string $displayField = 'email';
 
@@ -61,19 +73,19 @@ class User extends AbstractEntity implements
         'billing_plan_id'
     ];
 
-	/**
-	 * The database table used by the model.
-	 *
-	 * @var string
-	 */
-	protected $table = 'users';
+    /**
+     * The database table used by the model.
+     *
+     * @var string
+     */
+    protected $table = 'users';
 
-	/**
-	 * The attributes excluded from the model's JSON form.
-	 *
-	 * @var array
-	 */
-	protected $hidden = ['remember_token', 'api_hash', 'password', 'login_token', 'untouchable'];
+    /**
+     * The attributes excluded from the model's JSON form.
+     *
+     * @var array
+     */
+    protected $hidden = ['remember_token', 'api_hash', 'password', 'login_token', 'untouchable'];
 
     protected $fillable = array(
         'id',
@@ -135,13 +147,13 @@ class User extends AbstractEntity implements
     {
         parent::boot();
 
-        if ( Auth::check() && ! Auth::user()->isGod()) {
+        if (Auth::check() && ! Auth::user()->isGod()) {
             static::addGlobalScope(new \Tobuli\Scopes\GodUserScope());
         }
 
         static::saving(function ($user) {
             if ($user->isDirty('password')) {
-                while(self::where([
+                while (self::where([
                     'api_hash' => $hash = Hash::make("{$user->email}:{$user->password}")
                 ])->first());
                 $user->api_hash = $hash;
@@ -163,7 +175,7 @@ class User extends AbstractEntity implements
 
         static::updating(function (User $user) {
             if ($user->isDirty('group_id')) {
-                $groups = [3,5];
+                $groups = [3, 5];
                 if (in_array($user->getOriginal('group_id'), $groups) && !in_array($user->group_id, $groups)) {
                     User::where('manager_id', $user->id)->update(['manager_id' => null]);
                 }
@@ -255,7 +267,7 @@ class User extends AbstractEntity implements
             $list = unserialize($value);
             $maps = array_keys(getAvailableMaps());
 
-            $list = array_filter($list, function($id) use ($maps) {
+            $list = array_filter($list, function ($id) use ($maps) {
                 return in_array($id, $maps);
             });
 
@@ -270,11 +282,13 @@ class User extends AbstractEntity implements
         return unserialize($value);
     }
 
-    public function getUnitOfSpeedAttribute() {
+    public function getUnitOfSpeedAttribute()
+    {
         return trans("front.dis_h_{$this->unit_of_distance}");
     }
 
-    public function getDistanceUnitHourAttribute() {
+    public function getDistanceUnitHourAttribute()
+    {
         return $this->unit_of_speed;
     }
 
@@ -303,19 +317,23 @@ class User extends AbstractEntity implements
         return $this->subscription_expiration;
     }
 
-    public function timezone() {
+    public function timezone()
+    {
         return $this->hasOne('Tobuli\Entities\Timezone', 'id', 'timezone_id');
     }
 
-    public function manager() {
+    public function manager()
+    {
         return $this->hasOne('Tobuli\Entities\User', 'id', 'manager_id');
     }
 
-    public function billing_plan() {
+    public function billing_plan()
+    {
         return $this->hasOne('Tobuli\Entities\BillingPlan', 'id', 'billing_plan_id');
     }
 
-    public function alerts() {
+    public function alerts()
+    {
         return $this->hasMany('Tobuli\Entities\Alert', 'user_id', 'id');
     }
 
@@ -324,7 +342,8 @@ class User extends AbstractEntity implements
         return $this->hasMany(UserSecondaryCredentials::class);
     }
 
-    public function accessibleDevices() {
+    public function accessibleDevices()
+    {
         if ($this->isAdmin() || $this->isSupervisor()) {
             $relation = $this->hasMany('Tobuli\Entities\Device', 'user_id', 'id')
                 ->orWhere(function ($query) {
@@ -348,8 +367,7 @@ class User extends AbstractEntity implements
                         ->orWhere('users.manager_id', $self->id)
                     ;
                 })
-                ->distinct('devices.id')
-            ;
+                ->distinct('devices.id');
         } else {
             $relation = $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id');
         }
@@ -369,7 +387,6 @@ class User extends AbstractEntity implements
                     $join->on('user_device_pivot.device_id', '=', 'devices.id')
                         ->where('user_device_pivot.user_id', '=', $this->id);
                 });
-
         }
 
         if ($this->isManager()) {
@@ -398,36 +415,43 @@ class User extends AbstractEntity implements
             ->withPivot('group_id');
     }
 
-    public function devices() {
+    public function devices()
+    {
         return $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id')
             ->withPivot(['group_id', 'active'])
             ->orderBy('name', 'asc');
     }
 
-    public function devices_sms() {
+    public function devices_sms()
+    {
         return $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id')
             ->where('sim_number', '!=', '')
             ->withPivot(['group_id'])
             ->orderBy('name', 'asc');
     }
 
-    public function drivers() {
+    public function drivers()
+    {
         return $this->hasMany('Tobuli\Entities\UserDriver', 'user_id', 'id');
     }
 
-    public function subusers() {
+    public function subusers()
+    {
         return $this->hasMany('Tobuli\Entities\User', 'manager_id', 'id');
     }
 
-    public function sms_templates() {
+    public function sms_templates()
+    {
         return $this->hasMany('Tobuli\Entities\UserSmsTemplate', 'user_id', 'id');
     }
 
-    public function geofences() {
+    public function geofences()
+    {
         return $this->hasMany('Tobuli\Entities\Geofence', 'user_id', 'id');
     }
-    
-    public function geofenceGroups() {
+
+    public function geofenceGroups()
+    {
         return $this->hasMany('Tobuli\Entities\GeofenceGroup', 'user_id', 'id');
     }
 
@@ -436,11 +460,13 @@ class User extends AbstractEntity implements
         return $this->hasMany(DeviceGroup::class);
     }
 
-    public function pois() {
+    public function pois()
+    {
         return $this->hasMany('Tobuli\Entities\Poi', 'user_id', 'id');
     }
 
-    public function poiGroups() {
+    public function poiGroups()
+    {
         return $this->hasMany('Tobuli\Entities\PoiGroup', 'user_id', 'id');
     }
 
@@ -454,7 +480,8 @@ class User extends AbstractEntity implements
         return $this->hasMany(RouteGroup::class);
     }
 
-    public function forwards() {
+    public function forwards()
+    {
         return $this->belongsToMany(Forward::class, 'user_forward', 'user_id', 'forward_id');
     }
 
@@ -465,7 +492,7 @@ class User extends AbstractEntity implements
         $defaultPermissions = LaravelConfig::get('permissions.list');
 
         foreach ($defaultPermissions as $name => $modes) {
-            foreach($modes as $mode => $value) {
+            foreach ($modes as $mode => $value) {
                 $permissions[$name][$mode] = $this->perm($name, $mode);
             }
         }
@@ -473,7 +500,8 @@ class User extends AbstractEntity implements
         return $permissions;
     }
 
-    public function perm($name, $mode) {
+    public function perm($name, $mode)
+    {
         $mode = trim($mode);
         $modes = LaravelConfig::get('permissions.modes');
 
@@ -569,7 +597,7 @@ class User extends AbstractEntity implements
     {
         $user_id = intval($user_id);
 
-        return \Illuminate\Support\Facades\Cache::remember("user_manage_{$user_id}", 120, function() use ($user_id){
+        return \Illuminate\Support\Facades\Cache::remember("user_manage_{$user_id}", 120, function () use ($user_id) {
             return self::fromQuery("
                 SELECT T2.*
                 FROM (
@@ -658,13 +686,13 @@ class User extends AbstractEntity implements
 
         return true;
     }
-    
+
     public function canSendSMS()
     {
-        if ( ! $this->perm('sms_gateway', 'view'))
+        if (! $this->perm('sms_gateway', 'view'))
             return false;
 
-        if ( ! $this->sms_gateway)
+        if (! $this->sms_gateway)
             return false;
 
         return true;
@@ -791,9 +819,10 @@ class User extends AbstractEntity implements
         }
 
         if ($user->isManager()) {
-            return $query->where(fn ($q) => $q
-                ->where("$table.manager_id", $user->id)
-                ->orWhere("$table.id", $user->id)
+            return $query->where(
+                fn($q) => $q
+                    ->where("$table.manager_id", $user->id)
+                    ->orWhere("$table.id", $user->id)
             );
         }
 
@@ -802,9 +831,10 @@ class User extends AbstractEntity implements
 
     public function scopeUserTouchable(Builder $query, User $user): Builder
     {
-        return $query->where(fn (Builder $query) => $query
-            ->where('users.untouchable', 0)
-            ->orWhere('users.id', $user->id)
+        return $query->where(
+            fn(Builder $query) => $query
+                ->where('users.untouchable', 0)
+                ->orWhere('users.id', $user->id)
         );
     }
 
@@ -823,7 +853,7 @@ class User extends AbstractEntity implements
             return $items;
         }
 
-        $items = $items->filter(function($notification) use ($filters) {
+        $items = $items->filter(function ($notification) use ($filters) {
             foreach ($filters as $field => $filterValue) {
                 $equal = strpos($field, '!') !== 0;
 
@@ -837,7 +867,7 @@ class User extends AbstractEntity implements
                     $filterValue = [$filterValue];
                 }
 
-                if ($equal XOR in_array($value, $filterValue)) {
+                if ($equal xor in_array($value, $filterValue)) {
                     return false;
                 }
             }
@@ -852,7 +882,7 @@ class User extends AbstractEntity implements
     {
         $popups = (new NotificationService())->getPopups($this);
 
-        return array_filter($popups, function($popup){
+        return array_filter($popups, function ($popup) {
             return $popup['position'] == 'top';
         });
     }
@@ -920,7 +950,6 @@ class User extends AbstractEntity implements
         $token = sha1($this->email) . ';' . $this->id;
 
         $content = $emailTemplate->buildTemplate($token);
-
         dispatch(new SendEmailJob($this->email, $content['subject'], $content['body']));
 
         Cache::put('user_' . $this->id . '_verification_reminder', 60, self::VERIFY_EMAIL_TIMEOUT_MIN);
