@@ -630,7 +630,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'Australian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'au.png',
             'locale' => 'en_AU'
@@ -640,7 +640,7 @@ return [
             'iso'    => 'az',
             'iso3'   => 'aze',
             'title'  => 'Azerbaijan',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'az.png',
             'locale' => 'az_AZ'
@@ -650,7 +650,7 @@ return [
             'iso'    => 'ar',
             'iso3'   => 'ara',
             'title'  => 'Arabic',
-            'active' => true,
+            'active' => false,
             'dir'    => 'rtl',
             'flag'   => 'ar.png',
             'locale' => 'ar_AE'
@@ -660,7 +660,7 @@ return [
             'iso'    => 'sk',
             'iso3'   => 'slo',
             'title'  => 'Slovakian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'sk.png',
             'locale' => 'sk'
@@ -670,7 +670,7 @@ return [
             'iso'    => 'th',
             'iso3'   => 'tha',
             'title'  => 'Thai',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'th.png',
             'locale' => 'th'
@@ -680,7 +680,7 @@ return [
             'iso'    => 'nl',
             'iso3'   => 'dut',
             'title'  => 'Dutch',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'nl.png',
             'locale' => 'nl_NL'
@@ -690,7 +690,7 @@ return [
             'iso'    => 'de',
             'iso3'   => 'ger',
             'title'  => 'German',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'de.png',
             'locale' => 'de_DE'
@@ -700,7 +700,7 @@ return [
             'iso'    => 'el',
             'iso3'   => 'gre',
             'title'  => 'Greek',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'gr.png',
             'locale' => 'el'
@@ -710,7 +710,7 @@ return [
             'iso'    => 'pl',
             'iso3'   => 'pol',
             'title'  => 'Polish',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'pl.png',
             'locale' => 'pl'
@@ -720,7 +720,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'English(UK)',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'uk.png',
             'locale' => 'en_GB'
@@ -730,7 +730,7 @@ return [
             'iso'    => 'fr',
             'iso3'   => 'fre',
             'title'  => 'French',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'fr.png',
             'locale' => 'fr_FR'
@@ -740,7 +740,7 @@ return [
             'iso'    => 'pt',
             'iso3'   => 'por',
             'title'  => 'Brazilian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'br.png',
             'locale' => 'pt_BR'
@@ -750,7 +750,7 @@ return [
             'iso'    => 'pt',
             'iso3'   => 'por',
             'title'  => 'Portuguese',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'pt.png',
             'locale' => 'pt_PT'
@@ -762,7 +762,7 @@ return [
             'title'  => 'Spanish',
             'active' => true,
             'dir'    => 'ltr',
-            'flag'   => 'es.png',
+            'flag'   => 'pe.png',
             'locale' => 'es_ES'
         ],
         'it' => [
@@ -770,7 +770,7 @@ return [
             'iso'    => 'it',
             'iso3'   => 'ita',
             'title'  => 'Italian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'it.png',
             'locale' => 'it_IT'
@@ -780,7 +780,7 @@ return [
             'iso'    => 'es',
             'iso3'   => 'spa',
             'title'  => 'Chile',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'ch.png',
             'locale' => 'es_CL'
@@ -790,7 +790,7 @@ return [
             'iso'    => 'sr',
             'iso3'   => 'srp',
             'title'  => 'Serbian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'sr.png',
             'locale' => 'sr_SP'
@@ -800,7 +800,7 @@ return [
             'iso'    => 'fi',
             'iso3'   => 'fin',
             'title'  => 'Finnish',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'fi.png',
             'locale' => 'fi'
@@ -810,7 +810,7 @@ return [
             'iso'    => 'dk',
             'iso3'   => 'dan',
             'title'  => 'Danish',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'dk.png',
             'locale' => 'da'
@@ -820,7 +820,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'Philippines',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'ph.png',
             'locale' => 'en_PH'
@@ -830,7 +830,7 @@ return [
             'iso'    => 'sv',
             'iso3'   => 'swe',
             'title'  => 'Swedish',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'sv.png',
             'locale' => 'sv_SE'
@@ -840,7 +840,7 @@ return [
             'iso'    => 'ro',
             'iso3'   => 'rum',
             'title'  => 'Romanian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'ro.png',
             'locale' => 'ro'
@@ -850,7 +850,7 @@ return [
             'iso'    => 'bg',
             'iso3'   => 'bul',
             'title'  => 'Bulgarian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'bg.png',
             'locale' => 'bg'
@@ -860,7 +860,7 @@ return [
             'iso'    => 'hr',
             'iso3'   => 'hrv',
             'title'  => 'Croatian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'hr.png',
             'locale' => 'hr'
@@ -870,7 +870,7 @@ return [
             'iso'    => 'pt',
             'iso3'   => 'por',
             'title'  => 'Papiamento',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'cw.png',
             'locale' => 'pt_PT'
@@ -880,7 +880,7 @@ return [
             'iso'    => 'id',
             'iso3'   => 'ind',
             'title'  => 'Indonesian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'id.png',
             'locale' => 'id'
@@ -890,7 +890,7 @@ return [
             'iso'    => 'ru',
             'iso3'   => 'rus',
             'title'  => 'Russian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'ru.png',
             'locale' => 'ru_RU'
@@ -900,7 +900,7 @@ return [
             'iso'    => 'mk',
             'iso3'   => 'mac',
             'title'  => 'Macedonian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'mk.png',
             'locale' => 'mk'
@@ -910,7 +910,7 @@ return [
             'iso'    => 'fa',
             'iso3'   => 'per',
             'title'  => 'Persian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'rtl',
             'flag'   => 'ir.png',
             'locale' => 'fa'
@@ -920,7 +920,7 @@ return [
             'iso'    => 'zh',
             'iso3'   => 'chi',
             'title'  => 'Chinese',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'cn.png',
             'locale' => 'zh_CN'
@@ -930,7 +930,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'New Zealand',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'nz.png',
             'locale' => 'en_NZ'
@@ -940,7 +940,7 @@ return [
             'iso'    => 'cs',
             'iso3'   => 'cze',
             'title'  => 'Czech',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'cz.png',
             'locale' => 'cs'
@@ -950,7 +950,7 @@ return [
             'iso'    => 'he',
             'iso3'   => 'heb',
             'title'  => 'Hebrew',
-            'active' => true,
+            'active' => false,
             'dir'    => 'rtl',
             'flag'   => 'il.png',
             'locale' => 'he'
@@ -960,7 +960,7 @@ return [
             'iso'    => 'hu',
             'iso3'   => 'hun',
             'title'  => 'Hungarian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'hu.png',
             'locale' => 'hu'
@@ -970,7 +970,7 @@ return [
             'iso'    => 'ka',
             'iso3'   => 'geo',
             'title'  => 'Georgian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'ka.png',
             'locale' => 'ka'
@@ -980,7 +980,7 @@ return [
             'iso'    => 'no',
             'iso3'   => 'nor',
             'title'  => 'Norwegian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'no.png',
             'locale' => 'no_NO'
@@ -990,7 +990,7 @@ return [
             'iso'    => 'my',
             'iso3'   => 'bur',
             'title'  => 'Burmese',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'my.png',
             'locale' => 'my'
@@ -1000,7 +1000,7 @@ return [
             'iso'    => 'ca',
             'iso3'   => 'cat',
             'title'  => 'Catalan',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'catalonia.png',
             'locale' => 'ca'
@@ -1010,7 +1010,7 @@ return [
             'iso'    => 'tr',
             'iso3'   => 'tur',
             'title'  => 'Turkish',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'tr.png',
             'locale' => 'tr'
@@ -1020,7 +1020,7 @@ return [
             'iso'    => 'ku',
             'iso3'   => 'kur',
             'title'  => 'Kurdish',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'ku.png',
             'locale' => 'ku'
@@ -1030,7 +1030,7 @@ return [
             'iso'    => 'ja',
             'iso3'   => 'jpn',
             'title'  => 'Japanese',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'jp.png',
             'locale' => 'ja'
@@ -1040,7 +1040,7 @@ return [
             'iso'    => 'ms',
             'iso3'   => 'may',
             'title'  => 'Malay',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'malaysia.png',
             'locale' => 'ms'
@@ -1050,7 +1050,7 @@ return [
             'iso'    => 'si',
             'iso3'   => 'sin',
             'title'  => 'Sinhala',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'sin.png',
             'locale' => 'si'
@@ -1060,7 +1060,7 @@ return [
             'iso'    => 'lo',
             'iso3'   => 'lao',
             'title'  => 'Lao',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'la.png',
             'locale' => 'lo'
@@ -1070,7 +1070,7 @@ return [
             'iso'    => 'mn',
             'iso3'   => 'mon',
             'title'  => 'Mongolian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'mn.png',
             'locale' => 'mn'
@@ -1080,7 +1080,7 @@ return [
             'iso'    => 'ta',
             'iso3'   => 'tam',
             'title'  => 'Tamil',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'sin.png',
             'locale' => 'ta_IN'
@@ -1090,7 +1090,7 @@ return [
             'iso'    => 'hi',
             'iso3'   => 'hin',
             'title'  => 'Hindi',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'in.png',
             'locale' => 'hi_IN'
@@ -1100,7 +1100,7 @@ return [
             'iso'    => 'ne',
             'iso3'   => 'nep',
             'title'  => 'Nepali',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'np.png',
             'locale' => 'ne_NP'
@@ -1110,7 +1110,7 @@ return [
             'iso'    => 'sl',
             'iso3'   => 'slv',
             'title'  => 'Slovene',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'si.png',
             'locale' => 'sl_SI'
@@ -1120,7 +1120,7 @@ return [
             'iso'    => 'lt',
             'iso3'   => 'lit',
             'title'  => 'Lithuanian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'lt.png',
             'locale' => 'lt_LT'
@@ -1130,7 +1130,7 @@ return [
             'iso'    => 'lv',
             'iso3'   => 'lav',
             'title'  => 'Latvian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'lv.png',
             'locale' => 'lv_LV'
@@ -1140,7 +1140,7 @@ return [
             'iso'    => 'sq',
             'iso3'   => 'sqi',
             'title'  => 'Albanian',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'al.png',
             'locale' => 'sq_AL'
@@ -1150,7 +1150,7 @@ return [
             'iso'    => 'bn',
             'iso3'   => 'ben',
             'title'  => 'Bengali',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'bd.png',
             'locale' => 'bn_BN'
@@ -1160,7 +1160,7 @@ return [
             'iso'    => 'ps',
             'iso3'   => 'pus',
             'title'  => 'Pashto',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'af.png',
             'locale' => 'ps_PS'
@@ -1170,7 +1170,7 @@ return [
             'iso'    => 'km',
             'iso3'   => 'khm',
             'title'  => 'Khmer',
-            'active' => true,
+            'active' => false,
             'dir'    => 'ltr',
             'flag'   => 'km.png',
             'locale' => 'km_KH'
