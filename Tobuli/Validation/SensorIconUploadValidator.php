@@ -9,11 +9,10 @@ class SensorIconUploadValidator extends Validator
      */
     public array $rules = [
         'create' => [
-            'file' => 'required|image|mimes:jpeg,gif,png,svg|max:20000|dimensions:min_width=10,min_height=10,max_width=30,max_height=30'
+            'file' => 'required|image|mimes:jpeg,gif,png,svg|max:20000|dimensions:min_width=10,min_height=10,max_width=60,max_height=60'
         ],
         'update' => [
-            'file' => 'required|image|mimes:jpeg,gif,png,svg|max:20000|dimensions:min_width=10,min_height=10,max_width=30,max_height=30'
+            'file' => 'required|image|mimes:jpeg,gif,png,svg|max:20000|dimensions:min_width=10,min_height=10,max_width=60,max_height=60'
         ]
     ];
-
 }

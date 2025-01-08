@@ -690,9 +690,6 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     public function getStatus()
     {
-        if ($this->traccar->protocol == null)
-            return self::STATUS_DISCONNECTED;
-
         if (!$this->active)
             return self::STATUS_OFFLINE;
 
