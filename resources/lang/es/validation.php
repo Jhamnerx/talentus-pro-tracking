@@ -82,6 +82,7 @@ return [
         'fuel_cost' => 'Costo de combustible',
         'icon_id' => 'Ícono de dispositivo',
         'active' => 'Activo',
+        'inactive' => 'Desactivado',
         'polygon_color' => 'Color defondo',
         'devices' => 'Vehículos',
         'geofences' => 'Geocercas',
