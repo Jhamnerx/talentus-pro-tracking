@@ -130,7 +130,7 @@ return [
         'apple_store_link' => null,
         'google_play_link' => null,
         'enable_device_plans' => 0,
-        'email_verification' => 3,
+        'email_verification' => 0,
     ],
     'max_speed' => env('MAX_SPEED_LIMIT', 300),
     'min_time_gap' => env('MIN_TIME_GAP', 600),

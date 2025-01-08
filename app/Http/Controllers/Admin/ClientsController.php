@@ -2,44 +2,45 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exceptions\DeviceLimitException;
-use App\Exceptions\PermissionException;
-use CustomFacades\Repositories\UserRepo;
-use CustomFacades\Validators\ObjectsListSettingsFormValidator;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\View;
 use PgSql\Lob;
-use Tobuli\Entities\Company;
-use Tobuli\Entities\EmailTemplate;
-use Tobuli\Entities\MapIcon;
-use Tobuli\Entities\User;
-use Tobuli\Exceptions\ValidationException;
-use Tobuli\Helpers\Password;
-use Tobuli\Importers\Geofence\GeofenceImportManager;
-use Tobuli\Importers\POI\POIImportManager;
-use Tobuli\Importers\Route\RouteImportManager;
-use Tobuli\Reports\ReportTypesUserConfig;
-use Tobuli\Services\CustomValuesService;
-use Tobuli\Services\DeviceUsersService;
-use Tobuli\Services\AuthManager;
-use Tobuli\Repositories\BillingPlan\BillingPlanRepositoryInterface as BillingPlan;
-use Tobuli\Repositories\Device\DeviceRepositoryInterface as Device;
-use Tobuli\Repositories\TraccarDevice\TraccarDeviceRepositoryInterface as TraccarDevice;
-use Tobuli\Services\PermissionService;
-use Tobuli\Services\ScheduleService;
-use Tobuli\Services\UserClientService;
-use Tobuli\Services\UserCompanyService;
-use Tobuli\Services\UserService;
-use Tobuli\Services\EntityLoader\DevicesGroupLoader;
-use Tobuli\Services\EntityLoader\DevicesLoader;
-use Tobuli\Validation\ClientFormValidator;
 use Validator;
+use Tobuli\Entities\User;
+use Tobuli\Entities\Alert;
+use Illuminate\Support\Arr;
+use Tobuli\Entities\Company;
+use Tobuli\Entities\MapIcon;
+use Tobuli\Helpers\Password;
+use Tobuli\Services\AuthManager;
+use Tobuli\Services\UserService;
+use Illuminate\Support\Facades\DB;
+use Tobuli\Entities\EmailTemplate;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
+use Tobuli\Services\ScheduleService;
+use Tobuli\Services\PermissionService;
+use Tobuli\Services\UserClientService;
+use App\Exceptions\PermissionException;
+use Illuminate\Support\Facades\Request;
+use Tobuli\Services\DeviceUsersService;
+use Tobuli\Services\UserCompanyService;
+use App\Exceptions\DeviceLimitException;
+use CustomFacades\Repositories\UserRepo;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Response;
+use Tobuli\Services\CustomValuesService;
+use Illuminate\Database\Eloquent\Builder;
+use Tobuli\Reports\ReportTypesUserConfig;
+use Tobuli\Exceptions\ValidationException;
+use Tobuli\Importers\POI\POIImportManager;
+use Tobuli\Validation\ClientFormValidator;
+use Tobuli\Importers\Route\RouteImportManager;
+use Tobuli\Services\EntityLoader\DevicesLoader;
+use Tobuli\Importers\Geofence\GeofenceImportManager;
+use Tobuli\Services\EntityLoader\DevicesGroupLoader;
+use CustomFacades\Validators\ObjectsListSettingsFormValidator;
+use Tobuli\Repositories\Device\DeviceRepositoryInterface as Device;
+use Tobuli\Repositories\BillingPlan\BillingPlanRepositoryInterface as BillingPlan;
+use Tobuli\Repositories\TraccarDevice\TraccarDeviceRepositoryInterface as TraccarDevice;
 
 class ClientsController extends BaseController
 {
@@ -321,6 +322,30 @@ class ClientsController extends BaseController
             $this->notifyUser($input, 'account_created');
         }
 
+
+        $alerts = Alert::userOwned($this->user)->with('events_custom')->get();
+
+        $events_custom_ids = [];
+
+        foreach ($alerts as $alert) {
+            // Crear la nueva alerta para el usuario
+            $newAlert = $user->alerts()->create(
+                [
+                    'name' => $alert->name,
+                    'type' => $alert->type,
+                    'active' => $alert->active,
+                    'notifications' => $alert->notifications,
+                ]
+            );
+
+            // Obtener los IDs de los eventos personalizados asociados a la alerta
+            $events_custom_ids = array_merge($events_custom_ids, $alert->events_custom->pluck('id')->toArray());
+
+            // Sincronizar los eventos personalizados con la nueva alerta creada
+            $newAlert->events_custom()->sync($alert->events_custom->pluck('id'));
+        }
+
+
         return Response::json($this->api ? ['status' => 1, 'item' => $user] : ['status' => 1]);
     }
 
@@ -527,6 +552,31 @@ class ClientsController extends BaseController
 
         if (!empty($input['password']) && !empty($input['send_account_password_changed_email'])) {
             $this->notifyUser($input, 'account_password_changed');
+        }
+
+        if ($item->alerts()->get()->count() <= 0) {
+
+            $alerts = Alert::userOwned($this->user)->with('events_custom')->get();
+
+            $events_custom_ids = [];
+
+            foreach ($alerts as $alert) {
+                // Crear la nueva alerta para el usuario
+                $newAlert = $item->alerts()->create(
+                    [
+                        'name' => $alert->name,
+                        'type' => $alert->type,
+                        'active' => $alert->active,
+                        'notifications' => $alert->notifications,
+                    ]
+                );
+
+                // Obtener los IDs de los eventos personalizados asociados a la alerta
+                $events_custom_ids = array_merge($events_custom_ids, $alert->events_custom->pluck('id')->toArray());
+
+                // Sincronizar los eventos personalizados con la nueva alerta creada
+                $newAlert->events_custom()->sync($alert->events_custom->pluck('id'));
+            }
         }
 
         return Response::json(['status' => 1]);
