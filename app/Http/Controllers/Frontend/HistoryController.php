@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use CustomFacades\ModalHelpers\HistoryModalHelper;
@@ -20,6 +22,11 @@ class HistoryController extends Controller
         $data = HistoryModalHelper::getMessages();
 
         return !$this->api ? view('front::History.partials.bottom_messages')->with($data) : $data;
+    }
+
+    public function odometroPositions()
+    {
+        return HistoryModalHelper::odometroPositions();
     }
 
     public function doDeletePositions()

@@ -1601,6 +1601,7 @@ function getSelectTimeRange()
         $times[$date->format('H:i')] = $date->format($format);
         $date->addMinutes(15);
     }
+    $times['23:59'] = Carbon::createFromTime(23, 59)->format($format);
 
     return $times;
 }
@@ -1721,6 +1722,7 @@ function getJsConfig()
 
             'history' => route('history.index'),
             'historyExport' => route('history.export'),
+            'odometroPositions' => route('history.odometro.positions'),
             'historyPosition' => route('history.position'),
             'historyPositions' => route('history.positions'),
             'historyPositionsDelete' => route('history.delete_positions'),

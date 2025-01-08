@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 use App\Transformers\ApiV1\DeviceHistoryTransformer;
 use App\Transformers\Device\DeviceMapTransformer;
@@ -33,7 +35,8 @@ use FractalTransformer;
 ini_set('memory_limit', '-1');
 set_time_limit(600);
 
-class HistoryModalHelper extends ModalHelper {
+class HistoryModalHelper extends ModalHelper
+{
 
     const STATUS_DRIVE = 1;
     const STATUS_STOP  = 2;
@@ -91,8 +94,8 @@ class HistoryModalHelper extends ModalHelper {
     {
         $this->checkException('history', 'view');
 
-        $date_from = Formatter::time()->reverse($this->data['from_date'].' '.$this->data['from_time']);
-        $date_to   = Formatter::time()->reverse($this->data['to_date'].' '.$this->data['to_time']);
+        $date_from = Formatter::time()->reverse($this->data['from_date'] . ' ' . $this->data['from_time']);
+        $date_to   = Formatter::time()->reverse($this->data['to_date'] . ' ' . $this->data['to_time']);
 
         if (Carbon::parse($date_from)->diffInDays($date_to) > Config::get('tobuli.history_max_period_days'))
             throw new ValidationException([
@@ -133,12 +136,13 @@ class HistoryModalHelper extends ModalHelper {
 
     private function getDeviceSensors($device)
     {
-        return $device->sensors->filter(function($sensor){
+        return $device->sensors->filter(function ($sensor) {
             return $sensor->add_to_graph;
         });
     }
 
-    public function get() {
+    public function get()
+    {
 
         HistoryFormValidator::validate('create', $this->data);
 
@@ -230,8 +234,9 @@ class HistoryModalHelper extends ModalHelper {
                             }
 
                             return $data;
-
-                        }, $snapToRoad ? snapToRoad($positions) : $positions),
+                        },
+                        $snapToRoad ? snapToRoad($positions) : $positions
+                    ),
                 ];
 
                 if ($status == self::STATUS_STOP) {
@@ -280,11 +285,13 @@ class HistoryModalHelper extends ModalHelper {
                     'name' => $sensor->formatName(),
                     'unit' => $sensor->getUnit(),
                 ];
-            })->toArray());
+            }
+        )->toArray());
 
         return [
             'items' => $items,
             'sensors' => $sensors,
+            'distance_sum' => $data['root']->getStat('distance')->human(),
 
             'classes' => [
                 self::STATUS_DRIVE => [
@@ -316,7 +323,8 @@ class HistoryModalHelper extends ModalHelper {
         ];
     }
 
-    public function getApi() {
+    public function getApi()
+    {
 
         HistoryFormValidator::validate('create', $this->data);
 
@@ -393,7 +401,9 @@ class HistoryModalHelper extends ModalHelper {
                     'items'            => array_map(
                         function ($position) {
                             return $this->positionToItem($position);
-                        }, $group->getStat('positions')->value()),
+                        },
+                        $group->getStat('positions')->value()
+                    ),
                 ];
             }
 
@@ -423,9 +433,9 @@ class HistoryModalHelper extends ModalHelper {
             ]
         ];
 
-        $sensors = array_merge($sensors, $deviceSensors->map(function($sensor) {
+        $sensors = array_merge($sensors, $deviceSensors->map(function ($sensor) {
             return [
-                'id' => 'sensor_'.$sensor['id'],
+                'id' => 'sensor_' . $sensor['id'],
                 'name' => $sensor->formatName(),
                 'sufix' => $sensor['unit_of_measurement']
             ];
@@ -436,6 +446,7 @@ class HistoryModalHelper extends ModalHelper {
             'items' => $items,
             'device' => FractalTransformer::setSerializer(WithoutDataArraySerializer::class)
                 ->item($device, DeviceHistoryTransformer::class)->toArray(),
+            'distance_sum' => $data['root']->getStat('distance')->human(),
             'distance_sum' => $data['root']->getStat('distance')->human(),
             'top_speed' => $data['root']->getStat('speed_max')->human(),
             'move_duration' => $data['root']->getStat('drive_duration')->human(),
@@ -515,7 +526,7 @@ class HistoryModalHelper extends ModalHelper {
 
         $parameters = [];
 
-        $sensors = $device->sensors->filter(function($sensor){
+        $sensors = $device->sensors->filter(function ($sensor) {
             return $sensor['show_in_popup'] || $sensor['add_to_history'];
         })->values()->all();
 
@@ -545,7 +556,7 @@ class HistoryModalHelper extends ModalHelper {
             $message->other_arr = empty($message->other) ? [] : parseXML($message->other);
 
             $message->other_array = parseXMLToArray($message->other);
-            foreach($message->other_array as $el => $oval) {
+            foreach ($message->other_array as $el => $oval) {
                 if (array_key_exists($el, $parameters) || empty($el))
                     continue;
 
@@ -562,8 +573,8 @@ class HistoryModalHelper extends ModalHelper {
                 if ($sensor['show_in_popup']) {
                     $popup_sensors[$sensor['id']] = [
                         'name' => $sensor->formatName(),
-                        'value' => $sensors_value[$sensor['id']]]
-                    ;
+                        'value' => $sensors_value[$sensor['id']]
+                    ];
                 }
             }
 
@@ -640,9 +651,8 @@ class HistoryModalHelper extends ModalHelper {
         $ids = empty($this->data['id']) ? $ids : $this->data['id'];
         $ids = empty($this->data['ids']) ? $ids : $this->data['ids'];
 
-        if ($ids)
-        {
-            if ( ! is_array($ids))
+        if ($ids) {
+            if (! is_array($ids))
                 $ids = [$ids];
 
             $device->positions()->whereIn('id', $ids)->delete();

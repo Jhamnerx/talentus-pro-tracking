@@ -226,6 +226,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     # History
     Route::get('history', ['as' => 'history.index', 'uses' => 'HistoryController@index']);
     Route::get('history/positions', ['as' => 'history.positions', 'uses' => 'HistoryController@positionsPaginated']);
+    Route::get('history/getOdometro', ['as' => 'history.odometro.positions', 'uses' => 'HistoryController@odometroPositions']);
     Route::get('history/position', ['as' => 'history.position', 'uses' => 'HistoryController@getPosition']);
     Route::get('history/do_delete_positions', ['as' => 'history.do_delete_positions', 'uses' => 'HistoryController@doDeletePositions']);
     Route::any('history/delete_positions', ['as' => 'history.delete_positions', 'uses' => 'HistoryController@deletePositions']);

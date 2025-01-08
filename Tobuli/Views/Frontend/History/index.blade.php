@@ -2,56 +2,74 @@
     <div class="history">
         <table class="table">
             <tbody>
-            @foreach ($items as $key => $item)
-                <tr data-history-id="{!!$key!!}" class="{{ $classes[$item['status']]['tr'] }}" onClick="app.history.select( {!!$key!!} );">
-                    <td>
-                        <span class="{{ $classes[$item['status']]['class'] }}">
-                            {!! $classes[$item['status']]['sym'] !!}
-                            @if(!empty($item['index']))
-                                <span class="badge-history">{{ $item['index'] }}</span>
-                            @endif
-                        </span>
-                    </td>
-                    <td>
-                        <div class="row">
-                            <div class="col-xs-12 col-sm-6 datetime">
-                                <span class="time">{{ $item['start']['time'] }}</span>
-                                <span class="date">{{ $item['start']['date'] }}</span>
-                            </div>
-                            @if(!empty($item['metas']))
-                            <div class="col-xs-12 col-sm-6 duration">
+                @foreach ($items as $key => $item)
+                    <tr data-history-id="{!! $key !!}" class="{{ $classes[$item['status']]['tr'] }}"
+                        onClick="app.history.select( {!! $key !!} );">
+                        <td>
+                            <span class="{{ $classes[$item['status']]['class'] }}">
+                                {!! $classes[$item['status']]['sym'] !!}
+                                @if (!empty($item['index']))
+                                    <span class="badge-history">{{ $item['index'] }}</span>
+                                @endif
+                            </span>
+                        </td>
+                        <td>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-6 datetime">
+                                    <span class="time">{{ $item['start']['time'] }}</span>
+                                    <span class="date">{{ $item['start']['date'] }}</span>
+                                </div>
+                                @if (!empty($item['metas']))
+                                    <div class="col-xs-12 col-sm-6 duration">
 
-                                @foreach ($item['metas'] as $key => $meta)
-                                    @if (in_array($key, ['duration', 'message']))
-                                    <span>{{ $meta['value'] }}</span>
-                                    @endif
-                                @endforeach
+                                        @foreach ($item['metas'] as $key => $meta)
+                                            @if (in_array($key, ['duration', 'message']))
+                                                <span>{{ $meta['value'] }}</span>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
-                            @endif
-                        </div>
 
-                        @if (settings('plugins.history_section_address.status'))
-                        <div class="row">
-                            <div class="col-sm-12">
-                                <br>
-                                <span data-device="address" data-lat="{{$item['start']['lat']}}" data-lng="{{ $item['start']['lng'] }}"></span>
-                            </div>
-                        </div>
-                        @endif
-                    </td>
-                </tr>
-            @endforeach
+                            @if (settings('plugins.history_section_address.status'))
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <br>
+                                        <span data-device="address" data-lat="{{ $item['start']['lat'] }}"
+                                            data-lng="{{ $item['start']['lng'] }}"></span>
+                                    </div>
+                                </div>
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
             </tbody>
+
+            <div class="" style="padding-top: 10px">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-6 text-right">
+                                <span>Odómetro:</span>
+                            </div>
+                            <div class="col-xs-6 text-left">
+                                <span class="label label-primary">{{ $distance_sum }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </table>
     </div>
 
     <script>
-        window.history_items = {!!json_encode($items)!!};
-        window.history_sensors = {!!json_encode($sensors)!!};
+        window.history_items = {!! json_encode($items) !!};
+        window.history_sensors = {!! json_encode($sensors) !!};
         initComponents($('.history'));
     </script>
 @else
-    <p class="no-results">{!!trans('front.no_history')!!}</p>
+    <p class="no-results">{!! trans('front.no_history') !!}</p>
 
     <script>
         window.history_items = null;

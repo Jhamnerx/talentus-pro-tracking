@@ -61,6 +61,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     const STATUS_ENGINE  = 'engine';
     const STATUS_EXPIRED = 'expired';
     const STATUS_OFFLINE = 'offline';
+    const STATUS_DISCONNECTED = 'disconnected';
     const STATUS_ONLINE  = 'online';
     const STATUS_INACTIVE = 'inactive';
     const STATUS_MOVE = 'move';
@@ -75,6 +76,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     const SCOPE_STATUSES = [
         self::STATUS_EXPIRED,
         self::STATUS_OFFLINE,
+        self::STATUS_DISCONNECTED,
         self::STATUS_ONLINE,
         self::STATUS_INACTIVE,
         self::STATUS_MOVE,
