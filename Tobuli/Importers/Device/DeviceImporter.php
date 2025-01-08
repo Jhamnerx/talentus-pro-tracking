@@ -42,6 +42,9 @@ class DeviceImporter extends Importer
         'blue',
         'orange',
         'black',
+        'gray',
+        'cyan',
+        'white',
     ];
 
     public function __construct()
@@ -53,14 +56,14 @@ class DeviceImporter extends Importer
 
     protected function importItem($data, $attributes = [])
     {
-        $data = array_filter($data, function($value) {
+        $data = array_filter($data, function ($value) {
             return !(empty($value) && !is_numeric($value));
         });
 
         $data = $this->mergeDefaults($data);
         $data = $this->normalize($data);
 
-        if ( ! $this->validate($data)) {
+        if (! $this->validate($data)) {
             return;
         }
 
@@ -72,7 +75,7 @@ class DeviceImporter extends Importer
             ]);
         }
 
-        if ( ! $device) {
+        if (! $device) {
             if ($this->devicesLimit($data)) {
                 return;
             }
@@ -103,7 +106,7 @@ class DeviceImporter extends Importer
             }
         }
 
-        if ( ! empty($data['timezone'])) {
+        if (! empty($data['timezone'])) {
             $timezone = $this->getTimezone($data['timezone']);
 
             $data['timezone_id'] = $timezone ? $timezone->id : null;
@@ -143,7 +146,7 @@ class DeviceImporter extends Importer
 
         $cacheKey = "device_importer.users." . md5(json_encode($filter));
 
-        $users = Cache::store('array')->rememberForever($cacheKey, function() use ($filter) {
+        $users = Cache::store('array')->rememberForever($cacheKey, function () use ($filter) {
 
             $query = User::userAccessible(auth()->user());
 
@@ -195,7 +198,6 @@ class DeviceImporter extends Importer
             $device->createPositionsTable();
 
             $this->createSensors($device, $data);
-
         } catch (\Exception $e) {
             rollbackTransaction();
             throw new ValidationException(['id' => $e->getMessage()]);
@@ -210,7 +212,7 @@ class DeviceImporter extends Importer
         $group = $data['group_id'] ? DeviceGroup::find($data['group_id']) : 0;
 
         // Filter User with group
-        $users = array_filter($data['user_id'], function($user_id) use ($group){
+        $users = array_filter($data['user_id'], function ($user_id) use ($group) {
             return $group && $user_id == $group->user_id;
         });
 
@@ -219,7 +221,7 @@ class DeviceImporter extends Importer
         }
 
         // Filter Users without group
-        $users = array_filter($data['user_id'], function($user_id) use ($group){
+        $users = array_filter($data['user_id'], function ($user_id) use ($group) {
             return ! $group || $user_id != $group->user_id;
         });
 
@@ -230,11 +232,11 @@ class DeviceImporter extends Importer
 
     protected function createSensors($device, $data)
     {
-        if ( ! isAdmin()) {
+        if (! isAdmin()) {
             return;
         }
 
-        if ( ! isset($data['sensor_group_id'])) {
+        if (! isset($data['sensor_group_id'])) {
             return;
         }
 
