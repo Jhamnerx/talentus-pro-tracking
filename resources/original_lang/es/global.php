@@ -46,6 +46,8 @@ return [
     'price' => 'Precio',
     'engine' => 'Motor',
     'ack' => 'Detenido',
+    'excessive_speed' => 'Exceso de velocidad',
+    'disconnected' => 'No conectado',
     'center' => 'Centrar',
     'bottom_right' => 'Abajo a la derecha',
     'bottom_left' => 'Abajo a la izquierda',

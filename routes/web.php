@@ -29,15 +29,15 @@ Route::group([], function () {
     Route::get('authentication/create', ['as' => 'authentication.create', 'uses' => 'Frontend\LoginController@create']);
     Route::any('authentication/store', ['as' => 'authentication.store', 'uses' => 'Frontend\LoginController@store'])
         ->middleware('captcha')
-        ->middleware('throttle:'.config('server.throttle.web.login'));
+        ->middleware('throttle:' . config('server.throttle.web.login'));
     Route::resource('authentication', 'Frontend\LoginController', ['only' => ['destroy']]);
 
     Route::get('password_reminder', ['uses' => 'Frontend\PasswordReminderController@create', 'as' => 'password_reminder.create']);
     Route::post('password_reminder', ['uses' => 'Frontend\PasswordReminderController@store', 'as' => 'password_reminder.store'])
-        ->middleware('throttle:'.config('server.throttle.web.password_reset'));
+        ->middleware('throttle:' . config('server.throttle.web.password_reset'));
     Route::get('password/reset/{token}', ['uses' => 'Frontend\PasswordReminderController@reset', 'as' => 'password.reset']);
     Route::post('password/reset/{token}', ['uses' => 'Frontend\PasswordReminderController@update', 'as' => 'password.update'])
-        ->middleware('throttle:'.config('server.throttle.web.password_reset'));
+        ->middleware('throttle:' . config('server.throttle.web.password_reset'));
 
     Route::get('registration/create', ['as' => 'registration.create', 'uses' => 'Frontend\RegistrationController@create']);
     Route::post('registration/store', ['as' => 'registration.store', 'uses' => 'Frontend\RegistrationController@store'])
@@ -405,7 +405,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('maintenance/{imei?}', ['as' => 'maintenance.index', 'uses' => 'MaintenanceController@index']);
 
     # Tasks
-    Route::get('tasks/list', ['as'=> 'tasks.list', 'uses' => 'TasksController@search']);
+    Route::get('tasks/list', ['as' => 'tasks.list', 'uses' => 'TasksController@search']);
     Route::get('tasks/do_destroy/{id?}', ['as' => 'tasks.do_destroy', 'uses' => 'TasksController@doDestroy']);
     Route::get('tasks/signature/{taskStatusId}', ['as' => 'tasks.signature', 'uses' => 'TasksController@getSignature']);
     Route::get('tasks/import', ['as' => 'tasks.import', 'uses' => 'TasksController@import']);
@@ -441,12 +441,12 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('icon/sensor/table/{type}', ['as' => 'icon.sensor.table', 'uses' => 'SensorIconController@table']);
 
     # Chats
-    Route::get('chat/index',['as' => 'chat.index', 'uses' =>  'ChatController@index']);
+    Route::get('chat/index', ['as' => 'chat.index', 'uses' =>  'ChatController@index']);
     Route::get('chat/unread/count', ['as' => 'chat.unread_msg_count', 'uses' =>  'ChatController@getUnreadMessagesCount']);
-    Route::get('chat/init/{chatableId}/{type?}',['as' => 'chat.init', 'uses' =>  'ChatController@initChat']);
+    Route::get('chat/init/{chatableId}/{type?}', ['as' => 'chat.init', 'uses' =>  'ChatController@initChat']);
     Route::get('chat/participants', ['as' => 'chat.searchParticipant', 'uses' =>  'ChatController@searchParticipant']);
     Route::get('chat/{chatId}/messages', ['as' => 'chat.messages', 'uses' => 'ChatController@getMessages']);
-    Route::get('chat/{chatId}',['as' => 'chat.get', 'uses' =>  'ChatController@getChat']);
+    Route::get('chat/{chatId}', ['as' => 'chat.get', 'uses' =>  'ChatController@getChat']);
     Route::post('chat/{chatId}', ['as' => 'chat.message', 'uses' => 'ChatController@createMessage']);
 
     # Dashboard
@@ -572,7 +572,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         return Redirect::route('admin.objects.index');
     }]);
 
-    Route::group(['as' => 'admin.'], function() {
+    Route::group(['as' => 'admin.'], function () {
         # Clients
         Route::get('users/clients/import_geofences', ['as' => 'clients.import_geofences', 'uses' => 'ClientsController@importGeofences']);
         Route::post('users/clients/import_geofences', ['as' => 'clients.import_geofences_set', 'uses' => 'ClientsController@importGeofencesSet']);
@@ -691,7 +691,7 @@ Route::group(['middleware' => ['auth'], 'namespace' => 'Frontend'], function () 
     Route::get('membership/renew', ['as' => 'subscriptions.renew', 'uses' => 'SubscriptionsController@renew']);
 });
 
-Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth','auth.admin'], 'namespace' => 'Admin'], function () {
+Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'auth.admin'], 'namespace' => 'Admin'], function () {
     # Billing
     Route::any('billing/index', ['as' => 'billing.index', 'uses' => 'BillingController@index']);
     Route::any('billing/plans', ['as' => 'billing.plans', 'uses' => 'BillingController@plans']);
@@ -928,15 +928,16 @@ Route::group(['prefix' => 'sharing/{hash}'], function () {
     Route::get('/address', ['as' => 'sharing.address', 'uses' => 'SharingController@address']);
 });
 
-Route::get('streetViewEnable', ['as' => 'streetViewEnable', 'uses' =>
-    function ()
-    {
+Route::get('streetViewEnable', [
+    'as' => 'streetViewEnable',
+    'uses' =>
+    function () {
         $enable = false;
-        if (settings('main_settings.streetview_api') === 'google' && config('addon.street_view_frame')){
+        if (settings('main_settings.streetview_api') === 'google' && config('addon.street_view_frame')) {
             $enable = true;
         }
         $data = [
-            'enable'=>$enable
+            'enable' => $enable
         ];
         $response = Response::make($data);
         $response->header('Content-Type', 'application/json');
@@ -944,10 +945,12 @@ Route::get('streetViewEnable', ['as' => 'streetViewEnable', 'uses' =>
     },
 ]);
 
-Route::get('streetViewFrame', ['as' => 'streetViewFrame', 'uses' =>
-    function (\Illuminate\Http\Request $request)
-    {
-        function convertStreetViewUrl($oldUrl) {
+Route::get('streetViewFrame', [
+    'as' => 'streetViewFrame',
+    'uses' =>
+    function (\Illuminate\Http\Request $request) {
+        function convertStreetViewUrl($oldUrl)
+        {
             $parts = parse_url($oldUrl);
             parse_str($parts['query'], $params);
             $cbll = $params['cbll'];
@@ -956,36 +959,36 @@ Route::get('streetViewFrame', ['as' => 'streetViewFrame', 'uses' =>
             $tilt = $cbp[2];
             $pitch = $cbp[3];
             $zoom = $cbp[4];
-        
+
             return "https://www.google.com/maps/embed?pb=!4v" . time() . "!6m8!1m7!!2m2!1d" . explode(',', $cbll)[0] . "!2d" . explode(',', $cbll)[1] . "!3f" . $pano_yaw . "!4f" . $pitch . "!5f" . $zoom;
         }
 
         $location = $request->get('location');
         $size = $request->get('size');
         $heading = $request->get('heading');
-        $locationFinal = explode(',',$location);
+        $locationFinal = explode(',', $location);
         $data = [
-            'location'=>$location, 
-            'lat'=>$locationFinal[0], 
-            'lng'=>$locationFinal[1], 
-            'size'=>$size, 
-            'heading'=>$heading
+            'location' => $location,
+            'lat' => $locationFinal[0],
+            'lng' => $locationFinal[1],
+            'size' => $size,
+            'heading' => $heading
         ];
-        $url = 'https://maps.google.com/maps?q=&layer=c&cbll='.$data['lat'].','.$data['lng'].'&cbp=11,'.$data['heading'].',0,0,0';
-        $data['url']=$url;
-        $data['urlFrame']=convertStreetViewUrl($url);
+        $url = 'https://maps.google.com/maps?q=&layer=c&cbll=' . $data['lat'] . ',' . $data['lng'] . '&cbp=11,' . $data['heading'] . ',0,0,0';
+        $data['url'] = $url;
+        $data['urlFrame'] = convertStreetViewUrl($url);
 
         $response = Response::make($data);
         $response->header('Content-Type', 'application/json');
 
         return $response;
-
     },
 ]);
 
-Route::get('streetview.jpg', ['as' => 'streetview', 'uses' =>
-    function (\Illuminate\Http\Request $request, \Tobuli\Services\StreetviewService $streetviewService)
-    {
+Route::get('streetview.jpg', [
+    'as' => 'streetview',
+    'uses' =>
+    function (\Illuminate\Http\Request $request, \Tobuli\Services\StreetviewService $streetviewService) {
         $location = $request->get('location');
         $size = $request->get('size');
         $heading = $request->get('heading');
@@ -1003,8 +1006,8 @@ Route::get('streetview.jpg', ['as' => 'streetview', 'uses' =>
 ]);
 
 # Pages
-Route::get('privacy_policy', ['uses' => function(\App\Http\Controllers\Frontend\PagesController $pageController) {
-    return $pageController->show(request(),'privacy_policy');
+Route::get('privacy_policy', ['uses' => function (\App\Http\Controllers\Frontend\PagesController $pageController) {
+    return $pageController->show(request(), 'privacy_policy');
 }]);
 Route::get('page/{page}', ['as' => 'pages.show', 'uses' => 'Frontend\PagesController@show']);
 
@@ -1017,4 +1020,3 @@ Route::get('/testing', ['as' => 'testing', 'uses' => function () {}]);
 Route::get('/icons', ['as' => 'icons', 'uses' => function () {
     return response()->view('icons');
 }]);
-
