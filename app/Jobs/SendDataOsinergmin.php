@@ -153,7 +153,6 @@ class SendDataOsinergmin extends Job implements ShouldQueue
             [],
             Carbon::parse($trama['gpsDate'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
             $trama['imei']
-
         );
     }
 

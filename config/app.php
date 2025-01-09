@@ -18,6 +18,9 @@ $result = [
 
 	'url_comsatel_prod' => env('URL_COMSATEL_PROD', ''),
 
+	'url_mininter_beta' => env('URL_MININTER_BETA', ''),
+	'url_mininter_prod' => env('URL_MININTER_PROD', ''),
+
 	/*
 	|--------------------------------------------------------------------------
 	| Application Debug Mode

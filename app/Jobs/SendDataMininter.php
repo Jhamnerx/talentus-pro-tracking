@@ -4,39 +4,37 @@ namespace App\Jobs;
 
 use DateTime;
 use DateTimeZone;
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use App\Services\LogService;
 use Illuminate\Bus\Queueable;
 use Tobuli\Entities\Mininter;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 
 class SendDataMininter implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $logService;
+    protected $offset;
+    protected $batchSize;
+    protected $url_mininter;
+    protected $service;
 
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
-    public function __construct()
+
+    public function __construct($offset, $batchSize, $url_mininter, $service)
     {
         $this->onQueue('web-services');
+        $this->offset = $offset;
+        $this->batchSize = $batchSize;
+        $this->url_mininter = $url_mininter;
+        $this->service = $service;
     }
 
-    /**
-     * Execute the job.
-     *
-     * @return void
-     */
     public function handle()
     {
         // Instanciar el servicio de logging directamente aquí
@@ -47,9 +45,10 @@ class SendDataMininter implements ShouldQueue
 
     public function getTramas()
     {
-        $ip = config('app.env') == 'local' ? config('app.url_mininter_beta') : config('app.url_mininter_prod');
-
-        $tramas = Mininter::with('device', 'device.users')->get();
+        $ip = $this->url_mininter;
+        $tramas = Mininter::offset($this->offset)
+            ->limit($this->batchSize)
+            ->with('device', 'device.users')->get();
 
         foreach ($tramas as $trama) {
 
@@ -118,27 +117,25 @@ class SendDataMininter implements ShouldQueue
             // Procesar la respuesta de la API
             $this->processResponse($response, $json);
         } catch (RequestException $e) {
-            if ($e->hasResponse()) {
-                $response = $e->getResponse();
-                $body = $response->getBody()->getContents();
+            if ($this->service['logs']) {
 
-                // Guardar log de error en la base de datos
-                // $this->logService->logToDatabase(
-                //     'Mininter',
-                //     $json['placa'],
-                //     "Error en la respuesta: " . $body,
-                //     'error',
-                //     ['json' => $json]
-                // );
-            } else {
-                // Guardar log de error en la base de datos
-                $this->logService->logToDatabase(
-                    'Mininter',
-                    $json['placa'],
-                    "Error en la solicitud: " . $e->getMessage(),
-                    'error',
-                    ['json' => $json]
-                );
+
+                if ($e->hasResponse()) {
+                    $response = $e->getResponse();
+                    $body = $response->getBody()->getContents();
+
+                    // Guardar log de error en la base de datos
+                    $this->logService->logToDatabase(
+                        'Mininter',
+                        $json['placa'],
+                        "error",
+                        $json,
+                        ['response' => $response],
+                        [],
+                        Carbon::parse($json['fechaHora'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                        1,
+                    );
+                }
             }
         }
     }
@@ -147,25 +144,34 @@ class SendDataMininter implements ShouldQueue
     {
         if ($response->getStatusCode() == 201) {
             // Guardar log de éxito en la base de datos
-            // $this->logService->logToDatabase(
-            //     'Mininter',
-            //     $json['placa'],
-            //     "Trama registrada con éxito: ID " . $json['id'],
-            //     'info',
-            //     $response
-            // );
+            if ($this->service['logs']) {
 
-            // Eliminar el registro si la respuesta fue exitosa
+                $this->logService->logToDatabase(
+                    'Mininter',
+                    $json['placa'],
+                    'success',
+                    $json,
+                    ['response' => $response],
+                    Carbon::parse($json['fechaHora'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    1,
+                );
+            }
+
             Mininter::where('id', $json['id'])->delete();
         } else {
             // Guardar log de error en la base de datos
-            $this->logService->logToDatabase(
-                'Mininter',
-                $json['placa'],
-                "Error en la respuesta: código de estado inesperado " . $response->getStatusCode(),
-                'error',
-                $response
-            );
+            if ($this->service['logs']) {
+                $this->logService->logToDatabase(
+                    'Mininter',
+                    $json['placa'],
+                    'error',
+                    $json,
+                    ['response' => $response],
+                    [],
+                    Carbon::parse($json['fechaHora'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    1,
+                );
+            }
         }
     }
 }
