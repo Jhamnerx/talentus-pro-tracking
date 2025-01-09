@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Tobuli\Entities\WebservicesLogs;
 
 class CleanOldLogsJob implements ShouldQueue
 {
@@ -39,7 +40,7 @@ class CleanOldLogsJob implements ShouldQueue
         $cutoffDate = now()->subDays($this->days);
 
         // Eliminar los logs que son anteriores a la fecha límite
-        $deletedLogs = LogEntry::where('created_at', '<', $cutoffDate)->delete();
+        $deletedLogs = WebservicesLogs::where('created_at', '<', $cutoffDate)->delete();
 
         Log::info("CleanOldLogsJob: $deletedLogs logs eliminados que son anteriores a $cutoffDate.");
     }
