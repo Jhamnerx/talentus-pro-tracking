@@ -121,6 +121,11 @@ class User extends AbstractEntity implements
         'company_id',
         'login_periods',
         'only_one_session',
+
+        'is_municipalidad',
+        'token_muni',
+        'ubigeo_muni',
+        'services',
     );
 
     protected $casts = [
@@ -181,6 +186,39 @@ class User extends AbstractEntity implements
                 }
             }
         });
+    }
+
+    public function getServicesAttribute()
+    {
+        $services = $this->attributes['services'] ?? null;
+
+        if (is_null($services)) {
+            return [
+                'sutran' =>
+                [
+                    'active' => 0,
+                    'token' => null
+                ],
+                'osinergmin' =>
+                [
+                    'active' => 0,
+                    'token' => null
+                ],
+                'consatel' =>
+                [
+                    'active' => 0,
+                    'user' => null,
+                    'pass' => null
+                ],
+            ];
+        }
+
+        return json_decode($services, true);
+    }
+
+    public function setServicesAttribute($value)
+    {
+        $this->attributes['services'] = json_encode($value);
     }
 
     public function getPasswordHashAttribute()

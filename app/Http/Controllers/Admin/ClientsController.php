@@ -456,6 +456,34 @@ class ClientsController extends BaseController
             unset($input['company_id']);
         }
 
+        if (isset($input['services']) && $input['services'] == '[]') {
+            $input['services'] = null;
+        } else {
+            $services = $input['services'];
+            $defaultServices = [
+                'sutran' => ['active' => 0, 'token' => null],
+                'osinergmin' => ['active' => 0, 'token' => null],
+                'consatel' => ['active' => 0, 'user' => null, 'pass' => null]
+            ];
+
+            foreach ($defaultServices as $service => $defaults) {
+                if (isset($services[$service])) {
+                    $defaultServices[$service]['active'] = $services[$service]['active'] ?? 0;
+                    if ($defaultServices[$service]['active']) {
+                        $defaultServices[$service]['token'] = $services[$service]['token'] ?? null;
+                        if ($service == 'consatel') {
+                            $defaultServices[$service]['user'] = $services[$service]['user'] ?? null;
+                            $defaultServices[$service]['pass'] = $services[$service]['pass'] ?? null;
+                        }
+                    }
+                }
+            }
+
+            $input['services'] = $defaultServices;
+
+            $item->update(['services' => $input['services']]);
+        }
+
         beginTransaction();
 
         try {

@@ -1,22 +1,38 @@
-<?php namespace Tobuli\Repositories\User;
+<?php
+
+namespace Tobuli\Repositories\User;
 
 use Illuminate\Support\Arr;
 use Tobuli\Entities\User as Entity;
 use Tobuli\Repositories\EloquentRepository;
 use Tobuli\Sensors\SensorsManager;
 
-class EloquentUserRepository extends EloquentRepository implements UserRepositoryInterface {
+class EloquentUserRepository extends EloquentRepository implements UserRepositoryInterface
+{
 
-    public function __construct( Entity $entity )
+    public function __construct(Entity $entity)
     {
         $this->entity = $entity;
     }
 
-    public function getOtherManagers($user_id) {
+    public function getActiveServiceManagers($user_id, $service)
+    {
+        return $this->entity
+            ->whereIn('group_id', [3, 1])
+            ->get()
+            ->filter(function ($item) use ($service) {
+                $services = $item->services;
+                return isset($services[$service]['active']) && $services[$service]['active'] == 1;
+            });
+    }
+
+    public function getOtherManagers($user_id)
+    {
         return $this->entity->whereIn('group_id', [3, 5])->where('id', '!=', $user_id)->get();
     }
 
-    public function getDevicesWithServices($user_id, $imei = null) {
+    public function getDevicesWithServices($user_id, $imei = null)
+    {
         $query = $this->entity
             ->with('devices.sensors', 'devices.services')
             ->find($user_id)
@@ -30,19 +46,23 @@ class EloquentUserRepository extends EloquentRepository implements UserRepositor
         return $query->get();
     }
 
-    public function getDevicesWith($user_id, $with) {
+    public function getDevicesWith($user_id, $with)
+    {
         return $this->entity->with($with)->find($user_id)->devices;
     }
 
-    public function getDevicesWithWhere($user_id, $with, $where) {
+    public function getDevicesWithWhere($user_id, $with, $where)
+    {
         return $this->entity->with($with)->find($user_id)->devices;
     }
 
-    public function getDevices($user_id) {
+    public function getDevices($user_id)
+    {
         return $this->entity->with('devices')->find($user_id)->devices;
     }
 
-    public function getDevice($user_id, $device_id) {
+    public function getDevice($user_id, $device_id)
+    {
         $user = $this->entity->find($user_id);
 
         if (!$user)
@@ -51,7 +71,8 @@ class EloquentUserRepository extends EloquentRepository implements UserRepositor
         return $user->devices()->with('sensors', 'services')->find($device_id);
     }
 
-    public function getDevicesSms($user_id) {
+    public function getDevicesSms($user_id)
+    {
         return $this->entity->with('devices_sms')->find($user_id)->devices_sms;
     }
 
@@ -60,15 +81,18 @@ class EloquentUserRepository extends EloquentRepository implements UserRepositor
         return $this->entity->userAccessible($user)->orderby('email')->get();
     }
 
-    public function getDrivers($user_id) {
+    public function getDrivers($user_id)
+    {
         return $this->entity->with('drivers')->find($user_id)->drivers;
     }
 
-    public function getSettings($user_id, $key) {
+    public function getSettings($user_id, $key)
+    {
         return $this->entity->find($user_id)->getSettings($key);
     }
 
-    public function setSettings($user_id, $key, $value) {
+    public function setSettings($user_id, $key, $value)
+    {
         return $this->entity->find($user_id)->setSettings($key, $value);
     }
 
@@ -84,12 +108,12 @@ class EloquentUserRepository extends EloquentRepository implements UserRepositor
 
         $settings = empty($settings) ? $defaults : array_merge($defaults, $settings);
 
-        foreach($settings['columns'] as &$column) {
-            if ( ! empty($column['class']) && $column['class'] == 'sensor') {
-                $column['title'] = htmlentities( Arr::get($sensors_trans, $column['type'], 'none'), ENT_QUOTES);
+        foreach ($settings['columns'] as &$column) {
+            if (! empty($column['class']) && $column['class'] == 'sensor') {
+                $column['title'] = htmlentities(Arr::get($sensors_trans, $column['type'], 'none'), ENT_QUOTES);
             } else {
                 $column['class'] = 'device';
-                $column['title'] = htmlentities( Arr::get($fields_trans, $column['field'], 'none'), ENT_QUOTES);
+                $column['title'] = htmlentities(Arr::get($fields_trans, $column['field'], 'none'), ENT_QUOTES);
             }
         }
 

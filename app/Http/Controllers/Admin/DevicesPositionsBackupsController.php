@@ -23,7 +23,7 @@ class DevicesPositionsBackupsController extends BaseController
 
         $backupService = new BackupService(settings('backups'));
 
-        $canRestore = Cache::remember('backup_can_restore_positions', 60, fn () => $backupService->canRestorePositions());
+        $canRestore = Cache::remember('backup_can_restore_positions', 60, fn() => $backupService->canRestorePositions());
 
         if ($canRestore === false) {
             throw new PermissionException();

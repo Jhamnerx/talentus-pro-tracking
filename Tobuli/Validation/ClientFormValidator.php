@@ -1,8 +1,11 @@
-<?php namespace Tobuli\Validation;
+<?php
+
+namespace Tobuli\Validation;
 
 use Tobuli\Services\AuthManager;
 
-class ClientFormValidator extends Validator {
+class ClientFormValidator extends Validator
+{
 
     /**
      * @var array Validation rules for the test form, they can contain in-built Laravel rules or our custom rules
@@ -19,6 +22,10 @@ class ClientFormValidator extends Validator {
             'expiration_date' => 'required_if:enable_expiration_date,1|date',
             'default_login_methods' => 'boolean',
             'login_methods' => 'array',
+
+            'is_municipalidad' => 'boolean',
+            'token_muni' => 'required_if:is_municipalidad,1|string',
+            'ubigeo_muni' => 'required_if:is_municipalidad,1|string',
         ],
         'update' => [
             'active' => 'boolean',
@@ -32,6 +39,14 @@ class ClientFormValidator extends Validator {
             'expiration_date' => 'required_if:enable_expiration_date,1|date',
             'default_login_methods' => 'boolean',
             'login_methods' => 'array',
+
+            'is_municipalidad' => 'boolean',
+            'token_muni' => 'required_if:is_municipalidad,1|string',
+            'ubigeo_muni' => 'required_if:is_municipalidad,1|string',
+            'services.sutran.token' => 'required_if:services.sutran.active,1|string',
+            'services.osinergmin.token' => 'required_if:services.osinergmin.active,1|string',
+            'services.consatel.user' => 'required_if:services.consatel.active,1|string',
+            'services.consatel.pass' => 'required_if:services.consatel.active,1|string',
         ]
     ];
 
@@ -40,7 +55,7 @@ class ClientFormValidator extends Validator {
         $methods = AuthManager::getDefaultAuths();
 
         foreach ($methods as $method => $enabled) {
-            $this->rules[$name]['login_methods.'.$method] = 'boolean';
+            $this->rules[$name]['login_methods.' . $method] = 'boolean';
         }
 
         $this->rules[$name]['available_maps.*'] = 'integer|in:' . implode(',', array_keys(getAvailableMaps()));

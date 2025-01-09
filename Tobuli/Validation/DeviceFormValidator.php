@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Validation;
+<?php
+
+namespace Tobuli\Validation;
 
 use Illuminate\Validation\Factory as IlluminateValidator;
 use Tobuli\Services\RequiredFields\DeviceRequiredFieldsService;
@@ -24,7 +26,7 @@ class DeviceFormValidator extends Validator
             'min_moving_speed'    => 'numeric|min:1|max:50',
             'min_fuel_fillings'   => 'numeric|min:1|max:1000',
             'min_fuel_thefts'     => 'numeric|min:1|max:1000',
-            'sim_number'          => 'unique:devices,sim_number',
+            'sim_number'          => 'required|unique:devices,sim_number',
             //'expiration_date'     => 'required_if:enable_expiration_date,1|date',
             'installation_date'   => 'date',
             'sim_activation_date' => 'date',
@@ -32,7 +34,15 @@ class DeviceFormValidator extends Validator
             'forward.protocol'    => 'required_if:forward.active,1|in:TCP,UDP',
             'msisdn'              => 'sometimes|regex:/^\d{6,20}$/',
             'lbs'                 => 'nullable|boolean',
-            'fuel_detect_sec_after_stop' => 'nullable|numeric|min:60|max:300'
+            'fuel_detect_sec_after_stop' => 'nullable|numeric|min:60|max:300',
+
+            'mtc' => 'boolean',
+            'osinergmin' => 'boolean',
+            'mininter' => 'boolean',
+            'consatel' => 'boolean',
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^[A-Z0-9]{3}-[A-Z0-9]{3}$/',
+            'device_type_id' => 'required'
+
         ],
         'update' => [
             'imei'                => 'sometimes|required|unique:devices,imei,%s',
@@ -48,7 +58,7 @@ class DeviceFormValidator extends Validator
             'min_moving_speed'    => 'numeric|min:1|max:50',
             'min_fuel_fillings'   => 'numeric|min:1|max:1000',
             'min_fuel_thefts'     => 'numeric|min:1|max:1000',
-            'sim_number'          => 'unique:devices,sim_number,%s',
+            'sim_number'          => 'required|unique:devices,sim_number,%s',
             //'expiration_date'     => 'required_if:enable_expiration_date,1|date',
             'installation_date'   => 'date',
             'sim_activation_date' => 'date',
@@ -56,7 +66,14 @@ class DeviceFormValidator extends Validator
             'forward.protocol'    => 'required_if:forward.active,1|in:TCP,UDP',
             'msisdn'              => 'sometimes|regex:/^\d{6,20}$/',
             'lbs'                 => 'nullable|boolean',
-            'fuel_detect_sec_after_stop' => 'nullable|numeric|min:60|max:300'
+            'fuel_detect_sec_after_stop' => 'nullable|numeric|min:60|max:300',
+
+            'mtc' => 'boolean',
+            'osinergmin' => 'boolean',
+            'mininter' => 'boolean',
+            'consatel' => 'boolean',
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^[A-Z0-9]{3}-[A-Z0-9]{3}$/',
+            'device_type_id' => 'required'
         ],
     ];
 
@@ -76,7 +93,6 @@ class DeviceFormValidator extends Validator
         appendRulesArray($this->rules['create'], $extraRules);
         appendRulesArray($this->rules['update'], $extraRules);
     }
-
 }   //end of class
 
 //EOF

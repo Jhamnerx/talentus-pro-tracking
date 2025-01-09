@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Services;
+<?php
+
+namespace Tobuli\Services;
 
 
 use Illuminate\Support\Arr;
@@ -27,22 +29,23 @@ class PermissionService
             "{$permission['remove']} AS remove",
         ];
 
-        DB::insert('INSERT INTO user_permissions (user_id, name, view, edit, remove) '
-            . DB::table('users')
+        DB::insert(
+            'INSERT INTO user_permissions (user_id, name, view, edit, remove) '
+                . DB::table('users')
                 ->select(DB::raw(implode(', ', $fields)))
                 ->whereNull('billing_plan_id')
                 ->toSql()
         );
 
-        DB::insert('INSERT INTO billing_plan_permissions (plan_id, name, view, edit, remove) '
-            . DB::table('billing_plans')
+        DB::insert(
+            'INSERT INTO billing_plan_permissions (plan_id, name, view, edit, remove) '
+                . DB::table('billing_plans')
                 ->select(DB::raw(implode(', ', $fields)))
                 ->toSql()
         );
 
         $userPermissions = settings('main_settings.user_permissions');
-        if ($userPermissions && empty($userPermissions[$name]))
-        {
+        if ($userPermissions && empty($userPermissions[$name])) {
             $userPermissions[$name] = $permission;
 
             settings('main_settings.user_permissions', $userPermissions);
@@ -55,7 +58,7 @@ class PermissionService
             return array_key_exists($key, $preferred);
         }, ARRAY_FILTER_USE_BOTH);
 
-        array_walk($permissions, function(&$value, $key) use ($preferred) {
+        array_walk($permissions, function (&$value, $key) use ($preferred) {
             $value['view'] = $value['view'] && (
                 Arr::get($preferred[$key], 'view') ||
                 Arr::get($preferred[$key], 'edit') ||
@@ -123,7 +126,7 @@ class PermissionService
 
     public function getUserDefaults()
     {
-        if ( ! settings('main_settings.enable_plans'))
+        if (! settings('main_settings.enable_plans'))
             return settings('main_settings.user_permissions');
 
         return $this->defaultPlanPermissions();
@@ -141,7 +144,7 @@ class PermissionService
     {
         $permissions = config('permissions.list');
 
-        if ( ! settings('plugins.additional_installation_fields.status')) {
+        if (! settings('plugins.additional_installation_fields.status')) {
             unset(
                 $permissions['device.installation_date'],
                 $permissions['device.sim_activation_date'],
@@ -149,17 +152,19 @@ class PermissionService
             );
         }
 
-        if ( ! config('addon.device_authentication_field')) {
+        if (! config('addon.device_authentication_field')) {
             unset($permissions['device.authentication']);
         }
 
         if (! config('addon.checklists')) {
-            unset($permissions['checklist'],
+            unset(
+                $permissions['checklist'],
                 $permissions['checklist_activity'],
                 $permissions['checklist_template'],
                 $permissions['checklist_qr_code'],
                 $permissions['checklist_qr_pre_start_only'],
-                $permissions['checklist_optional_image']);
+                $permissions['checklist_optional_image']
+            );
         }
 
         if (! settings('plugins.call_actions.status')) {

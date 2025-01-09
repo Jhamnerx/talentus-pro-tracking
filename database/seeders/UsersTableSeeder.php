@@ -8,12 +8,13 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Tobuli\Services\PermissionService;
 
-class UsersTableSeeder extends Seeder {
+class UsersTableSeeder extends Seeder
+{
 
     public function run()
     {
         $now = date('Y-m-d H:i:s');
-        $password = 'adminAdmin7*';
+        $password = 'adminAdmin8*';
 
         DB::table('users')->insert([
             'email' => 'admin@server.com',
@@ -24,7 +25,7 @@ class UsersTableSeeder extends Seeder {
             'available_maps' => serialize(config('tobuli.main_settings.available_maps')),
             'ungrouped_open' => json_encode(['geofence_group' => 1, 'device_group' => 1, 'poi_group' => 1]),
         ]);
-        
+
         $permissions = (new PermissionService())->getByGroupId(PermissionService::GROUP_ADMIN);
 
         $users = DB::table('users')->get();
@@ -32,8 +33,7 @@ class UsersTableSeeder extends Seeder {
         foreach ($users as $user) {
             $user_permissions = [];
 
-            foreach ($permissions as $name => $modes)
-            {
+            foreach ($permissions as $name => $modes) {
                 $user_permissions[] = array_merge([
                     'user_id' => $user->id,
                     'name' => $name,
@@ -42,6 +42,5 @@ class UsersTableSeeder extends Seeder {
 
             DB::table('user_permissions')->insert($user_permissions);
         }
-
     }
 }

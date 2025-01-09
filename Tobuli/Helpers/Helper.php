@@ -96,6 +96,11 @@ function isAdmin()
     return Auth::User() && (Auth::User()->isAdmin() || Auth::User()->isManager());
 }
 
+function isMainAdmin()
+{
+    return Auth::User() && (Auth::User()->isAdmin());
+}
+
 function kilometersToMiles($km)
 {
     return round($km / 1.609344);

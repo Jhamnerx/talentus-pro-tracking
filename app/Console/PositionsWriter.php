@@ -2,23 +2,26 @@
 
 namespace App\Console;
 
-use App\Events\DeviceEngineChanged;
-use App\Events\DevicePositionChanged;
-use App\Events\PositionResultRetrieved;
-use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
-use CustomFacades\Repositories\UserDriverRepo;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Cache;
-use Tobuli\Entities\Device;
+use DateTime;
+use DateTimeZone;
 use Tobuli\Entities\Task;
+use Illuminate\Support\Arr;
+use Tobuli\Entities\Device;
 use Tobuli\Entities\TaskStatus;
-use Tobuli\Entities\TraccarPosition as Position;
-use Tobuli\Helpers\Alerts\Check\Checker;
-use Tobuli\Helpers\LbsLocation\LbsManager;
-use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
+use App\Events\DeviceEngineChanged;
+use Illuminate\Support\Facades\Log;
+use App\Events\DevicePositionChanged;
+use Illuminate\Support\Facades\Cache;
 use Tobuli\Services\EventWriteService;
+use App\Events\PositionResultRetrieved;
+use Tobuli\Helpers\Alerts\Check\Checker;
+use Illuminate\Database\Eloquent\Builder;
+use Tobuli\Helpers\LbsLocation\LbsManager;
+use Illuminate\Database\Eloquent\Collection;
+use CustomFacades\Repositories\UserDriverRepo;
+use Tobuli\Entities\TraccarPosition as Position;
+use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
+use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
 
 class PositionsWriter
 {
@@ -603,8 +606,216 @@ class PositionsWriter
         if ($this->events || count($this->positions) > 100) {
             $this->write();
         }
+
+
+        if ($this->device->mtc) {
+
+            //REGISTRAR BASE DE DATOS MTC SUTRAN
+            $this->saveDataSutran($this->device, $this->position);
+        }
+
+        if ($this->device->osinergmin) {
+
+            //REGISTRAR BASE DE DATOS OSINERGMIN
+            $this->saveDataOsinergmin($this->device, $this->position);
+        }
+
+        if ($this->device->mininter) {
+
+            //REGISTRAR BASE DE DATOS MININTER
+            $this->saveDataMininter($this->device, $this->position);
+        }
+
+        if ($this->device->consatel) {
+            //REGISTRAR BASE DE DATOS COMSATEL
+
+            $this->position->protocol == 'teltonika' ? $this->saveDataComsatel($this->device, $this->position) : Log::info('No se pudo registrar en la base de datos Comsatel la placa: ' . $this->device->plate_number);
+        }
+    }
+    public function saveDataComsatel($device, $position)
+    {
+        $evento = 1;
+
+        if ($position->getParameter('event') == "239" && $position->getParameter('ignition') == true) {
+            $evento = 3;
+        } elseif ($position->getParameter('event') == "239" && $position->getParameter('ignition') == false) {
+            $evento = 2;
+        }
+
+
+        if ($position->getParameter('event') == "252" && $position->getParameter('io252') == 0) {
+            $evento = 6;
+        } elseif ($position->getParameter('event') == "252" && $position->getParameter('io252') == 1) {
+            $evento = 7;
+        }
+
+        if ($position->getParameter('event') == "246" && $position->getParameter('io246') == 1) {
+            $evento = 11;
+        }
+
+        if ($position->getParameter('event') == "249" && $position->getParameter('io249') == 1) {
+            $evento = 12;
+        } elseif ($position->getParameter('event') == "249" && $position->getParameter('io249') == 0) {
+            $evento = 13;
+        }
+
+        if ($position->getParameter('event') == "253" && $position->getParameter('io253') == 1) {
+            $evento = 16;
+        } else if ($position->getParameter('event') == "253" && $position->getParameter('io253') == 2) {
+            $evento = 17;
+        }
+
+
+        $others = $this->parseString($position->other);
+        $device->dataComsatel()->create(
+            [
+                //'id' => Str::uuid()->toString(),
+                'device_id' => $device->id,
+                'placa' => trim($this->device->plate_number),
+                'velocidad' => round($position->speed),
+                'satelites' => $position->getParameter('sat'),
+                'rumbo' => $position->course,
+                'altitud' => $position->altitude,
+                'latitud' => $position->latitude,
+                'longitud' => $position->longitude,
+                'timestamp' => strtotime($position->device_time),
+                'gpsDateTime'  => gmdate('YmdHis', strtotime($position->device_time)),
+                'evento' => $evento,
+                'ignition' => $position->getParameter('ignition'),
+                'odometro' => $position->getParameter('totaldistance'),
+                'horometro' => $position->getParameter('enginehours'),
+                'batery_level' => intval($position->getParameter('io113') ? $position->getParameter('io113') : 0),
+                'valid' => $position->valid,
+                'fuente' => 'TALENTUS TECHNOLOGY EIRL',
+                'other' => $others,
+            ]
+        );
     }
 
+    public function saveDataMininter($device, $position)
+    {
+        $idMunicipalidad = "";
+        $ubigeo = "";
+
+
+        $user = $device->users->where('is_municipalidad', true)->first();
+
+        if ($user->is_municipalidad) {
+
+            $idMunicipalidad =  $user->token_muni;
+            $ubigeo = $user->ubigeo_muni;
+        }
+
+        $others = $this->parseString($position->other);
+
+        $device->mininter()->create(
+            [
+                'device_id' => $device->id,
+                'alarma' => 0,
+                'altitud' => $position->altitude,
+                'angulo' => $position->course,
+                'distancia' => $others['distance'],
+                'fechaHora' => $position->time,
+                'timestamp' => strtotime($position->device_time),
+                'horasMotor' => $position->getParameter(Position::VIRTUAL_ENGINE_HOURS_KEY),
+                'idMunicipalidad' => $idMunicipalidad,
+                'ignition' => $others['ignition'],
+                'imei' => $device->imei,
+                'latitud' => $position->latitude,
+                'longitud' => $position->longitude,
+                'motion' => $others['motion'],
+                'placa' => $device->plate_number,
+                'totalDistancia' => $others['totaldistance'],
+                'totalHorasMotor' => $others['enginehours'],
+                'ubigeo' => $ubigeo,
+                'valid' => $position->valid,
+                'velocidad' => $position->speed,
+                'other' => $others,
+            ]
+        );
+    }
+
+    public function saveDataOsinergmin($device, $position)
+    {
+        $others = $this->parseString($position->other);
+        $device->osinergminData()->create(
+            [
+                'plate' => $device->plate_number,
+                'latitud' => $position->latitude,
+                'longitud' => $position->longitude,
+                'altitude' => $position->altitude,
+                'direction' => $position->course,
+                'speed' => $position->speed,
+                'timestamp' => strtotime($position->device_time),
+                'time_device' => $position->device_time,
+                'other' => $others,
+            ]
+        );
+    }
+
+    public function saveDataSutran($device, $position)
+    {
+        // Obtener la última posición registrada
+        $prevPosition = $this->getPrevPosition($position->time);
+
+        // Definir los umbrales de cambio permitidos
+        $speedThreshold = 20; // km/h
+        $timeThreshold = 5; // seconds
+
+        // Convertir device_time a zona horaria "America/Lima"
+        $timezone = new DateTimeZone('America/Lima');
+        $deviceTime = new DateTime($position->device_time);
+        $deviceTime->setTimezone($timezone);
+
+        // Verificar que la fecha no sea mayor a 15 días
+        $now = new DateTime('now', $timezone);
+        $interval = $now->diff($deviceTime);
+        if ($interval->days > 15) {
+            return; // No registrar la nueva posición
+        }
+
+        if ($prevPosition) {
+            $prevDeviceTime = new DateTime($prevPosition->device_time);
+            $prevDeviceTime->setTimezone($timezone);
+
+            $speedDifference = abs($position->speed - $prevPosition->speed);
+            $timeDifference = $deviceTime->getTimestamp() - $prevDeviceTime->getTimestamp();
+
+            if ($timeDifference <= $timeThreshold && $speedDifference > $speedThreshold) {
+                return; // No registrar la nueva posición
+            }
+        }
+
+        if ($position->valid) {
+
+            $others = $this->parseString($position->other);
+            $device->sutran()->create(
+                [
+                    'plate' => trim($this->device->plate_number),
+                    'latitud' => $position->latitude,
+                    'longitud' => $position->longitude,
+                    'direction' => $position->course,
+                    'speed' => $position->speed,
+                    'time_device' => $position->device_time,
+                    'other' => $others,
+                ]
+            );
+        } else {
+            // Convierte la fecha y hora de UTC a un timestamp
+            $timestamp = strtotime($position->device_time);
+
+            // Establece la zona horaria a Lima/Perú
+            $timezone = new DateTimeZone('America/Lima');
+
+            // Crea un objeto DateTime y establece la hora desde el timestamp
+            $date = new DateTime();
+            $date->setTimestamp($timestamp);
+            $date->setTimezone($timezone);
+            // Formatea la fecha y hora en la zona horaria de Lima/Perú
+            $gps_date = $date->format('Y-m-d H:i:s');
+            // Log::error("POSICION INVALIDA: " . $this->device->plate_number . '|' . $device->id . '|' . $position->latitude . '|' . $position->longitude . '|' . $position->speed . '|' . $position->course . '|' . $gps_date);
+        }
+    }
     public function parseString($xmlString)
     {
 

@@ -2,44 +2,45 @@
 
 namespace Tobuli\Entities;
 
-use App\Events\Device\DeviceDisabled;
-use App\Events\Device\DeviceEnabled;
-use App\Events\Device\DeviceSubscriptionActivate;
-use App\Events\Device\DeviceSubscriptionRenew;
+use Formatter;
+use Carbon\Carbon;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use Tobuli\Traits\Nameable;
+use Tobuli\Traits\Chattable;
 use App\Events\DeviceCreated;
 use App\Events\DeviceDeleted;
-use App\Jobs\TrackerConfigWithRestart;
-use Carbon\Carbon;
-use Formatter;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
-use Tobuli\Exceptions\ValidationException;
-use Tobuli\Sensors\Types\Blocked;
-use Tobuli\Services\DeviceImageService;
-use Tobuli\Services\DeviceModelCache;
-use Tobuli\Services\EventWriteService;
-use Tobuli\Traits\AttributesRelationsGetter;
 use Tobuli\Traits\ChangeLogs;
-use Tobuli\Traits\Chattable;
+use Tobuli\Traits\Filterable;
+use Tobuli\Traits\Includable;
+use Tobuli\Traits\Searchable;
+use Tobuli\Utils\NetworkUtil;
 use Tobuli\Traits\Customizable;
 use Tobuli\Traits\DisplayTrait;
 use Tobuli\Traits\EventLoggable;
+use Tobuli\Sensors\Types\Blocked;
 use Tobuli\Traits\FcmTokensTrait;
-use Tobuli\Traits\Filterable;
-use Tobuli\Traits\Includable;
-use Tobuli\Traits\Nameable;
-use Tobuli\Traits\Searchable;
-use Tobuli\Utils\NetworkUtil;
+use Illuminate\Support\Facades\DB;
+use App\Events\Device\DeviceEnabled;
+use App\Events\Device\DeviceDisabled;
+use Illuminate\Support\Facades\Redis;
+use Tobuli\Services\DeviceModelCache;
+use App\Jobs\TrackerConfigWithRestart;
+use Illuminate\Support\Facades\Schema;
+use Tobuli\Services\EventWriteService;
+use Tobuli\Services\DeviceImageService;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Schema\Blueprint;
+use Tobuli\Exceptions\ValidationException;
+use Tobuli\Traits\AttributesRelationsGetter;
+use App\Events\Device\DeviceSubscriptionRenew;
+use App\Events\Device\DeviceSubscriptionActivate;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInterface, ChattableInterface
 {
@@ -2087,5 +2088,25 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             ,
             $alias
         );
+    }
+
+    public function sutran(): HasMany
+    {
+        return $this->hasMany('Tobuli\Entities\Sutran');
+    }
+
+    public function osinergminData(): HasMany
+    {
+        return $this->hasMany('Tobuli\Entities\Osinergmin');
+    }
+
+    public function mininter(): HasMany
+    {
+        return $this->hasMany('Tobuli\Entities\Mininter');
+    }
+
+    public function dataComsatel(): HasMany
+    {
+        return $this->hasMany('Tobuli\Entities\Comsatel');
     }
 }
