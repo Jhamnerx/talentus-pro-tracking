@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use Illuminate\Bus\Queueable;
 use Tobuli\Entities\Comsatel;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use CustomFacades\Repositories\UserRepo;
 use Illuminate\Queue\InteractsWithQueue;
@@ -24,15 +25,21 @@ class DispatchComsatelJobs implements ShouldQueue
 
         foreach ($users as $user) {
 
-            $plates = $user->devices()->where('consatel', 1)->get()->pluck('plate_number')->toArray();
-            $usuario = $user->services['consatel']['user'];
-            $pass = $user->services['consatel']['pass'];
+            $plates = $user->devices()->where('consatel', 1)->get()->pluck('plate_number')->map(function ($plate) {
+                return trim($plate);
+            })->toArray();
 
+            if (empty($plates)) {
+                Log::info('No plates found for user: ' . $user->id . '. Job terminated.');
+                continue;
+            }
+
+            $service = $user->services['consatel'];
             $batchSize = 500; // Tamaño del lote
             $totalRecords = Comsatel::whereIn('placa', $plates)->count();
 
             for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-                SendDataComsatelJob::dispatch($i, $batchSize, $usuario, $pass, $plates);
+                SendDataComsatelJob::dispatch($i, $batchSize, $service, $plates);
             }
         }
     }

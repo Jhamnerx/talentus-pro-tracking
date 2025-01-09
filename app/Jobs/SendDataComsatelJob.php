@@ -7,14 +7,12 @@ use GuzzleHttp\Client;
 use App\Services\LogService;
 use Illuminate\Bus\Queueable;
 use Tobuli\Entities\Comsatel;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 
 class SendDataComsatelJob implements ShouldQueue
 {
@@ -24,19 +22,17 @@ class SendDataComsatelJob implements ShouldQueue
     protected $offset;
     protected $batchSize;
     protected $plates;
-    protected $user;
-    protected $pass;
+    protected $service;
 
     public $tries = 3;
-    public $timeout = 120;
+    public $timeout = 150;
 
-    public function __construct($offset, $batchSize, $user, $pass, $plates)
+    public function __construct($offset, $batchSize, $service, $plates)
     {
         $this->offset = $offset;
         $this->batchSize = $batchSize;
         $this->plates = $plates;
-        $this->user = $user;
-        $this->pass = $pass;
+        $this->service = $service;
 
         $this->onQueue('web-services');
     }
@@ -58,26 +54,24 @@ class SendDataComsatelJob implements ShouldQueue
         }
     }
 
-    /**
-     * Send positions to the Comsatel API.
-     */
+
     protected function sendPositions()
     {
         // Obtenemos las posiciones
         $positions = Comsatel::offset($this->offset)
             ->limit($this->batchSize)->whereIn('placa', $this->plates)
             ->with('device')
-            ->get();
+            ->orderBy('created_at')->get();
 
 
         $url = config('app.url_comsatel_prod');
+
         if ($positions->isEmpty()) {
             Log::info('No hay posiciones para enviar a Comsatel.');
             return;
         }
 
         foreach ($positions as $position) {
-            // Generamos la trama siguiendo las especificaciones del PDF
             $json = [
                 "posicionId" => $position->id,
                 "vehiculoId" => str_replace('-', '', $position->placa),
@@ -87,7 +81,6 @@ class SendDataComsatelJob implements ShouldQueue
                 "latitud" => doubleval($position->latitud),
                 "longitud" => doubleval($position->longitud),
                 "altitud" => floatval($position->altitud),
-                // Convertir el timestamp a horario de Perú (UTC -5) y formatear a YmdHis
                 "gpsDateTime" => Carbon::createFromTimestamp($position->timestamp)
                     ->format('YmdHis'),  // Formato YmdHis
                 "sendDateTime" => gmdate('YmdHis'),
@@ -100,7 +93,7 @@ class SendDataComsatelJob implements ShouldQueue
                 "fuente" => $position->fuente
             ];
 
-            $trama = [$json];  // Enviar la trama como un array de un solo elemento
+            $trama = [$json];
             $this->sendToComsatel($trama, $url);
         }
     }
@@ -119,7 +112,7 @@ class SendDataComsatelJob implements ShouldQueue
             $response = $client->post($url, [
                 'headers' => [
                     'Content-Type' => 'application/json;charset=utf-8',
-                    'Authorization' => 'Basic ' . base64_encode($this->user . ':' . $this->pass),
+                    'Authorization' => 'Basic ' . base64_encode($this->service['user'] . ':' . $this->service['pass']),
                     'Aplicacion' => 'SERVICIO_RECOLECTOR',
                 ],
                 'body' => json_encode($trama, JSON_PRESERVE_ZERO_FRACTION),
@@ -127,7 +120,7 @@ class SendDataComsatelJob implements ShouldQueue
 
             $this->processResponse(json_decode($response->getBody()->getContents(), true), $trama[0]['posicionId'], $trama[0]['vehiculoId'], $trama);
         } catch (RequestException $e) {
-            $this->handleRequestException($e);
+            $this->handleRequestException($e, $trama);
         }
     }
 
@@ -140,19 +133,66 @@ class SendDataComsatelJob implements ShouldQueue
      */
     protected function processResponse(array $response, $posicionId, $plateNumber, $json)
     {
-        $service = 'Comsatel'; // Define el nombre del servicio
+        $statusCode = $response['statusCode'];
+        $mensaje = $response['mensaje'];
+        $service = "Consatel";
 
-        if ($response['statusCode'] == 200) {
-            // Guardar log en la base de datos
-            // $this->logService->logToDatabase($service, $plateNumber, "Envío exitoso: " . json_encode($json), 'info', $response);
+        switch ($statusCode) {
+            case 200:
+                // Log para respuesta 200
+                $this->logService->logToDatabase(
+                    $service,
+                    $plateNumber,
+                    'success',
+                    $json,
+                    ['message' => $mensaje],
+                    [],
+                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    1,
+                );
+                break;
 
-            // Eliminar el registro si la respuesta fue exitosa
-            DB::transaction(function () use ($posicionId) {
-                Comsatel::where('id', $posicionId)->delete();
-            });
-        } else {
-            // Guardar log en la base de datos para errores
-            $this->logService->logToDatabase($service, $plateNumber, "Error en el envío", 'error', $response);
+            case 400:
+                // Log para respuesta 400
+                $this->logService->logToDatabase(
+                    $service,
+                    $plateNumber,
+                    'success',
+                    $json,
+                    ['message' => $mensaje],
+                    [],
+                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    1,
+                );
+                break;
+
+            case 500:
+                // Log para respuesta 500
+                $this->logService->logToDatabase(
+                    $service,
+                    $plateNumber,
+                    'success',
+                    $json,
+                    ['message' => $mensaje],
+                    [],
+                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    1,
+                );
+                break;
+
+            default:
+                // Log para otros casos
+                $this->logService->logToDatabase(
+                    $service,
+                    $plateNumber,
+                    'other',
+                    $json,
+                    ['message' => $mensaje],
+                    [],
+                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    1,
+                );
+                break;
         }
     }
 
@@ -171,7 +211,7 @@ class SendDataComsatelJob implements ShouldQueue
         ];
 
         // Guardar el error en la base de datos usando el servicio
-        $this->logService->logToDatabase('Comsatel', 'N/A', 'Error general: ' . $e->getMessage(), 'error', $errorData);
+
     }
 
     /**
@@ -179,14 +219,20 @@ class SendDataComsatelJob implements ShouldQueue
      *
      * @param RequestException $e
      */
-    protected function handleRequestException(RequestException $e)
+    protected function handleRequestException(RequestException $e, $trama)
     {
         if ($e->hasResponse()) {
             $response = $e->getResponse();
             $body = $response->getBody()->getContents();
-            $this->logService->logToDatabase('Comsatel', 'N/A', "Error en la respuesta: " . $body, 'error');
-        } else {
-            $this->logService->logToDatabase('Comsatel', 'N/A', "Error en la solicitud: " . $e->getMessage(), 'error');
+            $this->logService->logToDatabase(
+                'Comsatel',
+                $trama[0]['vehiculoId'],
+                'error',
+                'Error en la solicitud: ' . $body,
+                [],
+                Carbon::parse($trama[0]['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                1,
+            );
         }
     }
 }

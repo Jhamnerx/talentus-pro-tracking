@@ -16,6 +16,8 @@ $result = [
 
 	'trust_hosts' => array_filter(explode(';', env('TRUST_HOSTS', null))),
 
+	'url_comsatel_prod' => env('URL_COMSATEL_PROD', ''),
+
 	/*
 	|--------------------------------------------------------------------------
 	| Application Debug Mode

@@ -7,7 +7,6 @@ use GuzzleHttp\Client;
 use App\Services\LogService;
 use Illuminate\Bus\Queueable;
 use Tobuli\Entities\Osinergmin;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
