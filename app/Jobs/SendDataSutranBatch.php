@@ -34,7 +34,7 @@ class SendDataSutranBatch implements ShouldQueue
         $this->batchSize = $batchSize;
         $this->service = $service;
         $this->plates = $plates;
-        //$this->onQueue('web-services');
+        $this->onQueue('web-services');
     }
 
     public function handle()
@@ -63,7 +63,6 @@ class SendDataSutranBatch implements ShouldQueue
             $date->setTimestamp($timestamp);
             $date->setTimezone($timezone);
             $gps_date = $date->format('Y-m-d H:i:s');
-            Log::info('GPS Date: ' . $position);
             $trama = [
                 'id' => $position->id,
                 'plate' => trim(str_replace('-', '', $position->plate)),

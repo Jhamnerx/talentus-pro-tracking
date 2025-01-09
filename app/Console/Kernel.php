@@ -129,9 +129,9 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping();
 
         //WEB SERVICES JOBS
-        $schedule->job(new DispatchSutranJobs)->everyMinute();
+        // $schedule->job(new DispatchSutranJobs)->everyMinute();
         // $schedule->job(new DispatchComsatelJobs)->everyMinute();
-        // $schedule->job(new DispatchOsinergminJobs)->everyMinute();
+        $schedule->job(new DispatchOsinergminJobs)->everyMinute();
         // $schedule->job(new SendDataMininter)->everyMinute();
         // $schedule->job(new CleanOldLogsJob(10))->daily();
     }
