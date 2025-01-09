@@ -12,6 +12,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\Sutran;
 
 class SendDataSutranBatch implements ShouldQueue
@@ -21,23 +22,24 @@ class SendDataSutranBatch implements ShouldQueue
     protected $offset;
     protected $batchSize;
     protected $logService;
-    protected $token;
+    protected $service;
     protected $plates;
 
     public $tries = 3;
     public $timeout = 120;
 
-    public function __construct($offset, $batchSize, $token, $plates)
+    public function __construct($offset, $batchSize, $service, $plates)
     {
         $this->offset = $offset;
         $this->batchSize = $batchSize;
-        $this->token = $token;
+        $this->service = $service;
         $this->plates = $plates;
-        $this->onQueue('web-services');
+        //$this->onQueue('web-services');
     }
 
     public function handle()
     {
+
         $this->logService = app(LogService::class); // Instanciar el servicio de logs
 
         $positions = Sutran::offset($this->offset)
@@ -61,11 +63,11 @@ class SendDataSutranBatch implements ShouldQueue
             $date->setTimestamp($timestamp);
             $date->setTimezone($timezone);
             $gps_date = $date->format('Y-m-d H:i:s');
-
+            Log::info('GPS Date: ' . $position);
             $trama = [
                 'id' => $position->id,
                 'plate' => trim(str_replace('-', '', $position->plate)),
-                'geo' => [$position['latitud'], $position->longitud],
+                'geo' => [$position->latitud, $position->longitud],
                 'direction' => intval($position->direction ?? 0),
                 'event' => $estado,
                 'speed' => intval($position->speed), // Confirmar que el valor sea entero
@@ -81,11 +83,12 @@ class SendDataSutranBatch implements ShouldQueue
 
     public function sendDataSutran($tramas)
     {
+
         $ip_sutran = config('app.env') == 'local' ? 'https://ws03.sutran.ehg.pe/api/v1.0/transmisiones' : 'https://ws03.sutran.gob.pe/api/v1.0/transmisiones';
         $tramas_por_grupo = array_chunk($tramas, 150); // Limitar a 150 tramas como máximo según la documentación
 
         foreach ($tramas_por_grupo as $grupo) {
-            $this->enviarTramas($grupo, $this->token, $ip_sutran);
+            $this->enviarTramas($grupo, $this->service['token'], $ip_sutran);
         }
     }
 
@@ -107,31 +110,21 @@ class SendDataSutranBatch implements ShouldQueue
         } catch (RequestException $e) {
 
             if ($e->hasResponse()) {
+
                 $response = $e->getResponse();
                 $body = $response->getBody()->getContents();
 
                 // Guardar log de error en la base de datos
-                if (config('app.debug')) {
-
-                    $this->logService->logToDatabase(
-                        'Sutran',
-                        'N/A', // Placa no disponible para el grupo completo
-                        "Error en la respuesta: " . $body,
-                        'error',
-                        ['json' => $tramas]
-                    );
-                }
-            } else {
-                // Guardar log de error en la base de datos
-                if (config('app.debug')) {
-                    $this->logService->logToDatabase(
-                        'Sutran',
-                        'N/A',
-                        "Error en la solicitud: " . $e->getMessage(),
-                        'error',
-                        ['json' => $tramas]
-                    );
-                }
+                $this->logService->logToDatabase(
+                    'Sutran',
+                    'N/A',
+                    'error',
+                    $tramas,
+                    ['message - token ' . $token . '' => $body],
+                    [],
+                    null,
+                    null
+                );
             }
         }
     }
@@ -141,19 +134,25 @@ class SendDataSutranBatch implements ShouldQueue
         $ids = [];
 
         if ($response['status'] == 200 && empty($response['error_plates'])) {
+
             foreach ($tramas as $item) {
                 $ids[] = $item['id'];
             }
 
-            // Guardar log de éxito en la base de datos
-            if (config('app.debug')) {
-                $this->logService->logToDatabase(
-                    'Sutran',
-                    'N/A', // Placa no disponible para el grupo completo
-                    "Tramas enviadas correctamente.",
-                    'info',
-                    $response
-                );
+            if ($this->service['logs']) {
+                foreach ($tramas as $trama) {
+
+                    $this->logService->logToDatabase(
+                        'Sutran',
+                        $trama['plate'],
+                        'success',
+                        $trama,
+                        ['message' => 'Registrado correctamente'],
+                        [],
+                        $trama['time_device'],
+                        $trama['imei']
+                    );
+                }
             }
 
             Sutran::destroy($ids);
@@ -162,19 +161,40 @@ class SendDataSutranBatch implements ShouldQueue
             $errored_rows = [];
             foreach ($response['error_plates'] as $error) {
                 if (preg_match('/F:(\d+)/', $error['message'], $matches)) {
-                    $errored_rows[] = intval($matches[1]);
+                    $errored_rows[intval($matches[1])] = $error['message'];
                 }
             }
 
-            // Guardar log de error en la base de datos
-            if (config('app.debug')) {
-                $this->logService->logToDatabase(
-                    'Sutran',
-                    'N/A',
-                    "Errores con placas: " . json_encode($response['error_plates']),
-                    'error',
-                    $response
-                );
+            if ($this->service['logs']) {
+
+                foreach ($tramas as $index => $trama) {
+
+                    if (array_key_exists($index, $errored_rows)) {
+
+                        $this->logService->logToDatabase(
+                            'Sutran',
+                            $trama['plate'],
+                            'error',
+                            $trama,
+                            ['message' => $errored_rows[$index]],
+                            [],
+                            $trama['time_device'],
+                            $trama['imei']
+                        );
+                    } else {
+
+                        $this->logService->logToDatabase(
+                            'Sutran',
+                            $trama['plate'],
+                            'success',
+                            $trama,
+                            ['message' => 'Registrado correctamente'],
+                            [],
+                            $trama['time_device'],
+                            $trama['imei']
+                        );
+                    }
+                }
             }
 
             foreach ($tramas as $index => $item) {

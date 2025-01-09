@@ -197,23 +197,45 @@ class User extends AbstractEntity implements
                 'sutran' =>
                 [
                     'active' => 0,
+                    'logs' => 0,
                     'token' => null
                 ],
                 'osinergmin' =>
                 [
                     'active' => 0,
+                    'logs' => 0,
                     'token' => null
                 ],
                 'consatel' =>
                 [
                     'active' => 0,
+                    'logs' => 0,
                     'user' => null,
                     'pass' => null
                 ],
+                'mininter' =>
+                [
+                    'logs' => 0,
+                ]
             ];
         }
 
-        return json_decode($services, true);
+        $services = json_decode($services, true);
+
+        foreach ($services as $key => $service) {
+            if (!isset($service['logs'])) {
+                $services[$key]['logs'] = 0;
+            }
+        }
+
+        // Verificar si existe 'mininter' y añadirlo por defecto si no existe
+        if (!isset($services['mininter'])) {
+            $services['mininter'] = [
+                'logs' => 0,
+            ];
+        }
+
+        return $services;
     }
 
     public function setServicesAttribute($value)

@@ -7,6 +7,7 @@ use App\Jobs\DeleteDatabaseTable;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceType;
 use Tobuli\Entities\User;
@@ -38,8 +39,7 @@ class DeviceService
         DeviceConfigService $configService,
         CustomValuesService $customValueService,
         DeviceUsersService $deviceUsersService
-    )
-    {
+    ) {
         $this->configService = $configService;
         $this->customValueService = $customValueService;
         $this->deviceUsersService = $deviceUsersService;
@@ -185,7 +185,6 @@ class DeviceService
             $device->createPositionsTable();
 
             commitTransaction();
-
         } catch (\Exception $e) {
             rollbackTransaction();
 
@@ -225,7 +224,6 @@ class DeviceService
             $this->saveGroup($device, $data);
 
             commitTransaction();
-
         } catch (\Exception $e) {
             rollbackTransaction();
 
@@ -293,10 +291,12 @@ class DeviceService
     {
         $sensor_group_id = $data['sensor_group_id'] ?? null;
 
-        if (empty($sensor_group_id)
+        if (
+            empty($sensor_group_id)
             && $device->wasRecentlyCreated
             && $device->device_type_id
-            && $deviceType = DeviceType::find($device->device_type_id)) {
+            && $deviceType = DeviceType::find($device->device_type_id)
+        ) {
             $sensor_group_id = $deviceType->sensor_group_id;
         }
 

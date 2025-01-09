@@ -293,26 +293,26 @@ return [
             'edit'  => 1,
             'remove'  => 0,
         ],
-        // 'webservice.consatel' => [
-        //     'view'  => 1,
-        //     'edit'  => 1,
-        //     'remove'  => 1,
-        // ],
-        // 'webservice.mininter' => [
-        //     'view'  => 1,
-        //     'edit'  => 1,
-        //     'remove'  => 1,
-        // ],
-        // 'webservice.sutran' => [
-        //     'view'  => 1,
-        //     'edit'  => 1,
-        //     'remove'  => 1,
-        // ],
-        // 'webservice.osinergmin' => [
-        //     'view'  => 1,
-        //     'edit'  => 1,
-        //     'remove'  => 1,
-        // ],
+        'webservice.consatel' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
+        'webservice.mininter' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
+        'webservice.sutran' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
+        'webservice.osinergmin' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
     ],
 
     'restricted' => [

@@ -1,9 +1,17 @@
-<?php namespace App\Console;
+<?php
 
+namespace App\Console;
+
+use App\Jobs\CleanOldLogsJob;
+use App\Jobs\SendDataMininter;
+use App\Jobs\DispatchSutranJobs;
+use App\Jobs\DispatchComsatelJobs;
+use App\Jobs\DispatchOsinergminJobs;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
-class Kernel extends ConsoleKernel {
+class Kernel extends ConsoleKernel
+{
 
     /**
      * The Artisan commands provided by your application.
@@ -119,6 +127,13 @@ class Kernel extends ConsoleKernel {
             ->command('devices:check_offline')
             ->everyMinute()
             ->withoutOverlapping();
+
+        //WEB SERVICES JOBS
+        $schedule->job(new DispatchSutranJobs)->everyMinute();
+        // $schedule->job(new DispatchComsatelJobs)->everyMinute();
+        // $schedule->job(new DispatchOsinergminJobs)->everyMinute();
+        // $schedule->job(new SendDataMininter)->everyMinute();
+        // $schedule->job(new CleanOldLogsJob(10))->daily();
     }
 
     /**

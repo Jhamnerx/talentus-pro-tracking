@@ -440,54 +440,112 @@
                 <h4>SUTRAN</h4>
             </div>
 
-            <div class="form-group">
-                <div class="checkbox">
+            <div class="row">
 
-                    {!! Form::checkbox('services[sutran][active]', 1, $item->services['sutran']['active'], [
-                        'class' => 'checkbox-sutran',
-                    ]) !!}
-                    {!! Form::label('services[sutran][active]', 'Activar') !!}
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+
+                            {!! Form::checkbox('services[sutran][active]', 1, $item->services['sutran']['active'], [
+                                'class' => 'checkbox-sutran',
+                            ]) !!}
+                            {!! Form::label('services[sutran][active]', 'Activar') !!}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+
+                            {!! Form::checkbox('services[sutran][logs]', 1, $item->services['sutran']['logs'], [
+                                'class' => 'sutran-logs',
+                            ]) !!}
+                            {!! Form::label('services[sutran][logs]', 'Logs') !!}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-12">
+                    <div class="form-group text-sutran">
+                        {!! Form::label('services[sutran][token]', 'Token') !!}
+                        {!! Form::text('services[sutran][token]', $item->services['sutran']['token'], ['class' => 'form-control']) !!}
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group text-sutran">
-                {!! Form::label('services[sutran][token]', 'Token') !!}
-                {!! Form::text('services[sutran][token]', $item->services['sutran']['token'], ['class' => 'form-control']) !!}
-            </div>
+
+            <hr style="border-color: #052062;">
 
             <div class="form-group">
                 <h4>OSINERGMIN</h4>
             </div>
 
-            <div class="form-group">
-                <div class="checkbox">
+            <div class="row">
 
-                    {!! Form::checkbox('services[osinergmin][active]', 1, $item->services['osinergmin']['active'], [
-                        'class' => 'checkbox-osinergmin',
-                    ]) !!}
-                    {!! Form::label('services[osinergmin][active]', 'Activar') !!}
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[osinergmin][active]', 1, $item->services['osinergmin']['active'], [
+                                'class' => 'checkbox-osinergmin',
+                            ]) !!}
+                            {!! Form::label('services[osinergmin][active]', 'Activar') !!}
+                        </div>
+                    </div>
                 </div>
+
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[osinergmin][logs]', 1, $item->services['osinergmin']['logs'], [
+                                'class' => 'osinergmin-logs',
+                            ]) !!}
+                            {!! Form::label('services[osinergmin][logs]', 'Logs') !!}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-12">
+                    <div class="form-group text-osinergmin">
+                        {!! Form::label('services[osinergmin][token]', 'Token') !!}
+                        {!! Form::text('services[osinergmin][token]', $item->services['osinergmin']['token'], [
+                            'class' => 'form-control',
+                        ]) !!}
+                    </div>
+                </div>
+
             </div>
-            <div class="form-group text-osinergmin">
-                {!! Form::label('services[osinergmin][token]', 'Token') !!}
-                {!! Form::text('services[osinergmin][token]', $item->services['osinergmin']['token'], [
-                    'class' => 'form-control',
-                ]) !!}
-            </div>
+
+            <hr style="border-color: #052062;">
 
             <div class="form-group">
                 <h4>CONSATEL</h4>
             </div>
 
             <div class="row">
-                <div class="col-sm-12">
+
+                <div class="col-sm-6">
                     <div class="form-group">
                         <div class="checkbox">
 
                             {!! Form::checkbox('services[consatel][active]', 1, $item->services['consatel']['active'], [
                                 'class' => 'checkbox-consatel',
                             ]) !!}
+
                             {!! Form::label('services[consatel][active]', 'Activar') !!}
+                        </div>
+                    </div>
+
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+
+                            {!! Form::checkbox('services[consatel][logs]', 1, $item->services['consatel']['logs'], [
+                                'class' => 'consatel-logs',
+                            ]) !!}
+
+                            {!! Form::label('services[consatel][logs]', 'Activar') !!}
                         </div>
                     </div>
                 </div>
@@ -512,8 +570,31 @@
                     </div>
 
                 </div>
+
             </div>
 
+            <hr style="border-color: #052062;">
+
+            <div class="form-group">
+                <h4>SISCOP - MININTER</h4>
+            </div>
+
+            <div class="row">
+
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+
+                            {!! Form::checkbox('services[mininter][logs]', 1, $item->services['mininter']['logs'], [
+                                'class' => 'mininter-logs',
+                            ]) !!}
+
+                            {!! Form::label('services[mininter][logs]', 'Logs') !!}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 

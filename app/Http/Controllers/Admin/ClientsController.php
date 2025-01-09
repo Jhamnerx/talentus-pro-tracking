@@ -457,18 +457,21 @@ class ClientsController extends BaseController
         }
 
         if (isset($input['services']) && $input['services'] == '[]') {
+
             $input['services'] = null;
         } else {
             $services = $input['services'];
             $defaultServices = [
                 'sutran' => ['active' => 0, 'token' => null],
                 'osinergmin' => ['active' => 0, 'token' => null],
-                'consatel' => ['active' => 0, 'user' => null, 'pass' => null]
+                'consatel' => ['active' => 0, 'user' => null, 'pass' => null],
+                'mininter' => ['logs' => 0]
             ];
 
             foreach ($defaultServices as $service => $defaults) {
                 if (isset($services[$service])) {
                     $defaultServices[$service]['active'] = $services[$service]['active'] ?? 0;
+                    $defaultServices[$service]['logs'] = $services[$service]['logs'] ?? 0;
                     if ($defaultServices[$service]['active']) {
                         $defaultServices[$service]['token'] = $services[$service]['token'] ?? null;
                         if ($service == 'consatel') {

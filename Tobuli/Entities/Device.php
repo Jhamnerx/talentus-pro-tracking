@@ -146,7 +146,12 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'app_tracker_login',
         'fuel_detect_sec_after_stop',
         'lbs',
-        'authentication'
+        'authentication',
+
+        'mtc',
+        'osinergmin',
+        'mininter',
+        'consatel',
     );
 
     protected $appends = [
@@ -2100,7 +2105,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasMany('Tobuli\Entities\Osinergmin');
     }
 
-    public function mininter(): HasMany
+    public function dataMininter(): HasMany
     {
         return $this->hasMany('Tobuli\Entities\Mininter');
     }
