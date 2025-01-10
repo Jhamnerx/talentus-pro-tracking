@@ -1,4 +1,6 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
 
 set_time_limit(0);
 
@@ -8,22 +10,24 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
 use App\Console\ProcessManager;
+use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\TraccarDevice;
 
-class CleanDevicesCommand extends Command {
-	/**
-	 * The console command name.
-	 *
-	 * @var string
-	 */
-	protected $name = 'devices:clean';
+class CleanDevicesCommand extends Command
+{
+    /**
+     * The console command name.
+     *
+     * @var string
+     */
+    protected $name = 'devices:clean';
 
-	/**
-	 * The console command description.
-	 *
-	 * @var string
-	 */
-	protected $description = 'Devices positions cleaner';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Devices positions cleaner';
 
     protected $type;
     protected $value;
@@ -31,52 +35,46 @@ class CleanDevicesCommand extends Command {
     protected $i;
     protected $all;
 
-	public function __construct()
-	{
-		parent::__construct();
+    public function __construct()
+    {
+        parent::__construct();
 
         $this->all = 0;
         $this->i = 0;
-	}
+    }
 
-	/**
-	 * Execute the console command.
-	 *
-	 * @return mixed
-	 */
-	public function handle()
-	{
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
         $this->processManager = new ProcessManager($this->name, $timeout = 3600, $limit = 1);
 
-        if ( ! $this->processManager->canProcess())
-        {
+        if (! $this->processManager->canProcess()) {
             echo "Cant process \n";
             return -1;
         }
 
-		$this->type = $this->argument('type');
+        $this->type = $this->argument('type');
         $this->value = $this->argument('value');
 
-		$this->all = TraccarDevice::count();
+        $this->all = TraccarDevice::count();
 
-        TraccarDevice::orderBy('id', 'asc')->chunk(500, function($devices){
-            foreach ($devices as $device)
-            {
+        TraccarDevice::orderBy('id', 'asc')->chunk(500, function ($devices) {
+            foreach ($devices as $device) {
+                Log::info("CLEAN TABLES ({$this->i}/{$this->all}) Device {$device->device}");
                 $this->i++;
 
                 $date = $this->getDate($device);
 
                 try {
-                    $query = $device->positions()->where(function($q) use ($date){
-                        $q->whereNull('time');
+                    $this->cleanPositions($device, $date);
 
-                        if ($date)
-                            $q->orWhere('time', '<', $date);
-                    })->limit(10000);
-
-                    do {
-                        $deleted = (clone $query)->delete();
-                    } while ($deleted > 0);
+                    if ($device->device->days_history !== null && $device->device->days_history > 0) {
+                        $this->cleanPositionsByDaysHistory($device);
+                    }
 
                     $this->line("CLEAN TABLES ({$this->i}/{$this->all}) Device {$device->id} {$date}");
                 } catch (\Exception $e) {
@@ -85,10 +83,46 @@ class CleanDevicesCommand extends Command {
             }
         });
 
-		$this->line("Job done[OK]\n");
-	}
+        $this->line("Job done[OK]\n");
+    }
 
-	protected function getDate($device)
+    protected function cleanPositions($device, $date)
+    {
+        $query = $device->positions()->where(function ($q) use ($date) {
+            $q->whereNull('time');
+
+            if ($date)
+                $q->orWhere('time', '<', $date);
+        })->limit(10000);
+
+        do {
+            $deleted = (clone $query)->delete();
+        } while ($deleted > 0);
+    }
+
+    protected function cleanPositionsByDaysHistory($device)
+    {
+        $date = Carbon::now()->subDays($device->device->days_history);
+
+        // Limpiar posiciones
+        $query = $device->positions()->where('time', '<', $date)->limit(10000);
+
+        do {
+            $deleted = (clone $query)->delete();
+        } while ($deleted > 0);
+
+        $this->line("CLEAN TABLES DEVICE CON DIAS: {$device->device->days_history} -  ({$this->i}/{$this->all}) Device {$device->id} {$date}");
+
+        // Limpiar eventos
+        $eventQuery = $device->device->events()->where('created_at', '<', $date)->limit(10000);
+
+        do {
+            $deletedEvents = (clone $eventQuery)->delete();
+        } while ($deletedEvents > 0);
+
+        $this->line("CLEAN EVENTS DEVICE CON DIAS: {$device->device->days_history} -  ({$this->i}/{$this->all}) Device {$device->id} {$date}");
+    }
+    protected function getDate($device)
     {
         $date = null;
 
@@ -98,12 +132,11 @@ class CleanDevicesCommand extends Command {
                 break;
 
             case 'days':
-                if ($lastConnection = $device->lastConnection)
-                {
+                if ($lastConnection = $device->lastConnection) {
                     $date = Carbon::parse($lastConnection);
 
                     if ($date->gt(Carbon::now()))
-                        $date= Carbon::now();
+                        $date = Carbon::now();
 
                     $date = $date->subDays($this->value);
                 }
@@ -114,26 +147,26 @@ class CleanDevicesCommand extends Command {
         return $date;
     }
 
-	/**
-	 * Get the console command arguments.
-	 *
-	 * @return array
-	 */
-	protected function getArguments()
-	{
-		return array(
-			array('type', InputArgument::REQUIRED, 'Type [date, days]'),
+    /**
+     * Get the console command arguments.
+     *
+     * @return array
+     */
+    protected function getArguments()
+    {
+        return array(
+            array('type', InputArgument::REQUIRED, 'Type [date, days]'),
             array('value', InputArgument::REQUIRED, 'Value [yyyy-mm-dd, days]')
-		);
-	}
+        );
+    }
 
-	/**
-	 * Get the console command options.
-	 *
-	 * @return array
-	 */
-	protected function getOptions()
-	{
-		return array();
-	}
+    /**
+     * Get the console command options.
+     *
+     * @return array
+     */
+    protected function getOptions()
+    {
+        return array();
+    }
 }

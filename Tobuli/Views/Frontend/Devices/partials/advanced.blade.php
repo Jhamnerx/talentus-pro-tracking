@@ -83,6 +83,7 @@
             {!! Form::label('device_model', trans('validation.attributes.device_model') . ':') !!}
             {!! Form::text('device_model', $item->device_model, ['class' => 'form-control']) !!}
         </div>
+
     </div>
     <div class="col-sm-6">
         @if ($additional_fields_on && Auth::user()->can('view', $item, 'installation_date'))
@@ -107,6 +108,10 @@
         <div class="form-group">
             {!! Form::label('object_owner', trans('validation.attributes.object_owner') . ':') !!}
             {!! Form::text('object_owner', $item->object_owner, ['class' => 'form-control']) !!}
+        </div>
+        <div class="form-group">
+            {!! Form::label('days_history', trans('validation.attributes.days_history') . ':') !!}
+            {!! Form::text('days_history', $item->days_history, ['class' => 'form-control']) !!}
         </div>
     </div>
 </div>

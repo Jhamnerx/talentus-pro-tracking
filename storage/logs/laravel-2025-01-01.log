@@ -1,7 +1,0 @@
-[2025-01-01 00:54:19] production.INFO: params: {"scheme":"ftp","host":"148.113.180.143","port":21,"user":"talentus","pass":"tyt2024c%23"}  
-[2025-01-01 00:54:19] production.INFO: scheme: ftp  
-[2025-01-01 00:54:19] production.INFO: host: 148.113.180.143, user: talentus, pass: tyt2024c%23, port: 21, path:   
-[2025-01-01 00:56:57] production.INFO: scheme: ftp  
-[2025-01-01 00:56:57] production.INFO: host: 148.113.180.143, user: talentus, pass: tyt2024c#, port: 21, path:   
-[2025-01-01 02:03:47] production.INFO: scheme: ftp  
-[2025-01-01 05:06:00] production.INFO: Server:   

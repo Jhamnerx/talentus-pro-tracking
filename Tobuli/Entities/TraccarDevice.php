@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Entities;
+<?php
+
+namespace Tobuli\Entities;
 
 use App\Jobs\DatabaseImportJob;
 use Carbon\Carbon;
@@ -11,8 +13,9 @@ use Symfony\Component\Process\Process;
 use Tobuli\Relations\HasManyTable;
 use Tobuli\Services\DatabaseService;
 
-class TraccarDevice extends AbstractEntity {
-	protected $table = 'traccar_devices';
+class TraccarDevice extends AbstractEntity
+{
+    protected $table = 'traccar_devices';
 
     protected $fillable = array(
         'database_id',
@@ -60,7 +63,7 @@ class TraccarDevice extends AbstractEntity {
 
         $schema = Schema::connection(DatabaseService::instance()->getDatabaseName($this->database_id));
         if ($schema->hasColumn($table, 'device_id')) {
-            $schema->table($table, function($t) use ($table) {
+            $schema->table($table, function ($t) use ($table) {
                 $t->dropColumn('device_id');
                 $t->dropColumn('power');
             });
@@ -76,7 +79,7 @@ class TraccarDevice extends AbstractEntity {
         $process->run();
         $process->wait();
 
-        if ( ! $process->isSuccessful()) {
+        if (! $process->isSuccessful()) {
             throw new ProcessFailedException($process);
         }
 
@@ -95,13 +98,19 @@ class TraccarDevice extends AbstractEntity {
     {
         $timestamp = $this->lastConnectTimestamp;
 
-        if ( ! $timestamp)
+        if (! $timestamp)
             return null;
 
         return Carbon::createFromTimestamp($timestamp);
     }
 
-    public function getLastConnectTimestampAttribute() {
+    public function getLastConnectTimestampAttribute()
+    {
         return strtotime($this->server_time);
+    }
+
+    public function device()
+    {
+        return $this->belongsTo('Tobuli\Entities\Device', 'id', 'traccar_device_id');
     }
 }

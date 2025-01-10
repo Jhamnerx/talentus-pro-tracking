@@ -116,6 +116,7 @@ return [
         'mobile_phone' => 'Celular',
         'sim_number' => 'Número SIM',
         'device_model' => 'Modelo del dispositivo',
+        'days_history' => 'Dias de historial',
         'rfid' => 'RFID',
         'phone' => 'Teléfono',
         'device_id' => 'Dispositivo',

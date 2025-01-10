@@ -152,6 +152,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'osinergmin',
         'mininter',
         'consatel',
+
+        'days_history',
     );
 
     protected $appends = [
