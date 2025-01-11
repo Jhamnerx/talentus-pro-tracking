@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Validator;
+use Tobuli\Entities\WebservicesLogs;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Exporters\EntityManager\Device\ExportManager;
 use Tobuli\Helpers\Tracker;
@@ -66,6 +67,24 @@ class ObjectsController extends BaseController
         $section = $this->section;
 
         return View::make('admin::' . ucfirst($this->section) . '.' . (Request::ajax() ? 'table' : 'index'))
+            ->with(compact('items', 'section'));
+    }
+
+    public function logs()
+    {
+        $input = array_merge(['limit' => 25], request()->input());
+
+        $sort = $input['sorting'] ?? ['sort_by' => 'id', 'sort' => 'asc'];
+
+        $items = WebservicesLogs::query()
+            ->select(['logs.*'])
+            ->search($input['search_phrase'] ?? '')
+            ->toPaginator($input['limit'], $sort['sort_by'], $sort['sort']);
+
+        $section = $this->section;
+
+
+        return View::make('admin::' . ucfirst($this->section) . '.logs.' . (Request::ajax() ? 'table' : 'index'))
             ->with(compact('items', 'section'));
     }
 

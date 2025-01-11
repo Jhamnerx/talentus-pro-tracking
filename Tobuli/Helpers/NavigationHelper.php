@@ -52,6 +52,12 @@ function getNavigation()
             'route' => 'admin.objects.index',
             'childs' => []
         ];
+
+        $items[] = [
+            'title' => '<i class="icon device"></i> ' . '<span class="text"> WebService Logs </span>',
+            'route' => 'admin.objects.logs',
+            'childs' => []
+        ];
     }
 
     $items['content'] = [

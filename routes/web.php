@@ -606,6 +606,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         Route::get('objects/assign', ['as' => 'objects.assignForm', 'uses' => 'ObjectsUsersController@assignForm']);
         Route::post('objects/assign', ['as' => 'objects.assign', 'uses' => 'ObjectsUsersController@assign']);
         Route::any('users/objects', ['as' => 'objects.index', 'uses' => 'ObjectsController@index']);
+        Route::any('objects/logs', ['as' => 'objects.logs', 'uses' => 'ObjectsController@logs']);
         Route::get('objects/import', ['as' => 'objects.import', 'uses' => 'ObjectsController@import']);
         Route::post('objects/export', ['as' => 'objects.export', 'uses' => 'ObjectsController@export']);
         Route::get('objects/export', ['as' => 'objects.export_modal', 'uses' => 'ObjectsController@exportModal']);
