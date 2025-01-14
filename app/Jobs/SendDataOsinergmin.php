@@ -121,13 +121,14 @@ class SendDataOsinergmin extends Job implements ShouldQueue
 
                 if ($data['status'] === 'CREATED') {
                     $ids[] = $data['uuid'];
-                    $this->service['logs'] ??
+                    if ($this->service['logs'])
                         $this->handleSuccess($data, $trama);
                 }
 
                 if ($data['status'] === 'ERROR') {
                     $errorsId[] = $data['uuid'];
-                    $this->service['logs'] ??
+
+                    if ($this->service['logs'])
                         $this->handleError($data, $trama);
                 }
             }
