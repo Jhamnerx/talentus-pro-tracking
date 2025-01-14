@@ -2564,42 +2564,6 @@ function decodeHtmlEntities(encodedString) {
   return "";
 }
 
-(function () {
-  function checkTimeDifference(threshold) {
-    if (isNaN(+threshold)) {
-      threshold = 100;
-    }
-    const startTime = +new Date();
-    const endTime = +new Date();
-    if (isNaN(startTime) || isNaN(endTime) || endTime - startTime > threshold) {
-      console.log(
-        "Si deseas adquirir este diseño, pregunta al email josuelmm92@gmail.com o entra en https://seelight.site"
-      );
-    }
-  }
-
-  if (window.attachEvent) {
-    if (
-      document.readyState === "complete" ||
-      document.readyState === "interactive"
-    ) {
-      checkTimeDifference();
-      window.attachEvent("onresize", checkTimeDifference);
-      window.attachEvent("onmousemove", checkTimeDifference);
-      window.attachEvent("onfocus", checkTimeDifference);
-      window.attachEvent("onblur", checkTimeDifference);
-    } else {
-      setTimeout(arguments.callee, 0);
-    }
-  } else {
-    window.addEventListener("load", checkTimeDifference);
-    window.addEventListener("resize", checkTimeDifference);
-    window.addEventListener("mousemove", checkTimeDifference);
-    window.addEventListener("focus", checkTimeDifference);
-    window.addEventListener("blur", checkTimeDifference);
-  }
-})();
-
 const linkElements = document.getElementsByTagName("link");
 const bodyElement = document.body;
 const themes = {

