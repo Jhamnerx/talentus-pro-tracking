@@ -132,7 +132,9 @@ class SendDataMininter implements ShouldQueue
                         $json,
                         ['response' => $response],
                         [],
-                        Carbon::parse($json['fechaHora'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                        Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora'])
+                            ->setTimezone('America/Lima')
+                            ->format('Y-m-d H:i:s'),
                         1,
                     );
                 }
@@ -152,7 +154,9 @@ class SendDataMininter implements ShouldQueue
                     'success',
                     $json,
                     ['response' => $response],
-                    Carbon::parse($json['fechaHora'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora'])
+                        ->setTimezone('America/Lima')
+                        ->format('Y-m-d H:i:s'),
                     1,
                 );
             }
@@ -168,7 +172,9 @@ class SendDataMininter implements ShouldQueue
                     $json,
                     ['response' => $response],
                     [],
-                    Carbon::parse($json['fechaHora'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora'])
+                        ->setTimezone('America/Lima')
+                        ->format('Y-m-d H:i:s'),
                     1,
                 );
             }
