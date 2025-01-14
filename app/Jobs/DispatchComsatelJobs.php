@@ -30,9 +30,11 @@ class DispatchComsatelJobs implements ShouldQueue
             })->toArray();
 
             if (empty($plates)) {
-                Log::info('No plates found for user: ' . $user->id . '. Job terminated.');
+                Log::info('No plates Comsatel found for user: ' . $user->id . '. Job terminated.');
                 continue;
             }
+
+            Log::info('Dispatching Comsatel Jobs for user: ' . $user->id . ' with plates: ' . implode(', ', $plates));
 
             $service = $user->services['consatel'];
             $batchSize = 500; // Tamaño del lote

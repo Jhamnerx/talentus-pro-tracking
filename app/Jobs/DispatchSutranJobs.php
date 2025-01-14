@@ -35,7 +35,6 @@ class DispatchSutranJobs implements ShouldQueue
                 continue;
             }
 
-            Log::info('Dispatching Sutran Jobs for user: ' . $user->id . ' with plates: ' . implode(', ', $plates));
             $service = $user->services['sutran'];
 
             $batchSize = 2000; // Tamaño del lote

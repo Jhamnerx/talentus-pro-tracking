@@ -545,7 +545,7 @@
                                 'class' => 'consatel-logs',
                             ]) !!}
 
-                            {!! Form::label('services[consatel][logs]', 'Activar') !!}
+                            {!! Form::label('services[consatel][logs]', 'Logs') !!}
                         </div>
                     </div>
                 </div>
