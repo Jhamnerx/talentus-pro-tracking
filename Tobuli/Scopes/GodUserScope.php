@@ -10,7 +10,7 @@ class GodUserScope implements Scope
 {
     public function apply(Builder $builder, Model $model)
     {
-        $builder->where('users.email', '!=', 'admin@server.com');
+        $builder->where('users.email', '!=', 'admin@talentustechnology.com');
     }
 
     public function remove(Builder $builder, Model $model)

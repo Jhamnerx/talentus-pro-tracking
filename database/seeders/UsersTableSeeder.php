@@ -17,7 +17,7 @@ class UsersTableSeeder extends Seeder
         $password = 'adminAdmin8*';
 
         DB::table('users')->insert([
-            'email' => 'admin@server.com',
+            'email' => 'admin@admin.com',
             'email_verified_at' => $now,
             'password' => Hash::make($password),
             'group_id' => 1,

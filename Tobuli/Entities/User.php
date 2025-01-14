@@ -610,12 +610,12 @@ class User extends AbstractEntity implements
 
     public static function getGodID()
     {
-        return self::where('email', 'admin@server.com')->withoutGlobalScopes()->select('id')->first()->id ?? null;
+        return self::where('email', 'admin@talentustechnology.com')->withoutGlobalScopes()->select('id')->first()->id ?? null;
     }
 
     public function isGod()
     {
-        return $this->email == 'admin@server.com';
+        return $this->email == 'admin@talentustechnology.com';
     }
 
     public function isAdmin()

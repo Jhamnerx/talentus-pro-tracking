@@ -20,10 +20,7 @@ class DeviceUsersService
      */
     protected $user;
 
-    public function __construct()
-    {
-
-    }
+    public function __construct() {}
 
     public function setActingUser(User $user)
     {
@@ -75,7 +72,8 @@ class DeviceUsersService
      * @param User|int $user
      * @param DeviceGroup|int|null $group
      */
-    public function addUser(Device $device, $user, $group = 0) {
+    public function addUser(Device $device, $user, $group = 0)
+    {
         $user_id = $this->resolveUser($user);
         $group_id = $this->resolveGroup($group);
 
@@ -90,7 +88,8 @@ class DeviceUsersService
      * @param Device $device
      * @param User|int $user
      */
-    public function removeUser(Device $device, $user) {
+    public function removeUser(Device $device, $user)
+    {
         $user_id = $this->resolveUser($user);
 
         $device->users()->detach($user_id);
@@ -115,7 +114,7 @@ class DeviceUsersService
                     case $userActing->isSupervisor():
                         break;
                     case $userActing->isManager():
-                        $query->where(function($q) use ($userActing) {
+                        $query->where(function ($q) use ($userActing) {
                             return $q->where('manager_id', $userActing->id)->orWhere('id', $userActing->id);
                         });
                         break;
@@ -124,7 +123,7 @@ class DeviceUsersService
                 }
 
                 if (!$userActing->isGod()) {
-                    $query->where('users.email', '!=', 'admin@server.com');
+                    $query->where('users.email', '!=', 'admin@talentustechnology.com');
                 }
 
                 return $query;
@@ -136,7 +135,6 @@ class DeviceUsersService
             $users = $this->resolveUsers($users);
             $query->sync($users);
         }
-
     }
 
     /**
@@ -242,7 +240,7 @@ class DeviceUsersService
     {
         $users_limit = $manager
             ->subusers()
-            ->when($except, function($query) use ($except) {
+            ->when($except, function ($query) use ($except) {
                 $query->where('id', '!=', $except);
             })
             ->sum('devices_limit');
@@ -267,11 +265,11 @@ class DeviceUsersService
 
         return $query
             ->whereNotNull('devices_limit')
-            ->with(['devices' => function($q) use ($device) {
+            ->with(['devices' => function ($q) use ($device) {
                 $q->where('user_device_pivot.device_id', $device ? $device->id : null);
             }])
             ->get()
-            ->filter(function($user) {
+            ->filter(function ($user) {
                 $hasThisDevice = !$user->devices->isEmpty();
 
                 return $this->isUserLimitReached($user, !$hasThisDevice);
@@ -289,7 +287,7 @@ class DeviceUsersService
         return $query
             ->whereNotNull('devices_limit')
             ->get()
-            ->filter(function(User $user) use ($newDevicesAmount) {
+            ->filter(function (User $user) use ($newDevicesAmount) {
                 $userDevicesCount = $this->getUsedLimit($user) + $newDevicesAmount;
 
                 return $user->devices_limit > $userDevicesCount;
