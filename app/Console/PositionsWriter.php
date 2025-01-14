@@ -708,7 +708,7 @@ class PositionsWriter
 
         $others = $this->parseString($position->other);
 
-        $device->mininter()->create(
+        $device->dataMininter()->create(
             [
                 'device_id' => $device->id,
                 'alarma' => 0,
