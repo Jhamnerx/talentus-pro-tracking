@@ -177,7 +177,7 @@ class BackupService
         $dbs = $dbService->getDatabases()->pluck('id')->all();
 
         /** @var BackupProcess[] $data */
-        $data = array_map(fn ($id) => DevicesPositionsBackuper::makeProcess($id), $dbs);
+        $data = array_map(fn($id) => DevicesPositionsBackuper::makeProcess($id), $dbs);
 
         array_unshift($data, FilesBackuper::makeProcess(images_path()));
         array_unshift($data, DatabaseBackuper::makeProcess(\DB::connection()->getName()));
@@ -229,9 +229,11 @@ class BackupService
             ->whereNotNull('failed_at');
 
         if ($launcher || $backupId) {
-            $query->whereHas('backup', fn (Builder $query) => $query
-                ->when($launcher, fn (Builder $query) => $query->where('launcher', $launcher))
-                ->when($backupId, fn (Builder $query) => $query->where('id', $backupId))
+            $query->whereHas(
+                'backup',
+                fn(Builder $query) => $query
+                    ->when($launcher, fn(Builder $query) => $query->where('launcher', $launcher))
+                    ->when($backupId, fn(Builder $query) => $query->where('id', $backupId))
             );
         }
 
@@ -273,8 +275,8 @@ class BackupService
     {
         $this->settings['next_backup'] = strtotime(
             date('Y-m-d', strtotime('+' . $this->settings['period'] . ' days'))
-            . ' '
-            . $this->settings['hour']
+                . ' '
+                . $this->settings['hour']
         );
 
         settings('backups.next_backup', $this->settings['next_backup']);
