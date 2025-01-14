@@ -204,6 +204,8 @@ class SendDataComsatelJob implements ShouldQueue
     protected function logError(\Exception $e)
     {
         Log::error($e->getMessage());
+        Log::error($e->getFile());
+        Log::error($e->getLine());
         $errorData = [
             'error' => $e->getMessage(),
             'file' => $e->getFile(),
