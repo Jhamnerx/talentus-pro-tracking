@@ -15,4 +15,5 @@ _ide_helper_models.php
 /storage/logs/*
 /storage/debugbar/*
 /storage/framework/*
+storage/framework/cache/*
 
