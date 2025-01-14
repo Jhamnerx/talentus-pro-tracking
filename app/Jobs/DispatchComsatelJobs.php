@@ -34,8 +34,6 @@ class DispatchComsatelJobs implements ShouldQueue
                 continue;
             }
 
-            Log::info('Dispatching Comsatel Jobs for user: ' . $user->id . ' with plates: ' . implode(', ', $plates));
-
             $service = $user->services['consatel'];
             $batchSize = 500; // Tamaño del lote
             $totalRecords = Comsatel::whereIn('placa', $plates)->count();
