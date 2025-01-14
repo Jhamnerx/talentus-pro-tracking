@@ -118,7 +118,7 @@ class SendDataComsatelJob implements ShouldQueue
                 'body' => json_encode($trama, JSON_PRESERVE_ZERO_FRACTION),
             ]);
             if ($this->service['logs'])
-                $this->processResponse(json_decode($response->getBody()->getContents(), true), $trama[0]['posicionId'], $trama[0]['vehiculoId'], $trama);
+                $this->processResponse(json_decode($response->getBody()->getContents(), true), $trama[0]['posicionId'], $trama[0]['vehiculoId'], $trama[0]);
         } catch (RequestException $e) {
             $this->handleRequestException($e, $trama);
         }
