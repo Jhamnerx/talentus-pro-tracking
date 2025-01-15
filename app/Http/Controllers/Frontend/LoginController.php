@@ -90,7 +90,7 @@ class LoginController extends Controller
                     return route($route);
 
                 if (Auth::User()->isManager() || Auth::User()->isAdmin())
-                    return route('admin');
+                    return route('objects.index');
 
                 return route('objects.index');
             });
