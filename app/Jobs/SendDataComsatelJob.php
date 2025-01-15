@@ -118,8 +118,8 @@ class SendDataComsatelJob implements ShouldQueue
                 ],
                 'body' => json_encode($trama, JSON_PRESERVE_ZERO_FRACTION),
             ]);
-            if ($this->service['logs'])
-                $this->processResponse(json_decode($response->getBody()->getContents(), true), $trama[0]['posicionId'], $trama[0]['vehiculoId'], $trama[0]);
+
+            $this->processResponse(json_decode($response->getBody()->getContents(), true), $trama[0]['posicionId'], $trama[0]['vehiculoId'], $trama[0]);
         } catch (RequestException $e) {
             $this->handleRequestException($e, $trama);
         }
@@ -141,16 +141,17 @@ class SendDataComsatelJob implements ShouldQueue
         switch ($statusCode) {
             case 200:
                 // Log para respuesta 200
-                $this->logService->logToDatabase(
-                    $service,
-                    $plateNumber,
-                    'success',
-                    $json,
-                    ['message' => $mensaje],
-                    [],
-                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
-                    1,
-                );
+                if ($this->service['logs'])
+                    $this->logService->logToDatabase(
+                        $service,
+                        $plateNumber,
+                        'success',
+                        $json,
+                        ['message' => $mensaje],
+                        [],
+                        Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                        1,
+                    );
                 // Eliminar el registro si la respuesta fue exitosa
                 DB::transaction(function () use ($posicionId) {
                     Comsatel::where('id', $posicionId)->delete();
@@ -159,44 +160,48 @@ class SendDataComsatelJob implements ShouldQueue
 
             case 400:
                 // Log para respuesta 400
-                $this->logService->logToDatabase(
-                    $service,
-                    $plateNumber,
-                    'success',
-                    $json,
-                    ['message' => $mensaje],
-                    [],
-                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
-                    1,
-                );
+
+                if ($this->service['logs'])
+                    $this->logService->logToDatabase(
+                        $service,
+                        $plateNumber,
+                        'success',
+                        $json,
+                        ['message' => $mensaje],
+                        [],
+                        Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                        1,
+                    );
                 break;
 
             case 500:
                 // Log para respuesta 500
-                $this->logService->logToDatabase(
-                    $service,
-                    $plateNumber,
-                    'success',
-                    $json,
-                    ['message' => $mensaje],
-                    [],
-                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
-                    1,
-                );
+                if ($this->service['logs'])
+                    $this->logService->logToDatabase(
+                        $service,
+                        $plateNumber,
+                        'success',
+                        $json,
+                        ['message' => $mensaje],
+                        [],
+                        Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                        1,
+                    );
                 break;
 
             default:
                 // Log para otros casos
-                $this->logService->logToDatabase(
-                    $service,
-                    $plateNumber,
-                    'other',
-                    $json,
-                    ['message' => $mensaje],
-                    [],
-                    Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
-                    1,
-                );
+                if ($this->service['logs'])
+                    $this->logService->logToDatabase(
+                        $service,
+                        $plateNumber,
+                        'other',
+                        $json,
+                        ['message' => $mensaje],
+                        [],
+                        Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                        1,
+                    );
                 break;
         }
     }
