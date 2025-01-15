@@ -7,6 +7,7 @@ use GuzzleHttp\Client;
 use App\Services\LogService;
 use Illuminate\Bus\Queueable;
 use Tobuli\Entities\Comsatel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
@@ -150,6 +151,10 @@ class SendDataComsatelJob implements ShouldQueue
                     Carbon::parse($json['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
                     1,
                 );
+                // Eliminar el registro si la respuesta fue exitosa
+                DB::transaction(function () use ($posicionId) {
+                    Comsatel::where('id', $posicionId)->delete();
+                });
                 break;
 
             case 400:
