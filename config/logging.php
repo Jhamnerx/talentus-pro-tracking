@@ -36,7 +36,7 @@ return [
         'stack' => [
             'driver' => 'stack',
             'channels' => ['single'],
-//            'channels' => ['single', 'bugsnag'], // BugSnag should be installed and configured
+            //            'channels' => ['single', 'bugsnag'], // BugSnag should be installed and configured
         ],
 
         'single' => [
