@@ -40,7 +40,7 @@ class DeviceFormValidator extends Validator
             'osinergmin' => 'boolean',
             'mininter' => 'boolean',
             'consatel' => 'boolean',
-            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^[A-Z0-9]{3}-[A-Z0-9]{3}$/|regex:/^[A-Z]{2}-\d{4}$/',
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^[A-Z]{2}-\d{4}$|^[A-Z0-9]{3}-[A-Z0-9]{3}$/',
             'device_type_id' => 'required'
 
         ],
@@ -72,7 +72,7 @@ class DeviceFormValidator extends Validator
             'osinergmin' => 'boolean',
             'mininter' => 'boolean',
             'consatel' => 'boolean',
-            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^[A-Z0-9]{3}-[A-Z0-9]{3}$/|regex:/^[A-Z]{2}-\d{4}$/',
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^[A-Z]{2}-\d{4}$|^[A-Z0-9]{3}-[A-Z0-9]{3}$/',
             'device_type_id' => 'required'
         ],
     ];
