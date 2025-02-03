@@ -28,15 +28,15 @@ class ObjectHistoryReport extends DeviceReport
 
     protected function processPosition($position, &$parameters, $sensors)
     {
-        foreach ($position->parameters as $key => $value) {
-            if (empty($key))
-                continue;
+        // foreach ($position->parameters as $key => $value) {
+        //     if (empty($key))
+        //         continue;
 
-            if (in_array($key, $parameters))
-                continue;
+        //     if (in_array($key, $parameters))
+        //         continue;
 
-            $parameters[] = $key;
-        }
+        //     $parameters[] = $key;
+        // }
 
         if ($this->anonymizer->isAnonymous($position)) {
             $position->latitude = null;
@@ -51,7 +51,7 @@ class ObjectHistoryReport extends DeviceReport
             'latitude'   => $position->latitude,
             'longitude'  => $position->longitude,
             'location'   => $this->getLocation($position, $this->getAddress($position)),
-            'parameters' => $position->parameters,
+            //'parameters' => $position->parameters,
             'sensors'    => $sensors->mapWithKeys(function ($sensor) use ($position) {
                 return [$sensor->id => $sensor->getValueFormated($position, false)];
             })
@@ -87,7 +87,7 @@ class ObjectHistoryReport extends DeviceReport
             return [
                 'meta'  => $this->getDeviceMeta($device),
                 'error' => trans('front.nothing_found_request'),
-                'parameters' => $parameters,
+                // 'parameters' => $parameters,
                 'sensors'    => $sensors
             ];
 
@@ -96,7 +96,7 @@ class ObjectHistoryReport extends DeviceReport
             'table'      => [
                 'rows' => $rows,
             ],
-            'parameters' => $parameters,
+            //'parameters' => $parameters,
             'sensors'    => $sensors
         ];
     }
