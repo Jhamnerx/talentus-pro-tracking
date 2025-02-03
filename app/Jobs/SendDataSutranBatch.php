@@ -87,7 +87,7 @@ class SendDataSutranBatch implements ShouldQueue
     public function sendDataSutran($tramas)
     {
 
-        $ip_sutran = config('app.env') == 'local' ? 'https://ws03.sutran.ehg.pe/api/v1.0/transmisiones' : 'https://ws03.sutran.gob.pe/api/v1.0/transmisiones';
+        $ip_sutran = 'https://ws03.sutran.gob.pe/api/v1.0/transmisiones';
         $tramas_por_grupo = array_chunk($tramas, 150); // Limitar a 150 tramas como máximo según la documentación
 
         foreach ($tramas_por_grupo as $grupo) {
