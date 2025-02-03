@@ -40,44 +40,50 @@ class SendDataSutranBatch implements ShouldQueue
     public function handle()
     {
 
-        $this->logService = app(LogService::class); // Instanciar el servicio de logs
+        try {
 
-        $positions = Sutran::offset($this->offset)
-            ->limit($this->batchSize)
-            ->whereIn('plate', $this->plates)
-            ->with('device')
-            ->get();
-        $tramas = [];
 
-        foreach ($positions as $position) {
+            $this->logService = app(LogService::class); // Instanciar el servicio de logs
 
-            if ($position->direction > 360) {
-                $position->delete(); // Eliminar trama con dirección inválida
-                continue;
+            $positions = Sutran::offset($this->offset)
+                ->limit($this->batchSize)
+                ->whereIn('plate', $this->plates)
+                ->with('device')
+                ->get();
+            $tramas = [];
+
+            foreach ($positions as $position) {
+
+                if ($position->direction > 360) {
+                    $position->delete(); // Eliminar trama con dirección inválida
+                    continue;
+                }
+
+                $estado = $position['speed'] == 0 ? 'PA' : ($position['speed'] > 5 ? 'ER' : 'PA');
+                $timestamp = strtotime($position['time_device']);
+                $timezone = new DateTimeZone('America/Lima'); // Asegurar que es GMT-5
+                $date = new DateTime();
+                $date->setTimestamp($timestamp);
+                $date->setTimezone($timezone);
+                $gps_date = $date->format('Y-m-d H:i:s');
+                $trama = [
+                    'id' => $position->id,
+                    'plate' => trim(str_replace('-', '', $position->plate)),
+                    'geo' => [$position->latitud, $position->longitud],
+                    'direction' => intval($position->direction ?? 0),
+                    'event' => $estado,
+                    'speed' => intval($position->speed), // Confirmar que el valor sea entero
+                    'time_device' => $gps_date,
+                    'imei' => intval($position->device->imei)
+                ];
+
+                $tramas[] = $trama;
             }
 
-            $estado = $position['speed'] == 0 ? 'PA' : ($position['speed'] > 5 ? 'ER' : 'PA');
-            $timestamp = strtotime($position['time_device']);
-            $timezone = new DateTimeZone('America/Lima'); // Asegurar que es GMT-5
-            $date = new DateTime();
-            $date->setTimestamp($timestamp);
-            $date->setTimezone($timezone);
-            $gps_date = $date->format('Y-m-d H:i:s');
-            $trama = [
-                'id' => $position->id,
-                'plate' => trim(str_replace('-', '', $position->plate)),
-                'geo' => [$position->latitud, $position->longitud],
-                'direction' => intval($position->direction ?? 0),
-                'event' => $estado,
-                'speed' => intval($position->speed), // Confirmar que el valor sea entero
-                'time_device' => $gps_date,
-                'imei' => intval($position->device->imei)
-            ];
-
-            $tramas[] = $trama;
+            $this->sendDataSutran($tramas);
+        } catch (\Exception $e) {
+            Log::error('Error al enviar tramas a Sutran: ' . $e->getMessage());
         }
-
-        $this->sendDataSutran($tramas);
     }
 
     public function sendDataSutran($tramas)
