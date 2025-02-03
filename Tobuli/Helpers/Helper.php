@@ -1637,7 +1637,7 @@ function getJsConfig()
     $mapControls = settings('map_controls');
 
     return [
-        'debug' => false,
+        'debug' => true,
         'user_id' => $user->id,
         'version' => config('tobuli.version'),
         'firstLogin' => $user && ! $user->isLoggedBefore(),

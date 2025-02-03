@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Redis;
 use Symfony\Component\Process\Process;
 
-class Server {
+class Server
+{
 
     const SPACE_PERCENTAGE_WARNING = 98;
 
@@ -21,7 +22,7 @@ class Server {
         try {
             $prefix = php_sapi_name() . '.server.';
 
-            $ip = Cache::get($prefix.'ip');
+            $ip = Cache::get($prefix . 'ip');
 
             if ($ip)
                 return $ip;
@@ -34,14 +35,15 @@ class Server {
             $ip = trim($ip);
 
             if (ip2long($ip) && !$this->isPrivateIP($ip))
-                Cache::put($prefix.'ip', $ip, 15 * 60);
-
-        } catch (\Exception $e){};
+                Cache::put($prefix . 'ip', $ip, 15 * 60);
+        } catch (\Exception $e) {
+        };
 
         return $ip;
     }
 
-    public function isPrivateIP($value) {
+    public function isPrivateIP($value)
+    {
         if ($value == '127.0.0.1')
             return true;
 
@@ -61,7 +63,7 @@ class Server {
         try {
             $prefix = php_sapi_name() . '.server.';
 
-            $hostname = Cache::get($prefix.'hostname');
+            $hostname = Cache::get($prefix . 'hostname');
 
             if ($hostname)
                 return $hostname;
@@ -72,9 +74,9 @@ class Server {
                 $hostname = gethostname();
 
             if ($hostname && !$this->isPrivateIP($hostname))
-                Cache::put($prefix.'hostname', $hostname, 5 * 60);
-
-        } catch (\Exception $e){};
+                Cache::put($prefix . 'hostname', $hostname, 5 * 60);
+        } catch (\Exception $e) {
+        };
 
         return $hostname;
     }
@@ -83,7 +85,7 @@ class Server {
     {
         $url = config('app.url');
 
-        if ( !empty($url) && $url != 'http://localhost' )
+        if (!empty($url) && $url != 'http://localhost')
             return $url;
 
         $hostname = $this->hostname();
@@ -168,24 +170,25 @@ class Server {
         return null;
     }
 
-    public function setMemoryLimit($limit, $force = false) {
+    public function setMemoryLimit($limit, $force = false)
+    {
         if (!$force && $limit < $this->getMemoryLimit())
             return;
 
         ini_set('memory_limit', $limit);
     }
 
-    public function getMemoryLimit() {
+    public function getMemoryLimit()
+    {
         return ini_get('memory_limit');
     }
 
     public function databaseSpacePercentage()
     {
         try {
-            $directory = exec('mysql -u root -p'. config('database.connections.mysql.password') .' -Bse "select @@datadir;"');
+            $directory = exec('mysql -u root -p' . config('database.connections.mysql.password') . ' -Bse "select @@datadir;"');
 
             return $this->spaceUsePercentage($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -197,7 +200,6 @@ class Server {
             $directory = storage_path();
 
             return $this->spaceUsePercentage($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -209,7 +211,6 @@ class Server {
             $directory = config('tobuli.logs_path');
 
             return $this->spaceUsePercentage($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -230,10 +231,9 @@ class Server {
     public function databaseFreeSpace()
     {
         try {
-            $directory = exec('mysql -u root -p'. config('database.connections.mysql.password') .' -Bse "select @@datadir;"');
+            $directory = exec('mysql -u root -p' . config('database.connections.mysql.password') . ' -Bse "select @@datadir;"');
 
             return disk_free_space($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -245,7 +245,6 @@ class Server {
             $directory = storage_path();
 
             return disk_free_space($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -257,7 +256,6 @@ class Server {
             $directory = config('tobuli.logs_path');
 
             return disk_free_space($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -266,10 +264,9 @@ class Server {
     public function databaseTotalSpace()
     {
         try {
-            $directory = exec('mysql -u root -p'. config('database.connections.mysql.password') .' -Bse "select @@datadir;"');
+            $directory = exec('mysql -u root -p' . config('database.connections.mysql.password') . ' -Bse "select @@datadir;"');
 
             return disk_total_space($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -281,7 +278,6 @@ class Server {
             $directory = storage_path();
 
             return disk_total_space($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -293,7 +289,6 @@ class Server {
             $directory = config('tobuli.logs_path');
 
             return disk_total_space($directory);
-
         } catch (\Exception $e) {
             return 0;
         }
@@ -302,7 +297,7 @@ class Server {
     public function isOnSameDisk()
     {
         $db_disk = exec('stat -c "%d" ' .
-            exec('mysql -u root -p'. config('database.connections.mysql.password') .' -Bse "select @@datadir;"'));
+            exec('mysql -u root -p' . config('database.connections.mysql.password') . ' -Bse "select @@datadir;"'));
 
         $traccar_disk = exec('stat -c "%d" ' . config('tobuli.logs_path'));
 
@@ -329,15 +324,15 @@ class Server {
             \DB::raw('SELECT 1+1');
 
             $services['db'] = true;
+        } catch (\Exception $e) {
         }
-        catch (\Exception $e) {}
 
         try {
             $redis = Redis::connection();
 
             $services['redis'] = true;
+        } catch (\Exception $e) {
         }
-        catch (\Exception $e) {}
 
         return $services;
     }
@@ -353,7 +348,7 @@ class Server {
 
         echo $process->getOutput() . '<br>';
 
-        if ( ! $process->isSuccessful())
+        if (! $process->isSuccessful())
             return false;
 
         if (is_null($expect))

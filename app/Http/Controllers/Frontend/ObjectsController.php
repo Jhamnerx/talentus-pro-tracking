@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Exceptions\PermissionException;
 use App\Http\Controllers\Controller;
@@ -14,7 +16,8 @@ use Illuminate\Support\Facades\Request;
 use ModalHelpers\SendCommandModalHelper;
 use Tobuli\Services\UserOpenGroupService;
 
-class ObjectsController extends Controller {
+class ObjectsController extends Controller
+{
 
     const LOAD_LIMIT = 100;
 
@@ -42,8 +45,9 @@ class ObjectsController extends Controller {
             ->with(compact('devices', 'history', 'version', 'dashboard'));
     }
 
-    public function items() {
-        if ( ! $this->user->perm('devices', 'view') )
+    public function items()
+    {
+        if (! $this->user->perm('devices', 'view'))
             throw new PermissionException();
 
         $full   = request()->get('full');
@@ -54,12 +58,12 @@ class ObjectsController extends Controller {
             ->filter(request()->all())
             ->filter(request()->filters)
             ->wasConnected()
-            ->when(!$full, function($query) {
+            ->when(!$full, function ($query) {
                 $query->visible();
             })
             ->clearOrdersBy()
             //optizime first page load
-            ->when(!$cursor, function($query) {
+            ->when(!$cursor, function ($query) {
                 $query->where('devices.id', '>', 0);
             })
             ->cursorPaginate(500);
@@ -71,7 +75,8 @@ class ObjectsController extends Controller {
         );
     }
 
-    public function itemsSimple() {
+    public function itemsSimple()
+    {
 
         $deviceCollection = $this->user->devices()
             ->search(Request::input('search_phrase'))
@@ -81,7 +86,8 @@ class ObjectsController extends Controller {
         return view('front::Objects.itemsSimple')->with(compact('deviceCollection'));
     }
 
-    public function itemsJson() {
+    public function itemsJson()
+    {
         $data = DeviceModalHelper::itemsJson();
 
         return $data;
@@ -123,12 +129,12 @@ class ObjectsController extends Controller {
             $times = 1;
             $val = '';
             if (isset($position)) {
-                while($tr && $times < 6) {
+                while ($tr && $times < 6) {
                     $positions = $item->positions()->where('time', '>', $position->time)->orderBy('time', 'asc')->get();
                     if ($times >= 5)
                         $positions = $item->positions()->select('other')->orderBy('time', 'desc')->limit(2)->get();
                     foreach ($positions as $pos) {
-                        preg_match('/<'.preg_quote('alarm', '/').'>(.*?)<\/'.preg_quote('alarm', '/').'>/s', $pos->other, $matches);
+                        preg_match('/<' . preg_quote('alarm', '/') . '>(.*?)<\/' . preg_quote('alarm', '/') . '>/s', $pos->other, $matches);
                         if (!isset($matches['1']))
                             continue;
 
@@ -157,8 +163,7 @@ class ObjectsController extends Controller {
             }
 
             return ['status' => $status, 'alarm' => intval($alarm), 'error' => trans('front.unexpected_error')];
-        }
-        else {
+        } else {
             return ['status' => 0, 'alarm' => intval($alarm), 'error' => isset($result['error']) ? $result['error'] : ''];
         }
     }
