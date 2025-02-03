@@ -85,24 +85,27 @@ class EmailTemplatesController extends BaseController
         $replacers = (new TemplateManager())->loadTemplateBuilder($item->name)->getPlaceholders($item);
         // Crear vista si no existe
         $directory = resource_path('views/emails');
-        $filePath = $directory . '/' . $item->name . '.blade.php';
+        $subDirectory = $item->user_id !== null ? $directory . '/' . $item->user_id : $directory;
+        $filePath = $subDirectory . '/' . $item->name . '.blade.php';
 
-        // Verificar si el directorio existe, si no, crearlo
-        if (!File::exists($directory)) {
-            File::makeDirectory($directory, 0755, true);
+        // Verificar si el subdirectorio existe, si no, crearlo
+        if (!File::exists($subDirectory)) {
+            File::makeDirectory($subDirectory, 0755, true);
         }
 
         // Verificar permisos de escritura
-        if (!is_writable($directory)) {
-            abort(500, "El directorio $directory no tiene permisos de escritura.");
+        if (!is_writable($subDirectory)) {
+            abort(500, "El directorio $subDirectory no tiene permisos de escritura.");
         }
 
-        // Verificar si el archivo existe, si no, crearlo
+        // Verificar si el archivo existe, si no, crearlo con contenido predeterminado
         if (!File::exists($filePath)) {
-            File::put($filePath, ''); // Crear un archivo vacío
+            $defaultContent = '<!-- Contenido predeterminado de la plantilla de correo electrónico -->';
+            File::put($filePath, $defaultContent);
         }
 
-        $content = view()->make('emails.' . $item->name)->render();
+        // Cargar el contenido de la vista
+        $content = view()->make('emails.' . ($item->user_id !== null ? $item->user_id . '.' : '') . $item->name)->render();
 
         return View::make('admin::' . ucfirst($this->section) . '.edit')->with(compact('item', 'replacers', 'content'));
     }
@@ -117,22 +120,28 @@ class EmailTemplatesController extends BaseController
 
         $this->emailTemplateFormValidator->validate('update', $input, $id);
 
-        //GUARDAR VISTA DE EMAIL
+        // GUARDAR VISTA DE EMAIL
         if (isset($input['content'])) {
-
             $directory = resource_path('views/emails');
-            $url = $directory . '/' . $item->name . '.blade.php';
-            // Verificar si el directorio existe, si no, crearlo
-            if (!File::exists($directory)) {
-                File::makeDirectory($directory, 0755, true);
+            $subDirectory = $item->user_id !== null ? $directory . '/' . $item->user_id : $directory;
+            $filePath = $subDirectory . '/' . $item->name . '.blade.php';
+
+            // Verificar si el subdirectorio existe, si no, crearlo
+            if (!File::exists($subDirectory)) {
+                File::makeDirectory($subDirectory, 0755, true);
+            }
+
+            // Verificar permisos de escritura
+            if (!is_writable($subDirectory)) {
+                abort(500, "El directorio $subDirectory no tiene permisos de escritura.");
             }
 
             try {
                 // Guardar el contenido en el archivo
-                File::put($url, $input['content']);
+                File::put($filePath, $input['content']);
             } catch (\Exception $e) {
                 // Registrar el error
-                Log::error('Error al guardar el archivo: ' . $e->getMessage());
+                Log::error('Error al guardar el archivo: ' . $filePath . ' - ' . $e->getMessage());
             }
         }
 

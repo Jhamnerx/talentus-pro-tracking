@@ -1,0 +1,1 @@
+<!-- Contenido predeterminado de la plantilla de correo electrónico -->

@@ -31,9 +31,9 @@ abstract class TemplateBuilder
             $variables = array_merge($variables, $this->_variablesEmail());
         }
 
-        if (is_array($data) && $template instanceof EmailTemplate) {
-            $vista = view('emails.' . $template->name, $data)->render();
-            Log::info('Email template: ' . $template->name . ' rendered');
+
+        if ($template instanceof EmailTemplate) {
+            $vista = view($template->user_id ? 'emails.' . $template->user_id . "." . $template->name : 'emails.' . $template->name, $data)->render();
             $template->note = $vista; // Asignar $vista a $template->note
         }
 

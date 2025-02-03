@@ -32,7 +32,7 @@ class DispatchSutranJobs implements ShouldQueue
 
             if (empty($plates)) {
                 Log::info('No plates found for user: ' . $user->id . '. Job terminated.');
-                continue;
+                //continue;
             }
 
             $service = $user->services['sutran'];
