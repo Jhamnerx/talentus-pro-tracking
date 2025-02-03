@@ -246,7 +246,7 @@ class Event extends AbstractEntity implements DisplayInterface
             case Event::TYPE_ZONE_OVERSPEED:
                 $speed  = Arr::get($this->additional, 'geofence', 0);
                 $exceso  = Arr::get($this->additional, 'exceso', 0);
-                $detail = Arr::get($this->additional, 'geofence') . ": Exceso" . Formatter::speed()->human($exceso);
+                $detail = Arr::get($this->additional, 'geofence') . ": Exceso " . Formatter::speed()->human($exceso);
                 break;
             case Event::TYPE_DRIVER:
             case Event::TYPE_DRIVER_UNAUTHORIZED:

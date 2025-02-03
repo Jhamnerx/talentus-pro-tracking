@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
             margin: 0;
             padding: 0;
         }
+
         .container {
             width: 100%;
             max-width: 600px;
@@ -19,26 +21,32 @@
             border: 1px solid #e0e0e0;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .header {
             text-align: center;
             padding: 10px 0;
         }
+
         .header img {
             max-width: 150px;
         }
+
         .content {
             padding: 20px;
             text-align: left;
         }
+
         .content h1 {
             font-size: 24px;
             color: #333333;
         }
+
         .content p {
             font-size: 16px;
             color: #666666;
             line-height: 1.5;
         }
+
         .alert-info {
             background-color: #ffeded;
             padding: 10px;
@@ -46,6 +54,7 @@
             margin-top: 20px;
             border-left: 5px solid #ff4d4d;
         }
+
         .alert-info h2 {
             font-size: 20px;
             color: #ff4d4d;
@@ -53,13 +62,16 @@
             display: flex;
             align-items: center;
         }
+
         .alert-info h2 svg {
             margin-right: 10px;
         }
+
         .alert-info p {
             margin: 5px 0;
             font-size: 16px;
         }
+
         .footer {
             text-align: center;
             padding: 10px 0;
@@ -68,18 +80,22 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
-          [logo]
+            [logo]
         </div>
         <div class="content">
             <h1>Hola,</h1>
             <div class="alert-info">
                 <h2>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0Z" fill="#FF4D4D"/>
-                        <path d="M11 17H13V19H11V17ZM11 5H13V15H11V5Z" fill="white"/>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 0C18.6274 0 24 5.37258 24 12C24 18.6274 18.6274 24 12 24C5.37258 24 0 18.6274 0 12C0 5.37258 5.37258 0 12 0Z"
+                            fill="#FF4D4D" />
+                        <path d="M11 17H13V19H11V17ZM11 5H13V15H11V5Z" fill="white" />
                     </svg>
                     Notificación de Alerta
                 </h2>
@@ -99,4 +115,5 @@
         </div>
     </div>
 </body>
+
 </html>

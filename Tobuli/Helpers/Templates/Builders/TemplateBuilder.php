@@ -33,6 +33,7 @@ abstract class TemplateBuilder
 
         if (is_array($data) && $template instanceof EmailTemplate) {
             $vista = view('emails.' . $template->name, $data)->render();
+            Log::info('Email template: ' . $template->name . ' rendered');
             $template->note = $vista; // Asignar $vista a $template->note
         }
 
