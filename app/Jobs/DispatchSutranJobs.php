@@ -19,6 +19,11 @@ class DispatchSutranJobs implements ShouldQueue
 
     public $tries = 3;
 
+    public function __construct()
+    {
+        $this->onQueue('web-services');
+    }
+
     public function handle()
     {
 
