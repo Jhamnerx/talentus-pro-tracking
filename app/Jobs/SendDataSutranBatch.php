@@ -107,7 +107,7 @@ class SendDataSutranBatch implements ShouldQueue
             $responseSutran = $response->getBody()->getContents();
             $this->actionAfterSend($tramas, json_decode($responseSutran, true));
         } catch (RequestException $e) {
-
+            Log::error('Error al enviar tramas a Sutran: ' . $e->getMessage());
             if ($e->hasResponse()) {
 
                 $response = $e->getResponse();
