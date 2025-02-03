@@ -25,13 +25,13 @@ class DispatchSutranJobs implements ShouldQueue
         $users = UserRepo::getActiveServiceManagers(1, 'sutran');
 
         foreach ($users as $user) {
-
+            Log::info('Processing user: ' . $user . ' - sutran.');
             $plates = $user->devices()->where('mtc', 1)->get()->pluck('plate_number')->map(function ($plate) {
                 return trim($plate);
             })->toArray();
 
             if (empty($plates)) {
-                Log::info('No plates found for user: ' . $user->id . '. Job terminated.');
+                Log::info('No plates found for user: ' . $user->id . '. Job terminated - sutran.');
                 //continue;
             }
 
