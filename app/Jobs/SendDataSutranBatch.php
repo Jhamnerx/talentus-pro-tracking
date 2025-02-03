@@ -43,6 +43,7 @@ class SendDataSutranBatch implements ShouldQueue
         try {
 
 
+            Log::info('Sending data to Sutran');
             $this->logService = app(LogService::class); // Instanciar el servicio de logs
 
             $positions = Sutran::offset($this->offset)
