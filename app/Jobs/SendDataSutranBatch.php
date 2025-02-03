@@ -86,8 +86,6 @@ class SendDataSutranBatch implements ShouldQueue
 
     public function sendDataSutran($tramas)
     {
-        Log::info('Enviando tramas a Sutran: ' . json_encode($tramas));
-        Log::info('Token de acceso: ' . $this->service['token']);
         $ip_sutran = 'https://ws03.sutran.gob.pe/api/v1.0/transmisiones';
         $tramas_por_grupo = array_chunk($tramas, 150); // Limitar a 150 tramas como máximo según la documentación
 
@@ -113,7 +111,7 @@ class SendDataSutranBatch implements ShouldQueue
             Log::info('Respuesta de Sutran: ' . $responseSutran);
             $this->actionAfterSend($tramas, json_decode($responseSutran, true));
         } catch (RequestException $e) {
-            Log::error('Error al enviar tramas a Sutran: ' . $e->getMessage());
+
             if ($e->hasResponse()) {
 
                 $response = $e->getResponse();
@@ -136,6 +134,8 @@ class SendDataSutranBatch implements ShouldQueue
 
     public function actionAfterSend($tramas, $response)
     {
+        Log::info('Respuesta de Sutran: ' . json_encode($response));
+        Log::info('logService: ' . json_encode($this->service));
         $ids = [];
 
         if ($response['status'] == 200 && empty($response['error_plates'])) {
