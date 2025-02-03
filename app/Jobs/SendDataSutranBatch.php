@@ -34,7 +34,7 @@ class SendDataSutranBatch implements ShouldQueue
         $this->batchSize = $batchSize;
         $this->service = $service;
         $this->plates = $plates;
-        $this->onQueue('web-services');
+        $this->onQueue('web-services-sutran');
     }
 
     public function handle()
@@ -108,7 +108,6 @@ class SendDataSutranBatch implements ShouldQueue
             ]);
 
             $responseSutran = $response->getBody()->getContents();
-            Log::info('Respuesta de Sutran: ' . $responseSutran);
             $this->actionAfterSend($tramas, json_decode($responseSutran, true));
         } catch (RequestException $e) {
 
@@ -134,8 +133,7 @@ class SendDataSutranBatch implements ShouldQueue
 
     public function actionAfterSend($tramas, $response)
     {
-        Log::info('Respuesta de Sutran: ' . json_encode($response));
-        Log::info('logService: ' . json_encode($this->service));
+
         $ids = [];
 
         if ($response['status'] == 200 && empty($response['error_plates'])) {
