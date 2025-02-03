@@ -37,7 +37,7 @@ class DispatchSutranJobs implements ShouldQueue
             Log::info('Plates found for user: ' . $user->id . '. Plates: ' . implode(', ', $plates));
             $service = $user->services['sutran'];
 
-            $batchSize = 2000; // Tamaño del lote
+            $batchSize = 5000; // Tamaño del lote
             $totalRecords = Sutran::whereIn('plate', $plates)->count();
 
             for ($i = 0; $i < $totalRecords; $i += $batchSize) {
