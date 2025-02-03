@@ -41,9 +41,6 @@ class SendDataSutranBatch implements ShouldQueue
     {
 
         try {
-
-
-            Log::info('Sending data to Sutran');
             $this->logService = app(LogService::class); // Instanciar el servicio de logs
 
             $positions = Sutran::offset($this->offset)
@@ -112,6 +109,7 @@ class SendDataSutranBatch implements ShouldQueue
             ]);
 
             $responseSutran = $response->getBody()->getContents();
+            Log::info('Respuesta de Sutran: ' . $responseSutran);
             $this->actionAfterSend($tramas, json_decode($responseSutran, true));
         } catch (RequestException $e) {
             Log::error('Error al enviar tramas a Sutran: ' . $e->getMessage());
