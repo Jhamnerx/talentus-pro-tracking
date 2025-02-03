@@ -34,7 +34,7 @@ class DispatchSutranJobs implements ShouldQueue
                 Log::info('No plates found for user: ' . $user->id . '. Job terminated.');
                 continue;
             }
-
+            Log::info('Plates found for user: ' . $user->id . '. Plates: ' . implode(', ', $plates));
             $service = $user->services['sutran'];
 
             $batchSize = 2000; // Tamaño del lote
