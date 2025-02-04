@@ -16,7 +16,7 @@ return [
     'general_information_6_report' => env('GENERAL_INFORMATION_6_REPORT', true),
     'device_app_single_usage' => env('DEVICE_APP_SINGLE_USAGE', false),
     'media_categories' => env('ENABLE_MEDIA_CATEGORIES', false),
-    'device_tracker_app_login' => env('ENABLE_TRACKER_APP_LOGIN', false),
+    'device_tracker_app_login' => env('ENABLE_TRACKER_APP_LOGIN', true),
     'external_url' => env('ENABLE_EXTERNAL_URL', false),
     'login_token' => env('ENABLE_LOGIN_TOKEN', false),
     'report_fuel_tank_usage' => env('REPORT_FUEL_TANK_USAGE', true),
