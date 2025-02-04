@@ -1648,6 +1648,10 @@ div#history_tab .dropdown .btn-default {
 	
 }
 
+#widgets .widget-services .table {
+	min-width: 289px;
+}
+	
 .light #widgets .widget {
 	 background: var(--white);
 	
