@@ -28,7 +28,10 @@ class CopyDataToTableMininter implements ShouldQueue
      *
      * @return void
      */
-    public function __construct() {}
+    public function __construct()
+    {
+        $this->onQueue('web-services');
+    }
 
     /**
      * Execute the job.
@@ -70,7 +73,7 @@ class CopyDataToTableMininter implements ShouldQueue
         //         });
         // }
 
-        Log::info('Se han copiado los datos a la tabla mininter 17');
+
     }
 
 
@@ -114,6 +117,7 @@ class CopyDataToTableMininter implements ShouldQueue
                 'other' => $others,
             ]
         );
+        Log::info('Data Mininter: ' . $i->id);
     }
 
 
