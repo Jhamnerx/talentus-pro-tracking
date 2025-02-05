@@ -89,7 +89,7 @@ class CopyDataToTableMininter implements ShouldQueue
 
         $others = $this->parseString($position->other);
 
-        $i = $device->mininter()->create(
+        $i = $device->dataMininter()->create(
             [
                 'device_id' => $device->id,
                 'alarma' => 0,
