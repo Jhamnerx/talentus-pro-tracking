@@ -20,8 +20,6 @@ use Tobuli\Helpers\Formatter\Facades\Formatter;
 class CopyDataToTableMininter implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    // Establece un tiempo máximo de ejecución en segundos
-    public $timeout = 800; // 1 hora
 
     /**
      * Create a new job instance.
@@ -54,9 +52,10 @@ class CopyDataToTableMininter implements ShouldQueue
         foreach ($devices as $device) {
 
             $device->positions()
-                ->whereBetween('time', ['2025-02-02 05:00:00', '2024-02-03 05:00:00'])
+                ->whereBetween('time', ['2025-02-02 05:00:00', '2025-02-03 05:00:00'])
                 ->chunk(100, function ($positions) use ($device) {
                     foreach ($positions as $position) {
+                        Log::info('Device e: ' . $position);
                         $this->saveDataMininter($device, $position);
                     }
                 });
@@ -79,6 +78,7 @@ class CopyDataToTableMininter implements ShouldQueue
 
     public function saveDataMininter($device, $position)
     {
+
         $idMunicipalidad = "";
         $ubigeo = "";
 

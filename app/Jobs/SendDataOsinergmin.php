@@ -32,7 +32,7 @@ class SendDataOsinergmin extends Job implements ShouldQueue
         $this->service = $service;
         $this->plates = $plates;
 
-        // $this->onQueue('web-services');
+        $this->onQueue('web-services');
     }
 
     public function handle()
