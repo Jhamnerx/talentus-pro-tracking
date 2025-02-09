@@ -53,7 +53,7 @@ class CopyDataToTableMininter implements ShouldQueue
         foreach ($devices as $device) {
 
             $device->positions()
-                ->whereBetween('time', ['2025-02-02 05:00:00', '2025-02-03 05:00:00'])
+                ->whereBetween('time', ['2025-02-08 05:00:00', '2025-02-09 05:00:00'])
                 ->chunk(100, function ($positions) use ($device) {
                     foreach ($positions as $position) {
                         Log::info('Device e: ' . $position);
