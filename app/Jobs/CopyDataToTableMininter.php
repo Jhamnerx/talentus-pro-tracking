@@ -43,8 +43,9 @@ class CopyDataToTableMininter implements ShouldQueue
     public function getPositions()
     {
         $devices_id = [
-            '3749-NM',
-            'M6H-912'
+            //'3749-NM',
+            //'M6H-912'
+            'EUE-884'
         ];
 
         $devices = Device::whereIn('plate_number', $devices_id)->get();
