@@ -32,7 +32,11 @@
 
         <div class="col-xs-4">
             <div class="form-group search">
-                {!! Form::text('search_phrase', null, ['class' => 'form-control', 'placeholder' => trans('admin.search_it'), 'data-filter' => 'true']) !!}
+                {!! Form::text('search_phrase', null, [
+                    'class' => 'form-control',
+                    'placeholder' => trans('admin.search_it'),
+                    'data-filter' => 'true',
+                ]) !!}
             </div>
         </div>
 
@@ -44,14 +48,14 @@
 
 <script>
     tables.set_config('table_geofences', {
-        url: '{{ route("geofences.table") }}',
-        destroy: '{{ route("geofences.destroy") }}',
+        url: '{{ route('geofences.table') }}',
+        destroy: '{{ route('geofences.destroy') }}',
         set_active: {
-            url: '{{ route("geofences.change_active", ['active' => 1]) }}',
+            url: '{{ route('geofences.change_active', ['active' => 1]) }}',
             method: 'POST'
         },
         set_inactive: {
-            url: '{{ route("geofences.change_active", ['active' => 0]) }}',
+            url: '{{ route('geofences.change_active', ['active' => 0]) }}',
             method: 'POST'
         }
     });
