@@ -40,7 +40,7 @@
                         {{ $item->name }}
                     </td>
                     <td>
-                        {{ $item->speed_limit }} Km/h
+                        {{ $item->speed_limit }} km/h
                     </td>
                     <td>
                         {{ trans('front.' . $item->type) }}
