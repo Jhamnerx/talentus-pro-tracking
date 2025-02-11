@@ -45,6 +45,8 @@ class DeviceMapTransformer extends DeviceTransformer
             $tailColor = $entity->tail_color; // Azul
         }
 
+        $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay());
+        $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay());
         return [
             'id'    => (int)$entity->id,
             'name'  => $entity->name,
@@ -78,7 +80,7 @@ class DeviceMapTransformer extends DeviceTransformer
                 'inicio' => Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay()),
                 'fin' => Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay()),
             ],
-            'distancia_hoy'     => Formatter::distance()->format($entity->getSumDistance(Formatter::time()->reverse(Carbon::now()->startOfDay()), Formatter::time()->reverse(Carbon::now()->endOfDay()))),
+            'distancia_hoy'     => Formatter::distance()->format($entity->getSumDistance($inicio, $fin)),
 
         ];
     }
