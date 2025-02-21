@@ -12,7 +12,7 @@ class GroupOverspeed extends ActionGroup
         ];
     }
 
-    public function boot(){}
+    public function boot() {}
 
     public function proccess($position)
     {
@@ -37,10 +37,10 @@ class GroupOverspeed extends ActionGroup
     {
         $previous = $this->history->getPrevPosition();
 
-        if ( ! $previous)
+        if (! $previous)
             return false;
 
-        if ( ! $this->isOverspeed($previous))
+        if (! $this->isOverspeed($previous))
             return false;
 
         if ($previous->speed_limit !== $position->speed_limit)

@@ -40,10 +40,10 @@ Route::group(['middleware' => ['auth.api', 'active_subscription'], 'namespace' =
     Route::put('user/secondary_credentials/{id}', ['as' => 'api.secondary_credentials.update', 'uses' => 'SecondaryCredentialsController@update']);
     Route::delete('user/secondary_credentials/{id}', ['as' => 'api.secondary_credentials.destroy', 'uses' => 'SecondaryCredentialsController@destroy']);
 
-    Route::get('get_tasks_statuses', ['as'=> 'api.get_tasks_statuses', 'uses' => 'TasksController@getStatuses']);
-    Route::get('get_tasks_priorities', ['as'=> 'api.get_tasks_priorities', 'uses' => 'TasksController@getPriorities']);
-    Route::get('get_tasks_custom_fields', ['as'=> 'api.get_tasks_custom_fields', 'uses' => 'TasksController@getCustomFields']);
-    Route::get('get_tasks', ['as'=> 'api.get_tasks', 'uses' => 'TasksController@search']);
+    Route::get('get_tasks_statuses', ['as' => 'api.get_tasks_statuses', 'uses' => 'TasksController@getStatuses']);
+    Route::get('get_tasks_priorities', ['as' => 'api.get_tasks_priorities', 'uses' => 'TasksController@getPriorities']);
+    Route::get('get_tasks_custom_fields', ['as' => 'api.get_tasks_custom_fields', 'uses' => 'TasksController@getCustomFields']);
+    Route::get('get_tasks', ['as' => 'api.get_tasks', 'uses' => 'TasksController@search']);
     Route::get('get_task/{id}', ['as' => 'api.get_task', 'uses' => 'TasksController@show']);
     Route::any('add_task', ['as' => 'api.add_task', 'uses' => 'TasksController@store']);
     Route::any('edit_task/{id}', ['as' => 'api.edit_task', 'uses' => 'TasksController@update']);
@@ -69,14 +69,14 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         'as' => 'api.login',
         'uses' => 'ApiController@login',
         'middleware' => [
-            'throttle:'.config('server.throttle.api.login'),
+            'throttle:' . config('server.throttle.api.login'),
         ]
     ]);
 
     Route::get('password_reminder', 'Frontend\PasswordReminderController@create')
-        ->middleware('throttle:'.config('server.throttle.api.password_reset'));
+        ->middleware('throttle:' . config('server.throttle.api.password_reset'));
     Route::post('password_reminder', 'Frontend\PasswordReminderController@store')
-        ->middleware('throttle:'.config('server.throttle.api.password_reset'));
+        ->middleware('throttle:' . config('server.throttle.api.password_reset'));
 
     Route::group(['middleware' => ['auth.api', 'active_subscription']], function () {
         Route::get('point_in_geofences', ['as' => 'api.geofences_point_in', 'uses' => 'V1\GeofencesController@pointIn', 'middleware' => ['throttle:30,1']]);

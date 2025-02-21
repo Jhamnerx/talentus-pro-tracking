@@ -3,6 +3,7 @@
 namespace Tobuli\History\Actions;
 
 use Tobuli\Entities\Geofence;
+use Illuminate\Support\Facades\Log;
 use Tobuli\History\Stats\StatModelList;
 
 class GeofencesIn extends ActionStat
@@ -23,9 +24,8 @@ class GeofencesIn extends ActionStat
     {
         if (empty($position->geofences))
             return;
-
+        Log::info($position->geofences);
         foreach ($position->geofences as $geofence_id)
             $this->history->applyStat('geofences_in', $geofence_id);
-
     }
 }

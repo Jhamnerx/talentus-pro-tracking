@@ -28,6 +28,7 @@ abstract class DeviceHistoryReport extends DeviceReport
     {
         $actions = $this->getActionsList();
 
+
         if (Arr::get($this->metas('history'), 'history.drivers'))
             $actions[] = Drivers::class;
 
@@ -64,8 +65,8 @@ abstract class DeviceHistoryReport extends DeviceReport
             'unloading_count' => trans('front.total_unloading_amount'),
 
             'fuel_consumption' => trans('front.fuel_consumption'),
-            'fuel_consumption_gps' => trans('front.fuel_consumption') . ' (' . trans('front.gps') . ')' ,
-            'odometer_start' => trans('front.odometer') . ' ' . trans('front.start') ,
+            'fuel_consumption_gps' => trans('front.fuel_consumption') . ' (' . trans('front.gps') . ')',
+            'odometer_start' => trans('front.odometer') . ' ' . trans('front.start'),
             'odometer_end' => trans('front.odometer') . ' ' . trans('front.end'),
         ];
     }
@@ -81,7 +82,8 @@ abstract class DeviceHistoryReport extends DeviceReport
     {
         $history = new DeviceHistory($device);
 
-        if ( ! empty($this->parameters))
+
+        if (! empty($this->parameters))
             $history->setConfig($this->parameters);
 
         $history->setConfig([
@@ -103,6 +105,7 @@ abstract class DeviceHistoryReport extends DeviceReport
         $history->setRange($this->date_from, $this->date_to);
 
         try {
+            //dd($history->get());
             return $history->get();
         } catch (\PDOException $e) {
             Bugsnag::notifyException($e);
@@ -111,6 +114,42 @@ abstract class DeviceHistoryReport extends DeviceReport
             throw $e;
         }
     }
+    protected function getDeviceHistoryDatav2($device)
+    {
+        $history = new DeviceHistory($device);
+
+
+        if (! empty($this->parameters))
+            $history->setConfig($this->parameters);
+
+        $history->setConfig([
+            'stop_seconds'      => $this->stop_seconds,
+            'extend_start'      => $this->extendStart(),
+
+            'stop_speed'        => $device->min_moving_speed,
+            'min_fuel_fillings' => $device->min_fuel_fillings,
+            'min_fuel_thefts'   => $device->min_fuel_thefts,
+        ]);
+
+        $history->setGeofences($this->geofences);
+
+        $history->registerActions(
+            $this->prepareActionsList()
+        );
+
+        $history->setRange($this->date_from, $this->date_to);
+
+        try {
+
+            return $history->get();
+        } catch (\PDOException $e) {
+            Bugsnag::notifyException($e);
+            return null;
+        } catch (\Exception $e) {
+            throw $e;
+        }
+    }
+
 
     protected function getStatusTranslate(Group $group)
     {
@@ -206,8 +245,8 @@ abstract class DeviceHistoryReport extends DeviceReport
                     foreach ($stats as $stat) {
                         Formatter::fuelAvg()->setMeasure(
                             $stat->getFormatUnit()->getMeasure()
-                            . '/' .
-                            $statDistance->getFormatUnit()->getMeasure()
+                                . '/' .
+                                $statDistance->getFormatUnit()->getMeasure()
                         );
                         $value = $distance ? ($stat->get() / $distance) : $stat->get();
 
@@ -227,8 +266,8 @@ abstract class DeviceHistoryReport extends DeviceReport
 
                         Formatter::fuelAvg()->setMeasure(
                             $stat->getFormatUnit()->getMeasure()
-                            . '/' .
-                            $statDistance->getFormatUnit()->getMeasure()
+                                . '/' .
+                                $statDistance->getFormatUnit()->getMeasure()
                         );
                         $value = $distance ? ($stat->get() / $distance) : $stat->get();
 
@@ -322,32 +361,28 @@ abstract class DeviceHistoryReport extends DeviceReport
         else
             $stats = $group->stats()->all();
 
-        foreach ($stats as $key => $value)
-        {
+        foreach ($stats as $key => $value) {
             $totals[$key] = [
                 'title' => $this->getStatTranslate($key),
                 'value' => $value->human(),
             ];
         }
 
-        if( $data = $this->getDataFromGroup($group, 'fuel_consumption_list'))
-        {
+        if ($data = $this->getDataFromGroup($group, 'fuel_consumption_list')) {
             $totals['fuel_consumption_list'] = [
                 'title' => '',
                 'value' => $data['fuel_consumption_list'],
             ];
         }
 
-        if( $data = $this->getDataFromGroup($group, 'fuel_price_list'))
-        {
+        if ($data = $this->getDataFromGroup($group, 'fuel_price_list')) {
             $totals['fuel_price_list'] = [
                 'title' => '',
                 'value' => $data['fuel_price_list'],
             ];
         }
 
-        if( $data = $this->getDataFromGroup($group, 'odometer_diff_list'))
-        {
+        if ($data = $this->getDataFromGroup($group, 'odometer_diff_list')) {
             $totals['odometer_diff_list'] = [
                 'title' => '',
                 'value' => $data['odometer_diff_list'],
@@ -367,9 +402,13 @@ abstract class DeviceHistoryReport extends DeviceReport
         return $totals;
     }
 
-    protected function getTable($data) {return null;}
+    protected function getTable($data)
+    {
+        return null;
+    }
 
-    protected function getMap($data) {
+    protected function getMap($data)
+    {
         return [
             'start'     => [$data['root']->getStartPosition()->latitude, $data['root']->getStartPosition()->longitude],
             'end'       => [$data['root']->getEndPosition()->latitude, $data['root']->getEndPosition()->longitude],
@@ -444,7 +483,7 @@ abstract class DeviceHistoryReport extends DeviceReport
 
     protected function getHistoryMetaValue($meta, $group)
     {
-        if(!$group->stats()->has($meta['attribute']))
+        if (!$group->stats()->has($meta['attribute']))
             return '-';
 
         return $group->stats()->human($meta['attribute']);

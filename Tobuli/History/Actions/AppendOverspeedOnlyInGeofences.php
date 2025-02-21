@@ -17,7 +17,7 @@ class AppendOverspeedOnlyInGeofences extends ActionAppend
 
     public function proccess(&$position)
     {
-        if(empty($position->geofences))
+        if (empty($position->geofences))
             $position->overspeeding = 0;
     }
 }

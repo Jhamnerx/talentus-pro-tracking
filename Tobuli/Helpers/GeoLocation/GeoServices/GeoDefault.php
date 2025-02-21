@@ -36,7 +36,7 @@ class GeoDefault extends GeoNominatim
         return $this->request($method, $options);
     }
 
-    protected function setServerCurrent() : string
+    protected function setServerCurrent(): string
     {
         $url = $this->getServerRandom();
 
@@ -47,7 +47,7 @@ class GeoDefault extends GeoNominatim
         return $this->url = $url;
     }
 
-    protected function getServerRandom() : string
+    protected function getServerRandom(): string
     {
         if (empty($this->servers)) {
             throw new \Exception('No working geocode servers');
@@ -64,7 +64,7 @@ class GeoDefault extends GeoNominatim
         return $server;
     }
 
-    protected function hasServerLock(string $server) : bool
+    protected function hasServerLock(string $server): bool
     {
         return Cache::has(self::lockKey($server));
     }

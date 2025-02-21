@@ -40,7 +40,7 @@ class AppendOverspeeding extends ActionAppend
     {
         $position->overspeeding = 0;
 
-        if ( ! $this->isOverspeed($position))
+        if (! $this->isOverspeed($position))
             return;
 
         $position->overspeeding++;

@@ -55,8 +55,7 @@ class OverspeedsInGeofenceReport extends DeviceHistoryReport
     {
         $rows = [];
 
-        foreach ($data['groups']->all() as $group)
-        {
+        foreach ($data['groups']->all() as $group) {
             $rows[] = $this->getDataFromGroup($group, [
                 'start_at',
                 'end_at',

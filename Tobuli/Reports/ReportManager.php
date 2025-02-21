@@ -101,6 +101,7 @@ class ReportManager
         92 => Reports\DevicesAlerts::class,
         93 => Reports\ObjectHistoryMovementReport::class,
         94 => Reports\OverspeedsInGeofenceCustomReport::class,
+        95 => Reports\OverspeedsInGeofenceCustomReportV2::class,
     ];
 
     /**

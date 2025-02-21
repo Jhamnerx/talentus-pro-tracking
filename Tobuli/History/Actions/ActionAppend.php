@@ -6,5 +6,5 @@ abstract class ActionAppend extends Action
 {
     const RADIO = 10000;
 
-    abstract public function proccess( & $position);
+    abstract public function proccess(&$position);
 }

@@ -1133,4 +1133,7 @@ return [
     'alert_252' => 'Desconexión de la batería',
     'alert_249' => 'Jammer',
     'alert_239' => 'Encendido/Apagado',
+    'excesive_speed' => 'Exceso de velocidad',
+    'overspeed_limit' => 'Límite de velocidad',
+    'distance' => 'Distancia',
 ];
