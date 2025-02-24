@@ -206,6 +206,13 @@ class User extends AbstractEntity implements
                     'logs' => 0,
                     'token' => null
                 ],
+                'wisetrack' =>
+                [
+                    'active' => 0,
+                    'logs' => 0,
+                    'token' => null,
+                    'url' => null
+                ],
                 'consatel' =>
                 [
                     'active' => 0,
@@ -232,6 +239,14 @@ class User extends AbstractEntity implements
         if (!isset($services['mininter'])) {
             $services['mininter'] = [
                 'logs' => 0,
+            ];
+        }
+        if (!isset($services['wisetrack'])) {
+            $services['wisetrack'] = [
+                'active' => 0,
+                'logs' => 0,
+                'token' => null,
+                'url' => null,
             ];
         }
 

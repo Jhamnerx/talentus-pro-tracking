@@ -313,6 +313,11 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+        'webservice.wisetrack' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
     ],
 
     'restricted' => [

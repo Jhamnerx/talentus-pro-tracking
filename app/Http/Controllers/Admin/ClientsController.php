@@ -465,7 +465,8 @@ class ClientsController extends BaseController
                 'sutran' => ['active' => 0, 'token' => null],
                 'osinergmin' => ['active' => 0, 'token' => null],
                 'consatel' => ['active' => 0, 'user' => null, 'pass' => null],
-                'mininter' => ['logs' => 0]
+                'mininter' => ['logs' => 0],
+                'wisetrack' => ['active' => 0, 'token' => null, 'logs' => 0, 'url' => null],
             ];
 
             foreach ($defaultServices as $service => $defaults) {
@@ -477,6 +478,10 @@ class ClientsController extends BaseController
                         if ($service == 'consatel') {
                             $defaultServices[$service]['user'] = $services[$service]['user'] ?? null;
                             $defaultServices[$service]['pass'] = $services[$service]['pass'] ?? null;
+                        }
+                        if ($service == 'wisetrack') {
+                            $defaultServices[$service]['logs'] = $services[$service]['logs'] ?? null;
+                            $defaultServices[$service]['url'] = $services[$service]['url'] ?? null;
                         }
                     }
                 }

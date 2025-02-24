@@ -472,6 +472,7 @@ return [
         'sutran' => 'Sutran',
         'osinergmin' => 'Osinergmin',
         'mininter' => 'Mininter',
+        'wisetrack' => 'Wisetrack',
         'consatel' => 'Consatel',
         'services.consatel.user' => 'Usuario de Consatel',
         'services.consatel.pass' => 'Contraseña de Consatel',

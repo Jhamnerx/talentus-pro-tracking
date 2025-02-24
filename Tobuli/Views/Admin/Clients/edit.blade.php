@@ -595,6 +595,55 @@
                 </div>
 
             </div>
+            <hr style="border-color: #052062;">
+
+            <div class="form-group">
+                <h4>WISETRACK</h4>
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+
+                            {!! Form::checkbox('services[wisetrack][active]', 1, $item->services['wisetrack']['active'], [
+                                'class' => 'checkbox-wisetrack',
+                            ]) !!}
+
+                            {!! Form::label('services[wisetrack][active]', 'Activar') !!}
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+
+                            {!! Form::checkbox('services[wisetrack][logs]', 1, $item->services['wisetrack']['logs'], [
+                                'class' => 'wisetrack-logs',
+                            ]) !!}
+
+                            {!! Form::label('services[wisetrack][logs]', 'Logs') !!}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12">
+                    <div class="form-group text-wisetrack">
+                        {!! Form::label('services[wisetrack][token]', 'Token') !!}
+                        {!! Form::text('services[wisetrack][token]', $item->services['wisetrack']['token'], [
+                            'class' => 'form-control',
+                        ]) !!}
+                    </div>
+                </div>
+                <div class="col-sm-12">
+                    <div class="form-group text-wisetrack">
+                        {!! Form::label('services[wisetrack][url]', 'Url') !!}
+                        {!! Form::text('services[wisetrack][url]', $item->services['wisetrack']['url'], [
+                            'class' => 'form-control',
+                        ]) !!}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

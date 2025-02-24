@@ -8,6 +8,7 @@ class WebServices
     const OSINERGMIN = "Osinergmin";
     const MININTER = "Mininter";
     const CONSATEL = "Consatel";
+    const WISETRACK = "Wisetrack";
 
     public static function labels(string $service): string
     {
@@ -16,6 +17,7 @@ class WebServices
             self::OSINERGMIN => "🏭 Osinergmin",
             self::MININTER => "👮 Mininter",
             self::CONSATEL => "📡 Consatel",
+            self::WISETRACK => "🚚 Wisetrack",
             default => "Unknown Service",
         };
     }

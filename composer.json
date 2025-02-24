@@ -36,7 +36,8 @@
 		"fruitcake/laravel-cors": "^3.0",
 		"laravel/ui": "^3.4",
 		"fakerphp/faker": "^1.23",
-		"spatie/laravel-activitylog": "^3.9"
+		"spatie/laravel-activitylog": "^3.9",
+		"laravel/tinker": "^2.10"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^9.0",

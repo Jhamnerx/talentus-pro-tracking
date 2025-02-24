@@ -33,3 +33,12 @@
         {!! Form::label('consatel', 'Consatel') !!}
     </div>
 @endif
+
+@if (Auth::User()->perm('webservice.wisetrack', 'edit'))
+    <div class="checkbox">
+
+        {!! Form::hidden('wisetrack', 0) !!}
+        {!! Form::checkbox('wisetrack', 1, $item->wisetrack) !!}
+        {!! Form::label('wisetrack', 'Wisetrack') !!}
+    </div>
+@endif

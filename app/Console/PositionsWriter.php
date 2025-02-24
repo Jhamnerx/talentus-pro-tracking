@@ -631,7 +631,60 @@ class PositionsWriter
 
             $this->position->protocol == 'teltonika' ? $this->saveDataComsatel($this->device, $this->position) : Log::info('No se pudo registrar en la base de datos Comsatel la placa: ' . $this->device->plate_number);
         }
+
+        if ($this->device->wisetrack) {
+            $this->saveDataWisetrack($this->device, $this->position);
+        }
     }
+
+    public function saveDataWisetrack($device, $position)
+    {
+        $transportista = $device->object_owner; // Puedes cambiarlo si necesitas obtenerlo de otro lado
+
+        // Convertir la fecha y hora al formato requerido (UTC)
+        $fechaHora = date('Y-m-d H:i:s', strtotime($position->device_time));
+
+        // Determinar el número de evento basado en la lógica del dispositivo
+        $numeroEvento = $this->getEventNumber($position);
+
+        $device->dataWisetrack()->create([
+            'device_id' => $device->id,
+            'patente' => trim($device->plate_number),
+            'fecha_hora' => $fechaHora,
+            'latitud' => number_format($position->latitude, 6, ',', ''), // Requiere coma en vez de punto
+            'longitud' => number_format($position->longitude, 6, ',', ''), // Requiere coma en vez de punto
+            'direccion' => $position->course,
+            'velocidad' => intval($position->speed),
+            'estado_registro' => $position->valid ? 1 : 0,
+            'estado_ignicion' => $position->getParameter('ignition') ? 1 : 0,
+            'numero_evento' => $numeroEvento,
+            'odometro' => round($position->getParameter('totaldistance'), 2),
+            'imei' => $device->imei,
+            'transportista' => $transportista,
+        ]);
+    }
+
+    /**
+     * Método para obtener el número de evento basado en los parámetros del dispositivo.
+     */
+    private function getEventNumber($position)
+    {
+        if ($position->getParameter('event') == "239" && $position->getParameter('ignition') == true) {
+            return 29; // Ignición encendida
+        } elseif ($position->getParameter('event') == "239" && $position->getParameter('ignition') == false) {
+            return 28; // Ignición apagada
+        } elseif ($position->getParameter('event') == "42") {
+            return 42; // Botón de pánico
+        } elseif ($position->valid && $position->getParameter('ignition')) {
+            return 45; // Posición online con ignición encendida
+        } elseif ($position->valid && !$position->getParameter('ignition')) {
+            return 46; // Posición online con ignición apagada
+        } else {
+            return 47; // Posición offline
+        }
+    }
+
+
     public function saveDataComsatel($device, $position)
     {
         $evento = 1;
