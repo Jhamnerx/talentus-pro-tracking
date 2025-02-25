@@ -139,52 +139,63 @@ class SendDataWisetrackJob implements ShouldQueue
     public function actionAfterSend($tramas, $response)
     {
         Log::info("Respuesta de Wisetrack: " . json_encode($response));
-        $ids = [];
-        $errored_rows = [];
+        $ids = []; // IDs de tramas que serán eliminadas
 
-        if (isset($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
-            foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $index => $result) {
-                Log::info("Resultado de la trama: " . json_encode($result));
-                $estado = Arr::get($result, 'ResultadoTransaccion.Estado', 'Desconocido');
-                $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleOperacion', '');
-
-                // Tomar la fecha de la trama enviada en lugar de la respuesta
-                $fecha_hora = $tramas[$index]['fecha_hora'] ?? null;
-                $patente = $tramas[$index]['patente'] ?? "Desconocido";
-
-                if ($estado == 1) {
-                    Log::info("Posición enviada correctamente: " . $detalle);
-                    $ids[] = $tramas[$index]['id'] ?? null;
-                } elseif ($estado == 4) {
-                    Log::warning("Registro duplicado en Wisetrack: " . $detalle);
-                } elseif ($estado == 3) {
-                    Log::error("Token inválido en Wisetrack. Verifica la configuración.");
-                } elseif ($estado == 5) {
-                    Log::error("Error interno en Wisetrack: " . $detalle);
-                } else {
-                    Log::error("Error desconocido en Wisetrack: " . $detalle);
-                    $errored_rows[] = $tramas[$index];
-                }
-
-                if ($this->service['logs']) {
-                    $this->logService->logToDatabase(
-                        'Wisetrack',
-                        $patente,
-                        $estado == 1 ? 'success' : 'error',
-                        $tramas[$index] ?? [],
-                        ['message' => $detalle],
-                        [],
-                        $fecha_hora, // ✅ Guardar la fecha de la trama, no la respuesta
-                        null
-                    );
-                }
-            }
-        } else {
-            Log::error("Respuesta de Wisetrack no válida: " . json_encode($response));
+        if (!isset($response['RespuestaServicioWeb']['RespuestaOperacion']) || !is_array($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
+            Log::error("Respuesta de Wisetrack no válida o inesperada: " . json_encode($response));
+            return; // Evita fallos y permite que el job continúe
         }
 
+        foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $index => $result) {
+            Log::info("Resultado de la trama: " . json_encode($result));
+
+            if (!isset($result['ResultadoTransaccion'])) {
+                Log::error("Error desconocido en Wisetrack: No se encontró 'ResultadoTransaccion' en la respuesta.", [
+                    'index' => $index,
+                    'result' => json_encode($result),
+                ]);
+                continue; // No fallamos el job, solo omitimos esta trama
+            }
+
+            $estado = Arr::get($result, 'ResultadoTransaccion.Estado', 'Desconocido');
+            $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleOperacion', '');
+
+            // Tomar la fecha de la trama enviada en lugar de la respuesta
+            $fecha_hora = $tramas[$index]['fecha_hora'] ?? null;
+            $patente = $tramas[$index]['patente'] ?? "Desconocido";
+
+            // ✅ Agregar todas las tramas al array de IDs para eliminar
+            $ids[] = $tramas[$index]['id'] ?? null;
+
+            if ($estado == 1) {
+                Log::info("✅ Posición enviada correctamente: " . $detalle);
+            } elseif ($estado == 4) {
+                Log::warning("⚠ Registro duplicado en Wisetrack: " . $detalle);
+            } elseif ($estado == 3) {
+                Log::error("⛔ Token inválido en Wisetrack. Verifica la configuración.");
+            } elseif ($estado == 5) {
+                Log::error("❌ Error interno en Wisetrack: " . $detalle);
+            } else {
+                Log::error("❗ Error desconocido en Wisetrack: " . $detalle);
+            }
+
+            if ($this->service['logs']) {
+                $this->logService->logToDatabase(
+                    'Wisetrack',
+                    $patente,
+                    $estado == 1 ? 'success' : 'error',
+                    $tramas[$index] ?? [],
+                    ['message' => $detalle],
+                    [],
+                    $fecha_hora, // ✅ Guardar la fecha de la trama, no la respuesta
+                    null
+                );
+            }
+        }
+
+        // ✅ Eliminar TODAS las tramas, incluyendo las que tuvieron error
         if (!empty($ids)) {
-            Log::info("Eliminando tramas enviadas correctamente: " . json_encode($ids));
+            Log::info("🗑 Eliminando tramas procesadas: " . json_encode($ids));
             WiseTrack::destroy($ids);
         }
     }
