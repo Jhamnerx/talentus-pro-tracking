@@ -31,7 +31,7 @@ class WiseTrack extends AbstractEntity
         'estado_registro',
         'estado_ignicion',
         'numero_evento',
-        'odómetro',
+        'odometro',
         'imei',
         'transportista',
     ];
