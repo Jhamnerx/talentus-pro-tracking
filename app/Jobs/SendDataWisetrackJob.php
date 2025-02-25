@@ -138,7 +138,7 @@ class SendDataWisetrackJob implements ShouldQueue
 
     public function actionAfterSend($tramas, $response)
     {
-        Log::info("Respuesta de Wisetrack: " . json_encode($response));
+
         $ids = []; // IDs de tramas a eliminar
 
         if (!isset($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
@@ -154,7 +154,7 @@ class SendDataWisetrackJob implements ShouldQueue
         }
 
         foreach ($operaciones as $index => $result) {
-            Log::info("Resultado de la trama: " . json_encode($result));
+
 
             if (!isset($result['ResultadoTransaccion'])) {
                 Log::error("❗ Error desconocido en Wisetrack: No se encontró 'ResultadoTransaccion' en la respuesta.", [
@@ -198,11 +198,12 @@ class SendDataWisetrackJob implements ShouldQueue
                     null
                 );
             }
+
+            Log::info("trama enviada: " . json_encode($tramas[$index]));
         }
 
         // ✅ Eliminar TODAS las tramas, incluyendo las que tuvieron error
         if (!empty($ids)) {
-            Log::info("🗑 Eliminando tramas procesadas: " . json_encode($ids));
             WiseTrack::destroy($ids);
         }
     }
