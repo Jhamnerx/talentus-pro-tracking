@@ -646,7 +646,6 @@ class PositionsWriter
 
         // Determinar el número de evento basado en la lógica del dispositivo
         $numeroEvento = $this->getEventNumber($position);
-
         $device->dataWisetrack()->create([
             'device_id' => $device->id,
             'patente' => trim($device->plate_number),
@@ -656,7 +655,7 @@ class PositionsWriter
             'direccion' => $position->course,
             'velocidad' => intval($position->speed),
             'estado_registro' => $position->valid ? 1 : 0,
-            'estado_ignicion' => $position->getParameter('ignition') ? 1 : 0,
+            'estado_ignicion' => $position->getParameter('ignition') == "true" ? 1 : 0,
             'numero_evento' => $numeroEvento,
             'odometro' => round($position->getParameter('totaldistance'), 2),
             'imei' => $device->imei,
@@ -669,9 +668,10 @@ class PositionsWriter
      */
     private function getEventNumber($position)
     {
-        if ($position->getParameter('event') == "239" && $position->getParameter('ignition') == true) {
+
+        if ($position->getParameter('event') == "239" && $position->getParameter('ignition') == "true") {
             return 29; // Ignición encendida
-        } elseif ($position->getParameter('event') == "239" && $position->getParameter('ignition') == false) {
+        } elseif ($position->getParameter('event') == "239" && $position->getParameter('ignition') == "false") {
             return 28; // Ignición apagada
         } elseif ($position->getParameter('event') == "42") {
             return 42; // Botón de pánico
