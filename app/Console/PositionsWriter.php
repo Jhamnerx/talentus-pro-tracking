@@ -675,9 +675,9 @@ class PositionsWriter
             return 28; // Ignición apagada
         } elseif ($position->getParameter('event') == "42") {
             return 42; // Botón de pánico
-        } elseif ($position->valid && $position->getParameter('ignition')) {
+        } elseif ($position->valid && $position->getParameter('ignition') == "true") {
             return 45; // Posición online con ignición encendida
-        } elseif ($position->valid && !$position->getParameter('ignition')) {
+        } elseif ($position->valid && $position->getParameter('ignition') == "false") {
             return 46; // Posición online con ignición apagada
         } else {
             return 47; // Posición offline
