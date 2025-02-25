@@ -40,8 +40,9 @@ class DeviceFormValidator extends Validator
             'osinergmin' => 'boolean',
             'mininter' => 'boolean',
             'consatel' => 'boolean',
-            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^\S+$/',
-            'device_type_id' => 'required'
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|regex:/^\S+$/',
+            'device_type_id' => 'required',
+            'object_owner' => 'required_if:wisetrack,1',
 
         ],
         'update' => [
@@ -72,8 +73,9 @@ class DeviceFormValidator extends Validator
             'osinergmin' => 'boolean',
             'mininter' => 'boolean',
             'consatel' => 'boolean',
-            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|regex:/^\S+$/',
-            'device_type_id' => 'required'
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|regex:/^\S+$/',
+            'device_type_id' => 'required',
+            'object_owner' => 'required_if:wisetrack,1',
         ],
     ];
 
