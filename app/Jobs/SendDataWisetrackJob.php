@@ -124,7 +124,7 @@ class SendDataWisetrackJob implements ShouldQueue
                     'response' => $body,
                     'token' => $token,
                     'endpoint' => $endpoint,
-                    'payload' => $payload // Registrar el payload para depuración
+                    'payload' => json_encode($payload) // Registrar el payload para depuración
                 ]);
 
                 if ($statusCode == 403) {
@@ -136,6 +136,8 @@ class SendDataWisetrackJob implements ShouldQueue
 
     public function actionAfterSend($tramas, $response)
     {
+
+        Log::info("Respuesta satisfactoria: " . json_encode($response));
 
         $ids = []; // IDs de tramas a eliminar
 
