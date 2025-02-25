@@ -657,7 +657,7 @@ class PositionsWriter
             'estado_registro' => $position->valid ? 1 : 0,
             'estado_ignicion' => $position->getParameter('ignition') == "true" ? 1 : 0,
             'numero_evento' => $numeroEvento,
-            'odometro' => round($position->getParameter('totaldistance'), 2),
+            'odometro' => round($position->getParameter('totaldistance') / 1000, 2),
             'imei' => $device->imei,
             'transportista' => $transportista,
         ]);
