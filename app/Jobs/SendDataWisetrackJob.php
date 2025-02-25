@@ -145,7 +145,7 @@ class SendDataWisetrackJob implements ShouldQueue
         if (isset($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
             foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $index => $result) {
                 $estado = Arr::get($result, 'ResultadoTransaccion.Estado', 'Desconocido');
-                $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleEjecucion', '');
+                $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleOperacion', '');
 
                 // Tomar la fecha de la trama enviada en lugar de la respuesta
                 $fecha_hora = $tramas[$index]['fecha_hora'] ?? null;
