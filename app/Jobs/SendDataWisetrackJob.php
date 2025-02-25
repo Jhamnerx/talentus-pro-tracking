@@ -173,7 +173,7 @@ class SendDataWisetrackJob implements ShouldQueue
             $ids[] = $tramas[$index]['id'] ?? null;
 
             if ($estado == 1) {
-                Log::info("✅ Posición enviada correctamente: " . $detalle);
+                // Log::info("✅ Posición enviada correctamente: " . $detalle);
             } elseif ($estado == 4) {
                 Log::warning("⚠ Registro duplicado en Wisetrack: " . $detalle);
             } elseif ($estado == 3) {
@@ -196,8 +196,6 @@ class SendDataWisetrackJob implements ShouldQueue
                     null
                 );
             }
-
-            Log::info("trama enviada: " . json_encode($tramas[$index]));
         }
 
         // ✅ Eliminar TODAS las tramas, incluyendo las que tuvieron error
