@@ -143,33 +143,17 @@ class SendDataWisetrackJob implements ShouldQueue
         $errored_rows = [];
 
         if (isset($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
-            foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $result) {
+            foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $index => $result) {
                 $estado = Arr::get($result, 'ResultadoTransaccion.Estado', 'Desconocido');
                 $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleEjecucion', '');
 
-                // Extraer patente, fecha_hora y numero_evento si están disponibles
-                preg_match('/\((.*?)\)/', $detalle, $matches);
-                $detalleData = isset($matches[1]) ? explode(", ", $matches[1]) : [];
-
-                $patente = $detalleData[0] ?? "Desconocido";
-                $fecha_hora = isset($detalleData[1]) ? $detalleData[1] : null;
-                $numero_evento = $detalleData[2] ?? "Desconocido";
-
-                // ✅ Verificar si fecha_hora es válida antes de usarla
-                if ($fecha_hora && strtotime($fecha_hora) !== false) {
-                    $fecha_hora = (new DateTime($fecha_hora, new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
-                } else {
-                    $fecha_hora = null; // Si no es válida, asignar NULL
-                }
-
-                // Buscar la posición de la trama enviada con la patente recibida
-                $tramaIndex = array_search($patente, array_column($tramas, 'patente'));
+                // Tomar la fecha de la trama enviada en lugar de la respuesta
+                $fecha_hora = $tramas[$index]['fecha_hora'] ?? null;
+                $patente = $tramas[$index]['patente'] ?? "Desconocido";
 
                 if ($estado == 1) {
                     Log::info("Posición enviada correctamente: " . $detalle);
-                    if ($tramaIndex !== false) {
-                        $ids[] = $tramas[$tramaIndex]['id'] ?? null;
-                    }
+                    $ids[] = $tramas[$index]['id'] ?? null;
                 } elseif ($estado == 4) {
                     Log::warning("Registro duplicado en Wisetrack: " . $detalle);
                 } elseif ($estado == 3) {
@@ -178,9 +162,7 @@ class SendDataWisetrackJob implements ShouldQueue
                     Log::error("Error interno en Wisetrack: " . $detalle);
                 } else {
                     Log::error("Error desconocido en Wisetrack: " . $detalle);
-                    if ($tramaIndex !== false) {
-                        $errored_rows[] = $tramas[$tramaIndex];
-                    }
+                    $errored_rows[] = $tramas[$index];
                 }
 
                 if ($this->service['logs']) {
@@ -188,10 +170,10 @@ class SendDataWisetrackJob implements ShouldQueue
                         'Wisetrack',
                         $patente,
                         $estado == 1 ? 'success' : 'error',
-                        $tramas[$tramaIndex] ?? [],
+                        $tramas[$index] ?? [],
                         ['message' => $detalle],
                         [],
-                        $tramas[$tramaIndex]['fecha_hora'] ?? null,
+                        $fecha_hora, // ✅ Guardar la fecha de la trama, no la respuesta
                         null
                     );
                 }
