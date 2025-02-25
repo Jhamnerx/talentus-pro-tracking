@@ -67,7 +67,7 @@ class SendDataWisetrackJob implements ShouldQueue
                     "estado_registro" => strval($position->estado_registro),
                     "estado_ignicion" => strval($position->estado_ignicion),
                     "numero_evento" => strval($position->numero_evento),
-                    "odometro" => number_format($position->odómetro, 2, '.', ''),
+                    "odometro" => str_replace('.', ',', $position->odometro),,
                     "transportista" => $transportista
                 ];
 
