@@ -12,6 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\WiseTrack;
+use Illuminate\Support\Arr;
 
 class SendDataWisetrackJob implements ShouldQueue
 {
@@ -135,30 +136,31 @@ class SendDataWisetrackJob implements ShouldQueue
 
     public function actionAfterSend($tramas, $response)
     {
+        Log::info("Respuesta de Wisetrack: " . json_encode($response));
         $ids = [];
         $errored_rows = [];
 
         if (isset($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
             foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $result) {
-                $estado = $result['ResultadoTransaccion']['Estado'];
-                $detalle = $result['ResultadoTransaccion']['DetalleEjecucion'];
+                $estado = Arr::get($result, 'ResultadoTransaccion.Estado', 'Desconocido');
+                $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleEjecucion', 'Sin detalles');
 
+                // Extraer patente, fecha_hora y numero_evento si están disponibles
                 preg_match('/\((.*?)\)/', $detalle, $matches);
                 $detalleData = isset($matches[1]) ? explode(", ", $matches[1]) : [];
 
-                if (count($detalleData) == 3) {
-                    list($patente, $fecha_hora, $numero_evento) = $detalleData;
-                } else {
-                    $patente = "Desconocido";
-                    $fecha_hora = "Desconocida";
-                    $numero_evento = "Desconocido";
-                }
+                $patente = $detalleData[0] ?? "Desconocido";
+                $fecha_hora = $detalleData[1] ?? "Desconocida";
+                $numero_evento = $detalleData[2] ?? "Desconocido";
 
+                // Buscar la posición de la trama enviada con la patente recibida
                 $tramaIndex = array_search($patente, array_column($tramas, 'patente'));
 
                 if ($estado == 1) {
                     Log::info("Posición enviada correctamente: " . $detalle);
-                    $ids[] = $tramas[$tramaIndex]['id'] ?? null;
+                    if ($tramaIndex !== false) {
+                        $ids[] = $tramas[$tramaIndex]['id'] ?? null;
+                    }
                 } elseif ($estado == 4) {
                     Log::warning("Registro duplicado en Wisetrack: " . $detalle);
                 } elseif ($estado == 3) {
@@ -167,7 +169,9 @@ class SendDataWisetrackJob implements ShouldQueue
                     Log::error("Error interno en Wisetrack: " . $detalle);
                 } else {
                     Log::error("Error desconocido en Wisetrack: " . $detalle);
-                    $errored_rows[] = $tramas[$tramaIndex];
+                    if ($tramaIndex !== false) {
+                        $errored_rows[] = $tramas[$tramaIndex];
+                    }
                 }
 
                 if ($this->service['logs']) {
