@@ -6,6 +6,7 @@ use App\Jobs\CleanOldLogsJob;
 use App\Jobs\DispatchSutranJobs;
 use App\Jobs\DispatchComsatelJobs;
 use App\Jobs\DispatchMininterJobs;
+use App\Jobs\DispatchWisetrackJobs;
 use App\Jobs\DispatchOsinergminJobs;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -133,6 +134,7 @@ class Kernel extends ConsoleKernel
         $schedule->job(new DispatchComsatelJobs)->everyMinute();
         $schedule->job(new DispatchOsinergminJobs)->everyMinute();
         $schedule->job(new DispatchMininterJobs)->everyMinute();
+        $schedule->job(new DispatchWisetrackJobs)->everyMinute();
         $schedule->job(new CleanOldLogsJob(10))->daily();
     }
 

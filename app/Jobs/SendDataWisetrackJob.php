@@ -32,7 +32,7 @@ class SendDataWisetrackJob implements ShouldQueue
         $this->batchSize = $batchSize;
         $this->service = $service;
         $this->plates = $plates;
-        // $this->onQueue('web-services-wisetrack');
+        $this->onQueue('web-services');
     }
 
     public function handle()
