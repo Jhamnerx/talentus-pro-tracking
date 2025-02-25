@@ -13,8 +13,6 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\WiseTrack;
 use Illuminate\Support\Arr;
-use DateTime;
-use DateTimeZone;
 
 class SendDataWisetrackJob implements ShouldQueue
 {
@@ -35,7 +33,7 @@ class SendDataWisetrackJob implements ShouldQueue
         $this->batchSize = $batchSize;
         $this->service = $service;
         $this->plates = $plates;
-        $this->onQueue('web-services');
+        $this->onQueue('web-services-wisetrack');
     }
 
     public function handle()
