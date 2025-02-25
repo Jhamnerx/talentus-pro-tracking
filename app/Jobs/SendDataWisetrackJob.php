@@ -13,6 +13,8 @@ use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\WiseTrack;
 use Illuminate\Support\Arr;
+use DateTime;
+use DateTimeZone;
 
 class SendDataWisetrackJob implements ShouldQueue
 {
@@ -136,22 +138,28 @@ class SendDataWisetrackJob implements ShouldQueue
 
     public function actionAfterSend($tramas, $response)
     {
-        Log::info("Respuesta de Wisetrack: " . json_encode($response));
         $ids = [];
         $errored_rows = [];
 
         if (isset($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
             foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $result) {
                 $estado = Arr::get($result, 'ResultadoTransaccion.Estado', 'Desconocido');
-                $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleEjecucion', 'Sin detalles');
+                $detalle = Arr::get($result, 'ResultadoTransaccion.DetalleEjecucion', '');
 
                 // Extraer patente, fecha_hora y numero_evento si están disponibles
                 preg_match('/\((.*?)\)/', $detalle, $matches);
                 $detalleData = isset($matches[1]) ? explode(", ", $matches[1]) : [];
 
                 $patente = $detalleData[0] ?? "Desconocido";
-                $fecha_hora = $detalleData[1] ?? "Desconocida";
+                $fecha_hora = isset($detalleData[1]) ? $detalleData[1] : null;
                 $numero_evento = $detalleData[2] ?? "Desconocido";
+
+                // ✅ Verificar si fecha_hora es válida antes de usarla
+                if ($fecha_hora && strtotime($fecha_hora) !== false) {
+                    $fecha_hora = (new DateTime($fecha_hora, new DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+                } else {
+                    $fecha_hora = null; // Si no es válida, asignar NULL
+                }
 
                 // Buscar la posición de la trama enviada con la patente recibida
                 $tramaIndex = array_search($patente, array_column($tramas, 'patente'));
