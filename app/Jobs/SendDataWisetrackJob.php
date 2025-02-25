@@ -201,6 +201,7 @@ class SendDataWisetrackJob implements ShouldQueue
         }
 
         if (!empty($ids)) {
+            Log::info("Eliminando tramas enviadas correctamente: " . json_encode($ids));
             WiseTrack::destroy($ids);
         }
     }
