@@ -190,7 +190,7 @@ class SendDataWisetrackJob implements ShouldQueue
                         $tramas[$tramaIndex] ?? [],
                         ['message' => $detalle],
                         [],
-                        $fecha_hora,
+                        $tramas[$tramaIndex]['fecha_hora'] ?? null,
                         null
                     );
                 }
