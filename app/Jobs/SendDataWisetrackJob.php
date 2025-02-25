@@ -138,6 +138,7 @@ class SendDataWisetrackJob implements ShouldQueue
 
     public function actionAfterSend($tramas, $response)
     {
+        Log::info("Respuesta de Wisetrack: " . json_encode($response));
         $ids = [];
         $errored_rows = [];
 
