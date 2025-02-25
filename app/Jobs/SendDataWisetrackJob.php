@@ -139,22 +139,29 @@ class SendDataWisetrackJob implements ShouldQueue
     public function actionAfterSend($tramas, $response)
     {
         Log::info("Respuesta de Wisetrack: " . json_encode($response));
-        $ids = []; // IDs de tramas que serán eliminadas
+        $ids = []; // IDs de tramas a eliminar
 
-        if (!isset($response['RespuestaServicioWeb']['RespuestaOperacion']) || !is_array($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
-            Log::error("Respuesta de Wisetrack no válida o inesperada: " . json_encode($response));
-            return; // Evita fallos y permite que el job continúe
+        if (!isset($response['RespuestaServicioWeb']['RespuestaOperacion'])) {
+            Log::error("❌ Respuesta de Wisetrack no válida o inesperada: " . json_encode($response));
+            return;
         }
 
-        foreach ($response['RespuestaServicioWeb']['RespuestaOperacion'] as $index => $result) {
+        $operaciones = $response['RespuestaServicioWeb']['RespuestaOperacion'];
+
+        // ✅ Convertir a array si es un objeto
+        if (!is_array($operaciones)) {
+            $operaciones = [$operaciones];
+        }
+
+        foreach ($operaciones as $index => $result) {
             Log::info("Resultado de la trama: " . json_encode($result));
 
             if (!isset($result['ResultadoTransaccion'])) {
-                Log::error("Error desconocido en Wisetrack: No se encontró 'ResultadoTransaccion' en la respuesta.", [
+                Log::error("❗ Error desconocido en Wisetrack: No se encontró 'ResultadoTransaccion' en la respuesta.", [
                     'index' => $index,
                     'result' => json_encode($result),
                 ]);
-                continue; // No fallamos el job, solo omitimos esta trama
+                continue; // Evita que el job falle y continúa con la siguiente trama
             }
 
             $estado = Arr::get($result, 'ResultadoTransaccion.Estado', 'Desconocido');
@@ -164,7 +171,7 @@ class SendDataWisetrackJob implements ShouldQueue
             $fecha_hora = $tramas[$index]['fecha_hora'] ?? null;
             $patente = $tramas[$index]['patente'] ?? "Desconocido";
 
-            // ✅ Agregar todas las tramas al array de IDs para eliminar
+            // ✅ Agregar TODAS las tramas al array de IDs para eliminar
             $ids[] = $tramas[$index]['id'] ?? null;
 
             if ($estado == 1) {
