@@ -20,9 +20,9 @@
                             <th>{{ trans('front.altitude') }}</th>
                             <th>{{ trans('front.speed') }}</th>
 
-                            @foreach ($item['sensors'] as $sensor)
+                            {{-- @foreach ($item['sensors'] as $sensor)
                                 <th>{{ $sensor['name'] }}</th>
-                            @endforeach
+                            @endforeach --}}
 
                             <!-- Cambiando el título del campo 'event' a 'Alerta' -->
                             <th>{{ trans('front.alert') }}</th>
