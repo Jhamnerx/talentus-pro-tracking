@@ -129,6 +129,8 @@ class GeofenceAlertCheck extends AlertCheck
     }
     public function checkSpeed($position, $geofence)
     {
+        $tolerance = $this->alert->getSpeedTolerance() ?: 0;
+
         if (!$position)
             return false;
 
@@ -138,7 +140,10 @@ class GeofenceAlertCheck extends AlertCheck
         if (!$geofence->speed_limit)
             return false;
 
-        if ($position->speed <= $geofence->speed_limit)
+        // Sumar la tolerancia al límite de velocidad de la geofence
+        $adjustedSpeedLimit = $geofence->speed_limit + $tolerance;
+
+        if ($position->speed <= $adjustedSpeedLimit)
             return false;
 
         return true;

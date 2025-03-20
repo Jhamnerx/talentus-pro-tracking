@@ -6,7 +6,8 @@ use App\Transformers\BaseTransformer;
 use Formatter;
 use Tobuli\Entities\Device;
 
-class DeviceFullTransformer extends BaseTransformer {
+class DeviceFullTransformer extends BaseTransformer
+{
 
     protected $json = false;
 
@@ -88,65 +89,67 @@ class DeviceFullTransformer extends BaseTransformer {
 
         $sensors = $this->formatSensors($entity);
         $services = $this->formatServices($entity);
-
+        $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay());
+        $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay());
         return [
-                'id'            => intval($entity->id),
-                'alarm'         => is_null($this->user->alarm) ? 0 : $this->user->alarm,
-                'name'          => $entity->name,
-                'image'         => $entity->image,
-                'online'        => $entity->getStatus(),
-                'time'          => $entity->time,
-                'timestamp'     => $entity->timestamp,
-                'acktimestamp'  => $entity->ack_timestamp,
-                'lat'           => floatval($entity->lat),
-                'lng'           => floatval($entity->lng),
-                'course'        => (isset($entity->course) ? $entity->course : '-'),
-                'speed'         => $entity->speed,
-                'altitude'      => $entity->altitude,
-                'icon_type'     => $entity->icon->type,
-                'icon_color'    => $entity->getStatusColor(),
-                'icon_colors'   => $entity->icon_colors,
-                'icon'          => $entity->icon->toArray(),
-                'power'         => '-',
-                'address'       => '-',
-                'protocol'      => $this->canView($entity, 'protocol', '-'),
-                'driver'        => ($driver ? $driver->name : '-'),
-                'driver_data'   => $driver ? $driver : [
-                    'id' => NULL,
-                    'user_id' => NULL,
-                    'device_id' => NULL,
-                    'name' => NULL,
-                    'rfid' => NULL,
-                    'phone' => NULL,
-                    'email' => NULL,
-                    'description' => NULL,
-                    'created_at' => NULL,
-                    'updated_at' => NULL,
-                ],
-                'sensors'            => $this->json ? json_encode($sensors) : $sensors,
-                'services'           => $this->json ? json_encode($services) : $services,
-                'tail'               => $this->json ? json_encode($entity->tail) : $entity->tail,
-                'distance_unit_hour' => Formatter::speed()->getUnit(),
-                'unit_of_distance'   => Formatter::distance()->getUnit(),
-                'unit_of_altitude'   => Formatter::altitude()->getUnit(),
-                'unit_of_capacity'   => Formatter::capacity()->getUnit(),
-                'stop_duration'      => $entity->stop_duration,
-                'stop_duration_sec'  => $entity->getStopDuration() ?? 0,
-                'moved_timestamp'    => $entity->moved_timestamp,
-                'engine_status'      => $entity->getEngineStatus(),
-                'detect_engine'      => $entity->detect_engine,
-                'engine_hours'       => $entity->engine_hours,
-                'total_distance'     => $entity->getTotalDistance(),
-                'inaccuracy'         => is_null($inaccuracy) ? null : intval($inaccuracy),
-                'sim_expiration_date'=> $sim_expiration_date ? Formatter::time()->human($sim_expiration_date) : null,
-                'device_data'        => $device_data,
-            ];
+            'id'            => intval($entity->id),
+            'alarm'         => is_null($this->user->alarm) ? 0 : $this->user->alarm,
+            'name'          => $entity->name,
+            'image'         => $entity->image,
+            'online'        => $entity->getStatus(),
+            'time'          => $entity->time,
+            'timestamp'     => $entity->timestamp,
+            'acktimestamp'  => $entity->ack_timestamp,
+            'lat'           => floatval($entity->lat),
+            'lng'           => floatval($entity->lng),
+            'course'        => (isset($entity->course) ? $entity->course : '-'),
+            'speed'         => $entity->speed,
+            'altitude'      => $entity->altitude,
+            'icon_type'     => $entity->icon->type,
+            'icon_color'    => $entity->getStatusColor(),
+            'icon_colors'   => $entity->icon_colors,
+            'icon'          => $entity->icon->toArray(),
+            'power'         => '-',
+            'address'       => '-',
+            'protocol'      => $this->canView($entity, 'protocol', '-'),
+            'driver'        => ($driver ? $driver->name : '-'),
+            'driver_data'   => $driver ? $driver : [
+                'id' => NULL,
+                'user_id' => NULL,
+                'device_id' => NULL,
+                'name' => NULL,
+                'rfid' => NULL,
+                'phone' => NULL,
+                'email' => NULL,
+                'description' => NULL,
+                'created_at' => NULL,
+                'updated_at' => NULL,
+            ],
+            'sensors'            => $this->json ? json_encode($sensors) : $sensors,
+            'services'           => $this->json ? json_encode($services) : $services,
+            'tail'               => $this->json ? json_encode($entity->tail) : $entity->tail,
+            'distance_unit_hour' => Formatter::speed()->getUnit(),
+            'unit_of_distance'   => Formatter::distance()->getUnit(),
+            'unit_of_altitude'   => Formatter::altitude()->getUnit(),
+            'unit_of_capacity'   => Formatter::capacity()->getUnit(),
+            'stop_duration'      => $entity->stop_duration,
+            'stop_duration_sec'  => $entity->getStopDuration() ?? 0,
+            'moved_timestamp'    => $entity->moved_timestamp,
+            'engine_status'      => $entity->getEngineStatus(),
+            'detect_engine'      => $entity->detect_engine,
+            'engine_hours'       => $entity->engine_hours,
+            'total_distance'     => $entity->getTotalDistance(),
+            'inaccuracy'         => is_null($inaccuracy) ? null : intval($inaccuracy),
+            'sim_expiration_date' => $sim_expiration_date ? Formatter::time()->human($sim_expiration_date) : null,
+            'device_data'        => $device_data,
+            'distancia_hoy'     => Formatter::distance()->format($entity->getSumDistance($inicio, $fin)),
+        ];
     }
 
     protected function formatUserList($users)
     {
         return $users
-            ->map(function($user) {
+            ->map(function ($user) {
                 return [
                     'id' => intval($user['id']),
                     'email' => $user['email']
@@ -174,8 +177,7 @@ class DeviceFullTransformer extends BaseTransformer {
                 if ($group != 'device') {
                     continue;
                 }
-
-            } catch(\Exception $e) {
+            } catch (\Exception $e) {
                 continue;
             }
 
@@ -220,8 +222,7 @@ class DeviceFullTransformer extends BaseTransformer {
 
         $result = [];
 
-        foreach ($entity->services as $service)
-        {
+        foreach ($entity->services as $service) {
             $service->setSensors($entity->sensors);
 
             $result[] = [

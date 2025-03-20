@@ -227,6 +227,7 @@ class AlertModalHelper extends ModalHelper
 
     public function edit()
     {
+
         $alert = $this->user->alerts()->find($this->data['id']);
 
         $this->checkException('alerts', 'update', $alert);
@@ -514,6 +515,11 @@ class AlertModalHelper extends ModalHelper
                             trans('validation.attributes.geofences'),
                             $alert ? $alert->geofences->pluck('id')->all() : []
                         )->setOptions($geofences),
+                        Field::number(
+                            'speed_tolerance',
+                            'Tolerancia de velocidad (' . Formatter::speed()->getUnit() . ')',
+                            $alert ? $alert->speed_tolerance : 0
+                        )
                     ]);
                     break;
                 case 'custom':

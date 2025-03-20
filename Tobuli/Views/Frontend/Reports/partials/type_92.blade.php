@@ -53,9 +53,9 @@
                                     <td>{!! $row['location'] !!}</td>
                                     <td>{{ $row['altitude'] }}</td>
                                     <td>{{ $row['speed'] }}</td>
-                                    @foreach ($item['sensors'] as $sensor)
+                                    {{-- @foreach ($item['sensors'] as $sensor)
                                         <th>{{ $row['sensors'][$sensor['id']] ?? '' }}</th>
-                                    @endforeach
+                                    @endforeach --}}
 
                                     <!-- Mostrar solo los parámetros que coincidan con 'event_types' -->
                                     <td>{{ trans('front.alert_' . $row['parameters']['event'] ?? '') }}</td>

@@ -1,9 +1,12 @@
-<?php namespace Tobuli\Validation;
+<?php
+
+namespace Tobuli\Validation;
 
 use Illuminate\Validation\Factory as IlluminateValidator;
 use ModalHelpers\AlertModalHelper;
 
-class AlertFormValidator extends Validator {
+class AlertFormValidator extends Validator
+{
 
     /**
      * @var array Validation rules for the test form, they can contain in-built Laravel rules or our custom rules
@@ -35,7 +38,8 @@ class AlertFormValidator extends Validator {
             'min_parking_duration' => 'required_if:type,move_duration|numeric|min:1',
             'time_duration'     => 'required_if:type,time_duration|numeric',
             'distance'          => 'required_if:type,distance|numeric',
-            'distance_tolerance'=> 'required_if:type,poi_stop_duration,poi_idle_duration|numeric',
+            'distance_tolerance' => 'required_if:type,poi_stop_duration,poi_idle_duration|numeric',
+            'speed_tolerance'   => 'required_if:type,geofence_overspeed|numeric',
 
             'command.active'    => 'in:0,1',
             'command.type'      => 'required_if:command.active,1',
@@ -61,7 +65,8 @@ class AlertFormValidator extends Validator {
             'move_duration'     => 'required_if:type,move_duration|numeric',
             'min_parking_duration' => 'required_if:type,move_duration|numeric',
             'distance'          => 'required_if:type,distance|numeric',
-            'distance_tolerance'=> 'required_if:type,poi_stop_duration,poi_idle_duration|numeric',
+            'distance_tolerance' => 'required_if:type,poi_stop_duration,poi_idle_duration|numeric',
+            'speed_tolerance'   => 'required_if:type,geofence_overspeed|numeric',
 
             'command.active'    => 'in:0,1',
             'command.type'      => 'required_if:command.active,1',
@@ -84,7 +89,6 @@ class AlertFormValidator extends Validator {
 
         parent::__construct($validator);
     }
-
 }   //end of class
 
 

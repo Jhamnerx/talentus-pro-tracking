@@ -55,12 +55,12 @@ class GeofenceUserService extends GeofenceService
 
         $items = $type === ExportTypesUtil::EXPORT_TYPE_GROUPS
             ? GeofenceGroup::where('user_id', $this->user->id)
-                ->pluck('title', 'id')
-                ->prepend(trans('front.ungrouped'), '0')
-                ->all()
+            ->pluck('title', 'id')
+            ->prepend(trans('front.ungrouped'), '0')
+            ->all()
             : Geofence::userAccessible($this->user)
-                ->pluck('name', 'id')
-                ->all();
+            ->pluck('name', 'id')
+            ->all();
 
         if ($type === ExportTypesUtil::EXPORT_TYPE_ACTIVE) {
             $selected = Geofence::userAccessible($this->user)->where(['active' => 1])

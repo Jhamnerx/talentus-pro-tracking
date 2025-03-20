@@ -51,6 +51,7 @@ class Alert extends AbstractEntity implements DisplayInterface
         'distance',
         'period',
         'distance_tolerance',
+        'speed_tolerance',
         'continuous_duration',
         'command',
         'authorized',
@@ -88,6 +89,7 @@ class Alert extends AbstractEntity implements DisplayInterface
         'min_parking_duration' => 0,
         'period' => 0,
         'distance_tolerance' => 0,
+        'speed_tolerance' => 0,
         'continuous_duration' => 0,
         'authorized' => 0,
         'state' => null,
@@ -307,6 +309,18 @@ class Alert extends AbstractEntity implements DisplayInterface
         $value = round(Formatter::distance()->reverse($value), 3);
 
         $this->setProperty('distance', $value);
+    }
+
+    public function setSpeedToleranceAttribute($value)
+    {
+        $value = round(Formatter::speed()->reverse($value), 0);
+
+        $this->setProperty('speed_tolerance', $value);
+    }
+
+    public function getSpeedTolerance()
+    {
+        return Arr::get($this->data, 'speed_tolerance', 0);
     }
 
     public function getDistanceTolerance()

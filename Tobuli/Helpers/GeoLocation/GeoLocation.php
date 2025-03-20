@@ -62,7 +62,7 @@ class GeoLocation
 
         return $this->resolveAddress($lat, $lon);
     }
-    
+
     public function locateGeofence(User $user, $lat, $lon)
     {
         $geofence = Geofence::userOwned($user)
@@ -85,7 +85,7 @@ class GeoLocation
                 return $location->address;
 
             return trans('front.nothing_found_request');
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             return $e->getMessage();
         }
     }
@@ -123,10 +123,10 @@ class GeoLocation
         }
 
         return new $class((new GeoSettings())
-            ->setApiKey($settings['api_key'] ?? '')
-            ->setApiUrl($settings['api_url'] ?? '')
-            ->setAppId($settings['api_app_id'] ?? '')
-            ->setAppSecret($settings['api_app_secret'] ?? '')
+                ->setApiKey($settings['api_key'] ?? '')
+                ->setApiUrl($settings['api_url'] ?? '')
+                ->setAppId($settings['api_app_id'] ?? '')
+                ->setAppSecret($settings['api_app_secret'] ?? '')
         );
     }
 

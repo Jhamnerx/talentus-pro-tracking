@@ -53,7 +53,7 @@ class DevicesAlerts extends DeviceReport
         return $inputParameters;
     }
 
-    protected function processPosition($position, &$parameters, $sensors)
+    protected function processPosition($position, &$parameters)
     {
         foreach ($position->parameters as $key => $value) {
             if (empty($key))
@@ -74,9 +74,9 @@ class DevicesAlerts extends DeviceReport
             'longitude'  => $position->longitude,
             'location'   => $this->getLocation($position, $this->getAddress($position)),
             'parameters' => $position->parameters,
-            'sensors'    => $sensors->mapWithKeys(function ($sensor) use ($position) {
-                return [$sensor->id => $sensor->getValueFormated($position->other, false)];
-            })
+            // 'sensors'    => $sensors->mapWithKeys(function ($sensor) use ($position) {
+            //     return [$sensor->id => $sensor->getValueFormated($position->other, false)];
+            // })
         ];
     }
 
@@ -84,9 +84,9 @@ class DevicesAlerts extends DeviceReport
     {
         $parameters = [];
         $rows = [];
-        $sensors = $device->sensors->filter(function ($sensor) {
-            return $sensor['add_to_history'];
-        });
+        // $sensors = $device->sensors->filter(function ($sensor) {
+        //     return $sensor['add_to_history'];
+        // });
         $eventTypes = Arr::get($this->parameters, 'event_types') ?? [9, 2, 253, 255, 247, 246, 252, 249];
 
         try {
@@ -95,13 +95,13 @@ class DevicesAlerts extends DeviceReport
                 ->whereBetween('time', [$this->date_from, $this->date_to])
                 ->chunk(
                     2000,
-                    function ($positions) use (&$rows, &$parameters, $sensors, $eventTypes) {
+                    function ($positions) use (&$rows, &$parameters, $eventTypes) {
                         foreach ($positions as $position) {
                             if (
                                 empty($eventTypes) ||
                                 (isset($position->parameters['event']) && in_array($position->parameters['event'], $eventTypes))
                             ) {
-                                $rows[] = $this->processPosition($position, $parameters, $sensors);
+                                $rows[] = $this->processPosition($position, $parameters);
                             }
                         }
                     }
@@ -114,7 +114,7 @@ class DevicesAlerts extends DeviceReport
                 'meta'  => $this->getDeviceMeta($device),
                 'error' => trans('front.nothing_found_request'),
                 'parameters' => $parameters,
-                'sensors'    => $sensors
+                // 'sensors'    => $sensors
             ];
         }
 
@@ -124,7 +124,7 @@ class DevicesAlerts extends DeviceReport
                 'rows' => $rows,
             ],
             'parameters' => $parameters,
-            'sensors'    => $sensors
+            // 'sensors'    => $sensors
         ];
     }
 }

@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -104,7 +106,8 @@ class AlertsController extends Controller
         return ['status' => 1];
     }
 
-    public function doDestroy($id = null) {
+    public function doDestroy($id = null)
+    {
         $data = AlertModalHelper::doDestroy($id);
 
         return is_array($data) ? view('front::Alerts.destroy')->with($data) : $data;

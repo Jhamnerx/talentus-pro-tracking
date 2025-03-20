@@ -3,8 +3,9 @@
 namespace Database\Seeders;
 
 // Composer: "fzaninotto/faker": "v1.3.0"
-use DB;
+
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tobuli\Services\PermissionService;
 

@@ -81,7 +81,6 @@ class DeviceMapTransformer extends DeviceTransformer
                 'fin' => Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay()),
             ],
             'distancia_hoy'     => Formatter::distance()->format($entity->getSumDistance($inicio, $fin)),
-
         ];
     }
 }
