@@ -36,8 +36,7 @@
 
                         @if (isset($item['error']))
                             <tr>
-                                <td
-                                    colspan="{{ 7 + count($item['meta']) + count($item['sensors']) + count($item['parameters']) }}">
+                                <td colspan="{{ 7 + count($item['meta']) + count($item['parameters']) }}">
                                     {{ $item['error'] }}</td>
                             </tr>
                         @else
