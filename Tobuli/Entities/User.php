@@ -64,6 +64,7 @@ class User extends AbstractEntity implements
 
     private $searchable = [
         'email',
+        'client.name',
     ];
     private $filterables = [
         'email',

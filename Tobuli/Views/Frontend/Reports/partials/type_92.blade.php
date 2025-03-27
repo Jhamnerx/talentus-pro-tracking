@@ -61,7 +61,17 @@
 
                                     @foreach ($item['parameters'] as $parameter)
                                         @if (strpos($parameter, $row['parameters']['event']) !== false)
-                                            <td>{{ $row['parameters'][$parameter] ?? '' }}</td>
+                                            <td>
+                                                @if ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '1')
+                                                    {{ trans('front.alert_253_1') }}
+                                                @elseif ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '2')
+                                                    {{ trans('front.alert_253_2') }}
+                                                @elseif ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '3')
+                                                    {{ trans('front.alert_253_3') }}
+                                                @else
+                                                    {{ $row['parameters'][$parameter] ?? '' }}
+                                                @endif
+                                            </td>
                                         @endif
                                     @endforeach
                                     {{-- @foreach ($item['parameters'] as $parameter)

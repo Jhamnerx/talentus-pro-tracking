@@ -128,14 +128,12 @@ class SendDataMininter implements ShouldQueue
                     $this->logService->logToDatabase(
                         'Mininter',
                         $json['placa'],
-                        "error",
+                        'error',
                         $json,
                         ['response' => $response],
-                        [],
-                        Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora'])
-                            ->setTimezone('America/Lima')
-                            ->format('Y-m-d H:i:s'),
-                        1,
+                        [], // <- adicionalData
+                        Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']), // <- fecha
+                        $json['imei'],
                     );
                 }
             }
@@ -147,17 +145,15 @@ class SendDataMininter implements ShouldQueue
         if ($response->getStatusCode() == 201) {
             // Guardar log de éxito en la base de datos
             if ($this->service['logs']) {
-
                 $this->logService->logToDatabase(
                     'Mininter',
                     $json['placa'],
                     'success',
                     $json,
                     ['response' => $response],
-                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora'])
-                        ->setTimezone('America/Lima')
-                        ->format('Y-m-d H:i:s'),
-                    1,
+                    [], // <- adicionalData
+                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']), // <- fecha
+                    $json['imei'],
                 );
             }
 
@@ -165,17 +161,16 @@ class SendDataMininter implements ShouldQueue
         } else {
             // Guardar log de error en la base de datos
             if ($this->service['logs']) {
+
                 $this->logService->logToDatabase(
                     'Mininter',
                     $json['placa'],
                     'error',
                     $json,
                     ['response' => $response],
-                    [],
-                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora'])
-                        ->setTimezone('America/Lima')
-                        ->format('Y-m-d H:i:s'),
-                    1,
+                    [], // <- adicionalData
+                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']), // <- fecha
+                    $json['imei'],
                 );
             }
         }

@@ -39,7 +39,7 @@ abstract class AbstractEntity extends Eloquent
             }
         }
 
-        return array_map(fn ($relation) => $relation->name, $relations);
+        return array_map(fn($relation) => $relation->name, $relations);
     }
 
     public function getRelationByClass(string $relationClass): ?Relation

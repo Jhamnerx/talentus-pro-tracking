@@ -1,10 +1,13 @@
-<?php namespace Tobuli\Traits;
+<?php
+
+namespace Tobuli\Traits;
 
 use Illuminate\Support\Str;
 
-trait Filterable {
+trait Filterable
+{
 
-    public function getFilters( $input )
+    public function getFilters($input)
     {
         $filters = [];
 
@@ -14,11 +17,10 @@ trait Filterable {
         if (empty($this->filterables))
             return $filters;
 
-        foreach ($this->filterables as $filterable)
-        {
+        foreach ($this->filterables as $filterable) {
             $key = str_replace('.', '_', $filterable);
 
-            if ( ! array_key_exists($key, $input))
+            if (! array_key_exists($key, $input))
                 continue;
 
             $filters[$filterable] = $input[$key];
@@ -27,12 +29,11 @@ trait Filterable {
         return $filters;
     }
 
-    public function scopeFilter( $query, $values )
+    public function scopeFilter($query, $values)
     {
         $filters = $this->getFilters($values);
 
-        foreach ($filters as $key => $value)
-        {
+        foreach ($filters as $key => $value) {
             $method = "scopeFilter" . Str::camel($key);
             if (method_exists($this, $method)) {
                 call_user_func([$this, $method], $query, $value);
@@ -49,14 +50,14 @@ trait Filterable {
             }
 
             if ($relation) {
-                $key = $this->{$relation}()->getRelated()->getTable().'.'.$field;
-                $query->whereHas($relation, function($query) use ($value, $key) {
+                $key = $this->{$relation}()->getRelated()->getTable() . '.' . $field;
+                $query->whereHas($relation, function ($query) use ($value, $key) {
                     $condition = is_array($value) ? 'whereIn' : 'where';
                     $query->{$condition}($key, $value);
                 });
             } else {
                 $condition = is_array($value) ? 'whereIn' : 'where';
-                $query->{$condition}($this->table.'.'.$field, $value);
+                $query->{$condition}($this->table . '.' . $field, $value);
             }
         }
 
