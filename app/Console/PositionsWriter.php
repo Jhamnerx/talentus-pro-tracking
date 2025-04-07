@@ -812,7 +812,7 @@ class PositionsWriter
         $prevPosition = $this->getPrevPosition($position->time);
 
         // Definir los umbrales de cambio permitidos
-        $speedThreshold = 20; // km/h
+        $speedThreshold = 30; // km/h
         $timeThreshold = 5; // seconds
 
         // Convertir device_time a zona horaria "America/Lima"
@@ -834,13 +834,19 @@ class PositionsWriter
             $speedDifference = abs($position->speed - $prevPosition->speed);
             $timeDifference = $deviceTime->getTimestamp() - $prevDeviceTime->getTimestamp();
 
+            // Validar si la velocidad anterior es 0 y la nueva velocidad es alta
+            if (($prevPosition->speed <= 10) && $position->speed >= 50) {
+                $this->position->valid = 0; // Invalidar la posición
+                return; // No registrar la nueva posición
+            }
+
             if ($timeDifference <= $timeThreshold && $speedDifference > $speedThreshold) {
+                $this->position->valid = 0; // Invalidar la posición
                 return; // No registrar la nueva posición
             }
         }
 
         if ($position->valid) {
-
             $others = $this->parseString($position->other);
             $device->sutran()->create(
                 [
@@ -869,6 +875,7 @@ class PositionsWriter
             // Log::error("POSICION INVALIDA: " . $this->device->plate_number . '|' . $device->id . '|' . $position->latitude . '|' . $position->longitude . '|' . $position->speed . '|' . $position->course . '|' . $gps_date);
         }
     }
+
     public function parseString($xmlString)
     {
 
