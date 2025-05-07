@@ -288,10 +288,36 @@ class HistoryModalHelper extends ModalHelper
             }
         )->toArray());
 
+        // Calculando distance_sum de manera consistente con OdometerDailyReport
+        $odometer_start = trans('front.not_available');
+        $odometer_end = trans('front.not_available');
+        $odometer = $data['root']->stats()->has('odometer') ? $data['root']->stats()->get('odometer') : null;
+
+        if ($odometer) {
+            $startPosition = $data['root']->getStartPosition();
+            if ($startPosition && isset($startPosition->odometer)) {
+                $odometer->set($startPosition->odometer);
+                $odometer_start = round($odometer->format());
+            }
+
+            $endPosition = $data['root']->getEndPosition();
+            if ($endPosition && isset($endPosition->odometer)) {
+                $odometer->set($endPosition->odometer);
+                $odometer_end = round($odometer->format());
+            }
+        }
+
+        $distance_sum = '';
+        if (is_numeric($odometer_end) && is_numeric($odometer_start)) {
+            $distance_sum = $odometer_end - $odometer_start;
+        } else {
+            $distance_sum = $data['root']->getStat('distance')->human();
+        }
+
         return [
             'items' => $items,
             'sensors' => $sensors,
-            'distance_sum' => $data['root']->getStat('distance')->human(),
+            'distance_sum' => $distance_sum,
 
             'classes' => [
                 self::STATUS_DRIVE => [
