@@ -50,7 +50,7 @@
                     <div class="panel-body">
                         <div class="row">
                             <div class="col-xs-6 text-right">
-                                <span>Odómetro:</span>
+                                <span>Km Recorrido:</span>
                             </div>
                             <div class="col-xs-6 text-left">
                                 <span class="label label-primary">{{ $distance_sum }}</span>

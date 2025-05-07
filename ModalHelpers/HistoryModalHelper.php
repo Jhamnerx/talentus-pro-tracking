@@ -311,7 +311,7 @@ class HistoryModalHelper extends ModalHelper
         if (is_numeric($odometer_end) && is_numeric($odometer_start)) {
             $distance_sum = $odometer_end - $odometer_start;
         } else {
-            $distance_sum = $data['root']->getStat('distance')->human();
+            $distance_sum = $data['root']->getStat('distance')->human() . 'km';
         }
 
         return [
