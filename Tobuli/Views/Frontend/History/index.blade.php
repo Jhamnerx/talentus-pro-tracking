@@ -53,7 +53,7 @@
                                 <span>Km Recorrido:</span>
                             </div>
                             <div class="col-xs-6 text-left">
-                                <span class="label label-primary">{{ $distance_sum }}</span>
+                                <span class="label label-primary">{{ round($distance_sum, 1) }} Km</span>
                             </div>
                         </div>
                     </div>

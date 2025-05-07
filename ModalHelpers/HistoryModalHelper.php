@@ -20,6 +20,7 @@ use Tobuli\History\Actions\GroupDriveStop;
 use Tobuli\History\Actions\GroupEvent;
 use Tobuli\History\Actions\Positions;
 use Tobuli\History\Actions\Speed;
+use Tobuli\History\Actions\Odometer;
 use Tobuli\History\DeviceHistory;
 use Tobuli\Services\DeviceAnonymizerService;
 use Tobuli\Services\FractalSerializers\WithoutDataArraySerializer;
@@ -122,7 +123,8 @@ class HistoryModalHelper extends ModalHelper
             EngineHours::class,
             Drivers::class,
             Positions::class,
-            GroupDriveStop::class
+            GroupDriveStop::class,
+            Odometer::class, // Añadido para que funcione igual que en OdometerDailyReport
         ]);
 
         if ($this->user->perm('events', 'view')) {
@@ -151,9 +153,11 @@ class HistoryModalHelper extends ModalHelper
         $snapToRoad = (isset($this->data['snap_to_road']) && ($this->data['snap_to_road'] == 'true' || $this->data['snap_to_road'] == 1)) ? true : false;
 
         $data = $this->getHistoryData($device);
-
         $items = [];
         $groupKeyCount = [];
+
+        // Variable para almacenar la suma de distancias calculada igual que en OdometerDailyReport
+        $total_distance = 0;
 
         if ($data['root']->getStartPosition()) {
 
@@ -245,6 +249,36 @@ class HistoryModalHelper extends ModalHelper
                 }
 
                 $items[] = $item;
+
+                // Calculamos la distancia para cada grupo EXACTAMENTE como en OdometerDailyReport::getRow
+                $odometer_start = trans('front.not_available');
+                $odometer_end = trans('front.not_available');
+                $odometer = $group->stats()->has('odometer') ? $group->stats()->get('odometer') : null;
+
+                $startPosition = $group->getStartPosition();
+
+
+                if ($odometer) {
+                    if ($startPosition && isset($startPosition->odometer)) {
+                        $odometer->set($startPosition->odometer);
+                        $odometer_start = round($odometer->format(), 1);
+                    }
+
+                    $endPosition = $group->getEndPosition();
+                    if ($endPosition && isset($endPosition->odometer)) {
+                        $odometer->set($endPosition->odometer);
+                        $odometer_end = round($odometer->format(), 1);
+                    }
+                }
+
+                if (is_numeric($odometer_end) && is_numeric($odometer_start)) {
+                    $segment_distance = $odometer_end - $odometer_start;
+                } else {
+                    $segment_distance = $group->stats()->get('distance')->format();
+                }
+
+                // Sumamos la distancia de este segmento al total
+                $total_distance += $segment_distance;
             }
 
             $items[] = [
@@ -288,36 +322,37 @@ class HistoryModalHelper extends ModalHelper
             }
         )->toArray());
 
-        // Calculando distance_sum de manera consistente con OdometerDailyReport
-        $odometer_start = trans('front.not_available');
-        $odometer_end = trans('front.not_available');
-        $odometer = $data['root']->stats()->has('odometer') ? $data['root']->stats()->get('odometer') : null;
+        // Si no hay grupos, utilizamos el valor de distancia del root siguiendo la misma lógica
+        if ($total_distance == 0) {
+            $odometer_start = trans('front.not_available');
+            $odometer_end = trans('front.not_available');
+            $odometer = $data['root']->stats()->has('odometer') ? $data['root']->stats()->get('odometer') : null;
 
-        if ($odometer) {
-            $startPosition = $data['root']->getStartPosition();
-            if ($startPosition && isset($startPosition->odometer)) {
-                $odometer->set($startPosition->odometer);
-                $odometer_start = round($odometer->format());
+            if ($odometer) {
+                $startPosition = $data['root']->getStartPosition();
+                if ($startPosition && isset($startPosition->odometer)) {
+                    $odometer->set($startPosition->odometer);
+                    $odometer_start = round($odometer->format(), 1);
+                }
+
+                $endPosition = $data['root']->getEndPosition();
+                if ($endPosition && isset($endPosition->odometer)) {
+                    $odometer->set($endPosition->odometer);
+                    $odometer_end = round($odometer->format(), 1);
+                }
             }
 
-            $endPosition = $data['root']->getEndPosition();
-            if ($endPosition && isset($endPosition->odometer)) {
-                $odometer->set($endPosition->odometer);
-                $odometer_end = round($odometer->format());
+            if (is_numeric($odometer_end) && is_numeric($odometer_start)) {
+                $total_distance = $odometer_end - $odometer_start;
+            } else {
+                $total_distance = $data['root']->stats()->get('distance')->format();
             }
-        }
-
-        $distance_sum = '';
-        if (is_numeric($odometer_end) && is_numeric($odometer_start)) {
-            $distance_sum = $odometer_end - $odometer_start;
-        } else {
-            $distance_sum = $data['root']->getStat('distance')->human() . 'km';
         }
 
         return [
             'items' => $items,
             'sensors' => $sensors,
-            'distance_sum' => $distance_sum,
+            'distance_sum' => $total_distance,
 
             'classes' => [
                 self::STATUS_DRIVE => [

@@ -6,7 +6,8 @@ use App\Transformers\BaseTransformer;
 use App\Transformers\Driver\DriverFullTransformer;
 use Tobuli\Entities\Device;
 
-abstract class DeviceTransformer extends BaseTransformer {
+abstract class DeviceTransformer extends BaseTransformer
+{
 
 
     protected $availableIncludes = [
@@ -18,30 +19,36 @@ abstract class DeviceTransformer extends BaseTransformer {
         'users'
     ];
 
-    public function includePosition(Device $device) {
+    public function includePosition(Device $device)
+    {
         return $this->item($device, new DevicePositionTransformer(), false);
     }
 
-    public function includeIcon(Device $device) {
+    public function includeIcon(Device $device)
+    {
         return $this->item($device, new DeviceIconTransformer(), false);
     }
 
-    public function includeSensors(Device $device) {
+    public function includeSensors(Device $device)
+    {
         return $this->item($device, new DeviceSensorsTransformer(), false);
     }
 
-    public function includeServices(Device $device) {
+    public function includeServices(Device $device)
+    {
         return $this->item($device, new DeviceServicesTransformer(), false);
     }
 
-    public function includeDriver(Device $device) {
-        if ( ! $device->driver)
+    public function includeDriver(Device $device)
+    {
+        if (! $device->driver)
             return null;
 
         return $this->item($device->driver, new DriverFullTransformer(), false);
     }
 
-    public function includeUsers(Device $device) {
+    public function includeUsers(Device $device)
+    {
         return $this->item($device, new DeviceUsersTransformer(), false);
     }
 }
