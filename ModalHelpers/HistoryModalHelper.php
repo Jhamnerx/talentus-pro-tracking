@@ -153,6 +153,7 @@ class HistoryModalHelper extends ModalHelper
         $snapToRoad = (isset($this->data['snap_to_road']) && ($this->data['snap_to_road'] == 'true' || $this->data['snap_to_road'] == 1)) ? true : false;
 
         $data = $this->getHistoryData($device);
+
         $items = [];
         $groupKeyCount = [];
 

@@ -12,14 +12,6 @@ use Illuminate\Support\Facades\App;
 
 class DeviceMapTransformer extends DeviceTransformer
 {
-    // Tiempo de duración del caché (en minutos)
-    protected $cacheDuration = 15;
-
-    // Bandera para indicar si se debe usar el caché
-    protected $useCache = true;
-
-    // Umbral para optimización de rendimiento (número de dispositivos)
-    protected $deviceThreshold = 100;
 
     protected $defaultIncludes = [
         'icon',
@@ -90,36 +82,6 @@ class DeviceMapTransformer extends DeviceTransformer
             'moved_timestamp'    => (int)$entity->moved_timestamp,
             'stop_duration_sec'  => $entity->getStopDuration(),
             'total_distance'     => $entity->getTotalDistance(),
-
         ];
-    }
-
-    private function getDeviceSensors($device)
-    {
-        // Retornamos todos los sensores que deben incluirse en el gráfico o análisis
-        return $device->sensors->filter(function ($sensor) {
-            return $sensor->add_to_history || $sensor->add_to_graph || $sensor->type == 'odometer';
-        });
-    }
-
-    // Método para habilitar/deshabilitar el caché
-    public function setUseCache($value)
-    {
-        $this->useCache = (bool)$value;
-        return $this;
-    }
-
-    // Método para establecer la duración del caché
-    public function setCacheDuration($minutes)
-    {
-        $this->cacheDuration = (int)$minutes;
-        return $this;
-    }
-
-    // Método para establecer el umbral de dispositivos para optimización
-    public function setDeviceThreshold($count)
-    {
-        $this->deviceThreshold = (int)$count;
-        return $this;
     }
 }

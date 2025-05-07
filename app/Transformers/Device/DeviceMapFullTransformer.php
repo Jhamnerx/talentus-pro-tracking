@@ -15,6 +15,15 @@ use Tobuli\Helpers\Formatter\Facades\Formatter;;
 class DeviceMapFullTransformer extends DeviceTransformer
 {
 
+    // Tiempo de duración del caché (en minutos)
+    protected $cacheDuration = 15;
+
+    // Bandera para indicar si se debe usar el caché
+    protected $useCache = true;
+
+    // Umbral para optimización de rendimiento (número de dispositivos)
+    protected $deviceThreshold = 100;
+
     protected $defaultIncludes = [
         'icon',
         //'sensors',
@@ -37,8 +46,7 @@ class DeviceMapFullTransformer extends DeviceTransformer
             : null;
 
         // Calculamos fechas para el día actual (America/Lima)
-        $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay()->format('Y-m-d H:i:s'));
-        $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay()->format('Y-m-d H:i:s'));
+
 
         // Variables para almacenar los valores del odómetro
         $total_distance = 0;
@@ -93,6 +101,8 @@ class DeviceMapFullTransformer extends DeviceTransformer
             'sensors'   => $this->formatSensors($entity),
             'services'  => $this->formatServices($entity),
             'distancia_hoy'     => Formatter::distance()->format($total_distance),
+            'odometro_inicio'   => $odometer_start_global,
+            'odometro_final'    => $odometer_end_global,
         ];
     }
 
@@ -146,5 +156,35 @@ class DeviceMapFullTransformer extends DeviceTransformer
         }
 
         return $result;
+    }
+
+
+    private function getDeviceSensors($device)
+    {
+        // Retornamos todos los sensores que deben incluirse en el gráfico o análisis
+        return $device->sensors->filter(function ($sensor) {
+            return $sensor->add_to_history || $sensor->add_to_graph || $sensor->type == 'odometer';
+        });
+    }
+
+    // Método para habilitar/deshabilitar el caché
+    public function setUseCache($value)
+    {
+        $this->useCache = (bool)$value;
+        return $this;
+    }
+
+    // Método para establecer la duración del caché
+    public function setCacheDuration($minutes)
+    {
+        $this->cacheDuration = (int)$minutes;
+        return $this;
+    }
+
+    // Método para establecer el umbral de dispositivos para optimización
+    public function setDeviceThreshold($count)
+    {
+        $this->deviceThreshold = (int)$count;
+        return $this;
     }
 }
