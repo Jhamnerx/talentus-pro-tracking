@@ -196,6 +196,7 @@ $result = [
 		'App\Providers\AppearanceServiceProvider',
 		'App\Providers\QueryBuilderMacrosProvider',
 		\App\Providers\AuthManagerProvider::class,
+		\App\Providers\OdometerServiceProvider::class, // Nuevo proveedor para optimización de odómetro
 	],
 
 	/*

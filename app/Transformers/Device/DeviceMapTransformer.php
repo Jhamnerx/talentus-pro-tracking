@@ -24,10 +24,20 @@ use Tobuli\History\Actions\Odometer;
 use Tobuli\History\Actions\AppendOdometerVirtualDistance;
 use Tobuli\History\Actions\AppendOdometer;
 use Tobuli\History\Group;
-
+use Tobuli\Helpers\OdometerOptimizer;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\App;
 
 class DeviceMapTransformer extends DeviceTransformer
 {
+    // Tiempo de duración del caché (en minutos)
+    protected $cacheDuration = 15;
+
+    // Bandera para indicar si se debe usar el caché
+    protected $useCache = true;
+
+    // Umbral para optimización de rendimiento (número de dispositivos)
+    protected $deviceThreshold = 100;
 
     protected $defaultIncludes = [
         'icon',
@@ -45,7 +55,6 @@ class DeviceMapTransformer extends DeviceTransformer
             $query->whereIn('type', $types);
         }];
     }
-
 
     public function transform(Device $entity)
     {
@@ -74,108 +83,18 @@ class DeviceMapTransformer extends DeviceTransformer
         $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay()->format('Y-m-d H:i:s'));
         $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay()->format('Y-m-d H:i:s'));
 
-        // Utilizamos exactamente la misma lógica que el HistoryModalHelper
-        $history = new \Tobuli\History\DeviceHistory($entity);
-        $history->setConfig([
-            'stop_seconds' => 180,
-            'stop_speed' => $entity->min_moving_speed,
-            'min_fuel_fillings' => $entity->min_fuel_fillings,
-            'min_fuel_thefts' => $entity->min_fuel_thefts,
-        ]);
-        $history->setRange($inicio, $fin);
-
-        // IMPORTANTE: Registramos las mismas acciones en el mismo orden que HistoryModalHelper
-        $history->registerActions([
-            \Tobuli\History\Actions\AppendOdometerVirtualDistance::class,
-            \Tobuli\History\Actions\AppendOdometer::class,
-            \Tobuli\History\Actions\AppendRouteColor::class,
-            \Tobuli\History\Actions\DriveStop::class,
-            \Tobuli\History\Actions\Duration::class,
-            \Tobuli\History\Actions\Distance::class,
-            \Tobuli\History\Actions\Speed::class,
-            \Tobuli\History\Actions\Fuel::class,
-            \Tobuli\History\Actions\EngineHours::class,
-            \Tobuli\History\Actions\Drivers::class,
-            \Tobuli\History\Actions\Positions::class,
-            \Tobuli\History\Actions\GroupDriveStop::class,
-            \Tobuli\History\Actions\Odometer::class,
-        ]);
-
-        // IMPORTANTE: Establecer los sensores antes de obtener los datos
-        $history->setSensors($this->getDeviceSensors($entity));
-
-        // Obtenemos datos del historial
-        $data = $history->get();
-
-        // Variable para almacenar la suma de distancias
+        // Variables para almacenar los valores del odómetro
         $total_distance = 0;
         $odometer_start_global = trans('front.not_available');
         $odometer_end_global = trans('front.not_available');
 
-        // Recorremos todos los grupos para calcular la distancia total exactamente como en HistoryModalHelper
-        if ($data['root']->getStartPosition()) {
-            foreach ($data['groups']->all() as $group) {
-                // Calculamos la distancia para cada grupo EXACTAMENTE como en OdometerDailyReport::getRow
-                $odometer_start = trans('front.not_available');
-                $odometer_end = trans('front.not_available');
-                $odometer = $group->stats()->has('odometer') ? $group->stats()->get('odometer') : null;
+        // Usar el optimizador de odómetro para obtener los valores
+        $odometerOptimizer = App::make(OdometerOptimizer::class);
+        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
 
-                $startPosition = $group->getStartPosition();
-
-                if ($odometer) {
-                    if ($startPosition && isset($startPosition->odometer)) {
-                        $odometer->set($startPosition->odometer);
-                        $odometer_start = round($odometer->format(), 1);
-                        // Guardamos el primer valor de odómetro que encontremos como valor inicial global
-                        if ($odometer_start_global == trans('front.not_available')) {
-                            $odometer_start_global = $odometer_start;
-                        }
-                    }
-
-                    $endPosition = $group->getEndPosition();
-                    if ($endPosition && isset($endPosition->odometer)) {
-                        $odometer->set($endPosition->odometer);
-                        $odometer_end = round($odometer->format(), 1);
-                        // Actualizamos el valor final global con cada valor final que encontremos
-                        $odometer_end_global = $odometer_end;
-                    }
-                }
-
-                if (is_numeric($odometer_end) && is_numeric($odometer_start)) {
-                    $segment_distance = $odometer_end - $odometer_start;
-                } else {
-                    $segment_distance = $group->stats()->has('distance') ? $group->stats()->get('distance')->format() : 0;
-                }
-
-                // Sumamos la distancia de este segmento al total
-                $total_distance += $segment_distance;
-            }
-        }
-
-        // Si no se encontraron grupos o no se calculó distancia, intentamos con el root
-        if ($total_distance == 0 || $odometer_start_global == trans('front.not_available')) {
-            $odometer_root = $data['root']->stats()->has('odometer') ? $data['root']->stats()->get('odometer') : null;
-
-            if ($odometer_root) {
-                $startPosition = $data['root']->getStartPosition();
-                if ($startPosition && isset($startPosition->odometer)) {
-                    $odometer_root->set($startPosition->odometer);
-                    $odometer_start_global = round($odometer_root->format());
-                }
-
-                $endPosition = $data['root']->getEndPosition();
-                if ($endPosition && isset($endPosition->odometer)) {
-                    $odometer_root->set($endPosition->odometer);
-                    $odometer_end_global = round($odometer_root->format());
-                }
-            }
-
-            if (is_numeric($odometer_end_global) && is_numeric($odometer_start_global)) {
-                $total_distance = $odometer_end_global - $odometer_start_global;
-            } else {
-                $total_distance = $data['root']->stats()->has('distance') ? $data['root']->stats()->get('distance')->format() : 0;
-            }
-        }
+        $total_distance = $odometerValues['total_distance'];
+        $odometer_start_global = $odometerValues['odometer_start'];
+        $odometer_end_global = $odometerValues['odometer_end'];
 
         return [
             'id'    => (int)$entity->id,
@@ -223,5 +142,26 @@ class DeviceMapTransformer extends DeviceTransformer
         return $device->sensors->filter(function ($sensor) {
             return $sensor->add_to_history || $sensor->add_to_graph || $sensor->type == 'odometer';
         });
+    }
+
+    // Método para habilitar/deshabilitar el caché
+    public function setUseCache($value)
+    {
+        $this->useCache = (bool)$value;
+        return $this;
+    }
+
+    // Método para establecer la duración del caché
+    public function setCacheDuration($minutes)
+    {
+        $this->cacheDuration = (int)$minutes;
+        return $this;
+    }
+
+    // Método para establecer el umbral de dispositivos para optimización
+    public function setDeviceThreshold($count)
+    {
+        $this->deviceThreshold = (int)$count;
+        return $this;
     }
 }

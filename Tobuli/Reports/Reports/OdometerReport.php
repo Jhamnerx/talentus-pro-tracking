@@ -50,13 +50,13 @@ class OdometerReport extends DeviceHistoryReport
             $startPosition = $data['root']->getStartPosition();
             if ($startPosition && isset($startPosition->odometer)) {
                 $odometer->set($startPosition->odometer);
-                $odometer_start = round($odometer->format());
+                $odometer_start = round($odometer->format(), 1);
             }
 
             $endPosition = $data['root']->getEndPosition();
             if ($endPosition && isset($endPosition->odometer)) {
                 $odometer->set($endPosition->odometer);
-                $odometer_end = round($odometer->format());
+                $odometer_end = round($odometer->format(), 1);
             }
         }
 
