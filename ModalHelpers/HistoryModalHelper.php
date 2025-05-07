@@ -309,7 +309,7 @@ class HistoryModalHelper extends ModalHelper
 
         $distance_sum = '';
 
-        $distance_sum = $odometer_end - $odometer_start;
+        $distance_sum = $odometer_end;
 
 
         return [
