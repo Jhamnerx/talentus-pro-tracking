@@ -2,11 +2,18 @@
 
 namespace App\Transformers\Device;
 
-use App\Transformers\BaseTransformer;
+use Carbon\Carbon;
 use Tobuli\Entities\Device;
-use Formatter;
 
-class DeviceMapFullTransformer extends DeviceTransformer  {
+
+use Illuminate\Support\Facades\App;
+use App\Transformers\BaseTransformer;
+
+use Tobuli\Helpers\OdometerOptimizer;
+use Tobuli\Helpers\Formatter\Facades\Formatter;;
+
+class DeviceMapFullTransformer extends DeviceTransformer
+{
 
     protected $defaultIncludes = [
         'icon',
@@ -28,6 +35,25 @@ class DeviceMapFullTransformer extends DeviceTransformer  {
         $inaccuracy = config('addon.inaccuracy')
             ? $entity->getParameter('inaccuracy')
             : null;
+
+        // Calculamos fechas para el día actual (America/Lima)
+        $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay()->format('Y-m-d H:i:s'));
+        $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay()->format('Y-m-d H:i:s'));
+
+        // Variables para almacenar los valores del odómetro
+        $total_distance = 0;
+        $odometer_start_global = trans('front.not_available');
+        $odometer_end_global = trans('front.not_available');
+
+        // Usar el optimizador de odómetro para obtener los valores
+        $odometerOptimizer = App::make(OdometerOptimizer::class);
+
+        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
+
+        $total_distance = $odometerValues['total_distance'];
+        $odometer_start_global = $odometerValues['odometer_start'];
+        $odometer_end_global = $odometerValues['odometer_end'];
+
 
         return [
             'id'    => (int)$entity->id,
@@ -66,6 +92,7 @@ class DeviceMapFullTransformer extends DeviceTransformer  {
 
             'sensors'   => $this->formatSensors($entity),
             'services'  => $this->formatServices($entity),
+            'distancia_hoy'     => Formatter::distance()->format($total_distance),
         ];
     }
 
@@ -107,8 +134,7 @@ class DeviceMapFullTransformer extends DeviceTransformer  {
 
         $result = [];
 
-        foreach ($entity->services as $service)
-        {
+        foreach ($entity->services as $service) {
             $service->setSensors($entity->sensors);
 
             $result[] = [

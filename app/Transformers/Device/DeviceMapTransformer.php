@@ -4,28 +4,10 @@ namespace App\Transformers\Device;
 
 use Carbon\Carbon;
 use Tobuli\Entities\Device;
-use Tobuli\History\DeviceHistory;
 use Tobuli\Sensors\Types\Blocked;
-use Tobuli\Helpers\Formatter\Facades\Formatter;
-use Tobuli\History\Actions\AppendRouteColor;
-use Tobuli\History\Actions\Distance;
-use Tobuli\History\Actions\Drivers;
-use Tobuli\History\Actions\DriveStop;
-use Tobuli\History\Actions\Duration;
-use Tobuli\History\Actions\EngineHours;
-use Tobuli\History\Actions\Fuel;
-use Tobuli\History\Actions\GroupDriveStop;
-use Tobuli\History\Actions\GroupEvent;
-use Tobuli\History\Actions\Positions;
-use Tobuli\History\Actions\Speed;
-use Tobuli\History\Actions\GroupDailySplit;
-use Tobuli\History\Actions\GroupSingle;
-use Tobuli\History\Actions\Odometer;
-use Tobuli\History\Actions\AppendOdometerVirtualDistance;
-use Tobuli\History\Actions\AppendOdometer;
-use Tobuli\History\Group;
+use Tobuli\Helpers\Formatter\Facades\Formatter;;
+
 use Tobuli\Helpers\OdometerOptimizer;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\App;
 
 class DeviceMapTransformer extends DeviceTransformer
@@ -79,23 +61,6 @@ class DeviceMapTransformer extends DeviceTransformer
             $tailColor = $entity->tail_color; // Azul
         }
 
-        // Calculamos fechas para el día actual (America/Lima)
-        $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay()->format('Y-m-d H:i:s'));
-        $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay()->format('Y-m-d H:i:s'));
-
-        // Variables para almacenar los valores del odómetro
-        $total_distance = 0;
-        $odometer_start_global = trans('front.not_available');
-        $odometer_end_global = trans('front.not_available');
-
-        // Usar el optimizador de odómetro para obtener los valores
-        $odometerOptimizer = App::make(OdometerOptimizer::class);
-        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
-
-        $total_distance = $odometerValues['total_distance'];
-        $odometer_start_global = $odometerValues['odometer_start'];
-        $odometer_end_global = $odometerValues['odometer_end'];
-
         return [
             'id'    => (int)$entity->id,
             'name'  => $entity->name,
@@ -125,14 +90,7 @@ class DeviceMapTransformer extends DeviceTransformer
             'moved_timestamp'    => (int)$entity->moved_timestamp,
             'stop_duration_sec'  => $entity->getStopDuration(),
             'total_distance'     => $entity->getTotalDistance(),
-            'hoy' => [
-                'inicio' => $inicio,
-                'fin' => $fin,
-            ],
-            'distancia_hoy'     => Formatter::distance()->format($total_distance),
-            'distancia_hoy_raw' => $total_distance,
-            'odometro_start'    => $odometer_start_global,
-            'odometro_end'      => $odometer_end_global,
+
         ];
     }
 
