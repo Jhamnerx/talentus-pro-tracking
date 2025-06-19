@@ -1,4 +1,6 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
 
 use App\Console\PositionsIpLogger;
 use Illuminate\Console\Command;
@@ -13,7 +15,7 @@ use Tobuli\Entities\UnregisteredDevice;
 
 class InsertCommand extends Command
 {
-    protected $debug = false;
+    protected $debug = true;
 
     /**
      * @var ProcessManager
@@ -62,22 +64,21 @@ class InsertCommand extends Command
         $this->processManager = new ProcessManager($this->name, $timeout, $limit);
         $this->positionsIpLog = new PositionsIpLogger(config('tobuli.positions_ip_log'));
 
-        if ( ! $this->processManager->canProcess()) {
+        if (! $this->processManager->canProcess()) {
             echo "Cant process.";
             return;
         }
 
-        while ($this->processManager->canContinue())
-        {
+        while ($this->processManager->canContinue()) {
             $start = microtime(true);
 
             $imei = $this->process();
 
-            if($this->debug)
-                $this->line('Process: '.(microtime(true) - $start));
+            if ($this->debug)
+                $this->line('Process: ' . (microtime(true) - $start));
 
-            if ($imei)
-            {
+            if ($imei) {
+
                 $this->processManager->unlock($imei);
                 continue;
             }
@@ -97,23 +98,22 @@ class InsertCommand extends Command
 
         $imei = $this->getListUnlockedImei();
 
-        if($this->debug) {
+        if ($this->debug) {
             $this->line('');
             $this->line('Getting imei: ' . (microtime(true) - $start));
         }
 
-        if ( ! $imei)
+        if (! $imei)
             return false;
 
         $start = microtime(true);
 
         $device = DeviceRepo::whereImei($imei);
 
-        if ( ! $device)
-        {
+        if (! $device) {
             $data = $this->positionsStack->getData($imei, false);
 
-            if ( ! $data) {
+            if (! $data) {
                 $this->positionsStack->deleteImei($imei);
                 return $imei;
             }
@@ -121,11 +121,11 @@ class InsertCommand extends Command
             $device = DeviceRepo::getByImeiProtocol($data['imei'], $data['protocol']);
         }
 
-        if($this->debug)
-            $this->line('Getting device: '.(microtime(true) - $start));
+        if ($this->debug)
+            $this->line('Getting device: ' . (microtime(true) - $start));
 
 
-        if ( ! $device) {
+        if (! $device) {
             UnregisteredDevice::increase(
                 Arr::get($data, 'imei'),
                 Arr::get($data, 'protocol'),
@@ -139,14 +139,12 @@ class InsertCommand extends Command
             );
 
             $this->positionsStack->deleteImei($imei);
-
         } elseif ($device->active) {
             $start = microtime(true);
             $writer = new PositionsWriter($device, $this->debug);
             $writer->runList($imei);
-            if($this->debug)
-                $this->line('All writer: '.(microtime(true) - $start));
-
+            if ($this->debug)
+                $this->line('All writer: ' . (microtime(true) - $start));
         } else {
             $this->positionsStack->deleteImei($imei);
         }
@@ -158,20 +156,18 @@ class InsertCommand extends Command
     {
         $imei = null;
 
-        do
-        {
+        do {
             $_imei = $this->positionsStack->next();
 
-            if ( ! $this->isValidImei($_imei)) {
+            if (! $this->isValidImei($_imei)) {
                 $this->positionsStack->deleteImei($_imei);
                 continue;
             }
 
-            if ( ! $this->processManager->lock($_imei))
+            if (! $this->processManager->lock($_imei))
                 continue;
 
             $imei = $_imei;
-
         } while ($_imei && is_null($imei));
 
         return $imei;

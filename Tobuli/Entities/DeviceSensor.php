@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Entities;
+<?php
+
+namespace Tobuli\Entities;
 
 use App\Events\DeviceSensorDeleted;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
@@ -87,11 +89,13 @@ class DeviceSensor extends AbstractEntity
         });
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo('Tobuli\Entities\User', 'user_id', 'id');
     }
 
-    public function device() {
+    public function device()
+    {
         return $this->hasOne('Tobuli\Entities\Device', 'id', 'device_id');
     }
 
@@ -100,7 +104,7 @@ class DeviceSensor extends AbstractEntity
      */
     public function getTypeObject()
     {
-        if ( ! $this->type)
+        if (! $this->type)
             return null;
 
         return (new SensorsManager())->resolveType($this->type);
@@ -179,7 +183,7 @@ class DeviceSensor extends AbstractEntity
         $description = '';
 
         if (!empty($this->fuel_tank_name))
-            $description = ' ('.$this->fuel_tank_name.')';
+            $description = ' (' . $this->fuel_tank_name . ')';
 
         return htmlspecialchars($this->name . $description);
     }
@@ -262,7 +266,7 @@ class DeviceSensor extends AbstractEntity
             return false;
 
         return $this->getSensor()::isUpdatable();
-/*
+        /*
         return $this->isBooleanValue() || in_array($this->type, [
                 'numerical',
                 'textual',
@@ -313,7 +317,7 @@ class DeviceSensor extends AbstractEntity
         if (is_null($value)) {
             return new Value(null, '-', null);
         }
-        
+
         if ($value === '-') {
             return new Value(null, '-', null);
         }
@@ -353,7 +357,9 @@ class DeviceSensor extends AbstractEntity
         return $value;
     }
 
-    public function getValueFormated($position, $newest = true) {
+    public function getValueFormated($position, $newest = true)
+    {
+        echo nl2br(htmlspecialchars(print_r($position, true))) . "<br>";
         $value = $this->getValue($position->other, $newest);
 
         if (is_null($value))
@@ -364,8 +370,7 @@ class DeviceSensor extends AbstractEntity
 
     protected function getCalibrations()
     {
-        if (!isset($this->cacheCalibrations))
-        {
+        if (!isset($this->cacheCalibrations)) {
             $this->cacheCalibrations = $this->calibrations
                 ? new Calibration($this->calibrations, $this->skip_calibration)
                 : false;

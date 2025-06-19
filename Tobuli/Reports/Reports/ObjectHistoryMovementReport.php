@@ -44,7 +44,7 @@ class ObjectHistoryMovementReport extends DeviceReport
             'location'   => $this->getLocation($position, $this->getAddress($position)),
             'parameters' => $position->parameters,
             'sensors'    => $sensors->mapWithKeys(function ($sensor) use ($position) {
-                return [$sensor->id => $sensor->getValueFormated($position->other, false)];
+                return [$sensor->id => $sensor->getValueFormated($position, false)];
             })
         ];
     }

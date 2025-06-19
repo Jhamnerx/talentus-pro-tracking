@@ -129,7 +129,9 @@ class ClientsController extends BaseController
             ->filter($input['filter'] ?? [])
             ->when(!empty($input['search_device']), function (Builder $query) use ($input) {
                 $query->whereHas('devices', function (Builder $query) use ($input) {
-                    $query->where('devices.imei', 'LIKE', '%' . $input['search_device'] . '%');
+                    $query->where('devices.imei', 'LIKE', '%' . $input['search_device'] . '%')
+                        ->orWhere('devices.plate_number', 'LIKE', '%' . $input['search_device'] . '%')
+                        ->orWhere('devices.name', 'LIKE', '%' . $input['search_device'] . '%');
                 });
             })
             ->toPaginator($input['limit'], $sort['sort_by'], $sort['sort']);

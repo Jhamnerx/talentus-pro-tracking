@@ -45,9 +45,6 @@ class DeviceMapFullTransformer extends DeviceTransformer
             ? $entity->getParameter('inaccuracy')
             : null;
 
-        // Calculamos fechas para el día actual (America/Lima)
-
-
         // Variables para almacenar los valores del odómetro
         $total_distance = 0;
         $odometer_start_global = trans('front.not_available');
@@ -156,15 +153,6 @@ class DeviceMapFullTransformer extends DeviceTransformer
         }
 
         return $result;
-    }
-
-
-    private function getDeviceSensors($device)
-    {
-        // Retornamos todos los sensores que deben incluirse en el gráfico o análisis
-        return $device->sensors->filter(function ($sensor) {
-            return $sensor->add_to_history || $sensor->add_to_graph || $sensor->type == 'odometer';
-        });
     }
 
     // Método para habilitar/deshabilitar el caché
