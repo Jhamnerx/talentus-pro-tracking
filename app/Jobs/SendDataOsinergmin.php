@@ -117,7 +117,10 @@ class SendDataOsinergmin extends Job implements ShouldQueue
         // Iterar a través de la respuesta para manejar éxito y errores
         foreach ($response['data'] as $index => $data) {
             $trama = $tramas[$index];
-
+            Log::info('Processing Osinergmin response', [
+                'data' => $data,
+                'trama' => $trama,
+            ]);
             if ($data['uuid'] === $trama['uuid']) {
 
                 if ($data['status'] === 'CREATED') {
