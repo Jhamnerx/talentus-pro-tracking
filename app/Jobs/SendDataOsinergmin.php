@@ -12,6 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Log;
 
 class SendDataOsinergmin extends Job implements ShouldQueue
 {
@@ -145,16 +146,23 @@ class SendDataOsinergmin extends Job implements ShouldQueue
 
     protected function handleSuccess(array $response, array $trama): void
     {
-        $this->logService->logToDatabase(
-            'Osinergmin',
-            $trama['plate'],
-            'success',
-            $trama,
-            ['message' => $response],
-            [],
-            Carbon::parse($trama['gpsDate'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
-            $trama['imei']
-        );
+        try {
+            $this->logService->logToDatabase(
+                'Osinergmin',
+                $trama['plate'],
+                'success',
+                $trama,
+                ['message' => $response],
+                [],
+                Carbon::parse($trama['gpsDate'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
+                $trama['imei']
+            );
+        } catch (\Throwable $th) {
+            Log::error('Error logging Osinergmin success: ' . $th->getMessage(), [
+                'trama' => $trama,
+                'response' => $response,
+            ]);
+        }
     }
 
     protected function handleError(array $response, array $trama): void
