@@ -33,6 +33,11 @@ class DispatchOsinergminJobs implements ShouldQueue
                 continue;
             }
 
+            Log::info('Dispatching Osinergmin jobs for user', [
+                'user_id' => $user->id,
+                'plates' => $plates,
+            ]);
+
             $service = $user->services['osinergmin'];
 
             $batchSize = 2000; // Tamaño del lote
