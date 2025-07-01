@@ -49,6 +49,12 @@ class SendDataOsinergmin extends Job implements ShouldQueue
             ->with('device')->orderBy('created_at')->get();
 
         $tramas = [];
+        Log::info('Processing Osinergmin positions', [
+            'count' => $positions->count(),
+            'offset' => $this->offset,
+            'batchSize' => $this->batchSize,
+            'positions' => $positions->pluck('plate')->toArray(),
+        ]);
 
         foreach ($positions as $position) {
             // Creación del evento (puedes ajustarlo según las reglas del manual)
