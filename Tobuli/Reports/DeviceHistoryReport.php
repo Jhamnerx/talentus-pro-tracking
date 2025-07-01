@@ -105,7 +105,6 @@ abstract class DeviceHistoryReport extends DeviceReport
         $history->setRange($this->date_from, $this->date_to);
 
         try {
-            //dd($history->get());
             return $history->get();
         } catch (\PDOException $e) {
             Bugsnag::notifyException($e);

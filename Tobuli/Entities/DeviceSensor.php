@@ -359,7 +359,6 @@ class DeviceSensor extends AbstractEntity
 
     public function getValueFormated($position, $newest = true)
     {
-        echo nl2br(htmlspecialchars(print_r($position, true))) . "<br>";
         $value = $this->getValue($position->other, $newest);
 
         if (is_null($value))
