@@ -28,9 +28,9 @@ class CopyDataToTableMininter implements ShouldQueue
      */
     public function __construct()
     {
-        $this->onQueue('web-services');
+        $this->onQueue('web-services-reenvio');
     }
-
+    //php /var/www/html/current/artisan queue:work --queue=web-services-reenvio --timeout=600 --verbose --no-interaction >> /var/www/html/current/storage/logs/web-services-reenvio.log 2>&1
     /**
      * Execute the job.
      *
