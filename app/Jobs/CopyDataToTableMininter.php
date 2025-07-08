@@ -20,7 +20,7 @@ use Tobuli\Helpers\Formatter\Facades\Formatter;
 class CopyDataToTableMininter implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
+    public $timeout = 300;
     /**
      * Create a new job instance.
      *
@@ -47,7 +47,7 @@ class CopyDataToTableMininter implements ShouldQueue
         foreach ($devices as $device) {
 
             $device->positions()
-                ->whereBetween('time', ['2025-03-18 05:00:00', '2025-03-19 05:00:00'])
+                ->whereBetween('time', ['2025-07-05 05:00:00', '2025-07-08 05:00:00'])
                 ->chunk(100, function ($positions) use ($device) {
                     foreach ($positions as $position) {
                         //  Log::info('Device e: ' . $position);
