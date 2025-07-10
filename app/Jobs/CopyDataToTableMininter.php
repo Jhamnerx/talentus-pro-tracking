@@ -20,7 +20,7 @@ use Tobuli\Helpers\Formatter\Facades\Formatter;
 class CopyDataToTableMininter implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-    public $timeout = 300;
+    public $timeout = 600;
     /**
      * Create a new job instance.
      *
@@ -31,6 +31,7 @@ class CopyDataToTableMininter implements ShouldQueue
         $this->onQueue('web-services-reenvio');
     }
     //php /var/www/html/current/artisan queue:work --queue=web-services-reenvio --timeout=600 --verbose --no-interaction >> /var/www/html/current/storage/logs/web-services-reenvio.log 2>&1
+    //Queue::pushOn('web-services-reenvio', new App\Jobs\CopyDataToTableMininter);
     /**
      * Execute the job.
      *
@@ -112,7 +113,6 @@ class CopyDataToTableMininter implements ShouldQueue
                 'other' => $others,
             ]
         );
-        Log::info('Data Mininter: ' . $i->id);
     }
 
 
