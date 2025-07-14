@@ -49,7 +49,7 @@ class SendDataOsinergmin extends Job implements ShouldQueue
             ->with('device')->orderBy('created_at')->get();
 
         $tramas = [];
-        Log::info('Processing Osinergmin positions', [
+        Log::channel('osinergmin')->info('Processing Osinergmin positions', [
             'count' => $positions->count(),
             'offset' => $this->offset,
             'batchSize' => $this->batchSize,
@@ -108,6 +108,11 @@ class SendDataOsinergmin extends Job implements ShouldQueue
             $responseBody = json_decode($response->getBody()->getContents(), true);
             $this->actionAfterSend($responseBody, $tramas);
         } catch (RequestException $e) {
+            Log::channel('osinergmin')->error('Request failed for Osinergmin API', [
+                'error' => $e->getMessage(),
+                'tramas_count' => count($tramas),
+                'plates' => array_column($tramas, 'plate')
+            ]);
 
             if ($this->service['logs']) {
                 $this->logError($e, $tramas);
@@ -123,7 +128,7 @@ class SendDataOsinergmin extends Job implements ShouldQueue
         // Iterar a través de la respuesta para manejar éxito y errores
         foreach ($response['data'] as $index => $data) {
             $trama = $tramas[$index];
-            Log::info('Processing Osinergmin response', [
+            Log::channel('osinergmin')->info('Processing Osinergmin response', [
                 'data' => $data,
                 'trama' => $trama,
             ]);
@@ -167,7 +172,7 @@ class SendDataOsinergmin extends Job implements ShouldQueue
                 $trama['imei']
             );
         } catch (\Throwable $th) {
-            Log::error('Error logging Osinergmin success: ' . $th->getMessage(), [
+            Log::channel('osinergmin')->error('Error logging Osinergmin success: ' . $th->getMessage(), [
                 'trama' => $trama,
                 'response' => $response,
             ]);
@@ -176,34 +181,63 @@ class SendDataOsinergmin extends Job implements ShouldQueue
 
     protected function handleError(array $response, array $trama): void
     {
-        $this->logService->logToDatabase(
-            'Osinergmin',
-            $trama['plate'],
-            'error',
-            $trama,
-            ['message' => $response['message'] . ' - ' . ($response['suggestion'] ?? 'No suggestion')],
-            [],
-            Carbon::parse($trama['gpsDate'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
-            $trama['imei']
-        );
-    }
-
-    protected function logError(RequestException $e, array $trama): void
-    {
-        if ($e->hasResponse()) {
-            $response = $e->getResponse();
-            $body = json_decode($response->getBody()->getContents(), true);
-
+        try {
             $this->logService->logToDatabase(
                 'Osinergmin',
                 $trama['plate'],
-                $body['status'],
+                'error',
                 $trama,
-                ['message' => $body['message'] . ' - ' . ($body['suggestion'] ?? 'No suggestion')],
+                ['message' => $response['message'] . ' - ' . ($response['suggestion'] ?? 'No suggestion')],
                 [],
                 Carbon::parse($trama['gpsDate'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
                 $trama['imei']
             );
+        } catch (\Throwable $th) {
+            Log::channel('osinergmin')->error('Error logging Osinergmin error to database: ' . $th->getMessage(), [
+                'trama' => $trama,
+                'response' => $response,
+            ]);
+        }
+    }
+
+    protected function logError(RequestException $e, array $tramas): void
+    {
+        // Tomar la primera trama para el log de error
+        $trama = $tramas[0] ?? [];
+
+        try {
+            if ($e->hasResponse()) {
+                $response = $e->getResponse();
+                $body = json_decode($response->getBody()->getContents(), true);
+
+                $this->logService->logToDatabase(
+                    'Osinergmin',
+                    $trama['plate'] ?? 'unknown',
+                    $body['status'] ?? 'error',
+                    $trama,
+                    ['message' => ($body['message'] ?? 'Unknown error') . ' - ' . ($body['suggestion'] ?? 'No suggestion')],
+                    [],
+                    isset($trama['gpsDate']) ? Carbon::parse($trama['gpsDate'])->setTimezone('America/Lima')->format('Y-m-d H:i:s') : null,
+                    $trama['imei'] ?? null
+                );
+            } else {
+                // Error sin respuesta del servidor
+                $this->logService->logToDatabase(
+                    'Osinergmin',
+                    $trama['plate'] ?? 'unknown',
+                    'connection_error',
+                    $trama,
+                    ['message' => 'Connection error: ' . $e->getMessage()],
+                    [],
+                    isset($trama['gpsDate']) ? Carbon::parse($trama['gpsDate'])->setTimezone('America/Lima')->format('Y-m-d H:i:s') : null,
+                    $trama['imei'] ?? null
+                );
+            }
+        } catch (\Throwable $th) {
+            Log::channel('osinergmin')->error('Error logging Osinergmin error to database: ' . $th->getMessage(), [
+                'original_exception' => $e->getMessage(),
+                'trama' => $trama,
+            ]);
         }
     }
 }

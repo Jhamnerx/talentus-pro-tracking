@@ -75,6 +75,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\BackupImportCommand',
         'App\Console\Commands\DeleteInvalidFuelEventsCommand',
         \App\Console\Commands\CacheOdometerValuesCommand::class,
+        'App\Console\Commands\CleanOsinergminLogs',
     ];
 
     /**
@@ -140,6 +141,9 @@ class Kernel extends ConsoleKernel
 
         // Comando para precalcular valores de odómetro cada 15 minutos
         $schedule->command('odometer:cache')->everyFifteenMinutes()->withoutOverlapping();
+
+        // Limpiar logs antiguos de Osinergmin diariamente a las 2:00 AM
+        $schedule->command('logs:clean-osinergmin')->dailyAt('02:00');
     }
 
     /**

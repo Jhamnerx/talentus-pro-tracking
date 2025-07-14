@@ -90,6 +90,13 @@ return [
         'bugsnag' => [
             'driver' => 'bugsnag',
         ],
+
+        'osinergmin' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/osinergmin.log'),
+            'level' => 'debug',
+            'days' => 7,
+        ],
     ],
 
 ];
