@@ -7,7 +7,7 @@ class WebServices
     const SUTRAN = "Sutran";
     const OSINERGMIN = "Osinergmin";
     const MININTER = "Mininter";
-    const CONSATEL = "Consatel";
+    const CONSATEL = "Comsatel";
     const WISETRACK = "Wisetrack";
 
     public static function labels(string $service): string

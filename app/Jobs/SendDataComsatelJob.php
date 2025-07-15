@@ -68,7 +68,6 @@ class SendDataComsatelJob implements ShouldQueue
         $url = config('app.url_comsatel_prod');
 
         if ($positions->isEmpty()) {
-            Log::info('No hay posiciones para enviar a Comsatel.');
             return;
         }
 

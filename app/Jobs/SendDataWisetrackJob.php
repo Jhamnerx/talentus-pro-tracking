@@ -177,7 +177,7 @@ class SendDataWisetrackJob implements ShouldQueue
             if ($estado == 1) {
                 // Log::info("✅ Posición enviada correctamente: " . $detalle);
             } elseif ($estado == 4) {
-                Log::warning("⚠ Registro duplicado en Wisetrack: " . $detalle);
+                // Log::warning("⚠ Registro duplicado en Wisetrack: " . $detalle);
             } elseif ($estado == 3) {
                 Log::error("⛔ Token inválido en Wisetrack. Verifica la configuración.");
             } elseif ($estado == 5) {
