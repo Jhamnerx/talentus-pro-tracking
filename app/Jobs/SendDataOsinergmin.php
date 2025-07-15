@@ -23,7 +23,6 @@ class SendDataOsinergmin extends Job implements ShouldQueue
     protected $plates;
     protected $logService;
     public $tries = 5; // Intentos permitidos
-    public $timeout = 300;
 
 
     public function __construct($offset, $batchSize, $service, $plates)
@@ -33,7 +32,7 @@ class SendDataOsinergmin extends Job implements ShouldQueue
         $this->service = $service;
         $this->plates = $plates;
 
-        $this->onQueue('web-services');
+        $this->onQueue('web-services-osinergmin');
     }
 
     public function handle()

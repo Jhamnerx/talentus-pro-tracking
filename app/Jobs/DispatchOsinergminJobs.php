@@ -38,7 +38,7 @@ class DispatchOsinergminJobs implements ShouldQueue
             $totalRecords = Osinergmin::whereIn('plate', $plates)->count();
 
             for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-                SendDataOsinergmin::dispatch($i, $batchSize, $service, $plates);
+                SendDataOsinergmin::dispatch($i, $batchSize, $service, $plates)->onQueue('web-services-osinergmin');
             }
         }
     }
