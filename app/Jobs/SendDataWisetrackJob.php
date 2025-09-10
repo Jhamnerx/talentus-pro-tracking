@@ -137,7 +137,7 @@ class SendDataWisetrackJob implements ShouldQueue
     public function actionAfterSend($tramas, $response)
     {
 
-        Log::info("Respuesta satisfactoria: " . json_encode($response));
+        //Log::info("Respuesta satisfactoria: " . json_encode($response));
 
         $ids = []; // IDs de tramas a eliminar
 

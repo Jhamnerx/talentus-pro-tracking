@@ -64,9 +64,6 @@ class CleanServerCommand extends Command
 		}
 
 		$server = File::exists('/etc/ser') ? true : false;
-		if (!$server) {
-			Artisan::call('down');
-		}
 		Log::info("colocar el servidor en mantenimiento");
 
 		$this->line("Job done[OK]\n");

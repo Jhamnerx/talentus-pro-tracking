@@ -24,7 +24,6 @@ class GeofencesIn extends ActionStat
     {
         if (empty($position->geofences))
             return;
-        Log::info($position->geofences);
         foreach ($position->geofences as $geofence_id)
             $this->history->applyStat('geofences_in', $geofence_id);
     }

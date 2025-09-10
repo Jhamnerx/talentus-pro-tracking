@@ -12,8 +12,8 @@
     <meta name="app-version" content="{{ config('tobuli.version') }}">
     <meta name="app-build" content="{{ config('app.build') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="author" content="desarrollosgps@gmail.com" />
-    <meta name="copyright" content="System modified by desarrollosgps@gmail.com. Information to +573187208706" />
+    <meta name="author" content="development@talentustechnology.com" />
+    <meta name="copyright" content="System modified by development@talentustechnology.com. " />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <link rel="shortcut icon" href="{{ Appearance::getAssetFileUrl('favicon') }}" />
     <link rel="stylesheet" type="text/css"
