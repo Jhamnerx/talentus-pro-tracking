@@ -83,6 +83,13 @@ return [
             'handler' => \Monolog\Handler\NullHandler::class,
         ],
 
+        'validaciones_tecnicas' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/validaciones_tecnicas.log'),
+            'level' => 'info',
+            'days' => 30,
+        ],
+
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],

@@ -808,6 +808,14 @@ class PositionsWriter
 
     public function saveDataSutran($device, $position)
     {
+        // Verificar primero si aplica validaciones técnicas (CTR + velocidad > 95)
+        if ($device->object_owner && strpos($device->object_owner, 'CTR') !== false && $position->speed > 95) {
+            // Ejecutar validaciones técnicas
+            $this->saveValidacionesTecnicas($device, $position);
+            // No guardar en tabla Sutran y salir de la función
+            return;
+        }
+
         // Obtener la última posición registrada
         $prevPosition = $this->getPrevPosition($position->time);
 
@@ -887,6 +895,51 @@ class PositionsWriter
 
         // Imprimir el array
         return $array;
+    }
+
+    /**
+     * Filtra posiciones con velocidad mayor a 95 km/h para dispositivos CTR
+     * y guarda registro en canal "validaciones tecnicas"
+     */
+    public function saveValidacionesTecnicas($device, $position)
+    {
+        // Verificar si el dispositivo tiene "CTR" en object_owner
+        if (!$device->object_owner || strpos($device->object_owner, 'CTR') === false) {
+            return;
+        }
+
+        // Filtrar solo posiciones con velocidad mayor a 95 km/h
+        if ($position->speed <= 95) {
+            return;
+        }
+
+        // Convertir device_time a zona horaria "America/Lima"
+        $timezone = new DateTimeZone('America/Lima');
+        $deviceTime = new DateTime($position->device_time);
+        $deviceTime->setTimezone($timezone);
+
+        // Preparar datos para validaciones técnicas
+        $validacionData = [
+            'device_id' => $device->id,
+            'plate' => trim($device->plate_number),
+            'object_owner' => $device->object_owner,
+            'latitud' => $position->latitude,
+            'longitud' => $position->longitude,
+            'velocidad' => $position->speed,
+            'direccion' => $position->course,
+            'time_device' => $position->device_time,
+            'time_lima' => $deviceTime->format('Y-m-d H:i:s'),
+            'valid' => $position->valid,
+            'canal' => 'validaciones tecnicas',
+            'tipo_validacion' => 'velocidad_excesiva',
+            'umbral_superado' => 95,
+            'diferencia' => $position->speed - 95,
+        ];
+
+        // Guardar en canal de validaciones técnicas
+        // Aquí puedes implementar el guardado según tu sistema de canales
+        // Por ejemplo, usando Redis, base de datos, logs, etc.
+        \Log::channel('validaciones_tecnicas')->info('Velocidad excesiva detectada', $validacionData);
     }
 
     protected function getEngineStatus($position)
