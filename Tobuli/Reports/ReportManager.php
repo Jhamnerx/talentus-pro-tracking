@@ -102,6 +102,7 @@ class ReportManager
         93 => Reports\ObjectHistoryMovementReport::class,
         94 => Reports\OverspeedsInGeofenceCustomReport::class,
         95 => Reports\OverspeedsInGeofenceCustomReportV2::class,
+        96 => Reports\OverspeedsInGeofenceCustomReportBuenaventura::class,
     ];
 
     /**

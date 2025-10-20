@@ -16,6 +16,7 @@ use Illuminate\Database\QueryException;
 use Tobuli\History\Actions\GeofencesIn;
 use Tobuli\History\Actions\GroupDriver;
 use Tobuli\Reports\DeviceHistoryReport;
+use Tobuli\History\Actions\AppendPosition;
 use Tobuli\History\Actions\BreakOverspeed;
 use Tobuli\History\Actions\GroupOverspeed;
 use Tobuli\History\Actions\OverspeedStatic;
@@ -23,9 +24,9 @@ use Tobuli\History\Actions\AppendSpeedLimitGeofence;
 use Tobuli\History\Actions\AppendOverspeedingProcessOnly;
 use Tobuli\History\Actions\AppendOverspeedOnlyInGeofences;
 
-class OverspeedsInGeofenceCustomReportV2 extends DeviceHistoryReport
+class OverspeedsInGeofenceCustomReportBuenaventura extends DeviceHistoryReport
 {
-    const TYPE_ID = 95;
+    const TYPE_ID = 96;
 
 
     protected $disableFields = ['stops', 'zones_instead'];
@@ -38,7 +39,7 @@ class OverspeedsInGeofenceCustomReportV2 extends DeviceHistoryReport
 
     public function title()
     {
-        return 'Overspeeds in geofences';
+        return trans('front.overspeeds') . ' / ' . trans('front.geofences') . ' - Buenaventura';
     }
 
     protected function getActionsList()
@@ -49,6 +50,7 @@ class OverspeedsInGeofenceCustomReportV2 extends DeviceHistoryReport
             Speed::class,
             AppendSpeedLimitGeofence::class,
             Overspeed::class,
+            AppendPosition::class,
             Harsh::class,
             Drivers::class,
             GeofencesIn::class,
@@ -64,27 +66,28 @@ class OverspeedsInGeofenceCustomReportV2 extends DeviceHistoryReport
 
     protected function getTable($data)
     {
-
         $rows = [];
 
         foreach ($data['groups']->all() as $group) {
             $distance = $group->stats()->get('distance')->get();
+            $excesive_speed = ($group->stats()->get('speed_max')->get() - $group->stats()->get('overspeed_limit')->get());
 
-
-            $rows[] = $this->getDataFromGroup($group, [
+            $row = $this->getDataFromGroup($group, [
                 'start_at',
                 'end_at',
                 'duration',
-                'speed',
                 'speed_max',
                 'speed_avg',
                 'location',
+                'overspeed_limit',
                 'geofences_in',
                 'drivers'
             ]);
 
             $row['distance'] = round($distance, 2);
-            $row['excesive_speed'] = $group->stats()->get('overspeed_count')->get();
+            $row['excesive_speed'] = $excesive_speed;
+
+            $rows[] = $row;
 
             $this->group->applyArray($group->stats()->only([
                 'duration',
@@ -92,7 +95,6 @@ class OverspeedsInGeofenceCustomReportV2 extends DeviceHistoryReport
                 'speed_avg',
             ]));
         }
-
 
         return [
             'rows'   => $rows,

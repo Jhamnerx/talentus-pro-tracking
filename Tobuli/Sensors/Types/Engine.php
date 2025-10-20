@@ -15,7 +15,7 @@ class Engine extends Logical
         return trans('front.engine_on_off');
     }
 
-    public static function isUnique() : bool
+    public static function isUnique(): bool
     {
         return true;
     }

@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Services\Commands;
+<?php
+
+namespace Tobuli\Services\Commands;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -17,6 +19,7 @@ class SendCommandService
     private $protocolManager;
     private $actor;
     private $user;
+
 
     public function __construct($actor = null)
     {
@@ -68,7 +71,7 @@ class SendCommandService
         $this->actor = $this->actor ?: $arguments['user'];
         $this->user = $arguments['user'];
 
-        if ( ! ($arguments['devices'] instanceof Collection || is_array($arguments['devices'])))
+        if (! ($arguments['devices'] instanceof Collection || is_array($arguments['devices'])))
             $arguments['devices'] = [$arguments['devices']];
 
         $responses = new Collection();
@@ -86,10 +89,10 @@ class SendCommandService
 
     private function _sms($device, $data)
     {
-        if ( ! $this->user)
+        if (! $this->user)
             return $this->handleError($device, $data, ['status' => 0, 'error' => trans('front.user_not_found')]);
 
-        if ( ! $this->user->can('show', $device))
+        if (! $this->user->can('show', $device))
             return $this->handleError($device, $data, ['status' => 0, 'error' => trans('front.dont_have_permission')]);
 
         $message = $this->prepareSmsMessage($device, $data['message']);
@@ -112,16 +115,16 @@ class SendCommandService
         if (Str::startsWith($data['type'], 'template_'))
             list($data['type'], $data['template_id']) = explode('_', $data['type']);
 
-        if ( ! $this->user)
+        if (! $this->user)
             return $this->handleError($device, $data, ['status' => 0, 'error' => trans('front.user_not_found')]);
 
-        if ( ! $this->user->can('show', $device))
+        if (! $this->user->can('show', $device))
             return $this->handleError($device, $data, ['status' => 0, 'error' => trans('front.dont_have_permission')]);
 
         if (in_array($data['type'], ['custom', 'serial']) && ! $this->user->perm('send_command', 'edit'))
             return $this->handleError($device, $data, ['status' => 0, 'error' => trans('front.dont_have_permission')]);
 
-        if ( ! $device->isConnected())
+        if (! $device->isConnected())
             return $this->handleError($device, $data, ['status' => 0, 'error' => trans('front.no_gprs_connection')]);
 
         if ($device->gprs_templates_only && ! Str::startsWith($data['type'], 'template'))
@@ -160,12 +163,12 @@ class SendCommandService
     private function logSending($device, $data, $additional)
     {
         $this->actor->sentCommands()->create([
-                'user_id'     => $this->user->id,
-                'device_imei' => $device->imei,
-                'template_id' => empty($data['template_id']) ? null : $data['template_id'],
-                'connection'  => $data['connection'],
-                'command'     => $data['type'],
-            ] + $additional);
+            'user_id'     => $this->user->id,
+            'device_imei' => $device->imei,
+            'template_id' => empty($data['template_id']) ? null : $data['template_id'],
+            'connection'  => $data['connection'],
+            'command'     => $data['type'],
+        ] + $additional);
     }
 
     private function prepareSmsMessage($device, $message)
@@ -199,5 +202,4 @@ class SendCommandService
 
         return trans('front.send_command_speed_limit_fail');
     }
-
 }

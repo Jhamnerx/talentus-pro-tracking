@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 use App\Exceptions\ResourseNotFoundException;
 use CustomFacades\Repositories\DeviceRepo;
@@ -20,7 +22,8 @@ use Tobuli\Sensors\Types\EngineHours;
 use Tobuli\Sensors\Types\Odometer;
 use Tobuli\Services\ConditionService;
 
-class SensorModalHelper extends ModalHelper {
+class SensorModalHelper extends ModalHelper
+{
 
     /**
      * @var SensorsManager
@@ -38,8 +41,7 @@ class SensorModalHelper extends ModalHelper {
     {
         $sensors = DeviceSensorRepo::searchAndPaginate(['filter' => ['device_id' => $device_id]], 'id', 'desc', 10);
 
-        $sensors->getCollection()->transform(function ($sensor)
-        {
+        $sensors->getCollection()->transform(function ($sensor) {
             $sensor->setAppends(['type_title']);
             return $sensor;
         });
@@ -56,7 +58,7 @@ class SensorModalHelper extends ModalHelper {
     {
         $sensors = $this->sensorsManager->getEnabledListTitles();
 
-        $types = $this->sensorsManager->getEnabledList()->map(function($sensor) {
+        $types = $this->sensorsManager->getEnabledList()->map(function ($sensor) {
             return [
                 'type'     => $sensor->getType(),
                 'shown_by' => $sensor->getShowTypes(),
@@ -69,15 +71,15 @@ class SensorModalHelper extends ModalHelper {
             $params = json_decode($device->parameters, true) ?? [];
             sort($params);
             $parameters = array_combine($params, $params);
-        }
-        else {
+        } else {
             $parameters = null;
         }
 
         return compact('sensors', 'types', 'device_id', 'parameters');
     }
 
-    public function create() {
+    public function create()
+    {
         $this->validate($this->data);
 
         $update = $this->formatInput($this->data);
@@ -88,12 +90,13 @@ class SensorModalHelper extends ModalHelper {
         return ['status' => 1];
     }
 
-    public function editData() {
+    public function editData()
+    {
         if (array_key_exists('sensor_id', $this->data))
             $sensor_id = $this->data['sensor_id'];
         else
             $sensor_id = request()->route('sensors');
-        
+
         $item = DeviceSensorRepo::find($sensor_id);
 
         if (empty($item))
@@ -110,7 +113,8 @@ class SensorModalHelper extends ModalHelper {
         return $data;
     }
 
-    public function edit() {
+    public function edit()
+    {
         if (array_key_exists('sensor_id', $this->data))
             $sensor_id = $this->data['sensor_id'];
         else
@@ -135,7 +139,8 @@ class SensorModalHelper extends ModalHelper {
         return ['status' => 1];
     }
 
-    public function destroy() {
+    public function destroy()
+    {
         if (array_key_exists('sensor_id', $this->data))
             $sensor_id = $this->data['sensor_id'];
         else
@@ -289,13 +294,13 @@ class SensorModalHelper extends ModalHelper {
                     $rules['tag_name'] = 'required';
                     break;
                 case 'logic_on':
-                    $rules['on_type'] = 'required|in:' . implode(',', $conditionTypes) ;
+                    $rules['on_type'] = 'required|in:' . implode(',', $conditionTypes);
                     $rules['on_tag_value'] = 'required';
                     $rules['on_tag_start'] = 'required_if:setflag,1|numeric|min:0';
                     $rules['on_tag_count'] = 'required_if:setflag,1|numeric|min:1';
                     break;
                 case 'logic_off':
-                    $rules['off_type'] = 'required|in:' . implode(',', $conditionTypes) ;
+                    $rules['off_type'] = 'required|in:' . implode(',', $conditionTypes);
                     $rules['off_tag_value'] = 'required';
                     $rules['off_tag_start'] = 'required_if:setflag,1|numeric|min:0';
                     $rules['off_tag_count'] = 'required_if:setflag,1|numeric|min:1';
@@ -379,7 +384,7 @@ class SensorModalHelper extends ModalHelper {
                     $update['tag_name'] = trim($input['tag_name'] ?? '');
                     break;
                 case 'calibrations':
-                    if (Arr::get($input,'calibrations')) {
+                    if (Arr::get($input, 'calibrations')) {
                         asort($input['calibrations']);
                         foreach ($input['calibrations'] as $value => $calibrated) {
                             if (!is_numeric($calibrated) || !is_numeric($value))
@@ -389,13 +394,13 @@ class SensorModalHelper extends ModalHelper {
                     }
                     break;
                 case 'mappings':
-                    if (Arr::get($input,'mappings')) {
+                    if (Arr::get($input, 'mappings')) {
                         $update[$key] = collect($input[$key])->sortBy('v')->toArray();
                     }
                     break;
                 case 'bitcut_start':
                 case 'bitcut_count':
-                    if (Arr::get($input,'bitcut')) {
+                    if (Arr::get($input, 'bitcut')) {
                         $update['bitcut'] = [
                             'start' => $input['bitcut_start'],
                             'count' => $input['bitcut_count'],
@@ -405,12 +410,12 @@ class SensorModalHelper extends ModalHelper {
                     break;
                 case 'setflag_start':
                 case 'setflag_count':
-                    if (Arr::get($input,'setflag')) {
+                    if (Arr::get($input, 'setflag')) {
                         $update['formula'] = SetFlag::buildCrop($input['setflag_start'], $input['setflag_count']);
                     }
                     break;
                 case 'on_tag_value':
-                    if (Arr::get($input,'setflag')) {
+                    if (Arr::get($input, 'setflag')) {
                         $update['on_tag_value'] = SetFlag::buildCropValue(
                             $input['on_tag_start'],
                             $input['on_tag_count'],
@@ -421,7 +426,7 @@ class SensorModalHelper extends ModalHelper {
                     }
                     break;
                 case 'off_tag_value':
-                    if (Arr::get($input,'setflag')) {
+                    if (Arr::get($input, 'setflag')) {
                         $update['off_tag_value'] = SetFlag::buildCropValue(
                             $input['off_tag_start'],
                             $input['off_tag_count'],
@@ -449,11 +454,10 @@ class SensorModalHelper extends ModalHelper {
                     $update['tag_name'] = TraccarPosition::VIRTUAL_ENGINE_HOURS_KEY;
                 }
                 if (Arr::has($input, 'value')) {
-
                 }
                 break;
             case Odometer::getType():
-                if (Arr::get($input, 'shown_value_by') == 'virtual_odometer' && Arr::has($input, 'value') ) {
+                if (Arr::get($input, 'shown_value_by') == 'virtual_odometer' && Arr::has($input, 'value')) {
                     $update['odometer_value'] = $input['value'];
                     unset($update['value']);
                 }
@@ -490,7 +494,8 @@ class SensorModalHelper extends ModalHelper {
         }
     }
 
-    protected function getValue($item) {
+    protected function getValue($item)
+    {
         switch ($item->type) {
             case EngineHours::getType():
                 if (in_array($item->shown_value_by, ['virtual', 'logical'])) {
@@ -555,7 +560,7 @@ class SensorModalHelper extends ModalHelper {
 
         $device->sensors()
             ->where('type', 'engine_hours')
-            ->where(function($query) {
+            ->where(function ($query) {
                 $query->where('tag_name', TraccarPosition::VIRTUAL_ENGINE_HOURS_KEY)->orWhere('shown_value_by', 'logical');
             })
             ->update([
@@ -564,5 +569,4 @@ class SensorModalHelper extends ModalHelper {
 
         return ['status' => 1];
     }
-
 }
