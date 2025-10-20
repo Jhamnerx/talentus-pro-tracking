@@ -43,14 +43,7 @@
                 </thead>
                 <tbody>
                     @foreach ($report->getItems() as $item)
-                        @if (isset($item['error']))
-                            <tr>
-                                @foreach ($item['meta'] as $key => $meta)
-                                    <td>{{ $meta['value'] }}</td>
-                                @endforeach
-                                <td colspan="10">{{ $item['error'] }}</td>
-                            </tr>
-                        @else
+                        @if (!isset($item['error']))
                             @foreach ($item['table']['rows'] as $row)
                                 <tr>
                                     @foreach ($item['meta'] as $key => $meta)
@@ -72,13 +65,11 @@
                     @endforeach
                 </tbody>
                 <tfoot>
-                    <tr>
+                    <tr style="background-color: #f5f5f5; font-weight: bold;">
                         @foreach ($report->metas('device') as $meta)
                             <th></th>
                         @endforeach
-                        <th></th>
-                        <th></th>
-                        <th></th>
+                        <th colspan="3" style="text-align: right;">{{ trans('front.total') }}:</th>
                         <th></th>
                         <th>{{ $report->globalTotals('duration') }}</th>
                         <th>{{ $report->globalTotals('speed_max') }}</th>
