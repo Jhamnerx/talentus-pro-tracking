@@ -14,6 +14,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Support\Facades\Log;
 
 class SendDataMininter implements ShouldQueue
 {
@@ -119,7 +120,7 @@ class SendDataMininter implements ShouldQueue
         } catch (RequestException $e) {
             if ($this->service['logs']) {
 
-
+                Log::error('Error al enviar datos a Mininter: ' . $e->getMessage());
                 if ($e->hasResponse()) {
                     $response = $e->getResponse();
                     $body = $response->getBody()->getContents();
