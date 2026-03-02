@@ -1,0 +1,3 @@
+# Ignore Blade templates to prevent formatting issues
+Tobuli/Views/**/*.blade.php
+resources/views/**/*.blade.php

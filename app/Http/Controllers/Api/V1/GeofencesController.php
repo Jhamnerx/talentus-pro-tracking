@@ -32,7 +32,10 @@ class GeofencesController extends Controller
             $this->checkException('geofences', 'view');
 
             return ['items' => [
-                'geofences' => Geofence::userOwned($this->user)->get()
+                'geofences' => Geofence::userOwned($this->user)
+                    ->filter(request()->all())
+                    ->search(request('search'))
+                    ->get()
             ]];
         } catch (\Exception $e) {
             return ['items' => ['geofences' => []]];

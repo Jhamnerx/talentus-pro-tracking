@@ -97,7 +97,13 @@
                     @if (Auth::User()->isAdmin() || Auth::User()->isSupervisor())
                         <div class="form-group field_manager_id">
                             {!! Form::label('manager_id', trans('validation.attributes.manager_id') . '*:') !!}
-                            {!! Form::select('manager_id', $managers, $item->manager_id, ['class' => 'form-control']) !!}
+                            {!! Form::select('manager_id', [], null, [
+                                'class' => 'form-control',
+                                'title' => trans('front.none'),
+                                'data-live-search' => 'true',
+                                'data-ajax' => route('admin.clients.managers'),
+                                'data-selected' => $item->manager_id,
+                            ]) !!}
                         </div>
                     @endif
                 </div>

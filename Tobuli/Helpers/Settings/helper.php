@@ -2,10 +2,10 @@
 
 if (! function_exists('settings')) {
     /**
-     * @param  array|string  $key
-     * @param  array|string  $value
-     * @return mixed
-     */
+    * @param  array|string  $key
+    * @param  array|string  $value
+    * @return mixed
+    */
     function settings($key = null, $value = null)
     {
         if (is_null($key)) {

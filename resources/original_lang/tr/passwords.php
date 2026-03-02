@@ -8,5 +8,9 @@ return array(
     'token' => 'Bu parola sıfırlama belirteci geçersiz.',
     'user' => 'Bu e-posta adresine sahip bir kullanıcı bulamıyoruz.',
     'throttled' => 'Tekrar denemeden önce lütfen bekleyin.',
-    'generic' => 'Bu e-postaya sahip bir hesap mevcutsa, bir şifre sıfırlama bağlantısı alacaksınız.',
+    'generic' => 'Bu verilere sahip bir hesabınız varsa, şifre sıfırlama bağlantısı alacaksınız.',
+    'action_confirmation_with_password' => 'Bu işlemi onaylamak için lütfen şifreyi girin',
+    'via_phone' => 'Telefon numarası üzerinden kurtarma',
+    'via_email' => 'E-posta yoluyla kurtarma',
+    'recovery_via' => 'Şifre sıfırlama bağlantısını nasıl almak istersiniz?',
 );

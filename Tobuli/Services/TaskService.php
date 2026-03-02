@@ -7,6 +7,8 @@ use Illuminate\Support\Arr;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Task;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Services\Tasks\TaskSetService;
+
 
 class TaskService extends ModelService
 {
@@ -27,6 +29,10 @@ class TaskService extends ModelService
         $task->user_id = $data['user_id'];
         $task->save();
 
+        if ($task->task_set_id) {
+            TaskSetService::createTask($task->task_set_id, $task->toArray());
+        }
+
         return $task;
     }
 
@@ -34,7 +40,13 @@ class TaskService extends ModelService
     {
         $this->validateDevice($model, $data);
 
-        return $model->update($data);
+        $status = $model->update($data);
+
+        if ($model->task_set_id) {
+            TaskSetService::createTask($model->task_set_id, $model->toArray());
+        }
+
+        return $status;
     }
 
     public function delete($model)

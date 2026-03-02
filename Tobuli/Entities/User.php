@@ -21,9 +21,10 @@ use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Laravel\Passport\HasApiTokens;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
-use Illuminate\Support\Facades\Log;
 use Tobuli\Helpers\Settings\Settingable;
+use Tobuli\Relations\HasManyTable;
 use Tobuli\Services\NotificationService;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\Chattable;
@@ -56,11 +57,13 @@ class User extends AbstractEntity implements
         Filterable,
         Customizable,
         FcmTokensTrait,
+        HasApiTokens,
         HasFactory,
         ChangeLogs,
         DisplayTrait;
 
     public static string $displayField = 'email';
+
 
     private $searchable = [
         'email',
@@ -103,6 +106,8 @@ class User extends AbstractEntity implements
         'unit_of_capacity',
         'unit_of_altitude',
         'duration_format',
+        'date_format',
+        'time_format',
         'timezone_id',
         'sms_gateway',
         'sms_gateway_url',
@@ -420,29 +425,17 @@ class User extends AbstractEntity implements
     public function accessibleDevices()
     {
         if ($this->isAdmin() || $this->isSupervisor()) {
-            $relation = $this->hasMany('Tobuli\Entities\Device', 'user_id', 'id')
-                ->orWhere(function ($query) {
-                    $query->whereNull('devices.user_id')->orWhere('devices.user_id', '>', 0);
-                });
+            $instance = new Device();
+            $relation = new HasManyTable($instance->newQuery(), $this);
         } elseif ($this->isManager()) {
-
-            $self = $this;
-
-            $relation = $this->hasMany('Tobuli\Entities\Device', 'user_id', 'id')
+            $instance = new Device();
+            $relation = new HasManyTable($instance->newQuery(), $this);
+            $relation
                 ->select('devices.*')
-                ->orWhere(function ($query) {
-                    $query->whereNull('devices.user_id')->orWhere('devices.user_id', '>', 0);
-                })
                 ->join('user_device_pivot', 'user_device_pivot.device_id', '=', 'devices.id')
-                ->whereIn('user_device_pivot.user_id', function ($query) use ($self) {
-                    $query
-                        ->select('users.id')
-                        ->from('users')
-                        ->where('users.id', $self->id)
-                        ->orWhere('users.manager_id', $self->id)
-                    ;
-                })
-                ->distinct('devices.id');
+                ->whereManagerOwn('user_device_pivot.user_id', $this)
+                ->distinct('devices.id')
+            ;
         } else {
             $relation = $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id');
         }
@@ -453,32 +446,25 @@ class User extends AbstractEntity implements
     public function accessibleDevicesWithGroups()
     {
         if ($this->isAdmin() || $this->isSupervisor()) {
-            return $this->hasMany('Tobuli\Entities\Device', 'user_id', 'id')
+            $instance = new Device();
+            $relation = new HasManyTable($instance->newQuery(), $this);
+
+            return $relation
                 ->select('devices.*', 'user_device_pivot.group_id')
-                ->orWhere(function ($query) {
-                    $query->whereNull('devices.user_id')->orWhere('devices.user_id', '>', 0);
-                })
                 ->leftJoin('user_device_pivot', function ($join) {
                     $join->on('user_device_pivot.device_id', '=', 'devices.id')
                         ->where('user_device_pivot.user_id', '=', $this->id);
                 });
         }
 
-        if ($this->isManager()) {
-            return $this->hasMany('Tobuli\Entities\Device', 'user_id', 'id')
+        if ($this->isReseller() || $this->isOperator()) {
+            $instance = new Device();
+            $relation = new HasManyTable($instance->newQuery(), $this);
+
+            return $relation
                 ->select('devices.*', 'user_device_group.group_id')
-                ->orWhere(function ($query) {
-                    $query->whereNull('devices.user_id')->orWhere('devices.user_id', '>', 0);
-                })
                 ->join('user_device_pivot', 'user_device_pivot.device_id', '=', 'devices.id')
-                ->whereIn('user_device_pivot.user_id', function ($query) {
-                    $query
-                        ->select('users.id')
-                        ->from('users')
-                        ->where('users.id', $this->id)
-                        ->orWhere('users.manager_id', $this->id)
-                    ;
-                })
+                ->whereManagerOwn('user_device_pivot.user_id', $this)
                 ->leftJoin('user_device_pivot as user_device_group', function ($join) {
                     $join->on('user_device_group.device_id', '=', 'devices.id')
                         ->where('user_device_group.user_id', '=', $this->id);
@@ -499,10 +485,7 @@ class User extends AbstractEntity implements
 
     public function devices_sms()
     {
-        return $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id')
-            ->where('sim_number', '!=', '')
-            ->withPivot(['group_id'])
-            ->orderBy('name', 'asc');
+        return $this->devices()->where('sim_number', '!=', '');
     }
 
     public function drivers()
@@ -707,6 +690,16 @@ class User extends AbstractEntity implements
         return $query->where('group_id', 5);
     }
 
+    public function scopeManagers($query)
+    {
+        return $query->whereIn('group_id', [3, 5]);
+    }
+
+    public function scopeNotUser($query, User $user)
+    {
+        return $query->where('users.id', '!=', $user->id);
+    }
+
     public function isActive()
     {
         return $this->active;
@@ -870,17 +863,15 @@ class User extends AbstractEntity implements
             ->where('subscription_expiration', '<=', $date);
     }
 
-    public function scopeUserAccessible(Builder $query, User $user): Builder
-    {
-        return self::queryAccessible($query, $user);
-    }
-
     /**
      * @param  Builder|\Illuminate\Database\Query\Builder  $query
      * @return Builder|\Illuminate\Database\Query\Builder
      */
     public static function queryAccessible($query, User $user, string $table = 'users')
     {
+        if (config('addon.untouchable_accessible'))
+            $query = self::queryUserTouchable($query, $user, $table);
+
         if (!$user->isGod()) {
             $query->where("$table.id", '!=', self::getGodID());
         }
@@ -904,18 +895,31 @@ class User extends AbstractEntity implements
         return $query->where("$table.id", $user->id);
     }
 
-    public function scopeUserTouchable(Builder $query, User $user): Builder
+    public function scopeUserAccessible(Builder $query, User $user): Builder
     {
-        return $query->where(
-            fn(Builder $query) => $query
-                ->where('users.untouchable', 0)
-                ->orWhere('users.id', $user->id)
-        );
+        return self::queryAccessible($query, $user);
     }
 
     public function scopeUserControllable(Builder $query, User $user): Builder
     {
-        return $query->userAccessible($user)->userTouchable($user);
+        if (!config('addon.untouchable_accessible')) {
+            $query = self::queryUserTouchable($query, $user);
+        }
+
+        return $query->userAccessible($user);
+    }
+
+    /**
+     * @param  Builder|\Illuminate\Database\Query\Builder  $query
+     * @return Builder|\Illuminate\Database\Query\Builder
+     */
+    public static function queryUserTouchable($query, User $user,  string $table = 'users')
+    {
+        return $query->where(
+            fn($query) => $query
+                ->where("$table.untouchable", 0)
+                ->orWhere("$table.id", $user->id)
+        );
     }
 
     public function filteredUnreadNotifications($filters = null)
@@ -1025,6 +1029,7 @@ class User extends AbstractEntity implements
         $token = sha1($this->email) . ';' . $this->id;
 
         $content = $emailTemplate->buildTemplate($token);
+
         dispatch(new SendEmailJob($this->email, $content['subject'], $content['body']));
 
         Cache::put('user_' . $this->id . '_verification_reminder', 60, self::VERIFY_EMAIL_TIMEOUT_MIN);

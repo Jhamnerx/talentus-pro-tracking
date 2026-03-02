@@ -356,6 +356,7 @@
         icon: '',
 
         ajax: null,
+        selected: null,
     };
 
     Selectpicker.prototype = {
@@ -463,8 +464,21 @@
             setTimeout(function () {
                 that.$element.trigger('loaded.bs.select');
                 if (that.options.ajax) {
-                    that.loadAjax(that.options.ajax, null, function(){
+
+                    let _data = null;
+
+                    if (that.options.selected) {
+                        _data = {
+                            selected_id: that.options.selected
+                        }
+                        that.addMultiValue(true, 'id', that.options.selected);
+                    }
+
+                    that.loadAjax(that.options.ajax, _data, function(){
                         that.$element.trigger('ajax.bs.select');
+                        if (_data) {
+                            that.$element.trigger('change');
+                        }
                     });
                 }
             });
@@ -926,6 +940,12 @@
                 }
 
             document.body.removeChild(newElement);
+
+            if (actions)
+                actionsHeight += this.$menu.find('.bs-actionsbox').outerHeight(true);
+
+            if (search)
+                searchHeight += this.$menu.find('.bs-searchbox').outerHeight(true);
 
             this.sizeInfo = {
                 liHeight: liHeight,

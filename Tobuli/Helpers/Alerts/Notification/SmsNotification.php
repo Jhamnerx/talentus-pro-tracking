@@ -6,25 +6,19 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ServerException;
 use Illuminate\Support\Arr;
+use Tobuli\Entities\Alert;
 use Tobuli\Entities\SendQueue;
 use Tobuli\Entities\SmsTemplate;
 use Tobuli\Entities\User;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Alerts\Notification\Input\InputAwareInterface;
-use Tobuli\Helpers\Alerts\Notification\Input\InputInitTrait;
 use Tobuli\Helpers\Alerts\Notification\Input\InputMeta;
 use Tobuli\Helpers\Alerts\Notification\Send\SendException;
 use Tobuli\Helpers\Alerts\Notification\Send\SendingInterface;
-use Tobuli\Helpers\Alerts\NotificationProvider;
 use Tobuli\Helpers\SMS\SMSGatewayManager;
 
 class SmsNotification extends AbstractNotification implements InputAwareInterface, SendingInterface
 {
-    use InputInitTrait;
-
-    private bool $defaultInputActive = false;
-    private ?string $defaultInputValue = '';
-
     public function __construct()
     {
         $this->rules = [
@@ -32,11 +26,16 @@ class SmsNotification extends AbstractNotification implements InputAwareInterfac
         ];
     }
 
-    public function getInput(array $alertData): InputMeta
+    public function getInput(Alert $alert): InputMeta
     {
-        return $this->initInput($alertData)
+        $key = static::getKey();
+
+        $alertData = Arr::get($alert->notifications ?? [], $key);
+
+        return (new InputMeta($key, trans('validation.attributes.sms_notification')))
+            ->setActive(Arr::get($alertData, 'active', false))
+            ->setInput(Arr::get($alertData, 'input', ''))
             ->setType(InputMeta::TYPE_STRING)
-            ->setTitle(trans('validation.attributes.sms_notification'))
             ->setDescription(trans('front.sms_semicolon'));
     }
 

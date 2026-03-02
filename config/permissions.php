@@ -168,6 +168,41 @@ return [
             'edit' => 1,
             'remove' => 0,
         ],
+        'device.device_model' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'device.plate_number' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'device.registration_number' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'device.object_owner' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'device.vin' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'device.additional_notes' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'device.comment' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
         'device.custom_fields' => [
             'view' => 1,
             'edit' => 1,

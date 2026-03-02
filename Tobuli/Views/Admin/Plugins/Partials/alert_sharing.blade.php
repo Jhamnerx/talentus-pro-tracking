@@ -1,4 +1,3 @@
-<div class="form-inline">
     <div class="form-group">
         <div class="checkbox">
             {!! Form::hidden('plugins['.$plugin->key.'][options][duration][active]', 0) !!}
@@ -21,10 +20,6 @@
         </div>
     </div>
     <div class="form-group">
-
-    </div>
-    <br>
-    <div class="form-group">
         <div class="checkbox">
             {!! Form::hidden('plugins['.$plugin->key.'][options][delete_after_expiration][status]', 0) !!}
             {!! Form::checkbox(
@@ -38,4 +33,3 @@
             !!}
         </div>
     </div>
-</div>

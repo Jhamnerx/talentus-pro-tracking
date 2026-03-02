@@ -13,18 +13,19 @@ use CustomFacades\Repositories\UserRepo;
 use CustomFacades\Validators\AlertFormValidator;
 use Formatter;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\Alert;
 use Tobuli\Entities\Geofence;
 use Tobuli\Entities\TaskStatus;
 use Tobuli\Exceptions\ValidationException;
-use Tobuli\Helpers\Alerts\Notification\Input\InputAwareInterface;
 use Tobuli\Helpers\Alerts\NotificationProvider;
 use Tobuli\InputFields\AttributesCollection;
 use Tobuli\Protocols\Commands;
 use Tobuli\Protocols\Manager as ProtocolsManager;
 use Tobuli\Services\AlertSoundService;
+use Tobuli\Services\Commands\CommandService;
 use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 use Tobuli\Services\EntityLoader\UsersLoader;
 use Tobuli\Services\ScheduleService;
@@ -64,7 +65,25 @@ class AlertModalHelper extends ModalHelper
         }
 
         if ($this->api) {
-            $alerts = AlertRepo::getWithWhere(['devices', 'drivers', 'geofences', 'events_custom'], ['user_id' => $this->user->id]);
+            $alerts = Alert::enabled()
+                ->userOwned($this->user)
+                ->with(['devices', 'drivers', 'geofences', 'events_custom'])
+                ->get();
+            $types = $this->getTypesWithAttributes();
+
+            foreach ($alerts as $alert) {
+                $type = Arr::first($types, fn($type) => $type['type'] === $alert->type);
+
+                if ($type && !empty($type['attributes'])) {
+                    $attributes = array_filter(
+                        $type['attributes']->toArray(),
+                        fn($attr) => $alert->hasProperty($attr['name']) || $alert->hasGetMutator($attr['name'])
+                    );
+
+                    $alert->append(array_map(fn($attr) => $attr['name'], $attributes));
+                }
+            }
+
             $alerts = $alerts->toArray();
 
             foreach ($alerts as $key => $alert) {
@@ -93,7 +112,7 @@ class AlertModalHelper extends ModalHelper
                 $alerts[$key]['events_custom'] = $events_custom;
             }
         } else {
-            $alerts = AlertRepo::getWhere(['user_id' => $this->user->id]);
+            $alerts = Alert::enabled()->userOwned($this->user)->get();
         }
 
         return compact('alerts');
@@ -142,6 +161,8 @@ class AlertModalHelper extends ModalHelper
 
         $this->validate('create');
 
+        $this->data['for_all_user_devices'] = $this->getForAllUserDevicesValue(null);
+
         beginTransaction();
         try {
             $alert = $this->user->alerts()->create($this->data);
@@ -179,7 +200,7 @@ class AlertModalHelper extends ModalHelper
         $id = array_key_exists('alert_id', $this->data) ? $this->data['alert_id'] : request()->route('alerts');
         $id = $id ?: request()->route('id');
 
-
+        /** @var Alert $item */
         $item = $this->user
             ->alerts()
             ->with(['geofences', 'drivers', 'events_custom', 'zones'])
@@ -195,7 +216,7 @@ class AlertModalHelper extends ModalHelper
         $types = $this->getTypesWithAttributes($item);
         $schedules = $this->schedulesService->setSchedules($item->schedules ?: [])->getFormSchedules($this->user);
         $notifications = $this->getNotifications($item);
-        $commands = SendCommandModalHelper::getCommands($devices);
+        $commands = (new CommandService($this->user))->getGprsCommands($devices);
         $geofences = Geofence::userAccessible($this->user)->orderBy('name')->pluck('name', 'id')->all();
 
         $alert_zones = [
@@ -208,6 +229,17 @@ class AlertModalHelper extends ModalHelper
             $devices     = apiArray($this->user->devices->pluck('name', 'id')->all());
             $geofences   = apiArray($geofences);
             $alert_zones = apiArray($alert_zones);
+
+            $type = Arr::first($types, fn($type) => $type['type'] === $item->type);
+
+            if ($type) {
+                $attributes = array_filter(
+                    $type['attributes']->toArray(),
+                    fn($attr) => $item->hasProperty($attr['name'])
+                );
+
+                $item->append(array_map(fn($attr) => $attr['name'], $attributes));
+            }
         } else {
             $devices = groupDevices($devices, $this->user);
         }
@@ -227,16 +259,17 @@ class AlertModalHelper extends ModalHelper
 
     public function edit()
     {
-
         $alert = $this->user->alerts()->find($this->data['id']);
 
         $this->checkException('alerts', 'update', $alert);
 
         $this->validate('update');
 
+        $this->data['for_all_user_devices'] = $this->getForAllUserDevicesValue($alert);
+
         beginTransaction();
         try {
-            AlertRepo::update($alert->id, $this->data);
+            $alert->update($this->data);
 
             $this->api
                 ? $alert->devices()->sync(Arr::get($this->data, 'devices', []))
@@ -265,6 +298,15 @@ class AlertModalHelper extends ModalHelper
         commitTransaction();
 
         return ['status' => 1];
+    }
+
+    private function getForAllUserDevicesValue(?Alert $alert): bool
+    {
+        if (!$this->userDevicesLoader->hasSelect()) {
+            return $alert->for_all_user_devices ?? false;
+        }
+
+        return $this->userDevicesLoader->hasSelectAll();
     }
 
     private function validate($type)
@@ -306,18 +348,10 @@ class AlertModalHelper extends ModalHelper
             } else {
                 $alert = AlertRepo::find($this->data['id'] ?? null);
 
-                if (!$this->userDevicesLoader->hasSelect() && !$alert) {
-                    $devices = [];
-                } elseif ($alert) {
-                    $this->userDevicesLoader->setQueryStored($alert->devices());
-
-                    $devices = $this->userDevicesLoader->getQuery()->get();
-                } else {
-                    $devices = $this->userDevicesLoader->getSeleted()->get();
-                }
+                $devices = $this->getDevicesSelected($alert)->get();
             }
 
-            $commands = SendCommandModalHelper::getCommands($devices);
+            $commands = (new CommandService($this->user))->getGprsCommands($devices);
 
             $rules = Commands::validationRules(Arr::get($this->data, 'command.type'), $commands);
             $validator = Validator::make($this->data, $rules);
@@ -331,6 +365,11 @@ class AlertModalHelper extends ModalHelper
                     $this->data['command']
                 );
             }
+        }
+
+        if (!empty($this->data['acceptable_time_from'])) {
+            $this->data['acceptable_time_from'] = Formatter::time()->reverse($this->data['acceptable_time_from']);
+            $this->data['acceptable_time_from'] = Carbon::parse($this->data['acceptable_time_from'])->format('H:i');
         }
     }
 
@@ -401,6 +440,29 @@ class AlertModalHelper extends ModalHelper
                             trans('validation.attributes.stop_duration_longer_than') . ' (' . trans('front.minutes') . ')',
                             $alert ? $alert->stop_duration : ''
                         ),
+                    ]);
+                    break;
+                case 'move_start_filtered':
+                    $timeOptions = getSelectTimeRange();
+
+                    $type['attributes'] = AttributesCollection::make([
+                        Field::number(
+                            'stop_duration',
+                            trans('validation.attributes.stop_duration_longer_than') . ' (' . trans('front.minutes') . ')',
+                            $alert ? $alert->stop_duration : ''
+                        ),
+                        Field::number(
+                            'distance',
+                            trans('validation.attributes.distance_limit') . ' (' . Formatter::distance()->getUnit() . ')',
+                            $alert ? $alert->distance : 0
+                        ),
+                        \Field::select(
+                            'acceptable_time_from',
+                            trans('validation.attributes.acceptable_time_from'),
+                            empty($alert->acceptable_time_from)
+                                ? Arr::first($timeOptions)
+                                : Carbon::parse(Formatter::time()->convert($alert->acceptable_time_from))->format('H:i'),
+                        )->setOptions($timeOptions),
                     ]);
                     break;
                 case 'offline_duration':
@@ -508,6 +570,14 @@ class AlertModalHelper extends ModalHelper
                 case 'geofence_in':
                 case 'geofence_out':
                 case 'geofence_inout':
+                    $type['attributes'] = AttributesCollection::make([
+                        Field::multiSelect(
+                            'geofences',
+                            trans('validation.attributes.geofences'),
+                            $alert ? $alert->geofences->pluck('id')->all() : []
+                        )->setOptions($geofences),
+                    ]);
+                    break;
                 case 'geofence_overspeed':
                     $type['attributes'] = AttributesCollection::make([
                         Field::multiSelect(
@@ -669,6 +739,10 @@ class AlertModalHelper extends ModalHelper
                 'title' => trans('front.start_of_movement'),
             ],
             [
+                'type'  => 'move_start_filtered',
+                'title' => trans('front.start_of_movement') . ' (' . trans('validation.attributes.filter') . ')',
+            ],
+            [
                 'type'  => 'driver',
                 'title' => trans('front.driver_change'),
             ],
@@ -687,10 +761,6 @@ class AlertModalHelper extends ModalHelper
             [
                 'type'  => 'geofence_inout',
                 'title' => trans('front.geofence') . ' ' . trans('global.in') . '/' . trans('global.out'),
-            ],
-            [
-                'type'  => 'geofence_overspeed',
-                'title' => 'Exceso de velocidad en geocerca',
             ],
             [
                 'type'  => 'custom',
@@ -734,6 +804,9 @@ class AlertModalHelper extends ModalHelper
         if (!config('addon.sensor_type_plugged'))
             $expect[] = 'unplugged';
 
+        if (!config('addon.alert_move_start_filtered'))
+            $expect[] = 'move_start_filtered';
+
         if (!auth()->user()->perm('tasks', 'view'))
             $expect[] = 'task_status';
 
@@ -748,9 +821,7 @@ class AlertModalHelper extends ModalHelper
 
     public function getNotifications(?Alert $alert = null): array
     {
-        $data = $alert->notifications ?? [];
-
-        $notifications = (new NotificationProvider($this->user))->getInputMeta($data);
+        $notifications = (new NotificationProvider($this->user))->getInputMeta($alert ?: new Alert());
 
         // indexes reset with array_values
         return array_values($notifications);
@@ -765,18 +836,10 @@ class AlertModalHelper extends ModalHelper
         } else {
             $alert = AlertRepo::find($this->data['alert_id'] ?? null);
 
-            if (!$this->userDevicesLoader->hasSelect() && !$alert) {
-                $devices = [];
-            } elseif ($alert) {
-                $this->userDevicesLoader->setQueryStored($alert->devices());
-
-                $devices = $this->userDevicesLoader->getQuery()->get();
-            } else {
-                $devices = $this->userDevicesLoader->getSeleted()->get();
-            }
+            $devices = $this->getDevicesSelected($alert)->get();
         }
 
-        $commands = SendCommandModalHelper::getCommands($devices);
+        $commands = (new CommandService($this->user))->getGprsCommands($devices);
 
         return $commands;
     }
@@ -798,16 +861,10 @@ class AlertModalHelper extends ModalHelper
     {
         $alert = AlertRepo::find($this->data['alert_id'] ?? null);
 
-        if (!$this->userDevicesLoader->hasSelect() && !$alert)
+        $devices = $this->getDevicesSelected($alert);
+
+        if (empty($devices))
             return [];
-
-        if ($alert) {
-            $this->userDevicesLoader->setQueryStored($alert->devices());
-
-            $devices = $this->userDevicesLoader->getQuery();
-        } else {
-            $devices = $this->userDevicesLoader->getSeleted();
-        }
 
         $events = CustomEventModalHelper::getGroupedEvents($devices);
 
@@ -855,5 +912,17 @@ class AlertModalHelper extends ModalHelper
 
         $this->usersLoader->setQueryStored($alert->users());
         $alert->users()->syncLoader($this->usersLoader);
+    }
+
+    protected function getDevicesSelected($alert)
+    {
+        if (!$this->userDevicesLoader->hasSelect() && !$alert)
+            return null;
+
+        if ($alert) {
+            $this->userDevicesLoader->setQueryStored($alert->devices());
+        }
+
+        return $this->userDevicesLoader->getQuerySelected();
     }
 }

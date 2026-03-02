@@ -7,14 +7,15 @@ $result = [
     |--------------------------------------------------------------------------
     */
 
-	'name' => 'GPS Master',
-	'build' => '20241228000000000',
+	'name' => 'Talentus Pro Tracking',
+	'build' => '202503200000000000',
 	'server' => env('server', 'localhost'),
 	'admin_user' => env('admin_user', 'admin'),
 
 	'force_https' => env('FORCE_HTTPS', false),
 
 	'trust_hosts' => array_filter(explode(';', env('TRUST_HOSTS', null))),
+
 
 	'url_comsatel_prod' => env('URL_COMSATEL_PROD', ''),
 
@@ -196,7 +197,6 @@ $result = [
 		'App\Providers\AppearanceServiceProvider',
 		'App\Providers\QueryBuilderMacrosProvider',
 		\App\Providers\AuthManagerProvider::class,
-		\App\Providers\OdometerServiceProvider::class, // Nuevo proveedor para optimización de odómetro
 	],
 
 	/*

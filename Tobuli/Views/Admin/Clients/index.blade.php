@@ -153,7 +153,8 @@
         do_destroy: {
             url: '{{ route("admin.{$section}.do_destroy") }}',
             modal: '{{$section}}_delete',
-            method: 'GET'
+            method: 'POST',
+            content: true,
         },
         set_active: {
             url: '{{ route("admin.{$section}.set_active", 1) }}',

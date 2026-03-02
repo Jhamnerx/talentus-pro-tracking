@@ -47,7 +47,20 @@ class GeofenceFormValidator extends Validator {
         $this->rules['create']['group_id'] = [$rule, 'nullable'];
         $this->rules['update']['group_id'] = [$rule, 'nullable'];
 
+        if (config('addon.reports_geofleet_in')) {
+            $additional = [
+                'additional.intervals.*'              => ['required', 'array'],
+                'additional.intervals.0.from'         => ['required'],
+                'additional.intervals.0.to'           => ['required'],
+                'additional.intervals.0.speed_limit'  => ['required', 'numeric'],
+                'additional.intervals.1.from'         => ['required'],
+                'additional.intervals.1.to'           => ['required'],
+                'additional.intervals.1.speed_limit'  => ['required', 'numeric'],
+            ];
 
+            $this->rules['create'] += $additional;
+            $this->rules['update'] += $additional;
+        }
     }
 
 }   //end of class

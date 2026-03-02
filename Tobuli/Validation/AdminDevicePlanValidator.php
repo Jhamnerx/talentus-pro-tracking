@@ -19,7 +19,7 @@ class AdminDevicePlanValidator extends Validator {
         ]
     ];
 
-    public function validate($name, array $data, $id = NULL)
+    public function validate(string $name, array $data, $id = null): void
     {
         $this->rules[$name]['duration_type'] = 'required|in:'.implode(',', array_keys(DevicePlan::getDurationTypes()));
 

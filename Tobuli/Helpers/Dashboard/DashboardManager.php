@@ -38,6 +38,16 @@ class DashboardManager
      * @return Block
      * @throws \Exception
      */
+    public function getBlock($name)
+    {
+        return $this->newBlockClass($name);
+    }
+
+    /**
+     * @param $name
+     * @return Block
+     * @throws \Exception
+     */
     private function newBlockClass($name)
     {
         $class = 'Tobuli\Helpers\Dashboard\Blocks\\' . ucfirst(Str::camel($name)) . 'Block';

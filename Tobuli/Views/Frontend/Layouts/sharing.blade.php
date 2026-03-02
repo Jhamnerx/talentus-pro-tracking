@@ -11,7 +11,7 @@
 
 <div id="mapWrap">
     <div id="map"></div>
-    <div id="map-controls">
+    <div id="map-controls" class="map-controls top-right">
         <div>
             <div class="btn-group-vertical" role="group">
                 <button type="button" class="btn" onclick="app.mapFull();">
@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <div>
+        <div id="map-controls-tile">
             <div class="btn-group-vertical" data-position="fixed" role="group">
                 <button type="button" class="btn" onClick="$('.leaflet-control-layers').toggleClass('leaflet-control-layers-expanded');">
                     <span class="icon map-change"></span>

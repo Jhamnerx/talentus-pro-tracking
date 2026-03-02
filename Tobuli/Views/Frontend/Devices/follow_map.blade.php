@@ -9,8 +9,8 @@
 @include('Frontend.Layouts.partials.loading')
 
 <div id="map"></div>
-<div id="map-controls">
-    <div>
+<div id="map-controls" class="map-controls top-right">
+    <div id="map-controls-tile">
         <div class="btn-group-vertical" data-position="fixed" role="group">
             <button type="button" class="btn" onClick="$('.leaflet-control-layers').toggleClass('leaflet-control-layers-expanded');">
                 <span class="icon map-change"></span>

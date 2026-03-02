@@ -11,6 +11,7 @@ class InstallationDeviceAllReport extends DeviceReport
     const TYPE_ID = 35;
 
     protected $enableFields = ['metas'];
+    protected $deviceless = true;
 
     public function typeID()
     {

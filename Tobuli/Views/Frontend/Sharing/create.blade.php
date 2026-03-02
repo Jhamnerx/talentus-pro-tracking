@@ -29,8 +29,14 @@
             </div>
         </div>
     <div class="form-group">
-        {!! Form::label('devices', trans('validation.attributes.devices').'*:') !!}
-        {!! Form::select('devices[]', $devices, null, ['class' => 'form-control multiexpand', 'multiple' => 'multiple', 'data-live-search' => 'true', 'data-actions-box' => 'true']) !!}
+        {!! Form::label('devices[]', trans('validation.attributes.devices').'*:') !!}
+        {!! Form::select('devices[]', [], null, [
+            'class' => 'form-control multiexpand',
+            'multiple' => 'multiple',
+            'data-live-search' => 'true',
+            'data-actions-box' => 'true',
+            'data-ajax' => route('sharing.devices_loader')
+        ]) !!}
     </div>
     {!! Form::close() !!}
 @stop

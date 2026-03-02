@@ -140,9 +140,10 @@ class DevicesGroupsController extends Controller
         $userDevicesLoader->setQueryStored($group->devices());
         $userDevicesLoader->setRequestKey('devices');
 
-        if ($userDevicesLoader->getDetach()) {
+
+        if ($userDevicesLoader->hasDetach()) {
             DB::table('user_device_pivot AS udp_update')
-                ->join(DB::raw('(' . $userDevicesLoader->getDetach()->select('id')->toRaw() . ') AS selected_devices'), function ($join) {
+                ->join(DB::raw('(' . $userDevicesLoader->getQueryDetach()->toRaw() . ') AS selected_devices'), function ($join) {
                     $join->on('selected_devices.id', '=', 'udp_update.device_id');
                 })
                 ->where([
@@ -154,9 +155,9 @@ class DevicesGroupsController extends Controller
                 ]);
         }
 
-        if ($userDevicesLoader->getAttach()) {
+        if ($userDevicesLoader->hasAttach()) {
             DB::table('user_device_pivot AS udp_update')
-                ->join(DB::raw('(' . $userDevicesLoader->getAttach()->select('id')->toRaw() . ') AS selected_devices'), function ($join) {
+                ->join(DB::raw('(' . $userDevicesLoader->getQueryAttach()->toRaw() . ') AS selected_devices'), function ($join) {
                     $join->on('selected_devices.id', '=', 'udp_update.device_id');
                 })
                 ->where([

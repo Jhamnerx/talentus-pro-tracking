@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Frontend;
+<?php namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use CustomFacades\Repositories\UserRepo;
@@ -12,8 +10,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\View;
 
-class PasswordReminderController extends Controller
-{
+class PasswordReminderController extends Controller {
 
     /*
 	|--------------------------------------------------------------------------
@@ -80,7 +77,8 @@ class PasswordReminderController extends Controller
     {
         $input = Request::only(['email', 'password', 'password_confirmation', 'token']);
 
-        $res = Password::reset($input, function ($user, $password) {
+        $res = Password::reset($input, function($user, $password)
+        {
             UserRepo::update($user->id, ['password' => $password]);
         });
 
@@ -89,4 +87,4 @@ class PasswordReminderController extends Controller
         else
             return Redirect::route('password.reset', $input['token'])->with('message', trans($res))->withInput();
     }
-}
+} 

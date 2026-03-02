@@ -113,7 +113,7 @@ class DeviceMediaController extends Controller
 
             $images = $fileQuery->paginate($limit, $fileSorter)->appends(request()->all());
         } catch (ResourseNotFoundException $e) {
-            $images = collect();
+            $images = new LengthAwarePaginator([], 0, $limit);
         }
 
         return [$images, $sort];
@@ -128,7 +128,7 @@ class DeviceMediaController extends Controller
 
         $image = DeviceMedia::setEntity($device)->find($filename);
 
-        if ( ! $image) {
+        if (! $image) {
             throw new ResourseNotFoundException('front.image');
         }
 
@@ -156,7 +156,7 @@ class DeviceMediaController extends Controller
 
         $image = DeviceMedia::setEntity($device)->find($filename);
 
-        if ( ! $image) {
+        if (! $image) {
             throw new ResourseNotFoundException('front.image');
         }
 
@@ -180,7 +180,7 @@ class DeviceMediaController extends Controller
 
         $image = DeviceCameraMedia::setEntity($camera)->find($filename);
 
-        if ( ! $image) {
+        if (! $image) {
             throw new ResourseNotFoundException('front.image');
         }
 
@@ -246,7 +246,7 @@ class DeviceMediaController extends Controller
         while ($undeletedFiles && $i--) {
             sleep(1);
 
-            $undeletedFiles = array_filter($undeletedFiles, function($filename) use ($deviceMedia, &$count) {
+            $undeletedFiles = array_filter($undeletedFiles, function ($filename) use ($deviceMedia, &$count) {
                 if ($deviceMedia->find($filename))
                     return true;
 
@@ -293,7 +293,7 @@ class DeviceMediaController extends Controller
 
         $image = DeviceMedia::setEntity($device)->find($filename);
 
-        if ( ! $image) {
+        if (! $image) {
             throw new ResourseNotFoundException('front.image');
         }
 

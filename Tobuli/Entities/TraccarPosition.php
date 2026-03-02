@@ -1,12 +1,9 @@
-<?php
-
-namespace Tobuli\Entities;
+<?php namespace Tobuli\Entities;
 
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class TraccarPosition extends AbstractEntity
-{
+class TraccarPosition extends AbstractEntity {
     use HasFactory;
 
     const VIRTUAL_ENGINE_HOURS_KEY = 'enginehours';
@@ -14,7 +11,7 @@ class TraccarPosition extends AbstractEntity
 
     protected $connection = 'traccar_mysql';
 
-    protected $table = 'positions';
+	protected $table = 'positions';
 
     protected $fillable = [
         'altitude',
@@ -54,8 +51,7 @@ class TraccarPosition extends AbstractEntity
         return $model;
     }
 
-    public function device()
-    {
+    public function device() {
         return $this->hasOne('Tobuli\Entities\Device', 'traccar_device_id', 'device_id');
     }
 
@@ -99,10 +95,12 @@ class TraccarPosition extends AbstractEntity
 
     public function setParametersAttribute($value)
     {
-        if (is_array($value)) {
+        if ( is_array($value))
+        {
             $xml = '<info>';
 
-            foreach ($value as $key => $val) {
+            foreach ($value as $key => $val)
+            {
                 if (is_numeric($key)) continue;
                 if (is_array($val)) continue;
 
@@ -133,7 +131,8 @@ class TraccarPosition extends AbstractEntity
         if (empty($rfid))
             return false;
 
-        switch ($this->protocol) {
+        switch ($this->protocol)
+        {
             case 'teltonika':
                 return $rfid == $this->rfid || $rfid == $this->rfidRaw;
                 break;
@@ -146,10 +145,11 @@ class TraccarPosition extends AbstractEntity
     {
         $rfids = [];
 
-        if (! $this->rfidRaw)
+        if ( ! $this->rfidRaw)
             return $rfids;
 
-        switch ($this->protocol) {
+        switch ($this->protocol)
+        {
             case 'teltonika':
                 $rfids[] = $this->rfid;
                 $rfids[] = $this->rfidRaw;
@@ -180,8 +180,7 @@ class TraccarPosition extends AbstractEntity
                         $rfid = hexdec($rfid);
                         break;
                 }
-            } catch (\Exception $e) {
-            }
+            } catch (\Exception $e) {}
         }
 
         return (string)$rfid;
@@ -193,8 +192,10 @@ class TraccarPosition extends AbstractEntity
 
         $rfid = empty($parameters['rfid']) ? null : $parameters['rfid'];
 
-        if (! $rfid) {
-            switch ($this->protocol) {
+        if ( ! $rfid)
+        {
+            switch ($this->protocol)
+            {
                 case 'teltonika':
                     $rfid = empty($parameters['io78']) ? null : $parameters['io78'];
                     break;
@@ -208,13 +209,13 @@ class TraccarPosition extends AbstractEntity
             }
         }
 
-        if (! $rfid && ! empty($parameters['driveruniqueid']))
+        if ( ! $rfid && ! empty($parameters['driveruniqueid']))
             $rfid = $parameters['driveruniqueid'];
 
-        if (! $rfid && ! empty($parameters['driver1']))
+        if ( ! $rfid && ! empty($parameters['driver1']))
             $rfid = $parameters['driver1'];
 
-        if (! $rfid && ! empty($parameters['beacon1uuid']))
+        if ( ! $rfid && ! empty($parameters['beacon1uuid']))
             $rfid = $parameters['beacon1uuid'];
 
         return $rfid;
@@ -237,10 +238,11 @@ class TraccarPosition extends AbstractEntity
         if (empty($sensors))
             return null;
 
-        if (! is_array($sensors))
+        if ( ! is_array($sensors))
             return null;
 
-        foreach ($sensors as $sensor) {
+        foreach ($sensors as $sensor)
+        {
             if ($sensor['id'] == $sensor_id)
                 return $sensor['val'];
         }

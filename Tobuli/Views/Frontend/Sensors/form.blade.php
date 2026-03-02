@@ -1,36 +1,26 @@
 <div class="row">
     <div class="col-md-12 sen-data-fields">
         <div class="form-group">
-            {!! Form::label('sensor_name', trans('validation.attributes.sensor_name') . ':') !!}
+            {!! Form::label('sensor_name', trans('validation.attributes.sensor_name').':') !!}
             {!! Form::text('sensor_name', $item->name ?? null, ['class' => 'form-control']) !!}
         </div>
 
         <div class="form-group">
-            {!! Form::label('sensor_type', trans('validation.attributes.sensor_template') . ':') !!}
-            {!! Form::select('sensor_type', $sensors, $item->type ?? null, [
-                'class' => 'form-control',
-                'id' => 'sensor_type',
-            ]) !!}
+            {!! Form::label('sensor_type', trans('validation.attributes.sensor_template').':') !!}
+            {!! Form::select('sensor_type', $sensors, $item->type ?? null, ['class' => 'form-control', 'id' => 'sensor_type']) !!}
         </div>
 
         <div data-sensor-input="shown_value_by">
             <div class="form-group">
-                {!! Form::label('shown_value_by', trans('validation.attributes.shown_value_by') . ':') !!}
-                {!! Form::select('shown_value_by', [], null, [
-                    'class' => 'form-control',
-                    'data-value' => $item->shown_value_by ?? null,
-                ]) !!}
+                {!! Form::label('shown_value_by', trans('validation.attributes.shown_value_by').':') !!}
+                {!! Form::select('shown_value_by', [], null, ['class' => 'form-control', 'data-value' => $item->shown_value_by ?? null]) !!}
             </div>
         </div>
 
         <div class="form-group" data-sensor-input="tag_name">
-            {!! Form::label('tag_name', trans('validation.attributes.tag_name') . ':') !!}
+            {!! Form::label('tag_name', trans('validation.attributes.tag_name').':') !!}
             <div class="input-group" id="sensor_parameters">
-                {!! Form::select('tag_name', $parameters ?? [], $item->tag_name ?? null, [
-                    'class' => 'form-control',
-                    'data-custom-input' => 'true',
-                    'data-custom-value' => $item->tag_name ?? null,
-                ]) !!}
+                {!! Form::select('tag_name', $parameters ?? [], $item->tag_name ?? null, ['class' => 'form-control', 'data-custom-input' => "true", 'data-custom-value' => $item->tag_name ?? null]) !!}
             </div>
         </div>
 
@@ -76,68 +66,45 @@
 
         <div data-sensor-input="bitcut">
             <div class="form-group">
-                {!! Form::label('bitcut', trans('front.bitcut') . ':') !!}
+                {!! Form::label('bitcut', trans('front.bitcut').':') !!}
                 <div class="input-group">
                     <div class="checkbox input-group-btn">
                         {!! Form::checkbox('bitcut', 1, !empty($item->bitcut), ['id' => 'bitcut_set']) !!}
                         {!! Form::label(null) !!}
                     </div>
-                    {!! Form::text('bitcut_start', $item->bitcut['start'] ?? null, [
-                        'class' => 'form-control',
-                        'placeholder' => trans('validation.attributes.bitcut_start'),
-                        'data-disablable' => '#bitcut_set;disable',
-                    ]) !!}
+                    {!! Form::text('bitcut_start', $item->bitcut['start'] ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.bitcut_start'), 'data-disablable' => '#bitcut_set;disable']) !!}
                     <span class="input-group-btn"></span>
-                    {!! Form::text('bitcut_count', $item->bitcut['count'] ?? null, [
-                        'class' => 'form-control',
-                        'placeholder' => trans('validation.attributes.bitcut_count'),
-                        'data-disablable' => '#bitcut_set;disable',
-                    ]) !!}
+                    {!! Form::text('bitcut_count', $item->bitcut['count'] ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.bitcut_count'), 'data-disablable' => '#bitcut_set;disable']) !!}
                     <span class="input-group-btn"></span>
-                    {!! Form::select('bitcut_base', ['10' => 'DEC', '16' => 'HEX'], $item->bitcut['base'] ?? null, [
-                        'class' => 'form-control',
-                        'data-disablable' => '#bitcut_set;disable',
-                    ]) !!}
+                    {!! Form::select('bitcut_base', ['10' => 'DEC', '16' => 'HEX'], $item->bitcut['base'] ?? null, ['class' => 'form-control', 'data-disablable' => '#bitcut_set;disable']) !!}
                 </div>
             </div>
         </div>
 
         <div data-sensor-input="setflag">
             <div class="form-group">
-                {!! Form::label('setflag', trans('front.setflag') . ':') !!}
+                {!! Form::label('setflag', trans('front.setflag').':') !!}
                 <div class="input-group">
                     <div class="checkbox input-group-btn">
                         {!! Form::checkbox('setflag', 1, !empty($item->setflag_count), ['id' => 'setflag_set']) !!}
                         {!! Form::label(null) !!}
                     </div>
-                    {!! Form::text('setflag_start', $item->setflag_start ?? null, [
-                        'class' => 'form-control',
-                        'placeholder' => trans('validation.attributes.on_setflag_1'),
-                        'data-disablable' => '#setflag_set;disable',
-                    ]) !!}
+                    {!! Form::text('setflag_start', $item->setflag_start ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.on_setflag_1'), 'data-disablable' => '#setflag_set;disable']) !!}
                     <span class="input-group-btn"></span>
-                    {!! Form::text('setflag_count', $item->setflag_count ?? null, [
-                        'class' => 'form-control',
-                        'placeholder' => trans('validation.attributes.on_setflag_2'),
-                        'data-disablable' => '#setflag_set;disable',
-                    ]) !!}
+                    {!! Form::text('setflag_count', $item->setflag_count ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.on_setflag_2'), 'data-disablable' => '#setflag_set;disable']) !!}
                 </div>
             </div>
         </div>
 
         <div data-sensor-input="formula">
             <div class="form-group">
-                {!! Form::label('formula', trans('validation.attributes.formula') . ':') !!}
+                {!! Form::label('formula', trans('validation.attributes.formula').':') !!}
                 <div class="input-group">
                     <div class="checkbox input-group-btn">
                         {!! Form::checkbox(null, 1, !empty($item->formula), ['id' => 'formula_set']) !!}
                         {!! Form::label(null) !!}
                     </div>
-                    {!! Form::text(
-                        'formula',
-                        empty($item->formula) ? \Tobuli\Sensors\Extractions\Formula::PLACEHOLDER : $item->formula,
-                        ['class' => 'form-control', 'data-disablable' => '#formula_set;disable'],
-                    ) !!}
+                    {!! Form::text('formula', (empty($item->formula) ? \Tobuli\Sensors\Extractions\Formula::PLACEHOLDER : $item->formula), ['class' => 'form-control', 'data-disablable' => '#formula_set;disable']) !!}
                 </div>
                 <span class="explanation">{{ trans('front.formula_example') }}</span>
             </div>
@@ -147,13 +114,13 @@
             <div class="row">
                 <div class="col-md-6 col-sm-6">
                     <div class="form-group">
-                        {!! Form::label('min_value', trans('validation.attributes.min_value') . ':') !!}
+                        {!! Form::label('min_value', trans('validation.attributes.min_value').':') !!}
                         {!! Form::text('min_value', $item->min_value ?? null, ['class' => 'form-control']) !!}
                     </div>
                 </div>
                 <div class="col-md-6 col-sm-6">
                     <div class="form-group">
-                        {!! Form::label('max_value', trans('validation.attributes.max_value') . ':') !!}
+                        {!! Form::label('max_value', trans('validation.attributes.max_value').':') !!}
                         {!! Form::text('max_value', $item->max_value ?? null, ['class' => 'form-control']) !!}
                     </div>
                 </div>
@@ -162,24 +129,18 @@
 
         <div data-sensor-input="full_tank">
             <div class="form-group">
-                {!! Form::label('fuel_tank_name', trans('validation.attributes.fuel_tank_name') . ':') !!}
+                {!! Form::label('fuel_tank_name', trans('validation.attributes.fuel_tank_name').':') !!}
                 {!! Form::text('fuel_tank_name', $item->fuel_tank_name ?? null, ['class' => 'form-control']) !!}
             </div>
 
             <div class="form-group" data-disablable="#calibration;show-enable">
-                {!! Form::label('parameters', trans('validation.attributes.parameters') . ':') !!}
+                {!! Form::label('parameters', trans('validation.attributes.parameters').':') !!}
                 <div class="row">
                     <div class="col-md-6 col-sm-6">
-                        {!! Form::text('full_tank', $item->full_tank ?? null, [
-                            'class' => 'form-control',
-                            'placeholder' => trans('validation.attributes.full_tank'),
-                        ]) !!}
+                        {!! Form::text('full_tank', $item->full_tank ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.full_tank')]) !!}
                     </div>
                     <div class="col-md-6 col-sm-6">
-                        {!! Form::text('full_tank_value', $item->full_tank_value ?? null, [
-                            'class' => 'form-control',
-                            'placeholder' => trans('validation.attributes.tag_value'),
-                        ]) !!}
+                        {!! Form::text('full_tank_value', $item->full_tank_value ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.tag_value')]) !!}
                     </div>
                 </div>
             </div>
@@ -196,32 +157,24 @@
         </div>
 
         <div data-sensor-input="unit" class="form-group">
-            {!! Form::label('unit_of_measurement', trans('validation.attributes.unit_of_measurement') . ':') !!}
+            {!! Form::label('unit_of_measurement', trans('validation.attributes.unit_of_measurement').':') !!}
             {!! Form::text('unit_of_measurement', $item->unit_of_measurement ?? null, ['class' => 'form-control']) !!}
         </div>
 
         <div data-sensor-input="odometer_unit" class="form-group">
-            {!! Form::label('odometer_value_unit', trans('validation.attributes.unit_of_measurement') . ':') !!}
-            {!! Form::select(
-                'odometer_value_unit',
-                ['km' => trans('front.km'), 'mi' => trans('front.mi')],
-                $item->odometer_value_unit ?? null,
-                ['class' => 'form-control'],
-            ) !!}
+            {!! Form::label('odometer_value_unit', trans('validation.attributes.unit_of_measurement').':') !!}
+            {!! Form::select('odometer_value_unit', ['km' => trans('front.km'), 'mi' => trans('front.mi')], $item->odometer_value_unit ?? null, ['class' => 'form-control']) !!}
         </div>
 
         <div data-sensor-input="value">
             <div class="form-group">
-                {!! Form::label('value', trans('validation.attributes.value') . ':') !!}
+                {!! Form::label('value', trans('validation.attributes.value').':') !!}
                 <div class="input-group">
                     <div class="checkbox input-group-btn">
                         {!! Form::checkbox(null, 1, null, ['id' => 'value_set']) !!}
                         {!! Form::label(null) !!}
                     </div>
-                    {!! Form::text('value', $item->value ?? 0, [
-                        'class' => 'form-control',
-                        'data-disablable' => '#value_set;disable',
-                    ]) !!}
+                    {!! Form::text('value', $item->value ?? 0, ['class' => 'form-control', 'data-disablable' => '#value_set;disable']) !!}
                 </div>
             </div>
         </div>
@@ -247,12 +200,9 @@
         </div>
 
         <div class="form-group">
-            {!! Form::label('value', trans('front.preview') . ':') !!}
+            {!! Form::label('value', trans('front.preview').':') !!}
             <div class="input-group">
-                {!! Form::text('input', null, [
-                    'class' => 'form-control',
-                    'placeholder' => trans('validation.attributes.value'),
-                ]) !!}
+                {!! Form::text('input', null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.value')]) !!}
                 <div class="input-group-btn">
                     <a href="javascript:" class="btn btn-action btn-preview" type="button">
                         <i class="icon send" title="{{ trans('front.preview') }}"></i>
@@ -269,7 +219,7 @@
     </div>
 </div>
 <script>
-    var types = jQuery.parseJSON('{!! json_encode($types) !!}');
+    var types = jQuery.parseJSON('{!! json_encode($types)  !!}');
 
     $(document)
         .off('click', '.btn-preview')
@@ -286,7 +236,7 @@
                 beforeSend: function() {
                     loader.add($container);
                 },
-                success: function(res) {
+                success: function(res){
                     if (res.status) {
                         $('#preview-result').val(res.formatted);
                     }
@@ -351,7 +301,7 @@
     function getSensorType(key) {
         var type = null;
         $.each(types, function(index, value) {
-            if (value.type == key) {
+            if (value.type  == key) {
                 type = value;
                 return false;
             }
@@ -368,7 +318,7 @@
 
         $select.html('');
 
-        $.each(type.shown_by, function(key, title) {
+        $.each(type.shown_by, function( key, title ) {
             $select.append('<option value="' + key + '">' + title + '</option>');
         });
 
@@ -409,7 +359,6 @@
         $('.sen-cal-fields').show();
         $('.sen-data-fields').removeClass('col-md-12').addClass('col-md-6');
     }
-
     function calibationHide() {
         $('#sensors_create, #sensors_edit').find('.modal-dialog').removeClass('modal-lg');
         $('.sen-cal-fields').hide();
@@ -417,7 +366,7 @@
     }
 
     function inputStatus(key, status, element) {
-        var $block = $('[data-sensor-input="' + key + '"]');
+        var $block = $('[data-sensor-input="'+key+'"]');
         if (status) {
             $block.show();
             $block.find('input, select').prop('disabled', false);
@@ -430,7 +379,7 @@
         }
     }
 
-    $(document).ready(function() {
+    $(document).ready(function () {
         $('select[name="sensor_type"]').trigger('change');
         //$('input[name="calibration"]').trigger('change');
         //$('input[name="mapping"]').trigger('change');

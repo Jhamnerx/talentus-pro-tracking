@@ -26,7 +26,8 @@ class Backup
     {
         $settings = $this->settings;
 
-        if (! empty($settings['type']) && $settings['type'] == 'auto') {
+        if ( ! empty($settings['type']) && $settings['type'] == 'auto')
+        {
             $hiveSettings = $this->hive->getBackupServer();
 
             if (!$hiveSettings)
@@ -53,13 +54,14 @@ class Backup
 
         $this->setupFTP();
 
-        if (! $this->ftp()->getHost())
+        if ( ! $this->ftp()->getHost())
             return false;
 
         try {
             $this->db();
             $this->images();
-        } catch (\Exception $e) {
+        }
+        catch(\Exception $e) {
             $this->setMessage('Error: ' . $e->getMessage(), 0);
 
             if (Arr::get($this->settings, 'type') == 'auto') {
@@ -80,10 +82,10 @@ class Backup
 
     public function force()
     {
-        if (! $this->ftp()->getHost())
+        if ( ! $this->ftp()->getHost())
             throw new \Exception('Not ftp server');
 
-        if (! $this->ftp()->check())
+        if ( ! $this->ftp()->check())
             throw new \Exception(trans('front.login_failed'));
 
 
@@ -108,7 +110,7 @@ class Backup
     {
         DatabaseService::loadDatabaseConfig();
 
-        $connections = Arr::where(config("database.connections"), function ($config, $connection) {
+        $connections = Arr::where(config("database.connections"), function($config, $connection){
             return $config['driver'] == 'mysql';
         });
 
@@ -132,19 +134,19 @@ class Backup
 
     public function check()
     {
-        if (! $this->ftp()->check())
+        if ( ! $this->ftp()->check())
             throw new \Exception(trans('front.login_failed'));
 
         try {
             $this->ftp()->process('echo "test"', 'test.txt', false);
         } catch (\Exception $e) {
-            throw new \Exception($e->getMessage());
+            throw new \Exception(trans('front.unexpected_error'));
         }
     }
 
     protected function setMessage($message, $status)
     {
-        if (! isset($this->settings['messages']))
+        if ( ! isset($this->settings['messages']))
             $this->settings['messages'] = [];
 
         array_unshift($this->settings['messages'], [
@@ -175,7 +177,7 @@ class Backup
 
     protected function setNextBackup()
     {
-        $this->settings['next_backup'] = strtotime(date('Y-m-d', strtotime('+' . $this->settings['period'] . ' days')) . ' ' . $this->settings['hour']);
+        $this->settings['next_backup'] = strtotime(date('Y-m-d', strtotime('+'.$this->settings['period'].' days')).' '.$this->settings['hour']);
 
         settings('backups.next_backup', $this->settings['next_backup']);
     }

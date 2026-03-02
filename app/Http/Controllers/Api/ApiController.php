@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Exceptions\Manager;
 use App\Exceptions\PermissionException;
 use App\Http\Controllers\Controller;
+use App\Http\Wrapper;
 use App\Transformers\ApiV1\DeviceAllTransformer;
 use App\Transformers\ApiV1\DeviceFullTransformer;
 use CustomFacades\ModalHelpers\DeviceModalHelper;
@@ -246,6 +247,160 @@ class ApiController extends Controller
         return $data;
     }
 
+    public function getDevicesByPlate()
+    {
+        if (!$this->user->perm('devices', 'view')) {
+            return response()->json(['status' => 0, 'message' => trans('front.dont_have_permission')], 403);
+        }
+
+        $plateNumber = request()->get('plate_number');
+
+        if (empty($plateNumber)) {
+            return response()->json(['status' => 0, 'message' => 'plate_number parameter is required'], 400);
+        }
+
+        $device = $this->user->devices()
+            ->where('plate_number', $plateNumber)
+            ->select(['id', 'imei', 'sim_number', 'name', 'plate_number'])
+            ->first();
+
+        if (!$device) {
+            return response()->json([
+                'status' => 0,
+                'message' => 'Device not found with plate number: ' . $plateNumber
+            ], 404);
+        }
+
+        return [
+            'status' => 1,
+            'device' => $device->toArray()
+        ];
+    }
+
+    public function getDevicesTransmissionStatus()
+    {
+        if (!$this->user->perm('devices', 'view')) {
+            return response()->json(['status' => 0, 'message' => trans('front.dont_have_permission')], 403);
+        }
+
+        Server::setMemoryLimit(config('server.device_memory_limit'));
+
+        // Usar zona horaria de Lima para cálculos correctos
+        $now = \Carbon\Carbon::now('America/Lima');
+
+        $devices = $this->user->devices()
+            ->where('devices.active', 1)
+            ->traccarJoin()
+            ->select(['devices.*', 'traccar_devices.server_time', 'traccar_devices.time'])
+            ->with(['traccar'])
+            ->get();
+
+        // Categorías de emergencia
+        $categories = [
+            'ok' => [
+                'title' => 'OK (< 1 hora)',
+                'description' => 'Transmitiendo normalmente',
+                'priority' => 0,
+                'items' => []
+            ],
+            'warning' => [
+                'title' => 'Advertencia (1-24 horas)',
+                'description' => 'Sin transmisión reciente',
+                'priority' => 1,
+                'items' => []
+            ],
+            'critical' => [
+                'title' => 'Crítico (1-7 días)',
+                'description' => 'Requiere atención inmediata',
+                'priority' => 2,
+                'items' => []
+            ],
+            'emergency' => [
+                'title' => 'Emergencia (> 7 días)',
+                'description' => 'Requiere revisión urgente',
+                'priority' => 3,
+                'items' => []
+            ],
+            'never_connected' => [
+                'title' => 'Nunca conectado',
+                'description' => 'Dispositivo sin conexión',
+                'priority' => 4,
+                'items' => []
+            ]
+        ];
+
+        foreach ($devices as $device) {
+            $deviceData = [
+                'id' => $device->id,
+                'name' => $device->name,
+                'imei' => $device->imei,
+                'plate_number' => $device->plate_number,
+                'sim_number' => $device->sim_number,
+                'last_connection' => null,
+                'days_offline' => null,
+                'hours_offline' => null,
+                'status' => $device->getStatus()
+            ];
+
+            if ($device->server_time) {
+                // Convertir de UTC a hora de Lima
+                $lastConnection = \Carbon\Carbon::parse($device->server_time, 'UTC')->setTimezone('America/Lima');
+
+                $diffHours = $now->diffInHours($lastConnection);
+                $diffDays = $now->diffInDays($lastConnection);
+
+                $deviceData['last_connection'] = $lastConnection->format('Y-m-d H:i:s');
+                $deviceData['last_connection_utc'] = $device->server_time;
+                $deviceData['days_offline'] = round($diffDays + ($diffHours % 24) / 24, 1);
+                $deviceData['hours_offline'] = round($diffHours, 1);
+
+                // Clasificar según tiempo sin transmitir
+                if ($diffHours < 1) {
+                    $categories['ok']['items'][] = $deviceData;
+                } elseif ($diffHours < 24) {
+                    $categories['warning']['items'][] = $deviceData;
+                } elseif ($diffDays < 7) {
+                    $categories['critical']['items'][] = $deviceData;
+                } else {
+                    $categories['emergency']['items'][] = $deviceData;
+                }
+            } else {
+                // Nunca se ha conectado
+                $categories['never_connected']['items'][] = $deviceData;
+            }
+        }
+
+        // Preparar respuesta con estadísticas
+        $response = [
+            'status' => 1,
+            'total_active_devices' => $devices->count(),
+            'summary' => [
+                'ok' => count($categories['ok']['items']),
+                'warning' => count($categories['warning']['items']),
+                'critical' => count($categories['critical']['items']),
+                'emergency' => count($categories['emergency']['items']),
+                'never_connected' => count($categories['never_connected']['items'])
+            ],
+            'categories' => []
+        ];
+
+        // Ordenar por prioridad y añadir solo categorías con dispositivos
+        foreach ($categories as $key => $category) {
+            if (count($category['items']) > 0 || request()->get('show_empty', false)) {
+                $response['categories'][] = [
+                    'key' => $key,
+                    'title' => $category['title'],
+                    'description' => $category['description'],
+                    'priority' => $category['priority'],
+                    'count' => count($category['items']),
+                    'items' => $category['items']
+                ];
+            }
+        }
+
+        return $response;
+    }
+
     public function getUserData()
     {
         $dStart = new \DateTime(date('Y-m-d H:i:s'));
@@ -352,9 +507,27 @@ class ApiController extends Controller
             throw new ValidationException($validator->errors());
         }
 
-        $fcmService->setFcmToken($this->user, $this->data['token']);
+        $fcmService->setFcmToken($this->user, $this->data['token'], $input['project_id'] ?? null);
 
         return response()->json(['status' => 1]);
+    }
+
+    public function destroyFcmToken(FcmService $fcmService)
+    {
+        $validator = Validator::make(request()->all(), ['token' => 'required']);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator->errors());
+        }
+
+        $token = request('token');
+        $result = $fcmService->destroyFcmToken($this->user, $token);
+
+        if (!$result) {
+            return response()->json(['status' => 0, 'message' => 'El token no existe'], 404);
+        }
+
+        return response()->json(['status' => 1, 'message' => 'Token eliminado con éxito.']);
     }
 
     public function getServicesKeys()
@@ -372,7 +545,7 @@ class ApiController extends Controller
 
         try {
             $controller = App::make("App\Http\Controllers\Frontend\\" . $class);
-            $response = $this->runController($controller, $method, $arguments);
+            $response = (new Wrapper())->run($controller, $method, $arguments);
         } catch (\ReflectionException $e) {
             return response()->json(['status' => 0, 'message' => 'Method does not exist!'], 500);
         }
@@ -391,44 +564,5 @@ class ApiController extends Controller
             $status_code = 403;
 
         return response()->json($response, $status_code);
-    }
-
-    private function runController($controller, $method, $arguments)
-    {
-        $middleware = $this->getControllerMiddleware($controller, $method);
-
-        $middleware = $this->sortMiddleware($middleware);
-
-        return (new Pipeline(app()))
-            ->send(request())
-            ->through($middleware)
-            ->then(function ($request) use ($controller, $method, $arguments) {
-                return app()
-                    ->call([$controller, $method], $arguments);
-            });
-    }
-
-    private function getControllerMiddleware($controller, $method)
-    {
-        return collect($this->controllerMidlleware($controller, $method))
-            ->map(function ($name) {
-                return (array)MiddlewareNameResolver::resolve(
-                    $name,
-                    app('router')->getMiddleware(),
-                    app('router')->getMiddlewareGroups()
-                );
-            })->flatten();
-    }
-
-    private function controllerMidlleware($controller, $method)
-    {
-        return (new ControllerDispatcher(app()))
-            ->getMiddleware($controller, $method);
-    }
-
-    private function sortMiddleware($middleware)
-    {
-        return (new SortedMiddleware(app('router')->middlewarePriority, $middleware))
-            ->all();
     }
 }

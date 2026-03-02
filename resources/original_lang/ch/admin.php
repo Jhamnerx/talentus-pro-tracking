@@ -1,7 +1,5 @@
 <?php
-
-return array(
-
+return [
     'clients' => 'Clientes',
     'content' => 'Contenido',
     'pages' => 'Paginas',
@@ -29,7 +27,7 @@ return array(
     'confirm' => 'Confirmar',
     'total_devices' => 'Dispositivos totales',
     'online_devices' => 'Dispositivos conectados',
-    'objects' => 'Objetos',
+    'objects' => 'Baterias',
     'last_connection' => 'Ultima conexión',
     'add_new_user' => 'Añadir nuevo usuario',
     'logs' => 'Registros',
@@ -37,10 +35,10 @@ return array(
     'do_delete' => 'Estas seguro que quieres borrarlo?',
     'download' => 'Descargar',
     'show_always' => 'Mostrar siempre',
-    'restart_tracking_service' => 'Servicio de seguimiento de reinicio',
+    'restart_tracking_service' => 'Reiniciar Servicio GPS',
     'do_restart_tracking_service' => '¿Seguro que desea reiniciar el servicio de seguimiento?',
-    'tracking_service_restarted' => ' Servicio de seguimiento reiniciado',
-    'tracking_service_restart_failed' => ' Reinicio del servicio de seguimiento falló',
+    'tracking_service_restarted' => 'Servicio GPS reiniciado',
+    'tracking_service_restart_failed' => 'Reinicio del servicio de seguimiento falló',
     'import_geofences' => 'Importar Geocercas',
     'unregistered_devices_log' => 'Dispositivos no registrados',
     'tried_to_connect' => 'Intentó conectar',
@@ -135,4 +133,16 @@ return array(
     'task_custom_fields' => 'Campos personalizados de tareas',
     'expire_notification_sending_channels' => 'Caducar canales de envío de notificaciones',
     'create_selected' => 'Crear seleccionado',
-);
+    'fcm_configurations' => 'Configuraciones de FCM',
+    'field' => 'Campo',
+    'registration_fields' => 'Campos de registro',
+    'back_to_admin' => 'Volver a la administración',
+    'plugin_activated' => 'Plugin activado',
+    'plugin_deactivated' => 'Plugin desactivado',
+    'clear_cache' => 'Limpiar caché',
+    'report_type_enabled_successfully' => 'El tipo de informe se ha habilitado correctamente',
+    'report_type_disabled_successfully' => 'El tipo de informe se ha deshabilitado correctamente',
+    'user' => 'Usuario',
+    'tools' => 'Herramientas',
+    'setup' => 'Configuración',
+];

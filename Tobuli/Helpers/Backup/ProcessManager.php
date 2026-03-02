@@ -3,7 +3,6 @@
 namespace Tobuli\Helpers\Backup;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Carbon;
 use Tobuli\Entities\Backup;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Helpers\Backup\Process\AbstractBackuper;
@@ -31,7 +30,10 @@ class ProcessManager
             try {
                 $this->resolveBackuper($process, $this->ftp)->run();
             } catch (\Throwable $e) {
-                $this->backup->update(['message' => $e->getCode() . ': ' .$e->getMessage()]);
+                $this->backup->update([
+                    'message' => (new ErrorTranslator())->translate($e),
+                    'details' => $e->getCode() . ': ' . $e->getMessage(),
+                ]);
 
                 throw $e;
             }

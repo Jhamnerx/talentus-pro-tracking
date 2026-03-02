@@ -32,12 +32,17 @@ class EngineHours extends ActionStat
             TraccarPosition::VIRTUAL_ENGINE_HOURS_KEY
         ];
 
-        if ($this->sensor && !in_array($this->sensor->tag_name, $formatTags))
-            $this->callback = [$this, 'byEngineHoursSensor'];
-        else if ($this->sensor && $this->sensor->shown_value_by !== 'virtual')
+        if ($this->sensor && !in_array($this->sensor->tag_name, $formatTags)) {
+            if ($this->sensor->shown_value_by === 'logical') {
+                $this->callback = [$this, 'byEngineHoursLogicalSensor'];
+            } else {
+                $this->callback = [$this, 'byEngineHoursSensor'];
+            }
+        } else if ($this->sensor && $this->sensor->shown_value_by !== 'virtual') {
             $this->callback = [$this, 'byEngineHoursFormatSensor'];
-        else
+        } else {
             $this->callback = [$this, 'byEngine'];
+        }
 
         $this->registerStat('engine_hours', new DurationStat());
         $this->registerStat('engine_idle', new DurationStat());
@@ -49,7 +54,7 @@ class EngineHours extends ActionStat
         call_user_func($this->callback, $position);
     }
 
-    protected function byEngineHoursSensor($position)
+    protected function getEngineHoursSensorDiffValue($position)
     {
         //first to set previous position sensor
         $value = $this->getSensorValue($this->sensor, $position);
@@ -61,7 +66,23 @@ class EngineHours extends ActionStat
 
         $previousValue = $this->getSensorValue($this->sensor, $previous);
 
-        $this->setStats(floatval($value) - floatval($previousValue), $position);
+        return floatval($value) - floatval($previousValue);
+    }
+
+    protected function byEngineHoursSensor($position)
+    {
+        $this->setStats(
+            $this->getEngineHoursSensorDiffValue($position),
+            $position
+        );
+    }
+
+    protected function byEngineHoursLogicalSensor($position)
+    {
+        $this->setStats(
+            $this->getEngineHoursSensorDiffValue($position) * 3600,
+            $position
+        );
     }
 
     protected function byEngineHoursFormatSensor($position)

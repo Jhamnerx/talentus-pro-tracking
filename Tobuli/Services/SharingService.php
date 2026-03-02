@@ -9,6 +9,8 @@ use Tobuli\Entities\EmailTemplate;
 use Tobuli\Entities\SmsTemplate;
 use Tobuli\Entities\User;
 use Tobuli\Entities\Sharing;
+use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
+use Tobuli\Services\EntityLoader\UserDevicesLoader;
 
 class SharingService
 {
@@ -86,7 +88,10 @@ class SharingService
 
     private function formDevices($user_id, $devices)
     {
-        if ( ! ((is_array($devices) || $devices instanceof Collection)))
+        if ($devices instanceof UserDevicesGroupLoader
+            || $devices instanceof UserDevicesLoader) {
+            $devices = $devices->getQuerySelected()->pluck('id');
+        } elseif ( ! ((is_array($devices) || $devices instanceof Collection)))
             $devices = [$devices];
 
         $data = [];

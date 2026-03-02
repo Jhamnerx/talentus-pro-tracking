@@ -3,11 +3,25 @@
   @extend .animated;
 }
 
-#sidebar {
+.sidebar {
+  &.left {
+    left: 0;
+
+    .sidebar-content {
+      border-right: 1px solid $color-border-100;
+    }
+  }
+  &.right {
+    right: 0;
+
+    .sidebar-content {
+      border-left: 1px solid $color-border-100;
+    }
+  }
   position: absolute;
   z-index: 999;
   bottom: 0;
-  left: 0;
+
   @include calc('max-height', 90%, '100% - #{$sidebar-top-space}');
   height: 100%;
 
@@ -41,7 +55,6 @@
   }
   .sidebar-content {
     background: $sidebar-bg;
-    border-right: 1px solid $color-border-100;
     width: 100%;
     height: 100%;
     max-width: 100%;

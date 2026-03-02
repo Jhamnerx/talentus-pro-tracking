@@ -92,6 +92,8 @@ class SettingsModel extends Settings {
         $settings[$group] = $item;
 
         $this->setValues($settings);
+
+        return true;
     }
 
     protected function _forget($key) {
@@ -114,5 +116,7 @@ class SettingsModel extends Settings {
         $settings[$group] = $item;
 
         $this->setValues($settings);
+
+        return true;
     }
 }

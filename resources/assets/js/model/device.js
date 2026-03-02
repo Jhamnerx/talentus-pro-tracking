@@ -390,7 +390,7 @@ function Device(data) {
           _lat,
           _lng,
           '<i class="icon eye"></i>',
-          "btn btn-xs btn-default"
+          "btn btn-xs btn-default",
         );
         break;
       case "address":
@@ -753,13 +753,13 @@ function Device(data) {
     }
 
     var html = "";
-    html +=
-      '<span class="name"><i>' +
-      options.name +
-      " (" +
-      _this.data("speed").text +
-      ")" +
-      "</i></span>";
+
+    let speed = app.settings.mapShowDeviceSpeed
+      ? " (" + _this.data("speed").text + ")"
+      : "";
+
+    html += '<span class="name"><i>' + options.name + speed + "</i></span>";
+
     html += icon;
 
     var iconAnchor = [width / 2, height / 2];
@@ -1055,6 +1055,14 @@ function Device(data) {
       .find('[data-modal="services"]')
       .attr("data-url", app.urls.devicesServices + _this.id())
       .data("url", app.urls.devicesServices + _this.id());
+    app.widgets
+      .find('[data-modal="send_command"]')
+      .attr("data-url", app.urls.deviceSendCommand + "?id=" + _this.id())
+      .data("url", app.urls.deviceSendCommand + "?id=" + _this.id());
+    app.widgets
+      .find('[data-modal="devices_edit"]')
+      .attr("data-url", app.urls.deviceEdit + _this.id())
+      .data("url", app.urls.deviceEdit + _this.id());
 
     var $location = app.widgets.find("#widget-location");
 
@@ -1413,7 +1421,7 @@ function Device(data) {
   };
 
   _this.sendGprsCommand = function (container, data) {
-    var url = app.urls.deviceSendGprsCommand;
+    var url = app.urls.deviceWidgetGprsCommand + data.device_id;
 
     $.ajax({
       type: "POST",

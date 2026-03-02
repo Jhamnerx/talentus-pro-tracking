@@ -86,7 +86,7 @@ class FractalTransformerService {
 
     public function collection($data, $transformerClass) {
         $this->setTransformer($transformerClass);
-        $this->transformer->loadRelations($data);
+        $this->transformer->loadRequestedRelations($data, $this->getIncludes());
         $this->setData($data);
 
         $transformedData = new Collection($this->data, $this->transformer);
@@ -96,7 +96,7 @@ class FractalTransformerService {
 
     public function paginate($data, $transformerClass) {
         $this->setTransformer($transformerClass);
-        $this->transformer->loadRelations($data);
+        $this->transformer->loadRequestedRelations($data, $this->getIncludes());
         $this->setData($data->getCollection());
 
         $transformedData = new Collection($this->data, $this->transformer);
@@ -113,12 +113,20 @@ class FractalTransformerService {
     public function cursorPaginate($data, $transformerClass)
     {
         $this->setTransformer($transformerClass);
-        $this->transformer->loadRelations($data);
+        $this->transformer->loadRequestedRelations($data, $this->getIncludes());
         $this->setData($data->getCollection());
 
         $transformedData = new Collection($this->data, $this->transformer);
         $transformedData->setCursor(new Cursor($data, $data->previousCursor(), $data->nextCursor()));
         $transformedData = $this->fractalManager->createData($transformedData);
         return $transformedData;
+    }
+
+    private function getIncludes(): array
+    {
+        return array_merge(
+            $this->fractalManager->getRequestedIncludes(),
+            $this->transformer->getDefaultIncludes(),
+        );
     }
 }

@@ -135,28 +135,66 @@ class CommandTemplate extends AbstractEntity
         });
     }
 
-    public function scopeByDevices(Builder $query, Collection $devices, $strict = false): Builder
+    /**
+     * @param Collection|Builder $devices
+     */
+    public function scopeByDevices(Builder $query, $devices, bool $strict = false): Builder
     {
-        $query->where(function (Builder $q) use ($devices, $strict) {
-            $q->whereNull('adapted');
+        if ($devices instanceof Builder) {
+            return $query->byDevicesQuery($devices, $strict);
+        }
 
-            $q->orWhere(function($q) use ($devices, $strict) {
-                $protocols = $devices->pluck('protocol')->unique()->all();
-                $q->adaptedProtocols($protocols, $strict);
-            });
+        return $query->byDevicesCollection($devices, $strict);
+    }
 
-            $q->orWhere(function($q) use ($devices, $strict) {
-                $ids = $devices->pluck('id')->all();
-                $q->adaptedDevices($ids, $strict);
-            });
+    protected function scopeByDevicesCollection(Builder $query, Collection $devices, bool $strict = false): Builder
+    {
+        return $query->where(function (Builder $query) use ($devices, $strict) {
+            $query->whereNull('adapted');
 
-            $q->orWhere(function($q) use ($devices, $strict) {
-                $ids = $devices->pluck('device_type_id')->unique()->all();
-                $q->adaptedDeviceTypes($ids, $strict);
-            });
+            $query->orWhere(fn (Builder $q) => $q->adaptedProtocols(
+                $devices->pluck('protocol')->unique()->all(),
+                $strict
+            ));
+
+            $query->orWhere(fn (Builder $q) => $q->adaptedDevices(
+                $devices->pluck('id')->all(),
+                $strict
+            ));
+
+            $query->orWhere(fn(Builder $q) => $q->adaptedDeviceTypes(
+                $devices->pluck('device_type_id')->unique()->all(),
+                $strict
+            ));
         });
+    }
 
-        return $query;
+    protected function scopeByDevicesQuery(Builder $query, Builder $devices, bool $strict = false): Builder
+    {
+        return $query->where(function (Builder $query) use ($devices, $strict) {
+            $query->whereNull('adapted');
+
+            $query->orWhere(fn (Builder $q) => $q->adaptedProtocols(
+                (clone $devices)
+                    ->traccarJoin()
+                    ->select(['traccar_devices.protocol'])
+                    ->distinct()
+                    ->pluck('traccar_devices.protocol')
+                    ->all(),
+                $strict
+            ));
+
+            $query->orWhere(fn (Builder $q) => $q->adaptedDeviceTypes(
+                (clone $devices)
+                    ->select(['device_type_id'])
+                    ->distinct()
+                    ->pluck('device_type_id')
+                    ->all(),
+                $strict
+            ));
+
+            $query->orWhere(fn (Builder $q) => $q->adaptedDevices($devices, $strict));
+        });
     }
 
     public function scopeAdaptedProtocols(Builder $query, array $protocols, $strict = false): Builder
@@ -179,21 +217,30 @@ class CommandTemplate extends AbstractEntity
         return $query;
     }
 
-    public function scopeAdaptedDevices(Builder $query, array $devices, $strict = false): Builder
+    /**
+     * @param array|Builder $devices
+     */
+    public function scopeAdaptedDevices(Builder $query, $devices, bool $strict = false): Builder
     {
-        if (empty($devices))
+        if (empty($devices)) {
             return $query;
+        }
 
         $query->where('adapted', 'devices');
 
-        $condition = $strict ? '=' : '>=';
-        $count = $strict ? count($devices) : 1;
+        if ($strict) {
+            $condition = '=';
+            $count = is_array($devices) ? count($devices) : (clone $devices)->count();
+        } else {
+            $condition = '>=';
+            $count = 1;
+        }
 
-        $query->whereHas('devices', function ($q) use ($devices) {
-            $q->whereIn('id', $devices);
-        }, $condition, $count);
-
-        return $query;
+        return $query->whereHas('devices', fn (Builder $q) => $q
+            ->whereIn(
+                'id',
+                $devices instanceof Builder ? (clone $devices)->select('devices.id') : $devices
+            ), $condition, $count);
     }
 
     public function scopeAdaptedDeviceTypes(Builder $query, array $deviceTypes, $strict = false): Builder
@@ -208,10 +255,8 @@ class CommandTemplate extends AbstractEntity
         $condition = $strict ? '=' : '>=';
         $count = $strict ? count($deviceTypes) : 1;
 
-        $query->whereHas('deviceTypes', function ($q) use ($deviceTypes) {
-            $q->whereIn('id', $deviceTypes);
-        }, $condition, $count);
+        $hasQuery = fn (Builder $q) => $q->whereIn('id', $deviceTypes);
 
-        return $query;
+        return $query->whereHas('deviceTypes', $hasQuery, $condition, $count);
     }
 }

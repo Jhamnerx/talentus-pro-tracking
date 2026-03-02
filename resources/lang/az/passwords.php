@@ -8,5 +8,9 @@ return array(
     'token' => 'Bu parol sıfırlama nişanı etibarsızdır.',
     'user' => 'Həmin e-poçt ünvanına malik istifadəçi tapa bilmirik.',
     'throttled' => 'Yenidən cəhd etməzdən əvvəl gözləyin.',
-    'generic' => 'Bu e-poçtu olan bir hesab varsa, parol sıfırlama linki alacaqsınız.',
+    'generic' => 'Bu data ilə hesab varsa, parol sıfırlama linki alacaqsınız.',
+    'action_confirmation_with_password' => 'Bu hərəkəti təsdiqləmək üçün parolu daxil edin',
+    'via_phone' => 'Telefon nömrəsi vasitəsilə bərpa',
+    'via_email' => 'E-poçt vasitəsilə bərpa',
+    'recovery_via' => 'Parol sıfırlama linkini necə əldə etmək istərdiniz?',
 );

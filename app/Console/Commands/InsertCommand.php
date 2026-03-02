@@ -15,7 +15,7 @@ use Tobuli\Entities\UnregisteredDevice;
 
 class InsertCommand extends Command
 {
-    protected $debug = true;
+    protected $debug = false;
 
     /**
      * @var ProcessManager
@@ -78,7 +78,6 @@ class InsertCommand extends Command
                 $this->line('Process: ' . (microtime(true) - $start));
 
             if ($imei) {
-
                 $this->processManager->unlock($imei);
                 continue;
             }
@@ -141,10 +140,19 @@ class InsertCommand extends Command
             $this->positionsStack->deleteImei($imei);
         } elseif ($device->active) {
             $start = microtime(true);
+            $positionCount = $this->positionsStack->count($imei);
+
+            if ($this->debug)
+                $this->line("Processing $positionCount positions for IMEI: $imei");
+
             $writer = new PositionsWriter($device, $this->debug);
             $writer->runList($imei);
-            if ($this->debug)
-                $this->line('All writer: ' . (microtime(true) - $start));
+
+            $duration = microtime(true) - $start;
+            if ($this->debug) {
+                $this->line("Processed $positionCount positions in {$duration}s");
+                $this->line('Rate: ' . round($positionCount / $duration, 2) . ' positions/second');
+            }
         } else {
             $this->positionsStack->deleteImei($imei);
         }

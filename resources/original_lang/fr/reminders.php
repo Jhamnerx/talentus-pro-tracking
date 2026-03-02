@@ -9,5 +9,5 @@ return array(
     'reset' => 'Votre mot de passe a été réinitialisé',
     'reset_link' => 'Cliquez ici pour réinitialiser votre mot de passe',
     'notice' => 'Vous recevez cet e-mail car nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.',
-    'warning' => 'Si vous n&#39;avez pas demandé de réinitialisation de mot de passe, aucune autre action n&#39;est requise.',
+    'warning' => 'Si vous n\'avez pas demandé de réinitialisation de mot de passe, aucune autre action n\'est requise.',
 );

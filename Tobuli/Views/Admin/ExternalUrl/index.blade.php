@@ -28,11 +28,14 @@
                     {!! Form::label('enabled', trans('front.enable')) !!}
                 </div>
                 <div class="form-group">
-                    {!!Form::label('external_url', trans('front.external_url').':')!!}
-                    {!!Form::textarea('external_url', \Illuminate\Support\Arr::get($params, 'external_url'), ['class' => 'form-control', 'rows' => 3])!!}
+                    {!! Form::label('external_url', trans('front.external_url') . ':') !!}
+                    {!! Form::textarea('external_url', \Illuminate\Support\Arr::get($params, 'external_url'), [
+                        'class' => 'form-control',
+                        'rows' => 3,
+                    ]) !!}
                 </div>
                 <div class="alert alert-info">
-                    {!!trans('front.external_url_description')!!}
+                    {!! trans('front.external_url_description') !!}
                 </div>
             </div>
         </div>

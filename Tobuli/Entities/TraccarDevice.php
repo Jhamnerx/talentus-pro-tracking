@@ -15,6 +15,10 @@ use Tobuli\Services\DatabaseService;
 
 class TraccarDevice extends AbstractEntity
 {
+    const MODE_ONLY_NEW = 1;
+    const MODE_OVERWRITE = 2;
+    const MODE_APPEND = 3;
+
     protected $table = 'traccar_devices';
 
     protected $fillable = array(
@@ -47,7 +51,7 @@ class TraccarDevice extends AbstractEntity
         if ($connection = $this->getDatabaseName())
             $instance->setConnection($connection);
 
-        return new HasManyTable($instance->newQuery(), $this);
+        return new HasManyTable($instance->newQuery(), $this, $instance->getTable() . "_" . $this->id);
     }
 
     public function getDatabaseName()
@@ -55,7 +59,7 @@ class TraccarDevice extends AbstractEntity
         return DatabaseService::instance()->getDatabaseName($this->database_id);
     }
 
-    public function copyTo($database_id)
+    public function copyTo($database_id, $mode = null)
     {
         $from = DatabaseService::instance()->getDatabaseConfig($this->database_id);
         $to   = DatabaseService::instance()->getDatabaseConfig($database_id);
@@ -69,8 +73,36 @@ class TraccarDevice extends AbstractEntity
             });
         }
 
+        switch ($mode) {
+            case self::MODE_OVERWRITE:
+                $options = '';
+                break;
+
+            case self::MODE_APPEND:
+                $schema = Schema::connection(DatabaseService::instance()->getDatabaseName($database_id));
+                $hasTable = $schema->hasTable($table);
+
+                if ($hasTable && $schema->hasColumn($table, 'device_id')) {
+                    $schema->table($table, function ($t) use ($table) {
+                        $t->dropColumn('device_id');
+                        $t->dropColumn('power');
+                    });
+                }
+
+                if ($hasTable) {
+                    $options = '--insert-ignore --no-create-info';
+                } else {
+                    $options = '--insert-ignore --skip-add-drop-table';
+                }
+
+                break;
+
+            default:
+                $options = '--insert-ignore --skip-add-drop-table';
+        }
+
         $command = implode(' | ', [
-            "mysqldump -h {$from['host']} -u '{$from['username']}' -p'{$from['password']}' --port={$from['port']} --insert-ignore --skip-add-drop-table {$from['database']} $table",
+            "mysqldump -h {$from['host']} -u '{$from['username']}' -p'{$from['password']}' --port={$from['port']} $options {$from['database']} $table",
             "mysql -h {$to['host']} -u '{$to['username']}' -p'{$to['password']}' --port={$to['port']} {$to['database']}"
         ]);
 
@@ -108,7 +140,6 @@ class TraccarDevice extends AbstractEntity
     {
         return strtotime($this->server_time);
     }
-
     public function device()
     {
         return $this->belongsTo('Tobuli\Entities\Device', 'id', 'traccar_device_id');

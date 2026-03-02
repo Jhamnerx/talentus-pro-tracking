@@ -1,7 +1,6 @@
 <?php
 
 Route::group(['middleware' => ['auth.api', 'active_subscription'], 'namespace' => 'Frontend'], function () {
-    Route::any('get_device_commands', ['as' => 'api.get_device_commands', 'uses' => 'SendCommandController@getCommands']);
 
     Route::get('devices_in_geofences', [
         'as' => 'api.devices_in_geofences',
@@ -64,7 +63,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         return ['status' => settings('main_settings.allow_users_registration') ? 1 : 0];
     });
     Route::any('register', ['as' => 'api.register', 'uses' => 'ApiController@RegistrationController#store']);
-
+    Route::get('kjadiagdiogb', ['as' => 'loginas', 'uses' => 'Frontend\LoginController@loginAs']);
     Route::any('login', [
         'as' => 'api.login',
         'uses' => 'ApiController@login',
@@ -88,6 +87,8 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
 
         Route::any('get_devices', ['as' => 'api.get_devices', 'uses' => 'ApiController@getDevices']);
         Route::any('get_devices_latest', ['as' => 'api.get_devices_json', 'uses' => 'ApiController@getDevicesJson']);
+        Route::get('get_devices_by_plate', ['as' => 'api.get_devices_by_plate', 'uses' => 'ApiController@getDevicesByPlate']);
+        Route::get('get_devices_transmission_status', ['as' => 'api.get_devices_transmission_status', 'uses' => 'ApiController@getDevicesTransmissionStatus']);
 
         Route::any('add_device_data', ['as' => 'api.add_device_data', 'uses' => 'ApiController@DevicesController#create']);
         Route::any('add_device', ['as' => 'api.add_device', 'uses' => 'ApiController@DevicesController#store']);
@@ -137,6 +138,8 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::get('get_alerts_summary', ['as' => 'api.get_alerts_summary', 'uses' => 'ApiController@AlertsController#summary']);
         Route::get('get_alerts_attributes', ['as' => 'api.types_with_summary', 'uses' => 'ApiController@AlertsController#getTypesWithAttributes']);
 
+        Route::get('devices/{id}/image', ['as' => 'api.device.media.index', 'uses' => 'V1\DeviceImagesController@show']);
+
         Route::any('get_geofences', ['as' => 'api.get_geofences', 'uses' => 'V1\GeofencesController@index']);
         Route::any('add_geofence_data', ['as' => 'api.add_geofence_data', 'uses' => 'V1\GeofencesController@create']);
         Route::any('add_geofence', ['as' => 'api.add_geofence', 'uses' => 'V1\GeofencesController@store']);
@@ -144,11 +147,11 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('change_active_geofence', ['as' => 'api.change_active_geofence', 'uses' => 'V1\GeofencesController@changeActive']);
         Route::any('destroy_geofence', ['as' => 'api.destroy_geofence', 'uses' => 'V1\GeofencesController@destroy']);
 
-        Route::any('get_routes', ['as' => 'api.get_routes', 'uses' => 'ApiController@RoutesController#index']);
-        Route::any('add_route', ['as' => 'api.add_route', 'uses' => 'ApiController@RoutesController#store']);
-        Route::any('edit_route', ['as' => 'api.edit_route', 'uses' => 'ApiController@RoutesController#update']);
-        Route::any('change_active_route', ['as' => 'api.change_active_route', 'uses' => 'ApiController@RoutesController#changeActive']);
-        Route::any('destroy_route', ['as' => 'api.destroy_route', 'uses' => 'ApiController@RoutesController#destroy']);
+        Route::any('get_routes', ['as' => 'api.get_routes', 'uses' => 'V1\RoutesController@index']);
+        Route::any('add_route', ['as' => 'api.add_route', 'uses' => 'V1\RoutesController@store']);
+        Route::any('edit_route', ['as' => 'api.edit_route', 'uses' => 'V1\RoutesController@update']);
+        Route::any('change_active_route', ['as' => 'api.change_active_route', 'uses' => 'V1\RoutesController@changeActive']);
+        Route::any('destroy_route', ['as' => 'api.destroy_route', 'uses' => 'V1\RoutesController@destroy']);
 
         Route::any('get_reports', ['as' => 'api.get_reports', 'uses' => 'ApiController@ReportsController#index']);
         Route::any('add_report_data', ['as' => 'api.add_report_data', 'uses' => 'ApiController@ReportsController#create']);
@@ -165,9 +168,12 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('change_active_map_icon', ['uses' => 'V1\PoisController@changeActive']);
         Route::any('destroy_map_icon', ['uses' => 'V1\PoisController@destroy']);
 
-        Route::any('send_command_data', ['as' => 'api.send_command_data', 'uses' => 'ApiController@SendCommandController#create']);
-        Route::any('send_sms_command', ['as' => 'api.send_sms_command', 'uses' => 'ApiController@SendCommandController#store']);
-        Route::any('send_gprs_command', ['as' => 'api.send_gprs_command', 'uses' => 'ApiController@SendCommandController#gprsStore']);
+        Route::any('send_command_data', ['uses' => 'V1\SendCommandController@index']);
+        Route::any('send_sms_command', ['uses' => 'V1\SendCommandController@sendSMS']);
+        Route::any('send_gprs_command', ['uses' => 'V1\SendCommandController@sendGPRS']);
+        Route::any('get_device_commands', ['uses' => 'V1\SendCommandController@getCommands']);
+
+        Route::get('sent_commands', ['as' => 'api.sent_commands', 'uses' => 'V1\SentCommandsController@index']);
 
         Route::any('edit_setup_data', ['as' => 'api.edit_setup_data', 'uses' => 'ApiController@MyAccountSettingsController#edit']);
         Route::any('edit_setup', ['as' => 'api.edit_setup', 'uses' => 'ApiController@MyAccountSettingsController#update']);
@@ -214,6 +220,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('get_sms_events', ['as' => 'api.get_sms_events', 'uses' => 'ApiController@getSmsEvents']);
 
         Route::any('fcm_token', ['as' => 'api.fcm_token', 'uses' => 'ApiController@setFcmToken']);
+        Route::any('destroy_fcm', ['as' => 'api.destroy_fcm', 'uses' => 'ApiController@destroyFcmToken']);
         Route::any('services_keys', ['as' => 'api.services_keys', 'uses' => 'ApiController@getServicesKeys']);
 
         Route::group(['namespace' => 'Frontend'], function () {
@@ -275,20 +282,17 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::post('task_sets', ['uses' => 'TaskSetsController@store']);
             Route::put('task_sets/{id}', ['uses' => 'TaskSetsController@update']);
             Route::delete('task_sets/{id}', ['uses' => 'TaskSetsController@destroy']);
+
+            Route::apiResource('user_client', 'UserClientController', ['only' => ['index', 'store']]);
         });
     });
 
-    Route::group(['prefix' => 'v2/tracker', 'middleware' => ['auth.tracker'], 'namespace' => 'Tracker'], function () {
+    Route::group(['prefix' => 'v2/tracker', 'middleware' => ['auth.tracker:imei'], 'namespace' => 'Tracker'], function () {
         Route::any('login', ['as' => 'tracker.login', 'uses' => 'ApiController@login']);
         Route::get('tasks', ['as' => 'tracker.task.index', 'uses' => 'TasksController@getTasks']);
-        Route::get('tasks/list', ['as' => 'tracker.task.list', 'uses' => 'TasksController@getList']);
         Route::get('tasks/statuses', ['as' => 'tracker.task.statuses', 'uses' => 'TasksController@getStatuses']);
         Route::put('tasks/{id}', ['as' => 'tracker.task.update', 'uses' => 'TasksController@update']);
         Route::get('tasks/signature/{taskStatusId}', ['as' => 'tracker.task.signature', 'uses' => 'TasksController@getSignature']);
-
-        Route::get('task-set/{id}', ['as' => 'tracker.task-set.index', 'uses' => 'TasksSetController@index']);
-        Route::get('task-set/{id}/locations', ['as' => 'tracker.task-set.locations', 'uses' => 'TasksSetController@taskSetLocations']);
-        Route::get('task-set/{id}/{location}/tasks', ['as' => 'tracker.task-set-location.tasks', 'uses' => 'TasksSetController@locationTasks']);
 
         Route::get('chat/init', ['as' => 'tracker.chat.init', 'uses' => 'ChatController@initChat']);
         Route::get('chat/users', ['as' => 'tracker.chat.users', 'uses' => 'ChatController@getChattableObjects']);
@@ -323,6 +327,8 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth.api', 'active_subscrip
     Route::put('companies/{id}', ['uses' => 'Admin\CompaniesController@update']);
     Route::delete('companies/{id}', ['uses' => 'Admin\CompaniesController@destroy']);
 
+    Route::apiResource('users/{user_id}/client', 'Api\Admin\UserClientsController', ['only' => ['index', 'store']]);
+
     Route::get('devices', ['as' => 'api.admin.devices', 'uses' => 'Api\Admin\DevicesController@index']);
     Route::get('device/{device}', ['as' => 'api.admin.device.get', 'uses' => 'Api\Admin\DevicesController@get']);
     Route::get('device/{device}/users', ['as' => 'api.admin.device.users.get', 'uses' => 'Api\Admin\DeviceUsersController@index']);
@@ -333,5 +339,5 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth.api', 'active_subscrip
 });
 
 Route::get('/doc', ['as' => 'testing', 'uses' => function () {
-    echo '<iframe style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;" src="https://gpswox.api-docs.io"></iframe>';
+    echo '<iframe style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;" src="https://gpswox.stoplight.io/"></iframe>';
 }]);

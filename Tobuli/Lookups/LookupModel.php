@@ -94,6 +94,11 @@ abstract class LookupModel
 
                 try {
                     list($relation, $property) = explode('.', $column['name']);
+
+                    if (!$property) {
+                        $relation = null;
+                        $property = $column['name'];
+                    }
                 } catch (\Exception $e) {
                     $relation = null;
                     $property = $column['name'];
@@ -157,6 +162,11 @@ abstract class LookupModel
 
         try {
             list($relation, $property) = explode('.', $column['name']);
+
+            if (!$property) {
+                $relation = null;
+                $property = $column['name'];
+            }
         } catch (\Exception $e) {
             $relation = null;
             $property = $column['name'];

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use PgSql\Lob;
 use Validator;
 use Tobuli\Entities\User;
 use Tobuli\Entities\Alert;
@@ -10,11 +9,9 @@ use Illuminate\Support\Arr;
 use Tobuli\Entities\Company;
 use Tobuli\Entities\MapIcon;
 use Tobuli\Helpers\Password;
-use Tobuli\Services\AuthManager;
 use Tobuli\Services\UserService;
 use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\EmailTemplate;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 use Tobuli\Services\ScheduleService;
 use Tobuli\Services\PermissionService;
@@ -23,7 +20,6 @@ use App\Exceptions\PermissionException;
 use Illuminate\Support\Facades\Request;
 use Tobuli\Services\DeviceUsersService;
 use Tobuli\Services\UserCompanyService;
-use App\Exceptions\DeviceLimitException;
 use CustomFacades\Repositories\UserRepo;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Response;
@@ -33,8 +29,11 @@ use Tobuli\Reports\ReportTypesUserConfig;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Importers\POI\POIImportManager;
 use Tobuli\Validation\ClientFormValidator;
+use Tobuli\Services\EntityLoader\UsersLoader;
+use App\Transformers\User\UserFullTransformer;
 use Tobuli\Importers\Route\RouteImportManager;
 use Tobuli\Services\EntityLoader\DevicesLoader;
+use Tobuli\Helpers\RelationTransfer\SyncManager;
 use Tobuli\Importers\Geofence\GeofenceImportManager;
 use Tobuli\Services\EntityLoader\DevicesGroupLoader;
 use CustomFacades\Validators\ObjectsListSettingsFormValidator;
@@ -129,9 +128,7 @@ class ClientsController extends BaseController
             ->filter($input['filter'] ?? [])
             ->when(!empty($input['search_device']), function (Builder $query) use ($input) {
                 $query->whereHas('devices', function (Builder $query) use ($input) {
-                    $query->where('devices.imei', 'LIKE', '%' . $input['search_device'] . '%')
-                        ->orWhere('devices.plate_number', 'LIKE', '%' . $input['search_device'] . '%')
-                        ->orWhere('devices.name', 'LIKE', '%' . $input['search_device'] . '%');
+                    $query->where('devices.imei', 'LIKE', '%' . $input['search_device'] . '%');
                 });
             })
             ->toPaginator($input['limit'], $sort['sort_by'], $sort['sort']);
@@ -139,7 +136,7 @@ class ClientsController extends BaseController
         $section = $this->section;
 
         return $this->api
-            ? $items
+            ? \FractalTransformer::paginate($items, UserFullTransformer::class)->toArray()
             : View::make('admin::' . ucfirst($this->section) . '.' . (Request::ajax() ? 'table' : 'index'))
             ->with(compact('items', 'input', 'section'));
     }
@@ -147,11 +144,6 @@ class ClientsController extends BaseController
     public function create(BillingPlan $billingPlanRepo)
     {
         $this->checkException('users', 'create');
-
-        $managers = UserRepo::getOtherManagers(0)
-            ->pluck('email', 'id')
-            ->prepend('-- ' . trans('admin.select') . ' --', '0')
-            ->all();
 
         $maps = getAvailableMaps();
 
@@ -190,7 +182,6 @@ class ClientsController extends BaseController
             ->all();
 
         return View::make('admin::' . ucfirst($this->section) . '.create')->with(compact(
-            'managers',
             'maps',
             'plans',
             'objects_limit',
@@ -307,6 +298,11 @@ class ClientsController extends BaseController
                 $user->setSettings('listview', ['columns' => array_values(request()->get('columns', []))]);
             }
 
+            if (isset($input['widgets'])) {
+                if (empty($input['widgets'])) $input['widgets'] = null;
+                $user->setSettings('widgets', $input['widgets']);
+            }
+
             if ($this->user->can('edit', $user, 'custom_fields')) {
                 $customValues = $input['custom_fields'] ?? null;
                 $this->customValueService->saveCustomValues($user, $customValues);
@@ -323,7 +319,6 @@ class ClientsController extends BaseController
         if (! empty($input['account_created'])) {
             $this->notifyUser($input, 'account_created');
         }
-
 
         $alerts = Alert::userOwned($this->user)->with('events_custom')->get();
 
@@ -347,7 +342,6 @@ class ClientsController extends BaseController
             $newAlert->events_custom()->sync($alert->events_custom->pluck('id'));
         }
 
-
         return Response::json($this->api ? ['status' => 1, 'item' => $user] : ['status' => 1]);
     }
 
@@ -357,10 +351,6 @@ class ClientsController extends BaseController
 
         $this->checkException('users', 'edit', $item);
 
-        $managers = UserRepo::getOtherManagers($item->id)
-            ->pluck('email', 'id')
-            ->prepend('-- ' . trans('admin.select') . ' --', '0')
-            ->all();
         $maps = getAvailableMaps();
         $plans = [];
 
@@ -397,7 +387,6 @@ class ClientsController extends BaseController
         return View::make('admin::' . ucfirst($this->section) . '.edit')->with(compact(
             'item',
             'permission_values',
-            'managers',
             'maps',
             'plans',
             'objects_limit',
@@ -573,6 +562,11 @@ class ClientsController extends BaseController
             if (isset($input['forwards'])) {
                 if (empty($input['forwards'])) $input['forwards'] = [];
                 $item->forwards()->sync($input['forwards']);
+            }
+
+            if (isset($input['widgets'])) {
+                if (empty($input['widgets'])) $input['widgets'] = null;
+                $item->setSettings('widgets', $input['widgets']);
             }
 
             if ($this->user->can('edit', $item, 'custom_fields')) {
@@ -1013,12 +1007,10 @@ class ClientsController extends BaseController
         } else {
             if ($user) {
                 $this->devicesLoader->setQueryStored($user->devices());
-                $count = $this->devicesLoader->getQuery()->count();
-            } else {
-                $count = $this->devicesLoader->getSeleted()
-                    ? $this->devicesLoader->getSeleted()->count()
-                    : 0;
             }
+            $count = $this->devicesLoader->getQuerySelected()
+                ? $this->devicesLoader->getQuerySelected()->count()
+                : 0;
         }
 
         if ($count && $input['devices_limit'] < $count) {
@@ -1026,18 +1018,38 @@ class ClientsController extends BaseController
         }
     }
 
-    private function syncDevices($user, $input)
+    private function syncDevices(User $user, $input)
     {
         if ($this->api) {
-            if (isset($input['objects'])) {
-                if (empty($input['objects'])) $input['objects'] = [];
-
-                $user->devices()->sync($input['objects']);
+            if (!isset($input['objects'])) {
+                return;
             }
+
+            if (empty($input['objects'])) {
+                $input['objects'] = [];
+            }
+
+            $changes = $user->devices()->sync($input['objects']);
+
+            (new SyncManager())->applyChanges($user->devices(), $changes);
         } else {
             if ($this->devicesLoader->hasSelect()) {
                 $user->devices()->syncLoader($this->devicesLoader);
+
+                (new SyncManager())->sync($user->devices());
             }
         }
+    }
+
+    public function managers()
+    {
+        $usersLoader = new UsersLoader($this->user);
+        $usersLoader->setRequestKey('manager_id');
+
+        $usersLoader->setQueryItems(
+            $usersLoader->getQueryItems()->managers()->notUser($this->user)
+        );
+
+        return response()->json($usersLoader->get());
     }
 }

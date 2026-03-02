@@ -3,308 +3,250 @@
 @section('modal_class', 'modal-md')
 
 @section('title')
-    <i class="icon reports"></i> {!! trans('front.reports') !!}
+    <i class="icon reports"></i> {!!trans('front.reports')!!}
 @stop
 
 @section('body')
     <ul class="nav nav-tabs nav-default" role="tablist">
-        @if (Auth::User()->perm('reports', 'edit'))
-            <li class="active"><a href="#reports-form-reports" class="reports-form-reports-link" role="tab"
-                    data-toggle="tab">{!! trans('front.main') !!}</a></li>
+        @if ( Auth::User()->perm('reports', 'edit') )
+            <li class="active"><a href="#reports-form-reports" class="reports-form-reports-link" role="tab" data-toggle="tab">{!!trans('front.main')!!}</a></li>
         @endif
-        <li @if (!Auth::User()->perm('reports', 'edit')) class="active" @endif><a href="#reports-form-generated-reports"
-                class="reports-form-generated-reports-tab-link" role="tab" data-toggle="tab"
-                style="width: auto; padding-left: 10px; padding-right: 10px;">{!! trans('front.generated_reports') !!}</a></li>
-        <li><a href="#reports-form-report-logs" class="reports-form-report-logs-tab-link" role="tab"
-                data-toggle="tab">{{ trans('front.report_logs') }}</a></li>
+        <li @if ( !Auth::User()->perm('reports', 'edit') ) class="active" @endif><a href="#reports-form-generated-reports" class="reports-form-generated-reports-tab-link" role="tab" data-toggle="tab" style="width: auto; padding-left: 10px; padding-right: 10px;">{!!trans('front.generated_reports')!!}</a></li>
+        <li><a href="#reports-form-report-logs" class="reports-form-report-logs-tab-link" role="tab" data-toggle="tab">{{ trans('front.report_logs') }}</a></li>
     </ul>
 
     <div id="reports-modal">
-        {!! Form::open(['route' => 'reports.store', 'method' => 'POST', 'id' => 'report_form']) !!}
-        {!! Form::hidden('id') !!}
-        {!! Form::hidden('_method', 'POST') !!}
+    {!!Form::open(['route' => 'reports.store', 'method' => 'POST', 'id' => 'report_form'])!!}
+    {!!Form::hidden('id')!!}
+    {!!Form::hidden('_method', 'POST')!!}
 
         <div class="tab-content" id="reports_form_inputs">
-            @if (Auth::User()->perm('reports', 'edit'))
+            @if ( Auth::User()->perm('reports', 'edit') )
 
-                <div id="reports-form-reports" class="tab-pane active">
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <div class="form-group">
-                                {!! Form::label('title', trans('validation.attributes.title')) !!}
-                                {!! Form::text('title', null, ['class' => 'form-control']) !!}
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                {!! Form::label('type', trans('validation.attributes.type')) !!}
-                                {!! Form::select('type', $types_list, null, [
-                                    'class' => 'form-control',
-                                    'id' => 'reports_type',
-                                    'data-live-search' => 'true',
-                                ]) !!}
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                {!! Form::label('format', trans('validation.attributes.format')) !!}
-                                {!! Form::select('format', $formats, null, ['class' => 'form-control']) !!}
-                            </div>
+            <div id="reports-form-reports" class="tab-pane active">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="form-group">
+                            {!!Form::label('title', trans('validation.attributes.title'))!!}
+                            {!!Form::text('title', null, ['class' => 'form-control'])!!}
                         </div>
                     </div>
-
-                    <hr class="section-line">
-
-                    <div class="row form-horizontal">
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                <label for="type"
-                                    class="col-sm-3 control-label">{{ trans('validation.attributes.period') }}</label>
-                                <div class="col-sm-9">
-                                    {!! Form::select('period', $filters, 1, ['class' => 'form-control', 'data-icon' => 'icon time']) !!}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="from"
-                                    class="col-sm-3 control-label">{{ trans('validation.attributes.date_from') }}</label>
-                                <div class="col-sm-9">
-                                    <div class="input-group">
-                                        <div class="has-feedback">
-                                            <i class="icon calendar form-control-feedback"></i>
-                                            <input name="date_from" type="text" class="datepicker form-control"
-                                                value="{{ date('Y-m-d') }}">
-                                        </div>
-                                        <span class="input-group-btn">
-                                            {!! Form::select('from_time', getSelectTimeRange(), '00:00', [
-                                                'class' => 'form-control timeselect',
-                                                'data-custom-input' => 'true',
-                                            ]) !!}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="to"
-                                    class="col-sm-3 control-label">{{ trans('validation.attributes.date_to') }}</label>
-                                <div class="col-sm-9">
-                                    <div class="input-group">
-                                        <div class="has-feedback">
-                                            <i class="icon calendar form-control-feedback"></i>
-                                            <input class="datepicker form-control" name="date_to" type="text"
-                                                value="{{ date('Y-m-d', strtotime(date('Y-m-d') . ' +1 day')) }}">
-                                        </div>
-                                        <span class="input-group-btn">
-                                            {!! Form::select('to_time', getSelectTimeRange(), '00:00', [
-                                                'class' => 'form-control timeselect',
-                                                'data-custom-input' => 'true',
-                                            ]) !!}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                <label for="to" class="col-sm-3 control-label">{!! trans('front.devices') !!}</label>
-                                <div class="col-sm-9">
-                                    {!! Form::select('devices[]', [], null, [
-                                        'class' => 'form-control',
-                                        'multiple' => 'multiple',
-                                        'data-icon' => 'icon devices',
-                                        'data-live-search' => 'true',
-                                        'data-actions-box' => 'true',
-                                        'data-ajax' => route('reports.devices'),
-                                    ]) !!}
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="to" class="col-sm-3 control-label">{!! trans('front.geofences') !!}</label>
-                                <div class="col-sm-9">
-                                    {!! Form::select('geofences[]', $geofences->pluck('name', 'id')->all(), null, [
-                                        'class' => 'form-control',
-                                        'multiple' => 'multiple',
-                                        'data-icon' => 'icon geofences',
-                                        'data-live-search' => 'true',
-                                        'data-actions-box' => 'true',
-                                    ]) !!}
-                                </div>
-                            </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            {!!Form::label('type', trans('validation.attributes.type'))!!}
+                            {!!Form::select('type', $types_list, null, ['class' => 'form-control', 'id' => 'reports_type'])!!}
                         </div>
                     </div>
-
-
-                    <div class="row" id="report-additional"></div>
-
-                    <hr class="section-line">
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>{{ trans('validation.attributes.send_to_email') }}</label>
-                                <div class="has-feedback">
-                                    <i class="icon email form-control-feedback"></i>
-                                    <input name="send_to_email" class="form-control" type="email" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>{{ trans('validation.attributes.speed_limit') }}</label>
-                                <input name="speed_limit" class="form-control" type="text" placeholder="60" />
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>{{ trans('validation.attributes.stops') }}</label>
-                                {!! Form::select('stops', $stops, 60, ['class' => 'form-control']) !!}
-                            </div>
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            {!!Form::label('format', trans('validation.attributes.format'))!!}
+                            {!!Form::select('format', $formats, null, ['class' => 'form-control'])!!}
                         </div>
                     </div>
+                </div>
 
-                    @if (config('addon.report_send_to_ftp'))
-                        <div class="row">
-                            <div class="col-xs-6">
+                <hr class="section-line">
+
+                <div class="row form-horizontal">
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="type" class="col-sm-3 control-label">{{ trans('validation.attributes.period') }}</label>
+                            <div class="col-sm-9">
+                                {!! Form::select('period', $filters, 1, ['class' => 'form-control', 'data-icon' => 'icon time']) !!}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="from" class="col-sm-3 control-label">{{ trans('validation.attributes.date_from') }}</label>
+                            <div class="col-sm-9">
                                 <div class="input-group">
-                                    <label>{{ trans('validation.attributes.send_to_ftp') }}</label>
                                     <div class="has-feedback">
-                                        <i class="fa fa-upload form-control-feedback"></i>
-                                        <input id="send_to_ftp" name="send_to_ftp" class="form-control"
-                                            placeholder="ftp://user:password@host:port" />
+                                        <i class="icon calendar form-control-feedback"></i>
+                                        <input name="date_from" type="text" class="datepicker form-control" value="{{ date('Y-m-d') }}">
                                     </div>
-
-                                    <span class="input-group-btn" style="vertical-align: bottom;">
-                                        <input id="test_ftp_btn" class="btn btn-info" type="button" onClick="test_ftp()"
-                                            value="{{ trans('front.test_ftp') }}" />
+                                    <span class="input-group-btn">
+                                        {!!Form::select('from_time', getSelectTimeRange(), '00:00', ['class' => 'form-control timeselect', 'data-custom-input' => 'true'])!!}
                                     </span>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-xs-6">
-                                <div id="test_ftp_upload" class="alert alert-danger" style="display: none;"></div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class="checkbox">
-                                    <input type="hidden" name="daily" value="0">
-                                    <input type="checkbox" name="daily" id="daily" value="1">
-                                    <label for="daily" title="{{ trans('validation.attributes.daily') }}">
-                                        {{ trans('validation.attributes.daily') }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class="checkbox">
-                                    <input type="hidden" name="weekly" value="0">
-                                    <input type="checkbox" name="weekly" id="weekly" value="1">
-                                    <label for="weekly" title="{{ trans('validation.attributes.weekly') }}">
-                                        {{ trans('validation.attributes.weekly') }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <div class="checkbox">
-                                    <input type="hidden" name="monthly" value="0">
-                                    <input type="checkbox" name="monthly" id="monthly" value="1">
-                                    <label for="monthly" title="{{ trans('front.monthly') }}">
-                                        {{ trans('front.monthly') }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <div class="checkbox">
-                                    <input type="checkbox" name="show_addresses" id="show_addresses" value="1">
-                                    <label for="show_addresses">
-                                        {{ trans('validation.attributes.show_addresses') }}
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <div class="checkbox">
-                                    <input type="checkbox" name="zones_instead" id="zones_instead" value="1">
-                                    <label for="zones_instead">
-                                        {{ trans('validation.attributes.zones_instead') }}
-                                    </label>
+                        <div class="form-group">
+                            <label for="to" class="col-sm-3 control-label">{{ trans('validation.attributes.date_to') }}</label>
+                            <div class="col-sm-9">
+                                <div class="input-group">
+                                    <div class="has-feedback">
+                                        <i class="icon calendar form-control-feedback"></i>
+                                        <input class="datepicker form-control" name="date_to" type="text" value="{{ date('Y-m-d', strtotime(date('Y-m-d').' +1 day')) }}">
+                                    </div>
+                                    <span class="input-group-btn">
+                                        {!!Form::select('to_time', getSelectTimeRange(), '00:00', ['class' => 'form-control timeselect', 'data-custom-input' => 'true'])!!}
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                {!! Form::text('daily_time', '00:00', ['class' => 'form-control']) !!}
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                {!! Form::text('weekly_time', '00:00', ['class' => 'form-control']) !!}
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                {!! Form::text('monthly_time', '00:00', ['class' => 'form-control']) !!}
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="checkbox">
-                                {!! Form::hidden('skip_blank_results', 0) !!}
-                                {!! Form::checkbox('skip_blank_results', 1, 0) !!}
-                                {!! Form::label('skip_blank_results', trans('validation.attributes.skip_blank_results')) !!}
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                {!! Form::select('metas[]', $metas, null, [
+                    <div class="col-sm-6">
+                        <div class="form-group">
+                            <label for="to" class="col-sm-3 control-label">{!!trans('front.devices')!!}</label>
+                            <div class="col-sm-9">
+                                {!! Form::select('devices[]', [], null, [
                                     'class' => 'form-control',
                                     'multiple' => 'multiple',
-                                    'data-icon' => 'icon list',
+                                    'data-icon' => 'icon devices',
+                                    'data-live-search' => 'true',
+                                    'data-actions-box' => 'true',
+                                    'data-ajax' => route('reports.devices')
                                 ]) !!}
                             </div>
                         </div>
-                        <div class="col-md-12 mt-5 infracciones" id="infracciones" style="display: none">
-                            <h2 class="text-center">Infracciones de Velocidad</h2>
-                            <table class="table table-bordered">
-                                <thead>
-                                    <tr>
-                                        <th>Grado de Infracción</th>
-                                        <th>Descripción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Moderado</td>
-                                        <td>Exceder la velocidad máxima establecida en promedio de 1 km/h a 10 km/h.</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Grave</td>
-                                        <td>Exceder la velocidad máxima establecida en promedio de 11 km/h a 20 km/h.</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Muy Grave</td>
-                                        <td>Exceder la velocidad máxima según los límites establecidos por más de 20 km/h.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="form-group">
+                            <label for="to" class="col-sm-3 control-label">{!!trans('front.geofences')!!}</label>
+                            <div class="col-sm-9">
+                                {!!Form::select('geofences[]', $geofences->pluck('name', 'id')->all(), null, ['class' => 'form-control', 'multiple' => 'multiple', 'data-icon' => 'icon geofences', 'data-live-search' => 'true', 'data-actions-box' => 'true'])!!}
+                            </div>
                         </div>
                     </div>
                 </div>
+
+
+                <div class="row" id="report-additional"></div>
+
+                <hr class="section-line">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>{{ trans('validation.attributes.send_to_email') }}</label>
+                            <div class="has-feedback">
+                                <i class="icon email form-control-feedback"></i>
+                                <input name="send_to_email" class="form-control" type="email" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>{{ trans('validation.attributes.speed_limit') }}</label>
+                            <input name="speed_limit" class="form-control" type="text" placeholder="60" />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label>{{ trans('validation.attributes.stops') }}</label>
+                            {!! Form::select('stops', $stops, 60, ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
+                </div>
+
+                @if (config('addon.report_send_to_ftp'))
+                    <div class="row">
+                        <div class="col-xs-6">
+                            <div class="input-group">
+                                <label>{{ trans('validation.attributes.send_to_ftp') }}</label>
+                                <div class="has-feedback">
+                                    <i class="fa fa-upload form-control-feedback"></i>
+                                    <input id="send_to_ftp" name="send_to_ftp" class="form-control" placeholder="ftp://user:password@host:port"/>
+                                </div>
+
+                                <span class="input-group-btn" style="vertical-align: bottom;">
+                                    <input id="test_ftp_btn" class="btn btn-info" type="button" onClick="test_ftp()" value="{{ trans('front.test_ftp') }}"/>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-xs-6">
+                            <div id="test_ftp_upload" class="alert alert-danger" style="display: none;"></div>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <input type="hidden" name="daily" value="0">
+                                <input type="checkbox" name="daily" id="daily" value="1">
+                                <label for="daily" title="{{ trans('validation.attributes.daily') }}">
+                                    {{ trans('validation.attributes.daily') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <input type="hidden" name="weekly" value="0">
+                                <input type="checkbox" name="weekly" id="weekly" value="1">
+                                <label for="weekly" title="{{ trans('validation.attributes.weekly') }}">
+                                    {{ trans('validation.attributes.weekly') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <input type="hidden" name="monthly" value="0">
+                                <input type="checkbox" name="monthly" id="monthly" value="1">
+                                <label for="monthly" title="{{ trans('front.monthly') }}">
+                                    {{ trans('front.monthly') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <input type="checkbox" name="show_addresses" id="show_addresses" value="1">
+                                <label for="show_addresses">
+                                    {{ trans('validation.attributes.show_addresses') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <input type="checkbox" name="zones_instead" id="zones_instead" value="1">
+                                <label for="zones_instead">
+                                    {{ trans('validation.attributes.zones_instead') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            {!! Form::text('daily_time', '00:00', ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            {!! Form::text('weekly_time', '00:00', ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            {!! Form::text('monthly_time', '00:00', ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="checkbox">
+                            {!! Form::hidden('skip_blank_results', 0) !!}
+                            {!! Form::checkbox('skip_blank_results', 1, 0) !!}
+                            {!! Form::label('skip_blank_results', trans('validation.attributes.skip_blank_results')) !!}
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            {!!Form::select('metas[]', $metas, null, ['class' => 'form-control', 'multiple' => 'multiple', 'data-icon' => 'icon list'])!!}
+                        </div>
+                    </div>
+                </div>
+            </div>
             @endif
-            <div id="reports-form-generated-reports"
-                class="tab-pane @if (!Auth::User()->perm('reports', 'edit')) active @endif
+            <div id="reports-form-generated-reports" class="tab-pane @if ( !Auth::User()->perm('reports', 'edit') ) active @endif
                     ">
                 <div data-table>
                     @include('Frontend.Reports.index')
@@ -316,10 +258,10 @@
                 </div>
             </div>
         </div>
-        {!! Form::close() !!}
+        {!!Form::close()!!}
     </div>
     <script>
-        if (typeof _static_reports_create === "undefined") {
+        if ( typeof _static_reports_create === "undefined") {
             var _static_reports_create = true;
 
             $(document).on('change', 'select[name="period"]', function() {
@@ -381,21 +323,21 @@
         });
 
         tables.set_config('reports-form-report-logs', {
-            url: '{{ route('reports.logs') }}',
-            delete_url: '{{ route('reports.log_destroy') }}'
+            url:'{{ route("reports.logs") }}',
+            delete_url:'{{ route("reports.log_destroy") }}'
         });
 
         tables.set_config('reports-form-generated-reports', {
-            url: '{{ route('reports.index') }}'
+            url:'{{ route('reports.index') }}'
         });
 
         function reports_create_modal_callback(res) {
             if (res.status == 3) {
                 var action = $('#report_form').attr('action');
-                if (action.indexOf('?') == -1) {
-                    action = action + "?generate=1";
-                } else {
-                    action = action + "&generate=1";
+                if(action.indexOf('?') == -1) {
+                    action = action+"?generate=1";
+                }else{
+                    action = action+"&generate=1";
                 }
                 $('#report_form').attr('action', action);
                 $('#report_form').submit();
@@ -421,35 +363,37 @@
         $('input[type="checkbox"][name="weekly"]').on('change', timeCon);
         $('input[type="checkbox"][name="monthly"]').on('change', timeCon);
 
-        function loadReportForm(type, data) {
+        function loadReportForm(type, data)
+        {
             $.ajax({
                 //async: false,
                 type: 'GET',
                 dataType: 'json',
-                url: '{{ route('reports.types.show') }}/' + type,
+                url: '{{ route('reports.types.show') }}/'+type,
                 beforeSend: function() {
-                    loader.add($('#reports-modal'));
+                    loader.add( $('#reports-modal') );
                 },
-                success: function(response) {
+                success: function (response) {
                     buildReportForm(response);
 
                     if (data)
                         setReportData(data);
                 },
                 complete: function() {
-                    loader.remove($('#reports-modal'));
+                    loader.remove( $('#reports-modal') );
                 }
             });
         }
 
-        function buildReportForm(type) {
+        function buildReportForm(type)
+        {
             var $form = $('#reports_create');
             var $format = $('#format', $form);
             var $additional = $('#report-additional', $form);
 
-            $('option', $format).attr('disabled', 'disabled');
-            $.each(type.formats, function(index, value) {
-                $("option[value='" + value + "']", $format).removeAttr('disabled');
+            $('option', $format).attr('disabled','disabled');
+            $.each(type.formats, function( index, value ) {
+                $("option[value='"+value+"']", $format).removeAttr('disabled');
             });
             $format.selectpicker('refresh');
 
@@ -463,29 +407,29 @@
                 'metas'
             ];
 
-            $.each(fields, function(index, value) {
+            $.each(fields, function( index, value ) {
                 if (value == 'geofences' || value == 'devices' || value == 'metas')
                     value += '[]';
 
-                var $field = $("[name='" + value + "']", $form);
+                var $field = $("[name='"+value+"']", $form);
 
-                $field.attr('disabled', 'disabled');
+                $field.attr('disabled','disabled');
             });
 
-            $.each(type.fields, function(index, value) {
+            $.each(type.fields, function( index, value ) {
                 if (value == 'geofences' || value == 'devices' || value == 'metas')
                     value += '[]';
 
-                var $field = $("[name='" + value + "']", $form);
+                var $field = $("[name='"+value+"']", $form);
 
                 $field.removeAttr('disabled');
             });
 
-            $.each(fields, function(index, value) {
+            $.each(fields, function( index, value ) {
                 if (value == 'geofences' || value == 'devices' || value == 'metas')
                     value += '[]';
 
-                var $field = $("[name='" + value + "']", $form);
+                var $field = $("[name='"+value+"']", $form);
 
                 if ($field.is('select'))
                     $field.selectpicker('refresh');
@@ -494,76 +438,87 @@
             buildReportAttributes(type.parameters, $additional);
         }
 
-        function buildReportAttributes(parameters, $parametersContainer) {
-            $parametersContainer = $($parametersContainer);
+        function buildReportAttributes(parameters, $parametersContainer)
+        {
+            $parametersContainer = $( $parametersContainer );
             $parametersContainer.html('');
 
-            if (!parameters)
+            if ( ! parameters)
                 return;
 
-            $.each(parameters, function(index, parameter) {
+            $.each(parameters, function( index, parameter )
+            {
                 var $formGroup = $('<div class="form-group"></div>');
                 var value = parameter.default ? parameter.default : '';
 
-                $formGroup.append('<label for="' + parameter.html_name + '">' + parameter.title + ':</label>');
+                switch (parameter.type) {
+                    case 'checkbox':
+                        break;
+                    default:
+                        $formGroup.append('<label for="' + parameter.html_name + '">' + parameter.title + ':</label>');
+                }
 
                 switch (parameter.type) {
                     case 'integer':
                     case 'string':
-                        $formGroup.append('<input type="text" class="form-control" name="' + parameter.name +
-                            '" value="' + value + '" />');
+                        $formGroup.append( '<input type="text" class="form-control" name="'+parameter.name+'" value="'+value+'" />' );
                         break;
                     case 'text':
-                        $formGroup.append('<textarea class="form-control" name="' + parameter.name + '">' + value +
-                            '</textarea>');
+                        $formGroup.append( '<textarea class="form-control" name="'+parameter.name+'">'+value+'</textarea>' );
+                        break;
+                    case 'checkbox':
+                        var $checkboxDiv = $('<div class="checkbox"></div>');
+
+                        $checkboxDiv.append('<input type="hidden" name="'+parameter.name+'" value="0">');
+                        $checkboxDiv.append('<input type="checkbox" name="'+parameter.name+'" id="'+parameter.name+'" value="'+value+'">');
+                        $checkboxDiv.append('<label for="' + parameter.html_name + '">' + parameter.title + '</label>');
+
+                        $formGroup.append($checkboxDiv);
                         break;
                     case 'select':
                     case 'multiselect':
                     case 'multiselect-group':
                         var attr = 'class="form-control"';
 
-                        if ('multiselect' === parameter.type || 'multiselect-group' === parameter.type)
-                            attr = attr + ' name="' + parameter.html_name +
-                            '" multiple="multiple" data-live-search="true" data-actions-box="true"';
+                        if('multiselect' === parameter.type || 'multiselect-group' === parameter.type)
+                            attr = attr + ' name="'+parameter.html_name +'" multiple="multiple" data-live-search="true" data-actions-box="true"';
                         else
-                            attr = attr + ' name="' + parameter.html_name + '"';
+                            attr = attr + ' name="'+parameter.html_name +'"';
 
-                        var $select = $('<select ' + attr + '></select> ');
+                        var $select = $('<select '+attr+'></select> ');
 
                         if ('multiselect-group' === parameter.type) {
-                            $.each(parameter.options, function(group, items) {
+                            $.each(parameter.options, function (group, items) {
                                 var $group = $('<optgroup></optgroup>');
                                 $group.attr('label', group);
 
-                                $.each(items, function(index, option) {
+                                $.each(items, function (index, option) {
                                     var _value = option.id || index,
                                         _title = option.title || option;
 
-                                    $group.append('<option value="' + _value + '">' + _title +
-                                        '</option>');
+                                    $group.append('<option value="' + _value + '">' + _title + '</option>');
                                 });
                                 $select.append($group);
                             });
                         } else {
-                            $.each(parameter.options, function(index, option) {
-                                $select.append('<option value="' + option.id + '">' + option.title +
-                                    '</option>');
+                            $.each(parameter.options, function (index, option) {
+                                $select.append('<option value="' + option.id + '">' + option.title + '</option>');
                             });
                         }
-                        $formGroup.append($select);
+                        $formGroup.append( $select );
                         $select
-                            .val(value)
-                            .selectpicker();
+                                .val(value)
+                                .selectpicker();
                         break;
                 }
 
                 if (parameter.description) {
-                    $formGroup.append('<small>' + parameter.description + '</small>');
+                    $formGroup.append('<small>'+parameter.description+'</small>');
                 }
 
                 var $container = $('<div class="col-sm-12"></div>');
 
-                if (parameters.length > 1 && parameter.type != 'text') {
+                if (parameters.length > 1 && parameter.type != 'text' ) {
                     $container = $('<div class="col-sm-6"></div>');
                 }
 
@@ -607,21 +562,21 @@
                 .trigger('change');
 
             var geofences = [];
-            $.each(item.geofences, function(index, value) {
-                geofences.push(value.id);
+            $.each(item.geofences, function( index, value ) {
+                geofences.push( value.id );
             });
-            $('#report_form select[name="geofences[]"]').val(geofences).trigger('change').selectpicker('refresh');
-            dd('geofences', geofences);
+            $('#report_form select[name="geofences[]"]').val( geofences ).trigger('change').selectpicker('refresh');
+            dd( 'geofences', geofences );
 
             $('#report_form select[name="devices[]"]')
-                .attr('data-ajax', '{{ route('reports.devices') }}/' + item.id)
-                .data('ajax', '{{ route('reports.devices') }}/' + item.id)
+                .attr('data-ajax', '{{route('reports.devices')}}/' + item.id)
+                .data('ajax', '{{route('reports.devices')}}/' + item.id)
                 .selectpicker('destroy')
                 .selectpicker();
 
             if (item.parameters) {
-                $.each(item.parameters, function(index, value) {
-                    var $field = parent.find('#report-additional [name^="' + index + '"]');
+                $.each(item.parameters, function( index, value ) {
+                    var $field = parent.find('#report-additional [name^="'+index+'"]');
 
                     $field.val(value);
 
@@ -636,40 +591,29 @@
             var daily = $('input[type="checkbox"][name="daily"]').prop("checked");
             if (daily) {
                 $('input[name="daily_time"]').removeAttr('disabled');
-            } else {
+            }
+            else {
                 $('input[name="daily_time"]').attr('disabled', 'disabled');
             }
 
             var weekly = $('input[type="checkbox"][name="weekly"]').prop("checked");
             if (weekly) {
                 $('input[name="weekly_time"]').removeAttr('disabled');
-            } else {
+            }
+            else {
                 $('input[name="weekly_time"]').attr('disabled', 'disabled');
             }
 
             var monthly = $('input[type="checkbox"][name="monthly"]').prop("checked");
             if (monthly) {
                 $('input[name="monthly_time"]').removeAttr('disabled');
-            } else {
+            }
+            else {
                 $('input[name="monthly_time"]').attr('disabled', 'disabled');
             }
         }
 
         timeCon();
-        // Función para mostrar u ocultar el contenedor basado en el valor seleccionado
-        function toggleContainer() {
-            var select = document.getElementById('reports_type');
-            var container = document.getElementById('infracciones');
-            console.log(select.value);
-            if (select.value === '94') {
-                container.style.display = 'block'; // Mostrar contenedor
-            } else {
-                container.style.display = 'none'; // Ocultar contenedor
-            }
-        }
-
-        // Asignar el evento change al select
-        document.getElementById('reports_type').addEventListener('change', toggleContainer);
 
         function test_ftp() {
             let msgPanel = $('#test_ftp_upload');
@@ -691,10 +635,9 @@
 
                     $('.input_error_send_to_ftp').remove();
 
-                    res.status ?
-                        msgPanel.show().removeClass('alert-danger').addClass('alert-success').html(res
-                            .message) :
-                        msgPanel.show().removeClass('alert-success').addClass('alert-danger').html(res.message);
+                    res.status
+                        ? msgPanel.show().removeClass('alert-danger').addClass('alert-success').html(res.message)
+                        : msgPanel.show().removeClass('alert-success').addClass('alert-danger').html(res.message);
                 },
                 error: function(jqXHR) {
                     const res = JSON.parse(jqXHR.responseText);
@@ -710,12 +653,10 @@
 
 @section('buttons')
     <button type="button" class="update_hidden" style="display: none;"></button>
-    @if (Auth::User()->perm('reports', 'edit'))
-        <button type="button" class="btn btn-action generate"
-            data-action="{!! route('reports.update') !!}">{!! trans('front.generate') !!}</button>
-        <button type="button" class="btn btn-default save"
-            data-action="{!! route('reports.store') !!}">{!! trans('global.save') !!}</button>
-        <button type="button" class="btn btn-default new">{!! trans('front.new') !!}</button>
+    @if ( Auth::User()->perm('reports', 'edit') )
+        <button type="button" class="btn btn-action generate" data-action="{!!route('reports.update')!!}">{!!trans('front.generate')!!}</button>
+        <button type="button" class="btn btn-default save" data-action="{!!route('reports.store')!!}">{!!trans('global.save')!!}</button>
+        <button type="button" class="btn btn-default new">{!!trans('front.new')!!}</button>
     @endif
-    <button type="button" class="btn btn-default" data-dismiss="modal">{!! trans('global.cancel') !!}</button>
+    <button type="button" class="btn btn-default" data-dismiss="modal">{!!trans('global.cancel')!!}</button>
 @stop

@@ -333,7 +333,7 @@ abstract class LookupTable extends DataTable
             $actions[] =  [
                 'title' => 'CSV',
                 'url'   => $this->getRoute('csv'),
-                'onClick' => "dataTableExport(event, 'csv')"
+                'onClick' => "dataTableExport(event, 'csv')",
             ];
         }
 
@@ -341,13 +341,13 @@ abstract class LookupTable extends DataTable
             $actions[] = [
                 'title' => 'Excel',
                 'url'   => $this->getRoute('excel'),
-                'onClick' => "dataTableExport(event, 'excel')"
+                'onClick' => "dataTableExport(event, 'excel')",
             ];
 
             $actions[] = [
                 'title' => 'PDF',
                 'url'   => $this->getRoute('pdf'),
-                'onClick' => "dataTableExport(event, 'pdf')"
+                'onClick' => "dataTableExport(event, 'pdf')",
             ];
         }
 

@@ -1,5 +1,6 @@
 <div class="table-responsive">
     <table class="table table-list">
+
         <thead>
         <tr>
             <th>{{ trans('front.connection') }}</th>
@@ -17,6 +18,7 @@
             </th>
         </tr>
         </thead>
+
         <tbody>
         @foreach($command_schedules as $command_schedule)
             <tr>

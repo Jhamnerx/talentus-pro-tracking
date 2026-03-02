@@ -1,4 +1,6 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
@@ -12,7 +14,8 @@ use Illuminate\Support\Facades\File;
 use App\Console\ProcessManager;
 use Tobuli\Services\DatabaseService;
 
-class OptimizeServerDBCommand extends Command {
+class OptimizeServerDBCommand extends Command
+{
 	/**
 	 * The console command name.
 	 *
@@ -40,38 +43,48 @@ class OptimizeServerDBCommand extends Command {
 	 */
 	public function handle()
 	{
-        $this->processManager = new ProcessManager($this->name, $timeout = 3600, $limit = 1);
+		$this->processManager = new ProcessManager($this->name, $timeout = 3600, $limit = 1);
 
-        if (!$this->processManager->canProcess())
-        {
-            echo "Cant process \n";
-            return -1;
-        }
+		if (!$this->processManager->canProcess()) {
+			echo "Cant process \n";
+			return -1;
+		}
 
-        DatabaseService::loadDatabaseConfig();
+		DatabaseService::loadDatabaseConfig();
 
-        $connections = Arr::where(config("database.connections"), function($config, $connection){
-            return $config['driver'] == 'mysql';
-        });
+		$connections = Arr::where(config("database.connections"), function ($config, $connection) {
+			return $config['driver'] == 'mysql';
+		});
 
-        foreach ($connections as $connection => $config) {
-            $this->line("OPTIMIZE Database {$config['host']} {$config['database']}\n");
-            $tables = DB::connection($connection)->select('SHOW TABLES');
-            $column = "Tables_in_{$config['database']}";
+		foreach ($connections as $connection => $config) {
+			$this->line("OPTIMIZE Database {$config['host']} {$config['database']}\n");
+			$tables = DB::connection($connection)->select('SHOW TABLES');
+			$column = "Tables_in_{$config['database']}";
 
-            $bar = $this->output->createProgressBar(count($tables));
+			$bar = $this->output->createProgressBar(count($tables));
 
-            foreach ($tables as $table) {
-                DB::connection($connection)->statement("OPTIMIZE TABLE {$table->{$column}};");
-                $bar->advance();
-            }
+			foreach ($tables as $table) {
+				$tableName = $table->{$column};
 
-            $bar->finish();
-        }
+				// Escapar el nombre de la tabla con backticks para evitar errores con palabras reservadas
+				$escapedTable = "`{$tableName}`";
+
+				try {
+					DB::connection($connection)->statement("OPTIMIZE TABLE {$escapedTable};");
+					$bar->advance();
+				} catch (\Exception $e) {
+					$this->error("\nError optimizing table {$tableName}: " . $e->getMessage());
+					$bar->advance();
+				}
+			}
+
+			$bar->finish();
+			$this->line("\n");
+		}
 
 		$this->line("Job done[OK]\n");
 
-        return 0;
+		return 0;
 	}
 
 	/**

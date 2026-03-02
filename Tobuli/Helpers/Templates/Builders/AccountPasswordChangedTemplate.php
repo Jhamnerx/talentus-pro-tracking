@@ -8,7 +8,8 @@ class AccountPasswordChangedTemplate extends TemplateBuilder
     {
         return [
             '[email]'    => $item['email'],
-            '[password]' => $item['password']
+            '[password]' => $item['password'],
+            '[phone_number]' => $item['phone_number'] ?? null,
         ];
     }
 
@@ -17,6 +18,7 @@ class AccountPasswordChangedTemplate extends TemplateBuilder
         return [
             '[email]'    => 'User email',
             '[password]' => 'User password',
+            '[phone_number]' => 'User phone number',
         ];
     }
 }

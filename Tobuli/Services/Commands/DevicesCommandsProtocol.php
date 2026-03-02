@@ -1,16 +1,13 @@
 <?php namespace Tobuli\Services\Commands;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Tobuli\Protocols\Manager as ProtocolsManager;
 use Illuminate\Database\Eloquent\Collection AS EloquentCollection;
 
 class DevicesCommandsProtocol implements DevicesCommands
 {
-    /**
-     * @var ProtocolsManager
-     */
-    private $protocolsManager;
-
+    private ProtocolsManager $protocolsManager;
 
     public function __construct()
     {
@@ -18,11 +15,9 @@ class DevicesCommandsProtocol implements DevicesCommands
     }
 
     /**
-     * @param EloquentCollection $devices
-     * @param bool $intersect
-     * @return Collection
+     * @param EloquentCollection|Builder $devices
      */
-    public function get(EloquentCollection $devices, bool $intersect) : Collection
+    public function get($devices, bool $intersect) : Collection
     {
         $bag = collect();
 
@@ -30,11 +25,9 @@ class DevicesCommandsProtocol implements DevicesCommands
             return $bag;
         }
 
-        $protocols = $devices->filter(function($device) {
-            return ! $device->gprs_templates_only;
-        })->pluck('protocol')->unique();
+        $protocols = $this->getProtocols($devices);
 
-        foreach ($protocols as $protocol) {;
+        foreach ($protocols as $protocol) {
             $bag->push(
                 collect($this->protocolsManager->protocol($protocol)->getCommands())->keyBy('type')
             );
@@ -57,13 +50,33 @@ class DevicesCommandsProtocol implements DevicesCommands
     }
 
     /**
-     * @param Collection $devices
+     * @param Collection|Builder $devices
      * @return bool
      */
-    protected function hasGprsTemplatesOnly($devices)
+    protected function hasGprsTemplatesOnly($devices): bool
     {
+        if ($devices instanceof Builder) {
+            return (clone $devices)->where('gprs_templates_only', 1)->count();
+        }
+
         return $devices->contains(function($device) {
             return $device->gprs_templates_only;
         });
+    }
+
+    protected function getProtocols($devices): Collection
+    {
+        if ($devices instanceof Builder) {
+            return (clone $devices)
+                ->where('gprs_templates_only', 0)
+                ->traccarJoin()
+                ->select(['traccar_devices.protocol'])
+                ->distinct()
+                ->pluck('traccar_devices.protocol');
+        }
+
+        return $devices->filter(function($device) {
+            return ! $device->gprs_templates_only;
+        })->pluck('protocol')->unique();
     }
 }

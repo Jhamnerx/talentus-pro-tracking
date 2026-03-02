@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Frontend;
 
-use App\Exceptions\ResourseNotFoundException;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use CustomFacades\Repositories\SharingRepo;
 use CustomFacades\Validators\SharingFormValidator;
+use Formatter;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Sharing;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 use Tobuli\Services\SharingService;
-use Formatter;
 use Validator;
 
 class SharingController extends Controller
@@ -35,15 +35,12 @@ class SharingController extends Controller
             ->filter($this->data)
             ->paginate(10);
 
-        $devices = groupDevices($this->user->devices, $this->user);
         $durationTimes = config('tobuli.object_online_timeouts');
 
-        $selectedDevices = Arr::get($this->data, 'devices_id', []);
-
-        $selectedDevices = is_array($selectedDevices) ? $selectedDevices : [$selectedDevices];
+        $device_id = Arr::get($this->data, 'devices_id');
 
         return view('front::Sharing.index')
-            ->with(compact('data', 'devices', 'durationTimes', 'selectedDevices'));
+            ->with(compact('data', 'durationTimes', 'device_id'));
     }
 
     public function table()
@@ -54,12 +51,10 @@ class SharingController extends Controller
             ->filter($this->data)
             ->paginate(10);
 
-        $selectedDevices = Arr::get($this->data, 'devices_id', []);
-
-        $selectedDevices = is_array($selectedDevices) ? $selectedDevices : [$selectedDevices];
+        $device_id = Arr::get($this->data, 'devices_id');
 
         return view('front::Sharing.table')
-            ->with(compact('data', 'selectedDevices'));
+            ->with(compact('data', 'device_id'));
     }
 
     public function edit($sharingId)
@@ -68,9 +63,7 @@ class SharingController extends Controller
 
         $this->checkException('sharing', 'edit', $sharing);
 
-        $devices = groupDevices($this->user->devices, $this->user);
-
-        return view('front::Sharing.edit')->with(compact('sharing', 'devices'));
+        return view('front::Sharing.edit')->with(compact('sharing'));
     }
 
     public function update($sharingId)
@@ -88,9 +81,13 @@ class SharingController extends Controller
 
         $this->sharingService->update($sharing, $this->data);
 
-        $devices = Device::whereIn('id', $this->data['devices'])->filterUserAbility($this->user);
+        $devicesLoader = new UserDevicesGroupLoader($this->user);
+        $devicesLoader->setRequestKey('devices');
+        $devicesLoader->setQueryStored($sharing->devices());
 
-        $this->sharingService->syncDevices($sharing, $devices);
+        if ($devicesLoader->hasSelect()) {
+            $this->sharingService->syncDevices($sharing, $devicesLoader);
+        }
 
         return ['status' => 1];
     }
@@ -99,9 +96,7 @@ class SharingController extends Controller
     {
         $this->checkException('sharing', 'create');
 
-        $devices = groupDevices($this->user->devices, $this->user);
-
-        return view('front::Sharing.create')->with(compact('devices'));
+        return view('front::Sharing.create');
     }
 
     public function store()
@@ -114,9 +109,12 @@ class SharingController extends Controller
 
         $sharing = $this->sharingService->create($this->user->id, $this->data);
 
-        $devices = Device::whereIn('id', $this->data['devices'])->filterUserAbility($this->user);
+        $devicesLoader = new UserDevicesGroupLoader($this->user);
+        $devicesLoader->setRequestKey('devices');
 
-        $this->sharingService->syncDevices($sharing, $devices);
+        if ($devicesLoader->hasSelect()) {
+            $this->sharingService->syncDevices($sharing, $devicesLoader);
+        }
 
         return ['status' => 1];
     }
@@ -162,16 +160,11 @@ class SharingController extends Controller
     {
         $this->checkException('sharing', 'create');
 
-        $devices = groupDevices($this->user->devices, $this->user);
         $durationTimes = Config::get('tobuli.object_online_timeouts');
 
-        $selectedDevices = [];
+        $device_id = Arr::get($this->data, 'device_id');
 
-        if (isset($this->data['device_id'])) {
-            $selectedDevices['device_id'] = $this->data['device_id'];
-        }
-
-        return view('front::Sharing.send')->with(compact('devices', 'durationTimes', 'selectedDevices'));
+        return view('front::Sharing.send')->with(compact( 'durationTimes', 'device_id'));
     }
 
     public function send()
@@ -185,9 +178,12 @@ class SharingController extends Controller
 
         $sharing = $this->sharingService->create($this->user->id, $this->data);
 
-        $devices = Device::whereIn('id', $this->data['devices'])->filterUserAbility($this->user);
+        $devicesLoader = new UserDevicesGroupLoader($this->user);
+        $devicesLoader->setRequestKey('devices');
 
-        $this->sharingService->syncDevices($sharing, $devices);
+        if ($devicesLoader->hasSelect()) {
+            $this->sharingService->syncDevices($sharing, $devicesLoader);
+        }
 
         if (!empty($this->data['sms'])) {
             $this->sharingService->sendSms($sharing, $this->data['sms']);
@@ -243,5 +239,17 @@ class SharingController extends Controller
 
             throw new ValidationException($errors);
         }
+    }
+
+    public function devices($id = null)
+    {
+        $userDevicesLoader = new UserDevicesGroupLoader($this->user);
+        $userDevicesLoader->setRequestKey('devices');
+
+        if ($item = Sharing::find($id)) {
+            $userDevicesLoader->setQueryStored($item->devices());
+        }
+
+        return response()->json($userDevicesLoader->get());
     }
 }

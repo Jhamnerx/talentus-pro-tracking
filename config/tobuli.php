@@ -1,6 +1,6 @@
 <?php
 return [
-    'version' => '3.7.9',
+    'version' => '3.7.11',
     'key'  => env('key', ''),
     'type' => env('APP_TYPE', 'ss3'),
 
@@ -55,8 +55,8 @@ return [
     ],
 
     'main_settings' => [
-        'server_name' => 'GPS Master',
-        'server_description' => 'GPS Tracking System for Personal Use or Business',
+        'server_name' => 'GPS Server',
+        'server_description' => 'GPS Tracking System',
         'available_maps' => [
             "2"  => 2,
             "51"  => 51,
@@ -64,8 +64,10 @@ return [
             "54"  => 54,
             "55"  => 55,
             "56"  => 56,
+            "56"  => 57,
             "70"  => 70,
-            "71"  => 71
+            "71"  => 71,
+            "72"  => 72
         ],
         'default_language' => 'es',
         'default_timezone' => 57,
@@ -79,7 +81,7 @@ return [
         'default_object_online_timeout' => 5,
         'default_object_inactive_timeout' => 7200, //5 days in minutes
         'default_fuel_avg_per' => 'distance',
-        'allow_users_registration' => false,
+        'allow_users_registration' => 0,
 
         'devices_limit' => 10,
         'subscription_expiration_after_days' => 30,
@@ -92,6 +94,7 @@ return [
         'map_center_latitude' => '51.505',
         'map_center_longitude' => '-0.09',
         'map_zoom_level' => 19,
+        'map_show_device_speed' => true,
         'user_permissions' => [],
         'geocoder_cache_enabled' => 1,
         'geocoder_cache_days' => 90,
@@ -131,6 +134,21 @@ return [
         'google_play_link' => null,
         'enable_device_plans' => 0,
         'email_verification' => 0,
+        'custom_registration_fields' => [
+            'enabled' => 0,
+            'fields' => [
+                'email'             => ['present' => 0, 'required' => 0],
+                'phone_number'      => ['present' => 0, 'required' => 0],
+                'client' => [
+                    'first_name'    => ['present' => 0, 'required' => 0],
+                    'last_name'     => ['present' => 0, 'required' => 0],
+                    'personal_code' => ['present' => 0, 'required' => 0],
+                    'birth_date'    => ['present' => 0, 'required' => 0],
+                    'address'       => ['present' => 0, 'required' => 0],
+                ],
+            ],
+            'email_domain' => env('EMAIL_DOMAIN', 'example.com'),
+        ],
     ],
     'max_speed' => env('MAX_SPEED_LIMIT', 300),
     'min_time_gap' => env('MIN_TIME_GAP', 600),
@@ -138,6 +156,7 @@ return [
     'apply_network_data' => env('APPLY_NETWORK_DATA', false),
     'overwrite_invalid'  => env('OVERWRITE_INVALID', true),
     'device_sidebar_query' => env('DEVICE_SIDEBAR_QUERY', true),
+    'entityloader_store_query' => env('ENTITYLOADER_STORE_QUERY', false),
     'alerts_throw_user_device' => env('ALERTS_THROW_USER_DEVICE', true),
 
     # Minutes before device is offline
@@ -403,7 +422,11 @@ return [
                 ],
                 'private_color' => [
                     'value' => 'red'
-                ]
+                ],
+                'schedule' => [
+                    'enabled' => false,
+                    'periods' => [],
+                ],
             ]
         ],
         'route_color' => [
@@ -415,7 +438,10 @@ return [
             ]
         ],
         'additional_installation_fields' => [
-            'status' => 0
+            'status' => 0,
+            'options' => [
+                'installation_date_default_today' => false,
+            ],
         ],
         'annual_sim_expiration' => [
             'status' => 0,
@@ -515,6 +541,9 @@ return [
         'device_driver_reset_engine' => [
             'status' => 0,
         ],
+        'reset_driver_on_unknown_rfid' => [
+            'status' => 0,
+        ],
         'user_api_tab' => [
             'status' => 0,
         ],
@@ -609,7 +638,7 @@ return [
         'alert_webhooks'        => env('LIMIT_ALERT_WEBHOOKS', 2),
         'geofence_groups'       => env('LIMIT_GEOFENCE_GROUPS', 50),
         'report_emails'         => env('LIMIT_REPORT_EMAILS', 5),
-        'command_devices'       => env('LIMIT_COMMAND_DEVICES', 10),
+        'command_sms_devices'   => env('LIMIT_COMMAND_DEVICES', 10),
         'command_gprs_devices'  => env('LIMIT_COMMAND_GPRS_DEVICES', 0),
         'forward_ips'           => env('LIMIT_FORWARD_IPS', 5),
     ],
@@ -630,7 +659,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'Australian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'au.png',
             'locale' => 'en_AU'
@@ -640,7 +669,7 @@ return [
             'iso'    => 'az',
             'iso3'   => 'aze',
             'title'  => 'Azerbaijan',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'az.png',
             'locale' => 'az_AZ'
@@ -650,7 +679,7 @@ return [
             'iso'    => 'ar',
             'iso3'   => 'ara',
             'title'  => 'Arabic',
-            'active' => false,
+            'active' => true,
             'dir'    => 'rtl',
             'flag'   => 'ar.png',
             'locale' => 'ar_AE'
@@ -660,7 +689,7 @@ return [
             'iso'    => 'sk',
             'iso3'   => 'slo',
             'title'  => 'Slovakian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'sk.png',
             'locale' => 'sk'
@@ -670,7 +699,7 @@ return [
             'iso'    => 'th',
             'iso3'   => 'tha',
             'title'  => 'Thai',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'th.png',
             'locale' => 'th'
@@ -680,7 +709,7 @@ return [
             'iso'    => 'nl',
             'iso3'   => 'dut',
             'title'  => 'Dutch',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'nl.png',
             'locale' => 'nl_NL'
@@ -690,7 +719,7 @@ return [
             'iso'    => 'de',
             'iso3'   => 'ger',
             'title'  => 'German',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'de.png',
             'locale' => 'de_DE'
@@ -700,7 +729,7 @@ return [
             'iso'    => 'el',
             'iso3'   => 'gre',
             'title'  => 'Greek',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'gr.png',
             'locale' => 'el'
@@ -710,7 +739,7 @@ return [
             'iso'    => 'pl',
             'iso3'   => 'pol',
             'title'  => 'Polish',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'pl.png',
             'locale' => 'pl'
@@ -720,7 +749,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'English(UK)',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'uk.png',
             'locale' => 'en_GB'
@@ -730,7 +759,7 @@ return [
             'iso'    => 'fr',
             'iso3'   => 'fre',
             'title'  => 'French',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'fr.png',
             'locale' => 'fr_FR'
@@ -740,7 +769,7 @@ return [
             'iso'    => 'pt',
             'iso3'   => 'por',
             'title'  => 'Brazilian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'br.png',
             'locale' => 'pt_BR'
@@ -750,7 +779,7 @@ return [
             'iso'    => 'pt',
             'iso3'   => 'por',
             'title'  => 'Portuguese',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'pt.png',
             'locale' => 'pt_PT'
@@ -762,7 +791,7 @@ return [
             'title'  => 'Spanish',
             'active' => true,
             'dir'    => 'ltr',
-            'flag'   => 'pe.png',
+            'flag'   => 'es.png',
             'locale' => 'es_ES'
         ],
         'it' => [
@@ -770,7 +799,7 @@ return [
             'iso'    => 'it',
             'iso3'   => 'ita',
             'title'  => 'Italian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'it.png',
             'locale' => 'it_IT'
@@ -780,7 +809,7 @@ return [
             'iso'    => 'es',
             'iso3'   => 'spa',
             'title'  => 'Chile',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'ch.png',
             'locale' => 'es_CL'
@@ -790,7 +819,7 @@ return [
             'iso'    => 'sr',
             'iso3'   => 'srp',
             'title'  => 'Serbian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'sr.png',
             'locale' => 'sr_SP'
@@ -800,7 +829,7 @@ return [
             'iso'    => 'fi',
             'iso3'   => 'fin',
             'title'  => 'Finnish',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'fi.png',
             'locale' => 'fi'
@@ -810,7 +839,7 @@ return [
             'iso'    => 'dk',
             'iso3'   => 'dan',
             'title'  => 'Danish',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'dk.png',
             'locale' => 'da'
@@ -820,7 +849,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'Philippines',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'ph.png',
             'locale' => 'en_PH'
@@ -830,7 +859,7 @@ return [
             'iso'    => 'sv',
             'iso3'   => 'swe',
             'title'  => 'Swedish',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'sv.png',
             'locale' => 'sv_SE'
@@ -840,7 +869,7 @@ return [
             'iso'    => 'ro',
             'iso3'   => 'rum',
             'title'  => 'Romanian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'ro.png',
             'locale' => 'ro'
@@ -850,7 +879,7 @@ return [
             'iso'    => 'bg',
             'iso3'   => 'bul',
             'title'  => 'Bulgarian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'bg.png',
             'locale' => 'bg'
@@ -860,7 +889,7 @@ return [
             'iso'    => 'hr',
             'iso3'   => 'hrv',
             'title'  => 'Croatian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'hr.png',
             'locale' => 'hr'
@@ -870,7 +899,7 @@ return [
             'iso'    => 'pt',
             'iso3'   => 'por',
             'title'  => 'Papiamento',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'cw.png',
             'locale' => 'pt_PT'
@@ -880,7 +909,7 @@ return [
             'iso'    => 'id',
             'iso3'   => 'ind',
             'title'  => 'Indonesian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'id.png',
             'locale' => 'id'
@@ -890,7 +919,7 @@ return [
             'iso'    => 'ru',
             'iso3'   => 'rus',
             'title'  => 'Russian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'ru.png',
             'locale' => 'ru_RU'
@@ -900,7 +929,7 @@ return [
             'iso'    => 'mk',
             'iso3'   => 'mac',
             'title'  => 'Macedonian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'mk.png',
             'locale' => 'mk'
@@ -910,7 +939,7 @@ return [
             'iso'    => 'fa',
             'iso3'   => 'per',
             'title'  => 'Persian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'rtl',
             'flag'   => 'ir.png',
             'locale' => 'fa'
@@ -920,7 +949,7 @@ return [
             'iso'    => 'zh',
             'iso3'   => 'chi',
             'title'  => 'Chinese',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'cn.png',
             'locale' => 'zh_CN'
@@ -930,7 +959,7 @@ return [
             'iso'    => 'en',
             'iso3'   => 'eng',
             'title'  => 'New Zealand',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'nz.png',
             'locale' => 'en_NZ'
@@ -940,7 +969,7 @@ return [
             'iso'    => 'cs',
             'iso3'   => 'cze',
             'title'  => 'Czech',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'cz.png',
             'locale' => 'cs'
@@ -950,7 +979,7 @@ return [
             'iso'    => 'he',
             'iso3'   => 'heb',
             'title'  => 'Hebrew',
-            'active' => false,
+            'active' => true,
             'dir'    => 'rtl',
             'flag'   => 'il.png',
             'locale' => 'he'
@@ -960,7 +989,7 @@ return [
             'iso'    => 'hu',
             'iso3'   => 'hun',
             'title'  => 'Hungarian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'hu.png',
             'locale' => 'hu'
@@ -970,7 +999,7 @@ return [
             'iso'    => 'ka',
             'iso3'   => 'geo',
             'title'  => 'Georgian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'ka.png',
             'locale' => 'ka'
@@ -980,7 +1009,7 @@ return [
             'iso'    => 'no',
             'iso3'   => 'nor',
             'title'  => 'Norwegian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'no.png',
             'locale' => 'no_NO'
@@ -990,7 +1019,7 @@ return [
             'iso'    => 'my',
             'iso3'   => 'bur',
             'title'  => 'Burmese',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'my.png',
             'locale' => 'my'
@@ -1000,7 +1029,7 @@ return [
             'iso'    => 'ca',
             'iso3'   => 'cat',
             'title'  => 'Catalan',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'catalonia.png',
             'locale' => 'ca'
@@ -1010,7 +1039,7 @@ return [
             'iso'    => 'tr',
             'iso3'   => 'tur',
             'title'  => 'Turkish',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'tr.png',
             'locale' => 'tr'
@@ -1020,7 +1049,7 @@ return [
             'iso'    => 'ku',
             'iso3'   => 'kur',
             'title'  => 'Kurdish',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'ku.png',
             'locale' => 'ku'
@@ -1030,7 +1059,7 @@ return [
             'iso'    => 'ja',
             'iso3'   => 'jpn',
             'title'  => 'Japanese',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'jp.png',
             'locale' => 'ja'
@@ -1040,7 +1069,7 @@ return [
             'iso'    => 'ms',
             'iso3'   => 'may',
             'title'  => 'Malay',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'malaysia.png',
             'locale' => 'ms'
@@ -1050,7 +1079,7 @@ return [
             'iso'    => 'si',
             'iso3'   => 'sin',
             'title'  => 'Sinhala',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'sin.png',
             'locale' => 'si'
@@ -1060,7 +1089,7 @@ return [
             'iso'    => 'lo',
             'iso3'   => 'lao',
             'title'  => 'Lao',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'la.png',
             'locale' => 'lo'
@@ -1070,7 +1099,7 @@ return [
             'iso'    => 'mn',
             'iso3'   => 'mon',
             'title'  => 'Mongolian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'mn.png',
             'locale' => 'mn'
@@ -1080,7 +1109,7 @@ return [
             'iso'    => 'ta',
             'iso3'   => 'tam',
             'title'  => 'Tamil',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'sin.png',
             'locale' => 'ta_IN'
@@ -1090,7 +1119,7 @@ return [
             'iso'    => 'hi',
             'iso3'   => 'hin',
             'title'  => 'Hindi',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'in.png',
             'locale' => 'hi_IN'
@@ -1100,7 +1129,7 @@ return [
             'iso'    => 'ne',
             'iso3'   => 'nep',
             'title'  => 'Nepali',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'np.png',
             'locale' => 'ne_NP'
@@ -1110,7 +1139,7 @@ return [
             'iso'    => 'sl',
             'iso3'   => 'slv',
             'title'  => 'Slovene',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'si.png',
             'locale' => 'sl_SI'
@@ -1120,7 +1149,7 @@ return [
             'iso'    => 'lt',
             'iso3'   => 'lit',
             'title'  => 'Lithuanian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'lt.png',
             'locale' => 'lt_LT'
@@ -1130,7 +1159,7 @@ return [
             'iso'    => 'lv',
             'iso3'   => 'lav',
             'title'  => 'Latvian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'lv.png',
             'locale' => 'lv_LV'
@@ -1140,7 +1169,7 @@ return [
             'iso'    => 'sq',
             'iso3'   => 'sqi',
             'title'  => 'Albanian',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'al.png',
             'locale' => 'sq_AL'
@@ -1150,7 +1179,7 @@ return [
             'iso'    => 'bn',
             'iso3'   => 'ben',
             'title'  => 'Bengali',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'bd.png',
             'locale' => 'bn_BN'
@@ -1160,7 +1189,7 @@ return [
             'iso'    => 'ps',
             'iso3'   => 'pus',
             'title'  => 'Pashto',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
             'flag'   => 'af.png',
             'locale' => 'ps_PS'
@@ -1170,10 +1199,30 @@ return [
             'iso'    => 'km',
             'iso3'   => 'khm',
             'title'  => 'Khmer',
-            'active' => false,
+            'active' => true,
             'dir'    => 'ltr',
-            'flag'   => 'km.png',
+            'flag'   => 'kh.png',
             'locale' => 'km_KH'
+        ],
+        'vi' => [
+            'key'    => 'vi',
+            'iso'    => 'vi',
+            'iso3'   => 'vie',
+            'title'  => 'Vietnamese',
+            'active' => true,
+            'dir'    => 'ltr',
+            'flag'   => 'vn.png',
+            'locale' => 'vi_VN'
+        ],
+        'ua' => [
+            'key'    => 'ua',
+            'iso'    => 'uk',
+            'iso3'   => 'ukr',
+            'title'  => 'Ukrainian',
+            'active' => true,
+            'dir'    => 'ltr',
+            'flag'   => 'ua.png',
+            'locale' => 'uk_UA'
         ],
     ],
 
@@ -1191,6 +1240,20 @@ return [
         'auth_token'            => '',
         'senders_phone'         => '',
         'user_id'               => null
+    ],
+
+    'users_default_sms_gateway' => [
+        'sms_gateway'           => false,
+        'request_method'        => '',
+        'sms_gateway_url'       => '',
+        'custom_headers'        => '',
+        'authentication'        => '0',
+        'username'              => '',
+        'password'              => '',
+        'encoding'              => '',
+        'auth_id'               => '',
+        'auth_token'            => '',
+        'senders_phone'         => '',
     ],
 
     'external_url' => [
@@ -1299,7 +1362,7 @@ return [
     ],
 
     'backups' => [
-        'type'         => 'custom',
+        'type'         => 'auto',
         'period'       => 1,
         'hour'         => '00:00',
         'ftp_server'   => null,
@@ -1392,10 +1455,39 @@ return [
         \Tobuli\Entities\Task::class => [
             'attributes' => ['*'],
         ],
+        \Tobuli\Entities\DeviceService::class => [
+            'attributes' => ['*'],
+        ],
         'login' => [
             'enable_successful' => true,
             'enable_failed' => 3, // number of failed attempts to log after
             //  'methods' => ['simple', ], // list methods defined at AuthLoginEventHandler::resolveLoginMethod
+        ],
+        'request' => [
+            'enabled' => env('REQUEST_LOGS', false),
+            'global' => [
+                'parameters' => [
+                    'except' => ['_', 'page', 'limit', '_token', 'url', 'modal'],
+                ],
+            ],
+            'paths' => [
+                'included' => [
+                    [
+                        'path' => 'objects/sidebar',
+                        'only_with_parameters' => true,
+                    ],
+                ],
+                'excluded' => [
+                    'api/*',
+                    'device/widgets/*',
+                    'address',
+                    'gpsdata_insert',
+                    'objects/items',
+                    'objects/items_json',
+                    '/',
+                    'authentication/create',
+                ],
+            ],
         ],
     ],
 
@@ -1418,6 +1510,7 @@ return [
             'user_individual_config' => false,
             'login_methods' => [
                 \Tobuli\Services\Auth\EmailAuth::getKey() => true,
+                \Tobuli\Services\Auth\PhoneAuth::getKey() => false,
                 \Tobuli\Services\Auth\AzureAuth::getKey() => false,
             ],
         ],
@@ -1436,6 +1529,10 @@ return [
 
     'extra_required_fields' => [
         'device' => [/* 'field' => 'required_if' */],
+    ],
+
+    'validation' => [
+        'regex_phone' => env('REGEX_PHONE', "/^\+?\d[0-9]{7,15}$/"),
     ],
 
     'reports' => [

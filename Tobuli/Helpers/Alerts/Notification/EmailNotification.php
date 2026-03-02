@@ -3,17 +3,15 @@
 namespace Tobuli\Helpers\Alerts\Notification;
 
 use Illuminate\Support\Arr;
+use Tobuli\Entities\Alert;
 use Tobuli\Entities\EmailTemplate;
 use Tobuli\Entities\SendQueue;
 use Tobuli\Helpers\Alerts\Notification\Input\InputAwareInterface;
-use Tobuli\Helpers\Alerts\Notification\Input\InputInitTrait;
 use Tobuli\Helpers\Alerts\Notification\Input\InputMeta;
 use Tobuli\Helpers\Alerts\Notification\Send\SendingInterface;
 
 class EmailNotification extends AbstractNotification implements InputAwareInterface, SendingInterface
 {
-    use InputInitTrait;
-
     public function __construct()
     {
         $this->rules = [
@@ -22,14 +20,16 @@ class EmailNotification extends AbstractNotification implements InputAwareInterf
         ];
     }
 
-    private bool $defaultInputActive = false;
-    private ?string $defaultInputValue = '';
-
-    public function getInput(array $alertData): InputMeta
+    public function getInput(Alert $alert): InputMeta
     {
-        return $this->initInput($alertData)
+        $key = static::getKey();
+
+        $alertData = Arr::get($alert->notifications ?? [], $key);
+
+        return (new InputMeta($key, trans('validation.attributes.email_notification')))
+            ->setActive(Arr::get($alertData, 'active', false))
+            ->setInput(Arr::get($alertData, 'input', ''))
             ->setType(InputMeta::TYPE_STRING)
-            ->setTitle(trans('validation.attributes.email_notification'))
             ->setDescription(trans('front.email_semicolon'));
     }
 

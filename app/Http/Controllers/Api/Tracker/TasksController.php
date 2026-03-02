@@ -2,8 +2,7 @@
 
 namespace App\Http\Controllers\Api\Tracker;
 
-use App\Transformers\Task\TaskTransformer;
-use Illuminate\Http\JsonResponse;
+use App\Transformers\TrackerLite\TaskTransformer;
 use Validator;
 use Tobuli\Entities\Task;
 use Tobuli\Entities\TaskStatus;
@@ -76,15 +75,5 @@ class TasksController extends ApiController
         $task->save();
 
         return response()->json(['status' => 1]);
-    }
-
-    /**
-     * @return JsonResponse
-     */
-    public function getList(): JsonResponse
-    {
-        $data = Task::where('device_id', $this->deviceInstance->id)->orderByDesc('created_at')->paginate();
-        $data = FractalTransformer::paginate($data, new TaskTransformer())->toArray();
-        return response()->json($data, 200);
     }
 }

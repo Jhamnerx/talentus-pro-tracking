@@ -2,13 +2,8 @@
 
 namespace App\Transformers\Device;
 
-use Carbon\Carbon;
 use Tobuli\Entities\Device;
 use Tobuli\Sensors\Types\Blocked;
-use Tobuli\Helpers\Formatter\Facades\Formatter;;
-
-use Tobuli\Helpers\OdometerOptimizer;
-use Illuminate\Support\Facades\App;
 
 class DeviceMapTransformer extends DeviceTransformer
 {
@@ -20,7 +15,7 @@ class DeviceMapTransformer extends DeviceTransformer
     protected static function requireLoads()
     {
         return ['icon', 'traccar', 'sensors' => function ($query) {
-            $types = ['speed', 'anonymizer', 'odometer'];
+            $types = ['speed', 'anonymizer'];
 
             if (Blocked::isEnabled()) {
                 $types[] = 'blocked';
@@ -32,11 +27,6 @@ class DeviceMapTransformer extends DeviceTransformer
 
     public function transform(Device $entity)
     {
-        // Si los sensores no están cargados, los cargamos explícitamente
-        if (!$entity->relationLoaded('sensors')) {
-            $entity->load('sensors');
-        }
-
         $inaccuracy = config('addon.inaccuracy')
             ? $entity->getParameter('inaccuracy')
             : null;

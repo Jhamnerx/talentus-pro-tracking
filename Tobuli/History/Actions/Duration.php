@@ -3,7 +3,7 @@
 namespace Tobuli\History\Actions;
 
 
-use Tobuli\History\Stats\Duration as StatsDuration;
+use Tobuli\History\Stats\Duration AS StatsDuration;
 
 class Duration extends ActionStat
 {

@@ -13,6 +13,7 @@ class InstallationDeviceOfflineReport extends DeviceReport
     const TYPE_ID = 36;
 
     protected $enableFields = ['metas'];
+    protected $deviceless = true;
 
     public function typeID()
     {

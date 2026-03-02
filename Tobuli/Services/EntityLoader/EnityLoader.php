@@ -5,11 +5,14 @@ namespace Tobuli\Services\EntityLoader;
 
 
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Tobuli\Services\EntityLoader\Filters\Filter;
+use Tobuli\Services\EntityLoader\Filters\FilterValuesSequence;
+use Tobuli\Services\EntityLoader\Filters\FilterValue;
 
 abstract class EnityLoader
 {
@@ -18,7 +21,6 @@ abstract class EnityLoader
 
     protected $request_key = null;
 
-    protected bool $orderStoredSelectAll = false;
     protected $orderStored = false;
 
     /**
@@ -39,29 +41,6 @@ abstract class EnityLoader
     abstract protected function transform($item);
 
     /**
-     * @return bool
-     */
-    public function hasSelect()
-    {
-        return !empty($this->parseSelectedRequest());
-    }
-
-    /**
-     * @return LengthAwarePaginator
-     */
-    public function get()
-    {
-        $items = $this->getItems();
-        $this->applySelected($items);
-
-        $items->appends([
-            self::KEY_SEARCH => request()->get(self::KEY_SEARCH)
-        ]);
-
-        return $items;
-    }
-
-    /**
      * @param string $key
      */
     public function setRequestKey(string $key)
@@ -70,125 +49,36 @@ abstract class EnityLoader
     }
 
     /**
-     * @return Builder
+     * @return bool
      */
-    public function getQuery()
+    public function hasSelect()
     {
-        $where = $this->parseWhere();
-
-        $query = $this->getQueryItems();
-
-        $query = $this->scopeSelect($query, $where[true] ?? null, $this->getQueryStored());
-        $query = $this->scopeDeselect($query, $where[false] ?? null);
-
-        return $query;
+        return $this->hasAttach() || $this->hasDetach();
     }
 
-    public function getSeleted()
+    public function hasSelectAll(): bool
     {
-        $where = $this->parseWhere();
+        $sequence = $this->parseSequence();
 
-        if (empty($where[true]))
-            return null;
+        if (!$sequence->hasSelectAll()) {
+            return false;
+        }
 
-        $query = $this->getQueryItems();
-        $query = $this->scopeSelect($query, $where[true] ?? null);
-
-        return $query;
+        return $this->getQueryItems()->count() === $this->getSelectedSubquery()->count();
     }
 
-    public function getDeseleted()
+    /**
+     * @return LengthAwarePaginator
+     */
+    public function get()
     {
-        $where = $this->parseWhere();
+        $items = $this->getItems();
 
-        if (empty($where[false]))
-            return null;
+        $items->appends([
+            self::KEY_SEARCH => request()->get(self::KEY_SEARCH)
+        ]);
 
-        $query = $this->getQueryItems();
-        $query = $this->scopeSelect($query, $where[false] ?? null);
-
-        return $query;
-    }
-
-    public function getDetach()
-    {
-        $where = $this->parseWhere();
-
-        if (empty($where[false]))
-            return null;
-
-        $query = $this->getQueryItems();
-        $query = $this->scopeSelect($query, $where[false] ?? null);
-
-        if (!empty($where[true]))
-            $query = $this->scopeDeselect($query, $where[true] ?? null);
-
-        return $query;
-    }
-
-    public function getAttach()
-    {
-        $where = $this->parseWhere();
-
-        if (empty($where[true]))
-            return null;
-
-        $query = $this->getQueryItems();
-        $query = $this->scopeSelect($query, $where[true] ?? null);
-
-        return $query;
-    }
-
-    protected function scopeInclude($query, $include)
-    {
-        $table = $include->getModel()->getTable();
-        $sql = $include->select("$table.id")->toRaw();
-
-        $query->orWhereRaw("`$table`.`id` IN ($sql)");
-    }
-
-    protected function scopeExclude($query, $exclude)
-    {
-        $table = $exclude->getModel()->getTable();
-        $sql = $exclude->select("$table.id")->toRaw();
-
-        $query->orWhereRaw("`$table`.`id` NOT IN ($sql)");
-    }
-
-    protected function scopeDeselect($query, $where, $exclude = null)
-    {
-        $query->where(function($q) use ($where, $exclude){
-            if ($exclude) {
-                $this->scopeExclude($q, $exclude);
-            }
-
-            foreach ($this->filters as $filter) {
-                if (empty($where[$filter->key()]))
-                    continue;
-
-                $filter->queryDeselect($q, $where[$filter->key()]);
-            }
-        });
-
-        return $query;
-    }
-
-    protected function scopeSelect($query, $where, $include = null)
-    {
-        $query->where(function($q) use ($where, $include){
-            if ($include) {
-                $this->scopeInclude($q, $include);
-            }
-
-            foreach ($this->filters as $filter) {
-                if (empty($where[$filter->key()]))
-                    continue;
-
-                $filter->querySelect($q, $where[$filter->key()]);
-            }
-        });
-
-        return $query;
+        return $items;
     }
 
     protected function scopeOrderDefault($query)
@@ -196,24 +86,51 @@ abstract class EnityLoader
         return $query;
     }
 
-    protected function scopeOrderStored($query)
+    protected function scopeAppendSelected($query)
     {
-        if ($stored = $this->getQueryStored()) {
-            $table = $stored->getModel()->getTable();
-            $sql = $stored->select("$table.id")->toRaw();
+        $table = $this->getQueryItems()->getModel()->getTable();
 
-            $this->orderStoredSelectAll // fixme: create solution to preserve relation fields
-                ? $query->select("*")
-                : $query->select("$table.*");
+        $sequence = $this->parseSequence();
 
+        if ($query instanceof Relation) {
+            if (is_null($query->getQuery()->getQuery()->columns)) {
+                $query->select($query->getModel()->qualifyColumn('*'));
+            }
+        }
+
+        if ($query instanceof Builder) {
+            if (is_null($query->getQuery()->columns)) {
+                $query->select($query->getModel()->qualifyColumn('*'));
+            }
+        }
+
+        if ($selected = $this->getSelectedSubQuery()) {
+            if ($sequence->hasSelectAll() && !$sequence->hasDetaches()) {
+                $asSelected = 'TRUE';
+            } else {
+
+                $query->leftjoin(DB::raw('(' .$selected->toRaw() . ') AS selected_table'), function ($join) use ($table) {
+                    $join->on('selected_table.id', '=', $table.'.id');
+                });
+
+                $asSelected = '(CASE WHEN selected_table.id IS NULL THEN FALSE ELSE TRUE END)';
+            }
+        } else {
+            $asSelected = 'FALSE';
+        }
+
+        if (!empty($asSelected)) {
             $query->addSelect(
-                DB::raw("(SELECT `$table`.`id` IN ($sql)) AS selected")
+                DB::raw("$asSelected AS selected")
             );
-
-            $query->orderBy('selected', 'desc');
         }
 
         return $query;
+    }
+
+    protected function scopeOrderSelected($query, $order = 'desc')
+    {
+        return $query->orderBy('selected', $order);
     }
 
     /**
@@ -263,129 +180,33 @@ abstract class EnityLoader
     protected function getItems()
     {
         $query = $this->getQueryItems();
+        $query->search(request()->get('s'));
 
         if ($id = request('selected_id')) {
-            $query->where($this->getMainTableID(), $id);
-        } else {
-            $query->search(request()->get('s'));
+            $sequence = $this->parseSequence();
+            $sequence->add(new FilterValue('id', true, $id));
+            $this->orderStored = true;
         }
 
-        if ($this->orderStored)
-            $query = $this->scopeOrderStored($query);
+        $this->parseSequence();
+
+        $query = $this->scopeAppendSelected($query);
+
+        if ($this->orderStored) {
+            $query = $this->scopeOrderSelected($query);
+        }
 
         $query = $this->scopeOrderDefault($query);
 
         $items = $query->paginate($this->getPageLimit());
 
         $items->setCollection($items->getCollection()->transform(function ($item) {
-            return $this->transform($item);
+            $transformed = $this->transform($item);
+            $transformed->selected = $item->selected ?? null;
+            return $transformed;
         }));
 
         return $items;
-    }
-
-    /**
-     * @param LengthAwarePaginator $items
-     */
-    protected function applySelected(LengthAwarePaginator $items)
-    {
-        $this->applySelectedStored($items);
-        $this->applySelectedRequest($items);
-    }
-
-    /**
-     * @param LengthAwarePaginator $items
-     * @return LengthAwarePaginator|void
-     */
-    protected function applySelectedStored(LengthAwarePaginator $items) {
-        if(!$this->getQueryStored())
-            return;
-
-        $selected = $this->getQueryStored()
-            ->whereIn($this->getMainTableID(), $items->pluck('id')->all())
-            ->get()
-            ->pluck('id');
-
-        $items->setCollection($items->getCollection()->transform(function ($item) use ($selected){
-            if (false !== $selected->search($item->id))
-                $item->selected = true;
-
-            return $item;
-        }));
-
-        return $items;
-    }
-
-    /**
-     * @param LengthAwarePaginator $items
-     */
-    protected function applySelectedRequest(LengthAwarePaginator $items) {
-        $selects = $this->parseSelectedRequest();
-
-        foreach ($selects as $select) {
-            list($field, $status, $value) = array_values($select);
-
-            $items->setCollection($items->getCollection()->transform(function ($item) use ($field, $status, $value) {
-                foreach ($this->filters as $filter) {
-                    if ($filter->key() != $field)
-                        continue;
-
-                    if (!$filter->isSelectedRequest($item, $value))
-                        continue;
-
-                    $item->selected = $status;
-                }
-
-                return $item;
-            }));
-        }
-    }
-
-    /**
-     * @return array
-     */
-    protected function parseSelectedRequest()
-    {
-        $selected = [];
-
-        foreach (request($this->request_key, []) as $select) {
-            list($field, $status, $value) = explode(';', $select, 3);
-
-            $status = filter_var($status, FILTER_VALIDATE_BOOLEAN);
-
-            $selected = array_filter($selected, function($item) use ($field, $status, $value) {
-                if($item['field'] == $field && $item['value'] == $value && $item['status'] != $status)
-                    return false;
-
-                return true;
-            });
-
-            $selected[] = [
-                'field' => $field,
-                'status' => $status,
-                'value' => $value,
-            ];
-        }
-
-        return $selected;
-    }
-
-    protected function parseWhere()
-    {
-        $selects = $this->parseSelectedRequest();
-
-        $where = [];
-
-        foreach ($selects as $select) {
-            list($field, $status, $value) = array_values($select);
-
-            if (empty($where[$status][$field]))
-                $where[$status][$field] = [];
-
-            $where[$status][$field][] = $value;
-        }
-
-        return $where;
     }
 
     protected function getPageLimit()
@@ -398,10 +219,167 @@ abstract class EnityLoader
         return $this->queryItems->getModel()->getTable() . '.id';
     }
 
-    public function setOrderStoredSelectAll(bool $orderStoredSelectAll): self
+    protected function hasFilter($key)
     {
-        $this->orderStoredSelectAll = $orderStoredSelectAll;
+        foreach ($this->filters as $filter) {
+            if ($filter->key() == $key)
+                return true;
+        }
 
-        return $this;
+        return false;
+    }
+
+    protected function getFilter($key)
+    {
+        foreach ($this->filters as $filter) {
+            if ($filter->key() == $key)
+                return $filter;
+        }
+
+        return null;
+    }
+
+    protected function parseSequence() : FilterValuesSequence
+    {
+        if (empty($this->sequence)) {
+            $this->sequence = new FilterValuesSequence();
+
+            foreach (request($this->request_key, []) as $select) {
+                list($field, $status, $value) = explode(';', $select, 3);
+
+                if (!$this->hasFilter($field))
+                    continue;
+
+                $this->sequence->add(new FilterValue($field, $status, $value));
+            }
+        }
+
+        return $this->sequence;
+    }
+
+    public function hasAttach()
+    {
+        $sequence = $this->parseSequence();
+
+        return $sequence->hasAttaches();
+    }
+
+    public function hasDetach()
+    {
+        $sequence = $this->parseSequence();
+
+        return $sequence->hasDetaches();
+    }
+
+    public function getQuerySelected()
+    {
+        $selectedQuery = $this->getSelectedSubquery();
+
+        if (!$selectedQuery)
+            return null;
+
+        $query = $this->getQueryItems();
+
+        $query->whereIn($this->getQueryItems()->getModel()->getQualifiedKeyName(), $selectedQuery);
+
+        return $query;
+    }
+
+    public function getQueryAttach()
+    {
+        $selectedQuery = $this->getSelectedSubquery();
+
+        if (!$selectedQuery)
+            return null;
+
+        $query = $this->getQueryItems();
+
+        $query->whereIn($this->getQueryItems()->getModel()->getQualifiedKeyName(), $selectedQuery);
+
+        return $query->select($this->getQueryItems()->getModel()->getQualifiedKeyName());
+    }
+
+    public function getQueryDetach()
+    {
+        $selectedQuery = $this->getSelectedSubquery();
+
+        if (!$selectedQuery)
+            return null;
+
+        $query = $this->getQueryItems();
+
+        $query->whereNotIn($this->getQueryItems()->getModel()->getQualifiedKeyName(), $selectedQuery);
+
+        return $query->select($this->getQueryItems()->getModel()->getQualifiedKeyName());
+    }
+
+    protected function getSelectedSubquery()
+    {
+        $sequence = $this->parseSequence();
+
+        $stored = $this->getQueryStored();
+
+        if (config('tobuli.entityloader_store_query') && $sequence->isEmpty()) {
+
+            return $stored
+                ? $stored->select($stored->getModel()->getQualifiedKeyName())->clearOrdersBy()
+                : null;
+        }
+
+        return $this->tmpTableQuery($sequence, $stored);
+    }
+
+    protected function tmpTable() : TempTable
+    {
+        if (empty($this->tmpTable))
+            $this->tmpTable = new TempTable();
+
+        return $this->tmpTable;
+    }
+
+    protected function tmpTableSequences($sequence)
+    {
+        $tmpTable = $this->tmpTable();
+
+        foreach ($sequence->all() as $filterValue) {
+
+            $select = $this->getQueryItems()
+                ->select($this->getQueryItems()->getModel()->getQualifiedKeyName())
+                ->where(function ($query) use ($filterValue) {
+                    $this->getFilter($filterValue->getField())->querySelect($query, $filterValue->getValues());
+                });
+
+            if ($filterValue->getStatus()) {
+                $tmpTable->append($select);
+            } else {
+                $tmpTable->remove($select);
+            }
+        }
+
+        return $tmpTable;
+    }
+
+    protected function tmpTableStored($stored)
+    {
+        $this->tmpTable()->append( 
+            $stored
+                ->select($stored->getModel()->getQualifiedKeyName())
+                ->clearOrdersBy()
+        );
+    }
+
+    protected function tmpTableQuery($sequence, $stored)
+    {
+        if (empty($this->tmpTableQuery)) {
+            if (!$sequence->hasDeselectAll() && $stored) {
+                $this->tmpTableStored($stored);
+            }
+
+            $this->tmpTableSequences($sequence);
+
+            $this->tmpTableQuery = $this->tmpTable()->toQuery();
+        }
+
+        return $this->tmpTableQuery;
     }
 }

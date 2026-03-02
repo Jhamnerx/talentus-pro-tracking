@@ -1,5 +1,6 @@
 <?php namespace Tobuli\Services\Commands;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Tobuli\Entities\User;
@@ -8,15 +9,8 @@ use Tobuli\Protocols\Manager as ProtocolsManager;
 
 class DevicesCommandsGprsTemplates implements DevicesCommands
 {
-    /**
-     * @var ProtocolsManager
-     */
-    private $protocolsManager;
-
-    /**
-     * @var User
-     */
-    private $user;
+    private ProtocolsManager $protocolsManager;
+    private User $user;
 
     public function __construct(User $user)
     {
@@ -25,11 +19,9 @@ class DevicesCommandsGprsTemplates implements DevicesCommands
     }
 
     /**
-     * @param EloquentCollection $devices
-     * @param bool $intersect
-     * @return Collection
+     * @param EloquentCollection|Builder $devices
      */
-    public function get(EloquentCollection $devices, bool $intersect) : Collection
+    public function get($devices, bool $intersect): Collection
     {
         $templates = UserGprsTemplate::userAccessible($this->user)
             ->byDevices($devices, $intersect)
@@ -45,11 +37,14 @@ class DevicesCommandsGprsTemplates implements DevicesCommands
     }
 
     /**
-     * @param Collection $devices
-     * @return bool
+     * @param Builder|EloquentCollection $devices
      */
-    protected function hasGprsTemplatesOnly($devices)
+    protected function hasGprsTemplatesOnly($devices): bool
     {
+        if ($devices instanceof Builder) {
+            return (clone $devices)->where('gprs_templates_only', 1)->count();
+        }
+
         return $devices->contains(function($device) {
             return $device->gprs_templates_only;
         });

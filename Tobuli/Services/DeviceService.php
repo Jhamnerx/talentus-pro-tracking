@@ -7,7 +7,6 @@ use App\Jobs\DeleteDatabaseTable;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceType;
 use Tobuli\Entities\User;
@@ -67,7 +66,9 @@ class DeviceService
             $expirationOffset = settings('plugins.create_only_expired_objects.options.offset') ?? 0;
             $expirationOffsetType = settings('plugins.create_only_expired_objects.options.offset_type') ?? 'days';
             $expirationDate = date('Y-m-d H:i:s', strtotime(" + {$expirationOffset} {$expirationOffsetType}"));
+        }
 
+        if (self::isDefaultInstallationDateToday()) {
             $installation_date = date('Y-m-d');
         }
 
@@ -316,5 +317,12 @@ class DeviceService
             return null;
 
         return Carbon::now()->addDays($offset);
+    }
+
+    public static function isDefaultInstallationDateToday(): bool
+    {
+        $pluginConf = settings('plugins.additional_installation_fields');
+
+        return !empty($pluginConf['status']) && !empty($pluginConf['options']['installation_date_default_today']);
     }
 }

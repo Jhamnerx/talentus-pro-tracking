@@ -16,6 +16,8 @@ class GeofencesReport extends DeviceHistoryReport
 {
     const TYPE_ID = 53;
 
+    protected $disableFields = ['speed_limit', 'stops', 'show_addresses', 'zones_instead'];
+
     public function typeID()
     {
         return self::TYPE_ID;

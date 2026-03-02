@@ -2,7 +2,6 @@
 
 namespace Tobuli\Reports\Reports;
 
-use Tobuli\History\Actions\AppendSpeedLimitStatic;
 use Tobuli\History\Actions\Distance;
 use Tobuli\History\Actions\Duration;
 use Tobuli\History\Actions\GroupOverspeed;
@@ -18,6 +17,9 @@ class OverspeedsReport extends DeviceHistoryReport
     protected $disableFields = ['geofences', 'stops'];
     protected $validation = ['speed_limit' => 'required'];
 
+    private int $overspeedCount;
+    private ?int $minDuration;
+
     public function typeID()
     {
         return self::TYPE_ID;
@@ -26,6 +28,14 @@ class OverspeedsReport extends DeviceHistoryReport
     public function title()
     {
         return trans('front.overspeeds');
+    }
+
+    public function getInputParameters(): array
+    {
+        return [
+            \Field::number('duration', trans('validation.attributes.duration') . ' (' . trans('front.second_short') . ')')
+                ->addValidation('integer'),
+        ];
     }
 
     protected function getActionsList()
@@ -41,12 +51,25 @@ class OverspeedsReport extends DeviceHistoryReport
         ];
     }
 
+    protected function beforeGenerate()
+    {
+        parent::beforeGenerate();
+
+        $this->minDuration = empty($this->parameters['duration']) ? null : $this->parameters['duration'];
+    }
+
     protected function getTable($data)
     {
         $rows = [];
+        $this->overspeedCount = 0;
 
-        foreach ($data['groups']->all() as $group)
-        {
+        foreach ($data['groups']->all() as $group) {
+            if (!$this->isValidSpeeding($group)) {
+                continue;
+            }
+
+            $this->overspeedCount++;
+
             $rows[] = $this->getDataFromGroup($group, [
                 'start_at',
                 'end_at',
@@ -65,15 +88,35 @@ class OverspeedsReport extends DeviceHistoryReport
 
     protected function getTotals(Group $group, array $only = [])
     {
-        return parent::getTotals($group, ['overspeed_count']);
+        $totals = parent::getTotals($group, ['overspeed_count']);
+
+        $totals['overspeed_count']['value'] = $this->overspeedCount;
+
+        return $totals;
     }
 
-    protected function isEmptyResult($data)
+    protected function isEmptyResult($data): bool
     {
-        return
-            empty($data) || 
+        if (
+            empty($data) ||
             empty($data['root']->getStartPosition()) ||
             !$data['root']->hasStat('overspeed_count') ||
-            empty($data['root']->getStat('overspeed_count')->value());
+            empty($data['root']->getStat('overspeed_count')->value())
+        ) {
+            return true;
+        }
+
+        foreach ($data['groups']->all() as $group) {
+            if ($this->isValidSpeeding($group)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function isValidSpeeding(Group $group): bool
+    {
+        return !$this->minDuration || $group->getStat('duration')->value() >= $this->minDuration;
     }
 }

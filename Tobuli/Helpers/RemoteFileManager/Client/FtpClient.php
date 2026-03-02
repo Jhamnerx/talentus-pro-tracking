@@ -2,7 +2,6 @@
 
 namespace Tobuli\Helpers\RemoteFileManager\Client;
 
-use Illuminate\Support\Facades\Log;
 use Tobuli\Helpers\RemoteFileManager\Exception\FailedLoginException;
 use Tobuli\Helpers\RemoteFileManager\Exception\NoConnectionException;
 
@@ -13,10 +12,6 @@ class FtpClient implements ClientInterface
 
     public function __construct(string $host, string $user, string $pass, int $port = 21, ?string $path = null)
     {
-
-        // Decodificar la contraseña en caso de que contenga caracteres codificados
-        $pass = rawurldecode($pass);
-
         $this->conn = ftp_connect($host, $port, 30);
 
         if ($this->conn === false) {

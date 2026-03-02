@@ -12,8 +12,13 @@
         {!!Form::text('name', $item->name, ['class' => 'form-control'])!!}
     </div>
     <div class="form-group">
-        {!!Form::label('devices', trans('front.devices').':')!!}
-        {!!Form::select('devices[]',  groupDevices($devices, auth()->user()), $item->devices->pluck('id', 'id')->all(), ['class' => 'form-control', 'multiple' => 'multiple', 'data-live-search' => 'true'])!!}
+        {!! Form::label('devices', trans('front.devices').':') !!}
+        {!! Form::select('devices[]', [], null, [
+            'class' => 'form-control',
+            'multiple' => 'multiple',
+            'data-live-search' => 'true',
+            'data-ajax' => route('user_drivers.devices', $item->id)
+        ]) !!}
     </div>
     <div class="form-group">
         {!! Form::label('device_id', trans('front.set_as_current').':') !!}
@@ -23,7 +28,12 @@
                 {!! Form::checkbox('current', 1, 0, ['data-disabler' => '#current_device_id;hide-disable']) !!}
                 {!! Form::label(null) !!}
             </div>
-            {!!Form::select('device_id', $devices->pluck('name', 'id')->prepend(trans('front.none'), '0')->all(), $item->device_id, ['id' => 'current_device_id', 'class' => 'form-control', 'data-live-search' => 'true'])!!}
+            {!! Form::select('device_id', [], null, [
+                'id' => 'current_device_id',
+                'class' => 'form-control',
+                'data-live-search' => 'true',
+                'data-ajax' => route('devices.index', ['request_key' => 'device_id'] + ($item->device_id ? ['selected_device_id' => ["id;true;$item->device_id"]] : []))
+            ]) !!}
         </div>
     </div>
     <div class="form-group">

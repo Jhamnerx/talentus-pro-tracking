@@ -89,7 +89,7 @@
       color: $navbar-main-link-color;
 
       &:hover,
-      &:focus {
+      &:hover:focus {
         color: $navbar-main-link-hover-color;
         background-color: $navbar-main-link-hover-bg;
       }
@@ -97,7 +97,7 @@
     > .active > a {
       &,
       &:hover,
-      &:focus {
+      &:hover:focus {
         color: $navbar-main-link-active-color;
         background-color: $navbar-main-link-active-bg;
       }
@@ -105,7 +105,7 @@
     > .disabled > a {
       &,
       &:hover,
-      &:focus {
+      &:hover:focus {
         color: $navbar-main-link-disabled-color;
         background-color: $navbar-main-link-disabled-bg;
       }
@@ -115,7 +115,7 @@
   .navbar-toggle {
     border-color: $navbar-main-toggle-border-color;
     &:hover,
-    &:focus {
+    &:hover:focus {
       background-color: $navbar-main-toggle-hover-bg;
     }
     .icon-bar {
@@ -134,7 +134,7 @@
     > .open > a {
       &,
       &:hover,
-      &:focus {
+      &:hover:focus {
         background-color: $navbar-main-link-active-bg;
         color: $navbar-main-link-active-color;
       }
@@ -146,7 +146,7 @@
         > li > a {
           color: $navbar-main-link-color;
           &:hover,
-          &:focus {
+          &:hover:focus {
             color: $navbar-main-link-hover-color;
             background-color: $navbar-main-link-hover-bg;
           }
@@ -154,7 +154,7 @@
         > .active > a {
           &,
           &:hover,
-          &:focus {
+          &:hover:focus {
             color: $navbar-main-link-active-color;
             background-color: $navbar-main-link-active-bg;
           }
@@ -162,7 +162,7 @@
         > .disabled > a {
           &,
           &:hover,
-          &:focus {
+          &:hover:focus {
             color: $navbar-main-link-disabled-color;
             background-color: $navbar-main-link-disabled-bg;
           }
@@ -181,7 +181,7 @@
   .btn-link {
     color: $navbar-main-link-color;
     &:hover,
-    &:focus {
+    &:hover:focus {
       color: $navbar-main-link-hover-color;
     }
     &[disabled],

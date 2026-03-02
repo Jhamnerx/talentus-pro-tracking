@@ -1,11 +1,12 @@
 <?php namespace ModalHelpers;
 
-use CustomFacades\Repositories\BillingPlanRepo;
-use CustomFacades\Repositories\UserRepo;
-use CustomFacades\Validators\RegistrationFormValidator;
-use Tobuli\Entities\EmailTemplate;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
-use Tobuli\Exceptions\ValidationException;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Tobuli\Entities\EmailTemplate;
+use Tobuli\Services\RegistrationFieldsService;
+use Tobuli\Services\UserClientService;
 use Tobuli\Services\UserService;
 
 class RegistrationModalHelper extends ModalHelper
@@ -14,21 +15,30 @@ class RegistrationModalHelper extends ModalHelper
     {
         $userService = new UserService();
 
+        $customFields = settings('main_settings.custom_registration_fields');
+
         try {
-            RegistrationFormValidator::validate('create', $this->data);
+            $rules = empty($customFields['enabled'])
+                ? ['email' => 'required|email|unique:users,email']
+                : (new RegistrationFieldsService($customFields['fields']))->getRules();
+
+            Validator::validate($this->data, $rules);
         } catch (ValidationException $e) {
             return [
                 'status' => 0,
-                'errors' => $e->getErrors()
+                'errors' => $e->errors()
             ];
         }
 
-        $data = [
-            'email'    => $this->data['email'],
-            'password' => $userService->generatePassword()
-        ];
+        $data = Arr::only($this->data, array_keys($rules)) + ['password' => $userService->generatePassword()];
 
         $user = $userService->registration($data);
+
+        $clientData = isset($data['client']) ? array_filter($data['client']) : null;
+
+        if ($clientData) {
+            (new UserClientService($user))->update($clientData);
+        }
 
         $this->sendRegistrationEmail($user, $data);
 

@@ -13,6 +13,10 @@ class AddUserLoginPeriods extends Migration
      */
     public function up()
     {
+        if (Schema::hasColumn('users', 'login_periods')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->text('login_periods')->after('settings')->nullable();
         });

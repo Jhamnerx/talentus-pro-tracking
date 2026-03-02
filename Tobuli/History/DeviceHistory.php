@@ -117,7 +117,7 @@ class DeviceHistory
     /**
      * @return Group
      */
-    public function &root()
+    public function & root()
     {
         return $this->root;
     }
@@ -133,7 +133,7 @@ class DeviceHistory
     /**
      * @return GroupContainer
      */
-    public function &groups()
+    public function & groups()
     {
         return $this->groups;
     }
@@ -158,6 +158,8 @@ class DeviceHistory
         if (config('addon.sensor_type_anonymizer')) {
             $this->actionContainer->add([AppendAnonymizerCoordinates::class]);
         }
+
+        $this->actionContainer->addDefaultAfter();
 
         $this->actions = [];
 
@@ -202,7 +204,6 @@ class DeviceHistory
 
         $first = null;
         $last_position = null;
-
 
         try {
             $connection = $this->device->positions()->getRelated()->getConnectionName();
@@ -260,7 +261,7 @@ class DeviceHistory
 
             $all->orderBy('time')->orderBy('id');
 
-            $all->chunk($this->config('chunk_size'), function ($positions) use (&$first, &$last_position) {
+            $all->chunk($this->config('chunk_size'), function ($positions) use (& $first, & $last_position) {
 
                 $this->preproccess($positions);
 
@@ -270,7 +271,7 @@ class DeviceHistory
                     if (is_null($first) && $first = true)
                         $this->root->setStartPosition($position);
 
-                    if (! empty($position->quit))
+                    if ( ! empty($position->quit))
                         return false;
                 }
 
@@ -283,8 +284,8 @@ class DeviceHistory
             }
         }
 
-        if (! empty($last_position)) {
-            foreach ($this->actions as &$action) {
+        if( ! empty($last_position)) {
+            foreach ($this->actions as & $action) {
                 $action->lastProcess($last_position);
             }
 
@@ -297,11 +298,13 @@ class DeviceHistory
                 $this->groupEnd($group->getKey(), $last_position);
             }
         }
+
     }
 
     protected function preproccess($positions)
     {
-        foreach ($this->actions as $action) {
+        foreach ($this->actions as $action)
+        {
             $action->preproccess($positions);
         }
     }
@@ -310,10 +313,11 @@ class DeviceHistory
     {
         $this->proceed = false;
 
-        foreach ($this->actions as &$action) {
+        foreach ($this->actions as & $action)
+        {
             $action->doIt($position);
 
-            if (! empty($position->break))
+            if ( ! empty($position->break))
                 break;
 
             if ($this->proceed)
@@ -394,7 +398,7 @@ class DeviceHistory
 
     public function processList($closure)
     {
-        foreach ($this->list as &$item) {
+        foreach ($this->list as & $item) {
 
             $position = is_array($item) ? $item[0] : $item;
 
@@ -409,7 +413,7 @@ class DeviceHistory
         $i = 0;
         $count = count($this->list);
 
-        while ($i++ < $count && $position = array_shift($this->list)) {
+        while($i++ < $count && $position = array_shift($this->list)) {
             $this->proccess($position);
         }
     }
@@ -424,7 +428,7 @@ class DeviceHistory
         }
 
         $group->setStartPosition($position);
-        $group->stats()->_clone($this->root->stats()->all());
+        $group->stats()->_clone( $this->root->stats()->all() );
 
         return $this->groups->open($group);
     }
@@ -477,8 +481,9 @@ class DeviceHistory
         if (empty($this->geofences))
             return $inGeofences;
 
-        foreach ($this->geofences as $geofence) {
-            if (! $geofence->pointIn($position))
+        foreach ($this->geofences as $geofence)
+        {
+            if ( ! $geofence->pointIn($position))
                 continue;
 
             $inGeofences[] = $geofence->id;
@@ -498,7 +503,8 @@ class DeviceHistory
 
         $stats = $this->root->stats();
 
-        foreach ($stats->all() as $key => $value) {
+        foreach ($stats->all() as $key => $value)
+            {
             if (is_object($value)) {
                 echo "$key: " . $value->human() . "<br>";
             } else {
@@ -522,4 +528,5 @@ class DeviceHistory
         $this->groups = null;
         $this->sensors_data = null;
     }
+
 }

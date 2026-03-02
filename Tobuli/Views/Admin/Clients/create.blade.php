@@ -85,8 +85,13 @@
                 <div class="col-sm-6">
                     @if (Auth::User()->isAdmin() || Auth::User()->isSupervisor())
                         <div class="form-group field_manager_id">
-                            {!! Form::label('manager_id', trans('validation.attributes.manager_id') . ':') !!}
-                            {!! Form::select('manager_id', $managers, null, ['class' => 'form-control', 'data-live-search' => 'true']) !!}
+                            {!! Form::label('manager_id', trans('validation.attributes.manager_id') . '*:') !!}
+                            {!! Form::select('manager_id', [], null, [
+                                'class' => 'form-control',
+                                'title' => trans('front.none'),
+                                'data-live-search' => 'true',
+                                'data-ajax' => route('admin.clients.managers'),
+                            ]) !!}
                         </div>
                     @endif
                 </div>
@@ -202,6 +207,7 @@
                     {!! Form::checkbox('account_created', 1, 1) !!}
                     {!! Form::label(null, trans('front.send_account_created_email')) !!}
                 </div>
+
                 @if (settings('main_settings.email_verification'))
                     <div class="checkbox">
                         {!! Form::checkbox('email_verification', 1, 1) !!}

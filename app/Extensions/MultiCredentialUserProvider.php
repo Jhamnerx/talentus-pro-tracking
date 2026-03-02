@@ -5,7 +5,6 @@ namespace App\Extensions;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable as UserContract;
 use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Support\Str;
 use Tobuli\Entities\SecondaryCredentialsInterface;
 use Tobuli\Entities\User;
 use Tobuli\Entities\UserSecondaryCredentials;
@@ -26,16 +25,16 @@ class MultiCredentialUserProvider extends EloquentUserProvider
 
         $query = UserSecondaryCredentials::query();
 
-        foreach ($credentials as $key => $value) {
-            if (Str::contains($key, 'password')) {
-                continue;
-            }
+        if (isset($credentials['email'])) {
+            $value = $credentials['email'];
 
             if (is_array($value) || $value instanceof Arrayable) {
-                $query->whereIn($key, $value);
+                $query->whereIn('email', $value);
             } else {
-                $query->where($key, $value);
+                $query->where('email', $value);
             }
+        } else {
+            $query->whereRaw('1 = 0');
         }
 
         /** @var UserSecondaryCredentials $secondaryCredentials */

@@ -22,7 +22,7 @@
                     <th>{{ trans('front.rpm_max') }}</th>
                     <th>{{ trans('front.top_speed') }}</th>
                     <th>{{ trans('front.average_speed') }}</th>
-                    <th>{{ trans('front.overspeed') }}</th>
+                    <th>{{ trans('front.overspeeds_count') }}</th>
                     <th>{{ trans('front.harsh_braking_count') }}</th>
                     <th>{{ trans('front.harsh_acceleration_count') }}</th>
                     <th>{{ trans('front.harsh_turning_count') }}</th>

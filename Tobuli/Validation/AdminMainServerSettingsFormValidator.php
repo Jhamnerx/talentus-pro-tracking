@@ -4,6 +4,7 @@ namespace Tobuli\Validation;
 
 use Illuminate\Validation\Factory as IlluminateValidator;
 use Illuminate\Validation\Rule;
+use Tobuli\Helpers\HereMaps;
 use Tobuli\Helpers\LbsLocation\LbsManager;
 
 class AdminMainServerSettingsFormValidator extends Validator
@@ -30,7 +31,7 @@ class AdminMainServerSettingsFormValidator extends Validator
             'geocoders' => 'array',
             'geocoders.*.api' => 'present',
             'geocoders.*.api_url' => 'required_if:geocoders.*.api,nominatim|url',
-            'geocoders.*.api_key' => 'required_if:geocoders.*.api,google,geocodio,pickpoint,here,mapmyindia,positionstack',
+            'geocoders.*.api_key' => 'required_if:geocoders.*.api,google,geocodio,pickpoint,here,mapmyindia,positionstack,opencage',
             'geocoders.*.api_app_id' => 'required_if:geocoders.*.api,mapmyindia',
             'geocoders.*.api_app_secret' => 'required_if:geocoders.*.api,mapmyindia',
 
@@ -48,6 +49,8 @@ class AdminMainServerSettingsFormValidator extends Validator
         $this->rules['update']['lbs'] = 'array';
         $this->rules['update']['lbs.provider'] = Rule::in($lbsProviders);
         $this->rules['update']['lbs.api_key'] = 'required_if:lbs.provider,' . implode(',', $lbsProviders);
+
+        $this->rules['update']['here_api_political_view'] = Rule::in(HereMaps::getPoliticalViews());
 
         parent::__construct($validator);
     }

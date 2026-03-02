@@ -12,6 +12,7 @@ class AppendFuelConsumptionHour extends ActionAppend
             AppendDistance::class,
             AppendDuration::class,
             AppendEngineStatus::class,
+            AppendResume::class,
         ];
     }
 
@@ -31,6 +32,10 @@ class AppendFuelConsumptionHour extends ActionAppend
         }
 
         if (!$position->engine || $this->isStateChanged($position, 'engine')) {
+            return;
+        }
+
+        if ($position->resumed) {
             return;
         }
 

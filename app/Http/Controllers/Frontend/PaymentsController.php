@@ -84,13 +84,13 @@ class PaymentsController extends Controller
             return (new Payments($gateway))->subscribe($this->user, $order);
         } catch (PaymentsIssueException $exception) {
             return Redirect::route('payments.gateways', [
-                    'order_id' => $order->id,
-                ])
+                'order_id' => $order->id,
+            ])
                 ->with(['message' => $exception->getMessage()]);
         } catch (PaymentsUnavailableException $exception) {
             return Redirect::route('payments.gateways', [
-                    'order_id' => $order->id,
-                ])
+                'order_id' => $order->id,
+            ])
                 ->with(['message' => $exception->getMessage()]);
         }
     }
@@ -141,10 +141,10 @@ class PaymentsController extends Controller
         if (config('addon.custom_device_add'))
             return Redirect::route('subscriptions.renew');
 
-        if ( ! settings('main_settings.enable_plans'))
+        if (! settings('main_settings.enable_plans'))
             return Redirect::route('home');
 
-        if ( ! settings('main_settings.allow_user_change_plan'))
+        if (! settings('main_settings.allow_user_change_plan'))
             return Redirect::route('subscriptions.renew');
 
         $permissions = $this->permissionService->group(
@@ -230,7 +230,7 @@ class PaymentsController extends Controller
         $gateways = settings('payments.gateways');
 
         foreach (config('payments') as $gateway => $config) {
-            if (( ! $config['visible']) || ( ! $gateways[$gateway]))
+            if ((! $config['visible']) || (! $gateways[$gateway]))
                 continue;
 
             $visible[] = $gateway;
@@ -250,7 +250,7 @@ class PaymentsController extends Controller
      */
     public function checkout(Request $request)
     {
-        if ( ! settings('payments.gateways.' . $request->gateway)) {
+        if (! settings('payments.gateways.' . $request->gateway)) {
             return Redirect::back();
         }
 

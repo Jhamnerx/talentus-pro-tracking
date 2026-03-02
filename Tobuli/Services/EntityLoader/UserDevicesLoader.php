@@ -18,7 +18,7 @@ class UserDevicesLoader extends DevicesLoader
         parent::__construct($user);
 
         $this->setQueryItems(
-            $this->user->devices()
+            $this->user->devices()->clearOrdersBy()
         );
     }
 

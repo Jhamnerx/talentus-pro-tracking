@@ -32,7 +32,7 @@ class Overspeed extends ActionStat
 
     public function proccess($position)
     {
-        if (! $this->isOverspeed($position))
+        if ( ! $this->isOverspeed($position))
             return;
 
         $this->history->applyStat("overspeed_positions", 1);

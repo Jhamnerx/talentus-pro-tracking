@@ -2,12 +2,9 @@
 
 namespace App\Transformers\ApiV1;
 
-use Formatter;
-use Carbon\Carbon;
-use Tobuli\Entities\Device;
-use Illuminate\Support\Facades\App;
 use App\Transformers\BaseTransformer;
-use Tobuli\Helpers\OdometerOptimizer;
+use Formatter;
+use Tobuli\Entities\Device;
 
 class DeviceFullTransformer extends BaseTransformer
 {
@@ -22,21 +19,6 @@ class DeviceFullTransformer extends BaseTransformer
     public function transform(Device $entity)
     {
         $device_data = $entity->toArray();
-
-        // Variables para almacenar los valores del odómetro
-        $total_distance = 0;
-        $odometer_start_global = trans('front.not_available');
-        $odometer_end_global = trans('front.not_available');
-
-        // Usar el optimizador de odómetro para obtener los valores
-        $odometerOptimizer = App::make(OdometerOptimizer::class);
-
-        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
-
-        $total_distance = $odometerValues['total_distance'];
-        $odometer_start_global = $odometerValues['odometer_start'];
-        $odometer_end_global = $odometerValues['odometer_end'];
-
 
         if (isset($device_data['users'])) {
             $filtered_users = $entity->users->filter(function ($user) {
@@ -93,6 +75,15 @@ class DeviceFullTransformer extends BaseTransformer
         $device_data['time'] = $entity->getTime();
         $device_data['course'] = isset($entity->course) ? $entity->course : null;
         $device_data['speed'] = $entity->speed;
+        $device_data['seoCams'] = [$this->extraerUrlVideo($entity->getCustomValue("s_e_o_c_a_m_01")), $this->extraerUrlVideo($entity->getCustomValue("s_e_o_c_a_m_02")), $this->extraerUrlVideo($entity->getCustomValue("s_e_o_c_a_m_03")), $this->extraerUrlVideo($entity->getCustomValue("s_e_o_c_a_m_04"))];
+
+        $filtered_values = array_filter($device_data['seoCams'], function ($value) {
+            return $value !== '' && $value !== null  && $value !== 'null';
+        });
+
+        if (empty($filtered_values)) {
+            $device_data['seoCams'] = [];
+        }
 
         $driver = $entity->driver;
         $inaccuracy = config('addon.inaccuracy')
@@ -107,8 +98,7 @@ class DeviceFullTransformer extends BaseTransformer
 
         $sensors = $this->formatSensors($entity);
         $services = $this->formatServices($entity);
-        $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay());
-        $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay());
+
         return [
             'id'            => intval($entity->id),
             'alarm'         => is_null($this->user->alarm) ? 0 : $this->user->alarm,
@@ -160,10 +150,6 @@ class DeviceFullTransformer extends BaseTransformer
             'inaccuracy'         => is_null($inaccuracy) ? null : intval($inaccuracy),
             'sim_expiration_date' => $sim_expiration_date ? Formatter::time()->human($sim_expiration_date) : null,
             'device_data'        => $device_data,
-            //'distancia_hoy'     => Formatter::distance()->format($entity->getSumDistance($inicio, $fin)),
-            'distancia_hoy'     => Formatter::distance()->format($total_distance),
-            'odometro_inicio'   => $odometer_start_global,
-            'odometro_final'    => $odometer_end_global,
         ];
     }
 
@@ -255,5 +241,27 @@ class DeviceFullTransformer extends BaseTransformer
         }
 
         return $result;
+    }
+
+    protected function extraerUrlVideo($urlCompleta)
+    {
+        if (!$urlCompleta) {
+            return '';
+        }
+
+        $urlComponents = parse_url($urlCompleta);
+        if (!isset($urlComponents['query'])) {
+            return trim(str_replace('&amp;', '&', $urlCompleta));
+        }
+
+        parse_str($urlComponents['query'], $urlParams);
+
+        if (isset($urlParams['videoUrl'])) {
+            $videoUrl = urldecode(trim($urlParams['videoUrl']));
+            return $videoUrl;
+        }
+
+        $url = str_replace('&amp;', '&', $urlCompleta);
+        return trim($url);
     }
 }

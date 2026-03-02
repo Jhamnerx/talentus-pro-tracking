@@ -12,6 +12,7 @@ class Backup extends AbstractEntity
     protected $fillable = [
         'name',
         'message',
+        'details',
         'launcher',
     ];
 

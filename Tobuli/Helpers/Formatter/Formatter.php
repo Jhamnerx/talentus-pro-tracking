@@ -110,7 +110,10 @@ class Formatter
         }
 
         $this->datetime->setFormat(
-            Appearance::getSetting('default_date_format').' '.Appearance::getSetting('default_time_format')
+            implode(" ", [
+                Appearance::getSetting('default_date_format'),
+                Appearance::getSetting('default_time_format')
+            ])
         );
         $this->date->setFormat(Appearance::getSetting('default_date_format'));
         $this->time->setFormat(Appearance::getSetting('default_time_format'));
@@ -133,6 +136,15 @@ class Formatter
 
         $timezone = Timezone::findOrInit($user->timezone_id);
         $this->DST->byTimezone($timezone, $this->DST->getUserDSTRange($user));
+
+        $this->datetime->setFormat(
+            implode(" ", [
+                $user->date_format ?? Appearance::getSetting('default_date_format'),
+                $user->time_format ?? Appearance::getSetting('default_time_format')
+            ])
+        );
+        $this->date->setFormat($user->date_format ?? Appearance::getSetting('default_date_format'));
+        $this->time->setFormat($user->time_format ?? Appearance::getSetting('default_time_format'));
     }
 
     /**

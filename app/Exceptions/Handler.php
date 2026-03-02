@@ -1,7 +1,11 @@
 <?php namespace App\Exceptions;
 
+use Exception;
+use LaravelFCM\Response\Exceptions\UnauthorizedRequestException;
+use League\OAuth2\Server\Exception\OAuthServerException;
 use PDOException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException as CoreValidationException;
@@ -29,13 +33,14 @@ class Handler extends ExceptionHandler {
         HttpException::class,
         ModelNotFoundException::class,
         AuthorizationException::class,
-
+        AuthenticationException::class,
         ResourseNotFoundException::class,
         PermissionException::class,
         DeviceLimitException::class,
         DemoAccountException::class,
         ValidationException::class,
         CoreValidationException::class,
+        OAuthServerException::class,
     ];
 
     /**
@@ -106,7 +111,7 @@ class Handler extends ExceptionHandler {
         $response = $this->getResponse($e);
 
         $response['status'] = 0;
-        $response['errors'] = ['id' => $response['message']];
+        $response['errors'] = ['id' => [$response['message']]];
 
         if ($e instanceof ValidationException)
             $response['errors'] = $e->getErrors();
@@ -167,19 +172,34 @@ class Handler extends ExceptionHandler {
         switch(true) {
             case $e instanceof NotFoundHttpException:
                 $message = 'The endpoint you are looking for could not be found.';
+                $status = 404;
                 break;
             case $e instanceof ValidationException:
                 $message = implode(' ', $e->getErrors()->all());
+                $status = 422;
                 break;
             case $e instanceof CoreValidationException:
                 $message = implode(' ', (new ValidationException($e->errors()))->getErrors()->all());
+                $status = 422;
+                break;
+            case $e instanceof ResourseNotFoundException:
+                $message = $e->getMessage();
+                $status = 404;
+                break;
+            case $e instanceof AuthenticationException:
+            case $e instanceof OAuthServerException:
+                $message = $e->getMessage();
+                $status = 401;
                 break;
             case $e instanceof AuthorizationException:
-            case $e instanceof ResourseNotFoundException:
+                $message = $e->getMessage();
+                $status = 403;
+                break;
             case $e instanceof PermissionException:
             case $e instanceof DemoAccountException:
             case $e instanceof DeviceLimitException:
                 $message = $e->getMessage();
+                $status = 403;
                 break;
 
             case config('app.debug'):
@@ -190,7 +210,7 @@ class Handler extends ExceptionHandler {
                 $message = 'Whoops, looks like something went wrong.';
         }
 
-        $status = $this->isHttpException($e) ? $e->getStatusCode() : 400;
+        $status = $this->isHttpException($e) ? $e->getStatusCode() : $status ?? 500;
 
         return [
             'statusCode'  => $status,

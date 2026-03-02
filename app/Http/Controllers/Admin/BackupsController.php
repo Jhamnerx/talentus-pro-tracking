@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Admin;
+<?php namespace App\Http\Controllers\Admin;
 
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
@@ -10,8 +8,7 @@ use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Backup;
 use Tobuli\Validation\AdminBackupsFormValidator;
 
-class BackupsController extends BaseController
-{
+class BackupsController extends BaseController {
     /**
      * @var array
      */
@@ -36,10 +33,10 @@ class BackupsController extends BaseController
         $this->adminBackupsFormValidator = $adminBackupsFormValidator;
 
         $this->periods = [
-            '1' => '1 ' . trans('front.day'),
-            '3' => '3 ' . trans('front.days'),
-            '7' => '7 ' . trans('front.days'),
-            '30' => '30 ' . trans('front.days'),
+            '1' => '1 '.trans('front.day'),
+            '3' => '3 '.trans('front.days'),
+            '7' => '7 '.trans('front.days'),
+            '30' => '30 '.trans('front.days'),
         ];
 
         $this->hours = [
@@ -75,8 +72,7 @@ class BackupsController extends BaseController
         ];
     }
 
-    public function index()
-    {
+    public function index() {
         return View::make('admin::Backups.index')->with([
             'settings' => settings('backups'),
             'periods' => $this->periods,
@@ -85,8 +81,7 @@ class BackupsController extends BaseController
         ]);
     }
 
-    public function panel()
-    {
+    public function panel() {
         return View::make('admin::Backups.panel')->with([
             'settings' => settings('backups'),
             'periods' => $this->periods,
@@ -95,11 +90,11 @@ class BackupsController extends BaseController
         ]);
     }
 
-    public function save()
-    {
+    public function save() {
         $input = Request::all();
         $settings = settings('backups');
-        try {
+        try
+        {
             if (config('app.server') == 'demo')
                 throw new ValidationException(['id' => trans('front.demo_acc')]);
 
@@ -108,7 +103,7 @@ class BackupsController extends BaseController
             beginTransaction();
             try {
                 if (!isset($settings['next_backup']) || $settings['period'] != $input['period'] || $settings['hour'] != $input['hour'])
-                    $settings['next_backup'] = strtotime(date('Y-m-d', strtotime('+' . $input['period'] . ' days')) . ' ' . $input['hour']);
+                    $settings['next_backup'] = strtotime(date('Y-m-d', strtotime('+'.$input['period'].' days')).' '.$input['hour']);
 
                 $settings['type'] = $input['type'];
                 $settings['ftp_server'] = $input['ftp_server'];
@@ -120,7 +115,8 @@ class BackupsController extends BaseController
                 $settings['hour'] = $input['hour'];
 
                 settings('backups', $settings);
-            } catch (\Exception $e) {
+            }
+            catch (\Exception $e) {
                 rollbackTransaction();
                 throw new ValidationException(['id' => trans('global.unexpected_db_error')]);
             }
@@ -129,12 +125,15 @@ class BackupsController extends BaseController
 
             try {
                 (new Backup($settings))->check();
-            } catch (\Exception $e) {
+            }
+            catch(\Exception $e) {
                 throw new ValidationException(['id' => $e->getMessage()]);
             }
 
             return Redirect::route('admin.backups.index')->withSuccess(trans('front.successfully_saved'));
-        } catch (ValidationException $e) {
+        }
+        catch (ValidationException $e)
+        {
             return Redirect::route('admin.backups.index')->withInput()->withErrors($e->getErrors());
         }
     }
@@ -151,7 +150,8 @@ class BackupsController extends BaseController
 
             $message = trans('front.successfully_uploaded');
             $status = 1;
-        } catch (\Exception $e) {
+        }
+        catch(\Exception $e) {
             $message = $e->getMessage();
             $status = 0;
         }

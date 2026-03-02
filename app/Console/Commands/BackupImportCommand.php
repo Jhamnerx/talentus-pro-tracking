@@ -176,6 +176,11 @@ class BackupImportCommand extends Command
 
             $choice = $this->choice('Choose backup folder', $pageItems);
 
+            // inconsistent return behavior in different PHP versions
+            if (!isset($pageItems[$choice])) {
+                $choice = array_search($choice, $pageItems, true);
+            }
+
             if ($choice === 'n') {
                 $page++;
             } elseif ($choice === 'p') {

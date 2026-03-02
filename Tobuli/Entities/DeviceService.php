@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Entities;
+<?php
+
+namespace Tobuli\Entities;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +15,7 @@ class DeviceService extends AbstractEntity implements DisplayInterface
 
     public static string $displayField = 'name';
 
-	protected $table = 'device_services';
+    protected $table = 'device_services';
 
     protected $fillable = array(
         'user_id',
@@ -40,11 +42,13 @@ class DeviceService extends AbstractEntity implements DisplayInterface
 
     public $timestamps = false;
 
-    public function device() {
+    public function device()
+    {
         return $this->hasOne('Tobuli\Entities\Device', 'id', 'device_id');
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->hasOne('Tobuli\Entities\User', 'id', 'user_id');
     }
 
@@ -70,14 +74,13 @@ class DeviceService extends AbstractEntity implements DisplayInterface
 
     public function getLeft()
     {
-        switch ($this->expiration_by)
-        {
+        switch ($this->expiration_by) {
             case 'days':
                 return Carbon::now()->diffInDays(Carbon::parse($this->expires_date), false);
 
             case 'odometer':
             case 'engine_hours':
-                if ( ! $sensor = $this->getSensor())
+                if (! $sensor = $this->getSensor())
                     return null;
 
                 if ($value = $sensor->getCurrent())
@@ -100,8 +103,7 @@ class DeviceService extends AbstractEntity implements DisplayInterface
         if ($left < 0 && ! config('addon.negative_device_service'))
             return trans('front.expired');
 
-        switch ($this->expiration_by)
-        {
+        switch ($this->expiration_by) {
             case 'days':
                 return $left . 'd.';
 
@@ -118,8 +120,7 @@ class DeviceService extends AbstractEntity implements DisplayInterface
 
     public function expires_formated()
     {
-        switch ($this->expiration_by)
-        {
+        switch ($this->expiration_by) {
             case 'days':
                 return $this->expires_date;
 
@@ -139,28 +140,27 @@ class DeviceService extends AbstractEntity implements DisplayInterface
         $left   = $this->getLeft();
         $sensor = $this->getSensor();
 
-        switch ($this->expiration_by)
-        {
+        switch ($this->expiration_by) {
             case 'days':
                 return  $left > 0 || config('addon.negative_device_service')
-                    ? trans('validation.attributes.days').' '.trans('front.left').' ('.$this->left_formated().')'
-                    : trans('validation.attributes.days').' '.strtolower(trans('front.expired'));
+                    ? trans('validation.attributes.days') . ' ' . trans('front.left') . ' (' . $this->left_formated() . ')'
+                    : trans('validation.attributes.days') . ' ' . strtolower(trans('front.expired'));
 
             case 'odometer':
-                if ( ! $sensor)
+                if (! $sensor)
                     return dontExist('front.sensor');
 
                 return  $left > 0 || config('addon.negative_device_service')
-                    ? trans('front.odometer').' '.trans('front.left').' ('.$this->left_formated().')'
-                    : trans('front.odometer').' '.strtolower(trans('front.expired'));
+                    ? trans('front.odometer') . ' ' . trans('front.left') . ' (' . $this->left_formated() . ')'
+                    : trans('front.odometer') . ' ' . strtolower(trans('front.expired'));
 
             case 'engine_hours':
-                if ( ! $sensor)
+                if (! $sensor)
                     return dontExist('front.sensor');
 
                 return  $left > 0 || config('addon.negative_device_service')
-                    ? trans('validation.attributes.engine_hours').' '.trans('front.left').' ('.$this->left_formated().')'
-                    : trans('validation.attributes.engine_hours').' '.strtolower(trans('front.expired'));
+                    ? trans('validation.attributes.engine_hours') . ' ' . trans('front.left') . ' (' . $this->left_formated() . ')'
+                    : trans('validation.attributes.engine_hours') . ' ' . strtolower(trans('front.expired'));
 
             default:
                 return null;
@@ -189,10 +189,10 @@ class DeviceService extends AbstractEntity implements DisplayInterface
 
         $percentage = $left * 100 / $this->interval;
 
-        if ( $percentage < 0 )
+        if ($percentage < 0)
             $percentage = 0;
 
-        if ( $percentage > 100 )
+        if ($percentage > 100)
             $percentage = 100;
 
         return round($percentage);
@@ -204,8 +204,7 @@ class DeviceService extends AbstractEntity implements DisplayInterface
             return $this->sensor;
 
         if ($this->sensors) {
-            switch ($this->expiration_by)
-            {
+            switch ($this->expiration_by) {
                 case 'odometer':
                     return $this->sensor = $this->getSensorByType('odometer');
                 case 'engine_hours':
@@ -214,8 +213,7 @@ class DeviceService extends AbstractEntity implements DisplayInterface
                     return $this->sensor = null;
             }
         } else {
-            switch ($this->expiration_by)
-            {
+            switch ($this->expiration_by) {
                 case 'odometer':
                     return $this->sensor = $this->device->getOdometerSensor();
                 case 'engine_hours':
@@ -242,6 +240,11 @@ class DeviceService extends AbstractEntity implements DisplayInterface
             return null;
 
         return $type_sensor;
+    }
+
+    public function scopeUserAccessible($query, User $user)
+    {
+        return $query->whereIn('device_id', $user->devices()->select('devices.id'));
     }
 
     public function scopeNotSend($query)

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Helpers\SetFlag;
 
 class ConditionService
 {
@@ -67,9 +68,8 @@ class ConditionService
                 return is_numeric($equal) || !empty($equal);
             case self::TYPE_MORE:
             case self::TYPE_LESS:
-                preg_match('/\%SETFLAG\[([0-9]+)\,([0-9]+)\,([\s\S]+)\]\%/', $equal, $match);
-                if (isset($match['1']) && isset($match['2']) && isset($match['3'])) {
-                    $equal = $match['3'];
+                if ($setflag = SetFlag::singleCropValue($equal)) {
+                    $equal = $setflag->getValue();
                 }
                 return is_numeric($equal);
             case self::TYPE_EMPTY:

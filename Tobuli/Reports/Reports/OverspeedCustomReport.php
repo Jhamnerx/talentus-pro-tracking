@@ -1,6 +1,4 @@
-<?php
-
-namespace Tobuli\Reports\Reports;
+<?php namespace Tobuli\Reports\Reports;
 
 use Tobuli\History\Actions\Distance;
 use Tobuli\History\Actions\Duration;
@@ -61,22 +59,22 @@ class OverspeedCustomReport extends DeviceHistoryReport
 
         foreach ($data['groups']->all() as $group) {
             $rows[] = $this->getDataFromGroup($group, [
-                'start_at',
-                'end_at',
-                'duration',
-                'speed_max',
-                'speed_avg',
-                'location',
-                'distance',
-                'address',
-                'date',
-                'harsh_breaking_count',
-                'harsh_acceleration_count',
-                'seatbelt_off_duration',
-                'gsm',
-            ]) + [
-                'course' => Formatter::course()->human($group->getStartPosition()->course),
-            ];
+                    'start_at',
+                    'end_at',
+                    'duration',
+                    'speed_max',
+                    'speed_avg',
+                    'location',
+                    'distance',
+                    'address',
+                    'date',
+                    'harsh_breaking_count',
+                    'harsh_acceleration_count',
+                    'seatbelt_off_duration',
+                    'gsm',
+                ]) + [
+                    'course' => Formatter::course()->human($group->getStartPosition()->course),
+                ];
         }
 
         return [
@@ -92,7 +90,7 @@ class OverspeedCustomReport extends DeviceHistoryReport
             ->where('type', 'overspeed')
             ->first();
 
-        $speed_limit = (! is_null($alert)) ? (int)$alert->overspeed : $this->cache['speed_limit'];
+        $speed_limit = ( ! is_null($alert)) ? (int)$alert->overspeed : $this->cache['speed_limit'];
 
         if (!$speed_limit) return null;
 

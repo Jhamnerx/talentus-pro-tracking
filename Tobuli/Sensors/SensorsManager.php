@@ -173,8 +173,8 @@ class SensorsManager
                     $value = $entity->on_tag_value;
 
                     if ($crop = SetFlag::singleCropValue($value)) {
-                        $value = $crop['value'];
-                        $setFlag = new \Tobuli\Sensors\Extractions\SetFlag($crop['start'], $crop['count']);
+                        $value = $crop->getValue();
+                        $setFlag = new \Tobuli\Sensors\Extractions\SetFlag($crop->getStart(), $crop->getCount());
                     }
 
                     $onText = $entity->type == 'door' ? trans('front.opened') : trans('front.on');
@@ -186,8 +186,8 @@ class SensorsManager
                     $value = $entity->off_tag_value;
 
                     if ($crop = SetFlag::singleCropValue($value)) {
-                        $value = $crop['value'];
-                        $setFlag = new \Tobuli\Sensors\Extractions\SetFlag($crop['start'], $crop['count']);
+                        $value = $crop->getValue();
+                        $setFlag = new \Tobuli\Sensors\Extractions\SetFlag($crop->getStart(), $crop->getCount());
                     }
 
                     $offText = $entity->type == 'door' ? trans('front.closed') : trans('front.off');
@@ -212,8 +212,9 @@ class SensorsManager
                     break;
                 case 'setflag':
                     $field = $entity->formula;
+
                     if ($field && $crop = SetFlag::singleCrop($field)) {
-                        $extractions[] = new \Tobuli\Sensors\Extractions\SetFlag($crop['start'], $crop['count']);
+                        $extractions[] = new \Tobuli\Sensors\Extractions\SetFlag($crop->getStart(), $crop->getCount());
                     }
                     break;
                 case 'bin':

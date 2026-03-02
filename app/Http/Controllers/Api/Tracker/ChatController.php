@@ -22,7 +22,7 @@ class ChatController extends ApiController
     /**
      * @var ChatService
      */
-    private $chatService;
+    protected $chatService;
 
     public function __construct(ChatService $chatService)
     {

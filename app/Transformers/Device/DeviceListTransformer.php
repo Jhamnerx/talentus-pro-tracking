@@ -12,6 +12,7 @@ class DeviceListTransformer extends DeviceTransformer  {
         return [
             'id'    => (int)$entity->id,
             'name'  => $entity->name,
+            'imei'  => $entity->imei,
         ];
     }
 }

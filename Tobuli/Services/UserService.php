@@ -49,6 +49,9 @@ class UserService
             'devices_limit' => null,
             'subscription_expiration' => '0000-00-00 00:00:00',
             'ungrouped_open' => ['geofence_group' => 1, 'device_group' => 1, 'poi_group' => 1],
+            'sms_gateway_params' => settings('users_default_sms_gateway'),
+            'sms_gateway_url' => settings('users_default_sms_gateway.sms_gateway_url'),
+            'sms_gateway' => settings('users_default_sms_gateway.sms_gateway'),
         ];
     }
 
@@ -221,6 +224,10 @@ class UserService
             $data['devices_limit'] = settings('main_settings.devices_limit');
         }
 
+        if (empty($data['email'])) {
+            $data['email'] = $this->generateEmail($data);
+        }
+
         $data['manager_id'] = NULL;
         if (Session::has('referer_id')) {
             $user = User::find(Session::get('referer_id'));
@@ -264,5 +271,20 @@ class UserService
     {
         $user->login_token = null;
         $user->save();
+    }
+
+    protected function generateEmail($data)
+    {
+        $domain = trim(settings('main_settings.custom_registration_fields.email_domain'), '@');
+
+        if (!empty($data['phone_number'])) {
+            $email = $data['phone_number'] . '@' . $domain;
+        }
+
+        while (empty($email) || User::where('email', $email)->count()) {
+            $email = Str::random(12) . '@' . $domain;
+        }
+
+        return $email;
     }
 }

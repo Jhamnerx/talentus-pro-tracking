@@ -28,7 +28,7 @@
 
     <script>
         tables.set_config('device_sharing_form', {
-            url: '{!! route('sharing.table', ['devices_id' => $selectedDevices]) !!}'
+            url: '{!! route('sharing.table', ['devices_id' => $device_id]) !!}'
         });
 
         function sharing_create_modal_callback() {

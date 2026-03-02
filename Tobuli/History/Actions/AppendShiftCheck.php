@@ -3,49 +3,95 @@
 namespace Tobuli\History\Actions;
 
 use Formatter;
+use Illuminate\Support\Facades\Validator;
 
 class AppendShiftCheck extends ActionAppend
 {
-    private string $shiftStart;
-    private string $shiftFinish;
+    private ?array $shiftWeekdays;
+    private ?string $shiftStart;
+    private ?string $shiftFinish;
     private bool $shiftPassesDay;
-
-    private function resolveTime(array $parameters, $key): string
-    {
-        if (empty($parameters[$key])) {
-            throw new \InvalidArgumentException("`$key` parameter missing");
-        }
-
-        $time = Formatter::time()->reverse($parameters[$key], 'H:i:s');
-
-        if ($time === false) {
-            throw new \InvalidArgumentException("`$key` invalid value: $parameters[$key]");
-        }
-
-        return $time;
-    }
 
     public function boot()
     {
         $parameters = $this->history->allConfig();
 
-        $this->shiftStart = $this->resolveTime($parameters, 'shift_start');
-        $this->shiftFinish = $this->resolveTime($parameters, 'shift_finish');
+        $this->shiftWeekdays  = $this->resolveWeekdays($parameters['weekdays'] ?? null);
+        $this->shiftStart     = $this->resolveTime($parameters['shift_start'] ?? null);
+        $this->shiftFinish    = $this->resolveTime($parameters['shift_finish'] ?? null);
 
         $this->shiftPassesDay = $this->shiftStart > $this->shiftFinish;
     }
 
     public function proccess(&$position)
     {
-        $time = (new \DateTime($position->time))->format('H:i:s');
-
-        $position->inShift = $this->isTimeInShift($time);
+        $position->inShift = $this->isDayInShift($position) && $this->isTimeInShift($position);
     }
 
-    private function isTimeInShift($time): bool
+    private function resolveTime(?string $value): ?string
     {
+        if (empty($value)) {
+            return null;
+        }
+
+        $time = Formatter::time()->reverse($value, 'H:i:s');
+
+        if ($time === false) {
+            throw new \InvalidArgumentException("Invalid shift time value: $value");
+        }
+
+        return $time;
+    }
+
+    private function resolveWeekdays(?array $weekdays): ?array
+    {
+        if (empty($weekdays)) {
+            return null;
+        }
+
+        $validator = Validator::make(
+            ['weekdays' => $weekdays],
+            ['weekdays.*' => ['min:1', 'max:7']]
+        );
+
+        if ($errors = $validator->errors()->all()) {
+            throw new \InvalidArgumentException(implode(". ", $errors));
+        }
+
+        return array_unique($weekdays);
+    }
+
+    private function isTimeInShift($position): bool
+    {
+        if (!$this->isTimeDefined()) {
+            return true;
+        }
+
+        $time = (new \DateTime($position->time))->format('H:i:s');
+
         return $this->shiftPassesDay
             ? $time >= $this->shiftStart || $time < $this->shiftFinish
             : $time >= $this->shiftStart && $time < $this->shiftFinish;
+    }
+
+    private function isDayInShift($position): bool
+    {
+        if (!$this->isDayDefined()) {
+            return true;
+        }
+
+        $day = Formatter::date()->convert($position->time, 'N');
+
+        return in_array($day, $this->shiftWeekdays);
+    }
+
+    private function isDayDefined(): bool
+    {
+        return !empty($this->shiftWeekdays);
+    }
+
+    private function isTimeDefined(): bool
+    {
+        return !empty($this->shiftStart) && !empty($this->shiftFinish);
     }
 }

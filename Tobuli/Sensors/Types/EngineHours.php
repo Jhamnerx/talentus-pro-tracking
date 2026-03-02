@@ -96,4 +96,20 @@ class EngineHours extends Numerical
                 break;
         }
     }
+
+    protected function getResult($value)
+    {
+        if (!$this->valueTag)
+            return parent::getResult($value);
+
+        if ($this->on && $this->on->parse($value)) {
+            return true;
+        }
+
+        if ($this->off && $this->off->parse($value)) {
+            return false;
+        }
+
+        return null;
+    }
 }

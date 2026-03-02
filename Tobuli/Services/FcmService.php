@@ -9,23 +9,46 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Response;
 use Tobuli\Entities\FcmToken;
 use Tobuli\Entities\FcmTokenableInterface;
-use Tobuli\Helpers\FirebaseConfig;
+use Tobuli\Helpers\FcmConfigurationService;
 
 class FcmService
 {
-    private FirebaseConfig $firebaseConfig;
-    private Client $client;
-    private string $firebaseUrl;
+    public const MODE_PROD = 1;
+    public const MODE_TEST = 2;
 
-    public function __construct()
+    private const DURATION_PROJECT_INSERT = 3;
+
+    /**
+     * @var Client[]
+     */
+    private array $clients = [];
+    private FcmConfigurationService $fcmConfigurationService;
+    private int $mode;
+
+    public function __construct(int $mode = self::MODE_PROD)
     {
-        $this->firebaseConfig = new FirebaseConfig();
+        $this->fcmConfigurationService = new FcmConfigurationService();
+        $this->mode = $mode;
     }
 
-    public function setFcmToken(FcmTokenableInterface $tokenable, string $fcmToken)
+    public function setFcmToken(FcmTokenableInterface $tokenable, string $fcmToken, ?string $projectId = null): void
     {
         $token = $tokenable->fcmTokens()->firstOrNew(['token' => $fcmToken]);
+        $token->project_id = $projectId;
         $token->save();
+    }
+
+    public function destroyFcmToken(FcmTokenableInterface $tokenable, string $fcmToken): bool
+    {
+        $token = $tokenable->fcmTokens()->where('token', $fcmToken)->first();
+
+        if (!$token) {
+            return false;
+        }
+
+        $token->delete();
+
+        return true;
     }
 
     /**
@@ -37,7 +60,7 @@ class FcmService
             return;
         }
 
-        $tokens = $tokenable->fcmTokens()->latest()->get()->pluck('token')->toArray();
+        $tokens = $tokenable->fcmTokens()->latest()->get()->all();
 
         if (!$tokens) {
             return;
@@ -48,100 +71,114 @@ class FcmService
         $this->sendToTokens($tokens, $title, $body, $payload, $type);
     }
 
+    /**
+     * @param  FcmToken[]  $tokens
+     */
     public function sendToTokens(array $tokens, string $title, string $body, ?array $payloadData = null, $type = null): void
     {
         $message = $this->buildMessage($title, $body, $payloadData, $type);
 
-        if ($this->firebaseConfig->isCustomConfig()) {
-            $this->sendDirect($tokens, $message);
-            return;
-        }
-
-        // user has custom config but did not upload firebase-config.json yet
-        if (config('fcm.http.sender_id')) {
-            return;
-        }
-
-        // $this->sendViaBridge($tokens, $message);
-    }
-
-    private function sendDirect(array $tokens, array $message): void
-    {
-        $resendCount = 0;
-
         foreach ($tokens as $token) {
-            $message['message']['token'] = $token;
+            $projectId = $token->project_id ?: $this->fcmConfigurationService->getDefaultProjectId();
 
-            try {
-                $this->sendDirectToken($token, $message);
-            } catch (ClientException $e) {
-                if ($this->isFailedAuthError($e) && $resendCount++ < 1) {
-                    $this->firebaseConfig->resetAccessToken();
-
-                    $this->sendDirectToken($token, $message);
-                } else {
-                    throw $e;
-                }
+            if ($this->fcmConfigurationService->hasProjectConfig($projectId)) {
+                $this->sendDirect($token, $message, $projectId);
+                continue;
             }
+
+            // user has custom config but did not upload firebase-config.json yet
+            if (config('fcm.http.sender_id')) {
+                continue;
+            }
+
+            $this->sendViaBridge($token, $message, $projectId);
         }
     }
 
     /**
      * @throws ClientException
      */
-    private function sendDirectToken(string $token, array $message): void
+    private function sendDirect(FcmToken $token, array $message, string $projectId, int $attempt = 1): void
     {
-        try {
-            $this->getClient()->post($this->getFirebaseUrl(), [
-                RequestOptions::JSON => $message,
-                RequestOptions::HEADERS => ['Authorization' => 'Bearer ' . ($token === 'test' ? 'x' : '').$this->firebaseConfig->getAccessToken()],
-            ]);
-        } catch (ClientException $exception) {
-            $data = json_decode($exception->getResponse()->getBody()->getContents(), true) ?? [];
+        $message['message']['token'] = $token->token;
 
-            $success = $this->handleSendError($token, $exception->getCode(), $data);
+        $accessToken = $this->fcmConfigurationService->getAccessToken($projectId);
+
+        try {
+            $this->getClient($projectId)->post($this->getFirebaseUrl($projectId), [
+                RequestOptions::JSON => $message,
+                RequestOptions::HEADERS => ['Authorization' => "Bearer $accessToken"],
+            ]);
+        } catch (ClientException $e) {
+            if ($this->mode === self::MODE_TEST) {
+                throw $e;
+            }
+
+            $data = json_decode($e->getResponse()->getBody()->getContents(), true) ?? [];
+
+            if ($this->isFailedAuthError($data) && $attempt < 2) {
+                $this->fcmConfigurationService->resetAccessToken($projectId);
+
+                $this->sendDirect($token, $message, $projectId, ++$attempt);
+
+                return;
+            }
+
+            $success = $this->handleSendError($token, $e->getCode(), $data);
 
             if (!$success) {
-                throw $exception;
+                throw $e;
             }
         }
     }
 
-    private function sendViaBridge(array $tokens, array $message): void
+    private function sendViaBridge(FcmToken $token, array $message, ?string $projectId): void
     {
-        foreach ($tokens as $token) {
-            $message['message']['token'] = $token;
+        $message['message']['token'] = $token->token;
 
-            try {
-                $this->getClient()->post(config('fcm.http.bridge_url'), [
-                    RequestOptions::JSON => $message,
-                ])->getBody()->getContents();
-            } catch (ClientException $exception) {
-                $data = json_decode($exception->getResponse()->getBody()->getContents(), true) ?? [];
+        if ($projectId) {
+            $message['project_id'] = $projectId;
+        }
 
-                $success = $this->handleSendError($token, $exception->getCode(), $data);
+        try {
+            $this->getClient($projectId)->post(config('fcm.http.bridge_url'), [
+                RequestOptions::JSON => $message,
+            ])->getBody()->getContents();
+        } catch (ClientException $e) {
+            if ($this->mode === self::MODE_TEST) {
+                throw $e;
+            }
 
-                if (!$success) {
-                    throw $exception;
-                }
+            $data = json_decode($e->getResponse()->getBody()->getContents(), true) ?? [];
+
+            $success = $this->handleSendError($token, $e->getCode(), $data);
+
+            if (!$success) {
+                throw $e;
             }
         }
     }
 
-    private function handleSendError(string $token, int $code, $data): bool
+    private function handleSendError(FcmToken $fcmToken, int $code, $data): bool
     {
+        $token = $fcmToken->token;
+
         if (!is_array($data)) {
             $data = (array)$data;
         }
 
-        if ($code === Response::HTTP_UNPROCESSABLE_ENTITY) {
-            $invalidToken = isset($data['message.token']);
+        if ($this->isFailedAuthError($data)) {
+            FcmToken::where('token', $token)->delete();
 
-            if ($invalidToken) {
-                FcmToken::where('token', $token)->delete();
+            return true;
+        }
+
+        if ($code === Response::HTTP_UNPROCESSABLE_ENTITY) {
+            if (isset($data['project_id'])) {
+                return \Carbon::now()->subDays(self::DURATION_PROJECT_INSERT)->gte($fcmToken->created_at) && $fcmToken->delete();
             }
 
-            return $invalidToken && count($data) === 1;
+            return false;
         }
 
         if (!isset($data['error']['details'])) {
@@ -169,7 +206,7 @@ class FcmService
             switch (true) {
                 case $code === 'INVALID_ARGUMENT' && $msg === 'The registration token is not a valid FCM registration token':
                 case $code === 'UNREGISTERED':
-                case $code === 'SENDER_ID_MISMATCH':
+//                case $code === 'SENDER_ID_MISMATCH': // valid AT, RT from other project
                     FcmToken::where('token', $token)->delete();
                     break;
                 default:
@@ -180,9 +217,16 @@ class FcmService
         return $success;
     }
 
-    private function isFailedAuthError(\Exception $e): bool
+    private function isFailedAuthError($data): bool
     {
-        return $e->getCode() === Response::HTTP_UNAUTHORIZED;
+        $error = $data['error'] ?? null;
+
+        if ($error === null) {
+            return false;
+        }
+
+        return $error['code'] === Response::HTTP_UNAUTHORIZED
+            && $error['status'] === 'UNAUTHENTICATED';
     }
 
     private function buildMessage(string $title, string $body, ?array $payloadData = null, $type = null): array
@@ -212,93 +256,15 @@ class FcmService
                 }
             });
         }
-
-        $typesSounds = [
-            'custom',
-            'device_subscription_expired',
-            'distance',
-            'driver',
-            'driver_authorized',
-            'driver_change',
-            'driver_unauthorized',
-            'expired_device',
-            'expired_sim',
-            'expired_user',
-            'expiring_device',
-            'expiring_sim',
-            'expiring_user',
-            'fuel_fill',
-            'fuel_theft',
-            'idle_duration',
-            'ignition_duration',
-            'ignition_off',
-            'ignition_on',
-            'move_start',
-            'offline_duration',
-            'overspeed',
-            'plugged_in',
-            'poi_idle_duration',
-            'poi_stop_duration',
-            'sos',
-            'stop_duration',
-            'task_complete',
-            'task_failed',
-            'task_in_progress',
-            'task_new',
-            'time_duration',
-            'unplugged',
-            'zone_in',
-            'zone_out'
-        ];
-
-        if ($type == null){
-            $type = 'general';
-            $typeSound = 'default';
-            foreach ($typesSounds as $sound) {
-                if (strpos($title, $sound) !== false) {
-                    $type = $sound;
-                    break;
-                }
-            }
-        }else{
-            $typesSounds = array_filter($typesSounds, function($sound) {
-                return $sound !== 'custom';
-            });
-            if ($type == 'custom'){
-                $type = 'general';
-                $typeSound = 'default';
-            }
-
-            if (preg_match('/\((.*?)\)/', $title, $matches)) {
-                $extractedSound = $matches[1];
-                if (in_array($extractedSound, $typesSounds)) {
-                    $type = $extractedSound;
-                }
-            }
-
-            if ($type == 'general') {
-                foreach ($typesSounds as $sound) {
-                    if (strpos($title, $sound) !== false) {
-                        $type = $sound;
-                        break;
-                    }
-                }
-            }
-
-            if ($type!='general'){
-                $typeSound = $type . '.mp3';
-            }
-        }
-
+        
         $channelId = config('fcm.channel_id');
         $sound = config('fcm.sound');
-        
-        if (config('addon.custom_sound_notifications')){
-            $channelId = $type ? $type : $channelId;
-            $sound = $typeSound ? $typeSound : $sound;
-        }
 
         $ttl = 20 * 60; // https://firebase.google.com/docs/cloud-messaging/concept-options#ttl
+
+        $type = isset($payloadData['type']) ? $payloadData['type'] : 'default';
+
+        $channelId = $type;
 
         $message['android']['ttl'] = $ttl . 's';
         $message['android']['priority'] = 'high';
@@ -323,28 +289,29 @@ class FcmService
         return ['message' => $message];
     }
 
-    private function getFirebaseUrl(): string
+    private function getFirebaseUrl(string $projectId): string
     {
-        if (isset($this->firebaseUrl)) {
-            return $this->firebaseUrl;
-        }
-
-        $projectId = $this->firebaseConfig->getCustomConfig()['project_id'] ?? '';
-
-        return $this->firebaseUrl = "v1/projects/$projectId/messages:send";
+        return "v1/projects/$projectId/messages:send";
     }
 
-    private function getClient(): Client
+    private function getClient(?string $projectId): Client
     {
-        if (isset($this->client)) {
-            return $this->client;
+        if (isset($this->clients[$projectId])) {
+            return $this->clients[$projectId];
         }
 
-        $uri = $this->firebaseConfig->isCustomConfig()
+        $uri = $this->fcmConfigurationService->hasProjectConfig($projectId)
             ? 'https://fcm.googleapis.com'
             : null;
 
         // client does not handle access token without providing base_uri
-        return $this->client = new Client(array_filter(['base_uri' => $uri]));
+        return $this->clients[$projectId] = new Client(array_filter(['base_uri' => $uri]));
+    }
+
+    public function setMode(int $mode): self
+    {
+        $this->mode = $mode;
+
+        return $this;
     }
 }

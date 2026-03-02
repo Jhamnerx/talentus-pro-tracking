@@ -40,7 +40,7 @@ class ApiController extends Controller
             'data' => [
                 'url'       => $url,
                 'device_id' => $this->deviceInstance->id,
-                'channel'   => md5('device_' . $this->deviceInstance->id),
+                'channel'   => $this->deviceInstance->getSocketChannel(),
             ]
         ]);
     }
@@ -55,7 +55,7 @@ class ApiController extends Controller
             throw new ValidationException($validator->errors());
         }
 
-        $fcmService->setFcmToken($this->deviceInstance, $input['token']);
+        $fcmService->setFcmToken($this->deviceInstance, $input['token'], $input['project_id'] ?? null);
 
         return response()->json(['status' => 1, 'data' => $this->deviceInstance->fcmTokens()]);
     }

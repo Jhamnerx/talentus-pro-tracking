@@ -70,6 +70,11 @@ class Route extends AbstractEntity implements DisplayInterface
         return $this->belongsTo(RouteGroup::class, 'group_id', 'id');
     }
 
+    public function scopeVisible($query)
+    {
+        $query->where('active', 1);
+    }
+
     public function scopeUserOwned(Builder $query, User $user): Builder
     {
         return $query->where(['user_id' => $user->id]);

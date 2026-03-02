@@ -8,7 +8,7 @@
             <p class="alert alert-danger">{{ $error }}</p>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-side default" data-dismiss="modal" aria-hidden="true">{{ trans('global.close') }}</button>
+            <button class="btn btn-default default" data-dismiss="modal" aria-hidden="true">{{ trans('global.close') }}</button>
         </div>
     </div><!-- /.modal-content -->
 </div><!-- /.modal-dialog -->

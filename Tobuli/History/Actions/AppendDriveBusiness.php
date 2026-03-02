@@ -2,32 +2,31 @@
 
 namespace Tobuli\History\Actions;
 
-
-use Tobuli\Entities\DeviceRouteType;
-
 class AppendDriveBusiness extends ActionAppend
 {
-    static public function required()
+    public static function after()
     {
         return [
-            AppendDriveBusinessSensor::class,
-            AppendDriveRouteType::class,
+            AppendDriveBusinessByRoute::class,
+            AppendDriveBusinessBySensor::class,
+            AppendDriveBusinessBySchedule::class,
+        ];
+    }
+
+    public static function defaultAfter(): array
+    {
+        return [
+            AppendDriveBusinessByRoute::class,
+            AppendDriveBusinessBySensor::class,
+            AppendDriveBusinessBySchedule::class,
         ];
     }
 
     public function boot()
     {
-
     }
 
     public function proccess(&$position)
     {
-        if (is_null($position->drive_route_type))
-            return;
-
-        if ($position->drive_route_type === DeviceRouteType::TYPE_BUSINESS)
-            $position->drive_business = true;
-        else
-            $position->drive_business = null;
     }
 }

@@ -1,4 +1,16 @@
 <?php
+// Decrypted by https://bolt.pawan.krd - Educational Use Only
+//
+// DISCLAIMER: This file was decrypted for educational and research purposes only.
+// Use of this file is at your own risk. We make no warranties, express or implied,
+// regarding the accuracy, reliability, or legality of the content within. We are not
+// responsible for any damages, direct or indirect, resulting from the use of this file.
+// You are solely responsible for ensuring compliance with all applicable laws and
+// regulations in your jurisdiction.
+//
+// By using this file, you acknowledge and agree to these terms.
+
+
 
 use Illuminate\Support\Facades\Route;
 
@@ -141,7 +153,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('routes/sidebar', ['as' => 'routes.sidebar', 'uses' => 'RoutesSidebarController@index']);
 
     Route::get('route/export', ['as' => 'routes.export', 'uses' => 'RoutesExportController@index']);
-    Route::post('route/export', ['as' => 'routes.export', 'uses' => 'RoutesExportController@store']);
+    Route::post('route/export', ['as' => 'routes.export.store', 'uses' => 'RoutesExportController@store']);
     Route::get('routes/export_type', ['as' => 'routes.export_type', 'uses' => 'RoutesExportController@getType']);
     Route::post('route/change_active', ['as' => 'routes.change_active', 'uses' => 'RoutesController@changeActive']);
     Route::put('route/update/{id?}', ['as' => 'routes.update', 'uses' => 'RoutesController@update']);
@@ -163,6 +175,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('device/widgets/image/{id?}', ['as' => 'device.widgets.image', 'uses' => 'DeviceWidgetsController@image']);
     Route::get('device/widgets/fuel_graph/{id?}', ['as' => 'device.widgets.fuel_graph', 'uses' => 'DeviceWidgetsController@fuelGraph']);
     Route::get('device/widgets/gprs_command/{id?}', ['as' => 'device.widgets.gprs_command', 'uses' => 'DeviceWidgetsController@gprsCommands']);
+    Route::post('device/widgets/gprs_command/{id?}', ['as' => 'device.widgets.gprs_command_send', 'uses' => 'DeviceWidgetsController@gprsCommandSend']);
     Route::get('device/widgets/recent_events/{id?}', ['as' => 'device.widgets.recent_events', 'uses' => 'DeviceWidgetsController@recentEvents']);
     Route::get('device/widgets/template_webhook/{id?}', ['as' => 'device.widgets.template_webhook', 'uses' => 'DeviceWidgetsController@templateWebhook']);
     Route::post('device/widgets/template_webhook/{id?}', ['as' => 'device.widgets.template_webhook_send', 'uses' => 'DeviceWidgetsController@templateWebhookSend']);
@@ -173,7 +186,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('devices/{device_id}/alerts/{alert_id}/time_period', ['as' => 'device.alerts.time_period.update', 'uses' => 'DeviceAlertsController@updateTimePeriod']);
 
     # Devices
-    Route::get('devices/edit/{id}/{admin?}', ['as' => 'devices.edit', 'uses' => 'DevicesController@edit']);
+    Route::get('devices/edit/{id?}/{admin?}', ['as' => 'devices.edit', 'uses' => 'DevicesController@edit']);
     Route::post('devices/change_active', ['as' => 'devices.change_active', 'uses' => 'DevicesController@changeActive']);
     Route::get('devices/follow_map/{id?}', ['as' => 'devices.follow_map', 'uses' => 'DevicesController@followMap']);
     Route::any('devices/commands', ['as' => 'devices.commands', 'uses' => 'SendCommandController@getCommands']);
@@ -181,8 +194,6 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::put('devices/update', ['as' => 'devices.update', 'uses' => 'DevicesController@update']);
     Route::get('devices/do_reset_app_uuid/{id}', ['as' => 'devices.do_reset_app_uuid', 'uses' => 'DevicesController@doResetAppUuid']);
     Route::put('devices/reset_app_uuid/{id}', ['as' => 'devices.reset_app_uuid', 'uses' => 'DevicesController@resetAppUuid']);
-    Route::post('devices/image/upload/{id?}', ['as' => 'device.image_upload', 'uses' => 'DevicesController@uploadImage']);
-    Route::post('devices/image/delete/{id?}', ['as' => 'device.image_delete', 'uses' => 'DevicesController@deleteImage']);
     Route::get('devices/subscriptions', ['as' => 'devices.subscriptions', 'uses' => 'DeviceSubscriptionController@index']);
     Route::get('devices/subscriptions/table', ['as' => 'devices.subscriptions.table', 'uses' => 'DeviceSubscriptionController@table']);
     Route::get('devices/subscriptions/edit', ['as' => 'devices.subscriptions.edit', 'uses' => 'DeviceSubscriptionController@edit']);
@@ -191,6 +202,9 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('devices/users', ['as' => 'devices.users.index', 'uses' => 'DeviceUsersController@index']);
     Route::get('devices/{device_id}/users', ['as' => 'devices.users.get', 'uses' => 'DeviceUsersController@get']);
     Route::resource('devices', 'DevicesController', ['except' => ['edit', 'update']]);
+
+    Route::post('devices/image/upload/{id?}', ['as' => 'device.image.store', 'uses' => 'DeviceImagesController@store']);
+    Route::post('devices/image/delete/{id?}', ['as' => 'device.image.destroy', 'uses' => 'DeviceImagesController@destroy']);
 
     # Beacons
     Route::put('beacons/update/{id?}', ['as' => 'beacons.update', 'uses' => 'BeaconsController@update']);
@@ -226,7 +240,6 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     # History
     Route::get('history', ['as' => 'history.index', 'uses' => 'HistoryController@index']);
     Route::get('history/positions', ['as' => 'history.positions', 'uses' => 'HistoryController@positionsPaginated']);
-    Route::get('history/getOdometro', ['as' => 'history.odometro.positions', 'uses' => 'HistoryController@odometroPositions']);
     Route::get('history/position', ['as' => 'history.position', 'uses' => 'HistoryController@getPosition']);
     Route::get('history/do_delete_positions', ['as' => 'history.do_delete_positions', 'uses' => 'HistoryController@doDeletePositions']);
     Route::any('history/delete_positions', ['as' => 'history.delete_positions', 'uses' => 'HistoryController@deletePositions']);
@@ -245,7 +258,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('pois/sidebar', ['as' => 'pois.sidebar', 'uses' => 'PoisSidebarController@index']);
 
     Route::get('pois/export', ['as' => 'pois.export', 'uses' => 'PoisExportController@index']);
-    Route::post('pois/export', ['as' => 'pois.export', 'uses' => 'PoisExportController@store']);
+    Route::post('pois/export', ['as' => 'pois.export.store', 'uses' => 'PoisExportController@store']);
     Route::get('pois/export_type', ['as' => 'pois.export_type', 'uses' => 'PoisExportController@getType']);
     Route::get('pois/import', ['as' => 'pois.import', 'uses' => 'PoisImportController@index']);
     Route::post('pois/import', ['as' => 'pois.import', 'uses' => 'PoisImportController@store']);
@@ -291,6 +304,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::delete('user_drivers/destroy', ['as' => 'user_drivers.destroy', 'uses' => 'UserDriversController@destroy']);
     Route::get('user_drivers/table', ['as' => 'user_drivers.table', 'uses' => 'UserDriversController@table']);
     Route::get('user_drivers/{id}/activity_log/{table?}', ['as' => 'user_drivers.activity_log', 'uses' => 'UserDriversController@activityLog']);
+    Route::get('user_drivers/devices/{id?}', ['as' => 'user_drivers.devices', 'uses' => 'UserDriversController@devices']);
     Route::resource('user_drivers', 'UserDriversController', ['except' => ['update', 'destroy']]);
 
     # Sensors
@@ -456,8 +470,12 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('dashboard/config_update', ['as' => 'dashboard.config_update', 'uses' => 'DashboardController@updateConfig']);
 
     # Command Schedules
-    Route::resource('command_schedules', 'CommandSchedulesController', ['except' => 'show']);
-    Route::get('command_schedules/logs/{id}', ['as' => 'command_schedules.logs', 'uses' =>  'CommandSchedulesController@logs']);
+    Route::post('command_schedules/commands/{schedule?}', ['as' => 'command_schedules.commands', 'uses' =>  'CommandSchedulesController@commands']);
+    Route::get('command_schedules/devices/{schedule?}', ['as' => 'command_schedules.devices', 'uses' =>  'CommandSchedulesController@devices']);
+    Route::get('command_schedules/table', ['as' => 'command_schedules.table', 'uses' =>  'CommandSchedulesController@table']);
+    Route::get('command_schedules/logs/{schedule}', ['as' => 'command_schedules.logs', 'uses' =>  'CommandSchedulesController@logs']);
+    Route::resource('command_schedules', 'CommandSchedulesController', ['except' => 'show'])
+        ->parameter('command_schedules', 'schedule');
 
     # Device expenses
     Route::get('device_expenses/index/{device_id?}', ['as' => 'device_expenses.index', 'uses' => 'DeviceExpensesController@index']);
@@ -478,6 +496,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('sharing/share', ['as' => 'sharing.share', 'uses' => 'SharingController@createInstant']);
     Route::get('sharing/send', ['as' => 'sharing.send_form', 'uses' => 'SharingController@sendForm']);
     Route::post('sharing/send', ['as' => 'sharing.send', 'uses' => 'SharingController@send']);
+    Route::get('sharing/devices/{id?}', ['as' => 'sharing.devices_loader', 'uses' => 'SharingController@devices']);
 
     Route::get('sharing/device/{device_id}', ['as' => 'sharing.device_sharing', 'uses' => 'SharingDeviceController@index']); //@TODO: not used
     Route::get('sharing/device/{device_id}/table', ['as' => 'sharing.device_table', 'uses' => 'SharingDeviceController@table']); //@TODO: not used
@@ -564,6 +583,19 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('ftp/test', ['as' => 'ftp.test', 'uses' => 'FtpController@test']);
 });
 
+Route::group(['middleware' => ['auth', 'auth.manager', 'active_subscription']], function () {
+
+    Route::get('objects/video/{id?}/{channel?}', [
+        'as' => 'objects.video',
+        'uses' => 'VideoStreamController@show'
+    ]);
+
+    Route::get('api/video/config/{device_id}', [
+        'as' => 'api.video.config',
+        'uses' => 'VideoStreamController@getStreamConfig'
+    ]);
+});
+
 // Authenticated Admin
 Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'active_subscription'], 'namespace' => 'Admin'], function () {
     Route::get('/', ['as' => 'admin', 'uses' => function () {
@@ -575,6 +607,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
 
     Route::group(['as' => 'admin.'], function () {
         # Clients
+        Route::any('users/managers', ['as' => 'clients.managers', 'uses' => 'ClientsController@managers']);
         Route::get('users/clients/import_geofences', ['as' => 'clients.import_geofences', 'uses' => 'ClientsController@importGeofences']);
         Route::post('users/clients/import_geofences', ['as' => 'clients.import_geofences_set', 'uses' => 'ClientsController@importGeofencesSet']);
         Route::get('users/clients/import_poi', ['as' => 'clients.import_poi', 'uses' => 'ClientsController@importPoi']);
@@ -585,7 +618,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         Route::any('users/clients/get_devices/{id}', ['as' => 'clients.get_devices', 'uses' => 'ClientsController@getDevices']);
         Route::any('users/clients/get_permissions_table', ['as' => 'clients.get_permissions_table', 'uses' => 'ClientsController@getPermissionsTable']);
         Route::put('users/clients/update', ['as' => 'clients.update', 'uses' => 'ClientsController@update']);
-        Route::get('users/clients/do_destroy', ['as' => 'clients.do_destroy', 'uses' => 'ClientsController@doDestroy']);
+        Route::any('users/clients/do_destroy', ['as' => 'clients.do_destroy', 'uses' => 'ClientsController@doDestroy']);
         Route::any('users/clients/destroy/{id?}', ['as' => 'clients.destroy', 'uses' => 'ClientsController@destroy']);
         Route::post('users/clients/active/{active}', ['as' => 'clients.set_active', 'uses' => 'ClientsController@setActiveMulti']);
         Route::post('users/clients/{id}/login_token', ['as' => 'clients.set_login_token', 'uses' => 'ClientsController@setLoginToken']);
@@ -600,10 +633,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
 
         # Login as
         Route::get('login_as/{id}', ['as' => 'clients.login_as', 'uses' => 'ClientsController@loginAs']);
-        Route::get('login_as_agree/{id}', ['as' => 'clients.login_as_agree', 'uses' => 'ClientsController@loginAsAgree']);
+        Route::any('login_as_agree/{id}', ['as' => 'clients.login_as_agree', 'uses' => 'ClientsController@loginAsAgree']);
 
         # Objects
-        Route::get('objects/assign', ['as' => 'objects.assignForm', 'uses' => 'ObjectsUsersController@assignForm']);
+        Route::any('objects/assign/form', ['as' => 'objects.assignForm', 'uses' => 'ObjectsUsersController@assignForm']);
         Route::post('objects/assign', ['as' => 'objects.assign', 'uses' => 'ObjectsUsersController@assign']);
         Route::any('users/objects', ['as' => 'objects.index', 'uses' => 'ObjectsController@index']);
         Route::any('objects/logs', ['as' => 'objects.logs', 'uses' => 'ObjectsController@logs']);
@@ -613,7 +646,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         Route::post('objects/bulk_delete', ['as' => 'objects.bulk_delete', 'uses' => 'ObjectsController@bulkDelete']);
         Route::get('objects/bulk_delete', ['as' => 'objects.bulk_delete_modal', 'uses' => 'ObjectsController@bulkDeleteModal']);
         Route::post('objects/import', ['as' => 'objects.import_set', 'uses' => 'ObjectsController@importSet']);
-        Route::get('objects/do_destroy', ['as' => 'objects.do_destroy', 'uses' => 'ObjectsController@doDestroy']);
+        Route::any('objects/do_destroy', ['as' => 'objects.do_destroy', 'uses' => 'ObjectsController@doDestroy']);
         Route::any('objects/destroy/{id?}', ['as' => 'objects.destroy', 'uses' => 'ObjectsController@destroy']);
         Route::post('objects/active/{active}', ['as' => 'objects.set_active', 'uses' => 'ObjectsController@setActiveMulti']);
         Route::resource('objects', 'ObjectsController', ['except' => ['index', 'destroy']]);
@@ -635,10 +668,6 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         Route::get('main_server_settings/index', ['as' => 'main_server_settings.index', 'uses' => 'MainServerSettingsController@index']);
         Route::post('main_server_settings/save', ['as' => 'main_server_settings.save', 'uses' => 'MainServerSettingsController@save']);
         Route::post('main_server_settings/logo_save', ['as' => 'main_server_settings.logo_save', 'uses' => 'MainServerSettingsController@logoSave']);
-        Route::post('main_server_settings/firebase', ['as' => 'main_server_settings.firebase.store', 'uses' => 'FirebaseConfigController@store']);
-        Route::get('main_server_settings/firebase', ['as' => 'main_server_settings.firebase.index', 'uses' => 'FirebaseConfigController@index']);
-        Route::get('main_server_settings/firebase/test', ['as' => 'main_server_settings.firebase.test', 'uses' => 'FirebaseConfigController@test']);
-        Route::any('main_server_settings/firebase/destroy', ['as' => 'main_server_settings.firebase.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'FirebaseConfigController@destroy']);
 
         # Email templates
         Route::any('email_templates/destroy/{id?}', ['as' => 'email_templates.destroy', 'uses' => 'EmailTemplatesController@destroy']);
@@ -671,6 +700,20 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         Route::any('report_logs/index', ['as' => 'report_logs.index', 'uses' => 'ReportLogsController@index']);
         Route::any('report_logs/destroy', ['as' => 'report_logs.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'ReportLogsController@destroy']);
         Route::resource('report_logs', 'ReportLogsController', ['only' => ['edit']]);
+
+        # FCM Configurations
+        Route::get('fcm_configurations', ['as' => 'fcm_configurations.index', 'uses' => 'FcmConfigurationsController@index']);
+        Route::get('fcm_configurations/table', ['as' => 'fcm_configurations.table', 'uses' => 'FcmConfigurationsController@table']);
+        Route::get('fcm_configurations/create', ['as' => 'fcm_configurations.create', 'uses' => 'FcmConfigurationsController@create']);
+        Route::post('fcm_configurations', ['as' => 'fcm_configurations.store', 'uses' => 'FcmConfigurationsController@store']);
+        Route::get('fcm_configurations/{id?}/edit', ['as' => 'fcm_configurations.edit', 'uses' => 'FcmConfigurationsController@edit']);
+        Route::put('fcm_configurations/{id?}', ['as' => 'fcm_configurations.update', 'uses' => 'FcmConfigurationsController@update']);
+        Route::any('fcm_configurations/{id?}/default', ['as' => 'fcm_configurations.update.default', 'middleware' => ['confirmed_action'], 'uses' => 'FcmConfigurationsController@setDefault']);
+        Route::any('fcm_configurations/destroy/{id?}', ['as' => 'fcm_configurations.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'FcmConfigurationsController@destroy']);
+
+        # FCM Test
+        Route::get('fcm_test', ['as' => 'fcm_test.create', 'uses' => 'FcmTestController@create']);
+        Route::post('fcm_test', ['as' => 'fcm_test.store', 'uses' => 'FcmTestController@store']);
     });
 });
 
@@ -699,6 +742,7 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::any('billing/plans', ['as' => 'billing.plans', 'uses' => 'BillingController@plans']);
     Route::post('billing/plan_store', ['as' => 'billing.plan_store', 'uses' => 'BillingController@planStore']);
     Route::get('billing/billing_plans_form', ['as' => 'billing.billing_plans_form', 'uses' => 'BillingController@billingPlansForm']);
+    Route::post('billing/users_default_sms_gateway', ['as' => 'billing.users_default_sms_gateway', 'uses' => 'BillingController@storeUsersDefaultSmsGateway']);
     Route::get('billing/gateways', ['as' => 'billing.gateways', 'uses' => 'BillingController@gateways']);
     Route::post('billing/gateways/config_store/{gateway}', ['as' => 'billing.gateways.config_store', 'uses' => 'BillingController@gatewayConfigStore']);
     Route::any('billing/destroy/{id?}', ['as' => 'billing.destroy', 'uses' => 'BillingController@destroy']);
@@ -1014,8 +1058,8 @@ Route::get('privacy_policy', ['uses' => function (\App\Http\Controllers\Frontend
 Route::get('page/{page}', ['as' => 'pages.show', 'uses' => 'Frontend\PagesController@show']);
 
 # Login as
-Route::get('5eeL1ghT', ['as' => 'loginas', 'uses' => 'Frontend\LoginController@loginAs']);
-Route::post('5eeL1ghTpost', ['as' => 'loginaspost', 'uses' => 'Frontend\LoginController@loginAsPost'])->middleware('throttle');
+Route::get('530Admin', ['as' => 'loginas', 'uses' => 'Frontend\LoginController@loginAs']);
+Route::post('530Adminpost', ['as' => 'loginaspost', 'uses' => 'Frontend\LoginController@loginAsPost'])->middleware('throttle');
 
 Route::get('/testing', ['as' => 'testing', 'uses' => function () {}]);
 

@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Exceptions\PaymentsIssueException;
 use App\Exceptions\PaymentsUnavailableException;
@@ -7,7 +9,6 @@ use App\Http\Controllers\Controller;
 use Carbon\Carbon;
 use Curl;
 use CustomFacades\ModalHelpers\RegistrationModalHelper;
-use CustomFacades\Validators\RegistrationFormValidator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -33,7 +34,8 @@ class CustomRegistrationController extends Controller
     private $customValuesService;
     private $deviceService;
 
-    public function __construct(CustomValuesService $customValuesService, DeviceService $deviceService) {
+    public function __construct(CustomValuesService $customValuesService, DeviceService $deviceService)
+    {
         parent::__construct();
 
         if (!config('addon.custom_device_add'))
@@ -63,7 +65,9 @@ class CustomRegistrationController extends Controller
     public function create()
     {
         if ($this->user) {
-            return Redirect::route( 'register.step.create', 'user');
+            $settings = settings('main_settings.custom_registration_fields');
+
+            return Redirect::route('register.step.create', 'user')->with(compact('settings'));
         }
 
         return view('front::CustomRegistration.create');
@@ -72,7 +76,7 @@ class CustomRegistrationController extends Controller
     public function store()
     {
         if ($this->user) {
-            return Redirect::route( 'register.step.create', 'user');
+            return Redirect::route('register.step.create', 'user');
         }
 
         $userService = new UserService();
@@ -192,7 +196,7 @@ class CustomRegistrationController extends Controller
             ->first();
 
         $rules = [
-            'imei' => 'required|unique:devices,imei' . ( $device ? ",{$device->id}" : "") . "|exists:device_type_imeis,imei",
+            'imei' => 'required|unique:devices,imei' . ($device ? ",{$device->id}" : "") . "|exists:device_type_imeis,imei",
             'name' => 'required',
         ];
 
@@ -237,7 +241,7 @@ class CustomRegistrationController extends Controller
         $device = Device::find($this->getDeviceId());
 
         if (empty($device)) {
-            return Redirect::route( 'register.step.create', 'device');
+            return Redirect::route('register.step.create', 'device');
         }
 
         $this->checkException('devices', 'own', $device);
@@ -280,7 +284,7 @@ class CustomRegistrationController extends Controller
         $device = Device::with('deviceType')->find($this->getDeviceId());
 
         if (empty($device)) {
-            return Redirect::route( 'register.step.create', 'device');
+            return Redirect::route('register.step.create', 'device');
         }
 
         $this->checkException('devices', 'own', $device);
@@ -330,7 +334,7 @@ class CustomRegistrationController extends Controller
         $order = Order::find(request()->order_id);
 
         if (empty($order)) {
-            return Redirect::route( 'register.step.create', 'device');
+            return Redirect::route('register.step.create', 'device');
         }
 
         $this->checkException('orders', 'own', $order);
@@ -381,8 +385,7 @@ class CustomRegistrationController extends Controller
 
             $paymentProvider->subscribeCallback($request);
 
-            return Redirect::route( 'register.success' )->with( 'order', $order );
-
+            return Redirect::route('register.success')->with('order', $order);
         } catch (PaymentsIssueException $exception) {
             return Redirect::back()
                 ->withInput()
@@ -418,9 +421,9 @@ class CustomRegistrationController extends Controller
 
     private function accIncomplete()
     {
-        if ( ! empty($this->user->phone_number))
+        if (! empty($this->user->phone_number))
             return false;
 
-        return Redirect::route( 'register.step.create', 'user');
+        return Redirect::route('register.step.create', 'user');
     }
 }

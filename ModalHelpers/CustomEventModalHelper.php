@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 use CustomFacades\Repositories\DeviceRepo;
 use CustomFacades\Repositories\EventCustomRepo;
@@ -105,7 +107,7 @@ class CustomEventModalHelper extends ModalHelper
         $this->checkException('custom_events', 'remove', $item);
 
         EventCustomRepo::delete($id);
-        
+
         return ['status' => 1];
     }
 
@@ -132,14 +134,15 @@ class CustomEventModalHelper extends ModalHelper
         return $groups;
     }
 
-    public function getProtocols() {
+    public function getProtocols()
+    {
         if (!$this->api) {
             $devices = isset($this->data['devices']) ? $this->data['devices'] : [];
             $protocols = DeviceRepo::getProtocols($devices)->pluck('protocol', 'protocol')->all();
             $protocols = [
-                    '-' => '- '.trans('validation.attributes.protocol').' -'] + EventCustomRepo::getProtocols($this->data['type'] == '1' ? $this->user->id : NULL, $protocols)->pluck('protocol', 'protocol')->all();
-        }
-        else {
+                '-' => '- ' . trans('validation.attributes.protocol') . ' -'
+            ] + EventCustomRepo::getProtocols($this->data['type'] == '1' ? $this->user->id : NULL, $protocols)->pluck('protocol', 'protocol')->all();
+        } else {
             $protocols = [
                 [
                     'type' => 1,
@@ -155,7 +158,8 @@ class CustomEventModalHelper extends ModalHelper
         return $protocols;
     }
 
-    public function getEvents() {
+    public function getEvents()
+    {
         $protocol = $this->data['protocol'];
         $where = [];
         $where['user_id'] = ($this->data['type'] == '1' ? $this->user->id : NULL);
@@ -187,7 +191,7 @@ class CustomEventModalHelper extends ModalHelper
 
         $this->data['conditions'] = [];
 
-        foreach($this->data['tag'] as $key => $tag) {
+        foreach ($this->data['tag'] as $key => $tag) {
             $tag = strtolower($tag);
             $type = $this->data['type'][$key] ?? '';
             $tag_value = $this->data['tag_value'][$key] ?? '';

@@ -72,9 +72,15 @@ class DataArraySerializer extends ArraySerializer
     public function cursor(CursorInterface $cursor)
     {
         $current = $cursor->getCurrent();
+        $next = $cursor->getNext();
+        $prev = $cursor->getPrev();
+
+
         return [
             'pagination' => [
                 'per_page' => $current->perPage(),
+                'next_cursor' => $next ? $next->encode() : null,
+                'prev_cursor' => $prev ? $prev->encode() : null,
                 'next_page_url' => $current->nextPageUrl(),
                 'prev_page_url' => $current->previousPageUrl(),
             ]

@@ -2,18 +2,23 @@
 
 
 use Collective\Html\FormFacade as Form;
+use CustomFacades\Validators\SMSGatewayFormValidator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config as LaravelConfig;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Tobuli\Entities\SmsEventQueue;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Payments\Payments;
 use Tobuli\Helpers\Templates\Builders\BillingPlanTemplate;
 use Tobuli\Repositories\BillingPlan\BillingPlanRepositoryInterface as BillingPlan;
 use Tobuli\Repositories\Timezone\TimezoneRepositoryInterface as Timezone;
 use Tobuli\Services\PermissionService;
+use Tobuli\Services\RegistrationFieldsService;
 use Tobuli\Validation\AdminBillingPlanFormValidator;
 
 
@@ -38,6 +43,12 @@ class BillingController extends BaseController
 
         $settings = settings('main_settings');
 
+        $userDefaultSms = settings('users_default_sms_gateway');
+        $requestMethods = $this->getRequestMethods();
+        $encodings = [0 => trans('global.no'), 'json' => 'JSON'];
+        $authentications = [0 => trans('global.no'), 1 => trans('global.yes')];
+        $smsQueueCount = SmsEventQueue::where('user_id', $this->user->id)->count();
+
         $timezones = $timezoneRepo->order()->pluck('title', 'id')->all();
         $payment_types = $this->payment_types;
         $grouped_permissions = $this->permissionService->group(
@@ -50,11 +61,15 @@ class BillingController extends BaseController
         $week_pos = getWeekPositions();
         $week_start_days = getWeekStartDays();
         $dst_countries = getDSTCountries();
+        $customRegistrationFields = (new RegistrationFieldsService($settings['custom_registration_fields']['fields']))
+            ->getFlat('custom_registration_fields[fields]');
 
         return view('admin::Billing.' . (Request::ajax() ? 'table' : 'index'))
-            ->with(compact('items', 'timezones', 'settings',
+            ->with(compact('items', 'timezones', 'settings', 'customRegistrationFields',
                 'payment_types', 'grouped_permissions', 'dst_types', 'months',
-                'weekdays', 'week_pos', 'week_start_days', 'dst_countries'));
+                'weekdays', 'week_pos', 'week_start_days', 'dst_countries',
+                'userDefaultSms', 'requestMethods', 'encodings', 'authentications',
+                'smsQueueCount'));
     }
 
     public function create() {
@@ -248,5 +263,38 @@ class BillingController extends BaseController
     private function getReplacers(\Tobuli\Entities\BillingPlan $item): array
     {
         return (new BillingPlanTemplate())->getPlaceholders($item);
+    }
+
+    public function storeUsersDefaultSmsGateway()
+    {
+        try {
+            Validator::make(['method' => $this->data['request_method'] ?? null], [
+                'method' => ['required', Rule::in(array_keys($this->getRequestMethods()))],
+            ]);
+
+            SMSGatewayFormValidator::validate($this->data['request_method'], $this->data);
+        } catch (ValidationException $e) {
+            return redirect()->back()->withErrors($e->getErrors());
+        }
+
+        settings('users_default_sms_gateway', Arr::except($this->data, ['_token']));
+
+        return redirect()->back()->withSuccess(trans('front.successfully_saved'));
+    }
+
+    private function getRequestMethods(): array
+    {
+        $requestMethods = [
+            'get' => 'GET',
+            'post' => 'POST',
+            'app' => trans('front.sms_gateway_app'),
+            'plivo' => 'Plivo'
+        ];
+
+        if (settings('sms_gateway.enabled')) {
+            $requestMethods = ['server' => 'Server gateway'] + $requestMethods;
+        }
+
+        return $requestMethods;
     }
 }

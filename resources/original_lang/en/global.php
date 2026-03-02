@@ -1,7 +1,5 @@
 <?php
-
-return array(
-
+return [
     'edit' => 'Edit',
     'add_new' => 'Add new',
     'cancel' => 'Cancel',
@@ -46,7 +44,7 @@ return array(
     'custom' => 'Custom',
     'percentage' => 'Percentage',
     'price' => 'Price',
-    'engine' => 'Engine',
+    'engine' => 'Motor',
     'ack' => 'ACK',
     'center' => 'Center',
     'bottom_right' => 'Bottom right',
@@ -93,4 +91,22 @@ return array(
     'both' => 'Both',
     'use_empty' => 'Use empty',
     'is_uploaded' => 'Is uploaded',
-);
+    'threshold' => 'Threshold',
+    'view' => 'View',
+    'remove' => 'Remove',
+    'reload' => 'Reload',
+    'confirm' => 'Confirm',
+    'action_confirmation' => 'Action confirmation',
+    'on' => 'On',
+    'off' => 'Off',
+    'set_date' => 'Set date',
+    'select_date' => 'Select date',
+    'old' => 'Old',
+    'result' => 'Result',
+    'new' => 'New',
+    'select' => 'Select',
+    'drag_and_drop_or_browse' => 'Drag & Drop files or <u>browse</u>',
+    'show_more' => 'Show more',
+    'show_less' => 'Show less',
+    'link_is_expired' => 'Link is expired',
+];

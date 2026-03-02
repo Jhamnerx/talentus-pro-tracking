@@ -90,13 +90,19 @@
 </div>
 
 <script>
+    try {
+        let mapIndex;
+    } catch (e){};
+
+    mapIndex = 0;
+
     function mappingRow(mapping) {
         var $row = $('<tr></tr>'),
             $value = $('<td></td>'),
             $mapped = $('<td></td>'),
             $icon = $('<td></td>'),
             $button = $('<td></td>'),
-            index = $('[data-sensor-input="mapping"] table tbody tr').length;
+            index = mapIndex++;
 
         $button.html('<button type="button" class="remove_mapping close"><span aria-hidden="true">×</span></button>');
 
@@ -206,6 +212,7 @@
     $(document).ready(function () {
         var $modal = $('#sensors_create .modal-content, #sensors_edit .modal-content'),
             $table = $modal.find('table tbody');
+
         @foreach ($item->mappings ?? [] as $mapping)
             $table.append(mappingRow(JSON.parse('{!! json_encode($mapping) !!}')));
         @endforeach

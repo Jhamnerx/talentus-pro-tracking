@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'default' => env('LOG_CHANNEL', 'daily'),
+    'default' => env('LOG_CHANNEL', 'single'),
 
     /*
     |--------------------------------------------------------------------------
@@ -82,7 +82,6 @@ return [
             'driver' => 'monolog',
             'handler' => \Monolog\Handler\NullHandler::class,
         ],
-
         'validaciones_tecnicas' => [
             'driver' => 'daily',
             'path' => storage_path('logs/validaciones_tecnicas.log'),

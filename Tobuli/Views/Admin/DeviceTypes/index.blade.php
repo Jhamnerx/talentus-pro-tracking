@@ -5,15 +5,13 @@
         <div class="panel-heading">
             <ul class="nav nav-tabs nav-icons pull-right">
                 <li role="presentation" class="">
-                    <a href="javascript:" type="button" data-modal="device_types_create"
-                        data-url="{{ route('admin.device_type.create') }}">
+                    <a href="javascript:" type="button" data-modal="device_types_create" data-url="{{ route("admin.device_type.create") }}">
                         <i class="icon add" title="{{ trans('admin.add_new') }}"></i>
                     </a>
                 </li>
             </ul>
 
-            {{-- <div class="panel-title">{!! trans('front.plans') !!}</div> --}}
-            <div class="panel-title">Tipos dispositivos</div>
+            <div class="panel-title">{!! trans('front.plans') !!}</div>
         </div>
 
         <div class="panel-body">
@@ -25,17 +23,17 @@
 @stop
 
 @section('javascript')
-    <script>
-        tables.set_config('table_device_types', {
-            url: '{{ route('admin.device_type.index') }}'
-        });
+<script>
+    tables.set_config('table_device_types', {
+        url:'{{ route("admin.device_type.index") }}'
+    });
 
-        function device_types_edit_modal_callback() {
-            tables.get('table_device_types');
-        }
+    function device_types_edit_modal_callback() {
+        tables.get('table_device_types');
+    }
 
-        function device_types_create_modal_callback() {
-            tables.get('table_device_types');
-        }
-    </script>
+    function device_types_create_modal_callback() {
+        tables.get('table_device_types');
+    }
+</script>
 @stop

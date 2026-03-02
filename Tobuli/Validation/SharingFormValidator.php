@@ -1,6 +1,9 @@
-<?php namespace Tobuli\Validation;
+<?php
 
-class SharingFormValidator extends Validator {
+namespace Tobuli\Validation;
+
+class SharingFormValidator extends Validator
+{
 
     /**
      * @var array Validation rules for the test form, they can contain in-built Laravel rules or our custom rules
@@ -9,14 +12,14 @@ class SharingFormValidator extends Validator {
         'create' => [
             'active' => 'required|boolean',
             'name' => 'required|string',
-            'devices' => 'required|array',
+            'selected_devices'  => 'required|array',
             'enable_expiration_date' => 'required|boolean',
             'expiration_date' => 'required_if:enable_expiration_date,1|date',
         ],
         'update' => [
             'active' => 'required|boolean',
             'name' => 'required|string',
-            'devices' => 'required|array',
+            'selected_devices'  => 'array',
             'enable_expiration_date' => 'required|boolean',
             'expiration_date' => 'required_if:enable_expiration_date,1|date',
         ],
@@ -38,7 +41,7 @@ class SharingFormValidator extends Validator {
             'devices' => 'required|array',
         ],
         'send' => [
-            'devices' => 'required|array',
+            'selected_devices'  => 'required|array',
             'expiration_date' => 'required_if:expiration_by,date|date',
             'duration' => 'required_if:expiration_by,duration|integer',
             'send_sms' => 'boolean',

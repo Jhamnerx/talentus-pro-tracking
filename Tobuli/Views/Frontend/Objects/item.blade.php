@@ -178,6 +178,32 @@
                         </a>
                     </li>
                 @endif
+                @php
+                        $cam = false; 
+                @endphp
+               
+                @foreach ($item->customFields()->get() as $index => $field)
+                    @php
+                        $title = $field->title;
+                        $slag = explode('_', $title);
+                        $slagType = $slag[0]; 
+                        $slagCam = $slag[1];
+                        $slug = $field->slug;
+                    @endphp
+                    @if($slagType == 'SEOCAM' && $item->getCustomValue($field->slug)!='')
+                    @php
+                        $cam = true; 
+                     @endphp
+                    @endif
+                @endforeach
+                @if($cam==true )
+                        <li>
+                            <a href="javascript:" data-id="{{ $item->id }}" onClick="openMdvr({{ $item->id }}, '0', 'LIVE');" data-name="{{ trans('front.follow').' ('.$item['name'].')' }}">
+                                <span class="icon play"></span>
+                                <span class="text">{{ $slagType }}</span>
+                            </a>
+                        </li>
+                    @endif
             </ul>
         </div>
     </div>

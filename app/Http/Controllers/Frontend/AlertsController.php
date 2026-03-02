@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Frontend;
+<?php namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -53,6 +51,7 @@ class AlertsController extends Controller
         $sortDir = $sort['sort'] ?? 'asc';
 
         $items = Alert::userOwned($this->user)
+            ->enabled()
             ->search($this->data['search_phrase'] ?? null)
             ->select(['id', 'active', 'name', 'type'])
             ->withCount('devices')
@@ -93,8 +92,10 @@ class AlertsController extends Controller
             $ids = (array)$ids;
         }
 
-        $items = Alert::whereIn('id', $ids)->get()
-            ->filter(fn($alert) => $this->user->can('active', $alert));
+        $items = Alert::enabled()
+            ->whereIn('id', $ids)
+            ->get()
+            ->filter(fn ($alert) => $this->user->can('active', $alert));
 
         if ($active === null) {
             $active = (isset($this->data['active']) && filter_var($this->data['active'], FILTER_VALIDATE_BOOLEAN)) ? 1 : 0;
@@ -106,8 +107,7 @@ class AlertsController extends Controller
         return ['status' => 1];
     }
 
-    public function doDestroy($id = null)
-    {
+    public function doDestroy($id = null) {
         $data = AlertModalHelper::doDestroy($id);
 
         return is_array($data) ? view('front::Alerts.destroy')->with($data) : $data;
@@ -138,7 +138,7 @@ class AlertsController extends Controller
         $userDevicesLoader = new UserDevicesGroupLoader($this->user);
         $userDevicesLoader->setRequestKey('devices');
 
-        if ($alert = Alert::find($id))
+        if ($alert = Alert::enabled()->find($id))
             $userDevicesLoader->setQueryStored($alert->devices());
 
         return response()->json($userDevicesLoader->get());
@@ -180,7 +180,7 @@ class AlertsController extends Controller
     {
         $this->checkException('users', 'show', $this->user);
 
-        if ($id && $alert = Alert::find($id)) {
+        if ($id && $alert = Alert::enabled()->find($id)) {
             $this->checkException('alerts', 'show', $alert);
 
             $this->usersLoader->setQueryStored($alert->users());

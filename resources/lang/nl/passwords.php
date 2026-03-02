@@ -8,5 +8,9 @@ return array(
     'token' => 'Dit token voor het opnieuw instellen van het wachtwoord is ongeldig.',
     'user' => 'We kunnen geen gebruiker vinden met dat e-mailadres.',
     'throttled' => 'Wacht alstublieft voordat u het opnieuw probeert.',
-    'generic' => 'Als er een account met dit e-mailadres bestaat, ontvangt u een link voor het opnieuw instellen van uw wachtwoord.',
+    'generic' => 'Als er een account met deze gegevens bestaat, ontvangt u een link om uw wachtwoord opnieuw in te stellen.',
+    'action_confirmation_with_password' => 'Voer het wachtwoord in om deze actie te bevestigen',
+    'via_phone' => 'Herstel via telefoonnummer',
+    'via_email' => 'Herstel via e-mail',
+    'recovery_via' => 'Hoe wilt u de link voor het opnieuw instellen van uw wachtwoord ontvangen?',
 );

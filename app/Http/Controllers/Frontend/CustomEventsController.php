@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use CustomFacades\ModalHelpers\CustomEventModalHelper;
@@ -8,7 +10,8 @@ use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 
 class CustomEventsController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         $data = CustomEventModalHelper::get();
 
         if ($this->api)
@@ -17,7 +20,8 @@ class CustomEventsController extends Controller
         return view('front::CustomEvents.index')->with($data);
     }
 
-    public function table() {
+    public function table()
+    {
         $data = CustomEventModalHelper::get();
 
         return view('front::CustomEvents.table')->with($data);
@@ -70,13 +74,15 @@ class CustomEventsController extends Controller
             $userDeviceLoader->setRequestKey('devices');
 
             if ($userDeviceLoader->hasSelect()) {
-                $devices = $userDeviceLoader->getQuery();
+                $devices = $userDeviceLoader->getQuerySelected();
             }
         }
 
         $events = CustomEventModalHelper::getGroupedEvents($devices);
 
-        array_walk($events, function(&$v){ $v['items'] = apiArray($v['items']); });
+        array_walk($events, function (&$v) {
+            $v['items'] = apiArray($v['items']);
+        });
 
         return $events;
     }
@@ -92,5 +98,4 @@ class CustomEventsController extends Controller
     {
         return CustomEventModalHelper::destroy();
     }
-
 }

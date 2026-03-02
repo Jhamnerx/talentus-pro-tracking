@@ -1,4 +1,6 @@
-<?php namespace App\Http\Middleware;
+<?php
+
+namespace App\Http\Middleware;
 
 use Closure;
 use Language;
@@ -8,7 +10,8 @@ use Tobuli\Entities\User;
 use Illuminate\Support\Facades\Auth;
 use Tobuli\Entities\UserSecondaryCredentials;
 
-class ApiAuthenticate {
+class ApiAuthenticate
+{
 
     /**
      * Create a new filter instance.
@@ -46,12 +49,12 @@ class ApiAuthenticate {
                 $secondaryCred = UserSecondaryCredentials::where('api_hash', $hash)->first();
                 $user = $secondaryCred->user ?? null;
             }
-}
+        }
 
         if (empty($user))
             return response()->json(['status' => 0, 'message' => trans('front.login_failed')], 401);
 
-        if ( ! $user->active)
+        if (! $user->active)
             return response()->json(['status' => 0, 'message' => trans('front.login_suspended')], 401);
 
         Auth::onceUsingId($user->id);
@@ -82,5 +85,4 @@ class ApiAuthenticate {
 
         return null;
     }
-
 }

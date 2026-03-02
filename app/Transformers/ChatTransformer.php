@@ -21,7 +21,8 @@ class ChatTransformer extends BaseTransformer {
     }
 
     public function includeMessages(Chat $chat) {
-        $messages = $chat->getLastMessages()->setPath(route('tracker.chat.messages'));
+        $messages = $chat->getLastMessages()
+            ->setPath(route('tracker.chat.messages'));
 
         return $this
             ->collection($messages, new ChatMessageTransformer)

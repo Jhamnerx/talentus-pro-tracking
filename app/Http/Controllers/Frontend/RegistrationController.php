@@ -1,9 +1,10 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
 
-use Curl;
+namespace App\Http\Controllers\Frontend;
+
 use App\Http\Controllers\Controller;
 use CustomFacades\ModalHelpers\RegistrationModalHelper;
-use Tobuli\Exceptions\ValidationException;
+use Tobuli\Services\RegistrationFieldsService;
 
 class RegistrationController extends Controller
 {
@@ -22,7 +23,12 @@ class RegistrationController extends Controller
             return view('front::CustomRegistration.create');
         }
 
-        return view('front::Registration.create');
+        $settings = settings('main_settings.custom_registration_fields');
+        $fields = empty($settings['enabled'])
+            ? []
+            : (new RegistrationFieldsService($settings['fields']))->getFlat();
+
+        return view('front::Registration.create')->with('fields', $fields);
     }
 
     public function store()

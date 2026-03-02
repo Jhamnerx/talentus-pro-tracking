@@ -42,6 +42,33 @@ class FtpUserService
         $this->removeFtpUser($camera->ftp_username);
     }
 
+    public function changeCameraFtpUserDir(DeviceCamera $camera)
+    {
+        $homePath = $this->deviceMedia->getDirectory($camera);
+        $username = $camera->ftp_username;
+
+        $commands = [
+            "usermod -m -d '{$homePath}' {$username}",
+            "chown -R {$username}:{$username} '{$homePath}'",
+            "chmod 0707 '{$homePath}'",
+        ];
+
+        foreach ($commands as $command) {
+            $process = $this->executeCommand($command);
+
+            $error = $process->getErrorOutput();
+
+            if (!$process->isSuccessful() && !empty($error) && !preg_match('/(?=.*usermod)(?=.*exists)/', $error)) {
+                return [
+                    'error' => "{$command}: ".$error
+                ];
+            }
+
+        }
+
+        return ['success' => 1];
+    }
+
     public function setup()
     {
         $this->installPackages();

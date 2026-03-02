@@ -10,7 +10,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
 
 use App\Console\ProcessManager;
-use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\TraccarDevice;
 
 class CleanDevicesCommand extends Command
@@ -64,7 +63,6 @@ class CleanDevicesCommand extends Command
 
         TraccarDevice::orderBy('id', 'asc')->chunk(500, function ($devices) {
             foreach ($devices as $device) {
-                Log::info("CLEAN TABLES ({$this->i}/{$this->all}) Device {$device->device}");
                 $this->i++;
 
                 $date = $this->getDate($device);
@@ -75,7 +73,6 @@ class CleanDevicesCommand extends Command
                     if ($device->device->days_history !== null && $device->device->days_history > 0) {
                         $this->cleanPositionsByDaysHistory($device);
                     }
-
                     $this->line("CLEAN TABLES ({$this->i}/{$this->all}) Device {$device->id} {$date}");
                 } catch (\Exception $e) {
                     $this->error("CLEAN TABLES ({$this->i}/{$this->all}) Device {$device->id} " . $e->getMessage());

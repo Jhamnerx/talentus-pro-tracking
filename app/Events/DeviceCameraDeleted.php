@@ -18,7 +18,9 @@ class DeviceCameraDeleted extends Event implements ShouldBroadcast
     }
 
     public function broadcastOn() {
-        return [md5('user_'.$this->user->id)];
+        return [
+            $this->user->getSocketChannel()
+        ];
     }
 
     public function broadcastAs() {

@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Tobuli\Entities\EmailTemplate;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Response;
+use Tobuli\Entities\EmailTemplate;
 use Tobuli\Helpers\Templates\TemplateManager;
-use Tobuli\Validation\EmailTemplateFormValidator;
 use Tobuli\Repositories\EmailTemplate\EmailTemplateRepositoryInterface;
+use Tobuli\Validation\EmailTemplateFormValidator;
 
 class EmailTemplatesController extends BaseController
 {

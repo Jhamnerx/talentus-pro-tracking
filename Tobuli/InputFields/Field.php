@@ -37,6 +37,11 @@ class Field
         return new TextField($name, $title, $default);
     }
 
+    public function checkbox(string $name, string $title, bool $checked = false, $default = 1): CheckboxField
+    {
+        return new CheckboxField($name, $title, $checked, $default);
+    }
+
     /**
      * @param string $name
      * @param string $title

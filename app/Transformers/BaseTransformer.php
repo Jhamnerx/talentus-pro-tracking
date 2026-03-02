@@ -8,7 +8,12 @@ use Illuminate\Pagination\CursorPaginator;
 use League\Fractal\TransformerAbstract;
 use Tobuli\Entities\User;
 
-class BaseTransformer extends TransformerAbstract {
+class BaseTransformer extends TransformerAbstract
+{
+    /**
+     * @var array key - alias, value - relation name
+     */
+    protected array $includesLoadMap = [];
 
     /**
      * @var User
@@ -37,6 +42,29 @@ class BaseTransformer extends TransformerAbstract {
     protected static function requireLoads()
     {
         return [];
+    }
+
+    public function loadRequestedRelations($data, array $requested): void
+    {
+        if (!($data instanceof Collection || $data instanceof LengthAwarePaginator || $data instanceof CursorPaginator)) {
+            return;
+        }
+
+        $loads = [];
+
+        foreach ($requested as $include) {
+            if (!isset($this->includesLoadMap[$include])) {
+                continue;
+            }
+
+            array_push($loads, ...(array)$this->includesLoadMap[$include]);
+        }
+
+        $loads = array_merge($loads, static::requireLoads());
+
+        if ($loads) {
+            $data->load($loads);
+        }
     }
 
     /**

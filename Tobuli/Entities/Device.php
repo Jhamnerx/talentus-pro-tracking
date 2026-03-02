@@ -21,6 +21,8 @@ use Tobuli\Traits\EventLoggable;
 use Tobuli\Sensors\Types\Blocked;
 use Tobuli\Traits\FcmTokensTrait;
 use Illuminate\Support\Facades\DB;
+use Laravel\Passport\HasApiTokens;
+use App\Jobs\DeviceCameraDirChange;
 use App\Events\Device\DeviceEnabled;
 use App\Events\Device\DeviceDisabled;
 use Illuminate\Support\Facades\Redis;
@@ -53,6 +55,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     use FcmTokensTrait;
     use Filterable;
     use HasFactory;
+    use HasApiTokens;
     use Includable;
     use Nameable;
     use Notifiable;
@@ -62,7 +65,6 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     const STATUS_ENGINE  = 'engine';
     const STATUS_EXPIRED = 'expired';
     const STATUS_OFFLINE = 'offline';
-    const STATUS_DISCONNECTED = 'disconnected';
     const STATUS_ONLINE  = 'online';
     const STATUS_INACTIVE = 'inactive';
     const STATUS_MOVE = 'move';
@@ -77,7 +79,6 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     const SCOPE_STATUSES = [
         self::STATUS_EXPIRED,
         self::STATUS_OFFLINE,
-        self::STATUS_DISCONNECTED,
         self::STATUS_ONLINE,
         self::STATUS_INACTIVE,
         self::STATUS_MOVE,
@@ -197,6 +198,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'object_owner',
         'device_model',
         'group_id',
+        'device_id',
         'status',
         'online',
         'offline'
@@ -218,6 +220,16 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'created' => DeviceCreated::class,
         'deleted' => DeviceDeleted::class,
     ];
+
+    public function getAuthIdentifierName()
+    {
+        return $this->getKeyName();
+    }
+
+    public function getIdentifier()
+    {
+        return $this->{$this->getAuthIdentifierName()};
+    }
 
     protected static function boot()
     {
@@ -275,6 +287,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
             if ($isImeiDirty) {
                 UnregisteredDevice::where('imei', $device->imei)->delete();
+
+                dispatch((new DeviceCameraDirChange($device, $device->getOriginal('imei'))));
             }
 
             if ($isImeiDirty && !$device->wasRecentlyCreated) {
@@ -644,6 +658,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
         if ($to)
             $query->where('time', '<', $to);
+
+        $query->where('valid', '>', 0);
 
         return $query->sum('distance');
     }
@@ -1291,9 +1307,9 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         if (! $moved_at)
             return null;
 
-        $last_time = max($server_time, $ack_time);
-        if ($time > $last_time)
-            return time() - $moved_at + ($time - $last_time);
+        if ($ack_time > $moved_at) {
+            return $ack_time - $moved_at;
+        }
 
         //device send incorrect self timestamp
         if ($time > $server_time)
@@ -1314,6 +1330,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
         return Formatter::duration()->human($duration);
     }
+
 
     public function getMovedDuration()
     {
@@ -1400,9 +1417,22 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->protocol == 'osmand';
     }
 
+    public function scopeFilterDeviceId($query, $device_id)
+    {
+        if (is_array($device_id)) {
+            $query->whereIn('devices.id', $device_id);
+        } else {
+            $query->where('devices.id', $device_id);
+        }
+    }
+
     public function scopeFilterGroupId($query, $group_id)
     {
-        $query->where('user_device_pivot.group_id', $group_id ?: 0);
+        if (is_array($group_id)) {
+            $query->whereIn('user_device_pivot.group_id', $group_id);
+        } else {
+            $query->where('user_device_pivot.group_id', $group_id ?: 0);
+        }
     }
 
     public function scopeVisible($query)
@@ -1450,17 +1480,19 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         $query->setQuery($newBase);
     }
 
-    public function changeDriver($driver, $time = null, $withoutAlerts = false)
+    public function changeDriver($driver, $rfid = null, $time = null, $withoutAlerts = false)
     {
         if (is_null($time))
             $time = date('Y-m-d H:i:s');
 
         $this->current_driver_id = $driver->id ?? null;
+        $this->current_driver_rfid = $driver->rfid ?? $rfid;
         $this->save();
 
         DB::table('user_driver_position_pivot')->insert([
             'device_id' => $this->id,
             'driver_id' => $driver->id ?? null,
+            'rfid'      => $driver->rfid ?? $rfid,
             'date'      => $time
         ]);
 
@@ -1503,6 +1535,45 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         }
     }
 
+    public function getDriversLog(array $options = []): array
+    {
+        $baseQuery = DB::table('user_driver_position_pivot AS dp')
+            ->select('d.*', 'dp.date')
+            ->join('user_drivers AS d', 'dp.driver_id', '=', 'd.id')
+            ->where('dp.device_id', $this->id);
+
+        $query = (clone $baseQuery)->groupBy('date');
+
+        if (isset($options['from'])) {
+            $query->where('dp.date', '>=', $options['from']);
+        }
+
+        if (isset($options['to'])) {
+            $query->where('dp.date', '<=', $options['to']);
+        }
+
+        if (isset($options['from']) && isset($options['offset_from'])) {
+            $query->unionAll((clone $baseQuery)
+                    ->where('dp.date', '<=', $options['from'])
+                    ->limit($options['offset_from'])
+                    ->orderBy('date', 'DESC')
+            );
+        }
+
+        if (isset($options['to']) && isset($options['offset_to'])) {
+            $query->unionAll((clone $baseQuery)
+                    ->where('dp.date', '>=', $options['to'])
+                    ->limit($options['offset_to'])
+                    ->orderBy('date', 'ASC')
+            );
+        }
+
+        return $query
+            ->orderBy('date', $options['order'] ?? 'ASC')
+            ->get()
+            ->all();
+    }
+
     public function beacons(): BelongsToMany
     {
         return $this->belongsToMany(Device::class, 'device_current_beacons_pivot', 'device_id', 'beacon_id');
@@ -1524,6 +1595,15 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         }
 
         return $value;
+    }
+
+    public function scopeViewBox($query, $topLat, $topLng, $bottomLat, $bottomLng)
+    {
+        return $query->traccarJoin()
+            ->where('lastValidLatitude', '>', $topLat)
+            ->where('lastValidLongitude', '>', $topLng)
+            ->where('lastValidLatitude', '<', $bottomLat)
+            ->where('lastValidLongitude', '<', $bottomLng);
     }
 
     public function scopeChatable($query)
@@ -1693,8 +1773,13 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             'last_connect_time' => trans('admin.last_connection'),
             'stop_duration' => trans('front.stop_duration'),
 
+            'created_at' => trans('validation.attributes.created_at'),
             'expiration_date' => trans('validation.attributes.expiration_date'),
         ];
+
+        if (settings('plugins.sim_blocking.status')) {
+            $fields['msisdn'] = trans('validation.attributes.msisdn');
+        }
 
         if (settings('plugins.additional_installation_fields.status')) {
             $fields['sim_activation_date'] = trans('validation.attributes.sim_activation_date');

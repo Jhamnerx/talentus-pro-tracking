@@ -94,7 +94,13 @@ abstract class Sensor implements SensorInterface
 
     public static function isPositionValue() : bool
     {
-        return false;
+        static $config = null;
+
+        if (is_null($config)) {
+            $config = config('addon.sensor_position_all');
+        }
+
+        return (bool) $config;
     }
 
     public static function getTimeout()
@@ -193,6 +199,13 @@ abstract class Sensor implements SensorInterface
     public function getDataValue($data)
     {
         return $this->getParameterValue($data);
+    }
+
+    public function getPositionParameterValue($position)
+    {
+        $value = $this->getParameterValue($position->other);
+
+        return $value ?? $this->getPositionStoredValue($position);
     }
 
     public function getParameterValue($data)

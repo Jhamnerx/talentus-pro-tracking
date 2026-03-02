@@ -176,36 +176,28 @@ function MapTiles() {
         name: "Here Normal",
         maxZoom: 18,
         tile: function () {
-          var tilesLink = "";
-
-          if (app.settings.keys.here_api_key) {
-            tilesLink =
-              "https://{s}.{base}.maps.ls.hereapi.com/maptile/2.1/{type}/{mapID}/{scheme}/{z}/{x}/{y}/{size}/{format}?apiKey={apiKey}&lg={language}";
-          } else if (
-            app.settings.keys.here_map_id &&
-            app.settings.keys.here_map_code
-          ) {
-            tilesLink =
-              "https://{s}.{base}.maps.cit.api.here.com/maptile/2.1/{type}/{mapID}/{scheme}/{z}/{x}/{y}/{size}/{format}?app_id={app_id}&app_code={app_code}&lg={language}";
-          } else {
+          if (!app.settings.keys.here_api_key) {
             return false;
+          }
+
+          var tilesLink =
+            "https://maps.hereapi.com/v3/{resource}/{projection}/{z}/{x}/{y}/{format}?apiKey={apiKey}&style={style}&size={size}&lang={lang}";
+
+          if (app.settings.keys.here_political_view) {
+            tilesLink += "&pview=" + app.settings.keys.here_political_view;
           }
 
           var _tileLayer = L.tileLayer(tilesLink, {
             attribution:
-              'Map &copy; 2016 <a href="http://developer.here.com">HERE</a>',
-            subdomains: "1234",
-            base: "base",
-            type: "maptile",
-            scheme: "normal.day",
+              'Map &copy; 2025 <a href="http://developer.here.com">HERE</a>',
+            resource: "base",
+            projection: "mc",
             apiKey: app.settings.keys.here_api_key,
-            app_id: app.settings.keys.here_map_id,
-            app_code: app.settings.keys.here_map_code,
-            mapID: "newest",
-            maxZoom: 18,
-            language: app.lang.iso3,
-            format: "png8",
+            style: "explore.day",
             size: "256",
+            maxZoom: 18,
+            lang: app.lang.iso,
+            format: "png8",
           });
 
           _tileLayer.map_id = 10;
@@ -217,36 +209,28 @@ function MapTiles() {
         name: "Here Sattelite",
         maxZoom: 18,
         tile: function () {
-          var tilesLink = "";
-
-          if (app.settings.keys.here_api_key) {
-            tilesLink =
-              "https://{s}.{base}.maps.ls.hereapi.com/maptile/2.1/{type}/{mapID}/{scheme}/{z}/{x}/{y}/{size}/{format}?apiKey={apiKey}&lg={language}";
-          } else if (
-            app.settings.keys.here_map_id &&
-            app.settings.keys.here_map_code
-          ) {
-            tilesLink =
-              "https://{s}.{base}.maps.cit.api.here.com/maptile/2.1/{type}/{mapID}/{scheme}/{z}/{x}/{y}/{size}/{format}?app_id={app_id}&app_code={app_code}&lg={language}";
-          } else {
+          if (!app.settings.keys.here_api_key) {
             return false;
+          }
+
+          var tilesLink =
+            "https://maps.hereapi.com/v3/{resource}/{projection}/{z}/{x}/{y}/{format}?apiKey={apiKey}&style={style}&size={size}&lang={lang}";
+
+          if (app.settings.keys.here_political_view) {
+            tilesLink += "&pview=" + app.settings.keys.here_political_view;
           }
 
           var _tileLayer = L.tileLayer(tilesLink, {
             attribution:
-              'Map &copy; 2016 <a href="http://developer.here.com">HERE</a>',
-            subdomains: "1234",
-            base: "aerial",
-            type: "maptile",
-            scheme: "satellite.day",
+              'Map &copy; 2025 <a href="http://developer.here.com">HERE</a>',
+            resource: "base",
+            projection: "mc",
             apiKey: app.settings.keys.here_api_key,
-            app_id: app.settings.keys.here_map_id,
-            app_code: app.settings.keys.here_map_code,
-            mapID: "newest",
-            maxZoom: 18,
-            language: app.lang.iso3,
-            format: "png8",
+            style: "satellite.day",
             size: "256",
+            maxZoom: 18,
+            lang: app.lang.iso,
+            format: "png8",
           });
 
           _tileLayer.map_id = 11;
@@ -258,36 +242,28 @@ function MapTiles() {
         name: "Here Hybrid",
         maxZoom: 18,
         tile: function () {
-          var tilesLink = "";
-
-          if (app.settings.keys.here_api_key) {
-            tilesLink =
-              "https://{s}.{base}.maps.ls.hereapi.com/maptile/2.1/{type}/{mapID}/{scheme}/{z}/{x}/{y}/{size}/{format}?apiKey={apiKey}&lg={language}";
-          } else if (
-            app.settings.keys.here_map_id &&
-            app.settings.keys.here_map_code
-          ) {
-            tilesLink =
-              "https://{s}.{base}.maps.cit.api.here.com/maptile/2.1/{type}/{mapID}/{scheme}/{z}/{x}/{y}/{size}/{format}?app_id={app_id}&app_code={app_code}&lg={language}";
-          } else {
+          if (!app.settings.keys.here_api_key) {
             return false;
+          }
+
+          var tilesLink =
+            "https://maps.hereapi.com/v3/{resource}/{projection}/{z}/{x}/{y}/{format}?apiKey={apiKey}&style={style}&size={size}&lang={lang}";
+
+          if (app.settings.keys.here_political_view) {
+            tilesLink += "&pview=" + app.settings.keys.here_political_view;
           }
 
           var _tileLayer = L.tileLayer(tilesLink, {
             attribution:
-              'Map &copy; 2016 <a href="http://developer.here.com">HERE</a>',
-            subdomains: "1234",
-            base: "aerial",
-            type: "maptile",
-            scheme: "hybrid.day",
+              'Map &copy; 2025 <a href="http://developer.here.com">HERE</a>',
+            resource: "base",
+            projection: "mc",
             apiKey: app.settings.keys.here_api_key,
-            app_id: app.settings.keys.here_map_id,
-            app_code: app.settings.keys.here_map_code,
-            mapID: "newest",
-            maxZoom: 18,
-            language: app.lang.iso3,
-            format: "png8",
+            style: "explore.satellite.day",
             size: "256",
+            maxZoom: 18,
+            lang: app.lang.iso,
+            format: "png8",
           });
 
           _tileLayer.map_id = 12;
@@ -823,7 +799,7 @@ function MapTiles() {
         },
       },
       51: {
-        name: "Google Normal B",
+        name: "Google Map - Normal ≠",
         maxZoom: 21,
         tile: function () {
           var _tileLayer = new L.TileLayer(
@@ -835,7 +811,7 @@ function MapTiles() {
               maxZoom: 21,
               minZoom: 0,
               attribution:
-                '<a href="https://talentustechnology.com" target="_system">Talentus</a>',
+                '<a href="https://google.com" target="_system">Google Maps</a>',
             }
           );
 
@@ -845,7 +821,7 @@ function MapTiles() {
         },
       },
       53: {
-        name: "Google Hybrid B",
+        name: "Google Map - Hibrido ≠",
         maxZoom: 21,
         tile: function () {
           var _tileLayer = new L.TileLayer(
@@ -857,7 +833,7 @@ function MapTiles() {
               maxZoom: 21,
               minZoom: 0,
               attribution:
-                '<a href="https://talentustechnology.com" target="_system">Talentus</a>',
+                '<a href="https://google.com" target="_system">Google Maps</a>',
             }
           );
 
@@ -867,7 +843,7 @@ function MapTiles() {
         },
       },
       54: {
-        name: "Google Satellite B",
+        name: "Google Map - Satelital ≠",
         maxZoom: 21,
         tile: function () {
           var _tileLayer = new L.TileLayer(
@@ -879,7 +855,7 @@ function MapTiles() {
               maxZoom: 21,
               minZoom: 0,
               attribution:
-                '<a href="https://talentustechnology.com" target="_system">Talentus</a>',
+                '<a href="https://google.com" target="_system">Google Maps</a>',
             }
           );
 
@@ -889,7 +865,7 @@ function MapTiles() {
         },
       },
       55: {
-        name: "Google Terrain B",
+        name: "Google Map - Terreno ≠",
         maxZoom: 21,
         tile: function () {
           var _tileLayer = new L.TileLayer(
@@ -901,7 +877,7 @@ function MapTiles() {
               maxZoom: 21,
               minZoom: 0,
               attribution:
-                '<a href="https://talentustechnology.com" target="_system">Talentus</a>',
+                '<a href="https://google.com" target="_system">Google Maps</a>',
             }
           );
 
@@ -911,7 +887,29 @@ function MapTiles() {
         },
       },
       56: {
-        name: "Google Hybrid Traffic",
+        name: "Google Map - Trafico Hibrido ≠",
+        maxZoom: 21,
+        tile: function () {
+          var _tileLayer = new L.TileLayer(
+            "https://mt0.google.com/vt/lyrs=y,traffic&hl=" +
+              app.lang.locale +
+              "&x={x}&y={y}&z={z}&s=Ga&gl=" +
+              app.lang.locale,
+            {
+              maxZoom: 21,
+              minZoom: 0,
+              attribution:
+                '<a href="https://google.com" target="_system">Google Maps</a>',
+            }
+          );
+
+          _tileLayer.map_id = 55;
+
+          return _tileLayer;
+        },
+      },
+      57: {
+        name: "Google Map - Trafico ≠",
         maxZoom: 21,
         tile: function () {
           var _tileLayer = new L.TileLayer(
@@ -923,7 +921,7 @@ function MapTiles() {
               maxZoom: 21,
               minZoom: 0,
               attribution:
-                '<a href="https://talentustechnology.com" target="_system">Talentus</a>',
+                '<a href="https://google.com" target="_system">Google Maps</a>',
             }
           );
 
@@ -942,7 +940,7 @@ function MapTiles() {
               maxZoom: 18,
               minZoom: 2,
               attribution:
-                '<a href="https://talentustechnology.com" target="_system">Talentus</a>',
+                '<a href="https://google.com" target="_system">Google Maps</a>',
             }
           );
 
@@ -961,11 +959,30 @@ function MapTiles() {
               maxZoom: 18,
               minZoom: 2,
               attribution:
-                '<a href="https://talentustechnology.com" target="_system">Talentus</a>',
+                '<a href="https://google.com" target="_system">Google Maps</a>',
             }
           );
 
           _tileLayer.map_id = 71;
+
+          return _tileLayer;
+        },
+      },
+      72: {
+        name: "Carto Dark",
+        maxZoom: 18,
+        tile: function () {
+          var _tileLayer = new L.TileLayer(
+            "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
+            {
+              maxZoom: 18,
+              minZoom: 2,
+              attribution:
+                '<a href="https://google.com" target="_system">Google Maps</a>',
+            }
+          );
+
+          _tileLayer.map_id = 70;
 
           return _tileLayer;
         },
@@ -1099,8 +1116,8 @@ function MapTiles() {
 
     $(layersControl.getContainer()).remove();
 
-    $(layersControl.onAdd(_this.map)).insertAfter(
-      $("#map-controls > div").first()
+    $(layersControl.onAdd(_this.map)).insertBefore(
+      $("#map-controls-tile > div").first()
     );
   };
 

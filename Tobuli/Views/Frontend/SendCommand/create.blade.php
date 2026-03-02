@@ -8,7 +8,7 @@
     <ul class="nav nav-tabs nav-default" role="tablist">
         <li class="active"><a href="#command-form-gprs" role="tab" data-toggle="tab">{!!trans('front.gprs')!!}</a></li>
         <li><a href="#command-form-sms" role="tab" data-toggle="tab">{!!trans('front.sms')!!}</a></li>
-        <li><a href="#schedule" role="tab" data-toggle="tab">{!!trans('front.schedule')!!}</a></li>
+        <li><a href="#schedule" role="tab" data-toggle="tab" data-url="{{ route('command_schedules.index') }}">{!!trans('front.schedule')!!}</a></li>
         <li><a href="#sent-commands" role="tab" data-toggle="tab" data-url="{{ route('send_commands.logs.index') }}">{{ trans('admin.logs') }}</a></li>
     </ul>
 
@@ -35,11 +35,7 @@
             {!!Form::close()!!}
         </div>
 
-        <div id="schedule" class="tab-pane">
-            <div data-table>
-                @include('Frontend.SendCommand.schedule.table')
-            </div>
-        </div>
+        <div id="schedule" class="tab-pane"></div>
 
         <div id="sent-commands" class="tab-pane"></div>
     </div>
@@ -47,10 +43,12 @@
     <script>
         $(document).ready(function () {
             $('*[data-connection] select[name="type"]').trigger('change');
-            $('*[data-connection] select[name="device_id[]"], *[data-connection] select[name="devices[]"]').trigger('change');
 
             $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-                $("button.command-save").attr('disabled', $(e.target).attr("href") == '#schedule');
+                let $button = $('.modal .modal-footer .buttons .btn-action.js-confirm-link');
+                let forms = ['#command-form-gprs', '#command-form-sms'];
+
+                $button.attr('disabled',  ! forms.includes($(e.target).attr("href")));
             });
         });
 
@@ -70,15 +68,20 @@
                 sendCommands[connection].buildAttributes(type, $container.find('.attributes'));
             });
 
-            $(document).on('change', '*[data-connection] select[name="device_id[]"], *[data-connection] select[name="devices[]"]', function () {
+            $(document).on('change', '*[data-connection] select[name="devices[]"]', function () {
                 var $container = $(this).closest('[data-connection]'),
+                    $type = $container.find('select[name="type"]'),
                     command_type_element = $container.find('.send-command-type'),
-                    connection = $container.attr('data-connection');
+                    connection = $container.attr('data-connection'),
+                    selected_devices = $container.find('input[name="selected_' + $(this).attr('name') + '"]')
+                        .map(function(){return $(this).val();})
+                        .get();
 
                 sendCommands[connection].getDeviceCommands(
                     {
-                        device_id: $(this).val(),
-                        connection: $container.attr('data-connection')
+                        selected_devices: selected_devices,
+                        devices: selected_devices,
+                        connection: connection
                     },
                     function ()
                     {
@@ -90,7 +93,8 @@
                         sendCommands[connection].buildTypesSelect(command_type_element.find('select'));
                         $(this).removeAttr('disabled');
                         loader.remove(command_type_element);
-                    }
+                    },
+                    $type.attr('data-commands-url')
                 );
             });
 
@@ -112,14 +116,6 @@
                     $('#send_command .alert-success, #command_schedule .alert-success').css('display', 'block').html(res.message);
                 }
             });
-
-            tables.set_config('schedule', {
-                url:'{{ route('command_schedules.index') }}',
-            });
-
-            function command_schedule_modal_callback() {
-                tables.get('schedule');
-            }
 
             function sendCommand() {
                 var form = $('#send_command .tab-pane.active form');

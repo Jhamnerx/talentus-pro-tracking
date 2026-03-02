@@ -112,9 +112,6 @@ class FuelLevelChangeCheck extends AlertCheck
         if ( ! $position)
             return false;
 
-        if ( ! $position->isValid())
-            return null;
-
         if ( ! $this->isValidParkedDuration($position))
             return false;
 

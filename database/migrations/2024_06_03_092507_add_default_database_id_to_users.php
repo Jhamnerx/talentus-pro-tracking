@@ -13,6 +13,10 @@ class AddDefaultDatabaseIdToUsers extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('user_database_pivot')) {
+            return;
+        }
+
         Schema::create('user_database_pivot', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('user_id')->index();

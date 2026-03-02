@@ -5,7 +5,7 @@
     </div>
 </div>
 
-<div class="form-group" data-disablable="#geocoder-{{ $geo_index }};hide-disable;google geocodio locationiq longdo here pickpoint mapmyindia positionstack">
+<div class="form-group" data-disablable="#geocoder-{{ $geo_index }};hide-disable;google geocodio locationiq longdo here pickpoint mapmyindia positionstack opencage">
     {!! Form::label("geocoders[$geo_index][api_key]", trans('validation.attributes.api_key'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
     <div class="col-xs-12 col-sm-8">
         {!! Form::text("geocoders[$geo_index][api_key]", settings("main_settings.geocoders.$geo_index.api_key"), ['class' => 'form-control']) !!}

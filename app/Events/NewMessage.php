@@ -14,32 +14,34 @@ class NewMessage extends Event implements ShouldBroadcast
 
     public $message, $user;
 
-    public function __construct($message) {
+    public function __construct($message)
+    {
         $this->message = $message;
     }
 
-    public function broadcastOn() {
+    public function broadcastOn()
+    {
         $channels = [];
         $channels[] = $this->message->chat->room_hash;
 
-        foreach ($this->message->chat->participants as $participant)
-        {
-            if ( ! $participant->chattable)
+        foreach ($this->message->chat->participants as $participant) {
+            if (! $participant->chattable)
                 continue;
 
             if ($participant->isUser() && $participant->chattable->perm('chat', 'view')) {
-                $channels[] = md5('user_'. $participant->chattable->id);
+                $channels[] = $participant->chattable->getSocketChannel();;
             }
 
             if ($participant->isDevice()) {
-                $channels[] = md5('device_'. $participant->chattable->id);
+                $channels[] = $participant->chattable->getSocketChannel();
             }
         }
 
         return $channels;
     }
 
-    public function broadcastAs() {
+    public function broadcastAs()
+    {
         return 'message';
     }
 

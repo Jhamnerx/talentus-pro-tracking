@@ -31,10 +31,6 @@ class DeviceConfigService
             'apn_password' => 'string|max:255',
             'ip' => 'required|ip',
         ];
-
-        $this->defaultData = [
-            'ip' => Server::ip(),
-        ];
     }
 
     public function setSmsManager($smsManager)
@@ -70,9 +66,16 @@ class DeviceConfigService
         return true;
     }
 
+    private function getDefautlData()
+    {
+        return [
+            'ip' => Server::ip(),
+        ];
+    }
+
     private function mergeDefaultData($data)
     {
-        return array_merge($this->defaultData, $data);
+        return array_merge($this->getDefautlData(), $data);
     }
 
     private function prepareCommands($commands, $data)

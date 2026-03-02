@@ -9,8 +9,12 @@ use CustomFacades\GeoLocation;
 use CustomFacades\ModalHelpers\SendCommandModalHelper;
 use CustomFacades\Repositories\DeviceRepo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\File\DeviceCameraMedia;
+use Tobuli\Exceptions\ValidationException;
 use Tobuli\History\DeviceHistory;
+use Tobuli\Services\Commands\CommandService;
+use Tobuli\Services\Commands\SendCommandService;
 
 class DeviceWidgetsController extends Controller
 {
@@ -182,7 +186,7 @@ class DeviceWidgetsController extends Controller
         $this->checkException('devices', 'show', $device);
         $this->checkException('send_command', 'view');
 
-        $commands = SendCommandModalHelper::getCommands($device);
+        $commands = (new CommandService($this->user))->getGprsCommands($device);
 
         $commands = $commands->filter(function($command) {
             if (isset($command['attributes']) && strpos($command['type'], 'template_') !== 0) {
@@ -196,6 +200,44 @@ class DeviceWidgetsController extends Controller
             'device_id' => $device->id,
             'commands' => $commands,
         ]);
+    }
+
+    public function gprsCommandSend(Request $request, $device_id)
+    {
+        $this->checkException('send_command', 'view');
+
+        $data = $request->all();
+
+        $validator = Validator::make($data, [
+            'type'      => 'required'
+        ]);
+
+        if ($validator->fails())
+            throw new ValidationException($validator->messages());
+
+        $devices = $this->user->devices()->findMany([$device_id]);
+
+        if ($devices->isEmpty()) {
+            throw new ValidationException(['device_id' => trans('global.not_found')]);
+        }
+
+        (new CommandService($this->user))->validateGPRS($devices, $data);
+
+        $responses = (new SendCommandService($this->user))->gprs($devices, $data, $this->user);
+
+        $errors = $responses
+            ->filter(function ($response) {
+                return $response['status'] == 0;
+            })
+            ->map(function ($response) {
+                return "{$response['device']}: {$response['error']}";
+            });
+
+        if ($errors->isNotEmpty()) {
+            return ['status' => 0, 'error' => $errors->first()];
+        }
+
+        return ['status' => 1, 'message' => trans('front.command_sent')];
     }
 
     private function sensorsData($device, $types, $from, $to) {

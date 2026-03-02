@@ -6,7 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 use App\Console\ProcessManager;
-use Illuminate\Support\Facades\Log;
+
 use Tobuli\Entities\User;
 
 class AutoCleanServerCommand extends Command
@@ -39,7 +39,6 @@ class AutoCleanServerCommand extends Command
      */
     public function handle()
     {
-        //$this->settingConfigs();
 
         $this->processManager = new ProcessManager($this->name, $timeout = 3600, $limit = 1);
 

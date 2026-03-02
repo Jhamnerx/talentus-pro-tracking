@@ -41,7 +41,7 @@ class GeofencesController extends Controller
 
         $items = Geofence::userOwned($this->user)
             ->search($this->data['search_phrase'] ?? null)
-            ->select(['id', 'active', 'name', 'type', 'polygon_color', 'speed_limit'])
+            ->select(['id', 'active', 'name', 'type', 'polygon_color'])
             ->toPaginator(15, $sortCol, $sortDir);
 
         return view('front::Geofences.' . $view)->with(compact('items'));

@@ -4,7 +4,6 @@ use Carbon\Carbon;
 use CustomFacades\Appearance;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceSensor;
@@ -100,6 +99,7 @@ function isMainAdmin()
 {
     return Auth::User() && (Auth::User()->isAdmin());
 }
+
 
 function kilometersToMiles($km)
 {
@@ -344,51 +344,6 @@ function prepareServiceData($input, $values = NULL)
     }
 
     return $input;
-}
-
-function getDatabaseSize($db_name)
-{
-    if (\CustomFacades\Server::isDatabaseLocal()) {
-        $results = DB::select(DB::raw('SHOW VARIABLES WHERE Variable_name = "datadir" OR Variable_name = "innodb_file_per_table"'));
-
-        if (empty($results))
-            return 0;
-
-        foreach ($results as $variable) {
-            if ($variable->Variable_name == 'datadir')
-                $dir = $variable->Value;
-            if ($variable->Variable_name == 'innodb_file_per_table')
-                $innodb_file_per_table = $variable->Value == 'ON' ? true : false;
-        }
-
-        if (empty($innodb_file_per_table)) {
-            if (empty($dir))
-                return 0;
-
-            return exec("du -msh -B1 $dir | cut -f1");
-        }
-    }
-
-    //calc via DB query (very slow)
-
-    if (is_array($db_name)) {
-        $dbs = $db_name;
-    } else {
-        $dbs = [$db_name];
-    }
-
-    $where = '';
-    foreach ($dbs as $db) {
-        $where .= '"' . $db . '",';
-    }
-    $where = trim($where, ',');
-
-    $res = DB::select(DB::raw('SELECT table_schema, SUM( data_length + index_length) AS db_size FROM information_schema.TABLES WHERE table_schema IN (' . $where . ');'));
-
-    if (empty($res))
-        return 0;
-
-    return current($res)->db_size;
 }
 
 function getMaps()
@@ -851,7 +806,7 @@ function parseInvalidXMLToArray($text)
  * @param array $array2
  * @return array
  */
-function array_merge_recursive_distinct(array &$array1, array &$array2)
+function array_merge_recursive_distinct(array $array1, array $array2)
 {
     $merged = $array1;
 
@@ -1519,6 +1474,7 @@ function listsTranslations()
         '900' => '> 15 ' . trans('front.minute_short'),
         '1200' => '> 20 ' . trans('front.minute_short'),
         '1800' => '> 30 ' . trans('front.minute_short'),
+        '2700' => '> 45 ' . trans('front.minute_short'),
         '3600' => '> 1 ' . trans('front.hour_short'),
         '7200' => '> 2 ' . trans('front.hour_short'),
         '18000' => '> 5 ' . trans('front.hour_short'),
@@ -1606,7 +1562,6 @@ function getSelectTimeRange()
         $times[$date->format('H:i')] = $date->format($format);
         $date->addMinutes(15);
     }
-    $times['23:59'] = Carbon::createFromTime(23, 59)->format($format);
 
     return $times;
 }
@@ -1648,7 +1603,7 @@ function getJsConfig()
         'lang' => Language::get(),
         'object_listview' => settings('plugins.object_listview.status'),
         'channels' => [
-            'userChannel' => md5('user_' . $user->id),
+            'userChannel' => $user->getSocketChannel(),
         ],
         'settings' => [
             'units' => [
@@ -1681,6 +1636,7 @@ function getJsConfig()
             'map_id' => $user->map_id,
             'availableMaps' => $user->available_maps,
             'toggleSidebar' => false,
+            'mapShowDeviceSpeed' => settings('main_settings.map_show_device_speed'),
 
             'showTotalDistance' => settings('plugins.device_widget_total_distance.status'),
             'animateDeviceMove' =>  settings('plugins.device_move_animation.status'),
@@ -1700,9 +1656,8 @@ function getJsConfig()
             'showHistoryEvent' => Arr::get($user->map_controls, 'history_control_events', $mapControls['showHistoryEvent'] ?? null),
             'keys' => [
                 'google_maps_key' => settings('main_settings.google_maps_key'),
-                'here_map_id' => settings('main_settings.here_map_id'),
-                'here_map_code' => settings('main_settings.here_map_code'),
                 'here_api_key' => settings('main_settings.here_api_key'),
+                'here_political_view' => settings('main_settings.here_political_view'),
                 'mapbox_access_token' => settings('main_settings.mapbox_access_token'),
                 'bing_maps_key' => settings('main_settings.bing_maps_key'),
                 'maptiler_key' => settings('main_settings.maptiler_key'),
@@ -1727,7 +1682,6 @@ function getJsConfig()
 
             'history' => route('history.index'),
             'historyExport' => route('history.export'),
-            'odometroPositions' => route('history.odometro.positions'),
             'historyPosition' => route('history.position'),
             'historyPositions' => route('history.positions'),
             'historyPositionsDelete' => route('history.delete_positions'),
@@ -1747,11 +1701,13 @@ function getJsConfig()
             'deviceImages' => route('device_media.get_images') . '/',
             'deviceImage' => route('device_media.get_image') . '/',
             'deleteImage' => route('device_media.delete_image') . '/',
+            'deviceEdit' => route('devices.edit') . '/',
+            'deviceSendCommand' => route('send_command.create'),
             'deviceSendGprsCommand' => route('send_command.gprs'),
             'deviceWidgetLocation' => route('device.widgets.location') . '/',
             'deviceWidgetCameras' => route('device.widgets.cameras') . '/',
             'deviceWidgetImage' => route('device.widgets.image') . '/',
-            'deviceWidgetUploadImage' => route('device.image_upload') . '/',
+            'deviceWidgetUploadImage' => route('device.image.store') . '/',
             'deviceWidgetFuelGraph' => route('device.widgets.fuel_graph') . '/',
             'deviceWidgetGprsCommand' => route('device.widgets.gprs_command') . '/',
             'deviceWidgetRecentEvents' => route('device.widgets.recent_events') . '/',

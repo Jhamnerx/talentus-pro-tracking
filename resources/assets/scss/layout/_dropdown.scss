@@ -65,12 +65,14 @@
 
       span.text {
         &::before {
-          color: #fff;
-          background-color: $brand-primary;
+          color: $checkbox-active-color;
+          background-color: $checkbox-active-background-color;
         }
         &::after{
-          background-color: $brand-primary;
-          border-color: $brand-primary;
+          background-color: $checkbox-active-background-color;
+          @if $checkbox-active-border-color-same {
+            border-color: $checkbox-active-background-color;
+          }
         }
       }
     }

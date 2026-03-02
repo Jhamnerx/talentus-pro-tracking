@@ -16,6 +16,11 @@ abstract class Action
     static public function required(){ return [];}
     static public function after(){ return [];}
 
+    public static function defaultAfter(): array
+    {
+        return [];
+    }
+
     public function __construct(DeviceHistory & $history)
     {
         $this->history = $history;
@@ -81,15 +86,17 @@ abstract class Action
         if ( ! empty($position->sensors[$sensor->id]))
             return $position->sensors[$sensor->id]['v'];
 
-        $value = null;
-        
-        if ($sensor->isPersistent()) {
-            $previous = $this->getPrevPosition();
-            if ($previous && !empty($previous->sensors[$sensor->id]))
-                $value = $previous->sensors[$sensor->id]['v'];
-        }
+        $value = $sensor->getValuePosition($position) ?? null;
 
-        $value = $sensor->getValuePosition($position) ?? $value;
+        if (is_null($value)) {
+            if ($sensor->isPersistent()) {
+                $previous = $this->getPrevPosition();
+                if ($previous && !empty($previous->sensors[$sensor->id]))
+                    $value = $previous->sensors[$sensor->id]['v'];
+            } else {
+                $value = false;
+            }
+        }
 
         if (is_null($value))
             $value = $default;

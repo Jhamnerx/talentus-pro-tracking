@@ -2,18 +2,20 @@
 
 namespace Tobuli\Entities;
 
+
 use Formatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
+use Tobuli\Traits\Filterable;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\Searchable;
 
 class Event extends AbstractEntity implements DisplayInterface
 {
-    use Searchable;
+    use Filterable, Searchable;
 
     const TYPE_FUEL_FILL  = 'fuel_fill';
     const TYPE_FUEL_THEFT = 'fuel_theft';
@@ -30,6 +32,7 @@ class Event extends AbstractEntity implements DisplayInterface
     const TYPE_DRIVER_UNAUTHORIZED = 'driver_unauthorized';
     const TYPE_DRIVER_AUTHORIZED = 'driver_authorized';
     const TYPE_MOVE_START = 'move_start';
+    const TYPE_MOVE_START_FILTERED = 'move_start_filtered';
     const TYPE_OVERSPEED = 'overspeed';
     const TYPE_TIME_DURATION = 'time_duration';
     const TYPE_OFFLINE_DURATION = 'offline_duration';
@@ -56,6 +59,8 @@ class Event extends AbstractEntity implements DisplayInterface
 
     public static array $recordEvents = ['deleted'];
     public static array $displayField = ['device_id'];
+
+    private static Collection $typeTitles;
 
     protected $table = 'events';
 
@@ -90,9 +95,17 @@ class Event extends AbstractEntity implements DisplayInterface
         'detail'
     ];
 
+    protected $filterables = [
+        'user_id',
+        'device_id',
+        'alert_id',
+        'group_id',
+        'type'
+    ];
+
     protected $searchable = [
         'message',
-        'device.name',
+        'device.name'
     ];
 
     public function getDisplayName(): string
@@ -146,7 +159,6 @@ class Event extends AbstractEntity implements DisplayInterface
             ->select("alert_user.alert_id")
             ->from('alert_user')
             ->where('alert_user.user_id', $user->id)
-            ->get()
             ->pluck('alert_id');
 
         return $query->where(function (Builder $query) use ($user, $alerts) {
@@ -189,6 +201,17 @@ class Event extends AbstractEntity implements DisplayInterface
         $query->where('events.created_at', '>', date('Y-m-d H:i:s', $time));
         $query->whereNull('events.silent');
         $query->with('geofence', 'device', 'alert');
+    }
+
+    public function scopeFilterGroupId($query, $group_id)
+    {
+        $query->join("user_device_pivot", 'events.device_id', '=', 'user_device_pivot.device_id');
+
+        if (is_array($group_id)) {
+            $query->whereIn('user_device_pivot.group_id', $group_id);
+        } else {
+            $query->where('user_device_pivot.group_id', $group_id ?: 0);
+        }
     }
 
     public function setAdditional($key, $value)
@@ -396,6 +419,9 @@ class Event extends AbstractEntity implements DisplayInterface
             case Event::TYPE_MOVE_START:
                 $name = trans('front.start_of_movement');
                 break;
+            case Event::TYPE_MOVE_START_FILTERED:
+                $name = trans('front.start_of_movement') . ' (' . trans('validation.attributes.filter') . ')';
+                break;
             case Event::TYPE_EXPIRED_DEVICE:
                 $name = trans('front.expired_device');
                 break;
@@ -441,9 +467,13 @@ class Event extends AbstractEntity implements DisplayInterface
             ->first();
     }
 
-    public static function getTypeTitles()
+    public static function getTypeTitles(): Collection
     {
-        return collect([
+        if (isset(self::$typeTitles)) {
+            return self::$typeTitles;
+        }
+
+        return self::$typeTitles = collect([
             [
                 'type' => Event::TYPE_ZONE_IN,
                 'title' => trans('front.' . Event::TYPE_ZONE_IN),
@@ -503,6 +533,10 @@ class Event extends AbstractEntity implements DisplayInterface
             [
                 'type' => Event::TYPE_MOVE_START,
                 'title' => trans('front.start_of_movement'),
+            ],
+            [
+                'type' => Event::TYPE_MOVE_START_FILTERED,
+                'title' => trans('front.start_of_movement') . ' (' . trans('validation.attributes.filter') . ')',
             ],
             [
                 'type' => Event::TYPE_FUEL_FILL,
@@ -567,5 +601,30 @@ class Event extends AbstractEntity implements DisplayInterface
     public function toPosition(): TraccarPosition
     {
         return new TraccarPosition($this->toArray());
+    }
+
+    public function getIconAsset()
+    {
+        return self::getTypeIconAsset($this->type);
+    }
+
+    public static function getTypeIconAsset($type)
+    {
+        switch ($type) {
+            case Event::TYPE_TIME_DURATION:
+            case Event::TYPE_MOVE_DURATION:
+            case Event::TYPE_STOP_DURATION:
+            case Event::TYPE_IDLE_DURATION:
+            case Event::TYPE_POI_IDLE_DURATION:
+            case Event::TYPE_POI_STOP_DURATION:
+                return asset("assets/icons/events_clock_l.svg");
+
+            case self::TYPE_DEVICE_SUBSCRIPTION_EXPIRED:
+            case self::TYPE_EXPIRED_USER:
+                return asset("assets/icons/events_event.svg");
+
+            default:
+                return asset("assets/icons/events_{$type}_l.svg");
+        }
     }
 }

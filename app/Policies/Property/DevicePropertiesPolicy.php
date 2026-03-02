@@ -20,6 +20,13 @@ class DevicePropertiesPolicy extends PropertyPolicy
         'sim_expiration_date',
         'installation_date',
         'msisdn',
+        'device_model',
+        'plate_number',
+        'registration_number',
+        'object_owner',
+        'vin',
+        'additional_notes',
+        'comment',
         'custom_fields',
         'device_type_id',
         'authentication',
@@ -39,6 +46,13 @@ class DevicePropertiesPolicy extends PropertyPolicy
         'sim_expiration_date',
         'installation_date',
         'msisdn',
+        'device_model',
+        'plate_number',
+        'registration_number',
+        'object_owner',
+        'vin',
+        'additional_notes',
+        'comment',
         'custom_fields',
         'device_type_id',
         'authentication',
@@ -49,7 +63,7 @@ class DevicePropertiesPolicy extends PropertyPolicy
 
     protected function expirationDateEditPolicy(User $user, Model $model)
     {
-        if ( ! ($user->isManager() || $user->isAdmin()))
+        if (! ($user->isManager() || $user->isAdmin()))
             return false;
 
         return true;
@@ -66,7 +80,7 @@ class DevicePropertiesPolicy extends PropertyPolicy
 
     protected function activeViewPolicy(User $user, Model $model)
     {
-        if ( ! ($user->isManager() || $user->isAdmin()))
+        if (! ($user->isManager() || $user->isAdmin()))
             return false;
 
         return true;
@@ -74,7 +88,7 @@ class DevicePropertiesPolicy extends PropertyPolicy
 
     protected function activeEditPolicy(User $user, Model $model)
     {
-        if ( ! ($user->isManager() || $user->isAdmin()))
+        if (! ($user->isManager() || $user->isAdmin()))
             return false;
 
         return true;

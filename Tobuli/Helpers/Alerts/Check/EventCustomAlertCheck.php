@@ -3,6 +3,7 @@
 namespace Tobuli\Helpers\Alerts\Check;
 
 use Tobuli\Entities\Event;
+use Tobuli\Helpers\SetFlag;
 use Tobuli\Services\ConditionService;
 
 class EventCustomAlertCheck extends AlertCheck
@@ -52,6 +53,8 @@ class EventCustomAlertCheck extends AlertCheck
             $this->silent($event);
 
             $events[] = $event;
+
+            $this->setFiredAt($event->time);
         }
 
         return $events;
@@ -81,6 +84,8 @@ class EventCustomAlertCheck extends AlertCheck
 
         foreach ($customEvent->conditions as $condition)
         {
+            $tag_value = $condition['tag_value'];
+
             if (!array_key_exists($condition['tag'], $parameters)) {
                 $value = null;
             } else {
@@ -89,14 +94,13 @@ class EventCustomAlertCheck extends AlertCheck
                 if ($condition['tag'] == 'rfid' && $position->protocol == 'meitrack')
                     $value = hexdec($value);
 
-                preg_match('/\%SETFLAG\[([0-9]+)\,([0-9]+)\,([\s\S]+)\]\%/', $condition['tag_value'], $match);
-                if (isset($match['1']) && isset($match['2']) && isset($match['3'])) {
-                    $condition['tag_value'] = $match['3'];
-                    $value = substr($value, $match['1'], $match['2']);
+                if ($setflag = SetFlag::singleCropValue($tag_value)) {
+                    $tag_value = $setflag->getValue();
+                    $value = $setflag->crop($value);
                 }
             }
 
-            if ( ! ConditionService::check($condition['type'], $value, $condition['tag_value'])) {
+            if ( ! ConditionService::check($condition['type'], $value, $tag_value)) {
                 return false;
             }
         }
@@ -126,6 +130,12 @@ class EventCustomAlertCheck extends AlertCheck
     protected function getFiredAt()
     {
         return $this->alert->pivot->fired_at ?? null;
+    }
+
+    protected function setFiredAt($time)
+    {
+        if ($time > $this->alert->pivot->fired_at)
+            $this->alert->pivot->fired_at = $time;
     }
 
     protected function setStartedAt($time)

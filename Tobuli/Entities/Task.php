@@ -6,17 +6,20 @@ use App\Events\TaskCreate;
 use App\Events\TaskStatusChange;
 use DB;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\Customizable;
 use Tobuli\Traits\DisplayTrait;
+use Tobuli\Traits\Filterable;
 
 class Task extends AbstractEntity implements DisplayInterface
 {
     use ChangeLogs;
     use Customizable;
     use DisplayTrait;
+    use Filterable;
 
     public static string $displayField = 'title';
 
@@ -102,6 +105,14 @@ class Task extends AbstractEntity implements DisplayInterface
     public function lastStatus(): HasOne
     {
         return $this->hasOne(TaskStatus::class, 'task_id')->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * @return BelongsToMany
+     */
+    public function locations(): BelongsToMany
+    {
+        return $this->belongsToMany(TaskSetLocation::class, 'task_set_location_tasks_pivot');
     }
 
     public function scopeAccessibleUser($query, $user_id)

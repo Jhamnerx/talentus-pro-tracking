@@ -20,10 +20,26 @@
     }
   }
 }
-#map-controls {
-  position: absolute;
-  top: 10%;
-  right: 0;
+
+.map-controls {
+  &.top-right {
+    position: absolute;
+    top: 10%;
+    right: 0;
+  }
+
+  &.top-left {
+    position: absolute;
+    top: 10%;
+    left: 0;
+  }
+
+  &.bottom-right {
+    position: absolute;
+    bottom: 20px;
+    right: 0;
+  }
+
   text-align: right;
   z-index: $leaflet-control-z-index;
 
@@ -32,7 +48,7 @@
   }
   .btn {
     + .btn {
-      border-top: 1px solid $color-border-100;
+      border-top: 1px solid $map-controls-btn-border-color;
     }
 
     padding: 0;

@@ -8,7 +8,7 @@
                        onClick="app.devices.get({{ $device->id }}).uploadImage('#upload_file')"
                        type="button"></a>
 
-                    <a href="{{ route('device.image_delete', $device->id) }}"
+                    <a href="{{ route('device.image.destroy', $device->id) }}"
                        class="btn icon trash js-confirm-link"
                        data-confirm="{!! trans('front.do_delete') !!}"
                        data-method="POST"

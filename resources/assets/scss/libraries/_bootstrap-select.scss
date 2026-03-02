@@ -102,6 +102,12 @@ select.form-control {
   }
 }
 
+.input-group > .input-group-btn.bootstrap-select.btn-group {
+  > .btn {
+    margin-left: 0;
+  }
+}
+
 // The selectpicker components
 .bootstrap-select.btn-group {
   &:not(.input-group-btn),
@@ -432,7 +438,8 @@ select.form-control {
     box-shadow: none;
   }
 
-  .dropdown-menu{
+  .dropdown-menu {
+    max-width: 100%;
     z-index: 1;
   }
 

@@ -258,6 +258,7 @@ var tables = {
                 _modal,
                 _method;
             var _ajax = true;
+            var _content = false;
 
             if (typeof tables.config[table][action] === 'string') {
                 _url = tables.config[table][action];
@@ -270,6 +271,10 @@ var tables = {
                 if (tables.config[table][action]['ajax'] !== undefined) {
                     _ajax = tables.config[table][action]['ajax'];
                 }
+
+                if (tables.config[table][action]['content'] !== undefined) {
+                    _content = tables.config[table][action]['content'];
+                }
             }
 
             var data = tables.getFilters(table);
@@ -277,7 +282,7 @@ var tables = {
                 if (_method === 'DELETE')
                     data._method = 'DELETE';
 
-            if (_method === 'GET') {
+            if (_method === 'GET' || _content) {
                 return $modal.getModalContent({
                     url: _url,
                     id: data.id

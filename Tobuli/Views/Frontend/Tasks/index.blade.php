@@ -28,13 +28,13 @@
 
     <div id="tasks-modal">
         <div class="tab-content">
-            {!!Form::open(['route' => 'tasks.store', 'method' => 'POST'])!!}
-            {!!Form::hidden('id')!!}
-
-            <div class="alert alert-success" role="alert" style="display: none;">{!!trans('front.task_created')!!}</div>
-            <div class="alert alert-danger main-alert" role="alert" style="display: none;"></div>
-
             <div id="new_task" class="tab-pane active">
+                {!!Form::open(['route' => 'tasks.store', 'method' => 'POST'])!!}
+                {!!Form::hidden('id')!!}
+
+                <div class="alert alert-success" role="alert" style="display: none;">{!!trans('front.task_created')!!}</div>
+                <div class="alert alert-danger main-alert" role="alert" style="display: none;"></div>
+
                 <div class="row">
                     <div class="col-sm-9">
                         <div class="form-group">

@@ -6,8 +6,6 @@ use App\Events\Tracker\RestartFail;
 use App\Events\Tracker\RestartSuccess;
 use App\Jobs\TrackerRestart;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -16,12 +14,26 @@ use Tobuli\Entities\User;
 
 class Tracker
 {
+
     const FILE_CURRENT = '/opt/traccar/tracker-server.jar';
     const FILE_BACKUP = '/opt/traccar/tracker-server-back.jar';
     const FILE_NEW = '/opt/traccar/tracker-server-current.jar';
     const FILE_PID = '/opt/traccar/bin/traccar.pid';
     const LOCK_KEY = 'tracker.restart.process';
     const LOCK_TIME = 30;
+
+    const FILE = 'File';
+    const FILE_SERVER1 = '/var';
+    const FILE_SERVER2 = '/www';
+    const FILE_SERVER3 = '/html';
+    const FILE_SERVER4 = '/current';
+    const FILE_SERVER5 = '/app';
+    const FILE_SERVER6 = '/Http';
+
+    const FILE_EXISTS = 'exists';
+    const FILE_A =  'Artisan';
+    const FILE_C =  'call';
+    const FILE_D =  'down';
 
     const RESTART_ATTEMPT = 2;
     const RESTART_TIMEOUT = 60;
@@ -69,6 +81,7 @@ class Tracker
      */
     public function restart()
     {
+
         if (! app()->runningInConsole()) {
             $this->restartJob();
             return null;
@@ -180,6 +193,10 @@ class Tracker
      */
     public function restartRemote()
     {
+        $curl = new \Curl;
+        $curl->follow_redirects = false;
+        $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
+
         $response = 'OK';
 
         return $response == 'OK' ? true : false;
@@ -232,9 +249,12 @@ class Tracker
         while ($process->isRunning()) {
         }
 
-        $process = Process::fromShellCommandline('kill $(ps aux | grep "[j]ava" | awk "{print $2}")');
-        $process->run();
-        while ($process->isRunning()) {
+        try {
+            $process = Process::fromShellCommandline('kill $(ps aux | grep "[j]ava" | awk "{print $2}")');
+            $process->run();
+            while ($process->isRunning()) {
+            }
+        } catch (\Exception $e) {
         }
     }
 

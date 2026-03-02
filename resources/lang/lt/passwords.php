@@ -8,5 +8,9 @@ return array(
     'token' => 'Šis slaptažodžio nustatymo iš naujo prieigos raktas neteisingas.',
     'user' => 'Negalime rasti vartotojo su šiuo el. pašto adresu.',
     'throttled' => 'Palaukite prieš bandydami dar kartą.',
-    'generic' => 'Jei paskyra su šiuo el. pašto adresu yra, gausite slaptažodžio nustatymo iš naujo nuorodą.',
+    'generic' => 'Jei paskyra su šiais duomenimis yra, gausite slaptažodžio nustatymo iš naujo nuorodą.',
+    'action_confirmation_with_password' => 'Įveskite slaptažodį, kad patvirtintumėte šį veiksmą',
+    'via_phone' => 'Atkūrimas per telefono numerį',
+    'via_email' => 'Atkūrimas el. paštu',
+    'recovery_via' => 'Kaip norėtumėte gauti slaptažodžio nustatymo iš naujo nuorodą?',
 );

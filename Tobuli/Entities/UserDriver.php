@@ -48,18 +48,19 @@ class UserDriver extends AbstractEntity {
         $this->attributes['device_id'] = empty($value) ? null : $value;
     }
 
-    public function changeDevice($device, $time = null, $withoutAlerts = false)
+    public function changeDevice($device, $rfid = null, $time = null, $withoutAlerts = false)
     {
         if (is_null($time))
             $time = date('Y-m-d H:i:s');
 
         if ($currentDevice = $this->device) {
             $currentDevice->current_driver_id = null;
+            $currentDevice->current_driver_rfid = null;
             $currentDevice->save();
         }
 
         if ($device) {
-            $device->changeDriver($this, $time, $withoutAlerts);
+            $device->changeDriver($this, $rfid, $time, $withoutAlerts);
         }
 
         $this->device_id = $device->id ?? null;

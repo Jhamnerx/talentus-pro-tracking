@@ -2,12 +2,13 @@
 
 namespace Tobuli\Helpers\Templates\Builders;
 
-use Appearance;
 use Formatter;
+use Appearance;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-use Tobuli\Entities\EmailTemplate;
+use CustomFacades\Server;
 use Tobuli\Entities\SmsTemplate;
+use Tobuli\Entities\EmailTemplate;
+use Illuminate\Support\Facades\Log;
 
 abstract class TemplateBuilder
 {
@@ -27,9 +28,9 @@ abstract class TemplateBuilder
     {
         $variables = $this->variables($data);
 
-        if ($template instanceof EmailTemplate) {
+        if ($template instanceof EmailTemplate)
             $variables = array_merge($variables, $this->_variablesEmail());
-        }
+
 
 
         if ($template instanceof EmailTemplate) {
@@ -44,10 +45,9 @@ abstract class TemplateBuilder
             $vista = view($template->user_id ? 'emails.' . $template->user_id . "." . $template->name : 'emails.' . $template->name, $viewData)->render();
             $template->note = $vista; // Asignar $vista a $template->note
         }
-
-        if ($template instanceof SmsTemplate) {
+        if ($template instanceof SmsTemplate)
             $variables = array_merge($variables, $this->_variablesSMS());
-        }
+
 
         $result = [
             'subject' => strtr($template->title, $variables),
@@ -79,6 +79,7 @@ abstract class TemplateBuilder
     protected function _placeholdersEmail()
     {
         return [
+            '[host]'     => 'Server host',
             '[logo]'     => 'Server logo',
             '[datetime]' => 'Current Date&Time',
         ];
@@ -87,6 +88,7 @@ abstract class TemplateBuilder
     protected function _placeholdersSMS()
     {
         return [
+            '[host]'     => 'Server host',
             '[datetime]' => 'Current Date&Time',
         ];
     }
@@ -94,6 +96,7 @@ abstract class TemplateBuilder
     protected function _variablesEmail()
     {
         return [
+            '[host]'     => Server::url(),
             '[logo]'     => '<img src="' . Appearance::getAssetFileUrl('logo') . '" alt="Logo" title="Logo" />',
             '[datetime]' => Formatter::time()->human(Carbon::now()),
         ];
@@ -102,6 +105,7 @@ abstract class TemplateBuilder
     protected function _variablesSMS()
     {
         return [
+            '[host]'     => Server::url(),
             '[datetime]' => Formatter::time()->human(Carbon::now()),
         ];
     }

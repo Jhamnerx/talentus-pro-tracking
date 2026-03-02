@@ -43,8 +43,14 @@
         </div>
 
         <div class="form-group">
-            {!! Form::label('devices', trans('validation.attributes.devices').'*:') !!}
-            {!! Form::select('devices[]', $devices, $sharing->devices->pluck('id', 'id')->all(), ['class' => 'form-control multiexpand', 'multiple' => 'multiple', 'data-live-search' => 'true', 'data-actions-box' => 'true']) !!}
+            {!! Form::label('devices[]', trans('validation.attributes.devices').'*:') !!}
+            {!! Form::select('devices[]', [], null, [
+                'class' => 'form-control multiexpand',
+                'multiple' => 'multiple',
+                'data-live-search' => 'true',
+                'data-actions-box' => 'true',
+                'data-ajax' => route('sharing.devices_loader', $sharing->id)
+            ]) !!}
         </div>
     {!! Form::close() !!}
 @stop

@@ -15,7 +15,7 @@ class CustomAssetsController extends Controller
 
         $content = File::exists($assetFile) ? File::get($assetFile) : '';
 
-        return view('admin::CustomAssets.' . $asset)->with([
+        return view('admin::CustomAssets.' . $asset )->with([
             'content' => $content
         ]);
     }
@@ -30,7 +30,7 @@ class CustomAssetsController extends Controller
 
         File::put($assetFile, $content);
 
-        return view('admin::CustomAssets.' . $asset)->with([
+        return view('admin::CustomAssets.' . $asset )->with([
             'content' => $content
         ]);
     }
@@ -54,3 +54,4 @@ class CustomAssetsController extends Controller
         }
     }
 }
+

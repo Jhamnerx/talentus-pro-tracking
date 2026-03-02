@@ -11,9 +11,15 @@ trait ParseValueTrait
         $values = [];
 
         foreach ($attributes as $attribute) {
-            $values[] = strpos($attribute, '.')
+            $value = strpos($attribute, '.')
                 ? $this->parseRelationValue($item, $attribute)
                 : $item->$attribute;
+
+            if (is_object($value) && method_exists($value, '__toString')) {
+                $value = (string)$value;
+            }
+
+            $values[] = $value;
         }
 
         return $values;

@@ -19,7 +19,7 @@ class AdminDeviceConfiguratorFormValidator extends Validator {
         ],
     ];
 
-    public function validate($name, array $data, $id = NULL)
+    public function validate(string $name, array $data, $id = null): void
     {
         if (isset($this->rules[$name]) && array_key_exists('commands', $this->rules[$name])) {
             foreach (array_keys($this->rules[$name]) as $key) {

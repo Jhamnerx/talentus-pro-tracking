@@ -2,27 +2,26 @@
 
 use App\Exceptions\ResourseNotFoundException;
 use App\Http\Controllers\Controller;
-use CustomFacades\ModalHelpers\SendCommandModalHelper;
-use CustomFacades\Repositories\UserRepo;
-use CustomFacades\Repositories\UserSmsTemplateRepo;
 use CustomFacades\Validators\SchedulesValidator;
 use CustomFacades\Validators\SendCommandFormValidator;
-use CustomFacades\Validators\SendCommandGprsFormValidator;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Tobuli\Entities\CommandSchedule;
 use Tobuli\Entities\Device;
-use Tobuli\Entities\SentCommand;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Protocols\Commands;
 use Tobuli\Services\Commands\CommandService;
 use Tobuli\Services\Commands\SendCommandService;
+use Tobuli\Services\EntityLoader\UserDevicesLoader;
 use Tobuli\Services\Schedule\Scheduler;
 
 class CommandSchedulesController extends Controller
 {
     private $scheduler;
+
+    private UserDevicesLoader $devicesLoader;
 
     public function __construct(Scheduler $scheduler)
     {
@@ -37,7 +36,21 @@ class CommandSchedulesController extends Controller
         });
     }
 
+
+    protected function afterAuth($user)
+    {
+        $this->devicesLoader = new UserDevicesLoader($user);
+        $this->devicesLoader->setRequestKey(request('request_key', 'devices'));
+    }
+
     public function index()
+    {
+        return view('front::SendCommand.schedule.index', [
+            'command_schedules' => $this->user->commandSchedules,
+        ]);
+    }
+
+    public function table()
     {
         return view('front::SendCommand.schedule.table', [
             'command_schedules' => $this->user->commandSchedules,
@@ -46,32 +59,31 @@ class CommandSchedulesController extends Controller
 
     public function create()
     {
-        return view('front::SendCommand.schedule.create', SendCommandModalHelper::createData())
+        return view('front::SendCommand.schedule.create')
             ->with([
                 'connections' => [
                     'gprs' => trans('front.gprs'),
                     'sms'  => trans('front.sms'),
                 ],
+                'devices_sms' => $this->user->devices_sms()->count(),
             ]);
     }
 
-    public function store()
+    public function store(Request $request)
     {
-        SchedulesValidator::validate('create', request()->all());
+        SchedulesValidator::validate('create', $request->all());
 
         beginTransaction();
         try {
             if ($this->isCommandGprs(request('connection'))) {
-                $command_schedule = $this->createGprs(request()->all());
+                $command_schedule = $this->createGprs($request->all());
             } else {
-                $command_schedule = $this->createSms(request()->all());
+                $command_schedule = $this->createSms($request->all());
             }
 
-            $command_schedule->devices()->attach(
-                $this->validDeviceIds(request('device_id') ?: request('devices'))
-            );
+            $command_schedule->devices()->syncLoader($this->devicesLoader);
 
-            $this->scheduler->create($command_schedule, request()->all(), $this->user);
+            $this->scheduler->create($command_schedule, $request->all(), $this->user);
         } catch (ValidationException $e) {
             rollbackTransaction();
             throw $e;
@@ -82,9 +94,9 @@ class CommandSchedulesController extends Controller
         return ['status' => 1];
     }
 
-    public function edit($id)
+    public function edit($schedule)
     {
-        $commandSchedule = CommandSchedule::with(['schedule', 'devices'])->find($id);
+        $commandSchedule = CommandSchedule::with(['schedule'])->find($schedule);
 
         if ( ! $commandSchedule)
             throw new ResourseNotFoundException('front.command_schedule');
@@ -93,25 +105,19 @@ class CommandSchedulesController extends Controller
 
         return view('front::SendCommand.schedule.edit', [
             'command_schedule' => $commandSchedule,
-            'commands'         => SendCommandModalHelper::getCommands($commandSchedule->devices)->pluck('title', 'type')->all(),
-            'devices_gprs'     => groupDevices($this->user->devices, $this->user),
-            'devices_sms'      => groupDevices($this->user->devices_sms, $this->user),
-            'sms_templates'    => UserSmsTemplateRepo::getWhere(['user_id' => $this->user->id], 'title')
-                ->pluck('title', 'id')
-                ->prepend(trans('front.no_template'), '0')
-                ->all(),
             'connections'      => [
                 'gprs' => trans('front.gprs'),
                 'sms'  => trans('front.sms'),
             ],
+            'devices_sms' => $this->user->devices_sms()->count(),
         ]);
     }
 
-    public function update($id)
+    public function update(Request $request, $schedule)
     {
-        SchedulesValidator::validate('update', request()->all());
+        SchedulesValidator::validate('update', $request->all());
 
-        $command_schedule = CommandSchedule::find($id);
+        $command_schedule = CommandSchedule::find($schedule);
 
         if (is_null($command_schedule))
             throw new ResourseNotFoundException('front.command_schedule');
@@ -121,16 +127,15 @@ class CommandSchedulesController extends Controller
         beginTransaction();
         try {
             if ($this->isCommandGprs(request('connection'))) {
-                $this->updateGprs($command_schedule, request()->all());
+                $this->updateGprs($command_schedule, $request->all());
             } else {
-                $this->updateSms($command_schedule, request()->all());
+                $this->updateSms($command_schedule, $request->all());
             }
 
-            $command_schedule->devices()->sync(
-                $this->validDeviceIds(request('device_id') ?: request('devices'))
-            );
+            $command_schedule->devices()->syncLoader($this->devicesLoader);
 
-            $this->scheduler->update($command_schedule, request()->all());
+            $this->scheduler->update($command_schedule, $request->all());
+
         } catch (ValidationException $e) {
             rollbackTransaction();
             throw $e;
@@ -141,9 +146,9 @@ class CommandSchedulesController extends Controller
         return ['status' => 1];
     }
 
-    public function destroy($id)
+    public function destroy($schedule)
     {
-        if (is_null($command_schedule = CommandSchedule::find($id)))
+        if (is_null($command_schedule = CommandSchedule::find($schedule)))
             throw new ResourseNotFoundException('front.command_schedule');
 
         $this->checkException(CommandSchedule::class, 'own', $command_schedule);
@@ -156,9 +161,9 @@ class CommandSchedulesController extends Controller
         return ['status' => 1];
     }
 
-    public function logs($id)
+    public function logs($schedule)
     {
-        $command_schedule = CommandSchedule::find($id);
+        $command_schedule = CommandSchedule::find($schedule);
 
         if (is_null($command_schedule))
             throw new ResourseNotFoundException('front.command_schedule');
@@ -171,9 +176,44 @@ class CommandSchedulesController extends Controller
         ]);
     }
 
+    public function devices(Request $request, $schedule = null)
+    {
+        if ($commandSchedule = CommandSchedule::with(['schedule'])->find($schedule)) {
+            $this->checkException(CommandSchedule::class, 'own', $commandSchedule);
+
+            $this->devicesLoader->setQueryStored($commandSchedule->devices());
+        }
+
+        if ($request->get('type') === 'sms') {
+            $this->devicesLoader->setQueryItems(
+                $this->devicesLoader->getQueryItems()->where('sim_number', '!=', '')
+            );
+        }
+
+        $this->devicesLoader->setOrderStored(true);
+
+        return response()->json($this->devicesLoader->get());
+    }
+
+    public function commands(Request $request, $schedule = null)
+    {
+        if ($commandSchedule = CommandSchedule::with(['schedule'])->find($schedule)) {
+            $this->checkException(CommandSchedule::class, 'own', $commandSchedule);
+
+            $this->devicesLoader->setQueryStored($commandSchedule->devices());
+        }
+
+        if (!$this->devicesLoader->getQuerySelected()->count())
+            return [];
+
+        $commandService = new CommandService($this->user);
+
+        return $commandService->getCommands($this->devicesLoader, true, $request->get('connection'));
+    }
+
     private function createGprs($data)
     {
-        SendCommandGprsFormValidator::validate('create', $data);
+        SendCommandFormValidator::validate('gprs', $data);
 
         $command_schedule = CommandSchedule::create([
             'user_id'    => $this->user->id,
@@ -187,7 +227,7 @@ class CommandSchedulesController extends Controller
 
     private function createSms($data)
     {
-        SendCommandFormValidator::validate('create', $data);
+        SendCommandFormValidator::validate('sms', $data);
 
         return CommandSchedule::create([
             'user_id'    => $this->user->id,
@@ -199,7 +239,7 @@ class CommandSchedulesController extends Controller
 
     private function updateGprs($command_schedule, $data)
     {
-        SendCommandGprsFormValidator::validate('create', $data);
+        SendCommandFormValidator::validate('gprs', $data);
 
         $command_schedule->update([
             'connection' => SendCommandService::CONNECTION_GPRS,
@@ -212,7 +252,7 @@ class CommandSchedulesController extends Controller
     {
         $data['message'] = Arr::get($data, 'message_sms');
 
-        SendCommandFormValidator::validate('create', $data);
+        SendCommandFormValidator::validate('sms', $data);
 
         $command_schedule->update([
             'connection' => SendCommandService::CONNECTION_SMS,

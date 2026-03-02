@@ -53,7 +53,7 @@ class AppendRouteColor extends ActionAppend
 
     public function proccess(&$position)
     {
-        $position->color = 'blue';
+        $position->color = '#0000FF';
 
         foreach ($this->actions as $action)
             call_user_func_array($action, [ & $position]);

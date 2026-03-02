@@ -3,37 +3,27 @@
 namespace Tobuli\Helpers\Alerts;
 
 use Illuminate\Support\Arr;
+use Tobuli\Entities\Alert;
 use Tobuli\Entities\User;
 use Tobuli\Helpers\Alerts\Filter\EnabledFilter;
 use Tobuli\Helpers\Alerts\Filter\FilterInterface;
 use Tobuli\Helpers\Alerts\Notification\AbstractNotification;
-use Tobuli\Helpers\Alerts\Notification\ColorNotification;
-use Tobuli\Helpers\Alerts\Notification\CommandNotification;
-use Tobuli\Helpers\Alerts\Notification\EmailNotification;
 use Tobuli\Helpers\Alerts\Notification\Input\InputAwareInterface;
-use Tobuli\Helpers\Alerts\Notification\PopupNotification;
-use Tobuli\Helpers\Alerts\Notification\PushNotification;
-use Tobuli\Helpers\Alerts\Notification\SharingEmailNotification;
-use Tobuli\Helpers\Alerts\Notification\SharingSmsNotification;
-use Tobuli\Helpers\Alerts\Notification\SilentNotification;
-use Tobuli\Helpers\Alerts\Notification\SmsNotification;
-use Tobuli\Helpers\Alerts\Notification\SoundNotification;
-use Tobuli\Helpers\Alerts\Notification\WebhookNotification;
 
 class NotificationProvider
 {
     private const LIST = [
-        ColorNotification::class,
-        CommandNotification::class,
-        SilentNotification::class,
-        SoundNotification::class,
-        PopupNotification::class,
-        PushNotification::class,
-        EmailNotification::class,
-        SmsNotification::class,
-        WebhookNotification::class,
-        SharingEmailNotification::class,
-        SharingSmsNotification::class,
+        Notification\ColorNotification::class,
+        Notification\CommandNotification::class,
+        Notification\SilentNotification::class,
+        Notification\SoundNotification::class,
+        Notification\PopupNotification::class,
+        Notification\PushNotification::class,
+        Notification\EmailNotification::class,
+        Notification\SmsNotification::class,
+        Notification\WebhookNotification::class,
+        Notification\SharingEmailNotification::class,
+        Notification\SharingSmsNotification::class,
     ];
 
     private ?User $user;
@@ -130,12 +120,12 @@ class NotificationProvider
         }
     }
 
-    public function getInputMeta(array $alertData): array
+    public function getInputMeta(Alert $alert): array
     {
         /** @var InputAwareInterface[] $notifications */
         $notifications = array_filter($this->all(), fn ($item) => $item instanceof InputAwareInterface);
 
-        return array_map(fn ($item) => $item->getInput($alertData)->toArray(), $notifications);
+        return array_map(fn ($item) => $item->getInput($alert)->toArray(), $notifications);
     }
 
     public function setUser(?User $user): self

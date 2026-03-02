@@ -35,7 +35,9 @@ class NoticeEvent extends Event implements ShouldBroadcast
             return [];
         }
 
-        return [md5('user_' . $this->actor->id)];
+        return [
+            $this->actor->getSocketChannel()
+        ];
     }
 
     public function broadcastAs()

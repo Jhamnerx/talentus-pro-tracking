@@ -2,25 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Events\Device\DeviceDisabled;
-use App\Events\Device\DeviceEnabled;
-use App\Exceptions\ResourseNotFoundException;
-use CustomFacades\Repositories\DeviceRepo;
-use CustomFacades\Repositories\UserRepo;
-use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Validator;
-use Tobuli\Entities\WebservicesLogs;
-use Tobuli\Exceptions\ValidationException;
-use Tobuli\Exporters\EntityManager\Device\ExportManager;
 use Tobuli\Helpers\Tracker;
-use Tobuli\Importers\Device\DeviceImporter;
 use Tobuli\Importers\Importer;
-use Tobuli\Repositories\Device\DeviceRepositoryInterface as Device;
 use Tobuli\Services\DeviceService;
+use App\Events\Device\DeviceEnabled;
+use Illuminate\Support\Facades\View;
+use Tobuli\Entities\WebservicesLogs;
+use App\Events\Device\DeviceDisabled;
+use Illuminate\Support\Facades\Request;
+use CustomFacades\Repositories\UserRepo;
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Validator;
+use CustomFacades\Repositories\DeviceRepo;
+use Tobuli\Exceptions\ValidationException;
 use Tobuli\Validation\ClientFormValidator;
+use Tobuli\Importers\Device\DeviceImporter;
+use App\Exceptions\ResourseNotFoundException;
+use Illuminate\Auth\Access\AuthorizationException;
+use Tobuli\Exporters\EntityManager\Device\ExportManager;
+use Tobuli\Repositories\Device\DeviceRepositoryInterface as Device;
 
 class ObjectsController extends BaseController
 {
@@ -54,14 +54,39 @@ class ObjectsController extends BaseController
         $input = array_merge(['limit' => 25], request()->input());
         $sort = $input['sorting'] ?? ['sort_by' => 'name', 'sort' => 'asc'];
 
-        $items = $this->user
+        $query = $this->user
             ->accessibleDevices()
             ->traccarJoin()
             ->select(['devices.*', 'traccar_devices.server_time', 'traccar_devices.time'])
             ->with(['traccar', 'sensors'])
             ->selectUsersEmails($this->user)
-            ->search($input['search_phrase'] ?? '')
-            ->clearOrdersBy()
+            ->search($input['search_phrase'] ?? '');
+
+        // Filtro por estado activo
+        if (isset($input['filter_active']) && $input['filter_active'] !== '') {
+            $query->where('devices.active', (bool)$input['filter_active']);
+        }
+
+        // Filtro por webservices activos
+        if (isset($input['filter_webservices']) && $input['filter_webservices'] !== '') {
+            $webservice = $input['filter_webservices'];
+
+            if ($webservice === 'any') {
+                // Con cualquier webservice activo
+                $query->where(function ($q) {
+                    $q->where('devices.mtc', 1)
+                        ->orWhere('devices.osinergmin', 1)
+                        ->orWhere('devices.mininter', 1)
+                        ->orWhere('devices.consatel', 1)
+                        ->orWhere('devices.wisetrack', 1);
+                });
+            } else {
+                // Webservice específico
+                $query->where('devices.' . $webservice, 1);
+            }
+        }
+
+        $items = $query->clearOrdersBy()
             ->toPaginator($input['limit'], $sort['sort_by'], $sort['sort']);
 
         $section = $this->section;
@@ -101,7 +126,7 @@ class ObjectsController extends BaseController
     public function destroy()
     {
         if (config('addon.object_delete_pass') && isAdmin() && request('password') != config('addon.object_delete_pass')) {
-            // return ['status' => 0, 'errors' => ['message' => trans('front.login_failed')]];
+            return ['status' => 0, 'errors' => ['message' => trans('front.login_failed')]];
         }
 
         $ids = Request::input('ids');

@@ -8,6 +8,25 @@ use Tobuli\Entities\Device;
 
 class TrackerAuth
 {
+
+    /**
+     * The authentication factory instance.
+     *
+     * @var \Illuminate\Contracts\Auth\Factory
+     */
+    protected $auth;
+
+    /**
+     * Create a new middleware instance.
+     *
+     * @param  \Illuminate\Contracts\Auth\Factory  $auth
+     * @return void
+     */
+    public function __construct(\Illuminate\Contracts\Auth\Factory $auth)
+    {
+        $this->auth = $auth;
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -15,19 +34,24 @@ class TrackerAuth
      * @param  Closure  $next
      * @return mixed
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, $type)
     {
-        if ($imei = $request->get('imei')) {
-            $device = Device::where('imei', $imei)->first();
+        if ($type === 'token') {
+            $device = $this->auth->guard('api-tracker')->check()
+                ? $this->auth->guard('api-tracker')->user()
+                : null;
+        } else {
+            $imei = $request->get('imei');
+            $device = $imei
+                ? Device::where('imei', $imei)->first()
+                : null;
         }
 
         if (empty($device)) {
             return response()->json(['success' => false, 'message' => trans('front.login_failed')], 401);
         }
 
-        $trackerAppLoginEnabled = config('addon.device_tracker_app_login') && $device->app_tracker_login;
-
-        if (!$trackerAppLoginEnabled && ($device->protocol && $device->protocol != 'osmand')) {
+        if (!$this->checkProtocol($device)) {
             return response()->json(['success' => false, 'message' => trans('front.login_failed')], 401);
         }
 
@@ -38,6 +62,17 @@ class TrackerAuth
         \app()->instance(Device::class, $device);
 
         return $next($request);
+    }
+
+    private function checkProtocol(Device $device)
+    {
+        $trackerAppLoginEnabled = config('addon.device_tracker_app_login') && $device->app_tracker_login;
+
+        if (!$trackerAppLoginEnabled && ($device->protocol && $device->protocol != 'osmand')) {
+            return false;
+        }
+
+        return true;
     }
 
     private function checkAppUuid(Device $device, $appUuid): bool

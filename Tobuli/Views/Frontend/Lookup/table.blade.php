@@ -15,6 +15,14 @@
             $('#{{ $html->getTableId() }}').DataTable().draw();
         });
     });
+
+    function dataTableExport(event, format) {
+        event.preventDefault();
+
+        var table = $(event.target).closest('.dataTable').DataTable();
+
+        window.location = table.ajax.url() + "?" + $.param(table.ajax.params()) + '&action=' + format;
+    }
 </script>
 
 {!! $html->table() !!}

@@ -1,43 +1,54 @@
-<?php namespace Tobuli\Validation;
+<?php
+
+namespace Tobuli\Validation;
 
 use Illuminate\Validation\Factory as IlluminateValidator;
+use Illuminate\Validation\Rules\Unique;
 use Tobuli\Exceptions\ValidationException;
 
 /**
  * Base Validation class. All entity specific validation classes inherit
  * this class and can override any function for respective specific needs
  */
-abstract class Validator {
+abstract class Validator
+{
+    protected IlluminateValidator $_validator;
 
-    /**
-     * @var IlluminateValidator
-     */
-    protected $_validator;
-
-    public function __construct( IlluminateValidator $validator ) {
+    public function __construct(IlluminateValidator $validator)
+    {
         $this->_validator = $validator;
     }
 
-    public function validate($name, array $data, $id = null) {
+    public function validate(string $name, array $data, $id = null): void
+    {
         $rules = $this->rules[$name];
-        !is_null($id) && $rules = $this->applyId($rules, $id);
 
-        //use Laravel's Validator and validate the data
-        $validation = $this->_validator->make($data, $rules);
-
-        if ( $validation->fails() ) {
-            //validation failed, throw an exception
-            throw new ValidationException( $validation->messages() );
+        if ($id !== null) {
+            $this->applyId($rules, $id);
         }
 
-        //all good and shiny
-        return true;
+        $validation = $this->_validator->make($data, $rules);
+
+        if ($validation->fails()) {
+            throw new ValidationException($validation->messages());
+        }
     }
 
-    private function applyId($rules, $id) {
-        return array_map(function($item) use($id) {
-            return sprintf($item, $id);
-        }, $rules);
+    private function applyId(array &$rules, $id): void
+    {
+        foreach ($rules as &$rule) {
+            switch (true) {
+                case is_array($rule):
+                    $this->applyId($rule, $id);
+                    break;
+                case is_string($rule):
+                    $rule = sprintf($rule, $id);
+                    break;
+                case $rule instanceof Unique:
+                    $rule->ignore($id);
+                    break;
+            }
+        }
     }
 
 }

@@ -10,12 +10,15 @@ class PagesController extends Controller
 {
     public function show(Request $request, string $slug)
     {
-        $content = Page::firstWhere('slug', $slug)->content ?? '';
+        $page = Page::where('slug', $slug)->firstOrFail();
 
         $view = $request->ajax()
             ? 'front::Docs.modal'
             : 'front::Docs.show';
 
-        return view($view, compact('content'));
+        return view($view, [
+            'title' => $page->title,
+            'content' => $page->content
+        ]);
     }
 }

@@ -4,6 +4,8 @@
 namespace Tobuli\Sensors\Extractions;
 
 
+use Tobuli\Helpers\SetFlagDO;
+
 class FormulaSetFlag extends Formula
 {
     const PLACEHOLDER = "[value]";
@@ -14,7 +16,7 @@ class FormulaSetFlag extends Formula
     protected $formula;
 
     /**
-     * @var array
+     * @var SetFlagDO[]
      */
     protected $setflags;
 
@@ -33,7 +35,7 @@ class FormulaSetFlag extends Formula
         foreach ($this->setflags as $place => $setflag) {
             $equation = str_replace(
                 "[$place]",
-                substr($value, $setflag['start'], $setflag['count']),
+                $setflag->crop($value),
                 $equation
             );
         }
@@ -41,15 +43,24 @@ class FormulaSetFlag extends Formula
         return $this->solve($equation);
     }
 
+    /**
+     * @param string $formula
+     * @param SetFlagDO[] $setflags
+     * @return string
+     */
     protected function replaceFormula($formula, $setflags)
     {
         foreach ($setflags as $place => $setflag) {
-            $formula = str_replace($setflag['place'], "[$place]", $formula);
+            $formula = str_replace($setflag->getPlace(), "[$place]", $formula);
         }
 
         return $formula;
     }
 
+    /**
+     * @param string $formula
+     * @return array
+     */
     static public function resolveSetflag($formula)
     {
         $groups = \Tobuli\Helpers\SetFlag::multiCrop($formula);

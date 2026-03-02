@@ -1,6 +1,4 @@
-<?php
-
-namespace ModalHelpers;
+<?php namespace ModalHelpers;
 
 set_time_limit(18000);
 
@@ -74,12 +72,12 @@ class ReportModalHelper extends ModalHelper
         $this->checkException('reports', 'create');
 
         $devices = $this->user->devices()
-            ->when(!$this->user->isAdmin(), function ($query) {
+            ->when(!$this->user->isAdmin(), function($query) {
                 return $query->unexpired();
             });
 
         if (empty($devices->count()))
-            return $this->api ? ['status' => 0, 'errors' => ['id' => trans('front.no_devices')]] : modal(trans('front.no_devices'), 'alert');
+            return $this->api ? ['status' => 0, 'errors' => ['id' => trans('front.no_devices')]] : modal(trans('front.no_devices'), 'warning');
 
         $geofences = Geofence::userAccessible($this->user)->orderBy('name')->get();
 
@@ -129,7 +127,7 @@ class ReportModalHelper extends ModalHelper
             $geofences = $geofences->toArray();
 
             //devices list return as array, not object
-            $devices = array_values($devices->get()->all());
+            $devices = array_values( $devices->get()->all() );
         } else {
             $devices = [];
         }
@@ -161,13 +159,13 @@ class ReportModalHelper extends ModalHelper
 
         ReportSaveFormValidator::validate('create', $this->data);
 
-        $now = Carbon::parse(Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d'));
-        $days = $now->diffInDays(Carbon::parse($this->data['date_from']), false);
+        $now = Carbon::parse( Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d') );
+        $days = $now->diffInDays( Carbon::parse( $this->data['date_from'] ) , false);
         $this->data['from_format'] = $days . ' days ' . (empty($this->data['from_time']) ? '00:00' : $this->data['from_time']);
-        $days = $now->diffInDays(Carbon::parse($this->data['date_to']), false);
+        $days = $now->diffInDays( Carbon::parse( $this->data['date_to'] ) , false);
         $this->data['to_format'] = $days . ' days ' . (empty($this->data['to_time']) ? '00:00' : $this->data['to_time']);
 
-        if (! $this->api) {
+        if ( ! $this->api ) {
             $this->data['date_from'] .= ' ' . (empty($this->data['from_time']) ? '00:00' : $this->data['from_time']);
             $this->data['date_to']   .= ' ' . (empty($this->data['to_time']) ? '00:00' : $this->data['to_time']);
         }
@@ -196,18 +194,18 @@ class ReportModalHelper extends ModalHelper
 
         $this->data['monthly_time'] = $monthly_time;
 
-        if (!empty($this->data['id']) && empty(ReportRepo::find($this->data['id']))) {
+        if ( !empty($this->data['id']) && empty(ReportRepo::find($this->data['id'])) ) {
             unset($this->data['id']);
         }
 
         if (empty($this->data['id'])) {
 
             $item = ReportRepo::create($this->data + [
-                'user_id'           => $this->user->id,
-                'daily_email_sent'  => date('Y-m-d', strtotime("-1 day")),
-                'weekly_email_sent' => date("Y-m-d", strtotime("{$this->user->week_start_weekday} this week")),
-                'monthly_email_sent' => date("Y-m-d", strtotime("first day this month"))
-            ]);
+                    'user_id'           => $this->user->id,
+                    'daily_email_sent'  => date('Y-m-d', strtotime("-1 day")),
+                    'weekly_email_sent' => date("Y-m-d", strtotime("{$this->user->week_start_weekday} this week")),
+                    'monthly_email_sent' => date("Y-m-d", strtotime("first day this month"))
+                ]);
         } else {
             $item = ReportRepo::findWhere(['id' => $this->data['id'], 'user_id' => $this->user->id]);
             if (!empty($item))
@@ -241,8 +239,8 @@ class ReportModalHelper extends ModalHelper
 
         ReportFormValidator::validate('create', $this->data);
 
-        $data['date_from'] .= (empty($data['from_time']) ? '' : ' ' . $data['from_time']);
-        $data['date_to']   .= (empty($data['to_time']) ? '' : ' ' . $data['to_time']);
+        $data['date_from'] .= ( empty($data['from_time']) ? '' : ' ' . $data['from_time']);
+        $data['date_to']   .= ( empty($data['to_time']) ? '' : ' ' . $data['to_time']);
 
         $this->validate($data);
 
@@ -253,18 +251,18 @@ class ReportModalHelper extends ModalHelper
 
             return [
                 'status' => 3,
-                'url' => route($this->api ? 'api.generate_report' : 'reports.update') . '?' . http_build_query($data + ['generate' => 1], '', '&')
+                'url' => route($this->api ? 'api.generate_report' : 'reports.update').'?'.http_build_query($data + ['generate' => 1], '', '&')
             ];
         }
 
         if (!$this->api) {
             unset($data['devices']);
 
-            if ($report = ReportRepo::find($this->data['id'])) {
-                $this->userDevicesLoader->setQueryStored($report->devices());
-            }
+            $data['devices_query'] = $this->userDevicesLoader->getQuerySelected();
 
-            $data['devices_query'] = $this->userDevicesLoader->getQuery();
+            if ($this->reportManager->report($data['type'])->isDeviceless() && !$data['devices_query']->count()) {
+                $data['devices_query'] = $this->userDevicesLoader->getQueryItems();
+            }
         }
 
         $report = $this->reportManager->fromRequest($data);
@@ -297,7 +295,7 @@ class ReportModalHelper extends ModalHelper
         return ['status' => 1];
     }
 
-    public function validate(&$data)
+    public function validate( & $data)
     {
         $validator = Validator::make($data, [
             'type' => 'required|' . Rule::in(array_keys(ReportManager::$types)),
@@ -310,6 +308,32 @@ class ReportModalHelper extends ModalHelper
         $data['send_to_email'] = semicol_explode($data['send_to_email'] ?? '');
 
         $type = $this->reportManager->getType($data['type']);
+
+        if (!$type->isDeviceless()) {
+            if ($this->api) {
+                if (!count($data['devices'] ?? [])) {
+                    throw new ValidationException(['devices' => $validator->makeReplacements(
+                        trans('validation.required'),
+                        'devices',
+                        'required',
+                        []
+                    )]);
+                }
+            } else {
+                if ($report = ReportRepo::find($data['id'] ?? null)) {
+                    $this->userDevicesLoader->setQueryStored($report->devices());
+                }
+
+                if (!$this->userDevicesLoader->getQuerySelected()->count()) {
+                    throw new ValidationException(['selected_devices' => $validator->makeReplacements(
+                        trans('validation.required'),
+                        'selected_devices',
+                        'required',
+                        []
+                    )]);
+                }
+            }
+        }
 
         $type->validateInput($data);
     }

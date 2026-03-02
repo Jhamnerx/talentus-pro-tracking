@@ -13,6 +13,7 @@ class OfflineDeviceReport extends DeviceReport
     const TYPE_ID = 38;
 
     protected $disableFields = ['geofences', 'speed_limit', 'stops'];
+    protected $deviceless = true;
 
     public function typeID()
     {

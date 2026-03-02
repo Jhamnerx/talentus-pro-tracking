@@ -10,13 +10,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class HasManyTable extends HasMany
 {
-    public function __construct(Builder $query, Model $parent, $localKey = 'id')
+    public function __construct(Builder $query, Model $parent, $table = null, $localKey = 'id')
     {
         static::noConstraints(function () use ($query, $parent, $localKey) {
             parent::__construct($query, $parent, null, $localKey);
         });
 
-        $table = $this->related->getTable() . '_' . $this->getParentKey();
+        if (is_null($table)) {
+            $table = $this->related->getTable();
+        }
 
         $this->related->setTable($table);
         $this->query->from($table);

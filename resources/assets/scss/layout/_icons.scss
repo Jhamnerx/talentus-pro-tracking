@@ -544,22 +544,27 @@ img.sensor-icon {
       @extend .ico-battery-0:before;
     }
   }
-  &.battery:before {
-    @extend .ico-battery-4:before;
-  }
-  &.battery-1:before {
-    @extend .ico-battery-1:before;
-  }
-  &.battery-2:before {
-    @extend .ico-battery-2:before;
-  }
-  &.battery-3:before {
-    @extend .ico-battery-3:before;
-  }
-  &.battery-4:before {
-    @extend .ico-battery-4:before;
-  }
-  &.battery-5:before {
-    @extend .ico-battery-5:before;
+  &.battery {
+    &:before {
+      @extend .ico-battery-4:before;
+    }
+    &.battery-0:before {
+      content: "";
+    }
+    &.battery-1:before {
+      @extend .ico-battery-1:before;
+    }
+    &.battery-2:before {
+      @extend .ico-battery-2:before;
+    }
+    &.battery-3:before {
+      @extend .ico-battery-3:before;
+    }
+    &.battery-4:before {
+      @extend .ico-battery-4:before;
+    }
+    &.battery-5:before {
+      @extend .ico-battery-5:before;
+    }
   }
 }

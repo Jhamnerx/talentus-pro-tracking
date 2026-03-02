@@ -24,6 +24,7 @@
                 {!! tableHeaderSort($items->sorting, 'devices.name', 'validation.attributes.name') !!}
                 {!! tableHeaderSort($items->sorting, 'devices.imei', 'validation.attributes.imei') !!}
                 {!! tableHeaderSort($items->sorting, 'devices.sim_number', 'validation.attributes.sim_number') !!}
+                {!! tableHeader('Webservices', 'style="text-align:center;"') !!}
                 {!! tableHeader('global.online', 'style="text-align:center;"') !!}
                 {!! tableHeaderSort($items->sorting, 'traccar_devices.server_time', 'admin.last_connection') !!}
                 @if (Auth::user()->can('view', new \Tobuli\Entities\Device(), 'expiration_date'))
@@ -48,7 +49,7 @@
                         @endif
                         <td>
                             <span class="label label-sm label-{!! $item->active ? 'success' : 'danger' !!}">
-                                {!! $item->active ? trans('validation.attributes.active') : trans('validation.attributes.inactive') !!}
+                                {!! $item->active ? trans('validation.attributes.active') : trans('front.inactive') !!}
                             </span>
                         </td>
                         <td>
@@ -59,6 +60,31 @@
                         </td>
                         <td>
                             {{ $item->sim_number }}
+                        </td>
+                        <td style="text-align: center">
+                            @php
+                                $webservices = [];
+                                if ($item->mtc) {
+                                    $webservices[] = '<span class="label label-primary label-xs">MTC</span>';
+                                }
+                                if ($item->osinergmin) {
+                                    $webservices[] = '<span class="label label-warning label-xs">OSINERGMIN</span>';
+                                }
+                                if ($item->mininter) {
+                                    $webservices[] = '<span class="label label-info label-xs">MININTER</span>';
+                                }
+                                if ($item->consatel) {
+                                    $webservices[] = '<span class="label label-success label-xs">CONSATEL</span>';
+                                }
+                                if ($item->wisetrack) {
+                                    $webservices[] = '<span class="label label-danger label-xs">WISETRACK</span>';
+                                }
+                            @endphp
+                            @if (count($webservices) > 0)
+                                {!! implode(' ', $webservices) !!}
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
                         </td>
                         <td style="text-align: center">
                             <span class="device-status" style="background-color: {{ $item->getStatusColor() }}"
@@ -127,7 +153,16 @@
                 @endforeach
             @else
                 <tr class="">
-                    <td class="no-data" colspan="7">
+                    @php
+                        $colspan = 9; // Columnas base: Active, Name, IMEI, SIM, Webservices, Online, Last connection, User, Actions
+                        if ($multiActions) {
+                            $colspan++;
+                        } // Checkbox
+                        if (Auth::user()->can('view', new \Tobuli\Entities\Device(), 'expiration_date')) {
+                            $colspan++;
+                        } // Expiration date
+                    @endphp
+                    <td class="no-data" colspan="{{ $colspan }}">
                         {!! trans('admin.no_data') !!}
                     </td>
                 </tr>

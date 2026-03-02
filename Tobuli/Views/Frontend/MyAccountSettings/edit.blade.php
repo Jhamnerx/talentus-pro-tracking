@@ -58,6 +58,17 @@
                 {!!Form::select('duration_format', $duration_formats, $item['duration_format'] ?? null, ['class' => 'form-control'])!!}
             </div>
             <div class="form-group">
+                {!!Form::label('datetime_format', trans('validation.attributes.datetime_format').':')!!}
+                <div class="row">
+                    <div class="col-xs-6">
+                        {!!Form::select('date_format', config('tobuli.date_formats'), $item['date_format'] ?? Appearance::getSetting('default_date_format'), ['class' => 'form-control'])!!}
+                    </div>
+                    <div class="col-xs-6">
+                        {!!Form::select('time_format', config('tobuli.time_formats'), $item['time_format'] ?? Appearance::getSetting('default_time_format'), ['class' => 'form-control'])!!}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
                 {!! Form::label('week_start_day', trans('validation.attributes.week_start_day').':') !!}
                 {!! Form::select('week_start_day', $week_start_days, (isset($item['week_start_day']) ? $item['week_start_day'] : null), ['class' => 'form-control']) !!}
             </div>

@@ -133,10 +133,10 @@ class Manager
         }
 
         if (is_null($model)) {
-            if ( ! $this->user->perm($repo, $this->permissionMap[$action]))
+            if (! $this->user->perm($repo, $this->permissionMap[$action]))
                 throw new PermissionException();
         } else {
-            if ( ! $this->user->can($action, $model))
+            if (! $this->user->can($action, $model))
                 throw new PermissionException();
         }
     }
@@ -153,7 +153,7 @@ class Manager
 
     protected function getModelClass($repo)
     {
-        if ( ! Arr::has($this->modelMap, $repo))
+        if (! Arr::has($this->modelMap, $repo))
             throw new \Exception('No model class declared');
 
         return Arr::get($this->modelMap, $repo);

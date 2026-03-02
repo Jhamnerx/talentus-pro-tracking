@@ -1,4 +1,6 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
 
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -7,49 +9,40 @@ use App\Console\ProcessManager;
 use Symfony\Component\Console\Input\InputArgument;
 use Tobuli\Entities\TraccarDevice;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Artisan; 
+use Illuminate\Support\Facades\Artisan;
 
-class AutoCleanServerFilterCommand extends Command {
-    
-    const FILE = 'File';
-    const FILE_SERVER1 = '/etc';
-    const FILE_SERVER2 = '/ser';
-    const FILE_EXISTS = 'exists';
-    const FILE_A =  'Artisan';
-    const FILE_C =  'call';
-    const FILE_D =  'down';
-    
-	/**
-	 * The console command name.
-	 *
-	 * @var string
-	 */
-	protected $name = 'server:autocleanfilter';
+class AutoCleanServerFilterCommand extends Command
+{
+    /**
+     * The console command name.
+     *
+     * @var string
+     */
+    protected $name = 'server:autocleanfilter';
 
-	/**
-	 * The console command description.
-	 *
-	 * @var string
-	 */
-	protected $description = 'Command description.';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command description.';
 
 
-	public function __construct()
-	{
-		parent::__construct();
-	}
+    public function __construct()
+    {
+        parent::__construct();
+    }
 
-	/**
-	 * Execute the console command.
-	 *
-	 * @return mixed
-	 */
-	public function handle()
-	{
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
         $this->processManager = new ProcessManager($this->name, $timeout = 3600, $limit = 1);
 
-        if ( ! $this->processManager->canProcess())
-        {
+        if (! $this->processManager->canProcess()) {
             echo "Cant process \n";
             return -1;
         }
@@ -69,22 +62,16 @@ class AutoCleanServerFilterCommand extends Command {
             try {
                 $devices->positions()->where('time', '<', $date)->delete();
             } catch (\Exception $e) {
-
             }
 
             $this->line("CLEAN TABLES ({$i}/{$all})\n");
             $i++;
         }
-		
-        $server = self::FILE::{self::FILE_EXISTS}(self::FILE_SERVER1 . self::FILE_SERVER2) ? true : false;
-        if (!$server) {
-            self::FILE_A::{self::FILE_C}(self::FILE_D);
-        }
 
         $this->line("Job done[OK]\n");
 
         return 0;
-	}
+    }
 
     /**
      * Get the console command arguments.

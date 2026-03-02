@@ -24,11 +24,6 @@ class HistoryController extends Controller
         return !$this->api ? view('front::History.partials.bottom_messages')->with($data) : $data;
     }
 
-    public function odometroPositions()
-    {
-        return HistoryModalHelper::odometroPositions();
-    }
-
     public function doDeletePositions()
     {
         return view('front::History.do_delete');

@@ -1,88 +1,58 @@
 @extends('Frontend.Reports.partials.layout')
 
 @section('content')
-    @foreach ($report->getItems() as $item)
-        <div class="panel panel-default">
-            @include('Frontend.Reports.partials.item_heading')
+    <div class="panel panel-default">
+        @include('Frontend.Reports.partials.item_heading')
 
-            <div class="panel-body no-padding">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            @foreach ($item['meta'] as $meta)
-                                <th>{{ $meta['title'] }}</th>
-                            @endforeach
-                            <th>{{ trans('front.server_time') }}</th>
-                            <th>{{ trans('front.time') }}</th>
-                            <th>{{ trans('front.latitude') }}</th>
-                            <th>{{ trans('front.longitude') }}</th>
-                            <th>{{ trans('front.address') }}</th>
-                            <th>{{ trans('front.altitude') }}</th>
-                            <th>{{ trans('front.speed') }}</th>
-
-                            {{-- @foreach ($item['sensors'] as $sensor)
-                                <th>{{ $sensor['name'] }}</th>
-                            @endforeach --}}
-
-                            <!-- Cambiando el título del campo 'event' a 'Alerta' -->
-                            <th>{{ trans('front.alert') }}</th>
-                            <th>{{ trans('front.value_exceeds') }}</th>
-                            {{-- @foreach ($item['parameters'] as $parameter)
-                                <th>{{ $parameter }}</th>
-                            @endforeach --}}
-                        </tr>
-                    </thead>
-                    <tbody>
-
-                        @if (isset($item['error']))
-                            <tr>
-                                <td colspan="{{ 7 + count($item['meta']) + count($item['parameters']) }}">
-                                    {{ $item['error'] }}</td>
-                            </tr>
-                        @else
-                            @foreach ($item['table']['rows'] as $row)
-                                <tr>
-                                    @foreach ($item['meta'] as $meta)
-                                        <td>{{ $meta['value'] }}</td>
-                                    @endforeach
-                                    <td>{{ $row['server_time'] }}</td>
-                                    <td>{{ $row['time'] }}</td>
-                                    <td>{{ $row['latitude'] }}</td>
-                                    <td>{{ $row['longitude'] }}</td>
-                                    <td>{!! $row['location'] !!}</td>
-                                    <td>{{ $row['altitude'] }}</td>
-                                    <td>{{ $row['speed'] }}</td>
-                                    {{-- @foreach ($item['sensors'] as $sensor)
-                                        <th>{{ $row['sensors'][$sensor['id']] ?? '' }}</th>
-                                    @endforeach --}}
-
-                                    <!-- Mostrar solo los parámetros que coincidan con 'event_types' -->
-                                    <td>{{ trans('front.alert_' . $row['parameters']['event'] ?? '') }}</td>
-
-                                    @foreach ($item['parameters'] as $parameter)
-                                        @if (strpos($parameter, $row['parameters']['event']) !== false)
-                                            <td>
-                                                @if ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '1')
-                                                    {{ trans('front.alert_253_1') }}
-                                                @elseif ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '2')
-                                                    {{ trans('front.alert_253_2') }}
-                                                @elseif ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '3')
-                                                    {{ trans('front.alert_253_3') }}
-                                                @else
-                                                    {{ $row['parameters'][$parameter] ?? '' }}
-                                                @endif
-                                            </td>
-                                        @endif
-                                    @endforeach
-                                    {{-- @foreach ($item['parameters'] as $parameter)
-                                        <td>{{ $row['parameters'][$parameter] ?? '' }}</td>
-                                    @endforeach --}}
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
-            </div>
+        <div class="panel-body no-padding">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Event Type</th>
+                    <th>Vehicle No</th>
+                    <th>Driver Name</th>
+                    <th>Driver Employee ID</th>
+                    <th>Event Key</th>
+                    <th>Event start Location</th>
+                    <th>Event End Location</th>
+                    <th>Event Start Date</th>
+                    <th>Event End Date</th>
+                    <th>Event Duration</th>
+                    <th>Event Distance (KMs)</th>
+                    <th>Event Threshold</th>
+                    <th>Event Start Coordinates</th>
+                    <th>Event End Coordinates</th>
+                    <th>Event Max Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                @forelse ($report->getItems() as $item)
+                    <tr>
+                        <td>{!! $item['date'] !!}</td>
+                        <td>{!! $item['type'] !!}</td>
+                        <td>{!! $item['plate_number'] !!}</td>
+                        <td>{!! $item['driver_name'] !!}</td>
+                        <td>{!! $item['driver_rfid'] !!}</td>
+                        <td></td>
+                        <td>{!! $item['location_start'] !!}</td>
+                        <td>{!! $item['location_end'] !!}</td>
+                        <td>{!! $item['start_at'] !!}</td>
+                        <td>{!! $item['end_at'] !!}</td>
+                        <td>{!! $item['duration'] !!}</td>
+                        <td>{!! $item['distance'] !!}</td>
+                        <td>{!! $item['threshold'] !!}</td>
+                        <td>{!! $item['start_coordinates'] !!}</td>
+                        <td>{!! $item['end_coordinates'] !!}</td>
+                        <td>{!! $item['max_value'] !!}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="16">{{ trans('front.nothing_found_request') }}</td>
+                    </tr>
+                @endforelse
+                </tbody>
+            </table>
         </div>
-    @endforeach
+    </div>
 @stop

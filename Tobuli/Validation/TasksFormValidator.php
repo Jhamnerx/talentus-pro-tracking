@@ -66,7 +66,7 @@ class TasksFormValidator extends Validator
         ]
     ];
 
-    public function validate($name, array $data, $id = NULL)
+    public function validate(string $name, array $data, $id = null): void
     {
         $this->rules[$name]['priority'] = 'required|in:'.implode(',', array_keys(Task::$priorities));
         $this->rules[$name]['pickup_ac_status'] = 'sometimes|required|' . Rule::in(array_flip(TaskStatus::$statuses));

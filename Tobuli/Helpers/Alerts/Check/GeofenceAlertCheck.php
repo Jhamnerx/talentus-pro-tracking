@@ -65,7 +65,6 @@ class GeofenceAlertCheck extends AlertCheck
 
                 $event->setAdditional('exceso', ($position->speed - $geofence->speed_limit));
             }
-
             $this->silent($event);
 
             $events[] = $event;

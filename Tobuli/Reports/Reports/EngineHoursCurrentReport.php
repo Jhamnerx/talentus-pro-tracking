@@ -56,7 +56,8 @@ class EngineHoursCurrentReport extends DeviceReport
                     foreach ($positions as $position)
                         $this->processPosition($position);
                 });
-        } catch (QueryException $e) {}
+        } catch (QueryException $e) {
+        }
 
         if (empty($this->lastHoursValue) && empty($this->lastVirtualHoursValue))
             return null;

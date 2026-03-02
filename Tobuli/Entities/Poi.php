@@ -94,6 +94,11 @@ class Poi extends AbstractEntity implements DisplayInterface
         return getDistance($this->coordinates['lat'], $this->coordinates['lng'], $latitude, $longitude);
     }
 
+    public function scopeVisible($query)
+    {
+        $query->where('active', 1);
+    }
+
     public function scopeUserOwned(Builder $query, User $user): Builder
     {
         return $query->where(['user_id' => $user->id]);

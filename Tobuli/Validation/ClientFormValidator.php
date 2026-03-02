@@ -50,7 +50,7 @@ class ClientFormValidator extends Validator
         ]
     ];
 
-    public function validate($name, array $data, $id = NULL)
+    public function validate(string $name, array $data, $id = null): void
     {
         $methods = AuthManager::getDefaultAuths();
 

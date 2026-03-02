@@ -13,6 +13,10 @@ class CreateTaskSetLocationsTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('task_set_locations')) {
+            return;
+        }
+
         Schema::create('task_set_locations', function (Blueprint $table) {
             $table->id();
             $table->integer('order')->nullable();

@@ -31,7 +31,6 @@ class GeofencesExportController extends Controller
             'radius',
             'center',
             'device_id',
-            'speed_limit',
         ];
 
         $geofences = Geofence::userOwned($this->user)->with('group:id,title');

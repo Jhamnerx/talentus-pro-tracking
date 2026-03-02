@@ -1,5 +1,9 @@
 <?php namespace Tobuli\Validation;
 
+use Illuminate\Validation\Factory as IlluminateValidator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\In;
+
 class UserAccountSettingsFormValidator extends Validator {
 
     /**
@@ -9,10 +13,14 @@ class UserAccountSettingsFormValidator extends Validator {
         'update' => [
             'timezone_id' => 'required|exists:timezones,id',
             'unit_of_distance' => 'required|in:km,mi,nm',
-            'unit_of_capacity' => 'required|in:lt,gl'
+            'unit_of_capacity' => 'required|in:lt,gl',
+            'unit_of_altitude' => 'required|in:mt,ft'
         ]
     ];
-}   //end of class
 
-
-//EOF
+    function __construct( IlluminateValidator $validator ) {
+        parent::__construct( $validator );
+        $this->rules['update']['date_format'] = Rule::in(array_keys(config('tobuli.date_formats')));
+        $this->rules['update']['time_format'] = Rule::in(array_keys(config('tobuli.time_formats')));
+    }
+}

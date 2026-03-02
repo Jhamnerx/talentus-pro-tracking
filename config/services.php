@@ -30,26 +30,25 @@ return [
 		'secret' => '',
 	],
 
-    'streetview' => [
-        'default' => env('streetview_default', 0),
-    ],
+	'streetview' => [
+		'default' => env('streetview_default', 0),
+	],
 
-    'snaptoroad' => [
-        'key' => env('snaptoroad_key', env('google_api_key'))
-    ],
+	'snaptoroad' => [
+		'key' => env('snaptoroad_key', env('google_api_key'))
+	],
 
-    'google_maps' => [
-        'key' => env('google_api_key')
-    ],
+	'google_maps' => [
+		'key' => env('google_api_key')
+	],
 
-    'speedlimit' => [
-        'key' => env('speedlimit_key', null)
-    ],
+	'speedlimit' => [
+		'key' => env('speedlimit_key', null)
+	],
 
-    'nominatims' => [
-        'http://65.108.17.98',
-        //'http://65.108.17.101',
-        'http://95.216.247.190/nominatim',
-        'http://95.217.44.84/nominatim',
-    ]
+	'nominatims' => [
+		'http://65.108.17.98',
+		'http://65.108.17.101',
+		'http://69.10.41.238'
+	]
 ];

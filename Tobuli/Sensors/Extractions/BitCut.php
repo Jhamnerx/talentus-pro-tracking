@@ -32,6 +32,8 @@ class BitCut implements Extraction
         try {
             if ($this->base) {
                 $value = intval(base_convert($value, 16, 10));
+            } else {
+                $value = intval($value);
             }
 
             $value = ($value >> $this->start) & $this->mask;

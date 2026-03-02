@@ -3,8 +3,8 @@
 @include checkbox('.checkbox', 'label');
 @include checkbox('.checkbox-inline', 'label');
 
-@include checkbox-variant('.checkbox-inline', $brand-primary);
-@include checkbox-variant('.checkbox', $brand-primary);
+@include checkbox-variant('.checkbox-inline', $checkbox-active-background-color);
+@include checkbox-variant('.checkbox', $checkbox-active-background-color);
 @include checkbox-variant('.checkbox-primary', $brand-primary);
 @include checkbox-variant('.checkbox-danger',  $brand-danger);
 @include checkbox-variant('.checkbox-info',    $brand-info);
@@ -19,6 +19,7 @@
         width: ($checkbox-size + 10 - 2);
         height: ($checkbox-size + 10 - 2);
         font-size: ($checkbox-font-size + 10);
+        font-weight: $checkbox-font-weight;
       }
       &::after{
         width: ($checkbox-size + 10);

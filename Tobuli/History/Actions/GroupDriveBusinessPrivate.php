@@ -2,9 +2,6 @@
 
 namespace Tobuli\History\Actions;
 
-
-use Tobuli\History\Group;
-
 class GroupDriveBusinessPrivate extends ActionGroup
 {
     const STATE_DEFAULT  = null;

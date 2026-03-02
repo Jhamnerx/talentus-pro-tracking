@@ -54,7 +54,7 @@
       margin-bottom: $line-height-computed;
       border: 1px solid transparent;
       border-radius: $alert-border-radius;
-      color: $text-color;
+      color: $stat-box-text-color;
       text-align: center;
 
       .title { }
@@ -65,6 +65,9 @@
       }
     }
 
+    a.link {
+      color: $text-color;
+    }
     .link {
       text-decoration: underline;
       cursor: pointer;

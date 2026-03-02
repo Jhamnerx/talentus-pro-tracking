@@ -23,7 +23,7 @@ class CallActionFormValidator extends Validator
         ],
     ];
 
-    public function validate($name, array $data, $id = NULL)
+    public function validate(string $name, array $data, $id = null): void
     {
         $this->rules[$name]['response_type'] = 'required|in:'.implode(',', array_column(CallAction::getResponseTypes(), 'type'));
 

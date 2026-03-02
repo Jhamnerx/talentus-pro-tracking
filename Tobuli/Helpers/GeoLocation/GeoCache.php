@@ -34,7 +34,6 @@ class GeoCache
                 $this->drive = Cache::store($drive);
             }
         } catch (\Exception $e) {
-
             $this->drive = null;
         }
     }

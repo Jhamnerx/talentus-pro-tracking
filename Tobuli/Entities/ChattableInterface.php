@@ -10,4 +10,5 @@ interface ChattableInterface
     public function messages();
     public function getChatableType();
     public function getChatableName();
+    public function getSocketChannel();
 }

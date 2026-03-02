@@ -82,10 +82,12 @@ class CopyDevicesCommand extends Command {
 
         $devices = $query->get();
 
+        $mode = $this->askCopyMode();
+
         $bar = $this->output->createProgressBar(count($devices));
 
         foreach ($devices as $device) {
-            $this->performTask($device, $database_id);
+            $this->performTask($device, $database_id, $mode);
 
             $bar->advance();
         }
@@ -97,14 +99,14 @@ class CopyDevicesCommand extends Command {
         return 0;
 	}
 
-    protected function performTask($device, $database_id) {
+    protected function performTask($device, $database_id, $mode) {
         try {
             if (!$device->traccar) {
                 $this->error("Device '{$device->imei}' without traccar instance");
                 return;
             }
 
-            $device->traccar->copyTo($database_id);
+            $device->traccar->copyTo($database_id, $mode);
         } catch (\Exception $e) {
             $this->error($e->getMessage());
         }
@@ -116,11 +118,28 @@ class CopyDevicesCommand extends Command {
             $sizes = $this->dbService->getDatabaseSizes($database->id);
 
             if ($sizes) {
-                $sizes = "\n" . implode("\n", $sizes);
+                $sizesOutput = "\n" . implode("\n", $sizes->map(function($row) {
+                        return substr(strtoupper($row->id), 0, 1) . " " . formatBytes($row->value) . " " . $row->updated_at;
+                    })->toArray());
+            } else {
+                $sizesOutput = "";
             }
 
-            $this->line("{$database->host} $sizes");
+            $this->line("{$database->host} $sizesOutput");
         }
+    }
+
+    protected function askCopyMode()
+    {
+        $choises = [
+            TraccarDevice::MODE_ONLY_NEW  => 'Skip exist',
+            TraccarDevice::MODE_OVERWRITE => 'Overwrite',
+            TraccarDevice::MODE_APPEND    => 'Append',
+        ];
+
+        $choise = $this->choice("Mode:", $choises, TraccarDevice::MODE_ONLY_NEW);
+
+        return array_search($choise, $choises);
     }
 
     protected function askDatabaseCopyTo()

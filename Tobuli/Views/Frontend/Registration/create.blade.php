@@ -29,10 +29,42 @@
 
             {!! Form::open(array('route' => 'registration.store', 'class' => 'form', 'id' => 'registration-form')) !!}
             {!! error_for('id', $errors) !!}
-            <div class="form-group">
-                {!! Form::email('email', null, ['class' => 'form-control input-lg', 'placeholder' => trans('validation.attributes.email'), 'id' => 'sign-in-form-email']) !!}
-                {!! error_for('email', $errors) !!}
-            </div>
+
+            @if(empty($fields))
+                <div class="form-group">
+                    {!! Form::email('email', null, ['class' => 'form-control input-lg', 'placeholder' => trans('validation.attributes.email'), 'id' => 'sign-in-form-email']) !!}
+                    {!! error_for('email', $errors) !!}
+                </div>
+            @else
+                @foreach($fields as $key => $field)
+                    @if($field['present'])
+                        <div class="form-group">
+                            @php $placeholder = trans('validation.attributes.' . $field['attribute']) . ($field['required'] ? '*' : '') @endphp
+
+                            @switch($key)
+                                @case('email')
+                                    {!! Form::email($key, null, ['class' => 'form-control input-lg', 'placeholder' => $placeholder]) !!}
+                                    @break
+                                @case('client[birth_date]')
+                                    {!! Form::text($key, null, ['class' => 'form-control input-lg field-date', 'placeholder' => $placeholder]) !!}
+                                    @break
+                                @default
+                                    {!! Form::text($key, null, ['class' => 'form-control input-lg', 'placeholder' => $placeholder]) !!}
+                            @endswitch
+
+                            {!! error_for(str_replace(['[', ']'], ['.', ''], $key), $errors) !!}
+                        </div>
+                            <script>
+                                $('.field-date').datepicker({
+                                    format: 'yyyy-mm-dd',
+                                    disableTouchKeyboard: true,
+                                    autoclose: true,
+                                });
+                            </script>
+                    @endif
+                @endforeach
+
+            @endif
 
             @include('Frontend.Captcha.form')
 
@@ -51,3 +83,4 @@
         </div>
     </div>
 @stop
+

@@ -33,8 +33,8 @@ class DevicesGroupLoader extends EnityGroupLoader
 
         $this->filters = [
             new IdFilter('devices'),
-            new GroupIdFilter('user_device_pivot'),
-            new GroupIdWithSearchFilter('user_device_pivot'),
+            new GroupIdFilter(($user->isReseller() || $user->isOperator()) ? 'user_device_group' : 'user_device_pivot'),
+            new GroupIdWithSearchFilter(($user->isReseller() || $user->isOperator()) ? 'user_device_group' : 'user_device_pivot'),
             new SearchFilter(null)
         ];
     }

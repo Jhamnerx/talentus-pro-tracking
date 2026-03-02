@@ -41,6 +41,14 @@ class LookupEvent extends LookupModel
             'orderable'  => false,
             'searchable' => false,
         ]);
+
+        $this->addColumn([
+            'data'       => 'position',
+            'name'       => 'position',
+            'title'      => trans('front.position'),
+            'orderable'  => false,
+            'searchable' => false,
+        ]);
     }
 
     public function renderTime($event) {
@@ -49,5 +57,21 @@ class LookupEvent extends LookupModel
 
     public function renderAddress($event) {
         return $event->getAddress();
+    }
+
+    public function renderPosition($event)
+    {
+        if ( ! $event->latitude && ! $event->longitude)
+            return null;
+
+        return "{$event->latitude}&deg;, {$event->longitude}&deg;";
+    }
+
+    public function renderHtmlPosition($event)
+    {
+        if ( ! $event->latitude && ! $event->longitude)
+            return null;
+
+        return googleMapLink($event->latitude, $event->longitude);
     }
 }

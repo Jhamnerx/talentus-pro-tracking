@@ -1,11 +1,17 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use CustomFacades\ModalHelpers\UserDriverModalHelper;
+use Tobuli\Entities\Report;
+use Tobuli\Entities\UserDriver;
+use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 
 class UserDriversController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         $data = UserDriverModalHelper::get();
 
         if ($this->api)
@@ -14,7 +20,8 @@ class UserDriversController extends Controller
         return view('front::UserDrivers.index')->with($data);
     }
 
-    public function table() {
+    public function table()
+    {
         $data = UserDriverModalHelper::get();
 
         return view('front::UserDrivers.table')->with($data);
@@ -65,8 +72,23 @@ class UserDriversController extends Controller
         return UserDriverModalHelper::destroy();
     }
 
-    public function doUpdate( $id ) {
+    public function doUpdate($id)
+    {
         return UserDriverModalHelper::editField($id);
     }
 
+    public function devices($id = null)
+    {
+        $userDevicesLoader = new UserDevicesGroupLoader($this->user);
+        $userDevicesLoader->setRequestKey('devices');
+
+        if ($id && $driver = UserDriver::find($id)) {
+            $this->checkException('drivers', 'update', $driver);
+
+            $userDevicesLoader->setOrderStored(true);
+            $userDevicesLoader->setQueryStored($driver->devices());
+        }
+
+        return response()->json($userDevicesLoader->get());
+    }
 }

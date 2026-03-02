@@ -217,7 +217,7 @@ class ValidatorRulesServiceProvider extends ServiceProvider
         });
 
         Validator::extend('phone', function ($attribute, $value, $parameters, $validator) {
-            return preg_match("/^\+\d[0-9]{10}/", $value);
+            return preg_match(config('tobuli.validation.regex_phone'), $value);
         });
 
         Validator::extend('array_max', function ($attribute, $value, $parameters, $validator) {

@@ -1,62 +1,64 @@
+@php /** @var \Tobuli\Reports\Reports\LastLocationReport $report */ @endphp
+
 @extends('Frontend.Reports.partials.layout')
 
 @section('content')
-    @foreach ($report->getItems() as $item)
-        <div class="panel panel-default">
-            @include('Frontend.Reports.partials.item_heading')
+    <div class="panel panel-default">
+        @include('Frontend.Reports.partials.item_heading')
 
-            <div class="panel-body no-padding">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            @foreach ($item['meta'] as $meta)
-                                <th>{{ $meta['title'] }}</th>
-                            @endforeach
-                            <th>{{ trans('front.server_time') }}</th>
-                            <th>{{ trans('front.time') }}</th>
-                            <th>{{ trans('front.latitude') }}</th>
-                            <th>{{ trans('front.longitude') }}</th>
-                            <th>{{ trans('front.address') }}</th>
-                            <th>{{ trans('front.altitude') }}</th>
-                            <th>{{ trans('front.speed') }}</th>
+        <div class="panel-body no-padding">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    @foreach($report->metas() as $key => $meta)
+                        <th>{{ $meta['title'] }}</th>
+                    @endforeach
 
-                            @foreach ($item['sensors'] as $sensor)
-                                <th>{{ $sensor['name'] }}</th>
-                            @endforeach
+                    <th>{{ trans('admin.last_connection') }}</th>
 
-                        </tr>
-                    </thead>
-                    <tbody>
+                    @if($report->show_addresses)
+                        <th>{{ trans('front.address') }}</th>
+                    @endif
+
+                    @if($report->hasGeofences())
+                        <th>{{ trans('front.geofences') }}</th>
+                    @endif
+
+                    <th>{{ trans('front.coordinates') }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                @forelse ($report->getItems() as $item)
+                    <tr>
+                        @foreach($item['meta'] as $key => $meta)
+                            <td>{{ $meta['value'] }}</td>
+                        @endforeach
 
                         @if (isset($item['error']))
-                            <tr>
-                                <td
-                                    colspan="{{ 7 + count($item['meta']) + count($item['sensors']) + count($item['parameters']) }}">
-                                    {{ $item['error'] }}</td>
-                            </tr>
-                        @else
-                            @foreach ($item['table']['rows'] as $row)
-                                <tr>
-                                    @foreach ($item['meta'] as $meta)
-                                        <td>{{ $meta['value'] }}</td>
-                                    @endforeach
-                                    <td>{{ $row['server_time'] }}</td>
-                                    <td>{{ $row['time'] }}</td>
-                                    <td>{{ $row['latitude'] }}</td>
-                                    <td>{{ $row['longitude'] }}</td>
-                                    <td>{!! $row['location'] !!}</td>
-                                    <td>{{ $row['altitude'] }}</td>
-                                    <td>{{ $row['speed'] }}</td>
-                                    @foreach ($item['sensors'] as $sensor)
-                                        <th>{{ $row['sensors'][$sensor['id']] ?? '' }}</th>
-                                    @endforeach
+                            <td colspan="10">{{ $item['error'] }}</td>
 
-                                </tr>
-                            @endforeach
+                            @continue;
                         @endif
-                    </tbody>
-                </table>
-            </div>
+
+                        <td>{{ $item['last_connection'] }}</td>
+
+                        @if($report->show_addresses)
+                            <td>{!! $item['address'] !!}</td>
+                        @endif
+
+                        @if($report->hasGeofences())
+                            <td>{!! $item['geofences'] !!}</td>
+                        @endif
+
+                        <td>{!! $item['coordinates'] !!}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="99">{{ trans('front.nothing_found_request') }}</td>
+                    </tr>
+                @endforelse
+                </tbody>
+            </table>
         </div>
-    @endforeach
+    </div>
 @stop

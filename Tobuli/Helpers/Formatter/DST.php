@@ -81,8 +81,8 @@ class DST
 
         $year = date('Y', $time);
 
-        if (isset($this->yearCache[$year])) {
-            return $this->yearCache[$year];
+        if (isset($this->yearCache[$this->timezone->id ?? 0][$year])) {
+            return $this->yearCache[$this->timezone->id ?? 0][$year];
         }
 
         $DST = $this->calculateDSTRange($this->DST, $time);
@@ -91,7 +91,7 @@ class DST
         $toDate = strtotime($year.'-'.$DST->date_to);
         $yearSplit = $fromDate > $toDate;
 
-        return $this->yearCache[$year] = $yearSplit
+        return $this->yearCache[$this->timezone->id ?? 0][$year] = $yearSplit
             ? [
                 'from' => $toDate,
                 'to' => $fromDate,

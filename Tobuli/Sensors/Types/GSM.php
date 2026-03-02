@@ -20,7 +20,7 @@ class GSM extends Numerical
         return trans('front.gsm');
     }
 
-    public static function getInputs(): array
+    public static function getInputs() : array
     {
         return [
             'default' => [

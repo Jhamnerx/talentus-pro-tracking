@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\ApnConfig;
 use Tobuli\Entities\Device;
@@ -133,7 +134,6 @@ class DeviceModalHelper extends ModalHelper
             'gray' => trans('front.gray'),
             'cyan' => trans('front.cyan'),
             'white' => trans('front.white'),
-
         ];
 
         $this->fuel_detect_stop_durations = [
@@ -242,6 +242,9 @@ class DeviceModalHelper extends ModalHelper
         $item->min_fuel_thefts = settings('device.min_fuel_thefts');
         $item->tail_length = settings('device.tail.length');
         $item->tail_color = settings('device.tail.color');
+        $item->installation_date = DeviceService::isDefaultInstallationDateToday()
+            ? Formatter::date()->convert(date('Y-m-d'))
+            : null;
 
         return compact(
             'device_groups',
@@ -606,7 +609,78 @@ class DeviceModalHelper extends ModalHelper
             return;
         }
 
+        // Log detallado de verificación de límites
+        $logData = [
+            'verification_date' => date('Y-m-d H:i:s'),
+            'acting_user' => $this->user->email,
+            'device_context' => [
+                'id' => $device ? $device->id : 'nuevo_dispositivo',
+                'name' => $device ? $device->name : 'dispositivo_nuevo'
+            ],
+            'users_to_verify' => is_array($this->data['user_id']) ? count($this->data['user_id']) : 'bulk_loader'
+        ];
+
+        // Obtener información detallada de cada usuario antes de la verificación
+        $usersDetails = [];
+
+        if (is_array($this->data['user_id'])) {
+            $usersToCheck = User::whereIn('id', $this->data['user_id'])->whereNotNull('devices_limit')->get();
+        } else {
+            // Para UsersLoader (bulk_loader), obtener todos los usuarios con límite
+            $usersToCheck = collect();
+
+            if ($this->data['user_id'] instanceof \Tobuli\Services\EntityLoader\UsersLoader) {
+                try {
+                    $usersToCheck = $this->data['user_id']->getQuerySelected()->whereNotNull('devices_limit')->get();
+                } catch (\Exception $e) {
+                    // Si falla, intentar obtener al menos los usuarios problemáticos
+                    $usersToCheck = $this->deviceUsersService->getUsersReachedLimit($this->data['user_id'], $device);
+                }
+            } else {
+                // Si no es UsersLoader, obtener solo los usuarios problemáticos
+                $usersToCheck = $this->deviceUsersService->getUsersReachedLimit($this->data['user_id'], $device);
+            }
+        }
+
+        foreach ($usersToCheck as $user) {
+            $usedLimit = $this->deviceUsersService->getUsedLimit($user);
+            $userDetail = [
+                'username' => $user->email,
+                'limite_configurado' => $user->devices_limit,
+                'limite_usado' => $usedLimit,
+                'disponible' => $user->devices_limit - $usedLimit,
+                'limite_alcanzado' => $usedLimit >= $user->devices_limit
+            ];
+
+            if ($user->isManager()) {
+                // Obtener detalles específicos para managers
+                $managerDevices = $user->devices()->count();
+                $subusersLimits = $user->subusers()->sum('devices_limit');
+                $userDetail['tipo'] = 'manager';
+                $userDetail['calculo_detallado'] = [
+                    'dispositivos_propios' => $managerDevices,
+                    'limites_subusuarios' => $subusersLimits,
+                    'formula' => "dispositivos_propios({$managerDevices}) + limites_subusuarios({$subusersLimits}) = {$usedLimit}"
+                ];
+            } else {
+                $userDetail['tipo'] = 'usuario_normal';
+                $userDetail['calculo_detallado'] = "dispositivos_asignados = {$usedLimit}";
+            }
+
+            $usersDetails[] = $userDetail;
+        }
+
+        $logData['usuarios_verificados'] = $usersDetails;
+
         $users = $this->deviceUsersService->getUsersReachedLimit($this->data['user_id'], $device);
+
+        $logData['resultado'] = [
+            'usuarios_con_limite_alcanzado' => $users->count(),
+            'status' => $users->isEmpty() ? 'APROBADO' : 'RECHAZADO_POR_LIMITE',
+            'usuarios_problematicos' => $users->pluck('email')->toArray()
+        ];
+
+
 
         if (!$users->isEmpty()) {
             throw new ValidationException(['user_id' => trans('validation.attributes.devices_limit') . ': ' . $users->implode('email', ', ')]);

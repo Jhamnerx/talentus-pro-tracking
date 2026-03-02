@@ -48,6 +48,7 @@ class SpeedReport extends DeviceHistoryReport
                 'start_at',
                 'location',
                 'speed_max',
+                'speed_avg',
                 'overspeed_duration'
             ]);
 

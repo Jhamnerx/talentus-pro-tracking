@@ -183,21 +183,35 @@ class PaypalGateway extends PaymentGateway implements PaymentGatewayInterface
             return false;
         }
 
-        $gatewayDate = $agreement->agreement_details
-            ->getNextBillingDate();
-
-        if (empty($gatewayDate)) {
+        if ($agreement->getState() !== self::ACTIVE) {
             return false;
         }
 
-        $gatewayDate = Carbon::parse($gatewayDate);
+        $nextBillingDate = $agreement->agreement_details->getNextBillingDate();
+        $lastPaymentDate = $agreement->agreement_details->getLastPaymentDate();
+
+        if (empty($nextBillingDate) || empty($lastPaymentDate)) {
+            return false;
+        }
+
+        $nextBillingDate = Carbon::parse($nextBillingDate);
+        $lastPaymentDate = Carbon::parse($lastPaymentDate);
         $subscriptionDate = Carbon::parse($subscription->expiration_date);
         $planDurationInDays = ! empty($subscription->plan)
             ? $subscription->plan->getDurationInDays()
             : null;
 
-        return $agreement->getState() == self::ACTIVE
-            && $this->compareDatesByPlan($subscriptionDate, $gatewayDate, $planDurationInDays);
+        if (!$this->compareDatesByPlan($subscriptionDate, $nextBillingDate, $planDurationInDays)) {
+            return false;
+        }
+
+        $diffPayment = $this->getDatesDiffByPlan($nextBillingDate, $lastPaymentDate, $planDurationInDays);
+
+        if ($diffPayment === null) {
+            return $nextBillingDate->gt($lastPaymentDate);
+        }
+
+        return $diffPayment <= -75 && $diffPayment >= -125;
     }
 
     public function getSubscriptionEnd($subscription)

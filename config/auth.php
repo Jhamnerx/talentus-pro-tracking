@@ -42,9 +42,14 @@ return [
         ],
 
         'api' => [
-            'driver' => 'token',
+            'driver' => 'passport',
             'provider' => 'users',
         ],
+
+        'api-tracker' => [
+            'driver' => 'passport',
+            'provider' => 'devices',
+        ]
     ],
 
     /*
@@ -70,6 +75,11 @@ return [
         'users' => [
             'driver' => env('ENABLE_SECONDARY_CREDENTIALS') ? 'multi_credentials' : 'eloquent',
             'model' => Tobuli\Entities\User::class,
+        ],
+
+        'devices' => [
+            'driver' => 'eloquent',
+            'model' => Tobuli\Entities\Device::class,
         ],
 
         // 'users' => [

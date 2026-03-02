@@ -31,7 +31,9 @@ class MediaConvertFail extends Event implements ShouldBroadcast {
         if ( ! $this->actor)
             return [];
 
-        return [md5('user_'.$this->actor->id)];
+        return [
+            $this->actor->getSocketChannel()
+        ];
     }
 
     public function broadcastAs()

@@ -20,6 +20,10 @@ class SetFlag
         return "%SETFLAG[$start,$count,$value]%";
     }
 
+    /**
+     * @param $string
+     * @return SetFlagDO|null
+     */
     static public function singleCrop($string)
     {
         preg_match(self::typePattern(self::TYPE_CROP), $string, $match);
@@ -27,6 +31,10 @@ class SetFlag
         return self::typeMatches(self::TYPE_CROP, $match);
     }
 
+    /**
+     * @param $string
+     * @return SetFlagDO|null
+     */
     static public function singleCropValue($string)
     {
         preg_match(self::typePattern(self::TYPE_VALUE), $string, $match);
@@ -34,6 +42,10 @@ class SetFlag
         return self::typeMatches(self::TYPE_VALUE, $match);
     }
 
+    /**
+     * @param $string
+     * @return SetFlagDO[]
+     */
     static public function multiCrop($string)
     {
         preg_match_all(self::typePattern(self::TYPE_CROP), $string, $matches);
@@ -60,21 +72,12 @@ class SetFlag
         switch ($type) {
             case self::TYPE_CROP:
                 if (isset($matches[1]) && isset($matches[2])) {
-                    return [
-                        'place' => $matches[0],
-                        'start' => $matches[1],
-                        'count' => $matches[2],
-                    ];
+                    return new SetFlagDO($matches[0], $matches[1], $matches[2], null, null);
                 }
                 break;
             case self::TYPE_VALUE:
                 if (isset($matches[1]) && isset($matches[2]) && isset($matches[3])) {
-                    return [
-                        'place' => $matches[0],
-                        'start' => $matches[1],
-                        'count' => $matches[2],
-                        'value' => $matches[3],
-                    ];
+                    return new SetFlagDO($matches[0], $matches[1], $matches[2], $matches[3], $matches[4] ?? null);
                 }
                 break;
             default:
@@ -90,7 +93,7 @@ class SetFlag
             case self::TYPE_CROP:
                 return '/\%SETFLAG\[([0-9]+)\,([0-9]+)\]\%/';
             case self::TYPE_VALUE:
-                return '/\%SETFLAG\[([0-9]+)\,([0-9]+)\,([\s\S]+)\]\%/';
+                return '/\%SETFLAG\[([0-9]+)\,([0-9]+)\,([\s\S]+)\](BIN|HEX)?\%/';
             default:
                 throw new \InvalidArgumentException("Undefined setflag type '$type'");
         }

@@ -4,17 +4,14 @@ namespace Tobuli\Helpers\Settings;
 
 use Illuminate\Support\Facades\DB;
 use Cache;
-use Illuminate\Support\Facades\Log;
 
-class SettingsDB extends Settings
-{
+class SettingsDB extends Settings {
 
     const CACHE_SECONDS = 15 * 60;
 
     protected $prefix = 'SettingsDB';
 
-    protected function _has($key)
-    {
+    protected function _has($key) {
         if (empty($key))
             return false;
 
@@ -25,7 +22,7 @@ class SettingsDB extends Settings
         if (empty($group))
             return false;
 
-        $item = Cache::store('array')->remember('settings.' . $group, self::CACHE_SECONDS, function () use ($group) {
+        $item = Cache::store('array')->remember('settings.'.$group, self::CACHE_SECONDS, function() use ($group) {
             return DB::table('configs')->where('title', '=', $group)->first();
         });
 
@@ -33,16 +30,22 @@ class SettingsDB extends Settings
             return false;
 
         try {
-            $has = has_array_value(unserialize($item->value), $keys);
-        } catch (\Exception $e) {
+            $serialize = unserialize($item->value);
+
+            if ($serialize !== false) {
+                $has = has_array_value( $serialize, $keys );
+            } else {
+                $has = true;
+            }
+        }
+        catch (\Exception $e) {
             $has = true;
         }
 
         return $has;
     }
 
-    protected function _get($key)
-    {
+    protected function _get($key) {
         if (empty($key))
             return null;
 
@@ -53,7 +56,7 @@ class SettingsDB extends Settings
         if (empty($group))
             return null;
 
-        $item = Cache::store('array')->remember('settings.' . $group, self::CACHE_SECONDS, function () use ($group) {
+        $item = Cache::store('array')->remember('settings.'.$group, self::CACHE_SECONDS, function() use ($group) {
             return DB::table('configs')->where('title', '=', $group)->first();
         });
 
@@ -61,7 +64,13 @@ class SettingsDB extends Settings
             return null;
 
         try {
-            $value = get_array_value(unserialize($item->value), $keys);
+            $serialize = unserialize($item->value);
+
+            if ($serialize !== false) {
+                $value = get_array_value($serialize, $keys);
+            } else {
+                $value = $item->value;
+            }
         } catch (\Exception $e) {
             $value = $item->value;
         }
@@ -69,8 +78,7 @@ class SettingsDB extends Settings
         return $value;
     }
 
-    protected function _set($key, $value)
-    {
+    protected function _set($key, $value) {
         if (empty($key))
             return false;
 
@@ -81,7 +89,7 @@ class SettingsDB extends Settings
         if (empty($group))
             return false;
 
-        Cache::store('array')->forget('settings.' . $group);
+        Cache::store('array')->forget('settings.'.$group);
 
         $item = DB::table('configs')->where('title', '=', $group)->first();
 
@@ -89,27 +97,24 @@ class SettingsDB extends Settings
             DB::table('configs')->insert(['title' => $group, 'value' => '']);
 
         try {
-            $group_value = unserialize($item->value);
-        } catch (\Exception $e) {
-        }
+            $serialize = unserialize($item->value);
+            $group_value = $serialize !== false ? $serialize : [];
+        } catch (\Exception $e) {}
 
         if (empty($group_value))
             $group_value = [];
 
 
-        set_array_value($group_value, $keys, $value);
+        set_array_value( $group_value, $keys, $value );
 
-        if (is_array($group_value)) {
-            $value = serialize($group_value);
+        if ( is_array($group_value) ) {
+            $value = serialize( $group_value );
         }
 
-        $this->store($group, $value);
-
-        return false;
+        return $this->store($group, $value);
     }
 
-    protected function _forget($key)
-    {
+    protected function _forget($key) {
         if (empty($key))
             return false;
 
@@ -120,7 +125,7 @@ class SettingsDB extends Settings
         if (empty($group))
             return false;
 
-        Cache::store('array')->forget('settings.' . $group);
+        Cache::store('array')->forget('settings.'.$group);
 
         $item = DB::table('configs')->where('title', '=', $group)->first();
 
@@ -128,22 +133,20 @@ class SettingsDB extends Settings
             return false;
 
         try {
-            $group_value = unserialize($item->value);
-        } catch (\Exception $e) {
-        }
+            $serialize = unserialize($item->value);
+            $group_value = $serialize !== false ? $serialize : [];
+        } catch (\Exception $e) {}
 
         if (empty($group_value))
             return false;
 
-        forget_array_value($group_value, $keys);
+        forget_array_value( $group_value, $keys);
 
-        if (is_array($group_value)) {
-            $value = serialize($group_value);
+        if ( is_array($group_value) ) {
+            $value = serialize( $group_value );
         }
 
-        $this->store($group, $value);
-
-        return false;
+        return $this->store($group, $value);
     }
 
     protected function store($group, $value)
@@ -160,5 +163,7 @@ class SettingsDB extends Settings
         }
 
         DB::rollBack();
+
+        return false;
     }
 }

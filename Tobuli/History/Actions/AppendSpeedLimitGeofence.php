@@ -14,7 +14,9 @@ class AppendSpeedLimitGeofence extends ActionAppend
         ];
     }
 
-    public function boot() {}
+    public function boot()
+    {
+    }
 
     public function proccess(&$position)
     {
@@ -36,8 +38,7 @@ class AppendSpeedLimitGeofence extends ActionAppend
         return empty($speed_limit) ? null : $speed_limit;
     }
 
-    public function getSpeedLimitGeofence($geofence_id)
-    {
+    public function getSpeedLimitGeofence($geofence_id) {
         $speed_limit = $this->limits[$geofence_id] ?? null;
 
         if (!is_null($speed_limit))

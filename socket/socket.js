@@ -20,39 +20,22 @@ try {
 } catch (err) {
   //console.log(err.message);
 }
+
 try {
-  httpsServer = https.createServer({
-    key: fs.readFileSync(
-      "/etc/letsencrypt/live/plataforma.talentustechnology.com/privkey.pem",
-      "utf8"
-    ),
-    cert: fs.readFileSync(
-      "/etc/letsencrypt/live/plataforma.talentustechnology.com/cert.pem",
-      "utf8"
-    ),
-    ca: fs.readFileSync(
-      "/etc/letsencrypt/live/plataforma.talentustechnology.com/chain.pem",
-      "utf8"
-    ),
-  });
+  var ssl = {
+    key: fs.readFileSync("/var/www/html/private.key"),
+    cert: fs.readFileSync("/var/www/html/cert.crt"),
+  };
+
+  if (fs.existsSync("/var/www/html/cert_ca.crt"))
+    ssl.ca = fs.readFileSync("/var/www/html/cert_ca.crt");
+
+  httpsServer = https.createServer(ssl);
   httpsServer.listen(https_port);
   io.attach(httpsServer);
 } catch (err) {
   console.log(err.message);
 }
-
-// try {
-//     httpsServer = https.createServer({
-//         key: fs.readFileSync('/var/www/html/private.key'),
-//         cert: fs.readFileSync('/var/www/html/cert.crt'),
-//         ca: fs.readFileSync('/var/www/html/cert_ca.crt')
-//     });
-//     httpsServer.listen(https_port);
-//     io.attach( httpsServer );
-// }
-// catch(err) {
-//     console.log(err.message);
-// }
 
 io.sockets.on("connection", function (socket) {
   //console.log('connection', socket.id);

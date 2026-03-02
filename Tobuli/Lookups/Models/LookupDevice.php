@@ -26,12 +26,23 @@ class LookupDevice extends LookupModel
         if ($this->user->can('view', $this->model(), 'sim_number'))
             $this->addColumn('sim_number');
 
-        $this->addColumn('vin');
-        $this->addColumn('device_model');
-        $this->addColumn('plate_number');
-        $this->addColumn('registration_number');
-        $this->addColumn('object_owner');
-        $this->addColumn('additional_notes');
+        if ($this->user->can('view', $this->model(), 'vin'))
+            $this->addColumn('vin');
+
+        if ($this->user->can('view', $this->model(), 'device_model'))
+            $this->addColumn('device_model');
+
+        if ($this->user->can('view', $this->model(), 'plate_number'))
+            $this->addColumn('plate_number');
+
+        if ($this->user->can('view', $this->model(), 'registration_number'))
+            $this->addColumn('registration_number');
+
+        if ($this->user->can('view', $this->model(), 'object_owner'))
+            $this->addColumn('object_owner');
+
+        if ($this->user->can('view', $this->model(), 'additional_notes'))
+            $this->addColumn('additional_notes');
 
         if ($this->user->can('view', $this->model(), 'expiration_date'))
             $this->addColumn('expiration_date');
@@ -53,6 +64,7 @@ class LookupDevice extends LookupModel
                 'name'       => 'users_list',
                 'title'      => trans('admin.users'),
                 'orderable'  => false,
+                'searchable' => false,
                 'className'  => 'user-list'
             ]);
 

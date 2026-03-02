@@ -5,6 +5,10 @@
 
     RewriteEngine On
 
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
     # Redirect Trailing Slashes...
     RewriteRule ^(.*)/$ /$1 [L,R=301]
 
@@ -34,8 +38,6 @@
 </IfModule>
 
 <IfModule mod_headers.c>
-    Header set Access-Control-Allow-Origin: *
-
     <FilesMatch ".(css|js|jpg|png|gif|ico|otf|eot|svg|ttf|woff|woff2)$">
         Header set Cache-Control "max-age=2628000, public"
     </FilesMatch>

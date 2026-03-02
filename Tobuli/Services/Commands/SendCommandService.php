@@ -4,8 +4,10 @@ namespace Tobuli\Services\Commands;
 
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Tobuli\Entities\UserSmsTemplate;
+use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Tracker;
 use Tobuli\Protocols\Commands;
 use Tobuli\Protocols\Manager as ProtocolsManager;
@@ -19,7 +21,6 @@ class SendCommandService
     private $protocolManager;
     private $actor;
     private $user;
-
 
     public function __construct($actor = null)
     {

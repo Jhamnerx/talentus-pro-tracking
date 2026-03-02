@@ -149,6 +149,8 @@ class MyAccountSettingsModalHelper extends ModalHelper
             'duration_format',
             'timezone_id',
             'week_start_day',
+            'date_format',
+            'time_format'
         ]);
 
         $this->parseSmsGatewayData($item, $update);

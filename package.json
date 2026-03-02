@@ -1,6 +1,6 @@
 {
-  "name": "gps-master",
-  "version": "3.7.8",
+  "name": "GPS Server",
+  "version": "3.7.11",
   "description": "",
   "main": "index.js",
   "scripts": {

@@ -1,4 +1,5 @@
 <?php
+
 namespace Tobuli\Traits;
 
 use Tobuli\Entities\ChatMessage;
@@ -14,11 +15,13 @@ trait Chattable
     /**
      * Get the entity's chats.
      */
-    public function chats() {
+    public function chats()
+    {
         return $this->morphMany(ChatParticipant::class, 'chattable')->orderBy('created_at', 'desc');
     }
 
-    public function messages() {
+    public function messages()
+    {
         return $this->hasManyThrough(
             ChatMessage::class,
             ChatParticipant::class,
@@ -28,6 +31,11 @@ trait Chattable
             'id'
         )->where('chat_participants.chattable_type', '=', $this->getChatableType());
         return $this->hasMany(ChatMessage::class, 'sender_id', 'id');
+    }
+
+    public function getSocketChannel()
+    {
+        return md5($this->getChatableType() . '_' . $this->id);
     }
 
     public function getChatableType()
@@ -56,26 +64,21 @@ trait Chattable
     {
         $chatables = [];
 
-        if ($this instanceof User)
-        {
+        if ($this instanceof User) {
             $devices = $this->devices()->with('traccar')->get();
 
-            foreach ($devices as $device)
-            {
+            foreach ($devices as $device) {
                 if (!$device->canChat())
                     continue;
 
                 $chatables[] = $device->toChatableObject();
             }
 
-            foreach ($this->subusers as $subuser)
-            {
+            foreach ($this->subusers as $subuser) {
                 $chatables[] = $subuser->toChatableObject();
             }
-
         } else {
-            foreach ($this->users as $user)
-            {
+            foreach ($this->users as $user) {
                 $chatables[] = $user->toChatableObject();
             }
         }

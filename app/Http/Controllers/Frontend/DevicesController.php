@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Exceptions\PermissionException;
 use App\Exceptions\ResourseNotFoundException;
@@ -6,47 +8,41 @@ use App\Http\Controllers\Controller;
 use App\Transformers\Device\DeviceMapTransformer;
 use CustomFacades\ModalHelpers\DeviceModalHelper;
 use CustomFacades\Repositories\DeviceRepo;
-use CustomFacades\Repositories\UserRepo;
 use CustomFacades\Validators\DeviceImageValidator;
+use FractalTransformer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
-use Session;
+use Illuminate\Support\Facades\Session;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Geofence;
-use Tobuli\Exceptions\ValidationException;
 use Tobuli\History\Actions\Duration;
-use Tobuli\History\Actions\GroupGeofenceIn;
 use Tobuli\History\Actions\GroupGeofenceInOut;
 use Tobuli\History\DeviceHistory;
 use Tobuli\Services\DeviceImageService;
-use Tobuli\Services\DeviceService;
-use FractalTransformer;
 use Tobuli\Services\EntityLoader\UserDevicesLoader;
 use Tobuli\Services\FractalSerializers\WithoutDataArraySerializer;
 
 class DevicesController extends Controller
 {
-    private $deviceService;
-
-    public function __construct(DeviceService $deviceService)
-    {
-        parent::__construct();
-        $this->deviceService = $deviceService;
-    }
+    private UserDevicesLoader $devicesLoader;
 
     protected function afterAuth($user)
     {
         $this->devicesLoader = new UserDevicesLoader($user);
-        $this->devicesLoader->setRequestKey('devices');
+        $this->devicesLoader->setRequestKey(request('request_key', 'devices'));
     }
 
     public function index()
     {
         if (!$this->user->perm('devices', 'view'))
             throw new PermissionException();
+
+        if (request('type') === 'sms') {
+            $this->devicesLoader->setQueryItems(
+                $this->devicesLoader->getQueryItems()->where('sim_number', '!=', '')
+            );
+        }
 
         $items = $this->devicesLoader->get();
 
@@ -67,7 +63,8 @@ class DevicesController extends Controller
         return DeviceModalHelper::create();
     }
 
-    public function edit($id = NULL, $admin = FALSE) {
+    public function edit($id = NULL, $admin = FALSE)
+    {
         $data = DeviceModalHelper::editData();
 
         $view = $data['item']->isBeacon() ? 'front::Devices.edit_beacon' : 'front::Devices.edit';
@@ -117,7 +114,8 @@ class DevicesController extends Controller
         return view('front::Devices.destroy', compact('id'));
     }
 
-    public function detach() {
+    public function detach()
+    {
         return DeviceModalHelper::detach();
     }
 
@@ -192,7 +190,7 @@ class DevicesController extends Controller
 
         $min_away_by = INF;
         $closest_point = null;
-        
+
         foreach ($positions as $position) {
             $point = [
                 'latitude'  => $position->latitude,
@@ -262,28 +260,5 @@ class DevicesController extends Controller
             'duration' => $duration,
             'seconds'  => $seconds,
         ]);
-
-    }
-
-    public function uploadImage($device_id)
-    {
-        $device = DeviceRepo::find($device_id);
-
-        $this->checkException('devices', 'update', $device);
-        DeviceImageValidator::validate('upload', $this->data);
-
-        (new DeviceImageService($device))->save($this->data['image']);
-
-        return ['status' => 1];
-    }
-
-    public function deleteImage($device_id)
-    {
-        $device = DeviceRepo::find($device_id);
-        $this->checkException('devices', 'update', $device);
-
-        (new DeviceImageService($device))->delete();
-
-        return ['status' => 1];
     }
 }

@@ -15,7 +15,7 @@ class UserAccountFormValidator extends Validator {
         ],
     ];
 
-    public function validate($name, array $data, $id = NULL)
+    public function validate(string $name, array $data, $id = null): void
     {
         if (settings('password.change_required_current')) {
             $this->rules['password']['current_password'] = 'required|password';

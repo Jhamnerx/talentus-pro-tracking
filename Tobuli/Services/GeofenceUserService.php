@@ -9,6 +9,7 @@ use Tobuli\Entities\GeofenceGroup;
 use Tobuli\Entities\User;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Exporters\Util\ExportTypesUtil;
+use Tobuli\Helpers\Formatter\Facades\Formatter;
 use Tobuli\Traits\ModelUserServiceTrait;
 
 class GeofenceUserService extends GeofenceService
@@ -26,6 +27,13 @@ class GeofenceUserService extends GeofenceService
     protected function normalize(array $data)
     {
         $this->checkDevice($data);
+
+        if (config('addon.reports_geofleet_in') && isset($data['additional']['intervals'])) {
+            foreach ($data['additional']['intervals'] as &$interval) {
+                $interval['from'] = Formatter::dtime()->reverse($interval['from']);
+                $interval['to'] = Formatter::dtime()->reverse($interval['to']);
+            }
+        }
 
         return parent::normalize($data) + ['user_id' => $this->user->id];
     }
@@ -55,12 +63,12 @@ class GeofenceUserService extends GeofenceService
 
         $items = $type === ExportTypesUtil::EXPORT_TYPE_GROUPS
             ? GeofenceGroup::where('user_id', $this->user->id)
-            ->pluck('title', 'id')
-            ->prepend(trans('front.ungrouped'), '0')
-            ->all()
+                ->pluck('title', 'id')
+                ->prepend(trans('front.ungrouped'), '0')
+                ->all()
             : Geofence::userAccessible($this->user)
-            ->pluck('name', 'id')
-            ->all();
+                ->pluck('name', 'id')
+                ->all();
 
         if ($type === ExportTypesUtil::EXPORT_TYPE_ACTIVE) {
             $selected = Geofence::userAccessible($this->user)->where(['active' => 1])

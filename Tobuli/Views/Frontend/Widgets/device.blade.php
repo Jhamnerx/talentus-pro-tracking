@@ -26,10 +26,6 @@
                     <td>{{ trans('front.stop_duration') }}:</td>
                     <td><span data-device="stop_duration"></span></td>
                 </tr>
-                <tr>
-                    <td>{{ trans('front.driver') }}:</td>
-                    <td><span data-device="driver.name"></span></td>
-                </tr>
                 @if (Auth::User()->isAdmin())
                     <tr>
                         <td>IMEI:</td>
@@ -40,6 +36,11 @@
                         <td><span data-device="sim_number"></span></td>
                     </tr>
                 @endif
+                <tr>
+                    <td>{{ trans('front.driver') }}:</td>
+                    <td><span data-device="driver.name"></span></td>
+                </tr>
+
             </tbody>
         </table>
     </div>

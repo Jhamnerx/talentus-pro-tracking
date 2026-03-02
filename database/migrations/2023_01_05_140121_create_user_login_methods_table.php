@@ -13,6 +13,10 @@ class CreateUserLoginMethodsTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('user_login_methods')) {
+            return;
+        }
+
         Schema::create('user_login_methods', function (Blueprint $table) {
             $table->increments('id');
             $table->string('type');

@@ -13,6 +13,10 @@ class CreateTaskSetLocationTasksPivotTable extends Migration
      */
     public function up()
     {
+        if (Schema::hasTable('task_set_location_tasks_pivot')) {
+            return;
+        }
+
         Schema::create('task_set_location_tasks_pivot', function (Blueprint $table) {
             $table->unsignedInteger('task_id');
             $table->unsignedBigInteger('task_set_location_id');

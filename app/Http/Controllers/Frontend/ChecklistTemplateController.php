@@ -1,12 +1,16 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use CustomFacades\Validators\ChecklistTemplateFormValidator;
 use Tobuli\Entities\ChecklistTemplate;
 use Tobuli\Exceptions\ValidationException;
 
-class ChecklistTemplateController extends Controller {
-    public function index() {
+class ChecklistTemplateController extends Controller
+{
+    public function index()
+    {
         $this->checkException('checklist_template', 'view');
 
         $templates = ChecklistTemplate::available()
@@ -18,7 +22,8 @@ class ChecklistTemplateController extends Controller {
             ]);
     }
 
-    public function indexAdmin() {
+    public function indexAdmin()
+    {
         $this->checkException('checklist_template', 'view');
 
         $templates = ChecklistTemplate::available()
@@ -30,7 +35,8 @@ class ChecklistTemplateController extends Controller {
             ]);
     }
 
-    public function table() {
+    public function table()
+    {
         $this->checkException('checklist_template', 'view');
 
         $templates = ChecklistTemplate::available()
@@ -54,7 +60,7 @@ class ChecklistTemplateController extends Controller {
             'template' => $template,
             'types' => $types,
             'rows' => $rows,
-            ]);
+        ]);
     }
 
     public function update($templateId)

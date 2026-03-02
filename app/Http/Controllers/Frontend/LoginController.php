@@ -8,11 +8,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
-use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\View;
 use Tobuli\Entities\User;
-use Tobuli\Services\Auth\EmailAuth;
 use Tobuli\Services\AuthManager;
 
 class LoginController extends Controller
@@ -22,7 +21,7 @@ class LoginController extends Controller
      *
      * @return mixed
      */
-    public function create($id = NULL)
+    public function create(AuthManager $authManager, $id = null)
     {
         if (Auth::check()) {
             return Redirect::route('objects.index');
@@ -44,12 +43,10 @@ class LoginController extends Controller
             return Redirect::route('login');
         }
 
-        $emailLogin = AuthManager::isAuthEnabledByDefault(EmailAuth::getKey());
+        $internalAuths = $authManager->getEnabledDefaultInternalAuths();
+        $externalAuths = $authManager->getEnabledDefaultExternalAuths();
 
-        $externalLoginMethods = AuthManager::getEnabledDefaultAuths();
-        unset($externalLoginMethods[EmailAuth::getKey()]);
-
-        return View::make('front::Login.create')->with(compact('emailLogin', 'externalLoginMethods'));
+        return View::make('front::Login.create')->with(compact('internalAuths', 'externalAuths'));
     }
 
     /**
@@ -57,7 +54,7 @@ class LoginController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store($hash = null, AuthManager $loginMethodService)
+    public function store(AuthManager $authManager, $hash = null)
     {
         if (isPublic()) {
             if ($user = \CustomFacades\RemoteUser::getByHash($hash)) {
@@ -72,14 +69,30 @@ class LoginController extends Controller
 
         $remember_me = config('session.remember_me') && Request::input('remember_me') == 1;
 
-        if (Auth::attempt(Request::only(['email', 'password']), $remember_me)) {
+        $validator = Validator::make($this->data, [
+            'identifier' => 'required',
+            'password' => 'required',
+        ]);
+
+        if ($validator->stopOnFirstFailure()->fails()) {
+            return Redirect::route('login')->withInput()->with('message', $validator->errors()->first());
+        }
+
+        $password = Request::only('password');
+        $identifier = Request::get('identifier');
+
+        foreach ($authManager->getEnabledDefaultInternalAuths() as $auth) {
+            if (!Auth::attempt($password + [$auth->getUserColumn() => $identifier], $remember_me)) {
+                continue;
+            }
+
             if (! Auth::User()->active) {
                 Auth::logout();
 
                 return Redirect::route('login')->withInput()->with('message', trans('front.login_suspended'));
             }
 
-            if (!$loginMethodService->isAuthEnabledToUser(Auth::user(), EmailAuth::getKey())) {
+            if (!$authManager->isAuthEnabledToUser(Auth::user(), $auth->getKey())) {
                 Auth::logout();
 
                 return Redirect::route('login')->withInput()->with('message', trans('front.login_method_unavailable'));
@@ -90,15 +103,15 @@ class LoginController extends Controller
                     return route($route);
 
                 if (Auth::User()->isManager() || Auth::User()->isAdmin())
-                    return route('objects.index');
+                    return route('admin');
 
                 return route('objects.index');
             });
 
             return Redirect::to($url);
-        } else {
-            return Redirect::route('login')->withInput()->with('message', trans('front.login_failed'));
         }
+
+        return Redirect::route('login')->withInput()->with('message', trans('front.login_failed'));
     }
 
     /**

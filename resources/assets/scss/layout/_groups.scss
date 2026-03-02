@@ -61,7 +61,8 @@
       @extend .ico;
       @extend .ico-minus:before;
 
-      font-size: 1em;
+      font-size: $group-collapse-status-collapse-font-size;
+      font-weight: $group-collapse-status-collapse-font-weight;
       color: $group-collapse-status-collapse-color;
       cursor: pointer;
     }
@@ -71,6 +72,8 @@
       &:after {
         @extend .ico-plus:before;
         color: $group-collapse-status-color;
+        font-size: $group-collapse-status-font-size;
+        font-weight: $group-collapse-status-font-weight;
       }
     }
 
@@ -105,9 +108,19 @@
     color: $group-heading-hover-color;
     background-color: $group-heading-hover-bg;
 
-    .group-title:after,
     .status-collapse {
       color: $brand-primary;
+    }
+
+    .group-title {
+      &:after {
+        color: $group-collapse-status-collapse-hover-color;
+      }
+      &.collapsed {
+        &:after {
+          color: $group-collapse-status-hover-color;
+        }
+      }
     }
   }
 }
@@ -166,12 +179,6 @@
         display: block;
         color: $color-text-600;
       }
-      
-      [data-device="time_text"] {
-        font-size: 0.85em;
-        display: block;
-        color: $color-text-600;
-      }
     }
 
     > .details {
@@ -197,12 +204,6 @@
 
       [data-device="time"] {
         font-size: 8px;
-        display: block;
-        color: $color-text-900;
-      }
-      
-      [data-device="time_text"] {
-        font-size: 9.5px;
         display: block;
         color: $color-text-900;
       }

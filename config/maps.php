@@ -34,14 +34,16 @@ return [
         'Azure Hybrid' => 29,
         'Azure Satellite' => 30,
         
-        'Google Normal B' => 51,
-        'Google Hybrid B' => 53,
-        'Google Satellite B' => 54,
-        'Google Terrain B' => 55,
-        'Google Hybrid Traffic' => 56,
+        'Google Map - Normal ≠' => 51,
+        'Google Map - Hibrido ≠' => 53,
+        'Google Map - Satelital ≠' => 54,
+        'Google Map - Terreno ≠' => 55,
+        'Google Map - Trafico Hibrido ≠' => 56,
+        'Google Map - Trafico ≠' => 57,
 
         'Carto' => 70,
         'LocationIQ Streets' => 71,
+        'Carto Dark' => 72,
     ],
 
     'zoom_levels' => array_combine(

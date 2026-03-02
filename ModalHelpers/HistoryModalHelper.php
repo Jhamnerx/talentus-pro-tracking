@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
 use Tobuli\Entities\Device;
+use Tobuli\Entities\Event;
 use Tobuli\Entities\UserDriver;
 use Tobuli\History\Actions\AppendRouteColor;
 use Tobuli\History\Actions\Distance;
@@ -124,7 +125,7 @@ class HistoryModalHelper extends ModalHelper
             Drivers::class,
             Positions::class,
             GroupDriveStop::class,
-            Odometer::class, // Añadido para que funcione igual que en OdometerDailyReport
+            Odometer::class,
         ]);
 
         if ($this->user->perm('events', 'view')) {
@@ -250,7 +251,6 @@ class HistoryModalHelper extends ModalHelper
                 }
 
                 $items[] = $item;
-
                 // Calculamos la distancia para cada grupo EXACTAMENTE como en OdometerDailyReport::getRow
                 $odometer_start = trans('front.not_available');
                 $odometer_end = trans('front.not_available');
@@ -509,10 +509,12 @@ class HistoryModalHelper extends ModalHelper
             'device' => FractalTransformer::setSerializer(WithoutDataArraySerializer::class)
                 ->item($device, DeviceHistoryTransformer::class)->toArray(),
             'distance_sum' => $data['root']->getStat('distance')->human(),
-            'distance_sum' => $data['root']->getStat('distance')->human(),
             'top_speed' => $data['root']->getStat('speed_max')->human(),
             'move_duration' => $data['root']->getStat('drive_duration')->human(),
             'stop_duration' => $data['root']->getStat('stop_duration')->human(),
+            'engine_hours' => $data['root']->getStat('engine_hours')->human(),
+            'engine_idle'  => $data['root']->getStat('engine_idle')->human(),
+            'engine_work'  => $data['root']->getStat('engine_work')->human(),
             'fuel_consumption' => $data['root']->hasStat('fuel_consumption') ? $data['root']->getStat('fuel_consumption')->human() : null,
             'sensors' => $sensors,
             'fuel_consumption_arr' => [],
@@ -883,6 +885,7 @@ class HistoryModalHelper extends ModalHelper
         return [
             'status'   => self::STATUS_EVENT,
             'icon'     => $this->icons[self::STATUS_EVENT] ?? null,
+            'type_icon' => Event::getTypeIconAsset($group->getStartPosition()->type),
             'message'  => $group->name,
             'lat'      => strval($group->getStartPosition()->latitude),
             'lng'      => strval($group->getStartPosition()->longitude),

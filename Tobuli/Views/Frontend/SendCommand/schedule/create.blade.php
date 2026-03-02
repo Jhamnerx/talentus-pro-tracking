@@ -17,11 +17,18 @@
             </div>
 
             <div class="connection" data-connection="gprs" hidden>
-                @include('Frontend.SendCommand.partials.gprs_form')
+                @include('Frontend.SendCommand.partials.gprs_form', [
+                    'ajax_url'  => route('command_schedules.devices'),
+                    'commands_url' => route('command_schedules.commands'),
+                ])
             </div>
 
             <div class="connection" data-connection="sms" hidden>
-                @include('Frontend.SendCommand.partials.sms_form')
+                @include('Frontend.SendCommand.partials.sms_form', [
+                    'ajax_url'  => route('command_schedules.devices',  ['type' => 'sms']),
+                    'commands_url' => route('command_schedules.commands', ['connection' => 'sms']),
+                    'devices_sms' => $devices_sms
+                ])
             </div>
         </div>
 
@@ -43,9 +50,11 @@
             $('*[data-connection]', $container).each(function () {
                 if ($(this).attr('data-connection') == connection) {
                     $('input, select, textarea', this).prop( "disabled", false );
+                    $('select', this).selectpicker('refresh');
                     return $(this).show();
                 } else {
                     $('input, select, textarea', this).prop( "disabled", true );
+                    $('select', this).selectpicker('refresh');
                     return $(this).hide();
                 }
             });

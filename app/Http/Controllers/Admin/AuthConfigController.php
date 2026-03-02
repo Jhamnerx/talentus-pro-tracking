@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Facades\Input;
 use Illuminate\Support\Facades\Redirect;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Services\AuthManager;
@@ -28,10 +27,8 @@ class AuthConfigController extends BaseController
 
     public function store()
     {
-        $input = Input::all();
-
         try {
-            $this->authManager->storeGeneralSettings($input);
+            $this->authManager->storeGeneralSettings($this->data);
         } catch (ValidationException $e) {
             return Redirect::back()->withErrors($e->getErrors());
         }
@@ -41,10 +38,8 @@ class AuthConfigController extends BaseController
 
     public function storeAuth(string $authKey)
     {
-        $input = Input::all();
-
         try {
-            $this->authManager->storeConfig($authKey, $input);
+            $this->authManager->storeConfig($authKey, $this->data);
         } catch (ValidationException $e) {
             return Redirect::back()->with(['errors-' . $authKey => $e->getErrors()]);
         }
@@ -54,9 +49,7 @@ class AuthConfigController extends BaseController
 
     public function check(string $authKey)
     {
-        $input = Input::all();
-
-        $errors = $this->authManager->checkConfigErrors($authKey, $input);
+        $errors = $this->authManager->checkConfigErrors($authKey, $this->data);
 
         return response()->json(['errors' => $errors]);
     }

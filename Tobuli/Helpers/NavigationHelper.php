@@ -310,6 +310,12 @@ function getNavigation()
             'childs' => []
         ];
 
+        $items['setup']['childs'][] = [
+            'title' => '<span class="text">' .  trans('admin.fcm_configurations') . '</span>',
+            'route' => 'admin.fcm_configurations.index',
+            'childs' => []
+        ];
+
         if (config('addon.external_url')) {
             $items['setup']['childs'][] = [
                 'title' => '<span class="text">' . trans('front.external_url') . '</span>',

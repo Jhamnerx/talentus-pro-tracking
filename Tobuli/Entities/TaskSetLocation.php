@@ -17,7 +17,11 @@ class TaskSetLocation extends AbstractEntity
      */
     protected $fillable = [
         'task_set_id',
-        'order'
+        'order',
+        'lat',
+        'lng',
+        'time_from',
+        'time_to'
     ];
 
     /**

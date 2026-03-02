@@ -22,13 +22,15 @@ class DashboardController extends Controller
     {
         $blocks = [];
 
-        $settings = $this->user->getSettings('dashboard');
+        $dashboardBlocks = config('tobuli.dashboard.blocks');
 
-        foreach ($settings['blocks'] as $block => $config) {
-            if ( ! $this->dashboardManager->getConfig($block, 'enabled'))
+        foreach ($dashboardBlocks as $name => $config) {
+            $block = $this->dashboardManager->getBlock($name);
+
+            if ( ! $block->getConfig('enabled'))
                 continue;
 
-            $blocks[$block] = $this->dashboardManager->getFrame($block);
+            $blocks[$name] = $block->buildFrame();
         }
 
         if ($request->ajax())

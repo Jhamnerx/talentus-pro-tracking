@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Frontend;
+<?php namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use CustomFacades\ModalHelpers\SensorModalHelper;
@@ -12,16 +10,15 @@ use Illuminate\Support\Facades\Form;
 use Tobuli\Sensors\SensorsManager;
 use Tobuli\Services\Sensors\ParameterSuggestionService;
 
-class SensorsController extends Controller
-{
+class SensorsController extends Controller {
 
     public function index($device_id = NULL)
     {
         if (is_null($device_id))
             $device_id = empty($this->data['device_id']) ? null : $this->data['device_id'];
-
+        
         $data = SensorModalHelper::paginated($device_id);
-
+        
         return !$this->api ? view('front::Sensors.index')->with(['sensors' => $data, 'device_id' => $device_id]) : $data;
     }
 
@@ -29,7 +26,7 @@ class SensorsController extends Controller
     {
         if (is_null($device_id))
             $device_id = empty($this->data['device_id']) ? null : $this->data['device_id'];
-
+        
         $data = array_merge(SensorModalHelper::createData($device_id), [
             'route' => 'sensors.store'
         ]);

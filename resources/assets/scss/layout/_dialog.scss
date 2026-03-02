@@ -13,6 +13,7 @@
 .ui-dialog.ui-widget.ui-widget-content {
   z-index: 1046;
   outline: none;
+  @include border-top-radius($modal-border-radius);
 }
 
 button.ui-dialog-titlebar-close {

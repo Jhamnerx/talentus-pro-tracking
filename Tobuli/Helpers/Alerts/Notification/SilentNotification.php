@@ -2,25 +2,26 @@
 
 namespace Tobuli\Helpers\Alerts\Notification;
 
+use Illuminate\Support\Arr;
+use Tobuli\Entities\Alert;
 use Tobuli\Helpers\Alerts\Notification\Input\InputAwareInterface;
-use Tobuli\Helpers\Alerts\Notification\Input\InputInitTrait;
 use Tobuli\Helpers\Alerts\Notification\Input\InputMeta;
 
 class SilentNotification extends AbstractNotification implements InputAwareInterface
 {
-    use InputInitTrait;
-
     protected array $rules = [
         'input' => 'required|integer|min:1',
     ];
 
-    private bool $defaultInputActive = false;
-    private string $defaultInputValue = '0';
-
-    public function getInput(array $alertData): InputMeta
+    public function getInput(Alert $alert): InputMeta
     {
-        return $this->initInput($alertData)
-            ->setType(InputMeta::TYPE_INTEGER)
-            ->setTitle(trans('validation.attributes.silent_notification'));
+        $key = static::getKey();
+
+        $alertData = Arr::get($alert->notifications ?? [], $key);
+
+        return (new InputMeta($key, trans('validation.attributes.silent_notification')))
+            ->setActive(Arr::get($alertData, 'active', false))
+            ->setInput(Arr::get($alertData, 'input', '0'))
+            ->setType(InputMeta::TYPE_INTEGER);
     }
 }

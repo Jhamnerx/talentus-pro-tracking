@@ -10,42 +10,40 @@
             </tr>
         </thead>
         <tbody>
-            @if (count($device_cameras))
-                @foreach ($device_cameras as $camera)
-                    <tr>
-                        <td>
-                            {{ $camera->name }}
-                        </td>
-                        <td>
-                            {{ $camera->show_widget }}
-                        </td>
-                        <td>
-                            @if ($camera->ftp_username)
-                                {{ $camera->ftp_username }}
-                            @else
-                                {{ trans('front.loading') }}
-                            @endif
-                        </td>
-                        <td>
-                            @if ($camera->ftp_password)
-                                {{ $camera->ftp_password }}
-                            @else
-                                {{ trans('front.loading') }}
-                            @endif
-                        </td>
-                        <td class="actions">
-                            <a href="javascript:" class="btn icon edit" data-url="{!! route('device_camera.edit', $camera->id) !!}"
-                                data-modal="device_camera_edit"></a>
-                            <a href="javascript:" class="btn icon delete" data-url="{!! route('device_camera.do_destroy', $camera->id) !!}"
-                                data-modal="device_camera_destroy"></a>
-                        </td>
-                    </tr>
-                @endforeach
-            @else
+        @if (count($device_cameras))
+            @foreach ($device_cameras as $camera)
                 <tr>
-                    <td colspan="3">{!! trans('front.no_cameras') !!}</td>
+                    <td>
+                        {{$camera->name}}
+                    </td>
+                    <td>
+                        {{$camera->show_widget}}
+                    </td>
+                    <td>
+                        @if ($camera->ftp_username)
+                            {{$camera->ftp_username}}
+                        @else
+                            {{trans('front.loading')}}
+                        @endif
+                    </td>
+                    <td>
+                        @if ($camera->ftp_password)
+                            {{$camera->ftp_password}}
+                        @else
+                            {{trans('front.loading')}}
+                        @endif
+                    </td>
+                    <td class="actions">
+                        <a href="javascript:" class="btn icon edit" data-url="{!!route('device_camera.edit', $camera->id)!!}" data-modal="device_camera_edit"></a>
+                        <a href="javascript:" class="btn icon delete" data-url="{!!route('device_camera.do_destroy', $camera->id)!!}" data-modal="device_camera_destroy"></a>
+                    </td>
                 </tr>
-            @endif
+            @endforeach
+        @else
+            <tr>
+                <td colspan="3">{!!trans('front.no_cameras')!!}</td>
+            </tr>
+        @endif
         </tbody>
     </table>
 </div>

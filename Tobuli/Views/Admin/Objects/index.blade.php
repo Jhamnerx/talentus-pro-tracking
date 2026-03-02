@@ -18,95 +18,137 @@
 
         <div class="panel-heading">
             <ul class="nav nav-tabs nav-icons pull-right">
-                @if( Auth::User()->perm('devices', 'edit') )
-                <li role="presentation" class="">
-                    <a href="javascript:" type="button" class="" data-modal="devices_create" data-url="{{ route("devices.create") }}">
-                        <i class="icon device-add" title="{{ trans('admin.add_new_device') }}"></i>
-                    </a>
-                </li>
-                <li role="presentation" class="">
-                    <a href="javascript:" type="button" class="" data-modal="{{ $section }}_import" data-url="{{ route("admin.objects.import") }}">
-                        <i class="icon device-import" title="{{ trans('front.import_devices') }}"></i>
-                    </a>
-                </li>
-                <li role="presentation" class="">
-                    <a href="javascript:" type="button" class="" data-modal="{{ $section }}_export_modal" data-url="{{ route("admin.objects.export_modal") }}">
-                        <i class="fa fa-download" title="{{ trans('admin.export_devices') }}"></i>
-                    </a>
-                </li>
+                @if (Auth::User()->perm('devices', 'edit'))
+                    <li role="presentation" class="">
+                        <a href="javascript:" type="button" class="" data-modal="devices_create"
+                            data-url="{{ route('devices.create') }}">
+                            <i class="icon device-add" title="{{ trans('admin.add_new_device') }}"></i>
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="javascript:" type="button" class="" data-modal="{{ $section }}_import"
+                            data-url="{{ route('admin.objects.import') }}">
+                            <i class="icon device-import" title="{{ trans('front.import_devices') }}"></i>
+                        </a>
+                    </li>
+                    <li role="presentation" class="">
+                        <a href="javascript:" type="button" class="" data-modal="{{ $section }}_export_modal"
+                            data-url="{{ route('admin.objects.export_modal') }}">
+                            <i class="fa fa-download" title="{{ trans('admin.export_devices') }}"></i>
+                        </a>
+                    </li>
                 @endif
-                @if(config('addon.devices_bulk_delete') && Auth::User()->isAdmin())
+                @if (config('addon.devices_bulk_delete') && Auth::User()->isAdmin())
                     <li role="presentation" class="">
                         <a href="javascript:" type="button" data-modal="{{ $section }}_bulk_delete"
-                           data-url="{{ route('admin.objects.bulk_delete') }}">
+                            data-url="{{ route('admin.objects.bulk_delete') }}">
                             <i class="fa fa-trash" title="Bulk delete"></i>
                         </a>
                     </li>
                 @endif
             </ul>
 
-            <div class="panel-title"><i class="icon device"></i> {{ trans('admin.'.$section) }}</div>
+            <div class="panel-title"><i class="icon device"></i> {{ trans('admin.' . $section) }}</div>
 
             <div class="panel-form">
                 <div class="form-group search">
-                    {!! Form::text('search_phrase', null, ['class' => 'form-control', 'placeholder' => trans('admin.search_it'), 'data-filter' => 'true']) !!}
+                    {!! Form::text('search_phrase', null, [
+                        'class' => 'form-control',
+                        'placeholder' => trans('admin.search_it'),
+                        'data-filter' => 'true',
+                    ]) !!}
+                </div>
+                <div class="form-group" style="min-width: 150px;">
+                    {!! Form::select(
+                        'filter_active',
+                        [
+                            '' => trans('admin.all'),
+                            '1' => trans('validation.attributes.active'),
+                            '0' => trans('front.inactive'),
+                        ],
+                        request('filter_active'),
+                        [
+                            'class' => 'form-control',
+                            'data-filter' => 'true',
+                        ],
+                    ) !!}
+                </div>
+                <div class="form-group" style="min-width: 180px;">
+                    {!! Form::select(
+                        'filter_webservices',
+                        [
+                            '' => trans('admin.all_webservices'),
+                            'any' => trans('admin.with_webservices'),
+                            'mtc' => 'MTC',
+                            'osinergmin' => 'OSINERGMIN',
+                            'mininter' => 'MININTER',
+                            'consatel' => 'CONSATEL',
+                            'wisetrack' => 'WISETRACK',
+                        ],
+                        request('filter_webservices'),
+                        [
+                            'class' => 'form-control',
+                            'data-filter' => 'true',
+                        ],
+                    ) !!}
                 </div>
             </div>
         </div>
 
         <div class="panel-body" data-table>
-            @include('Admin.'.ucfirst($section).'.table')
+            @include('Admin.' . ucfirst($section) . '.table')
         </div>
     </div>
 @stop
 
 @section('javascript')
-<script>
-    tables.set_config('table_{{ $section }}', {
-        url: '{{ route("admin.{$section}.index") }}',
-        do_destroy: {
-            url: '{{ route("admin.objects.do_destroy") }}',
-            modal: '{{$section}}_delete',
-            method: 'GET'
-        },
-        assign: {
-            url: '{{ route("admin.objects.assignForm") }}',
-            modal: '{{$section}}_assign',
-            method: 'GET'
-        },
-        set_active: {
-            url: '{{ route("admin.objects.set_active", 1) }}',
-            method: 'POST'
-        },
-        set_inactive: {
-            url: '{{ route("admin.objects.set_active", 0) }}',
-            method: 'POST'
+    <script>
+        tables.set_config('table_{{ $section }}', {
+            url: '{{ route("admin.{$section}.index") }}',
+            do_destroy: {
+                url: '{{ route('admin.objects.do_destroy') }}',
+                modal: '{{ $section }}_delete',
+                method: 'POST',
+                content: true,
+            },
+            assign: {
+                url: '{{ route('admin.objects.assignForm') }}',
+                modal: '{{ $section }}_assign',
+                method: 'POST',
+                content: true,
+            },
+            set_active: {
+                url: '{{ route('admin.objects.set_active', 1) }}',
+                method: 'POST'
+            },
+            set_inactive: {
+                url: '{{ route('admin.objects.set_active', 0) }}',
+                method: 'POST'
+            }
+        });
+
+        function {{ $section }}_assign_modal_callback() {
+            tables.get('table_{{ $section }}');
         }
-    });
 
-    function {{ $section }}_assign_modal_callback() {
-        tables.get('table_{{ $section }}');
-    }
+        function {{ $section }}_edit_modal_callback() {
+            tables.get('table_{{ $section }}');
+        }
 
-    function {{ $section }}_edit_modal_callback() {
-        tables.get('table_{{ $section }}');
-    }
+        function {{ $section }}_create_modal_callback() {
+            tables.get('table_{{ $section }}');
+        }
 
-    function {{ $section }}_create_modal_callback() {
-        tables.get('table_{{ $section }}');
-    }
+        function {{ $section }}_import_modal_callback() {
+            tables.get('table_{{ $section }}');
+        }
 
-    function {{ $section }}_import_modal_callback() {
-        tables.get('table_{{ $section }}');
-    }
+        function {{ $section }}_delete_modal_callback() {
+            tables.get('table_{{ $section }}');
+        }
 
-    function {{ $section }}_delete_modal_callback() {
-        tables.get('table_{{ $section }}');
-    }
-
-    $(document).on('bulk_delete_object', function (e, res) {
-        $('#objects_bulk_delete .alert-success').css('display', 'block').html(res.content);
-    });
-
-</script>
+        $(document).on('bulk_delete_object', function(e, res) {
+            $('#objects_bulk_delete .alert-success').css('display', 'block').html(res.content);
+        });
+    </script>
 @stop

@@ -1,15 +1,11 @@
 <?php namespace ModalHelpers;
 
-use CustomFacades\Repositories\UserDriverRepo;
-use CustomFacades\Repositories\UserRepo;
 use CustomFacades\Validators\UserDriverFormValidator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\UserDriver;
-use Tobuli\Exceptions\ValidationException;
-
-use Tobuli\Entities\Device;
+use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 
 class UserDriverModalHelper extends ModalHelper
 {
@@ -38,9 +34,13 @@ class UserDriverModalHelper extends ModalHelper
     {
         $this->checkException('drivers', 'create');
 
-        $devices = $this->user->devices;
+        $data = [];
 
-        return compact('devices');
+        if ($this->api) {
+            $data['devices'] = $this->user->devices;
+        }
+
+        return $data;
     }
 
     public function create()
@@ -49,9 +49,12 @@ class UserDriverModalHelper extends ModalHelper
 
         $this->validate('create');
 
-        $driver = UserDriverRepo::create($this->data + ['user_id' => $this->user->id]);
+        $driver = UserDriver::create($this->data + ['user_id' => $this->user->id]);
 
-        $driver->devices()->sync(Arr::get($this->data, 'devices', []));
+        $devicesLoader = new UserDevicesGroupLoader($this->user);
+        $devicesLoader->setRequestKey('devices');
+
+        $driver->devices()->syncLoader($devicesLoader);
 
         $setCurrent = Arr::get($this->data, 'current');
         $device_id = Arr::get($this->data, 'device_id');
@@ -67,18 +70,22 @@ class UserDriverModalHelper extends ModalHelper
     {
         $id = array_key_exists('user_driver_id', $this->data) ? $this->data['user_driver_id'] : request()->route('user_drivers');
 
-        $item = UserDriverRepo::find($id);
+        $item = UserDriver::find($id);
 
         $this->checkException('drivers', 'edit', $item);
 
-        $devices = $this->user->devices;
+        $data = compact('item');
 
-        return compact('item', 'devices');
+        if ($this->api) {
+            $data['devices'] = $this->user->devices;
+        }
+
+        return $data;
     }
 
     public function edit()
     {
-        $driver = UserDriverRepo::find($this->data['id']);
+        $driver = UserDriver::find($this->data['id']);
 
         $this->checkException('drivers', 'update', $driver);
 
@@ -95,21 +102,24 @@ class UserDriverModalHelper extends ModalHelper
             }
         }
 
-        UserDriverRepo::update($driver->id, $this->data);
-        $driver->devices()->sync(Arr::get($this->data, 'devices', []));
+        $devicesLoader = new UserDevicesGroupLoader($this->user);
+        $devicesLoader->setRequestKey('devices');
+
+        $driver->update($this->data);
+        $driver->devices()->syncLoader($devicesLoader);
 
         return ['status' => 1];
     }
 
     public function editField($id)
     {
-        $driver = UserDriverRepo::find($id);
+        $driver = UserDriver::find($id);
 
         $this->checkException('drivers', 'update', $driver);
 
         $this->validate('silentUpdate', $driver->id);
 
-        UserDriverRepo::update($driver->id, $this->data);
+        $driver->update($this->data);
 
         return ['status' => 1];
     }
@@ -121,7 +131,7 @@ class UserDriverModalHelper extends ModalHelper
 
     public function doDestroy($id)
     {
-        $item = UserDriverRepo::find($id);
+        $item = UserDriver::find($id);
 
         $this->checkException('drivers', 'remove', $item);
 
@@ -131,18 +141,18 @@ class UserDriverModalHelper extends ModalHelper
     public function destroy()
     {
         $id = array_key_exists('user_driver_id', $this->data) ? $this->data['user_driver_id'] : $this->data['id'];
-        $item = UserDriverRepo::find($id);
+        $item = UserDriver::find($id);
 
         $this->checkException('drivers', 'remove', $item);
 
-        UserDriverRepo::delete($id);
+        $item->delete();
 
         return ['status' => 1];
     }
 
     public function activityLog($id)
     {
-        $driver = UserDriverRepo::find($id);
+        $driver = UserDriver::find($id);
 
         $this->checkException('drivers', 'view', $driver);
 

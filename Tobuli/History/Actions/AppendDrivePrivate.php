@@ -2,32 +2,31 @@
 
 namespace Tobuli\History\Actions;
 
-
-use Tobuli\Entities\DeviceRouteType;
-
 class AppendDrivePrivate extends ActionAppend
 {
-    static public function required()
+    public static function after()
     {
         return [
-            AppendDrivePrivateSensor::class,
-            AppendDriveRouteType::class,
+            AppendDrivePrivateByRoute::class,
+            AppendDrivePrivateBySensor::class,
+            AppendDrivePrivateBySchedule::class,
+        ];
+    }
+
+    public static function defaultAfter(): array
+    {
+        return [
+            AppendDrivePrivateByRoute::class,
+            AppendDrivePrivateBySensor::class,
+            AppendDrivePrivateBySchedule::class,
         ];
     }
 
     public function boot()
     {
-
     }
 
     public function proccess(&$position)
     {
-        if (is_null($position->drive_route_type))
-            return;
-
-        if ($position->drive_route_type === DeviceRouteType::TYPE_PRIVATE)
-            $position->drive_private = true;
-        else
-            $position->drive_private = null;
     }
 }

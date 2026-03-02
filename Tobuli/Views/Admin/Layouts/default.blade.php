@@ -12,8 +12,8 @@
     <meta name="app-version" content="{{ config('tobuli.version') }}">
     <meta name="app-build" content="{{ config('app.build') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="author" content="development@talentustechnology.com" />
-    <meta name="copyright" content="System modified by development@talentustechnology.com. " />
+    <meta name="author" content="Gpswox" />
+    <meta name="copyright" content="Powered by Gpswox" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <link rel="shortcut icon" href="{{ Appearance::getAssetFileUrl('favicon') }}" />
     <link rel="stylesheet" type="text/css"
@@ -134,8 +134,8 @@
                         <p>{{ trans('admin.do_delete') }}</p>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-main" onclick="modal_delete.del();">{{ trans('admin.yes') }}</button>
-                        <button class="btn btn-side" data-dismiss="modal"
+                        <button class="btn btn-action" onclick="modal_delete.del();">{{ trans('admin.yes') }}</button>
+                        <button class="btn btn-default" data-dismiss="modal"
                             aria-hidden="true">{{ trans('global.cancel') }}</button>
                     </div>
                 </div>
@@ -151,8 +151,8 @@
                 </div>
                 <div class="modal-footer" style="margin-top: 0">
                     <button type="button" value="confirm"
-                        class="btn btn-main submit js-confirm-link-yes">{{ trans('admin.confirm') }}</button>
-                    <button type="button" value="cancel" class="btn btn-side"
+                        class="btn btn-action submit js-confirm-link-yes">{{ trans('admin.confirm') }}</button>
+                    <button type="button" value="cancel" class="btn btn-default"
                         data-dismiss="modal">{{ trans('admin.cancel') }}</button>
                 </div>
             </div>

@@ -1,16 +1,14 @@
 <?php namespace Tobuli\Services\Commands;
 
 use CustomFacades\Field;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Tobuli\Entities\User;
 
 class DevicesCommandsSmsCustom implements DevicesCommands
 {
-    /**
-     * @var User
-     */
-    private $user;
+    private User $user;
 
     public function __construct(User $user)
     {
@@ -18,11 +16,9 @@ class DevicesCommandsSmsCustom implements DevicesCommands
     }
 
     /**
-     * @param EloquentCollection $devices
-     * @param bool $intersect
-     * @return Collection
+     * @param EloquentCollection|Builder $devices
      */
-    public function get(EloquentCollection $devices, bool $intersect) : Collection
+    public function get($devices, bool $intersect): Collection
     {
         $command = [
             'type'  => 'custom',

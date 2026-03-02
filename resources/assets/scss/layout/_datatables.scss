@@ -54,6 +54,8 @@ div.dataTables_wrapper {
     text-align: left;
   }
   div.dataTables_filter input {
+    @extend .form-control;
+
     margin-left: 0.5em;
     display: inline-block;
     width: auto;

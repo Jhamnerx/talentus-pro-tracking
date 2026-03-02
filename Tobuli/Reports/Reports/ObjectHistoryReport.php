@@ -1,6 +1,4 @@
-<?php
-
-namespace Tobuli\Reports\Reports;
+<?php namespace Tobuli\Reports\Reports;
 
 use Formatter;
 use Illuminate\Database\QueryException;
@@ -26,17 +24,18 @@ class ObjectHistoryReport extends DeviceReport
         return trans('front.object_history');
     }
 
-    protected function processPosition($position, &$parameters, $sensors)
+    protected function processPosition($position, & $parameters, $sensors)
     {
-        // foreach ($position->parameters as $key => $value) {
-        //     if (empty($key))
-        //         continue;
+        foreach($position->parameters as $key => $value)
+        {
+            if (empty($key))
+                continue;
 
-        //     if (in_array($key, $parameters))
-        //         continue;
+            if (in_array($key, $parameters))
+                continue;
 
-        //     $parameters[] = $key;
-        // }
+            $parameters[] = $key;
+        }
 
         if ($this->anonymizer->isAnonymous($position)) {
             $position->latitude = null;
@@ -44,15 +43,15 @@ class ObjectHistoryReport extends DeviceReport
         }
 
         return [
-            'server_time' => Formatter::time()->human($position->server_time),
+            'server_time'=> Formatter::time()->human($position->server_time),
             'time'       => Formatter::time()->human($position->time),
             'speed'      => Formatter::speed()->human($position->speed),
             'altitude'   => Formatter::altitude()->human($position->altitude),
             'latitude'   => $position->latitude,
             'longitude'  => $position->longitude,
             'location'   => $this->getLocation($position, $this->getAddress($position)),
-            //'parameters' => $position->parameters,
-            'sensors'    => $sensors->mapWithKeys(function ($sensor) use ($position) {
+            'parameters' => $position->parameters,
+            'sensors'    => $sensors->mapWithKeys(function($sensor) use ($position) {
                 return [$sensor->id => $sensor->getValueFormated($position, false)];
             })
         ];
@@ -62,7 +61,7 @@ class ObjectHistoryReport extends DeviceReport
     {
         $parameters = [];
         $rows = [];
-        $sensors = $device->sensors->filter(function ($sensor) {
+        $sensors = $device->sensors->filter(function($sensor){
             return $sensor['add_to_history'];
         });
 
@@ -72,22 +71,19 @@ class ObjectHistoryReport extends DeviceReport
             $device->positions()
                 ->orderliness('asc')
                 ->whereBetween('time', [$this->date_from, $this->date_to])
-                ->chunk(
-                    2000,
-                    function ($positions) use (&$rows, &$parameters, $sensors) {
+                ->chunk(2000,
+                    function ($positions) use (& $rows, & $parameters, $sensors) {
                         foreach ($positions as $position) {
                             $rows[] = $this->processPosition($position, $parameters, $sensors);
                         }
-                    }
-                );
-        } catch (QueryException $e) {
-        }
+                    });
+        } catch (QueryException $e) {}
 
         if (empty($rows))
             return [
                 'meta'  => $this->getDeviceMeta($device),
                 'error' => trans('front.nothing_found_request'),
-                // 'parameters' => $parameters,
+                'parameters' => $parameters,
                 'sensors'    => $sensors
             ];
 
@@ -96,7 +92,7 @@ class ObjectHistoryReport extends DeviceReport
             'table'      => [
                 'rows' => $rows,
             ],
-            //'parameters' => $parameters,
+            'parameters' => $parameters,
             'sensors'    => $sensors
         ];
     }

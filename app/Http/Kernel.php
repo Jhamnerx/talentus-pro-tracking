@@ -8,6 +8,7 @@ use App\Http\Middleware\EnsureEmailIsVerified;
 use App\Http\Middleware\Referer;
 use App\Http\Middleware\TrustHosts;
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Laravel\Passport\Http\Middleware\CheckClientCredentials;
 
 class Kernel extends HttpKernel
 {
@@ -21,20 +22,20 @@ class Kernel extends HttpKernel
         'Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode',
         'App\Http\Middleware\ServerActive',
         'App\Http\Middleware\TrustProxies',
-        //\Fruitcake\Cors\HandleCors::class,
+        \Fruitcake\Cors\HandleCors::class,
         TrustHosts::class
-	];
+    ];
 
 
-	/**
-	 * The application's route middleware.
-	 *
-	 * @var array
-	 */
-	protected $routeMiddleware = [
-	    'confirmed_action' => ConfirmedAction::class,
-	    'auth' => 'App\Http\Middleware\Authenticate',
-		'auth.basic' => 'Illuminate\Auth\Middleware\AuthenticateWithBasicAuth',
+    /**
+     * The application's route middleware.
+     *
+     * @var array
+     */
+    protected $routeMiddleware = [
+        'confirmed_action' => ConfirmedAction::class,
+        'auth' => 'App\Http\Middleware\Authenticate',
+        'auth.basic' => 'Illuminate\Auth\Middleware\AuthenticateWithBasicAuth',
         'auth.api' => 'App\Http\Middleware\ApiAuthenticate',
         'auth.tracker' => 'App\Http\Middleware\TrackerAuth',
         'auth.admin' => 'App\Http\Middleware\AdminAuthenticate',
@@ -64,6 +65,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\EnsureEmailIsVerified::class,
             \App\Http\Middleware\TokenAuth::class,
             \App\Http\Middleware\OneSessionPerUser::class,
+            \App\Http\Middleware\LogRequest::class,
         ],
 
         'api' => [
@@ -75,7 +77,9 @@ class Kernel extends HttpKernel
         ],
 
         'app' => [
-
+            \App\Http\Middleware\ApiActive::class,
+            \App\Http\Middleware\SetLang::class,
+            \App\Http\Middleware\EnsureEmailIsVerified::class,
         ],
     ];
 }

@@ -25,7 +25,11 @@ class PoisController extends Controller
         try {
             $this->checkException('poi', 'view');
 
-            $pois = Poi::whereUserId($this->user->id)->with('mapIcon')->get();
+            $pois = Poi::userOwned($this->user)
+                ->filter(request()->all())
+                ->search(request('search'))
+                ->with('mapIcon')
+                ->get();
         } catch (\Exception $e) {
             $pois = [];
         }

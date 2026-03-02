@@ -20,7 +20,7 @@ class GeoNominatim extends AbstractGeoService
         $curl = new \Curl;
         $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
         $curl->options['CURLOPT_TIMEOUT'] = 5;
-        $curl->options['CURLOPT_USERAGENT'] = 'GPS Master application';
+        $curl->options['CURLOPT_USERAGENT'] = 'Server GPS application';
         $curl->options['CURLOPT_REFERER'] = url('/');
 
         $this->curl = $curl;

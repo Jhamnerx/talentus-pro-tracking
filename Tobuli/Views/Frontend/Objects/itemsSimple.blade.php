@@ -1,18 +1,22 @@
 <div class="table-responsive">
     <table class="table table-list table-hover">
         <thead>
-        <tr>
+            <tr>
                 {!! tableHeader('validation.attributes.name') !!}
-        </tr>
+            </tr>
         </thead>
         <tbody>
         @if (!empty($deviceCollection))
                 @foreach ($deviceCollection as $key => $item)
-                    <tr class="pointer" data-deviceContainer="{{ $item['id'] }}">
+                    <tr class="pointer" data-deviceContainer="{{ $item->id }}">
                         <td>
-                            <div class="name" onClick="app.deviceMedia.getImages({{ $item['id'] }}, '#ajax-photos'); app.devices.resetMap('mapForPhoto');">
-                                <span data-device="name">{{ $item['name'] }}</span>
+                            <div class="pull-right">
+                                <span data-device="status" style="background-color: {{ $item->getStatusColor() }}" title="{{ trans("global.".$item->getStatus()) }}">{{ $item->getStatus() }}</span>
                             </div>
+                            <div class="name" onClick="app.deviceMedia.getImages({{ $item->id }}, '#ajax-photos'); app.devices.resetMap('mapForPhoto');">
+                                <span data-device="name">{{ $item->name }}</span>
+                            </div>
+
                         </td>
                     </tr>
                 @endforeach

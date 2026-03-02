@@ -31,7 +31,7 @@ class CustomFieldFormValidator extends Validator
         parent::__construct($validator);
     }
 
-    public function validate($name, array $data, $id = NULL)
+    public function validate(string $name, array $data, $id = null): void
     {
         if (in_array($data['data_type'] ?? '', ['select', 'multiselect'])) {
             $this->validateOptions($data);

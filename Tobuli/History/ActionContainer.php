@@ -3,19 +3,13 @@
 namespace Tobuli\History;
 
 use Illuminate\Support\Str;
-use phpDocumentor\Reflection\Types\Boolean;
 use Tobuli\History\Actions\Action;
-use Tobuli\History\Stats\Skippable;
-use Tobuli\History\Stats\Stat;
 
 class ActionContainer
 {
-    protected $actions = [];
+    protected array $actions = [];
 
-    /**
-     * @return array
-     */
-    public function get()
+    public function get(): array
     {
         arsort($this->actions);
 
@@ -24,28 +18,46 @@ class ActionContainer
 
     /**
      * @param string|array<string> $actionClasses
-     * @return $this
      * @throws \Exception
      */
-    public function add($actionClasses)
+    public function add($actionClasses, int $weight = 1): self
     {
         if ( ! is_array($actionClasses))
             $actionClasses = [$actionClasses];
 
         foreach ($actionClasses as $class) {
-            $this->countCallers($this->resolveActionClass($class));
+            $this->countCallers($this->resolveActionClass($class), $weight);
+        }
+
+        return $this;
+    }
+
+    public function addDefaultAfter(): self
+    {
+        /** @var class-string<Action> $class */
+        foreach ($this->actions as $class => $weight) {
+            foreach ($class::after() as $afterAction) {
+                if (in_array($afterAction, $this->actions)) {
+                    continue 2;
+                }
+            }
+
+            foreach ($class::defaultAfter() as $defaultAction) {
+                if (in_array($defaultAction, $this->actions)) {
+                    continue;
+                }
+
+                $this->add($defaultAction, $weight + 1 - $class::RADIO);
+            }
         }
 
         return $this;
     }
 
     /**
-     * @param string $class
-     * @param int $weight
-     * @param array $list
      * @throws \Exception
      */
-    protected function countCallers(string $class, int $weight = 1, $list = [])
+    protected function countCallers(string $class, int $weight = 1, array $list = []): void
     {
         if (in_array($class, $list)) {
             throw new \Exception("Infinity loop for '$class'");
@@ -71,11 +83,9 @@ class ActionContainer
     }
 
     /**
-     * @param $class
-     * @return string
      * @throws \Exception
      */
-    protected function resolveActionClass($class)
+    protected function resolveActionClass(string $class): string
     {
         if ( ! class_exists($class))
             $class = "Tobuli\History\Actions\\" . Str::studly($class);

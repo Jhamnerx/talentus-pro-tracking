@@ -1,8 +1,4 @@
 .leaflet-control-layers {
-	@extend .droparrow;
-	@extend .dropright;
-	position: relative;
-
 	.leaflet-control-layers-list {
 		display: none;
 		@extend .dropdown-menu;
@@ -12,7 +8,7 @@
 		margin: 0;
 
 		@include checkbox('div', 'span');
-		@include checkbox-variant('div', $brand-primary, 'span');
+		@include checkbox-variant('div', $checkbox-active-background-color, 'span');
 
 		div {
 			padding: $dropdown-padding-vertical $dropdown-padding-horizontal;
@@ -22,5 +18,32 @@
 .leaflet-control-layers-expanded {
 	.leaflet-control-layers-list {
 		display: block;
+	}
+}
+
+.map-controls {
+	&.top-right {
+		.leaflet-control-layers {
+			@extend .droparrow;
+			@extend .dropright;
+			position: relative;
+		}
+	}
+
+	&.top-left {
+		.leaflet-control-layers {
+			@extend .droparrow;
+			@extend .dropleft;
+			position: relative;
+		}
+	}
+
+	&.bottom-right {
+		.leaflet-control-layers {
+			@extend .droparrow;
+			@extend .dropright;
+			@extend .up;
+			position: relative;
+		}
 	}
 }

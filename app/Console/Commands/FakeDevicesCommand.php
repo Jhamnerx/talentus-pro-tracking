@@ -46,6 +46,8 @@ class FakeDevicesCommand extends Command {
         } else {
             $this->updateDevices();
         }
+
+        return self::SUCCESS;
 	}
 
 	protected function fillDevices()
@@ -132,6 +134,7 @@ class FakeDevicesCommand extends Command {
         $device->traccar->device_time = $time;
         $device->traccar->time = $time;
         $device->traccar->server_time = $time;
+        $device->traccar->updated_at = $time;
 
         $device->speed = rand(0, 90);
 

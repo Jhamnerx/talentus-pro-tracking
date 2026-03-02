@@ -41,7 +41,7 @@ class BaseProtocol implements Protocol
     {
         $commands = [];
 
-        if ( ! $templates)
+        if (! $templates)
             return $commands;
 
         foreach ($templates as $template) {
@@ -83,8 +83,8 @@ class BaseProtocol implements Protocol
                 Field::text(Commands::KEY_DATA, trans('validation.attributes.message'), $template->message)
                     ->setDescription(
                         trans('front.raw_command_supports')
-                        . '<br><br>'
-                        . trans('front.gprs_template_variables')
+                            . '<br><br>'
+                            . trans('front.gprs_template_variables')
                     ),
             ]);
 
@@ -93,7 +93,7 @@ class BaseProtocol implements Protocol
 
     protected function initCommand($type, $attributes = [])
     {
-        if ( ! $this->commandsManager)
+        if (! $this->commandsManager)
             $this->commandsManager = new Commands();
 
         return $this->commandsManager->get($type, $attributes);
@@ -101,8 +101,7 @@ class BaseProtocol implements Protocol
 
     protected function appendPasswordAttribute($commands)
     {
-        foreach ($commands as &$command)
-        {
+        foreach ($commands as &$command) {
             if (empty($command['attributes'])) {
                 $command['attributes'] = collect([]);
             }
@@ -143,7 +142,7 @@ class BaseProtocol implements Protocol
                     break;
 
                 case Commands::KEY_ENABLE:
-                    $attributes[$key] = (boolean)$value;
+                    $attributes[$key] = (bool)$value;
                     break;
             }
         }
@@ -153,7 +152,7 @@ class BaseProtocol implements Protocol
             'type' => $data['type'],
         ];
 
-        if ( ! empty($attributes))
+        if (! empty($attributes))
             $data['attributes'] = $attributes;
 
         return $data;
@@ -166,8 +165,8 @@ class BaseProtocol implements Protocol
 
         $method = 'buildCommand' . ucfirst($data['type']);
 
-        if (method_exists($this,$method))
-            $data = call_user_func([$this,$method], $device, $data);
+        if (method_exists($this, $method))
+            $data = call_user_func([$this, $method], $device, $data);
 
         return $data;
     }
@@ -177,8 +176,7 @@ class BaseProtocol implements Protocol
         if (empty($data['unit']))
             return $data;
 
-        switch ($data['unit'])
-        {
+        switch ($data['unit']) {
             case 'minute':
                 $data['frequency'] *= 60;
                 break;
@@ -195,8 +193,7 @@ class BaseProtocol implements Protocol
         if (empty($data['unit']))
             return $data;
 
-        switch ($data['unit'])
-        {
+        switch ($data['unit']) {
             case 'minute':
                 $data['frequency'] *= 60;
                 break;
@@ -248,7 +245,7 @@ class BaseProtocol implements Protocol
 
         $cacheKey = 'grps_template_build_' . ($user->id ?? 0) . '_' . $data['template_id'];
 
-        $grps_template = Cache::store('array')->rememberForever($cacheKey, function() use ($user, $data) {
+        $grps_template = Cache::store('array')->rememberForever($cacheKey, function () use ($user, $data) {
             return UserGprsTemplate::userAccessible($user)->find($data['template_id']);
         });
 
@@ -256,7 +253,7 @@ class BaseProtocol implements Protocol
 
         $canEdit = $user->perm('send_command', 'edit') && !$device->gprs_templates_only;
 
-        if ( $canEdit && isset($data[Commands::KEY_DATA]))
+        if ($canEdit && isset($data[Commands::KEY_DATA]))
             $message = $data[Commands::KEY_DATA];
 
         $data[Commands::KEY_TYPE] = Commands::TYPE_CUSTOM;

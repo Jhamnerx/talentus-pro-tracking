@@ -3,7 +3,7 @@
 @section('modal_class', 'modal-md')
 
 @section('title')
-
+    {{ $title }}
 @stop
 
 @section('body')

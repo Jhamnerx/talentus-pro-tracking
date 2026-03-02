@@ -5,7 +5,7 @@
 @stop
 
 @section('body')
-    {!! Form::open(['route' => 'routes.export', 'method' => 'POST']) !!}
+    {!! Form::open(['route' => 'routes.export.store', 'method' => 'POST']) !!}
     {!! Form::hidden('id') !!}
     <div class="form-group">
         {!! Form::label('export_format', trans('validation.attributes.format').':') !!}

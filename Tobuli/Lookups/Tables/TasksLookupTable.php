@@ -131,26 +131,16 @@ class TasksLookupTable extends LookupTable
     {
         return [
             \Field::select('device_id', trans('validation.attributes.device_id'))
-                ->setOptions(['0' => '-- ' . trans('admin.select') . ' --'])
+                ->setOptions(['' => '-- ' . trans('admin.select') . ' --'])
                 ->setOptionsViaQuery($this->user->accessibleDevices(), 'name'),
             \Field::select('status', trans('front.task_status'))
                 ->setOptions(array_replace(
-                    ['0' => '-- '.trans('admin.select').' --'],
+                    ['' => '-- '.trans('admin.select').' --'],
                     TaskStatus::getList()
                 )),
             \Field::datetime('time_from', trans('global.from')),
             \Field::datetime('time_to', trans('global.to')),
             \Field::string('invoice_number', trans('validation.attributes.invoice_number')),
         ];
-    }
-
-    public function hasPrintableColumns(): bool
-    {
-        return false;
-    }
-
-    public function hasExportableColumns(): bool
-    {
-        return false;
     }
 }

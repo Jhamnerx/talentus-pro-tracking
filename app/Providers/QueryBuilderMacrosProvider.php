@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Query\JoinClause;
+use Tobuli\Services\EntityLoader\EnityLoader;
+use Tobuli\Services\EntityLoader\TempTable;
 
 class QueryBuilderMacrosProvider extends ServiceProvider
 {
@@ -224,16 +226,20 @@ class QueryBuilderMacrosProvider extends ServiceProvider
             return $query;
         });
 
-        BelongsToMany::macro('syncLoader', function ($loader) {
+        BelongsToMany::macro('syncLoader', function (EnityLoader $loader) {
             if (!$loader->hasSelect())
                 return;
 
-            if ($loader->getDetach()) {
-                $this->detachQuery($loader->getDetach());
+            if ($loader->hasDetach()) {
+                if (!$loader->getQueryStored()) {
+                    $loader->setQueryStored($this->getQuery());
+                }
+
+                $this->detachQuery($loader->getQueryDetach());
             }
 
-            if ($loader->getAttach()) {
-                $this->attachQuery($loader->getAttach());
+            if ($loader->hasAttach()) {
+                $this->attachQuery($loader->getQueryAttach());
             }
         });
 

@@ -42,6 +42,10 @@ class SetLang
             $lang = $request->session()->get('language');
         }
 
+        if (config('tobuli.api') && $request->hasHeader('Accept-Language')) {
+            $lang = $request->header('Accept-Language');
+        }
+
         if ($request->has('lang')) {
             $lang = $request->get('lang');
         }

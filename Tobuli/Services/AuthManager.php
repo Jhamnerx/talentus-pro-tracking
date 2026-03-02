@@ -2,29 +2,35 @@
 
 namespace Tobuli\Services;
 
+use Illuminate\Container\RewindableGenerator;
 use Illuminate\Support\Arr;
 use CustomFacades\Validators\AdminUserLoginMethodsValidator;
 use Tobuli\Entities\User;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Services\Auth\AuthInterface;
 use Tobuli\Services\Auth\ConfigurableInterface;
+use Tobuli\Services\Auth\InternalInterface;
 
 class AuthManager
 {
     /**
      * @var AuthInterface[]
      */
-    private $auths;
+    private array $auths;
 
     public function __construct($auths)
     {
-        $this->auths = $auths;
+        if ($auths instanceof RewindableGenerator) {
+            $this->auths = iterator_to_array($auths);
+        } else {
+            $this->auths = $auths;
+        }
     }
 
     /**
      * @throws ValidationException
      */
-    public function storeGeneralSettings(array $input)
+    public function storeGeneralSettings(array $input): void
     {
         AdminUserLoginMethodsValidator::validate('update', $input);
 
@@ -68,12 +74,12 @@ class AuthManager
         throw new \InvalidArgumentException('Unknown auth: ' . $key);
     }
 
-    public function getAuths()
+    public function getAuths(): array
     {
         return $this->auths;
     }
 
-    public function getAuthKeys()
+    public function getAuthKeys(): array
     {
         $keys = [];
 
@@ -82,6 +88,28 @@ class AuthManager
         }
 
         return $keys;
+    }
+
+    public function getEnabledAuths(): array
+    {
+        if (settings('user_login_methods.general.user_individual_config')) {
+            return $this->auths;
+        }
+
+        return array_filter($this->auths, fn ($auth) => self::isAuthEnabledByDefault($auth->getKey()));
+    }
+
+    /**
+     * @return InternalInterface&AuthInterface[]
+     */
+    public function getEnabledDefaultInternalAuths(): array
+    {
+        return array_filter($this->getEnabledAuths(), fn ($auth) => $auth instanceof InternalInterface);
+    }
+
+    public function getEnabledDefaultExternalAuths(): array
+    {
+        return array_filter($this->getEnabledAuths(), fn ($auth) => !$auth instanceof InternalInterface);
     }
 
     public function isAuthEnabledToUser(User $user, string $authKey): bool
@@ -102,11 +130,6 @@ class AuthManager
         $defaultMethods = self::getDefaultAuths();
 
         return !empty($defaultMethods[$authKey]);
-    }
-
-    public static function getEnabledDefaultAuths()
-    {
-        return array_filter(self::getDefaultAuths());
     }
 
     public static function getDefaultAuths()

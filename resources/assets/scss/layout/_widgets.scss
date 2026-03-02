@@ -94,12 +94,15 @@
   }
   .widget-title {
     @extend .panel-title;
-    .icon {
+    > .icon {
       color: $brand-primary;
       margin-right: 5px;
       vertical-align: middle;
     }
 
+    [data-device="name"] {
+      margin-right: 10px;
+    }
     [data-device="status"] {
       width: 7px; height: 7px;
     }

@@ -2,15 +2,13 @@
 
 namespace Tobuli\Services;
 
-use App\Exceptions\DeviceLimitException;
-use Carbon\Carbon;
+use CustomFacades\Server;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceGroup;
 use Tobuli\Entities\User;
-use CustomFacades\Server;
+use Tobuli\Helpers\RelationTransfer\SyncManager;
 use Tobuli\Services\EntityLoader\UsersLoader;
 
 class DeviceUsersService
@@ -82,6 +80,8 @@ class DeviceUsersService
                 'group_id' => $group_id
             ]
         ], false);
+
+        (new SyncManager())->attach($device->users(), $user_id);
     }
 
     /**
@@ -93,6 +93,8 @@ class DeviceUsersService
         $user_id = $this->resolveUser($user);
 
         $device->users()->detach($user_id);
+
+        (new SyncManager())->detach($device->users(), $user_id);
     }
 
     /**
@@ -131,9 +133,14 @@ class DeviceUsersService
 
         if ($users instanceof UsersLoader) {
             $query->syncLoader($users);
+
+            (new SyncManager())->sync($device->users());
         } else {
             $users = $this->resolveUsers($users);
-            $query->sync($users);
+
+            $changes = $query->sync($users);
+
+            (new SyncManager())->applyChanges($device->users(), $changes);
         }
     }
 
@@ -258,7 +265,7 @@ class DeviceUsersService
     public function getUsersReachedLimit($users, Device $device = null)
     {
         if ($users instanceof UsersLoader) {
-            $query = $users->getQuery();
+            $query = $users->getQuerySelected();
         } else {
             $query = User::whereIn('id', $this->resolveUsers($users));
         }
@@ -279,7 +286,7 @@ class DeviceUsersService
     public function getUsersUnableGetNewDevices($users, int $newDevicesAmount)
     {
         if ($users instanceof UsersLoader) {
-            $query = $users->getQuery();
+            $query = $users->getQuerySelected();
         } else {
             $query = User::whereIn('id', $this->resolveUsers($users));
         }
@@ -364,9 +371,9 @@ class DeviceUsersService
      * @param Collection|User[]|int[]|User|int $users
      * @return int[]
      */
-    protected function resolveUsers($users)
+    protected function resolveUsers($users): array
     {
-        if (!is_array($users))
+        if (!is_array($users) && !$users instanceof Collection)
             $users = [$users];
 
         $resolved = [];

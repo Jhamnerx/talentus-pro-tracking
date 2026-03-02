@@ -4,9 +4,11 @@
 
 .modal-content{
   background-color: $modal-content-bg;
+  border-radius: $modal-border-radius;
 }
 
 .modal-header {
+  @include border-top-radius($modal-border-radius);
   background: $modal-header-bg;
 
   .close {
@@ -31,6 +33,7 @@
   }
 }
 .modal-footer {
+  @include border-bottom-radius($modal-border-radius);
   background: $modal-footer-bg;
   text-align: left;
 }

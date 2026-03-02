@@ -4,24 +4,20 @@ namespace App\Console;
 
 use DateTime;
 use DateTimeZone;
-use Tobuli\Entities\Task;
-use Illuminate\Support\Arr;
-use Tobuli\Entities\Device;
-use Tobuli\Entities\TaskStatus;
 use App\Events\DeviceEngineChanged;
-use Illuminate\Support\Facades\Log;
 use App\Events\DevicePositionChanged;
-use Illuminate\Support\Facades\Cache;
-use Tobuli\Services\EventWriteService;
 use App\Events\PositionResultRetrieved;
-use Tobuli\Helpers\Alerts\Check\Checker;
-use Illuminate\Database\Eloquent\Builder;
-use Tobuli\Helpers\LbsLocation\LbsManager;
-use Illuminate\Database\Eloquent\Collection;
-use CustomFacades\Repositories\UserDriverRepo;
-use Tobuli\Entities\TraccarPosition as Position;
-use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
+use Tobuli\Entities\Device;
+use Tobuli\Entities\DeviceSensor;
+use Tobuli\Entities\TraccarPosition as Position;
+use Tobuli\Entities\UserDriver;
+use Tobuli\Helpers\Alerts\Check\Checker;
+use Tobuli\Helpers\LbsLocation\LbsManager;
+use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
+use Tobuli\Services\EventWriteService;
 
 class PositionsWriter
 {
@@ -57,10 +53,15 @@ class PositionsWriter
     protected $prev_position_device_object = null;
     protected $apply_network_data = null;
     protected $overwrite_invalid = null;
+    protected $resetDriverOnUnknownRfid = null;
 
     protected $eventWriteService = null;
     protected TaskStatusChanger $taskStatusChanger;
     protected ?LbsInterface $lbsService = null;
+
+    protected ?string $recalculationDate = null;
+    protected float $odometerDistance = 0;
+    protected array $virtualOdometers = [];
 
     public function __construct($device, $debug = false)
     {
@@ -78,6 +79,7 @@ class PositionsWriter
         $this->prev_position_device_object = config('tobuli.prev_position_device_object');
         $this->apply_network_data = config('tobuli.apply_network_data');
         $this->overwrite_invalid = config('tobuli.overwrite_invalid');
+        $this->resetDriverOnUnknownRfid = settings('plugins.reset_driver_on_unknown_rfid.status');
 
         $this->eventWriteService = new EventWriteService();
         $this->taskStatusChanger = new TaskStatusChanger($device, $debug);
@@ -287,6 +289,7 @@ class PositionsWriter
         $data['latitude'] = $response['lat'];
         $data['longitude'] = $response['lng'];
         $data['accuracy'] = $response['accuracy'];
+        $data['valid'] = 1;
     }
 
     protected function isHistory($time = null)
@@ -556,7 +559,6 @@ class PositionsWriter
                 $this->position->valid = 0;
             }
         }
-
         $distance = round($this->position->distance * 1000, 2);
 
         $this->position->setParameter('distance', $distance);
@@ -566,6 +568,7 @@ class PositionsWriter
 
         if ($this->position->isValid()) {
             $totalDistance += $distance;
+            $this->odometerDistance += $this->position->distance;
         }
 
         $this->position->setParameter('totaldistance', $totalDistance);
@@ -580,6 +583,10 @@ class PositionsWriter
 
         if ($this->events || $this->isChanged($this->position, $this->getPrevPosition())) {
             $this->addPosition($this->position);
+
+            if ($this->isHistory()) {
+                $this->setHistoryRecalculation($this->position);
+            }
         }
 
         // MUST ALWAYS BE CALLED AFTER OTHER PARAMETERS ARE SET!!
@@ -590,7 +597,7 @@ class PositionsWriter
         $this->setTraccarDeviceParkEndAt($this->position);
         $this->setTraccarDeviceEngineAt($this->position);
 
-        if (! $this->isHistory()) {
+        if (!$this->isHistory()) {
             if ($this->position->isValid()) {
                 $this->setTraccarDevicePosition($this->position);
             }
@@ -942,6 +949,7 @@ class PositionsWriter
         \Log::channel('validaciones_tecnicas')->info('Velocidad excesiva detectada', $validacionData);
     }
 
+
     protected function getEngineStatus($position)
     {
         if (! isset($this->engine_sensor))
@@ -1027,6 +1035,7 @@ class PositionsWriter
                 ->alerts()
                 ->withPivot('started_at', 'fired_at', 'silenced_at', 'active_from', 'active_to')
                 ->checkByPosition()
+                ->enabled()
                 ->active()
                 ->get();
 
@@ -1074,10 +1083,15 @@ class PositionsWriter
 
     protected function setSensors()
     {
+        $this->virtualOdometers = [];
         $sensorsValues = [];
 
         if ($this->device->sensors) {
             foreach ($this->device->sensors as &$sensor) {
+                if ($sensor->type == 'odometer' && $sensor->shown_value_by === 'virtual_odometer') {
+                    $this->virtualOdometers[] = $sensor->id;
+                }
+
                 $sensorValue = null;
 
                 if ($sensor->isCounter()) {
@@ -1088,6 +1102,23 @@ class PositionsWriter
                         'id'  => $sensor->id,
                         'val' => $sensor->getCounter()
                     ];
+
+                    continue;
+                }
+
+                if ($sensor->type == 'engine_hours' && $sensor->shown_value_by == 'logical') {
+                    $logicalValue = $sensor->getValueParameters($this->position);
+
+                    if (is_null($logicalValue) && $prevPosition = $this->getPrevPosition()) {
+                        $logicalValue = $sensor->getValueParameters($prevPosition);
+                    }
+
+                    if (!is_null($logicalValue)) {
+                        $sensorsValues[] = [
+                            'id' => $sensor->id,
+                            'val' => $logicalValue
+                        ];
+                    }
 
                     continue;
                 }
@@ -1156,32 +1187,46 @@ class PositionsWriter
         }
     }
 
-    protected function setCurrentDriver($position)
+    protected function setCurrentDriver($position): void
     {
         $rfids = $this->getRfids($position);
 
-        if (! $rfids)
+        if (!$rfids) {
             return;
+        }
 
         $hash = md5(json_encode($rfids));
 
-        if (! array_key_exists($hash, $this->drivers)) {
-            $this->drivers[$hash] = UserDriverRepo::findWhere(function ($query) use ($rfids) {
-                $query->whereIn('rfid', $rfids);
-            });
+        if (!array_key_exists($hash, $this->drivers)) {
+            $this->drivers[$hash] = UserDriver::whereIn('rfid', $rfids)->first();
         }
 
         $driver = $this->drivers[$hash];
 
-        if (! $driver)
+        if ($driver) {
+            if ($this->device->current_driver_id == $driver->id) {
+                return;
+            }
+
+            $this->device->current_driver_id = $driver->id;
+            $this->device->current_driver_rfid = $driver->rfid;
+
+            $driver->changeDevice($this->device, null, $position->time, true);
+
             return;
+        }
 
-        if ($this->device->current_driver_id == $driver->id)
+        if (!$this->resetDriverOnUnknownRfid) {
             return;
+        }
 
-        $this->device->current_driver_id = $driver->id;
+        $rfid = Arr::first($rfids);
 
-        $driver->changeDevice($this->device, $position->time, true);
+        if (!$this->device->current_driver_id && $this->device->current_driver_rfid == $rfid) {
+            return;
+        }
+
+        $this->device->changeDriver(null, $rfid);
     }
 
     protected function setTraccarDevicePosition($position)
@@ -1207,6 +1252,44 @@ class PositionsWriter
         }
 
         $this->device->traccar->latest_positions = implode(';', array_slice($latest_positions, 0, 15));
+    }
+
+    protected function setHistoryRecalculation($position): void
+    {
+        if (!$this->recalculationDate || $position->time < $this->recalculationDate) {
+            $this->recalculationDate = $position->time;
+        }
+    }
+
+    protected function registerHistoryRecalculation(): void
+    {
+        if (!$this->recalculationDate) {
+            return;
+        }
+
+        \DB::statement("
+            INSERT INTO history_recalculations VALUES ({$this->device->id}, ?)
+                ON DUPLICATE KEY 
+                    UPDATE date = LEAST(date, VALUES(date))", [$this->recalculationDate]);
+
+        $this->recalculationDate = null;
+    }
+
+    protected function updateOdometer(): void
+    {
+        if (!$this->virtualOdometers) {
+            return;
+        }
+
+        if (!$this->odometerDistance) {
+            return;
+        }
+
+        DeviceSensor::whereIn('id', $this->virtualOdometers)->update([
+            'value' => \DB::raw("CAST(value AS DOUBLE) + $this->odometerDistance"),
+        ]);
+
+        $this->odometerDistance = 0;
     }
 
     protected function setTraccarDeviceData($position)
@@ -1392,6 +1475,10 @@ class PositionsWriter
         $this->beaconsPositionWriter->write($this->positions);
         $this->writePositions();
         $this->writeEvents();
+
+        $this->registerHistoryRecalculation();
+        $this->updateOdometer();
+
 
         foreach ($this->device->sensors as $sensor) {
             $sensor->save();

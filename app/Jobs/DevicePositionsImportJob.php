@@ -38,8 +38,14 @@ class DevicePositionsImportJob implements ShouldQueue
         try {
             dispatch_sync(new DatabaseImportJob($config, $this->file, $this->actor));
         } catch (ProcessFailedException $e) {
+            if ($attempt > 3) {
+                throw $e;
+            }
+
             if ($this->shouldRepeatProcess($e)) {
                 $this->import($config, ++$attempt);
+            } else {
+                throw $e;
             }
         }
     }

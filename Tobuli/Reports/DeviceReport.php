@@ -75,6 +75,10 @@ abstract class DeviceReport extends Report
     {
         try {
             list($relation, $attribute) = explode('.', $meta['attribute'], 2);
+
+            if (!$attribute) {
+                $attribute = $meta['attribute'];
+            }
         } catch (\Exception $e) {
             $relation = null;
             $attribute = $meta['attribute'];

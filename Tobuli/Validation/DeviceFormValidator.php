@@ -43,7 +43,6 @@ class DeviceFormValidator extends Validator
             'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|regex:/^\S+$/',
             'device_type_id' => 'required',
             'object_owner' => 'required_if:wisetrack,1',
-
         ],
         'update' => [
             'imei'                => 'sometimes|required|unique:devices,imei,%s',

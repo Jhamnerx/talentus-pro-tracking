@@ -11,7 +11,7 @@ class ExternalUrlFormValidator extends Validator
     public $rules = [
         'update' => [
             'enabled' => 'required|boolean',
-            'external_url' => 'required|url',
+            'external_url' => 'required|regex:/^https?:\/\/(.)*$/',
         ],
     ];
 

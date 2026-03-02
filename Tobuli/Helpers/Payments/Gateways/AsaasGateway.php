@@ -10,9 +10,9 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Redirect;
 use InvalidArgumentException;
-use Symfony\Component\HttpFoundation\Response;
 use Tobuli\Entities\Order;
 use Tobuli\Entities\User;
 
@@ -233,7 +233,7 @@ class AsaasGateway extends PaymentGateway implements PaymentGatewayInterface
     public function isConfigCorrect(Request $request): bool
     {
         try {
-            $response = $this->client->get($this->baseUri . '/webhook')->getBody()->getContents();
+            $response = $this->client->get($this->baseUri . '/webhooks')->getBody()->getContents();
         } catch (RequestException $e) {
             $statusCode = $e->getResponse()->getStatusCode();
 
@@ -250,7 +250,7 @@ class AsaasGateway extends PaymentGateway implements PaymentGatewayInterface
 
         $response = json_decode($response, true);
 
-        if ($response['authToken'] !== $this->config['access_token']) {
+        if (empty($response['data'][0]['authToken']) || $response['data'][0]['authToken'] !== $this->config['access_token']) {
             $this->handleException(new PaymentsConfigurationException('Invalid Access token (webhook)'));
         }
 

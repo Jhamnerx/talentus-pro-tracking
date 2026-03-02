@@ -42,7 +42,15 @@ use App\Policies\UserGprsTemplatePolicy;
 use App\Policies\UserPolicy;
 use App\Policies\UserSmsTemplatePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Laravel\Passport\Bridge\RefreshTokenRepository;
+use Laravel\Passport\Bridge\UserRepository;
+use Laravel\Passport\Passport;
 use Illuminate\Support\Facades\Auth;
+use League\OAuth2\Server\AuthorizationServer;
+use Tobuli\Auth\Grants\RemoteUserGrant;
+use Tobuli\Auth\Grants\TrackerGrant;
 use Tobuli\Entities\Alert;
 use Tobuli\Entities\CallAction;
 use Tobuli\Entities\Chat;
@@ -140,10 +148,45 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+        $this->registerPassport();
+
         if (config('auth.secondary_credentials')) {
             Auth::provider('multi_credentials', function ($app, array $config) {
                 return new MultiCredentialUserProvider($this->app['hash'], $config['model']);
             });
         }
+    }
+
+    protected function registerPassport()
+    {
+        try {
+            $grant = new TrackerGrant(
+                $this->app->make(UserRepository::class),
+                $this->app->make(RefreshTokenRepository::class)
+            );
+            $grant->setRefreshTokenTTL(Passport::refreshTokensExpireIn());
+
+            app(AuthorizationServer::class)->enableGrantType(
+                $grant, Passport::tokensExpireIn()
+            );
+
+            if (isPublic()) {
+                $grant = new RemoteUserGrant(
+                    $this->app->make(UserRepository::class),
+                    $this->app->make(RefreshTokenRepository::class)
+                );
+                $grant->setRefreshTokenTTL(Passport::refreshTokensExpireIn());
+
+                app(AuthorizationServer::class)->enableGrantType(
+                    $grant, Passport::tokensExpireIn()
+                );
+            }
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+        }
+
+        Passport::routes();
+        Passport::tokensExpireIn(now()->addDays(30));
+        Passport::refreshTokensExpireIn(now()->addDays(60));
     }
 }

@@ -44,6 +44,29 @@
         </div>
     @endif
 
+    @if (config('addon.reports_geofleet_in'))
+        @foreach([0, 1] as $i)
+            <div class="form-group">
+                <h5>{!! trans('validation.attributes.interval') . ' ' . ($i + 1) !!}</h5>
+
+                <div class="col-sm-4">
+                    {!! Form::label("additional[intervals][$i][from]", trans('front.from') . ':') !!}
+                    {!! Form::select("additional[intervals][$i][from]", getSelectTimeRange(), null, ['class' => 'form-control']) !!}
+                </div>
+
+                <div class="col-sm-4">
+                    {!! Form::label("additional[intervals][$i][to]", trans('front.to') . ':') !!}
+                    {!! Form::select("additional[intervals][$i][to]", getSelectTimeRange(), null, ['class' => 'form-control']) !!}
+                </div>
+
+                <div class="col-sm-4">
+                    {!! Form::label("additional[intervals][$i][speed_limit]", trans('validation.attributes.speed_limit') . ':') !!}
+                    {!! Form::text("additional[intervals][$i][speed_limit]", null, ['class' => 'form-control']) !!}
+                </div>
+            </div>
+        @endforeach
+    @endif
+
     <div class="form-group">
         {!! Form::label('polygon_color', trans('validation.attributes.polygon_color').':') !!}
         {!! Form::text('polygon_color', '#D000DF', ['class' => 'form-control colorpicker']) !!}

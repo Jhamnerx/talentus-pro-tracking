@@ -1,6 +1,4 @@
-<?php
-
-namespace Tobuli\Entities;
+<?php namespace Tobuli\Entities;
 
 
 use Illuminate\Database\Eloquent\Builder;
@@ -26,7 +24,7 @@ class Geofence extends AbstractEntity implements DisplayInterface
 
     public static string $displayField = 'name';
 
-    protected $table = 'geofences';
+	protected $table = 'geofences';
 
     protected $fillable = [
         'user_id',
@@ -40,12 +38,14 @@ class Geofence extends AbstractEntity implements DisplayInterface
         'radius',
         'center',
         'polygon',
+        'additional',
     ];
 
     protected $hidden = array('polygon');
 
     protected $casts = [
-        'radius' => 'float'
+        'radius' => 'float',
+        'additional' => 'json',
     ];
 
     protected $searchable = [
@@ -75,8 +75,7 @@ class Geofence extends AbstractEntity implements DisplayInterface
         });
     }
 
-    public function user()
-    {
+    public function user() {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
@@ -213,13 +212,19 @@ class Geofence extends AbstractEntity implements DisplayInterface
      */
     private function getPolygonHelper()
     {
-        if (!isset($this->polygonHelpers[$this->id])) {
+        if (!isset($this->polygonHelpers[$this->id]))
+        {
             $coordinates = json_decode($this->coordinates, TRUE);
 
             $this->polygonHelpers[$this->id] = new PolygonHelper($coordinates ?? []);
         }
 
         return $this->polygonHelpers[$this->id];
+    }
+
+    public function scopeVisible($query)
+    {
+        $query->where('active', 1);
     }
 
     public function scopeUserOwned(Builder $query, User $user): Builder

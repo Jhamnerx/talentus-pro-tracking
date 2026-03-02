@@ -66,16 +66,17 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\GeoCacheSetupCommand',
         'App\Console\Commands\CopyDevicesCommand',
         'App\Console\Commands\CalcVirtualOdometerCommand',
+        'App\Console\Commands\RecalculateDeviceHistoryCommand',
         'App\Console\Commands\SplitDevicesCommand',
         'App\Console\Commands\FakeDevicesCommand',
         'App\Console\Commands\DropDeviceFreeTablesCommand',
         'App\Console\Commands\RegenerateDeviceCamerasCommand',
+        'App\Console\Commands\ServerPassportCommand',
         'App\Console\Commands\AlterPositionTablesCommand',
         'App\Console\Commands\BackupManageCommand',
         'App\Console\Commands\BackupImportCommand',
         'App\Console\Commands\DeleteInvalidFuelEventsCommand',
-        \App\Console\Commands\CacheOdometerValuesCommand::class,
-        'App\Console\Commands\CleanOsinergminLogs',
+        'App\Console\Commands\DeviceServerReconfigCommand',
     ];
 
     /**
@@ -99,6 +100,11 @@ class Kernel extends ConsoleKernel
             ->hourlyAt(3);
 
         $schedule
+            ->command('device_history:recalculate')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule
             ->command('schedules:check')
             ->everyMinute();
 
@@ -116,6 +122,10 @@ class Kernel extends ConsoleKernel
 
         $schedule
             ->command('camera:clean')
+            ->daily();
+
+        $schedule
+            ->command('server:check')
             ->daily();
 
         $schedule
@@ -138,12 +148,6 @@ class Kernel extends ConsoleKernel
         $schedule->job(new DispatchMininterJobs)->everyMinute();
         $schedule->job(new DispatchWisetrackJobs)->everyMinute();
         $schedule->job(new CleanOldLogsJob(10))->daily();
-
-        // Comando para precalcular valores de odómetro cada 15 minutos
-        $schedule->command('odometer:cache')->everyFifteenMinutes()->withoutOverlapping();
-
-        // Limpiar logs antiguos de Osinergmin diariamente a las 2:00 AM
-        $schedule->command('logs:clean-osinergmin')->dailyAt('02:00');
     }
 
     /**

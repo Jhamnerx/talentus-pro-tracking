@@ -44,5 +44,5 @@
 </div>
 
 <div class="nav-pagination">
-    {!! $data->setPath(route('sharing.table'))->appends(['devices_id' => $selectedDevices])->render() !!}
+    {!! $data->setPath(route('sharing.table'))->appends(['devices_id' => $device_id])->render() !!}
 </div>

@@ -4,6 +4,7 @@ namespace App\Handlers\Events;
 
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Tobuli\Entities\SecondaryCredentialsInterface;
 
@@ -40,10 +41,11 @@ class AuthFailedEventHandler
             return;
         }
 
-        $email = $event->credentials['email'];
-        $cacheKey = "login_failed_$email";
+        $identifier = Arr::first($event->credentials, fn ($value, $key) => $key !== 'password');
+        $cacheKey = "login_failed_$identifier";
 
         $attempt = Cache::get($cacheKey, 0) + 1;
+
         Cache::put($cacheKey, $attempt, 300);
 
         if ($attempt < $config['enable_failed']) {
@@ -54,7 +56,7 @@ class AuthFailedEventHandler
             ->causedBy($user)
             ->performedOn($user)
             ->withProperties(['attributes' => []])
-            ->useLog("$email | $method | $attempt attempt")
+            ->useLog("$identifier | $method | $attempt attempt")
             ->log('login_fail');
     }
 

@@ -1,5 +1,6 @@
 <?php namespace Tobuli\Services\Commands;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Tobuli\Entities\User;
@@ -8,15 +9,8 @@ use Tobuli\Protocols\Manager as ProtocolsManager;
 
 class DevicesCommandsSmsTemplates implements DevicesCommands
 {
-    /**
-     * @var ProtocolsManager
-     */
-    private $protocolsManager;
-
-    /**
-     * @var User
-     */
-    private $user;
+    private ProtocolsManager $protocolsManager;
+    private User $user;
 
     public function __construct(User $user)
     {
@@ -25,11 +19,9 @@ class DevicesCommandsSmsTemplates implements DevicesCommands
     }
 
     /**
-     * @param EloquentCollection $devices
-     * @param bool $intersect
-     * @return Collection
+     * @param EloquentCollection|Builder $devices
      */
-    public function get(EloquentCollection $devices, bool $intersect) : Collection
+    public function get($devices, bool $intersect): Collection
     {
         $templates = UserSmsTemplate::userAccessible($this->user)
             ->byDevices($devices, $intersect)

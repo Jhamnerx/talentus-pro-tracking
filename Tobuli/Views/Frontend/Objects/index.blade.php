@@ -119,5 +119,31 @@
             app.devices.list();
         }
     }
+    function openMdvr(e,c,t) {
+        var i = "follow-" + e+'-' + c
+          , n = $("#" + i)
+          , o = app.devices.get(e);
+        if (!n.length && o) { 
+            var a = 'objects/video/' + e +'/'+c
+              , s =  "CAMARAS: (" + o.name() + ") - #"+t;
+            $("body").append('<div id="' + i + '"><iframe src="' + a + '" style="border: 0; width: 100%; height: 100%;"></iframe></div>'),
+            $("#" + i).dialog({
+                autoOpen: !1,
+                height: 500, 
+                width: 680,
+                resizable: !0,
+                draggable: !0,
+                title: s,
+                close: function(t, e) {
+                    $(this).remove()
+                },
+                open: function() {
+                    $('div[aria-describedby="' + i + '"]').find(".ui-dialog-titlebar-close").html("<span>×</span>")
+                }
+            }),
+            $("#" + i).dialog("open"),
+            dialogMoveToTop($("#" + i).parent(".ui-dialog.ui-widget.ui-widget-content"), !0)
+        }
+    }
 </script>
 @stop

@@ -20,14 +20,9 @@ class MailHelper
         if ( ! is_array($to))
             $to = explode(';', $to);
 
-        $to = array_filter($to, function($value) {
-            if (!is_string($value))
-                return false;
-            
-            $value = trim($value);
-
-            return ! empty($value);
-        });
+        $to = array_filter($to, function($value) { return is_string($value); });
+        $to = array_map('trim', $to);
+        $to = array_filter($to, function($value) { return !empty($value); });
 
         return $to;
     }

@@ -1,11 +1,13 @@
 <table class="table table-condensed">
     <tr class="">
         {!! tableHeader('validation.attributes.title') !!}
-        {!! tableHeader('validation.attributes.plate_number') !!}
         {!! tableHeader('validation.attributes.imei') !!}
         {!! tableHeader('global.online', 'style="text-align:center"') !!}
         @if (Auth::user()->can('view', new \Tobuli\Entities\Device(), 'expiration_date'))
             {!! tableHeader('validation.attributes.expiration_date') !!}
+        @endif
+        @if (Auth::user()->isAdmin())
+            {!! tableHeader('validation.attributes.created_at') !!}
         @endif
         {!! tableHeader('admin.actions') !!}
     </tr>
@@ -14,9 +16,7 @@
             @foreach ($items as $device)
                 <tr>
                     <td>{{ $device->name }}</td>
-                    <td>{{ $device->plate_number }}</td>
                     <td>{{ $device->imei }}</td>
-
                     <td style="text-align: center">
                         <span class="device-status" style="background-color: {{ $device->getStatusColor() }}"
                             data-toggle="tooltip" title="{{ $device->getStatus() }}">
@@ -25,6 +25,11 @@
                     @if (Auth::user()->can('view', $device, 'expiration_date'))
                         <td>
                             {{ $device->hasExpireDate() ? Formatter::time()->human($device->expiration_date) : trans('front.unlimited') }}
+                        </td>
+                    @endif
+                    @if (Auth::user()->isAdmin())
+                        <td>
+                            {{ Formatter::time()->human($device->created_at) }}
                         </td>
                     @endif
                     <td>
@@ -45,7 +50,7 @@
             @endforeach
         @else
             <tr>
-                <td class="no-data" colspan="5">
+                <td class="no-data" colspan="{{ Auth::user()->isAdmin() ? '6' : '5' }}">
                     {{ trans('admin.no_data') }}
                 </td>
             </tr>

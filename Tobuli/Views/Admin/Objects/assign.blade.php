@@ -1,7 +1,7 @@
 @extends('Frontend.Layouts.modal')
 
 @section('title')
-    {{ trans('global.delete') }}
+    {{ trans('front.assign') }}
 @stop
 
 @section('body')

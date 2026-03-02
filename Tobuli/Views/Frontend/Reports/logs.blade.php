@@ -43,7 +43,7 @@
                 <td>
                     {{ formatBytes( $log->size ) }}
                 </td>
-                <td>
+                <td class="user-list" title="{{ $log->email }}">
                     {{ $log->email }}
                 </td>
                 @if ($showFtp)

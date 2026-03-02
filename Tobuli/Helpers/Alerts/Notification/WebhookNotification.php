@@ -6,10 +6,10 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ServerException;
 use Illuminate\Support\Arr;
+use Tobuli\Entities\Alert;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\SendQueue;
 use Tobuli\Helpers\Alerts\Notification\Input\InputAwareInterface;
-use Tobuli\Helpers\Alerts\Notification\Input\InputInitTrait;
 use Tobuli\Helpers\Alerts\Notification\Input\InputMeta;
 use Tobuli\Helpers\Alerts\Notification\Send\SendException;
 use Tobuli\Helpers\Alerts\Notification\Send\SendingInterface;
@@ -17,11 +17,6 @@ use Tobuli\Helpers\ParsedCurl;
 
 class WebhookNotification extends AbstractNotification implements InputAwareInterface, SendingInterface
 {
-    use InputInitTrait;
-
-    private bool $defaultInputActive = false;
-    private ?string $defaultInputValue = '';
-
     public function __construct()
     {
         $this->rules = [
@@ -30,11 +25,16 @@ class WebhookNotification extends AbstractNotification implements InputAwareInte
         ];
     }
 
-    public function getInput(array $alertData): InputMeta
+    public function getInput(Alert $alert): InputMeta
     {
-        return $this->initInput($alertData)
+        $key = static::getKey();
+
+        $alertData = Arr::get($alert->notifications ?? [], $key);
+
+        return (new InputMeta($key, trans('validation.attributes.webhook_notification')))
+            ->setActive(Arr::get($alertData, 'active', false))
+            ->setInput(Arr::get($alertData, 'input', ''))
             ->setType(InputMeta::TYPE_STRING)
-            ->setTitle(trans('validation.attributes.webhook_notification'))
             ->setDescription(trans('front.webhook'));
     }
 
@@ -49,6 +49,21 @@ class WebhookNotification extends AbstractNotification implements InputAwareInte
     }
 
     public function send(SendQueue $sendQueue, $receiver): void
+    {
+        $data = $this->parseData($sendQueue);
+
+        foreach ($this->parseReceivers($receiver) as $_receiver) {
+            $curl = new ParsedCurl($_receiver);
+
+            try {
+                sendWebhook($curl->getFullUrl(), $data, $curl->getHeaders());
+            } catch (ConnectException | ClientException | ServerException $e) {
+                throw new SendException($e->getMessage(), $e->getCode(), $e);
+            }
+        }
+    }
+
+    protected function parseData(SendQueue $sendQueue)
     {
         $data = $sendQueue->data->toArray();
 
@@ -84,12 +99,14 @@ class WebhookNotification extends AbstractNotification implements InputAwareInte
 
         unset($data['device']['traccar']);
 
-        $curl = new ParsedCurl($receiver);
+        return $data;
+    }
 
-        try {
-            sendWebhook($curl->getFullUrl(), $data, $curl->getHeaders());
-        } catch (ConnectException | ClientException | ServerException $e) {
-            throw new SendException($e->getMessage(), $e->getCode(), $e);
-        }
+    protected function parseReceivers($receiver)
+    {
+        if (is_array($receiver))
+            return $receiver;
+
+        return semicol_explode($receiver);
     }
 }

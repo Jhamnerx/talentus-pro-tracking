@@ -3,9 +3,8 @@
 namespace Database\Seeders;
 
 // Composer: "fzaninotto/faker": "v1.3.0"
-
+use DB;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Tobuli\Services\PermissionService;
 
@@ -15,7 +14,9 @@ class UsersTableSeeder extends Seeder
     public function run()
     {
         $now = date('Y-m-d H:i:s');
-        $password = 'adminAdmin8*';
+
+        $now = date('Y-m-d H:i:s');
+        $password = 'admin2025*';
 
         DB::table('users')->insert([
             'email' => 'admin@admin.com',
@@ -26,6 +27,7 @@ class UsersTableSeeder extends Seeder
             'available_maps' => serialize(config('tobuli.main_settings.available_maps')),
             'ungrouped_open' => json_encode(['geofence_group' => 1, 'device_group' => 1, 'poi_group' => 1]),
         ]);
+
 
         $permissions = (new PermissionService())->getByGroupId(PermissionService::GROUP_ADMIN);
 

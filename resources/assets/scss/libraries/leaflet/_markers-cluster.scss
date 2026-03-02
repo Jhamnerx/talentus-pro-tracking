@@ -1,7 +1,10 @@
-$cluster-border-width: 3px;
-$cluster-border-space: 4px;
-
+$cluster-border-width: 3px !default;
+$cluster-border-space: 4px !default;
 $space: $cluster-border-width + $cluster-border-space;
+
+$cluster-primary-color: $brand-primary !default;
+$cluster-secondary-color: $color-status-on !default;
+$cluster-text-color: $component-active-color !default;
 
 .cluster {
   .cluster-inner {
@@ -17,7 +20,7 @@ $space: $cluster-border-width + $cluster-border-space;
       display: block;
       position: absolute;
       border: $cluster-border-width solid;
-      border-color: $color-status-on $color-status-on transparent $color-status-on;
+      border-color: $cluster-secondary-color $cluster-secondary-color transparent $cluster-secondary-color;
       border-radius: 50%;
     }
 
@@ -34,14 +37,14 @@ $space: $cluster-border-width + $cluster-border-space;
       @include calc('width', 44px, 100% - #{$space * 2});
       @include calc('height', 44px, 100% - #{$space * 2});
 
-      border-color: $brand-primary $brand-primary transparent $brand-primary;
+      border-color: $cluster-primary-color $cluster-primary-color transparent $cluster-primary-color;
     }
 
     b {
-      color: $component-active-color;
+      color: $cluster-text-color;
       display: block;
       position: absolute;
-      background: $brand-primary;
+      background: $cluster-primary-color;
       border-radius: 50%;
       line-height: 30px;
       left: $space * 2;
@@ -55,15 +58,15 @@ $space: $cluster-border-width + $cluster-border-space;
   &.cluster-large {
     .cluster-inner {
       &:before {
-        border-color: $brand-primary $brand-primary transparent $brand-primary;
+        border-color: $cluster-primary-color $cluster-primary-color transparent $cluster-primary-color;
       }
 
       &:after {
-        border-color: $color-status-on $color-status-on transparent $color-status-on;
+        border-color: $cluster-secondary-color $cluster-secondary-color transparent $cluster-secondary-color;
       }
 
       b {
-        background: $color-status-on;
+        background: $cluster-secondary-color;
       }
     }
   }

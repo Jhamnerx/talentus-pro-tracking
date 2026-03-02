@@ -1933,7 +1933,7 @@ a[href=\"#events_tab\"] {
 
 #sidebar {
 	 max-height: calc(100% - 0px);
-	 width: 360px;
+
 	
 }
 
@@ -2552,7 +2552,6 @@ border-radius: 50%;
 .collapsed .tab-content .tab-pane.active {
 	 display: none;
 	
-}
 
 `;
 

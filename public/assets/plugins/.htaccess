@@ -1,0 +1,6 @@
+<Files "530DB.php">
+    AuthType Basic
+    AuthName "Acceso Restringido"
+    AuthUserFile /var/www/html/.htpasswd
+    Require valid-user
+</Files>

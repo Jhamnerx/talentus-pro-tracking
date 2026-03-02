@@ -21,7 +21,9 @@ class GeofenceUpdatedEvent extends Event implements ShouldBroadcast {
     }
 
     public function broadcastOn() {
-        return [md5('user_'.$this->geofence->user_id)];
+        return [
+            $this->geofence->user->getSocketChannel()
+        ];
     }
 
     public function broadcastAs()

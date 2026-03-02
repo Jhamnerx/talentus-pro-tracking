@@ -52,13 +52,12 @@ class CheckAlertsCommand extends Command
             return -1;
         }
 
-        $this->call('virtual_odometer:calc');
-
         $start = microtime(true);
 
         Alert::with('user', 'zones')
             ->withCount('devices')
             ->checkByTime()
+            ->enabled()
             ->active()
             ->chunk(100, function($alerts) {
                 $devices_count = $alerts->sum('devices_count');

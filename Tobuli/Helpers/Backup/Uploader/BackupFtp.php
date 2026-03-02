@@ -2,6 +2,7 @@
 
 namespace Tobuli\Helpers\Backup\Uploader;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
@@ -52,7 +53,26 @@ class BackupFtp implements BackupUploaderInterface
     {
         $command = $this->buildBackupCommand($commands, $process, $item, $gzip);
 
-        $this->run($command, $process);
+        try {
+            $this->run($command, $process);
+        } catch (ProcessFailedException $e) {
+            $backup = $process->backup;
+            $cache = Cache::store('array');
+
+            // backup root dir may not exist
+            if ($e->getProcess()->getExitCode() === 14 && !$cache->has("backups.$backup->id.root_create")) {
+                $cache->put("backups.$backup->id.root_create", 1);
+
+                $cmdMakeDir = 'ncftpput -m -c ' . $this->getFtpLoginParams() . self::getRootPath($backup) . '.empty';
+
+                $this->run($cmdMakeDir);
+                $this->run($command, $process);
+
+                return;
+            }
+
+            throw $e;
+        }
     }
 
     protected function buildBackupCommand($commands, BackupProcess $process, $item, bool $gzip = true): string
@@ -69,13 +89,17 @@ class BackupFtp implements BackupUploaderInterface
             $commands[] = 'gzip -9';
         }
 
-        $commands[] = "ncftpput -m -c"
-            . " -u '{$this->handler->getUser()}'"
-            . " -p '{$this->handler->getPass()}'"
-            . " -P {$this->handler->getPort()}"
-            . " {$this->handler->getHost()} {$this->handler->getPath()}$filename";
+        $commands[] = "ncftpput -m -c" . $this->getFtpLoginParams() . "$filename";
 
         return implode(' | ', $commands);
+    }
+
+    protected function getFtpLoginParams(): string
+    {
+        return " -u '{$this->handler->getUser()}'"
+            . " -p '{$this->handler->getPass()}'"
+            . " -P {$this->handler->getPort()}"
+            . " {$this->handler->getHost()} {$this->handler->getPath()}";
     }
 
     protected function resolveItemFilename(BackupProcess $process, $item): string

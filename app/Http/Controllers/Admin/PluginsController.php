@@ -1,12 +1,24 @@
-<?php namespace App\Http\Controllers\Admin;
+<?php
+
+namespace App\Http\Controllers\Admin;
 
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Redirect;
-use Tobuli\Exceptions\ValidationException;
-use Validator;
+use Tobuli\Plugins\Contracts\NormalizationAware;
+use Tobuli\Plugins\Contracts\ValidationAware;
+use Tobuli\Plugins\PluginsProvider;
 
-class PluginsController extends BaseController {
+class PluginsController extends BaseController
+{
+    private PluginsProvider $provider;
+
+    public function __construct(PluginsProvider $provider)
+    {
+        parent::__construct();
+
+        $this->provider = $provider;
+    }
 
     public function index()
     {
@@ -34,22 +46,35 @@ class PluginsController extends BaseController {
     {
         $input = Request::all();
 
-        try
-        {
-            $validator = Validator::make($input['plugins'], [
-                'alert_sharing.options.duration.value' => 'required_if:alert_sharing.options.duration.active,1|integer',
-            ]);
+        $errors = [];
 
-            if ($validator->fails())
-                throw new ValidationException(['alert_sharing.options.duration.value' => 'The duration value must be an integer.']);
+        foreach ($input['plugins'] as $key => &$pluginInput) {
+            $plugin = $this->provider->get($key);
 
-            settings('plugins', $input['plugins']);
+            if (!$plugin) {
+                continue;
+            }
 
-            return Redirect::route('admin.plugins.index')->withSuccess(trans('front.successfully_saved'));
+            if ($plugin instanceof ValidationAware) {
+                $pluginErrors = array_map(
+                    fn ($error) => trans("front.$key") . ' - ' . $error,
+                    $plugin->validate($pluginInput)->all()
+                );
+
+                $errors = array_merge($errors, $pluginErrors);
+            }
+
+            if ($plugin instanceof NormalizationAware) {
+                $plugin->normalize($pluginInput);
+            }
         }
-        catch (ValidationException $e)
-        {
-            return Redirect::route('admin.plugins.index')->withInput()->withErrors($e->getErrors());
+
+        if ($errors) {
+            return Redirect::route('admin.plugins.index')->withInput()->withErrors($errors);
         }
+
+        settings('plugins', $input['plugins']);
+
+        return Redirect::route('admin.plugins.index')->withSuccess(trans('front.successfully_saved'));
     }
 }

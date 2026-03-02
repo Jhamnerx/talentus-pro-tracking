@@ -19,15 +19,16 @@
 
             <div class="connection" data-connection="gprs" hidden>
                 @include('Frontend.SendCommand.partials.gprs_form', [
-                    'device_id' => $command_schedule->devices->pluck('id')->toArray(),
-                    'command'   => $command_schedule->command
+                    'ajax_url'  => route('command_schedules.devices', ['schedule' => $command_schedule->id]),
+                    'commands_url' => route('command_schedules.commands', ['schedule' => $command_schedule->id]),
                 ])
             </div>
 
             <div class="connection" data-connection="sms" hidden>
                 @include('Frontend.SendCommand.partials.sms_form', [
-                    'device_id' => $command_schedule->devices->pluck('id')->toArray(),
-                    'message'   => $command_schedule->message
+                    'ajax_url'  => route('command_schedules.devices',  ['schedule' => $command_schedule->id, 'type' => 'sms']),
+                    'commands_url' => route('command_schedules.commands', ['schedule' => $command_schedule->id, 'connection' => 'sms']),
+                    'devices_sms' => $devices_sms
                 ])
             </div>
 
@@ -43,6 +44,11 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
+        var scheduleParameters = JSON.parse('{!! json_encode($command_schedule->parameters) !!}'),
+            scheduleConnection = '{{ $command_schedule->connection }}';
+
+        scheduleParameters.type = '{{ $command_schedule->command }}';
+
         $('.schedule-type').hide();
         $('.schedule-type#' + $('input[name="schedule_type"]:checked').attr('value')).show();
 
@@ -54,18 +60,30 @@
             $('*[data-connection]', $container).each(function () {
                 if ($(this).attr('data-connection') == connection) {
                     $('input, select, textarea', this).prop( "disabled", false );
+                    $('select', this).selectpicker('refresh');
                     return $(this).show();
                 } else {
                     $('input, select, textarea', this).prop( "disabled", true );
+                    $('select', this).selectpicker('refresh');
                     return $(this).hide();
                 }
             });
         }).trigger('change');
 
-        var parameters = JSON.parse('{!! json_encode($command_schedule->parameters) !!}');
-        for (var i in parameters) {
-            $('[name="' + i + '"]').val(parameters[i]);
-            $('select').selectpicker('refresh');
-        }
+        $(document).on('ajax.bs.select', '*[data-connection] select[name="devices[]"]', function () {
+            sendCommands[scheduleConnection].setValues(scheduleParameters);
+
+            $(this).trigger('change');
+        });
+
+        /*
+        $(document).on('loaded.bs.select', '*[data-connection] select[name="type"]', function () {
+            for (var i in scheduleParameters) {
+                $('[name="' + i + '"]').val(scheduleParameters[i]);
+                $('select').selectpicker('refresh');
+            }
+        });
+
+         */
     });
 </script>

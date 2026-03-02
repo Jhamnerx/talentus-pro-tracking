@@ -1,10 +1,13 @@
-<?php namespace App\Console;
+<?php
+
+namespace App\Console;
 
 use App;
 use Illuminate\Support\Facades\Redis;
 use Predis\Pipeline\Pipeline;
 
-class ProcessManager {
+class ProcessManager
+{
 
     protected $redis;
 
@@ -43,7 +46,8 @@ class ProcessManager {
         $this->unregister();
     }
 
-    public function canContinue() {
+    public function canContinue()
+    {
         if ($this->timeover < time())
             return false;
 
@@ -53,7 +57,8 @@ class ProcessManager {
         return true;
     }
 
-    public function canProcess() {
+    public function canProcess()
+    {
         return $this->canContinue() && ! $this->reachedLimit();
     }
 
@@ -75,7 +80,7 @@ class ProcessManager {
     {
         $key = 'processing.' . $this->group . '.' . $id;
 
-        $pipeData = $this->redis->pipeline(function(Pipeline $pipe) use ($key) {
+        $pipeData = $this->redis->pipeline(function (Pipeline $pipe) use ($key) {
             $pipe->del($key);
             $pipe->set($key, $this->key, 'ex', $this->timeout, 'nx');
         });
@@ -85,12 +90,12 @@ class ProcessManager {
 
     private function unlockKeys($process_key = null)
     {
-        if ( ! $process_key)
+        if (! $process_key)
             $process_key = $this->key;
 
         $keys = $this->redis->keys('processing.' . $this->group . '.*');
 
-        foreach($keys as $key) {
+        foreach ($keys as $key) {
             $process = $this->redis->get($key);
 
             if ($process != $process_key)
@@ -102,7 +107,7 @@ class ProcessManager {
 
     private function reachedLimit()
     {
-        if ( ! $this->process_limit)
+        if (! $this->process_limit)
             return false;
 
         $processes = $this->redis->keys('process.' . $this->group . '.*');
@@ -119,7 +124,7 @@ class ProcessManager {
 
             $process = json_decode($process);
 
-            if ( ! $process) {
+            if (! $process) {
                 $this->redis->del($key);
                 continue;
             }
@@ -131,7 +136,7 @@ class ProcessManager {
             }
 
             // process is running?
-            if (file_exists('/proc/'.$process->pid))
+            if (file_exists('/proc/' . $process->pid))
                 continue;
 
             $this->unregister($process->key);
@@ -140,7 +145,7 @@ class ProcessManager {
 
     private function register()
     {
-        $this->key = md5( $this->group . time() . str_shuffle('QWERTYUIOOPASDFGHJKLZXCVBNMQWERTYUIOPASD') );
+        $this->key = md5($this->group . time() . str_shuffle('QWERTYUIOOPASDFGHJKLZXCVBNMQWERTYUIOPASD'));
 
         $key = 'process.' . $this->group . '.' . $this->key;
 
@@ -153,7 +158,7 @@ class ProcessManager {
 
     public function unregister($process_key = null)
     {
-        if ( ! $process_key)
+        if (! $process_key)
             $process_key = $this->key;
 
         $this->redis->del('process.' . $this->group . '.' . $process_key);

@@ -45,10 +45,14 @@
             </div>
         @endif
 
-        @if (settings('plugins.sim_blocking.status') && Auth::user()->can('edit', $item, 'msisdn'))
+        @if (settings('plugins.sim_blocking.status') && Auth::user()->can('view', $item, 'msisdn'))
             <div class="form-group">
                 {!! Form::label('msisdn', trans('validation.attributes.msisdn') . ':') !!}
-                {!! Form::text('msisdn', $item->msisdn, ['class' => 'form-control']) !!}
+                {!! Form::text(
+                    'msisdn',
+                    $item->msisdn,
+                    ['class' => 'form-control'] + (!Auth::user()->can('edit', $item, 'msisdn') ? ['disabled' => 'disabled'] : []),
+                ) !!}
             </div>
         @endif
 
@@ -75,15 +79,26 @@
                 ) !!}
             </div>
         @endif
-        <div class="form-group">
-            {!! Form::label('vin', trans('validation.attributes.vin') . ':') !!}
-            {!! Form::text('vin', $item->vin, ['class' => 'form-control']) !!}
-        </div>
-        <div class="form-group">
-            {!! Form::label('device_model', trans('validation.attributes.device_model') . ':') !!}
-            {!! Form::text('device_model', $item->device_model, ['class' => 'form-control']) !!}
-        </div>
-
+        @if (Auth::user()->can('view', $item, 'vin'))
+            <div class="form-group">
+                {!! Form::label('vin', trans('validation.attributes.vin') . ':') !!}
+                {!! Form::text(
+                    'vin',
+                    $item->vin,
+                    ['class' => 'form-control'] + (!Auth::user()->can('edit', $item, 'vin') ? ['disabled' => 'disabled'] : []),
+                ) !!}
+            </div>
+        @endif
+        @if (Auth::user()->can('view', $item, 'device_model'))
+            <div class="form-group">
+                {!! Form::label('device_model', trans('validation.attributes.device_model') . ':') !!}
+                {!! Form::text(
+                    'device_model',
+                    $item->device_model,
+                    ['class' => 'form-control'] + (!Auth::user()->can('edit', $item, 'device_model') ? ['disabled' => 'disabled'] : []),
+                ) !!}
+            </div>
+        @endif
     </div>
     <div class="col-sm-6">
         @if ($additional_fields_on && Auth::user()->can('view', $item, 'installation_date'))
@@ -97,32 +112,60 @@
                 ) !!}
             </div>
         @endif
-        <div class="form-group">
-            {!! Form::label('plate_number', trans('validation.attributes.plate_number') . ':') !!}
-            {!! Form::text('plate_number', $item->plate_number, ['class' => 'form-control']) !!}
-        </div>
-        <div class="form-group">
-            {!! Form::label('registration_number', trans('validation.attributes.registration_number') . ':') !!}
-            {!! Form::text('registration_number', $item->registration_number, ['class' => 'form-control']) !!}
-        </div>
-        <div class="form-group">
-            {!! Form::label('object_owner', trans('validation.attributes.object_owner') . ':') !!}
-            {!! Form::text('object_owner', $item->object_owner, ['class' => 'form-control']) !!}
-        </div>
-        <div class="form-group">
-            {!! Form::label('days_history', trans('validation.attributes.days_history') . ':') !!}
-            {!! Form::text('days_history', $item->days_history, ['class' => 'form-control']) !!}
-        </div>
+        @if (Auth::user()->can('view', $item, 'plate_number'))
+            <div class="form-group">
+                {!! Form::label('plate_number', trans('validation.attributes.plate_number') . ':') !!}
+                {!! Form::text(
+                    'plate_number',
+                    $item->plate_number,
+                    ['class' => 'form-control'] + (!Auth::user()->can('edit', $item, 'plate_number') ? ['disabled' => 'disabled'] : []),
+                ) !!}
+            </div>
+        @endif
+        @if (Auth::user()->can('view', $item, 'registration_number'))
+            <div class="form-group">
+                {!! Form::label('registration_number', trans('validation.attributes.registration_number') . ':') !!}
+                {!! Form::text(
+                    'registration_number',
+                    $item->registration_number,
+                    ['class' => 'form-control'] +
+                        (!Auth::user()->can('edit', $item, 'registration_number') ? ['disabled' => 'disabled'] : []),
+                ) !!}
+            </div>
+        @endif
+        @if (Auth::user()->can('view', $item, 'object_owner'))
+            <div class="form-group">
+                {!! Form::label('object_owner', trans('validation.attributes.object_owner') . ':') !!}
+                {!! Form::text(
+                    'object_owner',
+                    $item->object_owner,
+                    ['class' => 'form-control'] + (!Auth::user()->can('edit', $item, 'object_owner') ? ['disabled' => 'disabled'] : []),
+                ) !!}
+            </div>
+        @endif
     </div>
 </div>
-<div class="form-group">
-    {!! Form::label('additional_notes', trans('validation.attributes.additional_notes') . ':') !!}
-    {!! Form::text('additional_notes', $item->additional_notes, ['class' => 'form-control']) !!}
-</div>
-<div class="form-group">
-    {!! Form::label('comment', trans('validation.attributes.comment') . ':') !!}
-    {!! Form::text('comment', $item->comment, ['class' => 'form-control']) !!}
-</div>
+@if (Auth::user()->can('view', $item, 'additional_notes'))
+    <div class="form-group">
+        {!! Form::label('additional_notes', trans('validation.attributes.additional_notes') . ':') !!}
+        {!! Form::text(
+            'additional_notes',
+            $item->additional_notes,
+            ['class' => 'form-control'] +
+                (!Auth::user()->can('edit', $item, 'additional_notes') ? ['disabled' => 'disabled'] : []),
+        ) !!}
+    </div>
+@endif
+@if (Auth::user()->can('view', $item, 'comment'))
+    <div class="form-group">
+        {!! Form::label('comment', trans('validation.attributes.comment') . ':') !!}
+        {!! Form::text(
+            'comment',
+            $item->comment,
+            ['class' => 'form-control'] + (!Auth::user()->can('edit', $item, 'comment') ? ['disabled' => 'disabled'] : []),
+        ) !!}
+    </div>
+@endif
 @if (config('addon.device_tracker_app_login'))
     <div class="form-group">
         <div class="checkbox-inline">

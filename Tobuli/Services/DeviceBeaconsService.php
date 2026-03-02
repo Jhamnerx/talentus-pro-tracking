@@ -115,7 +115,7 @@ class DeviceBeaconsService
 
     private function prepare(array &$input, &$date): bool
     {
-        if (empty($beacons)) {
+        if (empty($input)) {
             return false;
         }
 

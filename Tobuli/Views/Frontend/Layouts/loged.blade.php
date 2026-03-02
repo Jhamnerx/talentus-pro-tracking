@@ -4,7 +4,6 @@
 <head>
     @include('Frontend.Layouts.partials.head')
     @yield('styles')
-
 </head>
 
 <body style="overflow: hidden;">
@@ -13,7 +12,7 @@
     @include('Frontend.Layouts.partials.loading')
     @include('Frontend.Layouts.partials.header')
 
-    <div id="sidebar">
+    <div id="sidebar" class="sidebar left">
 
         <a class="btn-collapse" onclick="app.changeSetting('toggleSidebar');"><i></i></a>
 
@@ -30,14 +29,6 @@
                 <li role="presentation">
                     <a href="#history_tab" type="button" data-toggle="tab">{!! trans('front.history') !!}</a>
                 </li>
-                @if (Auth::User()->perm('routes', 'view'))
-                    <li role="presentation"><a href="#routes_tab" data-toggle="tab"
-                            onclick="app.routes.list()">{!! trans('front.routes') !!}</a></li>
-                @endif
-                @if (Auth::User()->perm('poi', 'view'))
-                    <li role="presentation"><a href="#pois_tab" data-toggle="tab"
-                            onclick="app.pois.list()">{!! trans('front.poi') !!}</a></li>
-                @endif
                 {{-- hidden, import for correct tab work (shown, hidden evenets) --}}
                 <li role="presentation" class="hidden"><a href="#alerts_tab" data-toggle="tab"></a></li>
                 <li role="presentation" class="hidden"><a href="#geofencing_tab" data-toggle="tab"></a></li>
@@ -57,7 +48,7 @@
 
     <div id="mapWrap">
         <div id="map"></div>
-        <div id="map-controls">
+        <div id="map-controls" class="map-controls top-right">
             <div>
                 <div class="btn-group-vertical" role="group">
                     <button type="button" class="btn" onclick="app.mapFull();">
@@ -66,7 +57,7 @@
                 </div>
             </div>
 
-            <div>
+            <div id="map-controls-tile">
                 <div class="btn-group-vertical" data-position="fixed" role="group">
                     <button type="button" class="btn"
                         onClick="$('.leaflet-control-layers').toggleClass('leaflet-control-layers-expanded');">
@@ -240,7 +231,7 @@
                 <div class="modal-footer" style="margin-top: 0">
                     <button type="button" value="confirm"
                         class="btn btn-primary btn-main submit js-confirm-link-yes">{{ trans('admin.confirm') }}</button>
-                    <button type="button" value="cancel" class="btn btn-side"
+                    <button type="button" value="cancel" class="btn btn-default"
                         data-dismiss="modal">{{ trans('admin.cancel') }}</button>
                 </div>
             </div>

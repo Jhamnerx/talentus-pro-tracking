@@ -191,6 +191,10 @@
                 $(element).prop('disabled', false);
             }
         }
+
+        if ($(element).is('select')) {
+            $(element).selectpicker('checkDisabled');
+        }
     }
 
     function showElement(element, showElement) {

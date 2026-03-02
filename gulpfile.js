@@ -184,9 +184,9 @@ gulp.task('minify-js', function() {
 
 gulp.task('watch', function() {
     browserSync.init({
-        proxy: "localhost"
         //proxy: "http://46.101.121.251"
-        //proxy: "dev-cs.gpswox.com"
+        // proxy: "dev-cs.gpswox.com"
+        proxy: "localhost"
     });
 
     gulp.watch('resources/assets/scss/**/*.scss', gulp.series('sass'));

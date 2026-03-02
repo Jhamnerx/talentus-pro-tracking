@@ -104,25 +104,39 @@ abstract class PaymentGateway
 
     /**
      * Compares two dates and checks if they make period with length of plan duration
-     *
-     * @param Carbon $expirationDateByPlan
-     * @param Carbon $gatewayDate
-     * @param int|null $planDurationInDays
-     * @return boolean
      */
-    protected function compareDatesByPlan(Carbon $expirationDateByPlan, Carbon $gatewayDate, $planDurationInDays)
-    {
-        if (empty($planDurationInDays)) {
+    protected function compareDatesByPlan(
+        Carbon $expirationDateByPlan,
+        Carbon $gatewayDate,
+        ?int $planDurationInDays,
+        int $maxDiffPercentage = 30
+    ): bool {
+        $diffPercentage = $this->getDatesDiffByPlan($expirationDateByPlan, $gatewayDate, $planDurationInDays);
+
+        if ($diffPercentage === null) {
             return $gatewayDate->gt($expirationDateByPlan);
         }
 
-        $maxDiffPercentage = 30;
+        return $diffPercentage >= $maxDiffPercentage;
+    }
+
+    /**
+     * Compares two dates and checks if they make period with length of plan duration
+     */
+    protected function getDatesDiffByPlan(
+        Carbon $expirationDate,
+        Carbon $compareDate,
+        ?int $planDurationInDays
+    ): ?float {
+        if (empty($planDurationInDays)) {
+            return null;
+        }
 
         $planDurationInMinutes = $planDurationInDays * 24 * 60;
-        $diffInMinutes = $expirationDateByPlan->diffInMinutes($gatewayDate, false);
-        $diffPercentage = ($diffInMinutes/$planDurationInMinutes) * 100;
+        $diffInMinutes = $expirationDate->diffInMinutes($compareDate, false);
+        $diffPercentage = ($diffInMinutes / $planDurationInMinutes) * 100;
 
-        return $diffPercentage >= $maxDiffPercentage;
+        return $diffPercentage;
     }
 
     protected function handleException(Exception $exception, $logMessage = null)

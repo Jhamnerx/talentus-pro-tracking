@@ -2,7 +2,9 @@
 
 namespace Tobuli\Helpers\Alerts\Notification\Input;
 
+use Tobuli\Entities\Alert;
+
 interface InputAwareInterface
 {
-    public function getInput(array $alertData): InputMeta;
+    public function getInput(Alert $alert): InputMeta;
 }

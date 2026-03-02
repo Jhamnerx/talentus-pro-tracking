@@ -15,6 +15,7 @@
                     <th>{{ trans('front.location') }}</th>
                     <th>{{ trans('front.overspeed_duration') }}</th>
                     <th>{{ trans('front.top_speed') }}</th>
+                    <th>{{ trans('front.avg_speed') }}</th>
                     <th>{{ trans('front.driver') }}</th>
                     <th>{{ trans('validation.attributes.phone') }}</th>
                     <th>{{ trans('validation.attributes.description') }}</th>
@@ -42,6 +43,7 @@
                                 <td>{!! $row['location'] !!}</td>
                                 <td>{{ $row['overspeed_duration'] }}</td>
                                 <td>{{ $row['speed_max'] }}</td>
+                                <td>{{ $row['speed_avg'] }}</td>
                                 <td>{{ $row['driver'] }}</td>
                                 <td>{{ $row['phone'] }}</td>
                                 <td>{{ $row['description'] }}</td>
