@@ -41,7 +41,7 @@ class DispatchSutranJobs implements ShouldQueue
             $totalRecords = Sutran::whereIn('plate', $plates)->count();
 
             for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-                SendDataSutranBatch::dispatch($i, $batchSize, $service, $plates);
+                SendDataSutranBatch::dispatch($i, $batchSize, $service, $plates, $user->id);
             }
         }
     }

@@ -24,16 +24,18 @@ class SendDataComsatelJob implements ShouldQueue
     protected $batchSize;
     protected $plates;
     protected $service;
+    protected $userId;
 
     public $tries = 3;
     public $timeout = 150;
 
-    public function __construct($offset, $batchSize, $service, $plates)
+    public function __construct($offset, $batchSize, $service, $plates, $userId = null)
     {
         $this->offset = $offset;
         $this->batchSize = $batchSize;
         $this->plates = $plates;
         $this->service = $service;
+        $this->userId = $userId;
 
         $this->onQueue('web-services');
     }
@@ -47,6 +49,7 @@ class SendDataComsatelJob implements ShouldQueue
     {
         // Instanciar el servicio de logging directamente aquí
         $this->logService = app(LogService::class);
+        $this->logService->setUserId($this->userId);
 
         try {
             $this->sendPositions();

@@ -1380,7 +1380,7 @@ return [
     ],
 
     'dashboard' => [
-        'enabled' => 0,
+        'enabled' => 1,
         'blocks'  => [
             'device_activity'      => [
                 'enabled' => 1,
@@ -1409,7 +1409,7 @@ return [
                 ],
             ],
             'device_overview'      => [
-                'enabled' => 0,
+                'enabled' => 1,
                 'options' => [
                     'colors' => [
                         'move'            => '#52BE80',

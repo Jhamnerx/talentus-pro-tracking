@@ -3,7 +3,7 @@
 @section('modal_class', 'modal-lg')
 
 @section('title')
-    <i class="icon services"></i> {!!trans('front.services')!!}
+    <i class="icon services"></i> {!! trans('front.services') !!}
 @stop
 
 @section('body')
@@ -11,5 +11,5 @@
 @stop
 
 @section('buttons')
-    <button type="button" class="btn btn-default" data-dismiss="modal">{!!trans('global.close')!!}</button>
+    <button type="button" class="btn btn-default" data-dismiss="modal">{!! trans('global.close') !!}</button>
 @stop

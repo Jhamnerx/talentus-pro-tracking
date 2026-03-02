@@ -14,8 +14,7 @@ class WebservicesLogs extends AbstractEntity
     protected $guarded = [
         'id',
         'created_at',
-        'updated_at'
-
+        'updated_at',
     ];
 
     protected $filterables = [
@@ -25,7 +24,7 @@ class WebservicesLogs extends AbstractEntity
         'plate_number',
         'imei',
         'status',
-
+        'user_id',
     ];
 
     protected $searchable = [
@@ -39,9 +38,17 @@ class WebservicesLogs extends AbstractEntity
 
     protected $casts = [
         'fecha_hora_posicion' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'created_at'          => 'datetime',
+        'updated_at'          => 'datetime',
     ];
+
+    /**
+     * Usuario (manager/cliente) que originó el envío al webservice.
+     */
+    public function user()
+    {
+        return $this->belongsTo('Tobuli\Entities\User', 'user_id');
+    }
 
     // public function getServiceNameAttribute($value)
     // {

@@ -1,0 +1,1801 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guía de la Plataforma GPS - Talentus Pro Tracking</title>
+    <style>
+      :root {
+        --primary: #1a4fa0;
+        --primary-dark: #0e3272;
+        --accent: #f59e0b;
+        --accent2: #10b981;
+        --text: #1f2937;
+        --light: #f3f4f6;
+        --white: #ffffff;
+        --border: #e5e7eb;
+        --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        color: var(--text);
+        background: #f0f2f8;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      /* ── PORTADA ── */
+      .cover {
+        background: linear-gradient(
+          135deg,
+          var(--primary-dark) 0%,
+          var(--primary) 60%,
+          #2563eb 100%
+        );
+        color: var(--white);
+        padding: 80px 60px;
+        min-height: 380px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .cover::before {
+        content: "";
+        position: absolute;
+        right: -100px;
+        top: -100px;
+        width: 550px;
+        height: 550px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.06);
+      }
+      .cover::after {
+        content: "";
+        position: absolute;
+        right: 80px;
+        bottom: -150px;
+        width: 350px;
+        height: 350px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+      }
+      .cover h1 {
+        font-size: 48px;
+        font-weight: 800;
+        letter-spacing: -1px;
+        line-height: 1.15;
+        margin-bottom: 18px;
+      }
+      .cover h1 span {
+        color: var(--accent);
+      }
+      .cover p {
+        font-size: 20px;
+        opacity: 0.9;
+        max-width: 620px;
+        margin-bottom: 30px;
+      }
+      .cover .badges {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .badge {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+      /* ── CONTAINER ── */
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 40px 30px;
+      }
+      /* ── INTRO CARD ── */
+      .intro-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 40px 0;
+      }
+      .intro-card {
+        background: var(--white);
+        border-radius: 14px;
+        padding: 28px 22px;
+        box-shadow: var(--shadow);
+        text-align: center;
+        border-top: 4px solid var(--primary);
+      }
+      .intro-card .icon {
+        font-size: 36px;
+        margin-bottom: 12px;
+      }
+      .intro-card h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--primary);
+      }
+      .intro-card p {
+        font-size: 13px;
+        color: #6b7280;
+        margin-top: 6px;
+      }
+      /* ── SECTION ── */
+      .section {
+        background: var(--white);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        margin-bottom: 36px;
+        overflow: hidden;
+      }
+      .section-header {
+        background: linear-gradient(90deg, var(--primary) 0%, #2563eb 100%);
+        color: var(--white);
+        padding: 20px 32px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .section-header .s-icon {
+        font-size: 28px;
+      }
+      .section-header h2 {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+      }
+      .section-header p {
+        font-size: 13px;
+        opacity: 0.85;
+        margin: 2px 0 0;
+      }
+      .section-body {
+        padding: 30px 32px;
+      }
+      /* ── FEATURE GRID ── */
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 18px;
+        margin-top: 20px;
+      }
+      .feature-card {
+        background: var(--light);
+        border-radius: 12px;
+        padding: 18px 18px;
+        border-left: 4px solid var(--primary);
+      }
+      .feature-card.green {
+        border-left-color: var(--accent2);
+      }
+      .feature-card.amber {
+        border-left-color: var(--accent);
+      }
+      .feature-card.red {
+        border-left-color: #ef4444;
+      }
+      .feature-card h5 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--primary-dark);
+        margin-bottom: 6px;
+      }
+      .feature-card.green h5 {
+        color: #065f46;
+      }
+      .feature-card.amber h5 {
+        color: #92400e;
+      }
+      .feature-card.red h5 {
+        color: #991b1b;
+      }
+      .feature-card p,
+      .feature-card ul {
+        font-size: 13px;
+        color: #4b5563;
+      }
+      .feature-card ul {
+        padding-left: 18px;
+      }
+      .feature-card ul li {
+        margin-bottom: 2px;
+      }
+      /* ── TAG LIST ── */
+      .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+      .tag {
+        background: #e0e7ff;
+        color: var(--primary-dark);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .tag.green {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .tag.amber {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .tag.red {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .tag.gray {
+        background: #f3f4f6;
+        color: #374151;
+      }
+      /* ── REPORT TABLE ── */
+      .report-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 20px;
+      }
+      .report-cat {
+        background: var(--light);
+        border-radius: 12px;
+        padding: 16px 18px;
+        border-top: 3px solid var(--primary);
+      }
+      .report-cat.g {
+        border-top-color: var(--accent2);
+      }
+      .report-cat.a {
+        border-top-color: var(--accent);
+      }
+      .report-cat.r {
+        border-top-color: #ef4444;
+      }
+      .report-cat.p {
+        border-top-color: #8b5cf6;
+      }
+      .report-cat h5 {
+        font-size: 13px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .report-cat ul {
+        list-style: none;
+        padding: 0;
+      }
+      .report-cat ul li {
+        font-size: 12.5px;
+        color: #374151;
+        padding: 3px 0;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .report-cat ul li::before {
+        content: "→";
+        color: #9ca3af;
+        font-size: 11px;
+      }
+      /* ── STEPS ── */
+      .steps {
+        counter-reset: step;
+        margin-top: 18px;
+      }
+      .step {
+        display: flex;
+        gap: 18px;
+        margin-bottom: 20px;
+        align-items: flex-start;
+      }
+      .step-num {
+        counter-increment: step;
+        min-width: 36px;
+        height: 36px;
+        background: var(--primary);
+        color: var(--white);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+      .step-content h5 {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .step-content p {
+        font-size: 13px;
+        color: #6b7280;
+      }
+      /* ── ALERT TYPES ── */
+      .alert-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .alert-item {
+        background: var(--light);
+        border-radius: 8px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .alert-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--primary);
+        flex-shrink: 0;
+      }
+      .alert-dot.amber {
+        background: var(--accent);
+      }
+      .alert-dot.red {
+        background: #ef4444;
+      }
+      .alert-dot.green {
+        background: var(--accent2);
+      }
+      .alert-dot.purple {
+        background: #8b5cf6;
+      }
+      /* ── MAPS ── */
+      .map-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .map-item {
+        background: var(--light);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--primary-dark);
+        border: 1px solid var(--border);
+      }
+      .map-item span {
+        display: block;
+        font-size: 11px;
+        font-weight: 400;
+        color: #6b7280;
+      }
+      /* ── NOTIFICATIONS ── */
+      .notif-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+      }
+      .notif-card {
+        background: var(--light);
+        border-radius: 10px;
+        padding: 14px;
+        text-align: center;
+      }
+      .notif-card .n-icon {
+        font-size: 28px;
+        margin-bottom: 6px;
+      }
+      .notif-card p {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      /* ── TIP BOX ── */
+      .tip {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-top: 14px;
+        font-size: 13px;
+        color: #1e40af;
+      }
+      .tip strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+      .tip-amber {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+      }
+      .tip-green {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #065f46;
+      }
+      /* ── FOOTER ── */
+      footer {
+        background: var(--primary-dark);
+        color: rgba(255, 255, 255, 0.7);
+        padding: 30px 60px;
+        margin-top: 40px;
+        text-align: center;
+        font-size: 13px;
+      }
+      footer strong {
+        color: var(--white);
+      }
+      /* ── PRINT ── */
+      @media print {
+        body {
+          background: white;
+          font-size: 12px;
+        }
+        .cover {
+          padding: 40px;
+          min-height: auto;
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+        .cover h1 {
+          font-size: 32px;
+        }
+        .section {
+          box-shadow: none;
+          border: 1px solid #ccc;
+          page-break-inside: avoid;
+        }
+      }
+      @media (max-width: 700px) {
+        .cover {
+          padding: 40px 24px;
+        }
+        .cover h1 {
+          font-size: 30px;
+        }
+        .container {
+          padding: 20px 14px;
+        }
+        .section-header,
+        .section-body {
+          padding: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ═══════════════════════════════════════ PORTADA ═══════════════════════════ -->
+    <div class="cover">
+      <h1>Plataforma GPS<br /><span>Talentus Pro Tracking</span></h1>
+      <p>
+        Guía de orientación completa para clientes — Conozca todas las
+        herramientas disponibles para el monitoreo y control de su flota
+        vehicular.
+      </p>
+      <div class="badges">
+        <span class="badge">🛰️ Seguimiento en Tiempo Real</span>
+        <span class="badge">📊 Reportes Avanzados</span>
+        <span class="badge">🔔 Alertas Configurables</span>
+        <span class="badge">🗺️ Geocercas</span>
+        <span class="badge">🔧 Control de Servicios</span>
+        <span class="badge">👤 Gestión de Conductores</span>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- ─── RESUMEN GENERAL ─── -->
+      <div class="intro-grid">
+        <div class="intro-card">
+          <div class="icon">🗺️</div>
+          <h4>Mapa en Vivo</h4>
+          <p>
+            Visualiza todos tus vehículos en tiempo real sobre múltiples
+            proveedores de mapas.
+          </p>
+        </div>
+        <div class="intro-card">
+          <div class="icon">📁</div>
+          <h4>Historial de Ruta</h4>
+          <p>
+            Revisa cada trayecto recorrido con gráficas de velocidad,
+            combustible y sensores.
+          </p>
+        </div>
+        <div class="intro-card">
+          <div class="icon">🔔</div>
+          <h4>Alertas Inteligentes</h4>
+          <p>
+            Recibe notificaciones automáticas ante eventos críticos de tu flota.
+          </p>
+        </div>
+        <div class="intro-card">
+          <div class="icon">📊</div>
+          <h4>+80 Tipos de Reportes</h4>
+          <p>
+            Análisis detallados de conducción, combustible, geocercas y mucho
+            más.
+          </p>
+        </div>
+        <div class="intro-card">
+          <div class="icon">🛡️</div>
+          <h4>Geocercas</h4>
+          <p>
+            Define zonas geográficas y controla entradas, salidas y detenciones.
+          </p>
+        </div>
+        <div class="intro-card">
+          <div class="icon">🔧</div>
+          <h4>Mantenimientos</h4>
+          <p>
+            Programa y lleva control de servicios preventivos y correctivos.
+          </p>
+        </div>
+      </div>
+
+      <!-- ═══════ 1. MAPA Y VEHÍCULOS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">🗺️</span>
+          <div>
+            <h2>1. Mapa Principal y Vehículos</h2>
+            <p>Centro de monitoreo en tiempo real de toda su flota</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El <strong>mapa principal</strong> es el punto de partida del
+            sistema. Permite visualizar todos los vehículos registrados, su
+            posición actual, estado y datos en tiempo real.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>🚗 Panel de Vehículos</h5>
+              <ul>
+                <li>Listado de todos los dispositivos</li>
+                <li>Estado: En movimiento / Detenido / Offline</li>
+                <li>Velocidad y dirección actuales</li>
+                <li>Última posición registrada</li>
+                <li>Barra de búsqueda rápida</li>
+                <li>Agrupación por grupos personalizados</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>🌐 Tipos de Mapa Disponibles</h5>
+              <ul>
+                <li>
+                  Google Maps (Normal, Satélite, Terreno, Híbrido, Tráfico)
+                </li>
+                <li>OpenStreetMap</li>
+                <li>Bing Maps (Normal, Satélite, Híbrido)</li>
+                <li>Azure Maps</li>
+                <li>MapBox</li>
+                <li>TomTom</li>
+                <li>Here Maps</li>
+                <li>Carto / LocationIQ</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>📌 Funciones del Mapa</h5>
+              <ul>
+                <li>Hacer clic en vehículo para ver detalles</li>
+                <li>Seguir vehículo automáticamente</li>
+                <li>Zoom y navegación libre</li>
+                <li>Ver eventos recientes en mapa</li>
+                <li>Mostrar/ocultar grupos de dispositivos</li>
+                <li>Street View integrado</li>
+              </ul>
+            </div>
+            <div class="feature-card">
+              <h5>📋 Vista de Lista (Lookup)</h5>
+              <ul>
+                <li>Alternativa al mapa en formato tabla</li>
+                <li>Columnas personalizables</li>
+                <li>Odómetro, velocidad, motor, dirección</li>
+                <li>Sensor personalizado en columna</li>
+                <li>Exportación de datos</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tip">
+            <strong>💡 Funciones del Popup de Vehículo</strong>
+            Al hacer clic sobre un vehículo en el mapa aparece un popup con:
+            nombre, velocidad, dirección, coordenadas, estado motor, nivel de
+            combustible, temperatura, cámara en vivo (si aplica), eventos
+            recientes y acceso rápido a historial.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 2. HISTORIAL ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">📁</span>
+          <div>
+            <h2>2. Historial de Ruta</h2>
+            <p>
+              Revise cada trayecto recorrido con detalle completo de posiciones
+              y sensores
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de historial permite reproducir y analizar los recorridos
+            de cualquier vehículo durante un período de tiempo seleccionado.
+          </p>
+
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-content">
+                <h5>Seleccione el vehículo</h5>
+                <p>
+                  Elija el dispositivo que desea consultar desde el panel
+                  lateral.
+                </p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-content">
+                <h5>Defina el período de fecha y hora</h5>
+                <p>
+                  Indique la fecha de inicio y fin (máximo 31 días por
+                  consulta).
+                </p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-content">
+                <h5>Analice el recorrido</h5>
+                <p>
+                  El sistema muestra la ruta trazada en el mapa junto con todas
+                  las posiciones, paradas, eventos y valores de sensores en ese
+                  período.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>🎬 Reproducción</h5>
+              <ul>
+                <li>Playback animado del recorrido</li>
+                <li>Control de velocidad de reproducción</li>
+                <li>Pausa / avance / retroceso</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>📈 Gráficas de Sensores</h5>
+              <ul>
+                <li>Velocidad vs tiempo</li>
+                <li>Nivel de combustible</li>
+                <li>Temperatura</li>
+                <li>RPM del motor</li>
+                <li>Cualquier sensor personalizado</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>📤 Exportación</h5>
+              <ul>
+                <li>Exportar en PDF</li>
+                <li>Exportar en Excel (XLSX)</li>
+                <li>Exportar en CSV</li>
+                <li>Exportar en KML (Google Earth)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 3. ALERTAS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">🔔</span>
+          <div>
+            <h2>3. Alertas y Notificaciones</h2>
+            <p>Configuración de avisos automáticos ante eventos de su flota</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            Las <strong>alertas</strong> son reglas configurables que notifican
+            al usuario cuando un vehículo cumple determinadas condiciones. Cada
+            alerta puede asociarse a uno o varios dispositivos y enviar
+            notificaciones por múltiples canales.
+          </p>
+
+          <h4 style="margin: 20px 0 0; font-size: 16px">
+            Tipos de alertas disponibles:
+          </h4>
+          <div class="alert-grid">
+            <div class="alert-item">
+              <div class="alert-dot red"></div>
+              Exceso de velocidad
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot amber"></div>
+              Parada prolongada
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot"></div>
+              Tiempo excedido en zona
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot red"></div>
+              Dispositivo sin señal (Offline)
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot green"></div>
+              Inicio de movimiento
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot green"></div>
+              Inicio de movimiento (filtrado)
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot amber"></div>
+              Tiempo en movimiento
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot amber"></div>
+              Motor encendido/apagado
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot amber"></div>
+              Duración de motor encendido
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot amber"></div>
+              Motor en ralentí (Idle)
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot"></div>
+              Entrada a geocerca
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot"></div>
+              Salida de geocerca
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot"></div>
+              Entrada/Salida de geocerca
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot amber"></div>
+              Cambio de conductor
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot red"></div>
+              Conductor no autorizado
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot red"></div>
+              SOS / Pánico
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot amber"></div>
+              Variación de combustible (carga/robo)
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot"></div>
+              Distancia recorrida
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot purple"></div>
+              Parada en POI
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot purple"></div>
+              Motor ralentí en POI
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot red"></div>
+              Desconexión del dispositivo
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot green"></div>
+              Eventos personalizados
+            </div>
+            <div class="alert-item">
+              <div class="alert-dot green"></div>
+              Estado de tarea
+            </div>
+          </div>
+
+          <h4 style="margin: 24px 0 10px; font-size: 16px">
+            Canales de notificación:
+          </h4>
+          <div class="notif-grid">
+            <div class="notif-card">
+              <div class="n-icon">🌐</div>
+              <p>Notificación en plataforma</p>
+            </div>
+            <div class="notif-card">
+              <div class="n-icon">📧</div>
+              <p>Correo electrónico</p>
+            </div>
+            <div class="notif-card">
+              <div class="n-icon">📱</div>
+              <p>SMS</p>
+            </div>
+            <div class="notif-card">
+              <div class="n-icon">🔔</div>
+              <p>Push (App móvil)</p>
+            </div>
+            <div class="notif-card">
+              <div class="n-icon">🤖</div>
+              <p>Comando GPRS automático</p>
+            </div>
+            <div class="notif-card">
+              <div class="n-icon">🔗</div>
+              <p>Webhook (URL externa)</p>
+            </div>
+          </div>
+
+          <div class="tip tip-amber" style="margin-top: 18px">
+            <strong>⚙️ Configuración avanzada</strong>
+            Cada alerta puede tener horarios de activación (días y horas
+            específicas), asignarse a múltiples dispositivos, vincularse a
+            geocercas específicas, y configurar períodos de silencio para evitar
+            spam de notificaciones.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 4. EVENTOS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">⚡</span>
+          <div>
+            <h2>4. Eventos</h2>
+            <p>Registro completo de todas las alertas disparadas en su flota</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>eventos</strong> guarda un historial de cada
+            alerta que fue activada, indicando qué vehículo la generó, en qué
+            momento y su ubicación exacta.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>📋 Información del Evento</h5>
+              <ul>
+                <li>Fecha y hora exacta del evento</li>
+                <li>Vehículo que lo generó</li>
+                <li>Tipo de alerta disparada</li>
+                <li>Posición geográfica (coordenadas)</li>
+                <li>Dirección aproximada del lugar</li>
+                <li>Estado del evento (leído / no leído)</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>🔍 Filtros y Búsqueda</h5>
+              <ul>
+                <li>Filtrar por vehículo</li>
+                <li>Filtrar por tipo de alerta</li>
+                <li>Filtrar por rango de fechas</li>
+                <li>Buscar por dirección</li>
+                <li>Ver en mapa la posición del evento</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>🔧 Acciones disponibles</h5>
+              <ul>
+                <li>Marcar como leído / no leído</li>
+                <li>Eliminar eventos</li>
+                <li>Exportar historial de eventos</li>
+                <li>Ver ubicación en mapa</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 5. GEOCERCAS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">🛡️</span>
+          <div>
+            <h2>5. Geocercas</h2>
+            <p>
+              Defina zonas geográficas virtuales y controle la presencia de su
+              flota
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            Las <strong>geocercas</strong> son zonas geográficas virtuales
+            dibujadas sobre el mapa. Permiten definir áreas de operación, zonas
+            restringidas, puntos de interés y más.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>✏️ Tipos de Geocerca</h5>
+              <ul>
+                <li><strong>Polígono:</strong> forma libre personalizada</li>
+                <li><strong>Círculo:</strong> radio definido desde un punto</li>
+                <li><strong>Ruta:</strong> corredor sobre un camino</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>🗂️ Organización</h5>
+              <ul>
+                <li>Agrupar geocercas en carpetas</li>
+                <li>Activar / desactivar geocercas</li>
+                <li>Asignar colores y estilos</li>
+                <li>Compartir entre usuarios</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>🔔 Uso con Alertas</h5>
+              <ul>
+                <li>Alertar entrada a geocerca</li>
+                <li>Alertar salida de geocerca</li>
+                <li>Alertar velocidad dentro de zona</li>
+                <li>Tiempo de permanencia en zona</li>
+              </ul>
+            </div>
+            <div class="feature-card">
+              <h5>📤 Importar / Exportar</h5>
+              <ul>
+                <li>Importar desde archivo KML/KMZ</li>
+                <li>Exportar a KML para Google Earth</li>
+                <li>Copiar geocercas entre usuarios</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tip tip-green">
+            <strong>✅ Casos de uso frecuentes</strong>
+            Zona de trabajo asignada · Bodega o planta · Zonas de no acceso ·
+            Límites de ciudad · Rutas autorizadas · Zonas de carga/descarga
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 6. PUNTOS DE INTERÉS (POI) ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">📌</span>
+          <div>
+            <h2>6. Puntos de Interés (POI)</h2>
+            <p>
+              Marca lugares importantes en el mapa para facilitar la gestión
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            Los <strong>POI (Points of Interest)</strong> son marcadores
+            personalizados en el mapa que representan ubicaciones relevantes:
+            clientes, bodegas, gasolineras, talleres, etc.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>📌 Funciones</h5>
+              <ul>
+                <li>Crear puntos con nombre personalizado</li>
+                <li>Icono y color personalizable</li>
+                <li>Descripción del punto</li>
+                <li>Agregar imagen al punto</li>
+                <li>Agrupar por categorías</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>📊 En Reportes</h5>
+              <ul>
+                <li>Reporte de paradas en POI</li>
+                <li>Tiempo de permanencia en POI</li>
+                <li>Reporte de ralentí en POI</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>📤 Importar/Exportar</h5>
+              <ul>
+                <li>Importar desde CSV/Excel</li>
+                <li>Importar desde KML</li>
+                <li>Exportar a múltiples formatos</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 7. REPORTES ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">📊</span>
+          <div>
+            <h2>7. Reportes</h2>
+            <p>
+              Más de 80 tipos de reportes para análisis detallado de su flota
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>reportes</strong> genera análisis detallados de
+            la actividad de cada vehículo. Los reportes se pueden generar al
+            momento o programar para envío automático por correo electrónico.
+          </p>
+
+          <div class="report-categories">
+            <div class="report-cat">
+              <h5 style="color: var(--primary)">📍 Movimiento General</h5>
+              <ul>
+                <li>Información General</li>
+                <li>Información General Combinada</li>
+                <li>Historial de Objeto</li>
+                <li>Movimientos del Objeto</li>
+                <li>Tiempo de Conducción</li>
+                <li>Kilometraje Diario</li>
+                <li>Odómetro</li>
+                <li>Hoja de Viaje</li>
+                <li>Hoja de Viaje (Negocio/Privado)</li>
+              </ul>
+            </div>
+            <div class="report-cat g">
+              <h5 style="color: #065f46">⛽ Combustible</h5>
+              <ul>
+                <li>Nivel de Combustible</li>
+                <li>Consumo de Combustible</li>
+                <li>Tasa de Flujo por Hora</li>
+                <li>Flujo Diario</li>
+                <li>Robos de Combustible</li>
+                <li>Cargas de Combustible</li>
+                <li>Uso por Conductor</li>
+                <li>Comparación GPS vs ECM</li>
+              </ul>
+            </div>
+            <div class="report-cat a">
+              <h5 style="color: #92400e">🅁 Paradas y Detenciones</h5>
+              <ul>
+                <li>Paradas</li>
+                <li>Paradas Filtradas</li>
+                <li>Viajes y Paradas</li>
+                <li>Viajes y Paradas Simplificado</li>
+                <li>Viajes/Paradas en Geocercas</li>
+                <li>Viajes/Paradas por Conductor</li>
+                <li>Viajes Privados / Negocio</li>
+                <li>Viajes/Paradas Combinados</li>
+              </ul>
+            </div>
+            <div class="report-cat r">
+              <h5 style="color: #991b1b">🚨 Velocidad y Excesos</h5>
+              <ul>
+                <li>Exceso de Velocidad</li>
+                <li>Velocidad Mínima</li>
+                <li>Velocidad en Carreteras</li>
+                <li>Velocidad GPS vs ECM</li>
+                <li>Velocidad en Geocercas</li>
+                <li>Reporte de Velocidad</li>
+                <li>Máximo RPM por Conductor</li>
+              </ul>
+            </div>
+            <div class="report-cat p">
+              <h5 style="color: #5b21b6">🛡️ Geocercas</h5>
+              <ul>
+                <li>Geocercas Entrada/Salida</li>
+                <li>Geocercas Solo Salida</li>
+                <li>Geocercas en Grupo</li>
+                <li>Paradas en Geocercas</li>
+                <li>Motor en Geocercas</li>
+                <li>Geocercas modo 24h</li>
+                <li>Ignición 24h en Geocercas</li>
+                <li>Geocercas Combinadas</li>
+                <li>Todas las Geocercas Tocadas</li>
+              </ul>
+            </div>
+            <div class="report-cat">
+              <h5 style="color: var(--primary)">🏎️ Motor y Horas</h5>
+              <ul>
+                <li>Horas de Motor</li>
+                <li>Horas de Motor Actuales</li>
+                <li>Horas de Motor Virtual</li>
+                <li>Gráfica de Horas de Motor</li>
+                <li>Horas de Trabajo Diarias</li>
+                <li>Ignición Encendido/Apagado 24h</li>
+              </ul>
+            </div>
+            <div class="report-cat g">
+              <h5 style="color: #065f46">👤 Conductores</h5>
+              <ul>
+                <li>Informe RAG (Riesgos)</li>
+                <li>RAG con Curvas</li>
+                <li>RAG en Geocercas</li>
+                <li>RAG por Conductor</li>
+                <li>RAG con Cinturón</li>
+                <li>Distancia Diaria por Conductor</li>
+                <li>IVMS Conductores</li>
+                <li>IVMS Hoja de Viaje Conductor</li>
+              </ul>
+            </div>
+            <div class="report-cat a">
+              <h5 style="color: #92400e">🌡️ Temperatura y Sensores</h5>
+              <ul>
+                <li>Temperatura</li>
+                <li>Temperatura con Estadísticas</li>
+                <li>Velocidad Detallada</li>
+                <li>Tarifa Diems por Dispositivo</li>
+                <li>Tarifa Diems por Conductor</li>
+                <li>Eventos por Dispositivo</li>
+              </ul>
+            </div>
+            <div class="report-cat r">
+              <h5 style="color: #991b1b">🔧 Mantenimiento y Ops</h5>
+              <ul>
+                <li>Gastos de Dispositivo</li>
+                <li>Comandos Enviados</li>
+                <li>Dispositivos Offline</li>
+                <li>Instalación Dispositivos Offline</li>
+                <li>Instalación Todos los Dispositivos</li>
+                <li>Dispositivos en Geocercas</li>
+                <li>Última Ubicación</li>
+                <li>Checklists</li>
+                <li>Carga de Trabajo</li>
+                <li>Rutas</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="feature-grid" style="margin-top: 24px">
+            <div class="feature-card">
+              <h5>📅 Programación de Reportes</h5>
+              <ul>
+                <li>Envío automático por correo</li>
+                <li>Frecuencia: diaria, semanal, mensual</li>
+                <li>Formato: PDF, Excel, CSV</li>
+                <li>Múltiples destinatarios</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>🎯 Personalización</h5>
+              <ul>
+                <li>Seleccionar uno o múltiples vehículos</li>
+                <li>Definir período de análisis</li>
+                <li>Guardar reportes generados</li>
+                <li>Historial de reportes generados</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>📤 Formatos de Exportación</h5>
+              <ul>
+                <li>PDF imprimible</li>
+                <li>Excel (XLSX)</li>
+                <li>CSV para integración</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 8. SENSORES ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">🔬</span>
+          <div>
+            <h2>8. Sensores</h2>
+            <p>Monitoreo avanzado de datos del vehículo más allá del GPS</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            Los <strong>sensores</strong> permiten capturar y monitorear
+            variables del vehículo que el dispositivo GPS reporta, como
+            temperatura, combustible, RPM, voltaje y cualquier parámetro
+            personalizable.
+          </p>
+
+          <h4 style="margin: 0 0 10px; font-size: 15px">
+            Tipos de sensores más comunes:
+          </h4>
+          <div class="tag-list">
+            <span class="tag">🌡️ Temperatura</span>
+            <span class="tag">⛽ Nivel de Combustible</span>
+            <span class="tag green">🔌 Voltaje de Batería</span>
+            <span class="tag green">🔄 RPM del Motor</span>
+            <span class="tag amber">📟 Odómetro</span>
+            <span class="tag amber">⏱️ Horas de Motor</span>
+            <span class="tag">🔑 Estado de Ignición</span>
+            <span class="tag red">🚨 Botón de Pánico/SOS</span>
+            <span class="tag">🔒 Estado de Bloqueo</span>
+            <span class="tag green">🔋 Batería Interna</span>
+            <span class="tag amber">📦 Carga / Peso</span>
+            <span class="tag">🌬️ Presión de Aire</span>
+            <span class="tag purple">👤 Lector RFID (Conductor)</span>
+            <span class="tag red">🚪 Puerta Abierta/Cerrada</span>
+            <span class="tag purple">📡 Señal GSM</span>
+            <span class="tag">🛞 Velocidad GPS</span>
+            <span class="tag green">⚡ Consumo Eléctrico</span>
+            <span class="tag gray">🔧 Parámetro Personalizado</span>
+          </div>
+
+          <div class="tip" style="margin-top: 18px">
+            <strong>🔧 Calibración de sensores</strong>
+            Los sensores se pueden calibrar con tablas de conversión para
+            obtener valores precisos (ej: voltaje → litros de combustible).
+            Soporta importación de calibraciones desde archivo CSV.
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 9. SERVICIOS Y MANTENIMIENTO ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">🔧</span>
+          <div>
+            <h2>9. Servicios y Mantenimiento</h2>
+            <p>
+              Control completo del mantenimiento preventivo y correctivo de la
+              flota
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>servicios</strong> permite registrar y
+            programar las tareas de mantenimiento de cada vehículo, con avisos
+            automáticos cuando se acerque la fecha o el kilometraje programado.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>📋 Tipos de Servicio</h5>
+              <ul>
+                <li>Cambio de aceite</li>
+                <li>Revisión de frenos</li>
+                <li>Cambio de llantas</li>
+                <li>Revisión técnica (SOAT/Tecnicomercio)</li>
+                <li>Mantenimiento eléctrico</li>
+                <li>Cualquier servicio personalizado</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>⏱️ Disparadores de Servicio</h5>
+              <ul>
+                <li>Por fecha (vence el día X)</li>
+                <li>Por odómetro (cada N km)</li>
+                <li>Por horas de motor</li>
+                <li>Combinación de condiciones</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>🔔 Avisos</h5>
+              <ul>
+                <li>Notificación en plataforma</li>
+                <li>Correo electrónico automático</li>
+                <li>Aviso con X km/días de anticipación</li>
+                <li>Estado: Pendiente / Realizado / Vencido</li>
+              </ul>
+            </div>
+            <div class="feature-card">
+              <h5>📑 Checklists</h5>
+              <ul>
+                <li>Listas de verificación digitales</li>
+                <li>Plantillas reutilizables</li>
+                <li>Registro fotográfico</li>
+                <li>Firma digital del responsable</li>
+                <li>Código QR para acceso rápido</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>💰 Gastos del Vehículo</h5>
+              <ul>
+                <li>Registro de gastos por vehículo</li>
+                <li>Categoría: combustible, mantenimiento, seguro, etc.</li>
+                <li>Proveedor/taller</li>
+                <li>Costo y fecha</li>
+                <li>Reporte de gastos acumulados</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>📊 Mantenimiento Activo</h5>
+              <ul>
+                <li>Vista resumen de toda la flota</li>
+                <li>Estado por vehículo</li>
+                <li>Filtro por IMEI o dispositivo</li>
+                <li>Historial de servicios realizados</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 10. CONDUCTORES ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">👤</span>
+          <div>
+            <h2>10. Gestión de Conductores</h2>
+            <p>Identifique y controle quién opera cada vehículo</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>conductores</strong> permite registrar los
+            choferes de la flota y asociarlos a los vehículos mediante lector
+            RFID o selección manual, habilitando reportes de conducción
+            individual.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>👤 Datos del Conductor</h5>
+              <ul>
+                <li>Nombre completo</li>
+                <li>Foto del conductor</li>
+                <li>Número de licencia / documento</li>
+                <li>Código RFID (si aplica)</li>
+                <li>Datos de contacto</li>
+                <li>Empresa asignada</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>📊 Seguimiento</h5>
+              <ul>
+                <li>Histórico de vehículos operados</li>
+                <li>Registro de actividad (log)</li>
+                <li>Kilómetros recorridos por conductor</li>
+                <li>Alertas de conductor no autorizado</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>📋 Reportes por Conductor</h5>
+              <ul>
+                <li>Distancia diaria por conductor</li>
+                <li>Viajes y paradas por conductor</li>
+                <li>RPM máximo / comportamiento vial</li>
+                <li>Hoja de viaje del conductor</li>
+                <li>Viajes privados vs negocio</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 11. RUTAS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">🛤️</span>
+          <div>
+            <h2>11. Rutas Planificadas</h2>
+            <p>Dibuje rutas esperadas y compare con los recorridos reales</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>rutas</strong> permite trazar trayectorias
+            planificadas en el mapa y verificar si los vehículos siguen los
+            recorridos asignados.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>✏️ Creación de Rutas</h5>
+              <ul>
+                <li>Trazar rutas sobre el mapa</li>
+                <li>Importar desde archivo KML/GPX</li>
+                <li>Definir tolerancia de desviación</li>
+                <li>Organizar en grupos de rutas</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>📊 En Reportes</h5>
+              <ul>
+                <li>Reporte de cumplimiento de rutas</li>
+                <li>Reporte de rutas resumido</li>
+                <li>Desvíos de ruta</li>
+                <li>Tiempo en ruta vs esperado</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 12. TAREAS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">📋</span>
+          <div>
+            <h2>12. Tareas (Despacho)</h2>
+            <p>
+              Asigne y controle tareas de campo directamente desde la plataforma
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>tareas</strong> permite crear y asignar
+            trabajos a vehículos o conductores, monitorear su estado en tiempo
+            real y llevar un registro de cumplimiento.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>📋 Gestión de Tareas</h5>
+              <ul>
+                <li>Crear tareas con dirección o coordenadas</li>
+                <li>Asignar a vehículo o conductor</li>
+                <li>Fecha/hora estimada de cumplimiento</li>
+                <li>Estado: Pendiente / En camino / Completada</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>📬 Importación Masiva</h5>
+              <ul>
+                <li>Importar tareas desde Excel/CSV</li>
+                <li>Plantillas de conjuntos de tareas</li>
+                <li>Asignación múltiple</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>🔔 Alertas de Tareas</h5>
+              <ul>
+                <li>Notificación al cambiar estado</li>
+                <li>Alerta por tarea vencida</li>
+                <li>Firma de recepción</li>
+                <li>Integrable con alertas del sistema</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 13. ENVÍO DE COMANDOS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">📡</span>
+          <div>
+            <h2>13. Envío de Comandos</h2>
+            <p>Interactúe con los dispositivos GPS en tiempo real</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>comandos</strong> permite enviar instrucciones
+            directas a los dispositivos GPS instalados en los vehículos.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>📡 Comandos GPRS</h5>
+              <ul>
+                <li>Bloqueo / desbloqueo del vehículo</li>
+                <li>Solicitar posición inmediata</li>
+                <li>Reiniciar dispositivo</li>
+                <li>Cambiar frecuencia de reporte</li>
+                <li>Comandos personalizados por protocolo</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>📱 Comandos SMS</h5>
+              <ul>
+                <li>Envío por mensaje de texto</li>
+                <li>Plantillas SMS personalizadas</li>
+                <li>Variables dinámicas del dispositivo</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>⏰ Comandos Programados</h5>
+              <ul>
+                <li>Programar envío a fecha/hora específica</li>
+                <li>Ejecución recurrente</li>
+                <li>Log de comandos enviados</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 14. CÁMARA Y MEDIOS ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">📷</span>
+          <div>
+            <h2>14. Cámaras y Medios</h2>
+            <p>
+              Visualización de video en vivo e imágenes capturadas por el
+              dispositivo
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>📹 Cámara en Vivo</h5>
+              <ul>
+                <li>Streaming de video en tiempo real</li>
+                <li>Múltiples canales de cámara</li>
+                <li>Vista integrada en popup del mapa</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>🖼️ Galería de Imágenes</h5>
+              <ul>
+                <li>Imágenes capturadas por el dispositivo</li>
+                <li>Búsqueda por fecha y dispositivo</li>
+                <li>Descarga individual o en lote</li>
+                <li>Categorías de medios</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 15. COMPARTIR UBICACIÓN ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">🔗</span>
+          <div>
+            <h2>15. Compartir Ubicación</h2>
+            <p>
+              Comparta el seguimiento en vivo de un vehículo sin necesidad de
+              login
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El módulo de <strong>compartir</strong> genera un enlace público
+            para que terceros puedan ver la ubicación en tiempo real de un
+            vehículo, sin necesidad de una cuenta en el sistema.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>🔗 Tipos de Compartir</h5>
+              <ul>
+                <li>Enlace con fecha de expiración</li>
+                <li>Enlace permanente</li>
+                <li>Compartir al instante (enlace rápido)</li>
+                <li>Enviar por correo electrónico</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>📋 Configuración</h5>
+              <ul>
+                <li>Seleccionar vehículos a compartir</li>
+                <li>Definir fecha de inicio y fin</li>
+                <li>Vista de mapa sin credenciales</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 16. CHAT ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">💬</span>
+          <div>
+            <h2>16. Chat Interno</h2>
+            <p>
+              Comunicación directa entre usuarios de la plataforma y conductores
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>💬 Funciones de Chat</h5>
+              <ul>
+                <li>Chat entre usuarios del sistema</li>
+                <li>Chat con dispositivos/conductores</li>
+                <li>Indicador de mensajes no leídos</li>
+                <li>Historial de conversaciones</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>🔔 Notificaciones</h5>
+              <ul>
+                <li>Aviso en tiempo real de nuevo mensaje</li>
+                <li>Burbuja con contador de no leídos</li>
+                <li>Frecuencia de actualización configurable</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 17. DASHBOARD ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">📈</span>
+          <div>
+            <h2>17. Dashboard / Panel de Control</h2>
+            <p>Vista ejecutiva de sus indicadores más importantes</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <p>
+            El <strong>dashboard</strong> presenta bloques de información clave
+            configurables, brindando una vista resumen del estado de la flota
+            sin necesidad de entrar a cada módulo.
+          </p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>📊 Bloques Disponibles</h5>
+              <ul>
+                <li>Total de dispositivos activos/inactivos</li>
+                <li>Dispositivos en movimiento / detenidos</li>
+                <li>Últimos eventos recibidos</li>
+                <li>Alertas recientes</li>
+                <li>Vehículos offline</li>
+                <li>Odómetro acumulado del día</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>⚙️ Personalización</h5>
+              <ul>
+                <li>Activar/desactivar bloques</li>
+                <li>Orden personalizable</li>
+                <li>Vista rápida por usuario</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ 18. MI CUENTA ═══════ -->
+      <div class="section">
+        <div class="section-header">
+          <span class="s-icon">⚙️</span>
+          <div>
+            <h2>18. Mi Cuenta y Configuración Personal</h2>
+            <p>Personalice la plataforma según sus preferencias</p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="feature-grid">
+            <div class="feature-card">
+              <h5>👤 Datos de Cuenta</h5>
+              <ul>
+                <li>Cambiar contraseña</li>
+                <li>Correo electrónico</li>
+                <li>Datos personales / empresa</li>
+                <li>Zona horaria</li>
+                <li>Formato de fecha/hora</li>
+              </ul>
+            </div>
+            <div class="feature-card green">
+              <h5>🗺️ Preferencias de Mapa</h5>
+              <ul>
+                <li>Mapa predeterminado</li>
+                <li>Nivel de zoom inicial</li>
+                <li>Unidades de distancia (km/mi)</li>
+                <li>Unidades de velocidad</li>
+                <li>Unidades de volumen</li>
+              </ul>
+            </div>
+            <div class="feature-card amber">
+              <h5>🌐 Idioma</h5>
+              <ul>
+                <li>Múltiples idiomas disponibles</li>
+                <li>Cambio de idioma en tiempo real</li>
+              </ul>
+            </div>
+            <div class="feature-card">
+              <h5>🔐 Seguridad</h5>
+              <ul>
+                <li>Períodos de inicio de sesión</li>
+                <li>Acceso por IP</li>
+                <li>Credenciales secundarias (sub-accesos)</li>
+                <li>Métodos de autenticación</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════ PREGUNTAS FRECUENTES ═══════ -->
+      <div class="section">
+        <div
+          class="section-header"
+          style="background: linear-gradient(90deg, #065f46 0%, #059669 100%)"
+        >
+          <span class="s-icon">❓</span>
+          <div>
+            <h2>Preguntas Frecuentes</h2>
+            <p>
+              Respuestas rápidas a las dudas más comunes de nuestros clientes
+            </p>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="feature-grid">
+            <div class="feature-card green">
+              <h5>¿Con qué frecuencia se actualiza la posición?</h5>
+              <p>
+                La frecuencia depende de la configuración del dispositivo GPS.
+                Puede ser desde cada 5 segundos hasta cada pocos minutos. El
+                tiempo de "offline" se define a los 3 minutos sin reporte.
+              </p>
+            </div>
+            <div class="feature-card green">
+              <h5>¿Cuánto historial puedo consultar?</h5>
+              <p>
+                Puede consultar hasta 31 días de historial por consulta. Los
+                datos históricos se almacenan según el plan contratado.
+              </p>
+            </div>
+            <div class="feature-card green">
+              <h5>¿Puedo ver desde el celular?</h5>
+              <p>
+                Sí. La plataforma es responsiva y funciona desde cualquier
+                navegador web en celular, tablet o computador.
+              </p>
+            </div>
+            <div class="feature-card green">
+              <h5>¿Puedo agregar más usuarios a mi cuenta?</h5>
+              <p>
+                Sí. Puede crear sub-usuarios con permisos limitados para que
+                accedan solo a la información que usted autorice.
+              </p>
+            </div>
+            <div class="feature-card green">
+              <h5>¿Las alertas funcionan 24/7?</h5>
+              <p>
+                Sí. Las alertas están activas en todo momento. Puede configurar
+                horarios específicos si solo desea recibirlas en ciertos días u
+                horas.
+              </p>
+            </div>
+            <div class="feature-card green">
+              <h5>¿Puedo exportar los reportes?</h5>
+              <p>
+                Sí. Todos los reportes se pueden exportar en PDF, Excel y CSV.
+                También puede programar envío automático por correo.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /container -->
+
+    <footer>
+      <p>
+        <strong>Talentus Pro Tracking</strong> · Plataforma de Monitoreo GPS
+        Profesional
+      </p>
+      <p style="margin-top: 8px">
+        Para soporte técnico o capacitación adicional, contacte a su
+        representante de cuenta.
+      </p>
+      <p style="margin-top: 6px; opacity: 0.5; font-size: 11px">
+        Documento generado el 2 de marzo de 2026 — Versión para orientación a
+        clientes
+      </p>
+    </footer>
+  </body>
+</html>

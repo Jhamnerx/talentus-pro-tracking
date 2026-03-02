@@ -46,7 +46,7 @@ class DispatchWisetrackJobs implements ShouldQueue
             $totalRecords = WiseTrack::whereIn('patente', $plates)->count();
 
             for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-                SendDataWisetrackJob::dispatch($i, $batchSize, $service, $plates);
+                SendDataWisetrackJob::dispatch($i, $batchSize, $service, $plates, $user->id);
             }
         }
     }

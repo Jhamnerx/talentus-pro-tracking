@@ -5,14 +5,14 @@
 @stop
 
 @section('body')
-    {!! Form::open(array('url' => route('admin.logs.config.set'), 'method' => 'POST')) !!}
+    {!! Form::open(['url' => route('admin.logs.config.set'), 'method' => 'POST']) !!}
     @foreach ($levels as $level => $levelName)
-    <div class="form-group">
-        <div class="radio">
-            {!! Form::radio('level', $level, $level == $current) !!}
-            {!! Form::label(null, $levelName) !!}
+        <div class="form-group">
+            <div class="radio">
+                {!! Form::radio('level', $level, $level == $current) !!}
+                {!! Form::label(null, $levelName) !!}
+            </div>
         </div>
-    </div>
     @endforeach
     {!! Form::close() !!}
 @stop

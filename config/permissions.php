@@ -353,6 +353,11 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+        'webservice_logs' => [
+            'view'  => 1,
+            'edit'  => 0,
+            'remove'  => 0,
+        ],
     ],
 
     'restricted' => [

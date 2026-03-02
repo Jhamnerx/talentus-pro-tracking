@@ -39,7 +39,7 @@ class DispatchComsatelJobs implements ShouldQueue
             $totalRecords = Comsatel::whereIn('placa', $plates)->count();
 
             for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-                SendDataComsatelJob::dispatch($i, $batchSize, $service, $plates);
+                SendDataComsatelJob::dispatch($i, $batchSize, $service, $plates, $user->id);
             }
         }
     }

@@ -25,21 +25,24 @@ class SendDataMininter implements ShouldQueue
     protected $batchSize;
     protected $url_mininter;
     protected $service;
+    protected $userId;
 
 
-    public function __construct($offset, $batchSize, $url_mininter, $service)
+    public function __construct($offset, $batchSize, $url_mininter, $service, $userId = null)
     {
         $this->onQueue('web-services');
         $this->offset = $offset;
         $this->batchSize = $batchSize;
         $this->url_mininter = $url_mininter;
         $this->service = $service;
+        $this->userId = $userId;
     }
 
     public function handle()
     {
         // Instanciar el servicio de logging directamente aquí
         $this->logService = app(LogService::class);
+        $this->logService->setUserId($this->userId);
 
         $this->getTramas();
     }

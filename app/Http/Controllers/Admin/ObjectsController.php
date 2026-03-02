@@ -97,12 +97,17 @@ class ObjectsController extends BaseController
 
     public function logs()
     {
+        if (! $this->user->perm('webservice_logs', 'view')) {
+            throw new AuthorizationException(trans('front.dont_have_permission'));
+        }
+
         $input = array_merge(['limit' => 25], request()->input());
 
         $sort = $input['sorting'] ?? ['sort_by' => 'id', 'sort' => 'asc'];
 
         $items = WebservicesLogs::query()
             ->select(['logs.*'])
+            ->with('user')
             ->search($input['search_phrase'] ?? '')
             ->toPaginator($input['limit'], $sort['sort_by'], $sort['sort']);
 

@@ -22,15 +22,17 @@ class SendDataOsinergmin extends Job implements ShouldQueue
     protected $service;
     protected $plates;
     protected $logService;
+    protected $userId;
     public $tries = 5; // Intentos permitidos
 
 
-    public function __construct($offset, $batchSize, $service, $plates)
+    public function __construct($offset, $batchSize, $service, $plates, $userId = null)
     {
         $this->offset = $offset;
         $this->batchSize = $batchSize;
         $this->service = $service;
         $this->plates = $plates;
+        $this->userId = $userId;
 
         $this->onQueue('web-services-osinergmin');
     }
@@ -38,6 +40,7 @@ class SendDataOsinergmin extends Job implements ShouldQueue
     public function handle()
     {
         $this->logService = app(LogService::class);
+        $this->logService->setUserId($this->userId);
         $this->getTramas();
     }
 

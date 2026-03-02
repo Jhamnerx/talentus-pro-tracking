@@ -7,6 +7,7 @@
             {!! tableHeader('validation.attributes.expiration_date') !!}
         @endif
         @if (Auth::user()->isAdmin())
+            {!! tableHeader('validation.attributes.active') !!}
             {!! tableHeader('validation.attributes.created_at') !!}
         @endif
         {!! tableHeader('admin.actions') !!}
@@ -28,6 +29,11 @@
                         </td>
                     @endif
                     @if (Auth::user()->isAdmin())
+                        <td style="text-align:center">
+                            <span class="label label-sm label-{{ $device->active ? 'success' : 'danger' }}">
+                                {{ $device->active ? trans('admin.yes') : trans('admin.no') }}
+                            </span>
+                        </td>
                         <td>
                             {{ Formatter::time()->human($device->created_at) }}
                         </td>
@@ -50,7 +56,7 @@
             @endforeach
         @else
             <tr>
-                <td class="no-data" colspan="{{ Auth::user()->isAdmin() ? '6' : '5' }}">
+                <td class="no-data" colspan="{{ Auth::user()->isAdmin() ? '7' : '5' }}">
                     {{ trans('admin.no_data') }}
                 </td>
             </tr>

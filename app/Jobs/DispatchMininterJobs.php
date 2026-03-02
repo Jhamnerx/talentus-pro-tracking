@@ -28,7 +28,7 @@ class DispatchMininterJobs implements ShouldQueue
 
         for ($i = 0; $i < $totalRecords; $i += $batchSize) {
 
-            SendDataMininter::dispatch($i, $batchSize, $url_mininter, $service);
+            SendDataMininter::dispatch($i, $batchSize, $url_mininter, $service, $user->id);
         }
     }
 }

@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Helpers\Dashboard\Blocks;
+<?php
+
+namespace Tobuli\Helpers\Dashboard\Blocks;
 
 use Carbon\Carbon;
 use Tobuli\Entities\Device;
@@ -28,15 +30,13 @@ class DeviceDistanceBlock extends Block implements BlockInterface
         $from = Carbon::now()->startOfDay();
         $to   = Carbon::now();
 
-        $devices = $this->user->devices()->orderBy('updated_at','desc')->limit(10)->get()->sortBy('timestamp');
+        $devices = $this->user->devices()->orderBy('updated_at', 'desc')->limit(10)->get()->sortBy('timestamp');
 
         $i = 0;
-        while ($i < self::DAYS_PERIOD)
-        {
+        while ($i < self::DAYS_PERIOD) {
             $from_date = $from->toDateString();
 
-            foreach ($devices as $device)
-            {
+            foreach ($devices as $device) {
                 try {
                     $data = $device->getDistanceBetween($from_date, $to->toDateTimeString());
                 } catch (\Exception $e) {
@@ -46,7 +46,7 @@ class DeviceDistanceBlock extends Block implements BlockInterface
                 $results[$device->name][] = [$i, $data];
             }
 
-            $keys[] = date('F j', strtotime($from_date));
+            $keys[] = Carbon::parse($from_date)->locale('es')->isoFormat('D MMM');
             $to = clone $from;
             $from->subDay();
             $i++;

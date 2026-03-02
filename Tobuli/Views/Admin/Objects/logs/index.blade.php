@@ -59,7 +59,6 @@
             },
         });
 
-
         function logs_delete_modal_callback() {
             tables.get('table_logs');
         }

@@ -24,16 +24,18 @@ class SendDataSutranBatch implements ShouldQueue
     protected $logService;
     protected $service;
     protected $plates;
+    protected $userId;
 
     public $tries = 3;
     public $timeout = 120;
 
-    public function __construct($offset, $batchSize, $service, $plates)
+    public function __construct($offset, $batchSize, $service, $plates, $userId = null)
     {
         $this->offset = $offset;
         $this->batchSize = $batchSize;
         $this->service = $service;
         $this->plates = $plates;
+        $this->userId = $userId;
         $this->onQueue('web-services-sutran');
     }
 
@@ -42,6 +44,7 @@ class SendDataSutranBatch implements ShouldQueue
 
         try {
             $this->logService = app(LogService::class); // Instanciar el servicio de logs
+            $this->logService->setUserId($this->userId);
 
             $positions = Sutran::offset($this->offset)
                 ->limit($this->batchSize)

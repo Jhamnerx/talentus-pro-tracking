@@ -1214,6 +1214,7 @@ return [
     'virtual_engine_hours' => 'Horas de motor virtuales',
     'virtual_odometer' => 'Odómetro virtual',
     'webhook' => 'La URL en la que desea que se publiquen los datos del evento.',
+    'webservice_logs' => 'Logs de Webservices',
     'wednesday' => 'Miércoles',
     'wednesday_abbr' => 'Casarse',
     'week' => 'Semana',

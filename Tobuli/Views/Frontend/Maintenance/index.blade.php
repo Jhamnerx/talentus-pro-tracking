@@ -14,12 +14,12 @@
 
 @section('scripts')
     <script>
-    tables.set_config('table_maintenance', {
-        url:'{{ route("maintenance.table") }}',
-    });
-    $(window).on('load', function() {
-        $('.collapse').collapse('show');
-    });
+        tables.set_config('table_maintenance', {
+            url: '{{ route('maintenance.table') }}',
+        });
+        $(window).on('load', function() {
+            $('.collapse').collapse('show');
+        });
     </script>
 
     @include('Frontend.Layouts.partials.app')

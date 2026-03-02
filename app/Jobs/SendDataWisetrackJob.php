@@ -23,16 +23,18 @@ class SendDataWisetrackJob implements ShouldQueue
     protected $logService;
     protected $service;
     protected $plates;
+    protected $userId;
 
     public $tries = 3;
     public $timeout = 120;
 
-    public function __construct($offset, $batchSize, $service, $plates)
+    public function __construct($offset, $batchSize, $service, $plates, $userId = null)
     {
         $this->offset = $offset;
         $this->batchSize = $batchSize;
         $this->service = $service;
         $this->plates = $plates;
+        $this->userId = $userId;
         $this->onQueue('web-services-wisetrack');
     }
 
@@ -40,6 +42,7 @@ class SendDataWisetrackJob implements ShouldQueue
     {
         try {
             $this->logService = app(LogService::class);
+            $this->logService->setUserId($this->userId);
 
             $positions = WiseTrack::whereIn('patente', $this->plates)
                 ->offset($this->offset)
