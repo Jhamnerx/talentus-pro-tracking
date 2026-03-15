@@ -1,4 +1,7 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
+
 set_time_limit(0);
 
 use App\Console\ProcessManager;
@@ -14,21 +17,22 @@ use Tobuli\Entities\User;
 use Tobuli\Helpers\RemoteFileManager\ClientProvider;
 use Tobuli\Reports\ReportManager;
 
-class ReportsDailyCommand extends Command {
+class ReportsDailyCommand extends Command
+{
 
-	/**
-	 * The console command name.
-	 *
-	 * @var string
-	 */
-	protected $name = 'reports:daily';
+    /**
+     * The console command name.
+     *
+     * @var string
+     */
+    protected $name = 'reports:daily';
 
-	/**
-	 * The console command description.
-	 *
-	 * @var string
-	 */
-	protected $description = 'Command description.';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Command description.';
 
     private $users = [];
 
@@ -47,9 +51,9 @@ class ReportsDailyCommand extends Command {
      *
 
      */
-	public function __construct()
-	{
-		parent::__construct();
+    public function __construct()
+    {
+        parent::__construct();
 
         $this->reportManager = new ReportManager();
         $this->clientProvider = new ClientProvider();
@@ -57,20 +61,19 @@ class ReportsDailyCommand extends Command {
         Server::setMemoryLimit(config('server.report_memory_limit'));
     }
 
-	/**
-	 * Execute the console command.
-	 *
-	 * @return mixed
-	 */
-	public function handle()
-	{
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
         $timeout = config('tobuli.process.reportdaily_timeout');
         $limit = config('tobuli.process.reportdaily_limit');
 
         $this->processManager = new ProcessManager('reports:daily', $timeout, $limit);
 
-        if ( ! $this->processManager->canProcess())
-        {
+        if (! $this->processManager->canProcess()) {
             echo "Cant process \n";
             return -1;
         }
@@ -93,13 +96,13 @@ class ReportsDailyCommand extends Command {
         echo "DONE\n";
 
         return 0;
-	}
+    }
 
-	/**
-	 * Get the console command arguments.
-	 *
-	 * @return array
-	 */
+    /**
+     * Get the console command arguments.
+     *
+     * @return array
+     */
     protected function getArguments()
     {
         return array(
@@ -107,15 +110,15 @@ class ReportsDailyCommand extends Command {
         );
     }
 
-	/**
-	 * Get the console command options.
-	 *
-	 * @return array
-	 */
-	protected function getOptions()
-	{
-		return array();
-	}
+    /**
+     * Get the console command options.
+     *
+     * @return array
+     */
+    protected function getOptions()
+    {
+        return array();
+    }
 
     public function proccess($schedule_type)
     {
@@ -148,10 +151,10 @@ class ReportsDailyCommand extends Command {
             return null;
 
         foreach ($reports as $report) {
-            if ( ! $this->processManager->canContinue())
+            if (! $this->processManager->canContinue())
                 break;
 
-            if ( ! $this->processManager->lock($report->id))
+            if (! $this->processManager->lock($report->id))
                 continue;
 
             $still = Report::where($schedule_type, 1)
@@ -168,14 +171,14 @@ class ReportsDailyCommand extends Command {
             else
                 $user = $this->users[$report->user_id] = User::find($report->user_id);
 
-            if ( ! $user->isCapable()) {
+            if (! $user->isCapable()) {
                 continue;
             }
 
             setActingUser($user);
 
             $last_send = Formatter::time()->convert($report->{$field});
-            $send_time = date('Y-m-d', strtotime($last_send)) .' '. $report->{$schedule_type.'_time'};
+            $send_time = date('Y-m-d', strtotime($last_send)) . ' ' . $report->{$schedule_type . '_time'};
             $next_send = date("Y-m-d H:i:s", strtotime(date('Y-m-d H:i:s', strtotime($send_time . $next_send_format))));
             $next_send = Formatter::time()->reverse($next_send);
             $current_time = date("Y-m-d H:i:s");
@@ -200,21 +203,23 @@ class ReportsDailyCommand extends Command {
 
             $data['user'] = $user;
             $data['date_from'] = date(
-                    'Y-m-d',
-                    strtotime(
-                        $date_from_format,
-                        Formatter::time()->now()
-                    )).' '.$data[$schedule_type.'_time'];
+                'Y-m-d',
+                strtotime(
+                    $date_from_format,
+                    Formatter::time()->now()
+                )
+            ) . ' ' . $data[$schedule_type . '_time'];
             $data['date_to'] = date(
-                    'Y-m-d',
-                    Formatter::time()->now()).' '.$data[$schedule_type.'_time'];
+                'Y-m-d',
+                Formatter::time()->now()
+            ) . ' ' . $data[$schedule_type . '_time'];
 
-            if ( $schedule_type == 'daily' && !empty($data['from_format']) && !empty($data['to_format']) ) {
-                $now_user_time  = strtotime( date('Y-m-d', Formatter::time()->now()) );
-                $timestamp_from = strtotime( $data['from_format'], $now_user_time );
-                $timestamp_to   = strtotime( $data['to_format'], $now_user_time );
+            if ($schedule_type == 'daily' && !empty($data['from_format']) && !empty($data['to_format'])) {
+                $now_user_time  = strtotime(date('Y-m-d', Formatter::time()->now()));
+                $timestamp_from = strtotime($data['from_format'], $now_user_time);
+                $timestamp_to   = strtotime($data['to_format'], $now_user_time);
 
-                if ( $timestamp_from && $timestamp_to ) {
+                if ($timestamp_from && $timestamp_to) {
                     $data['date_from'] = date('Y-m-d H:i:s', $timestamp_from);
                     $data['date_to']   = date('Y-m-d H:i:s', $timestamp_to);
                 }
@@ -234,7 +239,7 @@ class ReportsDailyCommand extends Command {
             $reportLog = ReportLog::create([
                 'user_id' => $report->user_id,
                 'email' => $report->email,
-                'title' => $report->title . ' ' . $data['date_from'].' - '.$data['date_to'],
+                'title' => $report->title . ' ' . $data['date_from'] . ' - ' . $data['date_to'],
                 'type' => $report->type,
                 'format' => $report->format,
                 'size' => filesize($filename),

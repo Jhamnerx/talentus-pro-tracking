@@ -1,4 +1,19 @@
 <div class="table_error"></div>
+
+<div style="display:flex; gap:10px; padding: 8px 0 10px 0;">
+    <span class="label label-success" style="font-size:13px; padding:6px 14px; border-radius:20px;">
+        <i class="icon active"></i>
+        {{ trans('validation.attributes.active') }}: <strong>{{ $activeCount ?? 0 }}</strong>
+    </span>
+    <span class="label label-danger" style="font-size:13px; padding:6px 14px; border-radius:20px;">
+        <i class="icon inactive"></i>
+        {{ trans('front.inactive') }}: <strong>{{ $inactiveCount ?? 0 }}</strong>
+    </span>
+    <span class="label label-default" style="font-size:13px; padding:6px 14px; border-radius:20px; background:#6c757d;">
+        Total: <strong>{{ ($activeCount ?? 0) + ($inactiveCount ?? 0) }}</strong>
+    </span>
+</div>
+
 <div class="table-responsive">
     <table class="table table-list" data-toggle="multiCheckbox">
         <thead>

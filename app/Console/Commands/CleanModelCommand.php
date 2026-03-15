@@ -14,19 +14,19 @@ use Tobuli\Services\Cleaner\ModelSingleCleaner;
 
 class CleanModelCommand extends Command
 {
-	/**
-	 * The console command name.
-	 *
-	 * @var string
-	 */
-	protected $name = 'model:clean {model} {type?}';
+    /**
+     * The console command name.
+     *
+     * @var string
+     */
+    protected $name = 'model:clean {model} {type?}';
 
-	/**
-	 * The console command description.
-	 *
-	 * @var string
-	 */
-	protected $description = 'Models cleaner';
+    /**
+     * The console command description.
+     *
+     * @var string
+     */
+    protected $description = 'Models cleaner';
 
     protected $modelMap = [
         'event' => ModelCleaner::class,
@@ -37,13 +37,13 @@ class CleanModelCommand extends Command
         'report_log' => ModelSingleCleaner::class,
     ];
 
-	/**
-	 * Execute the console command.
-	 *
-	 * @return mixed
-	 */
-	public function handle()
-	{
+    /**
+     * Execute the console command.
+     *
+     * @return mixed
+     */
+    public function handle()
+    {
         $model = $this->argument('model');
         $type = $this->argument('type');
 
@@ -51,7 +51,7 @@ class CleanModelCommand extends Command
 
         $this->processManager = new ProcessManager($this->name . ':' . $model . $type);
 
-        if ( ! $this->processManager->canProcess()) {
+        if (! $this->processManager->canProcess()) {
             echo "Cant process \n";
 
             return;
@@ -60,7 +60,7 @@ class CleanModelCommand extends Command
         $cleaner->clean();
 
         $this->line("Job done[OK]\n");
-	}
+    }
 
     private function resolveModelCleaner(string $model, ?string $type): AbstractCleaner
     {
@@ -86,29 +86,29 @@ class CleanModelCommand extends Command
             });
     }
 
-	/**
-	 * Get the console command arguments.
-	 *
-	 * @return array
-	 */
-	protected function getArguments()
-	{
+    /**
+     * Get the console command arguments.
+     *
+     * @return array
+     */
+    protected function getArguments()
+    {
         return [
             ['model', InputArgument::REQUIRED, 'Model'],
             ['type', InputArgument::OPTIONAL],
         ];
-	}
+    }
 
-	/**
-	 * Get the console command options.
-	 *
-	 * @return array
-	 */
-	protected function getOptions()
-	{
-		return [
+    /**
+     * Get the console command options.
+     *
+     * @return array
+     */
+    protected function getOptions()
+    {
+        return [
             ['date', null, InputOption::VALUE_REQUIRED, 'Date until which created items are deleted.', null],
             ['limit', null, InputOption::VALUE_OPTIONAL, 'Max amount of items to be deleted.', 10000],
         ];
-	}
+    }
 }

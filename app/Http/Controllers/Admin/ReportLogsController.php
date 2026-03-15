@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Admin;
+<?php
+
+namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use CustomFacades\ModalHelpers\ReportLogModalHelper;
@@ -8,24 +10,24 @@ use Tobuli\ConfirmedAction\Prompt;
 
 class ReportLogsController extends Controller
 {
-	private $section = 'report_logs';
-	
+    private $section = 'report_logs';
+
     public function index()
     {
         $data = [];
-		$data['logs'] = ReportLogModalHelper::get(25);
+        $data['logs'] = ReportLogModalHelper::get(25);
         $data['section'] = $this->section;
         $data['showUser'] = $this->user->perm('users', 'view');
         $data['showFtp'] = config('addon.report_send_to_ftp');
 
-        return view('admin::'.ucfirst($this->section).'.' . (Request::ajax() ? 'table' : 'index'))->with($data);
+        return view('admin::' . ucfirst($this->section) . '.' . (Request::ajax() ? 'table' : 'index'))->with($data);
     }
 
     public function edit($id)
     {
-		$data = ReportLogModalHelper::download($id);
-	   
-		return Response::make( $data['data'], 200, $data['headers']);
+        $data = ReportLogModalHelper::download($id);
+
+        return Response::make($data['data'], 200, $data['headers']);
     }
 
     public function destroy()

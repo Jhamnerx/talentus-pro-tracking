@@ -1993,6 +1993,7 @@ function getWeekStartDays()
         '0' => trans('front.sunday'),
         '6' => trans('front.saturday'),
         '5' => trans('front.friday'),
+        '4' => trans('front.thursday'),
     ];
 }
 

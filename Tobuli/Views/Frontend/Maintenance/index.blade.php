@@ -2,7 +2,6 @@
 
 @section('content')
     <div class="panel panel-default" id="table_maintenance">
-
         <input type="hidden" name="sorting[sort_by]" value="{{ $sorting['sort_by'] ?? '' }}" data-filter>
         <input type="hidden" name="sorting[sort]" value="{{ $sorting['sort'] ?? '' }}" data-filter>
 
@@ -20,6 +19,14 @@
         $(window).on('load', function() {
             $('.collapse').collapse('show');
         });
+
+        function services_create_modal_callback(res) {
+            if (res && res.status == 1) tables.get('table_maintenance');
+        }
+
+        function services_edit_modal_callback(res) {
+            if (res && res.status == 1) tables.get('table_maintenance');
+        }
     </script>
 
     @include('Frontend.Layouts.partials.app')

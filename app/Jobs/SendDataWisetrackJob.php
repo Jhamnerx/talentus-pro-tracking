@@ -95,6 +95,7 @@ class SendDataWisetrackJob implements ShouldQueue
             $this->enviarTramas($grupo, $token, $endpoint);
         }
     }
+
     public function enviarTramas($tramas, $token, $endpoint)
     {
         try {

@@ -25,7 +25,9 @@ class PositionsStack
     {
         $keys = $this->getKeys();
 
-        $imeis = array_map(function($key) { return  str_replace(self::PREFIX . '.','', $key); }, $keys);
+        $imeis = array_map(function ($key) {
+            return  str_replace(self::PREFIX . '.', '', $key);
+        }, $keys);
 
         return $imeis;
     }
@@ -50,12 +52,12 @@ class PositionsStack
 
     public function getKeyDataList($key)
     {
-        $pipeData = $this->redis->pipeline(function($pipe) use ($key) {
+        $pipeData = $this->redis->pipeline(function ($pipe) use ($key) {
             $pipe->lrange($key, 0, -1);
             $pipe->del($key);
         });
 
-        return array_map(function($item){
+        return array_map(function ($item) {
             return json_decode($item, true);
         }, array_reverse($pipeData[0]));
     }
@@ -67,15 +69,15 @@ class PositionsStack
         else
             $data = $this->redis->lIndex($key, -1);
 
-        if ( ! $data)
+        if (! $data)
             return null;
 
         $data = json_decode($data, true);
 
-        if ( ! empty($data['deviceId']))
+        if (! empty($data['deviceId']))
             $data['imei'] = $data['deviceId'];
 
-        if ( ! empty($data['uniqueId']))
+        if (! empty($data['uniqueId']))
             $data['imei'] = $data['uniqueId'];
 
         if (empty($data['imei']))
@@ -91,15 +93,16 @@ class PositionsStack
         return $this->redis->lLen($key);
     }
 
-    public function allCount() {
+    public function allCount()
+    {
         $count = 0;
 
         $keys = $this->getKeys();
 
-        if ( ! $keys)
+        if (! $keys)
             return $count;
 
-        $data = $this->redis->pipeline(function($pipe) use ($keys) {
+        $data = $this->redis->pipeline(function ($pipe) use ($keys) {
             foreach ($keys as $key)
                 $pipe->lLen($key);
         });
@@ -123,10 +126,10 @@ class PositionsStack
 
         $imei = $this->redis->rPop($cacheKey);
 
-        if ( ! is_null($imei) && $imei !== false)
+        if (! is_null($imei) && $imei !== false)
             return $imei;
 
-        if ( ! $this->redis->set('list.imeis.process', true, 'ex', 60, 'nx')) {
+        if (! $this->redis->set('list.imeis.process', true, 'ex', 60, 'nx')) {
             usleep(50);
             return $this->next($depth);
         }

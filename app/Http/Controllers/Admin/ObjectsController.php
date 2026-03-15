@@ -89,10 +89,13 @@ class ObjectsController extends BaseController
         $items = $query->clearOrdersBy()
             ->toPaginator($input['limit'], $sort['sort_by'], $sort['sort']);
 
+        $activeCount   = (clone $query)->where('devices.active', 1)->count();
+        $inactiveCount = (clone $query)->where('devices.active', 0)->count();
+
         $section = $this->section;
 
         return View::make('admin::' . ucfirst($this->section) . '.' . (Request::ajax() ? 'table' : 'index'))
-            ->with(compact('items', 'section'));
+            ->with(compact('items', 'section', 'activeCount', 'inactiveCount'));
     }
 
     public function logs()

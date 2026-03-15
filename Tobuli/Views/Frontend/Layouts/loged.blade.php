@@ -207,6 +207,9 @@
         var titleReports = '{{ trans('front.reports') }}';
         var titleAlerts = '{{ trans('front.alerts') }}';
         var titleGeofences = '{{ trans('front.geofencing') }}';
+        @if (Auth::user()->perm('maintenance', 'view'))
+            var titleMaintenance = '{{ trans('front.maintenance') }}';
+        @endif
     </script>
 
     @yield('scripts')

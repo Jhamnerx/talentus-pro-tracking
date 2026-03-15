@@ -123,8 +123,7 @@ class ScheduleService
                     'id' => $time,
                     'title' => $displayTime,
                     'active' => $this->isTimeInPeriods($time, $actives),
-                    'class' =>
-                        (Str::endsWith($time, ":00") ? ' hour' : '') .
+                    'class' => (Str::endsWith($time, ":00") ? ' hour' : '') .
                         (in_array($time, $this->quarters) ? ' quarter' : '')
                 ];
             }
@@ -167,7 +166,7 @@ class ScheduleService
 
             $validator = Validator::make([$prefix => $input], [
                 "$prefix.$weekday"   => 'required|array',
-                "$prefix.$weekday.*" => 'in:' . implode(',' ,array_keys($this->times))
+                "$prefix.$weekday.*" => 'in:' . implode(',', array_keys($this->times))
             ]);
 
             if ($validator->fails()) {
@@ -273,7 +272,7 @@ class ScheduleService
 
         $result = [];
 
-        foreach($schedules as $weekday => $periods) {
+        foreach ($schedules as $weekday => $periods) {
             foreach ($periods as $period) {
                 list($_weekdayStart, $_timeStart) = $this->convertDate($weekday, $period[0], $reverse);
                 list($_weekdayEnd, $_timeEnd) = $this->convertDate($weekday, $period[1], $reverse);

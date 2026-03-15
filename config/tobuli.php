@@ -438,7 +438,7 @@ return [
             ]
         ],
         'additional_installation_fields' => [
-            'status' => 0,
+            'status' => 1,
             'options' => [
                 'installation_date_default_today' => false,
             ],

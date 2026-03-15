@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 use App\Exceptions\DemoAccountException;
 use App\Exceptions\PermissionException;
@@ -106,24 +108,56 @@ class MyAccountSettingsModalHelper extends ModalHelper
         }
 
         if ($this->api) {
-            return compact('item', 'timezones', 'units_of_distance',
-                'units_of_capacity', 'units_of_altitude', 'groups',
-                'sms_queue_count', 'request_method_select', 'encoding_select',
-                'authentication_select', 'dst_types', 'user_dst',
-                'months', 'weekdays', 'week_pos', 'dst_countries',
-                'week_start_days', 'client', 'company');
+            return compact(
+                'item',
+                'timezones',
+                'units_of_distance',
+                'units_of_capacity',
+                'units_of_altitude',
+                'groups',
+                'sms_queue_count',
+                'request_method_select',
+                'encoding_select',
+                'authentication_select',
+                'dst_types',
+                'user_dst',
+                'months',
+                'weekdays',
+                'week_pos',
+                'dst_countries',
+                'week_start_days',
+                'client',
+                'company'
+            );
         }
 
         $widgets = $this->user->getSettings('widgets');
         $dashboard = $this->user->getSettings('dashboard');
 
-        return compact('item', 'timezones', 'units_of_distance',
-            'units_of_capacity', 'units_of_altitude', 'duration_formats', 'groups',
-            'sms_queue_count', 'request_method_select', 'encoding_select',
+        return compact(
+            'item',
+            'timezones',
+            'units_of_distance',
+            'units_of_capacity',
+            'units_of_altitude',
+            'duration_formats',
+            'groups',
+            'sms_queue_count',
+            'request_method_select',
+            'encoding_select',
             'authentication_select',
-            'dst_types', 'user_dst', 'months', 'weekdays',
-            'week_pos', 'dst_countries', 'week_start_days',
-            'widgets', 'dashboard', 'client', 'company');
+            'dst_types',
+            'user_dst',
+            'months',
+            'weekdays',
+            'week_pos',
+            'dst_countries',
+            'week_start_days',
+            'widgets',
+            'dashboard',
+            'client',
+            'company'
+        );
     }
 
     public function edit()
@@ -136,7 +170,7 @@ class MyAccountSettingsModalHelper extends ModalHelper
         $this->data['sms_gateway_url'] = isset($this->data['sms_gateway_url']) ? $this->data['sms_gateway_url'] : '';
         $item = $this->user;
 
-        if ( ! empty($this->data['sms_gateway']) && isset($this->data['request_method'])) {
+        if (! empty($this->data['sms_gateway']) && isset($this->data['request_method'])) {
             SMSGatewayFormValidator::validate($this->data['request_method'], $this->data);
         }
 
@@ -187,7 +221,7 @@ class MyAccountSettingsModalHelper extends ModalHelper
             if (isset($this->data['groups'])) {
                 $this->data_group = $this->data['groups'];
 
-                if ( ! is_array($this->data_group)) {
+                if (! is_array($this->data_group)) {
                     $this->data_group = json_decode($this->data_group, TRUE);
                 }
             }
@@ -213,7 +247,7 @@ class MyAccountSettingsModalHelper extends ModalHelper
             DeviceGroupRepo::deleteUsersWhereNotIn($arr, $item->id);
         }
 
-        if ( ! $this->api) {
+        if (! $this->api) {
             $this->user->setSettings('widgets', $this->data['widgets'] ?? null, true);
             $this->user->setSettings('dashboard', $this->data['dashboard'] ?? null, true);
         }

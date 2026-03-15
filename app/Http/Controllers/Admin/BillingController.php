@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Admin;
+<?php
+
+namespace App\Http\Controllers\Admin;
 
 
 use Collective\Html\FormFacade as Form;
@@ -38,7 +40,8 @@ class BillingController extends BaseController
         $this->permissionService = $permissionService;
     }
 
-    public function index(BillingPlan $billingPlanRepo, Timezone $timezoneRepo) {
+    public function index(BillingPlan $billingPlanRepo, Timezone $timezoneRepo)
+    {
         $items = $billingPlanRepo->getWhere([], 'objects', 'asc');
 
         $settings = settings('main_settings');
@@ -65,14 +68,29 @@ class BillingController extends BaseController
             ->getFlat('custom_registration_fields[fields]');
 
         return view('admin::Billing.' . (Request::ajax() ? 'table' : 'index'))
-            ->with(compact('items', 'timezones', 'settings', 'customRegistrationFields',
-                'payment_types', 'grouped_permissions', 'dst_types', 'months',
-                'weekdays', 'week_pos', 'week_start_days', 'dst_countries',
-                'userDefaultSms', 'requestMethods', 'encodings', 'authentications',
-                'smsQueueCount'));
+            ->with(compact(
+                'items',
+                'timezones',
+                'settings',
+                'customRegistrationFields',
+                'payment_types',
+                'grouped_permissions',
+                'dst_types',
+                'months',
+                'weekdays',
+                'week_pos',
+                'week_start_days',
+                'dst_countries',
+                'userDefaultSms',
+                'requestMethods',
+                'encodings',
+                'authentications',
+                'smsQueueCount'
+            ));
     }
 
-    public function create() {
+    public function create()
+    {
         $duration_types = [
             'days' => trans('front.days'),
             'months' => trans('front.months'),
@@ -88,7 +106,8 @@ class BillingController extends BaseController
         return view('admin::Billing.create')->with(compact('replacers', 'duration_types', 'grouped_permissions', 'permission_values'));
     }
 
-    public function planStore(BillingPlan $billingPlanRepo, AdminBillingPlanFormValidator $adminBillingPlanFormValidator) {
+    public function planStore(BillingPlan $billingPlanRepo, AdminBillingPlanFormValidator $adminBillingPlanFormValidator)
+    {
         $input = Request::all();
         $permissions = LaravelConfig::get('permissions.list');
 
@@ -101,7 +120,7 @@ class BillingController extends BaseController
 
             if (array_key_exists('perms', $input)) {
                 foreach ($permissions as $key => $val) {
-                    if ( ! array_key_exists($key, $input['perms']))
+                    if (! array_key_exists($key, $input['perms']))
                         continue;
 
                     DB::table('billing_plan_permissions')->insert([
@@ -113,7 +132,6 @@ class BillingController extends BaseController
                     ]);
                 }
             }
-
         } catch (\Exception $e) {
             rollbackTransaction();
             throw new ValidationException(['id' => trans('global.unexpected_db_error')]);
@@ -123,7 +141,8 @@ class BillingController extends BaseController
         return response()->json(['status' => 1]);
     }
 
-    public function edit($id, BillingPlan $billingPlanRepo) {
+    public function edit($id, BillingPlan $billingPlanRepo)
+    {
         $item = $billingPlanRepo->find($id);
         if (empty($item))
             return modalError(dontExist('validation.attributes.plan'));
@@ -143,7 +162,8 @@ class BillingController extends BaseController
         return view('admin::Billing.edit')->with(compact('item', 'replacers', 'duration_types', 'grouped_permissions', 'permission_values'));
     }
 
-    public function update(BillingPlan $billingPlanRepo, AdminBillingPlanFormValidator $adminBillingPlanFormValidator) {
+    public function update(BillingPlan $billingPlanRepo, AdminBillingPlanFormValidator $adminBillingPlanFormValidator)
+    {
         $input = Request::all();
         $permissions = LaravelConfig::get('permissions.list');
 
@@ -156,7 +176,7 @@ class BillingController extends BaseController
             DB::table('billing_plan_permissions')->where('plan_id', '=', $input['id'])->delete();
             if (array_key_exists('perms', $input)) {
                 foreach ($permissions as $key => $val) {
-                    if ( ! array_key_exists($key, $input['perms']))
+                    if (! array_key_exists($key, $input['perms']))
                         continue;
 
                     DB::table('billing_plan_permissions')->insert([
@@ -168,7 +188,6 @@ class BillingController extends BaseController
                     ]);
                 }
             }
-
         } catch (\Exception $e) {
             rollbackTransaction();
             throw new ValidationException(['id' => trans('global.unexpected_db_error')]);
@@ -179,19 +198,22 @@ class BillingController extends BaseController
         return response()->json(['status' => 1]);
     }
 
-    public function plans(BillingPlan $billingPlanRepo) {
+    public function plans(BillingPlan $billingPlanRepo)
+    {
         $items = $billingPlanRepo->getWhere([], 'objects', 'asc');
 
         return view('admin::Billing.table')->with(compact('items'));
     }
 
-    public function billingPlansForm(BillingPlan $billingPlanRepo) {
+    public function billingPlansForm(BillingPlan $billingPlanRepo)
+    {
         $items = $billingPlanRepo->all()->pluck('title', 'id')->all();
 
         return Form::select('default_billing_plan', $items, settings('main_settings.default_billing_plan'), ['class' => 'form-control']);
     }
 
-    public function destroy(BillingPlan $billingPlanRepo) {
+    public function destroy(BillingPlan $billingPlanRepo)
+    {
         $input = Request::all();
         if (!isset($input['id']))
             return response()->json(['status' => 0]);
@@ -217,7 +239,7 @@ class BillingController extends BaseController
     {
         $visible = [];
         foreach (config('payments') as $payment => $config) {
-            if ( ! $config['visible'])
+            if (! $config['visible'])
                 continue;
 
             $visible[] = $payment;

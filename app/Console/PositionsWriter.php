@@ -646,7 +646,7 @@ class PositionsWriter
 
     public function saveDataWisetrack($device, $position)
     {
-        $transportista = $device->object_owner; // Puedes cambiarlo si necesitas obtenerlo de otro lado
+        $transportista = $device->transportista; // Puedes cambiarlo si necesitas obtenerlo de otro lado
 
         // Convertir la fecha y hora al formato requerido (UTC)
         $fechaHora = date('Y-m-d H:i:s', strtotime($position->device_time));

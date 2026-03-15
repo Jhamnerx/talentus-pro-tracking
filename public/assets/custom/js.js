@@ -1878,6 +1878,15 @@ a[href=\"#events_tab\"] {
 	
 }
 
+.sidebar-content a[href$=\"maintenance\"] {
+	 background-image: url(assets/custom/icons/maintenance.svg) !important;
+	 background-repeat: no-repeat !important;
+	 background-size: 35px !important;
+	 background-position: center 15px !important;
+	 background: var(--base);
+	
+}
+     
 #sidebar .nav-tabs>li.active>a {
 	 background-color: var(--inverso-base) !important;
 	 border: none !important;
@@ -2164,10 +2173,10 @@ body.sign-in-layout .sign-in-text {
 		
 	}
 
-	 #sidebar {
-		 width: 80%;
-		
-	}
+#sidebar:not(.collapsed) {
+     width: 80%;
+    
+}
 
 	 #sidebar ul.nav.nav-tabs.nav-default {
 		 zoom: 0.9;
@@ -2644,6 +2653,12 @@ if (typeof $ !== "undefined") {
         modal: "sharing",
         condition: typeof titleSharing !== "undefined",
       },
+      {
+        title: typeof titleMaintenance !== "undefined" ? titleMaintenance : "",
+        url: urlBase + "maintenance",
+        condition: typeof titleMaintenance !== "undefined",
+        link: true,
+      },
     ];
 
     $(document).ready(function () {
@@ -2653,6 +2668,12 @@ if (typeof $ !== "undefined") {
             $(".sidebar-content ul.nav.nav-tabs.nav-default").append(
               $("<li role='presentation'>").html(
                 `<a href="javascript:" data-id="geofencing_tab" onclick="app.geofences.list();app.openTab('geofencing_tab');">${tab.title}</a>`,
+              ),
+            );
+          } else if (tab.link) {
+            $(".sidebar-content ul.nav.nav-tabs.nav-default").append(
+              $("<li role='presentation'>").html(
+                `<a href="${tab.url}">${tab.title}</a>`,
               ),
             );
           } else {
