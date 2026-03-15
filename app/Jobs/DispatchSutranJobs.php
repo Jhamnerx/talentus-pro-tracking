@@ -31,7 +31,7 @@ class DispatchSutranJobs implements ShouldQueue
             })->toArray();
 
             if (empty($plates)) {
-                Log::info('No plates found for user: ' . $user->id . '. Job terminated.');
+                Log::info('No plates found for user: ' . $user->id . '. Job terminated Sutran.');
                 continue;
             }
 

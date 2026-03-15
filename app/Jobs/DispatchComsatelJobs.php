@@ -30,7 +30,7 @@ class DispatchComsatelJobs implements ShouldQueue
             })->toArray();
 
             if (empty($plates)) {
-                Log::info('No plates Comsatel found for user: ' . $user->id . '. Job terminated.');
+                Log::info('No plates Comsatel found for user: ' . $user->id . '. Job terminated Comsatel.');
                 continue;
             }
 

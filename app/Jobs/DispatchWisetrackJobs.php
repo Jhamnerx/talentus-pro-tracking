@@ -37,7 +37,7 @@ class DispatchWisetrackJobs implements ShouldQueue
             })->toArray();
 
             if (empty($plates)) {
-                Log::info('No plates Wisetrack found for user: ' . $user->id . '. Job terminated.');
+                Log::info('No plates Wisetrack found for user: ' . $user->id . '. Job terminated Wisetrack.');
                 continue;
             }
 
