@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -95,7 +97,7 @@ class AlertsController extends Controller
         $items = Alert::enabled()
             ->whereIn('id', $ids)
             ->get()
-            ->filter(fn ($alert) => $this->user->can('active', $alert));
+            ->filter(fn($alert) => $this->user->can('active', $alert));
 
         if ($active === null) {
             $active = (isset($this->data['active']) && filter_var($this->data['active'], FILTER_VALIDATE_BOOLEAN)) ? 1 : 0;
@@ -107,7 +109,8 @@ class AlertsController extends Controller
         return ['status' => 1];
     }
 
-    public function doDestroy($id = null) {
+    public function doDestroy($id = null)
+    {
         $data = AlertModalHelper::doDestroy($id);
 
         return is_array($data) ? view('front::Alerts.destroy')->with($data) : $data;

@@ -38,7 +38,11 @@
                         <div class="col-sm-6">
                             <div class="form-group">
                                 {!! Form::label('type', trans('validation.attributes.type')) !!}
-                                {!! Form::select('type', $types_list, null, ['class' => 'form-control', 'id' => 'reports_type']) !!}
+                                {!! Form::select('type', $types_list, null, [
+                                    'class' => 'form-control',
+                                    'id' => 'reports_type',
+                                    'data-live-search' => 'true',
+                                ]) !!}
                             </div>
                         </div>
                         <div class="col-sm-6">

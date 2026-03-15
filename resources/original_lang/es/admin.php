@@ -145,4 +145,8 @@ return [
     'welcome_text' => 'Texto de bienvenida',
     'yes' => 'Si',
     'your_branding_url' => 'Para utilizar software con su Marca, utilice esta URL para iniciar sesión:',
+    'all' => 'Todos',
+    'all_webservices' => 'Todos los Webservices',
+    'with_webservices' => 'Con Webservices',
+    'webservices' => 'Webservices',
 ];

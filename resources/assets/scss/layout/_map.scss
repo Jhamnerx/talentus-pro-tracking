@@ -43,33 +43,59 @@
   text-align: right;
   z-index: $leaflet-control-z-index;
 
-  .btn-group-vertical {
-    margin-bottom: 10px;
+  // Cada grupo fluye en columna
+  > div {
+    display: block;
   }
-  .btn {
-    + .btn {
-      border-top: 1px solid $map-controls-btn-border-color;
-    }
 
+  .btn-group-vertical {
+    margin-bottom: 14px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .btn {
     padding: 0;
-    width: 33px;
-    height: 33px;
-    line-height: 33px;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
     font-size: 15px;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    transition:
+      background 0.15s ease,
+      color 0.15s ease,
+      transform 0.1s ease;
 
     background: $map-controls-btn-bg;
     color: $map-controls-btn-color;
 
+    &:first-child {
+      border-top: none;
+    }
+
     &:hover {
       background: $map-controls-btn-hover-bg;
       color: $map-controls-btn-hover-color;
+      transform: scale(1.08);
+      z-index: 1;
+    }
+
+    &:active {
+      transform: scale(0.95);
     }
 
     &.active {
       background: $map-controls-btn-active-bg;
       color: $map-controls-btn-active-color;
     }
+
+    .icon {
+      pointer-events: none;
+    }
   }
 }
-

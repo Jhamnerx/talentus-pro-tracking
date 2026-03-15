@@ -1212,6 +1212,7 @@ return [
     'zoom_out' => 'Zoom out',
     'dont_have_an_account' => 'Don’t have an account?',
     'get_started' => 'Get started',
+    'webservice_logs' => 'Webservice Logs',
     'password_reminder_message' => 'Enter the email address associated with your account and we\'ll send you a link to reset your password.',
     'task_set_view' => 'View task set',
     'show_traffic' => 'Show traffic',

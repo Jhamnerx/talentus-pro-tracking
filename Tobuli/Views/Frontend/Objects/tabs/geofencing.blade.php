@@ -3,18 +3,23 @@
         <div class="form">
             <div class="input-group">
                 <div class="form-group search">
-                    {!!Form::text('search', null, ['class' => 'form-control', 'placeholder' => trans('front.search'), 'autocomplete' => 'off'])!!}
+                    {!! Form::text('search', null, [
+                        'class' => 'form-control',
+                        'placeholder' => trans('front.search'),
+                        'autocomplete' => 'off',
+                    ]) !!}
                 </div>
                 @if (Auth::User()->perm('geofences', 'edit'))
-                <span class="input-group-btn">
-                    <a href="javascript:" class="btn btn-default" data-url="{{ route('geofences.index_modal') }}" data-modal="geofences_modal">
-                        <i class="icon edit"></i>
-                    </a>
+                    <span class="input-group-btn">
+                        <a href="javascript:" class="btn btn-default" data-url="{{ route('geofences.index_modal') }}"
+                            data-modal="geofences_modal">
+                            <i class="icon edit"></i>
+                        </a>
 
-                    <a href="javascript:" class="btn btn-primary" type="button" onClick="app.geofences.create();">
-                        <i class="icon add"></i>
-                    </a>
-                </span>
+                        <a href="javascript:" class="btn btn-primary" type="button" onClick="app.geofences.create();">
+                            <i class="icon add"></i>
+                        </a>
+                    </span>
                 @endif
             </div>
         </div>

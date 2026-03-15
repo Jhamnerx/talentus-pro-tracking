@@ -114,6 +114,11 @@ class GeofenceAlertCheck extends AlertCheck
                     return false;
                 }
 
+                $sat = $position->getParameter('sat');
+                if (!is_null($sat) && $sat <= 10) {
+                    return false;
+                }
+
                 $isCurrentIn = $this->checkGeofence($position, $geofence);
 
                 // Si la velocidad excede el límite y no hemos comenzado a rastrear, establecer la hora de inicio

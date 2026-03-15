@@ -91,10 +91,10 @@ abstract class AlertCheck
 
     protected function checkAlertPosition($position)
     {
-        if ( ! $this->checkSchedules($position->time))
+        if (! $this->checkSchedules($position->time))
             return false;
 
-        if ( ! $this->checkZones($position->latitude, $position->longitude))
+        if (! $this->checkZones($position->latitude, $position->longitude))
             return false;
 
         return true;
@@ -106,7 +106,7 @@ abstract class AlertCheck
      */
     protected function checkActiveTime($time)
     {
-        if ( ! is_integer($time))
+        if (! is_integer($time))
             $time = strtotime($time);
 
         $alertPivotActiveFrom = $this->alert->pivot->active_from ?? null;
@@ -139,7 +139,7 @@ abstract class AlertCheck
         if (empty($firedAt))
             return true;
 
-        if ( ! is_integer($time))
+        if (! is_integer($time))
             $time = strtotime($time);
 
         return strtotime($firedAt) < $time;
@@ -151,10 +151,10 @@ abstract class AlertCheck
      */
     protected function checkSchedules($time)
     {
-        if ( ! $this->checkActiveTime($time))
+        if (! $this->checkActiveTime($time))
             return false;
 
-        if ( ! $this->alert->schedule)
+        if (! $this->alert->schedule)
             return true;
 
         if (empty($time))
@@ -165,10 +165,10 @@ abstract class AlertCheck
 
     protected function checkZones($latitude, $longitude)
     {
-        if (in_array($this->alert->type, ['geofence_in','geofence_out','geofence_inout']))
+        if (in_array($this->alert->type, ['geofence_in', 'geofence_out', 'geofence_inout']))
             return true;
 
-        if ( ! $this->alert->zone)
+        if (! $this->alert->zone)
             return true;
 
         if (empty($this->alert->zones))
@@ -205,10 +205,10 @@ abstract class AlertCheck
 
     protected function getZone($latitude, $longitude)
     {
-        if (in_array($this->alert->type, ['geofence_in','geofence_out','geofence_inout']))
+        if (in_array($this->alert->type, ['geofence_in', 'geofence_out', 'geofence_inout']))
             return null;
 
-        if ( ! $this->alert->zone)
+        if (! $this->alert->zone)
             return null;
 
         if (empty($this->alert->zones))
@@ -247,10 +247,10 @@ abstract class AlertCheck
 
     protected function getZones($latitude, $longitude)
     {
-        if (in_array($this->alert->type, ['geofence_in','geofence_out','geofence_inout']))
+        if (in_array($this->alert->type, ['geofence_in', 'geofence_out', 'geofence_inout']))
             return null;
 
-        if ( ! $this->alert->zone)
+        if (! $this->alert->zone)
             return null;
 
         if (empty($this->alert->zones))
@@ -313,8 +313,7 @@ abstract class AlertCheck
             'silent'       => null,
         ]);
 
-        if ($zone = $this->getZone($position->latitude, $position->longitude))
-        {
+        if ($zone = $this->getZone($position->latitude, $position->longitude)) {
             $event->geofence_id = $zone->id;
             $event->setAdditional('geofence', $zone->name);
         }
@@ -324,8 +323,8 @@ abstract class AlertCheck
             $event->setAdditional('driver_name', $driver->name);
         }
 
-        $event->setCreatedAt( Carbon::now() );
-        $event->setUpdatedAt( Carbon::now() );
+        $event->setCreatedAt(Carbon::now());
+        $event->setUpdatedAt(Carbon::now());
 
         $event->channels = $this->alert->channels;
         $event->other = $position->other;

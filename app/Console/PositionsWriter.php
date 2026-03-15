@@ -552,11 +552,31 @@ class PositionsWriter
                 $this->position->longitude = $lastValidPosition->longitude;
             }
         }
-        if ($this->position->protocol == 'teltonika') {
+        $sat = $this->position->getParameter('sat');
 
-            $others = $this->parseString($this->position->other);
-            if ($others['sat'] <= 5) {
+        if ($sat !== null && $sat < 7) {
+
+            if ($lastValidPosition) {
+
+                $this->position->latitude = $lastValidPosition->latitude;
+                $this->position->longitude = $lastValidPosition->longitude;
+                $this->position->speed = 0;
+            } else {
+
                 $this->position->valid = 0;
+            }
+        }
+        if ($lastValidPosition) {
+
+            if ($this->position->distance > 1) { // mas de 1 km
+
+                $time = strtotime($this->position->time) - strtotime($lastValidPosition->time);
+
+                if ($time < 30) {
+
+                    $this->position->valid = 0;
+                    return;
+                }
             }
         }
         $distance = round($this->position->distance * 1000, 2);

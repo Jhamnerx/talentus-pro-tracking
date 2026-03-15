@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Entities;
+<?php
+
+namespace Tobuli\Entities;
 
 use Formatter;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,7 +23,7 @@ class Alert extends AbstractEntity implements DisplayInterface
 
     public static string $displayField = 'name';
 
-	protected $table = 'alerts';
+    protected $table = 'alerts';
 
     protected array $searchable = [
         'name',
@@ -35,7 +37,7 @@ class Alert extends AbstractEntity implements DisplayInterface
         'schedules',
         'notifications',
         'for_all_user_devices',
-
+        'speed_tolerance',
         'zone',
         'schedule',
         'overspeed',
@@ -109,7 +111,7 @@ class Alert extends AbstractEntity implements DisplayInterface
     {
         return $this->belongsToMany('Tobuli\Entities\Device')
             // escape deattached users devices
-            ->when(config('tobuli.alerts_throw_user_device'), function($query) {
+            ->when(config('tobuli.alerts_throw_user_device'), function ($query) {
                 $query
                     ->join('alerts', 'alerts.id', '=', 'alert_device.alert_id')
                     ->join('user_device_pivot', function ($join) {
@@ -171,7 +173,7 @@ class Alert extends AbstractEntity implements DisplayInterface
         return $query->where(function (Builder $query) use ($user) {
             $query->userOwned($user);
 
-            $query->orWhere(function(Builder $q) use ($user) {
+            $query->orWhere(function (Builder $q) use ($user) {
                 $q->whereExists(function ($query) use ($user) {
                     $query->select("alert_user.user_id")
                         ->from('alert_user')
@@ -192,6 +194,7 @@ class Alert extends AbstractEntity implements DisplayInterface
             'geofence_in',
             'geofence_out',
             'geofence_inout',
+            'geofence_overspeed',
             'ignition',
             'sos',
             'fuel_change',
@@ -288,7 +291,7 @@ class Alert extends AbstractEntity implements DisplayInterface
 
     public function getOverspeedAttribute()
     {
-        return Formatter::speed()->format( $this->getOverspeed() );
+        return Formatter::speed()->format($this->getOverspeed());
     }
 
     public function setOverspeedAttribute($value)
@@ -305,7 +308,7 @@ class Alert extends AbstractEntity implements DisplayInterface
 
     public function getDistanceAttribute()
     {
-        return Formatter::distance()->format( $this->getDistance()  );
+        return Formatter::distance()->format($this->getDistance());
     }
 
     public function setDistanceAttribute($value)
@@ -313,6 +316,17 @@ class Alert extends AbstractEntity implements DisplayInterface
         $value = round(Formatter::distance()->reverse($value), 3);
 
         $this->setProperty('distance', $value);
+    }
+    public function setSpeedToleranceAttribute($value)
+    {
+        $value = round(Formatter::speed()->reverse($value), 0);
+
+        $this->setProperty('speed_tolerance', $value);
+    }
+
+    public function getSpeedTolerance()
+    {
+        return Arr::get($this->data, 'speed_tolerance', 0);
     }
 
     public function getDistanceTolerance()

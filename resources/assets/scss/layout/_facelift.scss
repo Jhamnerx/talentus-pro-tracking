@@ -4,8 +4,6 @@ body.sign-in-layout {
   }
 }
 
-
-
 .modal-content {
   //overflow: hidden;
 }
@@ -15,55 +13,114 @@ body.sign-in-layout {
 }
 .nav-tabs {
   & > li > a {
-    border-bottom: 4px solid #EBF0F4;
+    border-bottom: 4px solid #ebf0f4;
   }
 }
 
-  #header.folded {
-    &:before {
+#header.folded {
+  &:before {
+    display: none !important;
+  }
+  .navbar-nav {
+    @media (min-width: $grid-float-breakpoint) {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+    }
+
+    &:before,
+    &:after {
       display: none !important;
     }
-    .navbar-nav {
+  }
 
-      @media (min-width: $grid-float-breakpoint) {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-      }
+  .navbar .navbar-brand {
+    max-width: 100%;
 
-      &:before,
-      &:after {
-        display: none !important;
-      }
+    width: 265px;
+    @media (min-width: $screen-sm-min) {
+      width: 315px;
+    }
+    @media (min-width: $screen-md-min) {
+      width: 345px;
     }
 
-    .navbar .navbar-brand {
-      max-width: 100%;
+    &:before,
+    &:after {
+      display: none !important;
+    }
+  }
+}
 
-      width: 265px;
-      @media (min-width: $screen-sm-min) {
-        width: 315px;
-      }
-      @media (min-width: $screen-md-min) {
-        width: 345px;
-      }
+#map-controls {
+  right: 12px;
+  padding-top: 8px;
+}
 
-      &:before,
-      &:after {
-        display: none !important;
+// Dropdown moderno para la lista de dispositivos
+.group-list .droparrow.dropleft > .dropdown-menu,
+.group-list .droparrow.dropright > .dropdown-menu {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: 4px 0;
+  min-width: 200px;
+
+  &:before {
+    border-right-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  &:after {
+    border-right-color: #ffffff !important;
+  }
+
+  > li > a {
+    color: #333333;
+    padding: 7px 14px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 0;
+    transition: background 0.12s ease;
+
+    > .icon {
+      color: #666666;
+      width: 16px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    > .text {
+      flex: 1;
+    }
+
+    &:hover {
+      background: #f0f4f8;
+      color: $brand-primary;
+
+      > .icon {
+        color: $brand-primary;
       }
     }
   }
 
-  #map-controls {
-    right: 15px;
+  > li:first-child > a {
+    border-radius: 8px 8px 0 0;
   }
 
-  body.sign-in-layout {
-    .btn-primary {
-      margin: 16px 0;
-    }
+  > li:last-child > a {
+    border-radius: 0 0 8px 8px;
   }
+}
+
+body.sign-in-layout {
+  .btn-primary {
+    margin: 16px 0;
+  }
+}
 
 .group-list {
   display: block;

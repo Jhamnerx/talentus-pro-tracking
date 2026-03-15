@@ -2413,12 +2413,6 @@ body.sign-in-layout .sign-in-text {
 	
 }
 
-#map-controls .btn-group-vertical,
-#map-controls .btn {
-	 margin-bottom: 0px;
-	
-}
-
 #sidebar .tab-pane-header {
 	 padding: 0px 10px;
 	

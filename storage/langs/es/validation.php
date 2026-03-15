@@ -318,6 +318,7 @@ return [
         'bottom_text' => 'Texto inferior',
         'google_play_link' => 'Enlace de GooglePlay',
         'apple_store_link' => 'Enlace AppleStore',
+        'date_from' => 'Fecha desde',
     ],
     'custom' => [
         'attribute-name' => [

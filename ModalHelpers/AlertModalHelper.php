@@ -763,6 +763,10 @@ class AlertModalHelper extends ModalHelper
                 'title' => trans('front.geofence') . ' ' . trans('global.in') . '/' . trans('global.out'),
             ],
             [
+                'type'  => 'geofence_overspeed',
+                'title' => 'Exceso de velocidad en geocerca',
+            ],
+            [
                 'type'  => 'custom',
                 'title' => trans('front.custom_events'),
             ],
