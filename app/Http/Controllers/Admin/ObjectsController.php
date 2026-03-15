@@ -100,7 +100,7 @@ class ObjectsController extends BaseController
 
     public function logs()
     {
-        if (! $this->user->perm('webservice_logs', 'view')) {
+        if (! $this->user->isAdmin() && ! $this->user->perm('webservice_logs', 'view')) {
             throw new AuthorizationException(trans('front.dont_have_permission'));
         }
 

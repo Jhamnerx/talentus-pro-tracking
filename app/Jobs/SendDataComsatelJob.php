@@ -37,7 +37,7 @@ class SendDataComsatelJob implements ShouldQueue
         $this->service = $service;
         $this->userId = $userId;
 
-        $this->onQueue('web-services');
+        $this->onQueue('web-services-comsatel');
     }
 
     /**

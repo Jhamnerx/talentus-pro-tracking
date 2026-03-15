@@ -30,12 +30,13 @@ class SendDataMininter implements ShouldQueue
 
     public function __construct($offset, $batchSize, $url_mininter, $service, $userId = null)
     {
-        $this->onQueue('web-services');
+
         $this->offset = $offset;
         $this->batchSize = $batchSize;
         $this->url_mininter = $url_mininter;
         $this->service = $service;
         $this->userId = $userId;
+        $this->onQueue('web-services-mininter');
     }
 
     public function handle()
