@@ -61,6 +61,11 @@ class SendDataComsatelJob implements ShouldQueue
 
     protected function sendPositions()
     {
+        Log::info('Starting to process Comsatel positions', [
+            'offset' => $this->offset,
+            'batchSize' => $this->batchSize,
+            'plates' => $this->plates,
+        ]);
         // Obtenemos las posiciones
         $positions = Comsatel::offset($this->offset)
             ->limit($this->batchSize)->whereIn('placa', $this->plates)
@@ -236,6 +241,7 @@ class SendDataComsatelJob implements ShouldQueue
      */
     protected function handleRequestException(RequestException $e, $trama)
     {
+        Log::error('RequestException: ' . $e->getMessage());
         if ($e->hasResponse()) {
             $response = $e->getResponse();
             $body = $response->getBody()->getContents();
