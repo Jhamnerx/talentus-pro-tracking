@@ -780,7 +780,7 @@ class PositionsWriter
 
         $user = $device->users->where('is_municipalidad', true)->first();
 
-        if ($user->is_municipalidad) {
+        if ($user && $user->is_municipalidad) {
 
             $idMunicipalidad =  $user->token_muni;
             $ubigeo = $user->ubigeo_muni;
