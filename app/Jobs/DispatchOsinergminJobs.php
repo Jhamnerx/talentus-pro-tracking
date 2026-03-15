@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Support\Facades\Log;
 
 class DispatchOsinergminJobs implements ShouldQueue
 {
@@ -22,6 +23,7 @@ class DispatchOsinergminJobs implements ShouldQueue
     {
 
         $users = UserRepo::getActiveServiceManagers(1, 'osinergmin');
+        Log::channel('osinergmin')->info('Iniciando dispatch de jobs Osinergmin', ['user_count' => $users->count()]);
 
         foreach ($users as $user) {
 
@@ -30,6 +32,7 @@ class DispatchOsinergminJobs implements ShouldQueue
             })->toArray();
 
             if (empty($plates)) {
+                Log::channel('osinergmin')->info('Sin placas para usuario: ' . $user->id . '. Job omitido.');
                 continue;
             }
             $service = $user->services['osinergmin'];

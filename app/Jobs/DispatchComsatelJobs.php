@@ -22,6 +22,7 @@ class DispatchComsatelJobs implements ShouldQueue
     public function handle()
     {
         $users = UserRepo::getActiveServiceManagers(1, 'consatel');
+        Log::channel('comsatel')->info('Iniciando dispatch de jobs Comsatel', ['user_count' => $users->count()]);
 
         foreach ($users as $user) {
 
@@ -30,7 +31,7 @@ class DispatchComsatelJobs implements ShouldQueue
             })->toArray();
 
             if (empty($plates)) {
-                Log::info('No plates Comsatel found for user: ' . $user->id . '. Job terminated Comsatel.');
+                Log::channel('comsatel')->info('Sin placas para usuario: ' . $user->id . '. Job omitido.');
                 continue;
             }
 

@@ -100,8 +100,36 @@ return [
         'osinergmin' => [
             'driver' => 'daily',
             'path' => storage_path('logs/osinergmin.log'),
-            'level' => 'debug',
-            'days' => 7,
+            'level' => 'info',
+            'days' => 3,
+        ],
+
+        'sutran' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/sutran.log'),
+            'level' => 'info',
+            'days' => 3,
+        ],
+
+        'comsatel' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/comsatel.log'),
+            'level' => 'info',
+            'days' => 3,
+        ],
+
+        'mininter' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/mininter.log'),
+            'level' => 'info',
+            'days' => 3,
+        ],
+
+        'wisetrack' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/wisetrack.log'),
+            'level' => 'info',
+            'days' => 3,
         ],
     ],
 

@@ -10,6 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\User;
 
 class DispatchMininterJobs implements ShouldQueue
@@ -20,6 +21,7 @@ class DispatchMininterJobs implements ShouldQueue
     {
         $batchSize = 1000;
         $totalRecords = Mininter::count();
+        Log::channel('mininter')->info('Iniciando dispatch de jobs Mininter', ['total_records' => $totalRecords]);
 
         $user = User::where('id', 1)->first();
         $service = $user->services['mininter'];

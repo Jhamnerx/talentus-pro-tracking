@@ -8,7 +8,6 @@ use App\Services\LogService;
 use Illuminate\Bus\Queueable;
 use Tobuli\Entities\Comsatel;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
@@ -61,10 +60,10 @@ class SendDataComsatelJob implements ShouldQueue
 
     protected function sendPositions()
     {
-        Log::info('Starting to process Comsatel positions', [
-            'offset' => $this->offset,
+        $this->logService->logStart('Comsatel', 'Iniciando procesamiento de tramas Comsatel', [
+            'offset'    => $this->offset,
             'batchSize' => $this->batchSize,
-            'plates' => $this->plates,
+            'plates'    => $this->plates,
         ]);
         // Obtenemos las posiciones
         $positions = Comsatel::offset($this->offset)
@@ -220,18 +219,10 @@ class SendDataComsatelJob implements ShouldQueue
      */
     protected function logError(\Exception $e)
     {
-        Log::error($e->getMessage());
-        Log::error($e->getFile());
-        Log::error($e->getLine());
-        $errorData = [
-            'error' => $e->getMessage(),
+        $this->logService->logError('Comsatel', $e->getMessage(), [
             'file' => $e->getFile(),
             'line' => $e->getLine(),
-            'time' => now(),
-        ];
-
-        // Guardar el error en la base de datos usando el servicio
-
+        ]);
     }
 
     /**
@@ -241,7 +232,7 @@ class SendDataComsatelJob implements ShouldQueue
      */
     protected function handleRequestException(RequestException $e, $trama)
     {
-        Log::error('RequestException: ' . $e->getMessage());
+        $this->logService->logError('Comsatel', 'RequestException: ' . $e->getMessage());
         if ($e->hasResponse()) {
             $response = $e->getResponse();
             $body = $response->getBody()->getContents();
@@ -249,7 +240,8 @@ class SendDataComsatelJob implements ShouldQueue
                 'Comsatel',
                 $trama[0]['vehiculoId'],
                 'error',
-                'Error en la solicitud: ' . $body,
+                $trama[0],
+                ['message' => 'Error en la solicitud: ' . $body],
                 [],
                 Carbon::parse($trama[0]['gpsDateTime'])->setTimezone('America/Lima')->format('Y-m-d H:i:s'),
                 1,

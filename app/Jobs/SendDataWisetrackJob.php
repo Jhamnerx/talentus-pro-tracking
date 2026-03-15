@@ -10,7 +10,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\WiseTrack;
 use Illuminate\Support\Arr;
 
@@ -43,11 +42,10 @@ class SendDataWisetrackJob implements ShouldQueue
         try {
             $this->logService = app(LogService::class);
             $this->logService->setUserId($this->userId);
-
-            Log::info('Starting to process WiseTrack positions', [
-                'offset' => $this->offset,
+            $this->logService->logStart('Wisetrack', 'Iniciando procesamiento de tramas Wisetrack', [
+                'offset'    => $this->offset,
                 'batchSize' => $this->batchSize,
-                'plates' => $this->plates,
+                'plates'    => $this->plates,
             ]);
             $positions = WiseTrack::whereIn('patente', $this->plates)
                 ->offset($this->offset)
@@ -82,7 +80,9 @@ class SendDataWisetrackJob implements ShouldQueue
 
             $this->sendDataWisetrack($tramas);
         } catch (\Exception $e) {
-            Log::error('Error al enviar tramas a Wisetrack: ' . $e->getMessage());
+            if ($this->logService) {
+                $this->logService->logError('Wisetrack', 'Error al enviar tramas: ' . $e->getMessage());
+            }
         }
     }
 
@@ -125,16 +125,14 @@ class SendDataWisetrackJob implements ShouldQueue
                 $body = $response->getBody()->getContents();
 
 
-                Log::error("Error al enviar tramas a Wisetrack", [
-                    'status' => $statusCode,
+                $this->logService->logError('Wisetrack', 'Error al enviar tramas', [
+                    'status'   => $statusCode,
                     'response' => $body,
-                    'token' => $token,
                     'endpoint' => $endpoint,
-                    'payload' => json_encode($payload) // Registrar el payload para depuración
                 ]);
 
                 if ($statusCode == 403) {
-                    Log::error("Token de Wisetrack inválido o sin permisos. Verifica la autenticación.");
+                    $this->logService->logError('Wisetrack', 'Token inválido o sin permisos. Verifica la autenticación.');
                 }
             }
         }
@@ -143,7 +141,7 @@ class SendDataWisetrackJob implements ShouldQueue
     public function actionAfterSend($tramas, $response)
     {
 
-        Log::info("Respuesta satisfactoria: " . json_encode($response));
+        $this->logService->logStart('Wisetrack', 'Respuesta satisfactoria recibida', ['response' => $response]);
 
         $ids = []; // IDs de tramas a eliminar
 

@@ -12,7 +12,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\Log;
 
 class SendDataOsinergmin extends Job implements ShouldQueue
 {
@@ -51,11 +50,11 @@ class SendDataOsinergmin extends Job implements ShouldQueue
             ->with('device')->orderBy('created_at')->get();
 
         $tramas = [];
-        Log::channel('osinergmin')->info('Processing Osinergmin positions', [
-            'count' => $positions->count(),
-            'offset' => $this->offset,
+        $this->logService->logStart('Osinergmin', 'Iniciando procesamiento de tramas Osinergmin', [
+            'count'     => $positions->count(),
+            'offset'    => $this->offset,
             'batchSize' => $this->batchSize,
-            'positions' => $positions->pluck('plate')->toArray(),
+            'plates'    => $positions->pluck('plate')->toArray(),
         ]);
 
         foreach ($positions as $position) {
@@ -110,10 +109,9 @@ class SendDataOsinergmin extends Job implements ShouldQueue
             $responseBody = json_decode($response->getBody()->getContents(), true);
             $this->actionAfterSend($responseBody, $tramas);
         } catch (RequestException $e) {
-            Log::channel('osinergmin')->error('Request failed for Osinergmin API', [
-                'error' => $e->getMessage(),
+            $this->logService->logError('Osinergmin', 'Error en la solicitud a la API: ' . $e->getMessage(), [
                 'tramas_count' => count($tramas),
-                'plates' => array_column($tramas, 'plate')
+                'plates'       => array_column($tramas, 'plate'),
             ]);
 
             if ($this->service['logs']) {
@@ -130,9 +128,9 @@ class SendDataOsinergmin extends Job implements ShouldQueue
         // Iterar a través de la respuesta para manejar éxito y errores
         foreach ($response['data'] as $index => $data) {
             $trama = $tramas[$index];
-            Log::channel('osinergmin')->info('Processing Osinergmin response', [
-                'data' => $data,
-                'trama' => $trama,
+            $this->logService->logStart('Osinergmin', 'Respuesta Osinergmin procesada', [
+                'uuid'   => $data['uuid'] ?? null,
+                'status' => $data['status'] ?? null,
             ]);
             if ($data['uuid'] === $trama['uuid']) {
 
@@ -174,8 +172,8 @@ class SendDataOsinergmin extends Job implements ShouldQueue
                 $trama['imei']
             );
         } catch (\Throwable $th) {
-            Log::channel('osinergmin')->error('Error logging Osinergmin success: ' . $th->getMessage(), [
-                'trama' => $trama,
+            $this->logService->logError('Osinergmin', 'Error al registrar log de éxito: ' . $th->getMessage(), [
+                'trama'    => $trama,
                 'response' => $response,
             ]);
         }
@@ -195,8 +193,8 @@ class SendDataOsinergmin extends Job implements ShouldQueue
                 $trama['imei']
             );
         } catch (\Throwable $th) {
-            Log::channel('osinergmin')->error('Error logging Osinergmin error to database: ' . $th->getMessage(), [
-                'trama' => $trama,
+            $this->logService->logError('Osinergmin', 'Error al registrar log de error: ' . $th->getMessage(), [
+                'trama'    => $trama,
                 'response' => $response,
             ]);
         }
@@ -236,9 +234,9 @@ class SendDataOsinergmin extends Job implements ShouldQueue
                 );
             }
         } catch (\Throwable $th) {
-            Log::channel('osinergmin')->error('Error logging Osinergmin error to database: ' . $th->getMessage(), [
+            $this->logService->logError('Osinergmin', 'Error al registrar log de error en BD: ' . $th->getMessage(), [
                 'original_exception' => $e->getMessage(),
-                'trama' => $trama,
+                'trama'              => $trama,
             ]);
         }
     }

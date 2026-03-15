@@ -12,7 +12,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\Sutran;
 
 class SendDataSutranBatch implements ShouldQueue
@@ -43,8 +42,13 @@ class SendDataSutranBatch implements ShouldQueue
     {
 
         try {
-            $this->logService = app(LogService::class); // Instanciar el servicio de logs
+            $this->logService = app(LogService::class);
             $this->logService->setUserId($this->userId);
+            $this->logService->logStart('Sutran', 'Iniciando procesamiento de tramas Sutran', [
+                'offset'    => $this->offset,
+                'batchSize' => $this->batchSize,
+                'plates'    => $this->plates,
+            ]);
 
             $positions = Sutran::offset($this->offset)
                 ->limit($this->batchSize)
@@ -83,7 +87,7 @@ class SendDataSutranBatch implements ShouldQueue
 
             $this->sendDataSutran($tramas);
         } catch (\Exception $e) {
-            Log::error('Error al enviar tramas a Sutran: ' . $e->getMessage());
+            $this->logService->logError('Sutran', 'Error al enviar tramas: ' . $e->getMessage());
         }
     }
 
@@ -130,6 +134,8 @@ class SendDataSutranBatch implements ShouldQueue
                     null,
                     null
                 );
+            } else {
+                $this->logService->logError('Sutran', 'Error de conexión: ' . $e->getMessage());
             }
         }
     }

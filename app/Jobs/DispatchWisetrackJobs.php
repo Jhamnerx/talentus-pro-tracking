@@ -30,6 +30,7 @@ class DispatchWisetrackJobs implements ShouldQueue
     public function handle()
     {
         $users = UserRepo::getActiveServiceManagers(1, 'wisetrack');
+        Log::channel('wisetrack')->info('Iniciando dispatch de jobs Wisetrack', ['user_count' => $users->count()]);
         foreach ($users as $user) {
 
             $plates = $user->devices()->where('wisetrack', 1)->get()->pluck('plate_number')->map(function ($plate) {
@@ -37,7 +38,7 @@ class DispatchWisetrackJobs implements ShouldQueue
             })->toArray();
 
             if (empty($plates)) {
-                Log::info('No plates Wisetrack found for user: ' . $user->id . '. Job terminated Wisetrack.');
+                Log::channel('wisetrack')->info('Sin placas para usuario: ' . $user->id . '. Job omitido.');
                 continue;
             }
 

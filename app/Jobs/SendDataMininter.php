@@ -14,7 +14,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Support\Facades\Log;
 
 class SendDataMininter implements ShouldQueue
 {
@@ -44,6 +43,10 @@ class SendDataMininter implements ShouldQueue
         // Instanciar el servicio de logging directamente aquí
         $this->logService = app(LogService::class);
         $this->logService->setUserId($this->userId);
+        $this->logService->logStart('Mininter', 'Iniciando procesamiento de tramas Mininter', [
+            'offset'    => $this->offset,
+            'batchSize' => $this->batchSize,
+        ]);
 
         $this->getTramas();
     }
@@ -65,7 +68,7 @@ class SendDataMininter implements ShouldQueue
 
                 $user = $trama->device->users->where('is_municipalidad', true)->first();
 
-                if ($user->is_municipalidad) {
+                if ($user && $user->is_municipalidad) {
                     $idMunicipalidad = $user->token_muni;
                 }
             }
@@ -73,7 +76,7 @@ class SendDataMininter implements ShouldQueue
             if ($trama->ubigeo == "") {
                 $user = $trama->device->users->where('is_municipalidad', true)->first();
 
-                if ($user->is_municipalidad) {
+                if ($user && $user->is_municipalidad) {
                     $ubigeo = $user->ubigeo_muni;
                 }
             }
@@ -124,22 +127,22 @@ class SendDataMininter implements ShouldQueue
         } catch (RequestException $e) {
             if ($this->service['logs']) {
 
-                Log::error('Error al enviar datos a Mininter: ' . $e->getMessage());
                 if ($e->hasResponse()) {
                     $response = $e->getResponse();
                     $body = $response->getBody()->getContents();
 
-                    // Guardar log de error en la base de datos
                     $this->logService->logToDatabase(
                         'Mininter',
                         $json['placa'],
                         'error',
                         $json,
-                        ['response' => $response],
-                        [], // <- adicionalData
-                        Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']), // <- fecha
+                        ['response' => $body],
+                        [],
+                        Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']),
                         $json['imei'],
                     );
+                } else {
+                    $this->logService->logError('Mininter', 'Error de conexión: ' . $e->getMessage(), ['placa' => $json['placa']]);
                 }
             }
         }
