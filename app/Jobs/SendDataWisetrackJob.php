@@ -44,6 +44,11 @@ class SendDataWisetrackJob implements ShouldQueue
             $this->logService = app(LogService::class);
             $this->logService->setUserId($this->userId);
 
+            Log::info('Starting to process WiseTrack positions', [
+                'offset' => $this->offset,
+                'batchSize' => $this->batchSize,
+                'plates' => $this->plates,
+            ]);
             $positions = WiseTrack::whereIn('patente', $this->plates)
                 ->offset($this->offset)
                 ->limit($this->batchSize)
@@ -83,11 +88,8 @@ class SendDataWisetrackJob implements ShouldQueue
 
     public function sendDataWisetrack($tramas)
     {
-
         $endpoint = $this->service['url'];
         $token = $this->service['token'];
-
-
 
         $tramas_por_grupo = array_chunk($tramas, 300); // Máximo 300 posiciones por envío
 
@@ -141,7 +143,7 @@ class SendDataWisetrackJob implements ShouldQueue
     public function actionAfterSend($tramas, $response)
     {
 
-        //Log::info("Respuesta satisfactoria: " . json_encode($response));
+        Log::info("Respuesta satisfactoria: " . json_encode($response));
 
         $ids = []; // IDs de tramas a eliminar
 
