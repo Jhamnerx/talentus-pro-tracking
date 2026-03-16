@@ -44,6 +44,22 @@
                     </tr>
                 @endforeach
             </tbody>
+
+            <div class="" style="padding-top: 10px">
+                <div class="panel panel-default">
+                    <div class="panel-body">
+                        <div class="row">
+                            <div class="col-xs-6 text-right">
+                                <span>Km Recorrido:</span>
+                            </div>
+                            <div class="col-xs-6 text-left">
+                                <span class="label label-primary">{{ round($distance_sum, 1) }} Km</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </table>
     </div>
 

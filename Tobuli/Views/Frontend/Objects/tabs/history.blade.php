@@ -1,35 +1,42 @@
 <div class="tab-pane-header">
     <div id="history-form" class="form-horizontal">
         <div class="form-group">
-            <label class="col-xs-3 control-label">{!!trans('global.device')!!}:</label>
+            <label class="col-xs-3 control-label">{!! trans('global.device') !!}:</label>
             <div class="col-xs-9">
                 {!! Form::select('device_id', [], null, [
                     'class' => 'form-control',
                     'data-live-search' => 'true',
-                    'data-ajax' => route('devices.index')
+                    'data-ajax' => route('devices.index'),
                 ]) !!}
             </div>
         </div>
 
         <div class="form-group">
-            <label class="col-xs-3 control-label">{!!trans('global.from')!!}:</label>
+            <label class="col-xs-3 control-label">{!! trans('global.from') !!}:</label>
             <div class="col-xs-9">
                 <div class="input-group">
-                    {!!Form::text('from_date', $history['start'], ['class' => 'datepicker form-control'])!!}
+                    {!! Form::text('from_date', $history['start'], ['class' => 'datepicker form-control']) !!}
                     <span class="input-group-btn">
-                        {!!Form::select('from_time', getSelectTimeRange(), null, ['class' => 'form-control timeselect', 'data-custom-input' => 'true'])!!}
+                        {!! Form::select('from_time', getSelectTimeRange(), null, [
+                            'class' => 'form-control timeselect',
+                            'data-custom-input' => 'true',
+                        ]) !!}
                     </span>
                 </div>
             </div>
         </div>
 
         <div class="form-group">
-            <label class="col-xs-3 control-label">{!!trans('global.to')!!}:</label>
+            <label class="col-xs-3 control-label">{!! trans('global.to') !!}:</label>
             <div class="col-xs-9">
                 <div class="input-group">
-                    {!!Form::text('to_date', $history['end'], ['class' => 'datepicker form-control'])!!}
+                    {!! Form::text('to_date', $history['end'], ['class' => 'datepicker form-control']) !!}
                     <span class="input-group-btn">
-                        {!!Form::select('to_time', getSelectTimeRange(), $history['end_time'], ['class' => 'form-control timeselect', 'data-custom-input' => 'true', 'id' => 'ttt'])!!}
+                        {!! Form::select('to_time', getSelectTimeRange(), $history['end_time'], [
+                            'class' => 'form-control timeselect',
+                            'data-custom-input' => 'true',
+                            'id' => 'ttt',
+                        ]) !!}
                     </span>
                 </div>
             </div>
@@ -37,13 +44,15 @@
 
         <div class="form-group">
             <div class="col-xs-12 text-right">
-                <a href="javascript:" class="collapsed" data-toggle="collapse" data-target="#history-advanced" data-parent="#history_tab" aria-expanded="false" aria-controls="history-advanced">
+                <a href="javascript:" class="collapsed" data-toggle="collapse" data-target="#history-advanced"
+                    data-parent="#history_tab" aria-expanded="false" aria-controls="history-advanced">
                     {{ trans('global.advanced') }}
                 </a>
             </div>
         </div>
 
-        <div id="history-advanced" class="group-collapse collapse" role="tabpanel" aria-expanded="false" style="height: 0px;">
+        <div id="history-advanced" class="group-collapse collapse" role="tabpanel" aria-expanded="false"
+            style="height: 0px;">
             <div class="form-group">
                 <label class="col-xs-3 control-label">{{ trans('validation.attributes.stops') }}</label>
                 <div class="col-xs-9">
@@ -51,15 +60,15 @@
                 </div>
             </div>
             @if (config('services.snaptoroad.key'))
-            <div class="form-group">
-                <label class="col-xs-3 control-label"></label>
-                <div class="col-xs-9">
-                    <div class="checkbox">
-                        {!! Form::checkbox('snap_to_road', 1, false) !!}
-                        {!! Form::label(null, trans('front.snap_to_road')) !!}
+                <div class="form-group">
+                    <label class="col-xs-3 control-label"></label>
+                    <div class="col-xs-9">
+                        <div class="checkbox">
+                            {!! Form::checkbox('snap_to_road', 1, false) !!}
+                            {!! Form::label(null, trans('front.snap_to_road')) !!}
+                        </div>
                     </div>
                 </div>
-            </div>
             @endif
             <div class="form-group">
                 <label class="col-xs-3 control-label"></label>
@@ -73,17 +82,23 @@
         </div>
 
         <div class="input-group">
-            <button class="btn btn-primary btn-block" type="button" onclick="app.history.get()">{!!trans('front.show_history')!!}</button>
+            <button class="btn btn-primary btn-block" type="button"
+                onclick="app.history.get()">{!! trans('front.show_history') !!}</button>
             <span class="input-group-btn">
                 <div class="btn-group dropdown">
-                    <button class="btn btn-default" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <button class="btn btn-default" type="button" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
                         <i class="icon history-export"></i>
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a href="javascript:" onclick="app.history.export( 'gsr' )">{{ trans('front.export_gsr') }}</a></li>
-                        <li><a href="javascript:" onclick="app.history.export( 'kml' )">{{ trans('front.export_kml') }}</a></li>
-                        <li><a href="javascript:" onclick="app.history.export( 'gpx' )">{{ trans('front.export_gpx') }}</a></li>
-                        <li><a href="javascript:" onclick="app.history.export( 'csv' )">{{ trans('front.export_csv') }}</a></li>
+                        <li><a href="javascript:"
+                                onclick="app.history.export( 'gsr' )">{{ trans('front.export_gsr') }}</a></li>
+                        <li><a href="javascript:"
+                                onclick="app.history.export( 'kml' )">{{ trans('front.export_kml') }}</a></li>
+                        <li><a href="javascript:"
+                                onclick="app.history.export( 'gpx' )">{{ trans('front.export_gpx') }}</a></li>
+                        <li><a href="javascript:"
+                                onclick="app.history.export( 'csv' )">{{ trans('front.export_csv') }}</a></li>
                     </ul>
                 </div>
                 <button class="btn btn-default" type="button" onclick="app.history.clear()">
