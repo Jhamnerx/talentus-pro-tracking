@@ -6,7 +6,7 @@ use Tobuli\Entities\Device;
 use Illuminate\Support\Facades\App;
 use Tobuli\Helpers\OdometerOptimizer;
 use Tobuli\Sensors\Types\Blocked;
-
+use Tobuli\Helpers\Formatter\Facades\Formatter;;
 class DeviceMapTransformer extends DeviceTransformer
 {
 
