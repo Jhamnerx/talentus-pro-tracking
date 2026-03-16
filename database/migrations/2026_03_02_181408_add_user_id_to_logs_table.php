@@ -14,7 +14,7 @@ class AddUserIdToLogsTable extends Migration
     public function up()
     {
         Schema::table('logs', function (Blueprint $table) {
-            $table->unsignedBigInteger('user_id')->nullable()->after('imei');
+            $table->integer('user_id')->unsigned()->nullable()->after('imei');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
         });
     }
