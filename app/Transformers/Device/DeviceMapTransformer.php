@@ -3,6 +3,8 @@
 namespace App\Transformers\Device;
 
 use Tobuli\Entities\Device;
+use Illuminate\Support\Facades\App;
+use Tobuli\Helpers\OdometerOptimizer;
 use Tobuli\Sensors\Types\Blocked;
 
 class DeviceMapTransformer extends DeviceTransformer
@@ -43,6 +45,20 @@ class DeviceMapTransformer extends DeviceTransformer
             $tailColor = $entity->tail_color; // Azul
         }
 
+        // Variables para almacenar los valores del odómetro
+        $total_distance = 0;
+        $odometer_start_global = trans('front.not_available');
+        $odometer_end_global = trans('front.not_available');
+
+        // Usar el optimizador de odómetro para obtener los valores
+        $odometerOptimizer = App::make(OdometerOptimizer::class);
+
+        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
+
+        $total_distance = $odometerValues['total_distance'];
+        $odometer_start_global = $odometerValues['odometer_start'];
+        $odometer_end_global = $odometerValues['odometer_end'];
+
         return [
             'id'    => (int)$entity->id,
             'name'  => $entity->name,
@@ -72,6 +88,7 @@ class DeviceMapTransformer extends DeviceTransformer
             'moved_timestamp'    => (int)$entity->moved_timestamp,
             'stop_duration_sec'  => $entity->getStopDuration(),
             'total_distance'     => $entity->getTotalDistance(),
+            'distancia_hoy'     => Formatter::distance()->format($total_distance),
         ];
     }
 }

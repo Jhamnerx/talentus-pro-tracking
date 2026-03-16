@@ -5,6 +5,8 @@ namespace App\Transformers\ApiV1;
 use App\Transformers\BaseTransformer;
 use Formatter;
 use Tobuli\Entities\Device;
+use Tobuli\Helpers\OdometerOptimizer;
+use Illuminate\Support\Facades\App;
 
 class DeviceFullTransformer extends BaseTransformer
 {
@@ -19,6 +21,20 @@ class DeviceFullTransformer extends BaseTransformer
     public function transform(Device $entity)
     {
         $device_data = $entity->toArray();
+
+        // Variables para almacenar los valores del odómetro
+        $total_distance = 0;
+        $odometer_start_global = trans('front.not_available');
+        $odometer_end_global = trans('front.not_available');
+
+        // Usar el optimizador de odómetro para obtener los valores
+        $odometerOptimizer = App::make(OdometerOptimizer::class);
+
+        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
+
+        $total_distance = $odometerValues['total_distance'];
+        $odometer_start_global = $odometerValues['odometer_start'];
+        $odometer_end_global = $odometerValues['odometer_end'];
 
         if (isset($device_data['users'])) {
             $filtered_users = $entity->users->filter(function ($user) {
@@ -150,6 +166,9 @@ class DeviceFullTransformer extends BaseTransformer
             'inaccuracy'         => is_null($inaccuracy) ? null : intval($inaccuracy),
             'sim_expiration_date' => $sim_expiration_date ? Formatter::time()->human($sim_expiration_date) : null,
             'device_data'        => $device_data,
+            'distancia_hoy'     => Formatter::distance()->format($total_distance),
+            'odometro_inicio'   => $odometer_start_global,
+            'odometro_final'    => $odometer_end_global,
         ];
     }
 

@@ -77,6 +77,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\BackupImportCommand',
         'App\Console\Commands\DeleteInvalidFuelEventsCommand',
         'App\Console\Commands\DeviceServerReconfigCommand',
+        \App\Console\Commands\CacheOdometerValuesCommand::class,
     ];
 
     /**
@@ -148,6 +149,9 @@ class Kernel extends ConsoleKernel
         $schedule->job(new DispatchMininterJobs)->everyMinute();
         $schedule->job(new DispatchWisetrackJobs)->everyMinute();
         $schedule->job(new CleanOldLogsJob(10))->daily();
+
+        // Comando para precalcular valores de odómetro cada 15 minutos
+        $schedule->command('odometer:cache')->everyFifteenMinutes()->withoutOverlapping();
     }
 
     /**

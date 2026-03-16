@@ -197,6 +197,7 @@ $result = [
 		'App\Providers\AppearanceServiceProvider',
 		'App\Providers\QueryBuilderMacrosProvider',
 		\App\Providers\AuthManagerProvider::class,
+		\App\Providers\OdometerServiceProvider::class,
 	],
 
 	/*
