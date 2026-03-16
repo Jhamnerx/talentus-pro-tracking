@@ -12,6 +12,12 @@ _ide_helper.php
 /socket/node_modules/*
 .phpstorm.meta.php
 _ide_helper_models.php
+/storage/logs/*
+/storage/debugbar/*
+/storage/framework/*
+storage/framework/cache/*
 public/images/device_icons
 public/images/deviceTypes
 public/images/logos
+public/serve_file.php
+public/webhook.php
