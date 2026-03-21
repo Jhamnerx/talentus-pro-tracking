@@ -261,7 +261,7 @@ class DeviceImporter extends Importer
             'icon_id'             => 'exists:device_icons,id',
             'fuel_quantity'       => 'numeric',
             'fuel_price'          => 'numeric',
-            'fuel_measurement_id' => 'in:1,2,3,4,5',
+            'fuel_measurement_id' => 'in:1,2,3,4,5,6',
             'tail_length'         => 'numeric|min:0|max:10',
             'max_speed'           => 'numeric|min:1',
             'min_moving_speed'    => 'numeric|min:1|max:50',

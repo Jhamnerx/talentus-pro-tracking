@@ -54,6 +54,8 @@ class Event extends AbstractEntity implements DisplayInterface
     const TYPE_DEVICE_SUBSCRIPTION_EXPIRED = 'device_subscription_expired';
     const TYPE_UNPLUGGED = 'unplugged';
     const TYPE_PLUGGED_IN = 'plugged_in';
+    const TYPE_GHOST_SPEED = 'ghost_speed';
+    const TYPE_JUMP_FROM_STOP = 'jump_from_stop';
 
     use ChangeLogs;
 
@@ -442,6 +444,12 @@ class Event extends AbstractEntity implements DisplayInterface
                 break;
             case Event::TYPE_DEVICE_SUBSCRIPTION_EXPIRED:
                 $name = trans('front.device_subscription_expired');
+                break;
+            case Event::TYPE_GHOST_SPEED:
+                $name = 'Velocidad Fantasma (Ghost Speed)';
+                break;
+            case Event::TYPE_JUMP_FROM_STOP:
+                $name = 'Salto de Posición desde Parada (Jump from Stop)';
                 break;
             default:
                 $name = empty($this->attributes['message']) ? null : $this->attributes['message'];

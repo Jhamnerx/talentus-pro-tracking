@@ -5,11 +5,12 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class IconsMigrationVersionSeeder extends Seeder {
+class IconsMigrationVersionSeeder extends Seeder
+{
 
     public function run()
     {
-        exec("cp -R ".base_path('images')." /var/www/html/");
+        exec("cp -R " . base_path('images') . " /var/www/html/");
 
         $oldDeviceIconsPath = [
             'frontend/images/device_icons/1.png',

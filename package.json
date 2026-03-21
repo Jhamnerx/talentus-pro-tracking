@@ -1,5 +1,5 @@
 {
-  "name": "GPS Server",
+  "name": "GPSServer",
   "version": "3.7.11",
   "description": "",
   "main": "index.js",

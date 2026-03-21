@@ -27,10 +27,10 @@ class DeviceFullTransformer extends BaseTransformer
         $odometer_start_global = trans('front.not_available');
         $odometer_end_global = trans('front.not_available');
 
-        // Usar el optimizador de odómetro para obtener los valores
+        // Usar el optimizador de odómetro — solo lectura de caché (no bloqueante).
+        // El cron 'odometer:cache' pre-calienta la caché cada 5 minutos.
         $odometerOptimizer = App::make(OdometerOptimizer::class);
-
-        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
+        $odometerValues = $odometerOptimizer->getOdometerValues($entity, false, false);
 
         $total_distance = $odometerValues['total_distance'];
         $odometer_start_global = $odometerValues['odometer_start'];

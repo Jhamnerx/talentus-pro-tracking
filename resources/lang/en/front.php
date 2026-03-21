@@ -1009,6 +1009,7 @@ return [
     'incremental' => 'Incremental',
     'separate' => 'Separate',
     'km_l' => 'km/l',
+    'km_gal' => 'km/gal',
     'no_data' => 'No data',
     'first_login' => 'First login',
     'auth_config' => 'Authentication config',

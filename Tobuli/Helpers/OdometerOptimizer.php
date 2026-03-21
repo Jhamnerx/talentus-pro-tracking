@@ -7,17 +7,8 @@ use Tobuli\Entities\Device;
 use Carbon\Carbon;
 use Tobuli\History\DeviceHistory;
 use Tobuli\Helpers\Formatter\Facades\Formatter;
-use Tobuli\History\Actions\AppendRouteColor;
 use Tobuli\History\Actions\Distance;
-use Tobuli\History\Actions\Drivers;
-use Tobuli\History\Actions\DriveStop;
-use Tobuli\History\Actions\Duration;
-use Tobuli\History\Actions\EngineHours;
-use Tobuli\History\Actions\Fuel;
 use Tobuli\History\Actions\GroupDriveStop;
-use Tobuli\History\Actions\GroupEvent;
-use Tobuli\History\Actions\Positions;
-use Tobuli\History\Actions\Speed;
 use Tobuli\History\Actions\Odometer;
 
 class OdometerOptimizer
@@ -33,12 +24,16 @@ class OdometerOptimizer
      * @param bool $forceCalculate
      * @return array
      */
-    public function getOdometerValues(Device $device, $forceCalculate = false)
+    public function getOdometerValues(Device $device, $forceCalculate = false, $syncIfMissing = true)
     {
         $cacheKey = $this->getCacheKey($device->id);
 
         if (!$forceCalculate && Cache::has($cacheKey)) {
             return Cache::get($cacheKey);
+        }
+
+        if (!$syncIfMissing) {
+            return ['total_distance' => 0, 'odometer_start' => null, 'odometer_end' => null];
         }
 
         $values = $this->calculateOdometerValues($device);
@@ -97,18 +92,13 @@ class OdometerOptimizer
         ]);
         $history->setRange($inicio, $fin);
 
-        // Registramos solo las acciones requeridas para el odómetro
+        // Registramos solo las acciones mínimas necesarias.
+        // GroupDriveStop crea los segmentos de ruta (auto-añade AppendMoveState).
+        // Distance provee distancia por segmento como fallback.
+        // Odometer usa el sensor odómetro (auto-añade AppendOdometer como dependencia).
         $history->registerActions([
-            AppendRouteColor::class,
-            DriveStop::class,
-            Duration::class,
-            Distance::class,
-            Speed::class,
-            Fuel::class,
-            EngineHours::class,
-            Drivers::class,
-            Positions::class,
             GroupDriveStop::class,
+            Distance::class,
             Odometer::class,
         ]);
 

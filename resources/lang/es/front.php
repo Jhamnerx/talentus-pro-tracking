@@ -576,6 +576,7 @@ return [
     'kilometers' => 'Kilómetros',
     'km' => 'Km',
     'km_l' => 'Kilómetros por litro',
+    'km_gal' => 'Kilómetros por galón',
     'kn' => 'Nudos',
     'koc_group' => 'Dirección / Grupo KOC',
     'kph' => 'km/h',

@@ -158,7 +158,7 @@ The `Device` entity is central (2000+ lines). Key relationships:
 - `user()` - Owner
 - `sensors()` - Sensor configurations
 - `alerts()` - Alert rules
-- `traccarDevice()` - Integration with Traccar GPS server
+- `traccarDevice()` - Integration with Traccar GPSServer
 
 ## File Organization
 
@@ -170,7 +170,7 @@ The `Device` entity is central (2000+ lines). Key relationships:
 
 ## Integration Points
 
-- **Traccar GPS Server**: Backend tracking via `TraccarDevice` entities
+- **Traccar GPSServer**: Backend tracking via `TraccarDevice` entities
 - **Redis**: Caching, queues, and pub/sub for real-time updates
 - **Socket.io**: WebSocket connections for live data
 - **Payment Gateways**: Stripe, Braintree configurations in `config/payments.php`

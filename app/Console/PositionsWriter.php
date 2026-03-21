@@ -583,6 +583,11 @@ class PositionsWriter
 
         $this->position->setParameter('distance', $distance);
 
+        // Detectar y corregir velocidad fantasma (ghost speed)
+        $this->correctGhostSpeed($distance);
+
+        // Detectar salto de posición desde parada (jump from stop)
+        $this->detectJumpFromStop($distance, $lastValidPosition);
 
         $totalDistance = $lastValidPosition ? $lastValidPosition->getParameter('totaldistance', 0) : 0;
 
@@ -1665,5 +1670,105 @@ class PositionsWriter
             return false;
 
         return true;
+    }
+
+    /**
+     * Detecta salto de posición desde parada (jump from stop).
+     *
+     * Ocurre cuando el dispositivo estaba detenido (speed ≈ 0) y en el siguiente
+     * reporte aparece a una distancia sospechosamente grande. Se detecta con dos criterios:
+     *
+     * 1) Distancia supera el umbral configurable 'from_stop_max_jump_meters' (default 150 m).
+     *    Cualquier salto mayor desde reposo se considera anómalo.
+     *
+     * 2) Velocidad media del intervalo > velocidad actual reportada.
+     *    Desde parada, la velocidad media debe ser ≤ velocidad final (aceleración gradual).
+     *    Si avg_speed > current_speed el GPS saltó a una posición lejana sin
+     *    movimiento real (teleportación), por eso se invalida la posición.
+     *
+     * Ejemplo del caso reportado:
+     *   11:15:44 speed=0 → 11:16:44 speed=24kph, distancia=177.15m en 60s
+     *   avg_speed = 10.6 kph < 24 kph (aceleración normal, solo se marca)
+     *   Si fuera teleportación: avg >> current_speed → se invalida.
+     */
+    protected function detectJumpFromStop(float $distanceMeters, $lastValidPosition): void
+    {
+        if (!$lastValidPosition) {
+            return;
+        }
+
+        // Solo aplica cuando la posición previa estaba en reposo
+        $prevSpeed = floatval($lastValidPosition->speed);
+        if ($prevSpeed > ($this->device->min_moving_speed ?? 3)) {
+            return;
+        }
+
+        if ($distanceMeters <= 0) {
+            return;
+        }
+
+        $timeGap = strtotime($this->position->time) - strtotime($lastValidPosition->time);
+        if ($timeGap <= 0 || $timeGap > 300) {
+            return;
+        }
+
+        $maxJumpMeters = (float) config('tobuli.from_stop_max_jump_meters', 150);
+        $avgSpeedKph   = ($distanceMeters / $timeGap) * 3.6; // m/s → kph
+        $currentSpeed  = floatval($this->position->speed);
+
+        // Criterio 1: distancia supera el umbral configurable
+        $jumpByDistance = $distanceMeters > $maxJumpMeters;
+
+        // Criterio 2: avg_speed > current_speed cuando se arrancó desde 0
+        //  (la velocidad media no puede superar la velocidad final en una aceleración desde reposo)
+        $jumpByAvgSpeed = $currentSpeed > 0 && $avgSpeedKph > $currentSpeed * 1.1;
+
+        if (! $jumpByDistance && ! $jumpByAvgSpeed) {
+            return;
+        }
+
+        $this->line(sprintf(
+            'Jump from stop detectado: %.1fm en %ds (avg=%.1f kph, speed=%.1f kph) en %s',
+            $distanceMeters,
+            $timeGap,
+            $avgSpeedKph,
+            $currentSpeed,
+            $this->position->time
+        ));
+
+        $this->position->setParameter('jump_from_stop', 'true');
+
+        // Teleportación comprobada (avg_speed imposible): invalidar posición
+        if ($jumpByAvgSpeed) {
+            $this->position->valid = 0;
+        }
+    }
+
+    /**
+     * Detecta y corrige velocidad fantasma (ghost speed):
+     * El equipo reporta velocidad > 0 pero la posición no cambió (distance = 0)
+     * y la ignición está encendida. Esto ocurre con firmware Teltonika cuando
+     * el vehículo está detenido con motor encendido (di1 = 1).
+     */
+    protected function correctGhostSpeed(float $distance): void
+    {
+        // Solo aplica cuando no hay desplazamiento real pero se reporta velocidad significativa
+        if ($distance > 0 || $this->position->speed <= 5) {
+            return;
+        }
+
+        // El problema ocurre específicamente con ignición encendida
+        $ignition = filter_var($this->position->getParameter('ignition'), FILTER_VALIDATE_BOOLEAN);
+
+        if (!$ignition) {
+            return;
+        }
+
+        $this->line(
+            'Ghost speed detectado: velocidad=' . $this->position->speed . 'kph corregida a 0, posición sin cambio en ' . $this->position->time
+        );
+
+        $this->position->speed = 0;
+        $this->position->setParameter('ghost_speed', 'true');
     }
 }

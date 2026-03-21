@@ -55,7 +55,7 @@ return [
     ],
 
     'main_settings' => [
-        'server_name' => 'GPS Server',
+        'server_name' => 'GPSServer',
         'server_description' => 'GPS Tracking System',
         'available_maps' => [
             "2"  => 2,

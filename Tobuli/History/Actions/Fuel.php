@@ -25,7 +25,7 @@ class Fuel extends ActionStat
     public function boot()
     {
         $device = $this->getDevice();
-        $this->fuel_price = (float)($device->fuel_price) * ($device->fuel_measurement_id == 2 ? 0.264172053 : 1);
+        $this->fuel_price = (float)($device->fuel_price) * (in_array($device->fuel_measurement_id, [2, 6]) ? 0.264172053 : 1);
 
         $this->loadConsumptionGPS();
         $this->loadConsumptionHour();
@@ -52,8 +52,7 @@ class Fuel extends ActionStat
         if (empty($position->fuel_tanks))
             return;
 
-        foreach ($position->fuel_tanks as $key => $value)
-        {
+        foreach ($position->fuel_tanks as $key => $value) {
             $this->history->applyStat("fuel_level_start_{$key}", $value);
             $this->history->applyStat("fuel_level_end_{$key}", $value);
         }
@@ -61,13 +60,12 @@ class Fuel extends ActionStat
 
     protected function processConsumptions($position)
     {
-        if ( ! $position->consumptions)
+        if (! $position->consumptions)
             return;
 
         $consumption = null;
 
-        foreach ($position->consumptions as $key => $value)
-        {
+        foreach ($position->consumptions as $key => $value) {
             if ($formatter = $this->formatters[$key] ?? null) {
                 $value = $formatter->reverse($value);
             }
@@ -83,7 +81,7 @@ class Fuel extends ActionStat
             }
         }
 
-        if ( ! is_null($consumption)) {
+        if (! is_null($consumption)) {
             $this->history->applyStat("fuel_consumption", $consumption);
 
             if ($this->fuel_price)
@@ -123,7 +121,7 @@ class Fuel extends ActionStat
 
     protected function loadConsumptionSensors()
     {
-        $sensors = $this->getDevice()->sensors->filter(function($sensor) {
+        $sensors = $this->getDevice()->sensors->filter(function ($sensor) {
             return in_array($sensor->type, ['fuel_consumption']);
         });
 
@@ -132,8 +130,7 @@ class Fuel extends ActionStat
 
         $this->total_by = [];
 
-        foreach ($sensors as $sensor)
-        {
+        foreach ($sensors as $sensor) {
             $this->total_by[] = $sensor->id;
 
             $name = $sensor->formatName();
@@ -147,7 +144,7 @@ class Fuel extends ActionStat
 
     protected function loadConsumptionLevelSensors()
     {
-        $sensors = $this->getDevice()->sensors->filter(function($sensor) {
+        $sensors = $this->getDevice()->sensors->filter(function ($sensor) {
             return in_array($sensor->type, ['fuel_tank']);
         });
 
@@ -156,8 +153,7 @@ class Fuel extends ActionStat
 
         $this->total_by = [];
 
-        foreach ($sensors as $sensor)
-        {
+        foreach ($sensors as $sensor) {
             $this->total_by[] = $sensor->id;
 
             $name = $sensor->formatName();

@@ -150,6 +150,8 @@ function convertFuelConsumption($type, $fuel_quantity)
         return gallonsToLiters(1) / milesToKilometers($fuel_quantity);
     } elseif ($type == 5) {
         return 1 / $fuel_quantity;
+    } elseif ($type == 6) {
+        return gallonsToLiters(1) / $fuel_quantity;
     } else {
         return 0;
     }

@@ -116,6 +116,13 @@ class DeviceModalHelper extends ModalHelper
                 'distance_title' => strtolower(trans('front.liter')),
                 'cost_title' => strtolower(trans('front.liter')),
             ],
+            [
+                'id' => 6,
+                'title' => trans('front.km_gal'),
+                'fuel_title' => trans('front.kilometers'),
+                'distance_title' => strtolower(trans('front.gallon')),
+                'cost_title' => strtolower(trans('front.gallon')),
+            ],
         ];
 
         $this->icons_types = [
