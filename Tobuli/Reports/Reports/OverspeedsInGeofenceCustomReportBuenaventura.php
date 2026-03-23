@@ -26,7 +26,7 @@ use Tobuli\History\Actions\AppendOverspeedOnlyInGeofences;
 
 class OverspeedsInGeofenceCustomReportBuenaventura extends DeviceHistoryReport
 {
-    const TYPE_ID = 96;
+    const TYPE_ID = 906;
 
 
     protected $disableFields = ['stops', 'zones_instead'];

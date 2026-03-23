@@ -8,7 +8,7 @@ use Tobuli\Reports\DeviceReport;
 
 class ObjectHistoryMovementReport extends DeviceReport
 {
-    const TYPE_ID = 93;
+    const TYPE_ID = 903;
 
     protected $validation = ['devices' => 'same_protocol'];
 

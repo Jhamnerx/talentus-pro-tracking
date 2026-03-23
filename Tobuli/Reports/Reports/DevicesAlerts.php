@@ -9,7 +9,7 @@ use Illuminate\Support\Arr;
 
 class DevicesAlerts extends DeviceReport
 {
-    const TYPE_ID = 92;
+    const TYPE_ID = 902;
 
     protected $validation = ['devices' => 'same_protocol'];
 

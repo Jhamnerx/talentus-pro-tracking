@@ -10,7 +10,7 @@ use Tobuli\Reports\DeviceReport;
 
 class OverspeedsInGeofenceCustomReport extends DeviceReport
 {
-    const TYPE_ID = 94;
+    const TYPE_ID = 904;
 
     protected $disableFields = ['stops', 'geofences'];
 
