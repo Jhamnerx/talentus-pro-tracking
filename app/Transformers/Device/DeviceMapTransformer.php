@@ -2,12 +2,13 @@
 
 namespace App\Transformers\Device;
 
+use Carbon\Carbon;
 use Tobuli\Entities\Device;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Cache;
-use Tobuli\Helpers\OdometerOptimizer;
 use Tobuli\Sensors\Types\Blocked;
-use Tobuli\Helpers\Formatter\Facades\Formatter;
+use Tobuli\Helpers\Formatter\Facades\Formatter;;
+
+use Tobuli\Helpers\OdometerOptimizer;
+use Illuminate\Support\Facades\App;
 
 class DeviceMapTransformer extends DeviceTransformer
 {
@@ -19,7 +20,7 @@ class DeviceMapTransformer extends DeviceTransformer
     protected static function requireLoads()
     {
         return ['icon', 'traccar', 'sensors' => function ($query) {
-            $types = ['speed', 'anonymizer'];
+            $types = ['speed', 'anonymizer', 'odometer'];
 
             if (Blocked::isEnabled()) {
                 $types[] = 'blocked';
@@ -31,6 +32,11 @@ class DeviceMapTransformer extends DeviceTransformer
 
     public function transform(Device $entity)
     {
+        // Si los sensores no están cargados, los cargamos explícitamente
+        if (!$entity->relationLoaded('sensors')) {
+            $entity->load('sensors');
+        }
+
         $inaccuracy = config('addon.inaccuracy')
             ? $entity->getParameter('inaccuracy')
             : null;
@@ -46,21 +52,6 @@ class DeviceMapTransformer extends DeviceTransformer
         } else {
             $tailColor = $entity->tail_color; // Azul
         }
-
-        // Variables para almacenar los valores del odómetro
-        $total_distance = 0;
-        $odometer_start_global = trans('front.not_available');
-        $odometer_end_global = trans('front.not_available');
-
-        // Usar el optimizador de odómetro — solo lectura de caché para no bloquear la carga del mapa.
-        // El cron 'odometer:cache' pre-calienta la caché cada 5 minutos.
-        // Si el device no está en caché aún, retorna 0 y el cron lo populará pronto.
-        $odometerOptimizer = App::make(OdometerOptimizer::class);
-        $odometerValues = $odometerOptimizer->getOdometerValues($entity, false, false);
-
-        $total_distance = $odometerValues['total_distance'];
-        $odometer_start_global = $odometerValues['odometer_start'];
-        $odometer_end_global = $odometerValues['odometer_end'];
 
         return [
             'id'    => (int)$entity->id,
@@ -91,7 +82,6 @@ class DeviceMapTransformer extends DeviceTransformer
             'moved_timestamp'    => (int)$entity->moved_timestamp,
             'stop_duration_sec'  => $entity->getStopDuration(),
             'total_distance'     => $entity->getTotalDistance(),
-            'distancia_hoy'     => $total_distance > 0 ? Formatter::distance()->format($total_distance) : '-',
         ];
     }
 }

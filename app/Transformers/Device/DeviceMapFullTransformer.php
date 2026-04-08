@@ -2,12 +2,23 @@
 
 namespace App\Transformers\Device;
 
+use Illuminate\Support\Facades\App;
 use App\Transformers\BaseTransformer;
 use Tobuli\Entities\Device;
-use Formatter;
+use Tobuli\Helpers\OdometerOptimizer;
+use Tobuli\Helpers\Formatter\Facades\Formatter;;
 
 class DeviceMapFullTransformer extends DeviceTransformer
 {
+
+    // Tiempo de duración del caché (en minutos)
+    protected $cacheDuration = 15;
+
+    // Bandera para indicar si se debe usar el caché
+    protected $useCache = true;
+
+    // Umbral para optimización de rendimiento (número de dispositivos)
+    protected $deviceThreshold = 100;
 
     protected $defaultIncludes = [
         'icon',
@@ -15,7 +26,6 @@ class DeviceMapFullTransformer extends DeviceTransformer
         //'services',
         'driver'
     ];
-
     protected static function requireLoads()
     {
         return ['icon', 'traccar', 'sensors', 'services', 'driver'];
@@ -29,6 +39,20 @@ class DeviceMapFullTransformer extends DeviceTransformer
         $inaccuracy = config('addon.inaccuracy')
             ? $entity->getParameter('inaccuracy')
             : null;
+
+        // Variables para almacenar los valores del odómetro
+        $total_distance = 0;
+        $odometer_start_global = trans('front.not_available');
+        $odometer_end_global = trans('front.not_available');
+
+        // Usar el optimizador de odómetro para obtener los valores
+        $odometerOptimizer = App::make(OdometerOptimizer::class);
+
+        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
+
+        $total_distance = $odometerValues['total_distance'];
+        $odometer_start_global = $odometerValues['odometer_start'];
+        $odometer_end_global = $odometerValues['odometer_end'];
 
         return [
             'id'    => (int)$entity->id,
@@ -67,6 +91,9 @@ class DeviceMapFullTransformer extends DeviceTransformer
 
             'sensors'   => $this->formatSensors($entity),
             'services'  => $this->formatServices($entity),
+            'distancia_hoy'     => Formatter::distance()->format($total_distance),
+            'odometro_inicio'   => $odometer_start_global,
+            'odometro_final'    => $odometer_end_global,
         ];
     }
 
@@ -120,5 +147,26 @@ class DeviceMapFullTransformer extends DeviceTransformer
         }
 
         return $result;
+    }
+
+    // Método para habilitar/deshabilitar el caché
+    public function setUseCache($value)
+    {
+        $this->useCache = (bool)$value;
+        return $this;
+    }
+
+    // Método para establecer la duración del caché
+    public function setCacheDuration($minutes)
+    {
+        $this->cacheDuration = (int)$minutes;
+        return $this;
+    }
+
+    // Método para establecer el umbral de dispositivos para optimización
+    public function setDeviceThreshold($count)
+    {
+        $this->deviceThreshold = (int)$count;
+        return $this;
     }
 }

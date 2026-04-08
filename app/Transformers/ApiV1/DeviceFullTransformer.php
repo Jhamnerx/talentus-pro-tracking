@@ -4,6 +4,7 @@ namespace App\Transformers\ApiV1;
 
 use App\Transformers\BaseTransformer;
 use Formatter;
+use Carbon\Carbon;
 use Tobuli\Entities\Device;
 use Tobuli\Helpers\OdometerOptimizer;
 use Illuminate\Support\Facades\App;
@@ -27,10 +28,10 @@ class DeviceFullTransformer extends BaseTransformer
         $odometer_start_global = trans('front.not_available');
         $odometer_end_global = trans('front.not_available');
 
-        // Usar el optimizador de odómetro — solo lectura de caché (no bloqueante).
-        // El cron 'odometer:cache' pre-calienta la caché cada 5 minutos.
+        // Usar el optimizador de odómetro para obtener los valores
         $odometerOptimizer = App::make(OdometerOptimizer::class);
-        $odometerValues = $odometerOptimizer->getOdometerValues($entity, false, false);
+
+        $odometerValues = $odometerOptimizer->getOdometerValues($entity);
 
         $total_distance = $odometerValues['total_distance'];
         $odometer_start_global = $odometerValues['odometer_start'];
@@ -114,7 +115,8 @@ class DeviceFullTransformer extends BaseTransformer
 
         $sensors = $this->formatSensors($entity);
         $services = $this->formatServices($entity);
-
+        $inicio = Formatter::time()->reverse(Carbon::now('America/Lima')->startOfDay());
+        $fin = Formatter::time()->reverse(Carbon::now('America/Lima')->endOfDay());
         return [
             'id'            => intval($entity->id),
             'alarm'         => is_null($this->user->alarm) ? 0 : $this->user->alarm,
