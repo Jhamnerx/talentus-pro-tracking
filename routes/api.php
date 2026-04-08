@@ -341,3 +341,34 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth.api', 'active_subscrip
 Route::get('/doc', ['as' => 'testing', 'uses' => function () {
     echo '<iframe style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;" src="https://gpswox.stoplight.io/"></iframe>';
 }]);
+
+/*
+|--------------------------------------------------------------------------
+| Integración Clientes Externos — Ubicación Vehicular (CCP)
+|--------------------------------------------------------------------------
+| Autenticación: Authorization: Bearer <api_hash>
+| POST api/v1/myper/ubicacion
+|
+| Sandbox (sin autenticación, datos simulados):
+| POST api/v1/myper/sandbox/ubicacion
+*/
+Route::group([
+    'prefix'    => 'v1/myper',
+    'namespace' => 'Api\Myper',
+], function () {
+
+    // Producción — requiere Bearer token válido y suscripción activa
+    Route::group(['middleware' => ['auth.bearer', 'active_subscription']], function () {
+        Route::post('ubicacion', [
+            'as'   => 'api.myper.vehiculos.ubicacion',
+            'uses' => 'VehiculosUbicacionController@ubicacion',
+        ]);
+    });
+
+    // Sandbox — sin autenticación, solo datos ficticios
+    Route::post('sandbox/ubicacion', [
+        'as'   => 'api.myper.vehiculos.sandbox',
+        'uses' => 'VehiculosUbicacionController@sandbox',
+        'middleware' => ['throttle:60,1'],
+    ]);
+});

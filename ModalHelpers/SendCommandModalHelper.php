@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 use CustomFacades\Repositories\DeviceRepo;
 use CustomFacades\Validators\SendCommandFormValidator;
@@ -55,15 +57,21 @@ class SendCommandModalHelper extends ModalHelper
 
         $command_schedules = $this->user->commandSchedules;
 
-        return compact('devices_sms', 'devices_gprs', 'sms_templates', 'gprs_templates',
-            'device_id', 'command_schedules');
+        return compact(
+            'devices_sms',
+            'devices_gprs',
+            'sms_templates',
+            'gprs_templates',
+            'device_id',
+            'command_schedules'
+        );
     }
 
     public function create()
     {
         $this->checkException('send_command', 'view');
 
-        if ( ! $this->user->sms_gateway)
+        if (! $this->user->sms_gateway)
             throw new ValidationException(['id' => trans('front.sms_gateway_disabled')]);
 
         SendCommandFormValidator::validate('sms', $this->data);
@@ -99,7 +107,28 @@ class SendCommandModalHelper extends ModalHelper
             throw new ValidationException(['devices' => trans('global.not_found')]);
         }
 
-        $devices = $devicesLoader->getQuerySelected()->get();
+        $query = $devicesLoader->getQuerySelected();
+
+        $responses = collect();
+
+        $query->chunk(100, function ($devices) use (&$responses) {
+
+            foreach ($devices as $device) {
+
+                $response = $this->sendCommandService->gprs(
+                    collect([$device]), // importante, espera colección
+                    $this->data,
+                    $this->user
+                );
+
+                // gprs devuelve colección → sacamos el primero
+                $result = $response->first();
+
+                $result['device'] = $device->name;
+
+                $responses->push($result);
+            }
+        });
 
         if ($devices->isEmpty()) {
             throw new ValidationException(['devices' => trans('global.not_found')]);

@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Frontend;
+<?php
+
+namespace App\Http\Controllers\Frontend;
 
 set_time_limit(0);
 
@@ -22,12 +24,11 @@ class ReportsController extends Controller
     public function create()
     {
         $data = ReportModalHelper::createData();
-		
-		if ( !$this->api && is_array($data) )
-		{
-			$data['logs'] = ReportLogModalHelper::get();
+
+        if (!$this->api && is_array($data)) {
+            $data['logs'] = ReportLogModalHelper::get();
             $data['showFtp'] = config('addon.report_send_to_ftp');
-		}
+        }
 
         return is_array($data) && !$this->api ? view('front::Reports.create')->with($data) : $data;
     }
@@ -55,28 +56,28 @@ class ReportsController extends Controller
     {
         return ReportModalHelper::destroy();
     }
-	
-	public function logs()
+
+    public function logs()
     {
-		$data = [];
-		$data['logs'] = ReportLogModalHelper::get();
+        $data = [];
+        $data['logs'] = ReportLogModalHelper::get();
         $data['showFtp'] = config('addon.report_send_to_ftp');
 
         return view('front::Reports.logs')->with($data);
     }
-	
-	public function logDownload($id)
-    {
-		$data = ReportLogModalHelper::download($id);
-	   
-		return response()->make( $data['data'], 200, $data['headers']);
-    }
-	
-	public function logDestroy()
-    {
-		$data = ReportLogModalHelper::destroy();
 
-		return request()->ajax() ? response()->json( $data ) : null;
+    public function logDownload($id)
+    {
+        $data = ReportLogModalHelper::download($id);
+
+        return response()->make($data['data'], 200, $data['headers']);
+    }
+
+    public function logDestroy()
+    {
+        $data = ReportLogModalHelper::destroy();
+
+        return request()->ajax() ? response()->json($data) : null;
     }
 
     public function getTypes(ReportManager $reportManager)

@@ -290,6 +290,7 @@ var app = {
     });
 
     this.socket.on("notice", function (data) {
+      console.log("[notice]", data.type, data.message);
       switch (data.type) {
         case "success":
           app.notice.success(data.message);

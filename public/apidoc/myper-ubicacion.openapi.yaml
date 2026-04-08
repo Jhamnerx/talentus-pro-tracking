@@ -1,0 +1,301 @@
+openapi: 3.0.3
+
+info:
+  title: GPS Tracking — Ubicación Vehicular en Tiempo Real
+  description: |
+    API REST para consultar la posición actual (latitud, longitud y velocidad)
+    de uno o más vehículos identificados por número de placa.
+
+    ## Autenticación
+    El proveedor GPS entrega al cliente un **token** de acceso (`api_hash`) de forma directa
+    (sin necesidad de llamar a ningún endpoint de login).
+    Ese token se envía en cada request como **Bearer Token**:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    ## Placas de prueba (sandbox)
+    | Placa    | Latitud      | Longitud     | Velocidad |
+    |----------|-------------|--------------|-----------|
+    | ABC-123  | -12.046374  | -77.042793   | 45 km/h   |
+    | CDE-456  | -12.083261  | -77.054961   |  0 km/h   |
+    | EFG-789  | -12.121500  | -76.990100   | 72 km/h   |
+    | HIJ-000  | -11.990000  | -77.110000   | 30 km/h   |
+    | KLM-321  | -12.005000  | -77.020000   |  0 km/h   |
+
+  version: "1.0.0"
+  contact:
+    name: Soporte Técnico GPS
+    email: soporte@talentustechnology.com
+
+servers:
+  - url: https://{dominio}/api
+    description: Producción
+    variables:
+      dominio:
+        default: plataforma.talentustechnology.com
+  - url: https://{dominio}/api
+    description: Sandbox (datos simulados, sin autenticación)
+    variables:
+      dominio:
+        default: plataforma.talentustechnology.com
+
+tags:
+  - name: Ubicación Vehicular
+    description: Consulta de posición y velocidad de vehículos en tiempo real
+  - name: Sandbox
+    description: Entorno de pruebas con datos simulados (no requiere autenticación)
+
+paths:
+  /v1/myper/ubicacion:
+    post:
+      tags:
+        - Ubicación Vehicular
+      summary: Consultar posición de vehículos (producción)
+      description: |
+        Retorna la posición actual de los vehículos indicados por placa.
+        Solo se retornan vehículos con datos GPS con menos de **60 segundos** de antigüedad.
+        Los vehículos no encontrados o con datos viejos se reportan en el campo `errors`.
+
+        **Límite:** hasta 200 placas por request.
+        **Rate limit:** 60 requests/minuto por token.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UbicacionRequest"
+            examples:
+              ejemplo_basico:
+                summary: Consulta de dos placas
+                value:
+                  items:
+                    - Placa: "ABC-123"
+                    - Placa: "CDE-456"
+      responses:
+        "200":
+          description: Consulta procesada (puede contener errores parciales en el campo `errors`)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UbicacionResponse"
+              examples:
+                ambas_encontradas:
+                  summary: Ambas placas encontradas
+                  value:
+                    responseCode: 200
+                    message: ""
+                    items:
+                      - Placa: "ABC-123"
+                        Latitud: -12.046374
+                        Longitud: -77.042793
+                        Velocidad: 45.0
+                      - Placa: "CDE-456"
+                        Latitud: -12.083261
+                        Longitud: -77.054961
+                        Velocidad: 0.0
+                    errors: []
+                una_no_encontrada:
+                  summary: Una placa no existe
+                  value:
+                    responseCode: 200
+                    message: ""
+                    items:
+                      - Placa: "ABC-123"
+                        Latitud: -12.046374
+                        Longitud: -77.042793
+                        Velocidad: 45.0
+                    errors:
+                      - "Placa no encontrada: XYZ-999"
+        "400":
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                responseCode: 400
+                message: "Error en la obtención de datos"
+                items: []
+                errors:
+                  - "El campo items es requerido y debe ser un arreglo no vacío"
+        "401":
+          description: Token inválido, expirado o usuario desactivado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                token_invalido:
+                  summary: Token no válido
+                  value:
+                    responseCode: 401
+                    message: "Error en la autenticación"
+                    items: []
+                    errors:
+                      - "Token de autenticación inválido o expirado"
+                usuario_inactivo:
+                  summary: Usuario desactivado
+                  value:
+                    responseCode: 401
+                    message: "Error en la autenticación"
+                    items: []
+                    errors:
+                      - "El usuario se encuentra desactivado"
+
+  /v1/myper/sandbox/ubicacion:
+    post:
+      tags:
+        - Sandbox
+      summary: Consultar posición de vehículos (sandbox)
+      description: |
+        Entorno de pruebas. **No requiere autenticación.**
+        Retorna datos simulados para validar la integración antes de pasar a producción.
+
+        ### Placas de prueba disponibles:
+        `ABC-123`, `CDE-456`, `EFG-789`, `HIJ-000`, `KLM-321`
+
+        Cualquier otra placa se reportará como no encontrada en `errors`.
+
+        **Rate limit:** 60 requests/minuto.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UbicacionRequest"
+            examples:
+              prueba_sandbox:
+                summary: Placas válidas del sandbox
+                value:
+                  items:
+                    - Placa: "ABC-123"
+                    - Placa: "CDE-456"
+                    - Placa: "INVALIDA-999"
+      responses:
+        "200":
+          description: Respuesta simulada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UbicacionResponse"
+              example:
+                responseCode: 200
+                message: "[SANDBOX] Datos simulados. No usar en producción."
+                items:
+                  - Placa: "ABC-123"
+                    Latitud: -12.046374
+                    Longitud: -77.042793
+                    Velocidad: 45.0
+                  - Placa: "CDE-456"
+                    Latitud: -12.083261
+                    Longitud: -77.054961
+                    Velocidad: 0.0
+                errors:
+                  - "Placa no encontrada en sandbox: INVALIDA-999"
+        "400":
+          description: Request inválido
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Token entregado directamente por el proveedor GPS al cliente.
+        Se envía como: `Authorization: Bearer <token>`
+
+  schemas:
+    UbicacionRequest:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          maxItems: 200
+          description: Lista de vehículos a consultar
+          items:
+            type: object
+            required: [Placa]
+            properties:
+              Placa:
+                type: string
+                description: Número de placa del vehículo
+                example: "ABC-123"
+      example:
+        items:
+          - Placa: "ABC-123"
+          - Placa: "CDE-456"
+
+    VehiculoUbicacion:
+      type: object
+      properties:
+        Placa:
+          type: string
+          description: Número de placa del vehículo
+          example: "ABC-123"
+        Latitud:
+          type: number
+          format: double
+          description: Coordenada de latitud en grados decimales (WGS84)
+          example: -12.046374
+        Longitud:
+          type: number
+          format: double
+          description: Coordenada de longitud en grados decimales (WGS84)
+          example: -77.042793
+        Velocidad:
+          type: number
+          format: double
+          description: Velocidad instantánea en km/h
+          example: 45.0
+
+    UbicacionResponse:
+      type: object
+      properties:
+        responseCode:
+          type: integer
+          description: "200 = éxito, 400 = error de datos, 401 = error de autenticación"
+          example: 200
+        message:
+          type: string
+          description: Mensaje descriptivo del resultado
+          example: ""
+        items:
+          type: array
+          description: Vehículos encontrados con posición vigente
+          items:
+            $ref: "#/components/schemas/VehiculoUbicacion"
+        errors:
+          type: array
+          description: Errores parciales (placas no encontradas, datos viejos, etc.)
+          items:
+            type: string
+          example: []
+
+    ErrorResponse:
+      type: object
+      properties:
+        responseCode:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: "Error en la autenticación"
+        items:
+          type: array
+          items: {}
+          example: []
+        errors:
+          type: array
+          items:
+            type: string
+          example:
+            - "Token de autenticación inválido o expirado"

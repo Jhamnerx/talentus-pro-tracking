@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 set_time_limit(18000);
 
@@ -72,7 +74,7 @@ class ReportModalHelper extends ModalHelper
         $this->checkException('reports', 'create');
 
         $devices = $this->user->devices()
-            ->when(!$this->user->isAdmin(), function($query) {
+            ->when(!$this->user->isAdmin(), function ($query) {
                 return $query->unexpired();
             });
 
@@ -127,7 +129,7 @@ class ReportModalHelper extends ModalHelper
             $geofences = $geofences->toArray();
 
             //devices list return as array, not object
-            $devices = array_values( $devices->get()->all() );
+            $devices = array_values($devices->get()->all());
         } else {
             $devices = [];
         }
@@ -159,13 +161,13 @@ class ReportModalHelper extends ModalHelper
 
         ReportSaveFormValidator::validate('create', $this->data);
 
-        $now = Carbon::parse( Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d') );
-        $days = $now->diffInDays( Carbon::parse( $this->data['date_from'] ) , false);
+        $now = Carbon::parse(Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d'));
+        $days = $now->diffInDays(Carbon::parse($this->data['date_from']), false);
         $this->data['from_format'] = $days . ' days ' . (empty($this->data['from_time']) ? '00:00' : $this->data['from_time']);
-        $days = $now->diffInDays( Carbon::parse( $this->data['date_to'] ) , false);
+        $days = $now->diffInDays(Carbon::parse($this->data['date_to']), false);
         $this->data['to_format'] = $days . ' days ' . (empty($this->data['to_time']) ? '00:00' : $this->data['to_time']);
 
-        if ( ! $this->api ) {
+        if (! $this->api) {
             $this->data['date_from'] .= ' ' . (empty($this->data['from_time']) ? '00:00' : $this->data['from_time']);
             $this->data['date_to']   .= ' ' . (empty($this->data['to_time']) ? '00:00' : $this->data['to_time']);
         }
@@ -194,18 +196,18 @@ class ReportModalHelper extends ModalHelper
 
         $this->data['monthly_time'] = $monthly_time;
 
-        if ( !empty($this->data['id']) && empty(ReportRepo::find($this->data['id'])) ) {
+        if (!empty($this->data['id']) && empty(ReportRepo::find($this->data['id']))) {
             unset($this->data['id']);
         }
 
         if (empty($this->data['id'])) {
 
             $item = ReportRepo::create($this->data + [
-                    'user_id'           => $this->user->id,
-                    'daily_email_sent'  => date('Y-m-d', strtotime("-1 day")),
-                    'weekly_email_sent' => date("Y-m-d", strtotime("{$this->user->week_start_weekday} this week")),
-                    'monthly_email_sent' => date("Y-m-d", strtotime("first day this month"))
-                ]);
+                'user_id'           => $this->user->id,
+                'daily_email_sent'  => date('Y-m-d', strtotime("-1 day")),
+                'weekly_email_sent' => date("Y-m-d", strtotime("{$this->user->week_start_weekday} this week")),
+                'monthly_email_sent' => date("Y-m-d", strtotime("first day this month"))
+            ]);
         } else {
             $item = ReportRepo::findWhere(['id' => $this->data['id'], 'user_id' => $this->user->id]);
             if (!empty($item))
@@ -239,8 +241,8 @@ class ReportModalHelper extends ModalHelper
 
         ReportFormValidator::validate('create', $this->data);
 
-        $data['date_from'] .= ( empty($data['from_time']) ? '' : ' ' . $data['from_time']);
-        $data['date_to']   .= ( empty($data['to_time']) ? '' : ' ' . $data['to_time']);
+        $data['date_from'] .= (empty($data['from_time']) ? '' : ' ' . $data['from_time']);
+        $data['date_to']   .= (empty($data['to_time']) ? '' : ' ' . $data['to_time']);
 
         $this->validate($data);
 
@@ -251,7 +253,7 @@ class ReportModalHelper extends ModalHelper
 
             return [
                 'status' => 3,
-                'url' => route($this->api ? 'api.generate_report' : 'reports.update').'?'.http_build_query($data + ['generate' => 1], '', '&')
+                'url' => route($this->api ? 'api.generate_report' : 'reports.update') . '?' . http_build_query($data + ['generate' => 1], '', '&')
             ];
         }
 
@@ -295,7 +297,7 @@ class ReportModalHelper extends ModalHelper
         return ['status' => 1];
     }
 
-    public function validate( & $data)
+    public function validate(&$data)
     {
         $validator = Validator::make($data, [
             'type' => 'required|' . Rule::in(array_keys(ReportManager::$types)),

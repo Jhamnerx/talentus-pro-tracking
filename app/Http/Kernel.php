@@ -37,6 +37,7 @@ class Kernel extends HttpKernel
         'auth' => 'App\Http\Middleware\Authenticate',
         'auth.basic' => 'Illuminate\Auth\Middleware\AuthenticateWithBasicAuth',
         'auth.api' => 'App\Http\Middleware\ApiAuthenticate',
+        'auth.bearer' => 'App\Http\Middleware\BearerTokenAuthenticate',
         'auth.tracker' => 'App\Http\Middleware\TrackerAuth',
         'auth.admin' => 'App\Http\Middleware\AdminAuthenticate',
         'auth.manager' => 'App\Http\Middleware\ManagerAuthenticate',

@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Services;
+<?php
+
+namespace Tobuli\Services;
 
 use Curl;
 use Illuminate\Support\Arr;

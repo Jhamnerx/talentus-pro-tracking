@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Admin;
+<?php
+
+namespace App\Http\Controllers\Admin;
 
 use CustomFacades\Appearance;
 use Illuminate\Support\Arr;
@@ -17,7 +19,8 @@ use Tobuli\Validation\AdminLogoUploadValidator;
 use Tobuli\Validation\AdminMainServerSettingsFormValidator;
 use Tobuli\Validation\AdminNewUserDefaultsFormValidator;
 
-class MainServerSettingsController extends BaseController {
+class MainServerSettingsController extends BaseController
+{
     /**
      * @var Config
      */
@@ -35,7 +38,8 @@ class MainServerSettingsController extends BaseController {
      */
     private $adminNewUserDefaultsFormValidator;
 
-    function __construct(AdminMainServerSettingsFormValidator $adminMainServerSettingsFormValidator, Config $config, Timezone $timezone, AdminNewUserDefaultsFormValidator $adminNewUserDefaultsFormValidator) {
+    function __construct(AdminMainServerSettingsFormValidator $adminMainServerSettingsFormValidator, Config $config, Timezone $timezone, AdminNewUserDefaultsFormValidator $adminNewUserDefaultsFormValidator)
+    {
         parent::__construct();
         $this->config = $config;
         $this->timezone = $timezone;
@@ -43,7 +47,8 @@ class MainServerSettingsController extends BaseController {
         $this->adminNewUserDefaultsFormValidator = $adminNewUserDefaultsFormValidator;
     }
 
-    public function index() {
+    public function index()
+    {
         if (!($this->user->isAdmin() || $this->user->isReseller()))
             return redirect(route('objects.index'));
 
@@ -56,7 +61,7 @@ class MainServerSettingsController extends BaseController {
 
         $maps = getMaps();
 
-        $langs = Arr::sort(settings('languages'), function($language){
+        $langs = Arr::sort(settings('languages'), function ($language) {
             return $language['title'];
         });
 
@@ -142,23 +147,41 @@ class MainServerSettingsController extends BaseController {
         $herePoliticalViews = HereMaps::getPoliticalViewsOptions();
 
         return View::make('admin::MainServerSettings.index')
-            ->with(compact('settings', 'maps', 'langs', 'timezones', 'units_of_distance',
-                'units_of_capacity', 'units_of_altitude', 'date_formats', 'time_formats', 'duration_formats',
-                'object_online_timeouts', 'geocoder_apis', 'zoom_levels', 'geocoder_cache_status',
-                'geocoder_cache_days', 'streetview_apis', 'streetview_api', 'streetview_key',
-                'captcha_providers', 'lbs_providers', 'extra_expiration_time_options', 'repeat_expire_time_options',
+            ->with(compact(
+                'settings',
+                'maps',
+                'langs',
+                'timezones',
+                'units_of_distance',
+                'units_of_capacity',
+                'units_of_altitude',
+                'date_formats',
+                'time_formats',
+                'duration_formats',
+                'object_online_timeouts',
+                'geocoder_apis',
+                'zoom_levels',
+                'geocoder_cache_status',
+                'geocoder_cache_days',
+                'streetview_apis',
+                'streetview_api',
+                'streetview_key',
+                'captcha_providers',
+                'lbs_providers',
+                'extra_expiration_time_options',
+                'repeat_expire_time_options',
                 'herePoliticalViews',
             ));
     }
 
-    public function save() {
+    public function save()
+    {
         if (!($this->user->isAdmin() || $this->user->isReseller()))
             return redirect(route('objects.index'));
 
         $input = request()->except('_token');
 
-        try
-        {
+        try {
             $this->adminMainServerSettingsFormValidator->validate('update', $input);
 
             beginTransaction();
@@ -176,8 +199,7 @@ class MainServerSettingsController extends BaseController {
                     Appearance::setUser($this->user);
                     Appearance::save($input);
                 }
-            }
-            catch (\Exception $e) {
+            } catch (\Exception $e) {
                 rollbackTransaction();
                 throw new ValidationException(['id' => trans('global.unexpected_db_error')]);
             }
@@ -185,9 +207,7 @@ class MainServerSettingsController extends BaseController {
             commitTransaction();
 
             return Redirect::route('admin.main_server_settings.index')->withSuccess(trans('front.successfully_saved'));
-        }
-        catch (ValidationException $e)
-        {
+        } catch (ValidationException $e) {
             return Redirect::route('admin.main_server_settings.index')->withInput()->withErrors($e->getErrors());
         }
     }
@@ -217,10 +237,11 @@ class MainServerSettingsController extends BaseController {
         }
 
         return redirect()->route('admin.main_server_settings.index')
-                ->withSuccess(trans('front.successfully_saved'));
+            ->withSuccess(trans('front.successfully_saved'));
     }
 
-    public function newUserDefaultsSave() {
+    public function newUserDefaultsSave()
+    {
         $input = Request::all();
 
         try {
@@ -229,7 +250,8 @@ class MainServerSettingsController extends BaseController {
                     throw new ValidationException([
                         'devices_limit' => strtr(
                             trans('validation.required'),
-                            [':attribute' => trans('validation.attributes.devices_limit')])
+                            [':attribute' => trans('validation.attributes.devices_limit')]
+                        )
                     ]);
                 }
 
@@ -237,7 +259,8 @@ class MainServerSettingsController extends BaseController {
                     throw new ValidationException([
                         'subscription_expiration_after_days' => strtr(
                             trans('validation.required'),
-                            [':attribute' => trans('validation.attributes.subscription_expiration_after_days')])
+                            [':attribute' => trans('validation.attributes.subscription_expiration_after_days')]
+                        )
                     ]);
                 }
 
@@ -247,7 +270,8 @@ class MainServerSettingsController extends BaseController {
                     throw new ValidationException([
                         'default_billing_plan' => strtr(
                             trans('validation.required'),
-                            [':attribute' => trans('validation.attributes.default_billing_plan')])
+                            [':attribute' => trans('validation.attributes.default_billing_plan')]
+                        )
                     ]);
                 }
             }
@@ -271,7 +295,7 @@ class MainServerSettingsController extends BaseController {
             }
 
             if (in_array($input['default_dst_type'] ?? null, ['exact', 'other', 'automatic'])) {
-                switch($input['default_dst_type']) {
+                switch ($input['default_dst_type']) {
                     case 'exact':
                         $settings['default_dst_date_from'] = $input['default_dst_date_from'];
                         $settings['default_dst_date_to'] = $input['default_dst_date_to'];
@@ -341,7 +365,8 @@ class MainServerSettingsController extends BaseController {
      * Deletes (flushes) all geocoder cache
      * @return mixed
      */
-    public function deleteGeocoderCache() {
+    public function deleteGeocoderCache()
+    {
         $redirect = Redirect::route('admin.main_server_settings.index');
 
         try {

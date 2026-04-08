@@ -23,7 +23,8 @@
                                 {{ $command['title'] }}
                             </td>
                             <td>
-                                <button type="button" class="btn btn-default btn-xs send-command"><i class="icon send-command"></i></button>
+                                <button type="button" class="btn btn-default btn-xs send-command"><i
+                                        class="icon send-command"></i></button>
                             </td>
                         </tr>
                     @endforeach

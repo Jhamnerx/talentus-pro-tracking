@@ -25,7 +25,8 @@ class InstallationDeviceOfflineReport extends DeviceReport
         return trans('front.installation_offline_objects');
     }
 
-    public static function isReasonable(): bool {
+    public static function isReasonable(): bool
+    {
         return settings('plugins.additional_installation_fields.status');
     }
 

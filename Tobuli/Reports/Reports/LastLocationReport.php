@@ -15,6 +15,7 @@ class LastLocationReport extends DeviceReport
     protected $deviceless = true;
 
     private bool $hasGeofences;
+    private array $allParameters = [];
 
     public function typeID(): int
     {
@@ -46,15 +47,25 @@ class LastLocationReport extends DeviceReport
 
         if (empty($position)) {
             return [
-                'meta' => $this->getDeviceMeta($device),
-                'error' => trans('front.nothing_found_request')
+                'meta'       => $this->getDeviceMeta($device),
+                'parameters' => [],
+                'error'      => trans('front.nothing_found_request'),
             ];
         }
 
+        $positionParameters = is_array($position->parameters) ? $position->parameters : [];
+
+        foreach (array_keys($positionParameters) as $key) {
+            if (!empty($key) && !in_array($key, $this->allParameters)) {
+                $this->allParameters[] = $key;
+            }
+        }
+
         $data = [
-            'meta' => $this->getDeviceMeta($device),
+            'meta'            => $this->getDeviceMeta($device),
             'last_connection' => Formatter::time()->convert($device->last_connect_time),
-            'coordinates' => googleMapLink($position->latitude, $position->longitude, "{$position->latitude},{$position->longitude}"),
+            'coordinates'     => googleMapLink($position->latitude, $position->longitude, "{$position->latitude},{$position->longitude}"),
+            'parameters'      => $positionParameters,
         ];
 
         if ($this->show_addresses) {
@@ -71,5 +82,10 @@ class LastLocationReport extends DeviceReport
     public function hasGeofences(): bool
     {
         return $this->hasGeofences;
+    }
+
+    public function getPositionParameters(): array
+    {
+        return $this->allParameters;
     }
 }

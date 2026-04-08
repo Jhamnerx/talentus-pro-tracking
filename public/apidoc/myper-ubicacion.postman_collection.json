@@ -1,0 +1,406 @@
+{
+    "info": {
+        "_postman_id": "gps-myper-ubicacion-v1",
+        "name": "GPS Tracking — Ubicación Vehicular (CCP)",
+        "description": "Colección para integrar el endpoint de consulta de posición vehicular en tiempo real.\n\n## Uso rápido\n1. Configura la variable `{{api_hash}}` con el **token entregado por el proveedor GPS** (no se obtiene por login — el proveedor lo envía directamente).\n2. Prueba **[SANDBOX]** sin credenciales para validar la integración.\n3. Usa **[PROD]** con tu token en producción.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://plataforma.talentustechnology.com",
+            "description": "URL base del servidor GPS. Cambiar según el ambiente."
+        },
+        {
+            "key": "api_hash",
+            "value": "",
+            "description": "Token de acceso entregado directamente por el proveedor GPS. Pegar aquí el valor recibido."
+        }
+    ],
+    "item": [
+        {
+            "name": "Sandbox (sin autenticación)",
+            "description": "Pruebas con datos simulados. No requiere token. Útil para validar la integración antes de producción.\n\nPlacas disponibles: ABC-123, CDE-456, EFG-789, HIJ-000, KLM-321",
+            "item": [
+                {
+                    "name": "[SANDBOX] Consultar placas válidas",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                                    "pm.test('responseCode es 200', function() {",
+                                    "    pm.expect(pm.response.json().responseCode).to.eql(200);",
+                                    "});",
+                                    "pm.test('items contiene resultados', function() {",
+                                    "    pm.expect(pm.response.json().items.length).to.be.above(0);",
+                                    "});",
+                                    "pm.test('Estructura correcta de cada item', function() {",
+                                    "    pm.response.json().items.forEach(function(item) {",
+                                    "        pm.expect(item).to.have.all.keys('Placa', 'Latitud', 'Longitud', 'Velocidad');",
+                                    "    });",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/myper/sandbox/ubicacion",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "myper",
+                                "sandbox",
+                                "ubicacion"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"items\": [\n    { \"Placa\": \"ABC-123\" },\n    { \"Placa\": \"CDE-456\" },\n    { \"Placa\": \"EFG-789\" }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "description": "Consulta tres placas del catálogo sandbox. Todas deben retornar posición."
+                    },
+                    "response": [
+                        {
+                            "name": "Respuesta sandbox exitosa",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"responseCode\": 200,\n  \"message\": \"[SANDBOX] Datos simulados. No usar en producción.\",\n  \"items\": [\n    { \"Placa\": \"ABC-123\", \"Latitud\": -12.046374, \"Longitud\": -77.042793, \"Velocidad\": 45.0 },\n    { \"Placa\": \"CDE-456\", \"Latitud\": -12.083261, \"Longitud\": -77.054961, \"Velocidad\": 0.0 },\n    { \"Placa\": \"EFG-789\", \"Latitud\": -12.121500, \"Longitud\": -76.990100, \"Velocidad\": 72.5 }\n  ],\n  \"errors\": []\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "[SANDBOX] Placa no encontrada",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                                    "pm.test('errors contiene la placa no encontrada', function() {",
+                                    "    pm.expect(pm.response.json().errors.length).to.be.above(0);",
+                                    "});",
+                                    "pm.test('items vacío cuando placa no existe', function() {",
+                                    "    pm.expect(pm.response.json().items).to.eql([]);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/myper/sandbox/ubicacion",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "myper",
+                                "sandbox",
+                                "ubicacion"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"items\": [\n    { \"Placa\": \"INVALIDA-999\" }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "description": "Placa que no existe en el sandbox. Debe aparecer en errors."
+                    },
+                    "response": [
+                        {
+                            "name": "Error parcial — placa no encontrada",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"responseCode\": 200,\n  \"message\": \"[SANDBOX] Datos simulados. No usar en producción.\",\n  \"items\": [],\n  \"errors\": [\"Placa no encontrada en sandbox: INVALIDA-999\"]\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "[SANDBOX] Request inválido (sin items)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 400', function() { pm.response.to.have.status(400); });",
+                                    "pm.test('responseCode es 400', function() {",
+                                    "    pm.expect(pm.response.json().responseCode).to.eql(400);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/myper/sandbox/ubicacion",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "myper",
+                                "sandbox",
+                                "ubicacion"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "description": "Body sin el campo items. Debe retornar 400."
+                    },
+                    "response": [
+                        {
+                            "name": "Error 400 — items requerido",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"responseCode\": 400,\n  \"message\": \"Error en la obtención de datos\",\n  \"items\": [],\n  \"errors\": [\"El campo items es requerido y debe ser un arreglo no vacío\"]\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Producción (requiere Bearer token)",
+            "description": "Endpoints reales. Asegurarse de configurar la variable `{{api_hash}}` con el token entregado por el proveedor GPS antes de ejecutar.",
+            "item": [
+                {
+                    "name": "[PROD] Consultar ubicación de vehículos",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 200', function() { pm.response.to.have.status(200); });",
+                                    "pm.test('responseCode es 200', function() {",
+                                    "    pm.expect(pm.response.json().responseCode).to.eql(200);",
+                                    "});",
+                                    "pm.test('Estructura de respuesta correcta', function() {",
+                                    "    var json = pm.response.json();",
+                                    "    pm.expect(json).to.have.all.keys('responseCode', 'message', 'items', 'errors');",
+                                    "    pm.expect(json.items).to.be.an('array');",
+                                    "    pm.expect(json.errors).to.be.an('array');",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{api_hash}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/myper/ubicacion",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "myper",
+                                "ubicacion"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"items\": [\n    { \"Placa\": \"ABC-123\" },\n    { \"Placa\": \"CDE-456\" }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "description": "Reemplazar las placas con valores reales registrados en el sistema. Requiere `{{api_hash}}` configurado con el token entregado por el proveedor GPS."
+                    },
+                    "response": [
+                        {
+                            "name": "Consulta exitosa",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"responseCode\": 200,\n  \"message\": \"\",\n  \"items\": [\n    { \"Placa\": \"ABC-123\", \"Latitud\": -12.046374, \"Longitud\": -77.042793, \"Velocidad\": 45.0 }\n  ],\n  \"errors\": []\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "[PROD] Token inválido (401)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "pm.test('Status 401 cuando token es incorrecto', function() {",
+                                    "    pm.response.to.have.status(401);",
+                                    "});",
+                                    "pm.test('responseCode es 401', function() {",
+                                    "    pm.expect(pm.response.json().responseCode).to.eql(401);",
+                                    "});"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "token_invalido_para_prueba",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/v1/myper/ubicacion",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "myper",
+                                "ubicacion"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"items\": [\n    { \"Placa\": \"ABC-123\" }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "description": "Usa un token deliberadamente incorrecto para verificar el manejo del error 401."
+                    },
+                    "response": [
+                        {
+                            "name": "Error 401 — token inválido",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"responseCode\": 401,\n  \"message\": \"Error en la autenticación\",\n  \"items\": [],\n  \"errors\": [\"Token de autenticación inválido o expirado\"]\n}"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

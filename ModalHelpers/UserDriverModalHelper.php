@@ -1,4 +1,6 @@
-<?php namespace ModalHelpers;
+<?php
+
+namespace ModalHelpers;
 
 use CustomFacades\Validators\UserDriverFormValidator;
 use Illuminate\Database\Query\Builder;

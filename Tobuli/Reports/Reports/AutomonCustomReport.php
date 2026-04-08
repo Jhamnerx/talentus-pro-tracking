@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Reports\Reports;
+<?php
+
+namespace Tobuli\Reports\Reports;
 
 use Formatter;
 use Illuminate\Database\QueryException;
@@ -33,25 +35,27 @@ class AutomonCustomReport extends DeviceReport
             $device->positions()
                 ->orderliness('asc')
                 ->whereBetween('time', [$this->date_from, $this->date_to])
-                ->chunk(2000,
+                ->chunk(
+                    2000,
                     function ($positions) {
                         foreach ($positions as $position) {
                             $this->processPosition($position);
                         }
-                    });
-        } catch (QueryException $e) {}
+                    }
+                );
+        } catch (QueryException $e) {
+        }
 
-        if ( $this->journey ) {
+        if ($this->journey) {
             $this->journeys[] = $this->journey;
         }
 
-        foreach ($this->journeys as $i => $journey)
-        {
+        foreach ($this->journeys as $i => $journey) {
             $this->journeys[$i]['distance']      = Formatter::distance()->human($journey['distance']);
             $this->journeys[$i]['move_duration'] = Formatter::duration()->human($journey['move_duration']);
             $this->journeys[$i]['stop_duration'] = Formatter::duration()->human($journey['stop_duration']);
 
-            if ( !empty($journey['begin']) && !empty($journey['end'])) {
+            if (!empty($journey['begin']) && !empty($journey['end'])) {
                 $this->journeys[$i]['duration'] = Formatter::duration()->human($journey['duration']);
             } else {
                 $this->journeys[$i]['duration'] = null;
@@ -80,14 +84,14 @@ class AutomonCustomReport extends DeviceReport
         if (empty($this->last_item))
             $this->last_item = $position;
 
-        if ( is_null($position->state) )
+        if (is_null($position->state))
             return;
 
-        if ( ! in_array($position->state, [0,1]) )
+        if (! in_array($position->state, [0, 1]))
             return;
 
 
-        if ( ! $this->journey) {
+        if (! $this->journey) {
             $this->journey = [
                 'state' => $position->state,
                 'distance' => 0,
@@ -110,8 +114,7 @@ class AutomonCustomReport extends DeviceReport
         $this->journey['stop_duration'] += $stop_duration;
 
 
-        if ($this->last_item->state == $position->state && $position->motion == 'false')
-        {
+        if ($this->last_item->state == $position->state && $position->motion == 'false') {
             ++$this->repeat;
 
             if (!empty($this->tmp)) {
@@ -143,8 +146,7 @@ class AutomonCustomReport extends DeviceReport
         }
 
         // 1 -> 0 journy end
-        if ( $this->item_changed->state == 0 )
-        {
+        if ($this->item_changed->state == 0) {
             $this->journey['end'] = [
                 'timestamp' => strtotime($this->item_changed->time),
                 'time' => Formatter::time()->human($this->item_changed->time),
@@ -163,8 +165,7 @@ class AutomonCustomReport extends DeviceReport
         }
 
         // 0 -> 1 journy begin
-        if ( $this->item_changed->state == 1 )
-        {
+        if ($this->item_changed->state == 1) {
             $this->journeys[] = $this->journey;
 
             $this->journey = [
@@ -192,12 +193,12 @@ class AutomonCustomReport extends DeviceReport
     {
         $motion = null;
         preg_match('/<motion>(.*?)<\/motion>/s', $other, $matches);
-        if ( isset($matches[1]) )
+        if (isset($matches[1]))
             $motion = $matches[1];
 
         $state = null;
         preg_match('/<adc1>(.*?)<\/adc1>/s', $other, $matches);
-        if ( isset($matches[1]))
+        if (isset($matches[1]))
             $state = $matches[1] > 10000 ? 1 : 0;
 
         return [
@@ -205,5 +206,4 @@ class AutomonCustomReport extends DeviceReport
             'motion' => $motion,
         ];
     }
-
 }
