@@ -25,5 +25,8 @@
     "gulp-sourcemaps": "^2.6.0",
     "node-sass": "^7.0.3",
     "vinyl": "^3.0.0"
+  },
+  "devDependencies": {
+    "sass": "^1.99.0"
   }
 }
