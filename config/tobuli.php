@@ -565,7 +565,7 @@ return [
             'status' => 0,
         ],
         'task_status_auto_change_by_device_position' => [
-            'status' => 0,
+            'status' => 1,
             'options' => [
                 'delivery_radius' => 100,
                 'delivery_duration' => 60,

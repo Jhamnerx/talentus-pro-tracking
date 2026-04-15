@@ -109,26 +109,7 @@ class SendCommandModalHelper extends ModalHelper
 
         $query = $devicesLoader->getQuerySelected();
 
-        $responses = collect();
-
-        $query->chunk(100, function ($devices) use (&$responses) {
-
-            foreach ($devices as $device) {
-
-                $response = $this->sendCommandService->gprs(
-                    collect([$device]), // importante, espera colección
-                    $this->data,
-                    $this->user
-                );
-
-                // gprs devuelve colección → sacamos el primero
-                $result = $response->first();
-
-                $result['device'] = $device->name;
-
-                $responses->push($result);
-            }
-        });
+        $devices = $query->get();
 
         if ($devices->isEmpty()) {
             throw new ValidationException(['devices' => trans('global.not_found')]);
@@ -136,7 +117,21 @@ class SendCommandModalHelper extends ModalHelper
 
         $this->commandService->validateGPRS($devices, $this->data);
 
-        $responses = $this->sendCommandService->gprs($devices, $this->data, $this->user);
+        $responses = collect();
+
+        foreach ($devices->chunk(100) as $chunk) {
+            foreach ($chunk as $device) {
+                $response = $this->sendCommandService->gprs(
+                    collect([$device]),
+                    $this->data,
+                    $this->user
+                );
+
+                $result = $response->first();
+                $result['device'] = $device->name;
+                $responses->push($result);
+            }
+        }
 
         $errors = $responses
             ->filter(function ($response) {

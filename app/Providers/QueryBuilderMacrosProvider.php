@@ -19,9 +19,7 @@ class QueryBuilderMacrosProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
-    {
-    }
+    public function boot() {}
 
     /**
      * Register any application services.
@@ -126,120 +124,139 @@ class QueryBuilderMacrosProvider extends ServiceProvider
                 throw new \RuntimeException("The related object classes do not match: $macroClass and $queryClass");
             }
 
-            $tablePivot = $this->getTable();
+            $tablePivot      = $this->getTable();
             $foreignPivotKey = $this->getForeignPivotKeyName();
             $relatedPivotKey = $this->getRelatedPivotKeyName();
 
-            $relatedKey = $this->getRelated()->getKeyName();
-            $relatedTable = $this->getRelated()->getTable();
+            $relatedKey          = $this->getRelated()->getKeyName();
+            $relatedTable        = $this->getRelated()->getTable();
             $relatedQualifiedKey = "$relatedTable.$relatedKey";
 
-            $select = $query
-                ->clearOrdersBy()
-                ->select(\DB::raw("{$this->getParent()->id} AS `$foreignPivotKey`, $relatedQualifiedKey"))
-                ->leftJoin("$tablePivot AS tmp_table_pivot", function ($join) use ($relatedPivotKey, $foreignPivotKey, $relatedQualifiedKey){
-                    $join->on("tmp_table_pivot.$relatedPivotKey", '=', $relatedQualifiedKey)
-                        ->where("tmp_table_pivot.$foreignPivotKey", '=', $this->getParent()->id);
-                })
-                ->whereNull("tmp_table_pivot.$relatedPivotKey")
-            ;
+            // Resolver IDs primero para evitar subquery con tabla temporal en INSERT SELECT
+            $ids = $query->clearOrdersBy()->pluck($relatedQualifiedKey)->toArray();
 
-            $insert = "INSERT INTO `$tablePivot` (`$foreignPivotKey`, `$relatedPivotKey`) ";
+            if (empty($ids)) {
+                return;
+            }
 
-            $bindings = $select->getBindings();
-            $insertQuery = str_finish($insert, ' ') . $select->toSql();
+            $parentId = $this->getParent()->id;
+            $rows = array_map(fn($id) => [$foreignPivotKey => $parentId, $relatedPivotKey => $id], $ids);
 
-            \DB::insert($insertQuery, $bindings);
+            // INSERT IGNORE: maneja duplicados atómicamente, evita leer user_device_pivot
+            // dentro de la misma transacción donde ya se hizo un DELETE (causa error 1020 en MariaDB)
+            \DB::table($tablePivot)->insertOrIgnore($rows);
         });
 
         BelongsToMany::macro('detachQuery', function ($query) {
 
-            $tablePivot = $this->getTable();
+            $tablePivot      = $this->getTable();
             $foreignPivotKey = $this->getForeignPivotKeyName();
             $relatedPivotKey = $this->getRelatedPivotKeyName();
 
-            $relatedKey = $this->getRelated()->getKeyName();
-            $relatedTable = $this->getRelated()->getTable();
+            $relatedKey          = $this->getRelated()->getKeyName();
+            $relatedTable        = $this->getRelated()->getTable();
             $relatedQualifiedKey = "$relatedTable.$relatedKey";
 
-            $sql = $query->select($relatedQualifiedKey)->toRaw();
+            // Obtener los IDs primero (evita el JOIN sobre tabla temporal en DELETE)
+            $ids = $query->select($relatedQualifiedKey)->pluck($relatedKey)->toArray();
+
+            if (empty($ids)) {
+                return;
+            }
 
             \DB::table($tablePivot)
                 ->where("$tablePivot.$foreignPivotKey", $this->getParent()->id)
-                ->join(\DB::raw('(' . $sql. ') AS tmp_table_related'), function($join) use ($relatedKey, $tablePivot, $relatedPivotKey){
-                    $join->on("tmp_table_related.$relatedKey", '=', "$tablePivot.$relatedPivotKey");
-                })
-                ->whereNotNull("tmp_table_related.$relatedKey")
+                ->whereIn("$tablePivot.$relatedPivotKey", $ids)
                 ->delete();
         });
 
-        EloquentBuilder::macro('throughModelDetached', /** @var null|string|Relation $checkRelation */ function (string $relationName, string $throughModel, $checkRelation = null) {
-            /** @var BelongsToMany $mainRelation */
-            $mainRelation = $this->getRelation($relationName);
+        EloquentBuilder::macro(
+            'throughModelDetached',
+            /** @var null|string|Relation $checkRelation */
+            function (string $relationName, string $throughModel, $checkRelation = null) {
+                /** @var BelongsToMany $mainRelation */
+                $mainRelation = $this->getRelation($relationName);
 
-            $model = $this->getModel();
-            $modelThrough = $model->getRelationByClass($throughModel)->getRelated();
+                $model = $this->getModel();
+                $modelThrough = $model->getRelationByClass($throughModel)->getRelated();
 
-            if ($checkRelation === null) {
-                $checkRelation = $relationName;
+                if ($checkRelation === null) {
+                    $checkRelation = $relationName;
+                }
+
+                $throughRelation = (is_string($checkRelation) ? (new $throughModel())->$checkRelation() : $checkRelation)
+                    ->getModel()
+                    ->getRelationByClass($throughModel);
+
+                if (get_class($throughRelation->getRelated()) !== get_class($modelThrough)) {
+                    throw new \InvalidArgumentException(sprintf(
+                        'Query relation class (%s) does not match main relation class (%s)',
+                        get_class($throughRelation),
+                        get_class($modelThrough),
+                    ));
+                }
+
+                $query = \DB::query()
+                    ->from($mainRelation->getTable())
+                    ->leftJoin(
+                        $this->from,
+                        $mainRelation->getQualifiedParentKeyName(),
+                        $mainRelation->getQualifiedForeignPivotKeyName()
+                    )
+                    ->leftJoin($throughRelation->getTable(), function (JoinClause $join) use ($mainRelation, $throughRelation, $modelThrough) {
+                        $join->on(
+                            $throughRelation->getQualifiedForeignPivotKeyName(),
+                            $mainRelation->getQualifiedRelatedPivotKeyName()
+                        )->on(
+                            $throughRelation->getQualifiedRelatedPivotKeyName(),
+                            $this->from . '.' . $modelThrough->getForeignKey()
+                        );
+                    })
+                    ->whereNull($throughRelation->getQualifiedForeignPivotKeyName());
+
+                if ($checkRelation instanceof Relation && $checkRelation->getParent()->exists) {
+                    $subQuery = $checkRelation->getQuery();
+                    $subQuery->clearOrdersBy()
+                        ->select($subQuery->from . '.' . $checkRelation->getModel()->getKeyName())
+                        ->distinct(false);
+
+                    $query->whereRaw($mainRelation->getQualifiedRelatedPivotKeyName() . ' IN (' . $subQuery->toRaw() . ')');
+                }
+
+                return $query;
             }
-
-            $throughRelation = (is_string($checkRelation) ? (new $throughModel())->$checkRelation() : $checkRelation)
-                ->getModel()
-                ->getRelationByClass($throughModel);
-
-            if (get_class($throughRelation->getRelated()) !== get_class($modelThrough)) {
-                throw new \InvalidArgumentException(sprintf(
-                    'Query relation class (%s) does not match main relation class (%s)',
-                    get_class($throughRelation),
-                    get_class($modelThrough),
-                ));
-            }
-
-            $query = \DB::query()
-                ->from($mainRelation->getTable())
-                ->leftJoin(
-                    $this->from,
-                    $mainRelation->getQualifiedParentKeyName(),
-                    $mainRelation->getQualifiedForeignPivotKeyName()
-                )
-                ->leftJoin($throughRelation->getTable(), function (JoinClause $join) use ($mainRelation, $throughRelation, $modelThrough) {
-                    $join->on(
-                        $throughRelation->getQualifiedForeignPivotKeyName(),
-                        $mainRelation->getQualifiedRelatedPivotKeyName()
-                    )->on(
-                        $throughRelation->getQualifiedRelatedPivotKeyName(),
-                        $this->from . '.' . $modelThrough->getForeignKey()
-                    );
-                })
-                ->whereNull($throughRelation->getQualifiedForeignPivotKeyName());
-
-            if ($checkRelation instanceof Relation && $checkRelation->getParent()->exists) {
-                $subQuery = $checkRelation->getQuery();
-                $subQuery->clearOrdersBy()
-                    ->select($subQuery->from . '.' . $checkRelation->getModel()->getKeyName())
-                    ->distinct(false);
-
-                $query->whereRaw($mainRelation->getQualifiedRelatedPivotKeyName() . ' IN (' . $subQuery->toRaw() . ')');
-            }
-
-            return $query;
-        });
+        );
 
         BelongsToMany::macro('syncLoader', function (EnityLoader $loader) {
             if (!$loader->hasSelect())
                 return;
 
-            if ($loader->hasDetach()) {
-                if (!$loader->getQueryStored()) {
-                    $loader->setQueryStored($this->getQuery());
-                }
-
-                $this->detachQuery($loader->getQueryDetach());
+            // Capturar el estado actual del pivot ANTES de cualquier DML.
+            // setQueryStored guarda la query (lazy) que puebla la TempTable con los IDs
+            // actualmente asociados en user_device_pivot.
+            if ($loader->hasDetach() && !$loader->getQueryStored()) {
+                $loader->setQueryStored($this->getQuery());
             }
 
-            if ($loader->hasAttach()) {
-                $this->attachQuery($loader->getQueryAttach());
+            // Pre-materializar ambas queries AHORA (antes de cualquier DML).
+            // getQueryAttach/getQueryDetach crean la TempTable, que internamente ejecuta
+            // INSERT INTO tmp_xxx SELECT id FROM user_device_pivot (lectura del pivot).
+            // Si esta lectura ocurriera DESPUÉS de un DELETE, MariaDB 10.11 lanzaría
+            // error 1020 ("Record has changed since last read") en el INSERT siguiente.
+            $queryAttach = $loader->hasAttach() ? $loader->getQueryAttach() : null;
+            $queryDetach = $loader->hasDetach() ? $loader->getQueryDetach() : null;
+
+            // INSERT primero (attach), luego DELETE (detach).
+            // Orden crítico para MariaDB 10.11: hacer DELETE y luego INSERT sobre el mismo
+            // índice único dentro de la misma transacción provoca error 1020 porque InnoDB
+            // detecta el índice modificado al verificar unicidad del INSERT.
+            // Con INSERT primero y DELETE después el problema no se reproduce.
+            if ($queryAttach !== null) {
+                $this->attachQuery($queryAttach);
+            }
+
+            if ($queryDetach !== null) {
+                $this->detachQuery($queryDetach);
             }
         });
 
