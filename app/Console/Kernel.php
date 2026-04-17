@@ -151,7 +151,7 @@ class Kernel extends ConsoleKernel
         $schedule->job(new DispatchMininterJobs)->everyMinute();
         $schedule->job(new DispatchWisetrackJobs)->everyMinute();
         $schedule->job(new DispatchSidersalesJobs)->everyMinute();
-        $schedule->job(new RenewSidersalesToken)->everyFiftyMinutes();
+        $schedule->job(new RenewSidersalesToken)->everyFifteenMinutes();
         $schedule->job(new CleanOldLogsJob(10))->daily();
 
         // Comando para precalcular valores de odómetro cada 15 minutos
