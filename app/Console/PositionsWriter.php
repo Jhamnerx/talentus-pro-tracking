@@ -667,11 +667,34 @@ class PositionsWriter
         if ($this->device->wisetrack) {
             $this->saveDataWisetrack($this->device, $this->position);
         }
+
+        if ($this->device->sidersales) {
+            //REGISTRAR BASE DE DATOS SIDERSALES (Gerdau)
+            $this->saveDataSidersales($this->device, $this->position);
+        }
+    }
+
+    public function saveDataSidersales($device, $position)
+    {
+        $timezone = new DateTimeZone('America/Lima');
+        $deviceTime = new DateTime($position->device_time);
+        $deviceTime->setTimezone($timezone);
+
+        $device->dataSidersales()->create([
+            'device_id'       => $device->id,
+            'placa'           => trim($device->plate_number),
+            'latitud'         => $position->latitude,
+            'longitud'        => $position->longitude,
+            'velocidadKPH'    => round($position->speed, 2),
+            'fechaHoraGPS'    => $deviceTime->format('Y-m-d H:i:s'),
+            'rucTransportista' => $device->registration_number,
+            'ProveedorGPS'    => 'TALENTUS TECHNOLOGY SAC',
+        ]);
     }
 
     public function saveDataWisetrack($device, $position)
     {
-        $transportista = $device->object_owner; // Puedes cambiarlo si necesitas obtenerlo de otro lado
+        $transportista = $device->object_owner; // 
         // Convertir la fecha y hora al formato requerido (UTC)
         $fechaHora = date('Y-m-d H:i:s', strtotime($position->device_time));
 

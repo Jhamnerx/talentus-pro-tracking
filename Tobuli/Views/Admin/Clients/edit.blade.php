@@ -650,6 +650,72 @@
                     </div>
                 </div>
             </div>
+
+            <hr style="border-color: #052062;">
+
+            <div class="form-group">
+                <h4>SIDERSALES (Gerdau)</h4>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[sidersales][active]', 1, $item->services['sidersales']['active'], [
+                                'class' => 'checkbox-sidersales',
+                            ]) !!}
+                            {!! Form::label('services[sidersales][active]', 'Activar') !!}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[sidersales][logs]', 1, $item->services['sidersales']['logs'], [
+                                'class' => 'sidersales-logs',
+                            ]) !!}
+                            {!! Form::label('services[sidersales][logs]', 'Logs') !!}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-12 text-sidersales">
+                    <div class="form-group">
+                        {!! Form::label('services[sidersales][environment]', 'Entorno') !!}
+                        {!! Form::select(
+                            'services[sidersales][environment]',
+                            [
+                                'dev' => 'DEV — dev-experience-gerdau-sidersales-pe.us-e1.cloudhub.io',
+                                'qa'  => 'QA — qa-experience-gerdau-sidersales-pe.us-e1.cloudhub.io',
+                                'prd' => 'PRD — api.gerdau.com/experience-gerdau-sidersales-pe/api/gps-tracking',
+                            ],
+                            $item->services['sidersales']['environment'] ?? 'prd',
+                            ['class' => 'form-control'],
+                        ) !!}
+                    </div>
+                </div>
+
+                <div class="col-sm-6 text-sidersales">
+                    <div class="form-group">
+                        {!! Form::label('services[sidersales][client_id]', 'Client ID (Azure AD)') !!}
+                        {!! Form::text('services[sidersales][client_id]', $item->services['sidersales']['client_id'], [
+                            'class' => 'form-control',
+                        ]) !!}
+                    </div>
+                </div>
+
+                <div class="col-sm-6 text-sidersales">
+                    <div class="form-group">
+                        {!! Form::label('services[sidersales][client_secret]', 'Client Secret (Azure AD)') !!}
+                        {!! Form::password('services[sidersales][client_secret]', [
+                            'class' => 'form-control',
+                            'autocomplete' => 'new-password',
+                            'placeholder' => $item->services['sidersales']['client_secret'] ? '••••••••••••••••' : '',
+                        ]) !!}
+                        <small class="text-muted">Dejar vacío para no modificar el secreto almacenado.</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -678,6 +744,7 @@
             toggleTextFields('.checkbox-sutran', '.text-sutran');
             toggleTextFields('.checkbox-osinergmin', '.text-osinergmin');
             toggleTextFields('.checkbox-consatel', '.text-consatel');
+            toggleTextFields('.checkbox-sidersales', '.text-sidersales');
         });
     </script>
 

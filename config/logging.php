@@ -131,6 +131,13 @@ return [
             'level' => 'info',
             'days' => 3,
         ],
+
+        'sidersales' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/sidersales.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
     ],
 
 ];

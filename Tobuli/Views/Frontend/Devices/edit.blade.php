@@ -19,7 +19,8 @@
         @if (Auth::User()->perm('webservice.consatel', 'view') ||
                 Auth::User()->perm('webservice.mininter', 'view') ||
                 Auth::User()->perm('webservice.sutran', 'view') ||
-                Auth::User()->perm('webservice.osinergmin', 'view'))
+                Auth::User()->perm('webservice.osinergmin', 'view') ||
+                Auth::User()->perm('webservice.sidersales', 'view'))
             <li><a href="#device-add-form-web_service" role="tab" data-toggle="tab">Servicios Web</a></li>
         @endif
         @if (expensesTypesExist())

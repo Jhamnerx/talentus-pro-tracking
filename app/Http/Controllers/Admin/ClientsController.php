@@ -458,6 +458,7 @@ class ClientsController extends BaseController
                 'consatel' => ['active' => 0, 'user' => null, 'pass' => null],
                 'mininter' => ['logs' => 0],
                 'wisetrack' => ['active' => 0, 'token' => null, 'logs' => 0, 'url' => null],
+                'sidersales' => ['active' => 0, 'logs' => 0, 'environment' => 'prd', 'client_id' => null, 'client_secret' => null],
             ];
 
             foreach ($defaultServices as $service => $defaults) {
@@ -474,6 +475,15 @@ class ClientsController extends BaseController
                             $defaultServices[$service]['logs'] = $services[$service]['logs'] ?? null;
                             $defaultServices[$service]['url'] = $services[$service]['url'] ?? null;
                         }
+                    }
+                    // Sidersales: persistir credenciales incluso si está inactivo
+                    if ($service == 'sidersales') {
+                        $defaultServices[$service]['environment'] = $services[$service]['environment'] ?? 'prd';
+                        $defaultServices[$service]['client_id'] = $services[$service]['client_id'] ?? null;
+                        $submittedSecret = $services[$service]['client_secret'] ?? null;
+                        $defaultServices[$service]['client_secret'] = !empty($submittedSecret)
+                            ? $submittedSecret
+                            : ($item->services['sidersales']['client_secret'] ?? null);
                     }
                 }
             }

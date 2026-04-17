@@ -42,3 +42,11 @@
         {!! Form::label('wisetrack', 'Wisetrack') !!}
     </div>
 @endif
+
+@if (Auth::User()->perm('webservice.sidersales', 'edit'))
+    <div class="checkbox">
+        {!! Form::hidden('sidersales', 0) !!}
+        {!! Form::checkbox('sidersales', 1, $item->sidersales) !!}
+        {!! Form::label('sidersales', 'Sidersales (Gerdau)') !!}
+    </div>
+@endif

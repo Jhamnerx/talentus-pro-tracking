@@ -353,6 +353,11 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+        'webservice.sidersales' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
         'webservice_logs' => [
             'view'  => 1,
             'edit'  => 0,

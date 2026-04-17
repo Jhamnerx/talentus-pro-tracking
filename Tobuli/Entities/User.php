@@ -228,6 +228,14 @@ class User extends AbstractEntity implements
                 'mininter' =>
                 [
                     'logs' => 0,
+                ],
+                'sidersales' =>
+                [
+                    'active'        => 0,
+                    'logs'          => 0,
+                    'environment'   => 'prd',
+                    'client_id'     => null,
+                    'client_secret' => null,
                 ]
             ];
         }
@@ -252,6 +260,15 @@ class User extends AbstractEntity implements
                 'logs' => 0,
                 'token' => null,
                 'url' => null,
+            ];
+        }
+        if (!isset($services['sidersales'])) {
+            $services['sidersales'] = [
+                'active'        => 0,
+                'logs'          => 0,
+                'environment'   => 'prd',
+                'client_id'     => null,
+                'client_secret' => null,
             ];
         }
 
