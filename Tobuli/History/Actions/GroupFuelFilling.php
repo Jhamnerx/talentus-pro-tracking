@@ -3,6 +3,7 @@
 namespace Tobuli\History\Actions;
 
 use Formatter;
+use Tobuli\Helpers\Formatter\Unit\Capacity;
 use Tobuli\History\Group;
 use Tobuli\History\Stats\StatValue;
 
@@ -15,9 +16,7 @@ class GroupFuelFilling extends ActionGroup
         ];
     }
 
-    public function boot() {
-
-    }
+    public function boot() {}
 
     public function proccess($position)
     {
@@ -27,8 +26,15 @@ class GroupFuelFilling extends ActionGroup
         $group = new Group('fuel_filling');
         $group->sensor_name = $position->fuel_filling['name'];
 
+        $sensorUnit = $position->fuel_filling['unit'];
         $fuelFormatter = clone Formatter::capacity();
-        $fuelFormatter = $fuelFormatter->setUnit($position->fuel_filling['unit']);
+        $firstChar = utf8_strtolower(utf8_substr($sensorUnit, 0, 1));
+        if (in_array($firstChar, ['l', 'g'])) {
+            $sensorCapacity = (new Capacity())->setMeasure($sensorUnit);
+            $fuelFormatter->setRatio($fuelFormatter->getRatio() / $sensorCapacity->getRatio());
+        } else {
+            $fuelFormatter->setRatio(1)->setUnit($sensorUnit);
+        }
 
         $map = [
             'previous' => 'fuel_level_previous',
@@ -36,10 +42,9 @@ class GroupFuelFilling extends ActionGroup
             'diff'     => 'fuel_level_difference',
         ];
 
-        foreach ($map as $key => $value)
-        {
+        foreach ($map as $key => $value) {
             $stat = (new StatValue())->setFormatUnit($fuelFormatter);
-            $stat->apply( $position->fuel_filling[$key] );
+            $stat->apply($position->fuel_filling[$key]);
 
             $group->stats()->set($value, $stat);
         }

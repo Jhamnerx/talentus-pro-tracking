@@ -9,6 +9,7 @@ use App\Jobs\DispatchMininterJobs;
 use App\Jobs\DispatchWisetrackJobs;
 use App\Jobs\DispatchOsinergminJobs;
 use App\Jobs\DispatchSidersalesJobs;
+use App\Jobs\DispatchEpsCenterJobs;
 use App\Jobs\RenewSidersalesToken;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -151,6 +152,7 @@ class Kernel extends ConsoleKernel
         $schedule->job(new DispatchMininterJobs)->everyMinute();
         $schedule->job(new DispatchWisetrackJobs)->everyMinute();
         $schedule->job(new DispatchSidersalesJobs)->everyMinute();
+        $schedule->job(new DispatchEpsCenterJobs)->everyMinute();
         $schedule->job(new RenewSidersalesToken)->everyFifteenMinutes();
         $schedule->job(new CleanOldLogsJob(10))->daily();
 

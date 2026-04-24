@@ -20,7 +20,9 @@
                 Auth::User()->perm('webservice.mininter', 'view') ||
                 Auth::User()->perm('webservice.sutran', 'view') ||
                 Auth::User()->perm('webservice.osinergmin', 'view') ||
-                Auth::User()->perm('webservice.sidersales', 'view'))
+                Auth::User()->perm('webservice.wisetrack', 'view') ||
+                Auth::User()->perm('webservice.sidersales', 'view') ||
+                Auth::User()->perm('webservice.epscenter', 'view'))
             <li><a href="#device-add-form-web_service" role="tab" data-toggle="tab">Servicios Web</a></li>
         @endif
         @if (expensesTypesExist())

@@ -94,6 +94,14 @@
                                 if ($item->wisetrack) {
                                     $webservices[] = '<span class="label label-danger label-xs">WISETRACK</span>';
                                 }
+                                if ($item->sidersales) {
+                                    $webservices[] =
+                                        '<span class="label label-xs" style="background:#052062;color:#fff;">SIDERSALES</span>';
+                                }
+                                if ($item->epscenter) {
+                                    $webservices[] =
+                                        '<span class="label label-xs" style="background:#e67e22;color:#fff;">EPS CENTER</span>';
+                                }
                             @endphp
                             @if (count($webservices) > 0)
                                 {!! implode(' ', $webservices) !!}

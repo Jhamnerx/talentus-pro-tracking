@@ -124,49 +124,49 @@ class QueryBuilderMacrosProvider extends ServiceProvider
                 throw new \RuntimeException("The related object classes do not match: $macroClass and $queryClass");
             }
 
-            $tablePivot      = $this->getTable();
+            $tablePivot = $this->getTable();
             $foreignPivotKey = $this->getForeignPivotKeyName();
             $relatedPivotKey = $this->getRelatedPivotKeyName();
 
-            $relatedKey          = $this->getRelated()->getKeyName();
-            $relatedTable        = $this->getRelated()->getTable();
+            $relatedKey = $this->getRelated()->getKeyName();
+            $relatedTable = $this->getRelated()->getTable();
             $relatedQualifiedKey = "$relatedTable.$relatedKey";
 
-            // Resolver IDs primero para evitar subquery con tabla temporal en INSERT SELECT
-            $ids = $query->clearOrdersBy()->pluck($relatedQualifiedKey)->toArray();
+            $select = $query
+                ->clearOrdersBy()
+                ->select(\DB::raw("{$this->getParent()->id} AS `$foreignPivotKey`, $relatedQualifiedKey"))
+                ->leftJoin("$tablePivot AS tmp_table_pivot", function ($join) use ($relatedPivotKey, $foreignPivotKey, $relatedQualifiedKey) {
+                    $join->on("tmp_table_pivot.$relatedPivotKey", '=', $relatedQualifiedKey)
+                        ->where("tmp_table_pivot.$foreignPivotKey", '=', $this->getParent()->id);
+                })
+                ->whereNull("tmp_table_pivot.$relatedPivotKey");
 
-            if (empty($ids)) {
-                return;
-            }
+            $insert = "INSERT INTO `$tablePivot` (`$foreignPivotKey`, `$relatedPivotKey`) ";
 
-            $parentId = $this->getParent()->id;
-            $rows = array_map(fn($id) => [$foreignPivotKey => $parentId, $relatedPivotKey => $id], $ids);
+            $bindings = $select->getBindings();
+            $insertQuery = str_finish($insert, ' ') . $select->toSql();
 
-            // INSERT IGNORE: maneja duplicados atómicamente, evita leer user_device_pivot
-            // dentro de la misma transacción donde ya se hizo un DELETE (causa error 1020 en MariaDB)
-            \DB::table($tablePivot)->insertOrIgnore($rows);
+            \DB::insert($insertQuery, $bindings);
         });
 
         BelongsToMany::macro('detachQuery', function ($query) {
 
-            $tablePivot      = $this->getTable();
+            $tablePivot = $this->getTable();
             $foreignPivotKey = $this->getForeignPivotKeyName();
             $relatedPivotKey = $this->getRelatedPivotKeyName();
 
-            $relatedKey          = $this->getRelated()->getKeyName();
-            $relatedTable        = $this->getRelated()->getTable();
+            $relatedKey = $this->getRelated()->getKeyName();
+            $relatedTable = $this->getRelated()->getTable();
             $relatedQualifiedKey = "$relatedTable.$relatedKey";
 
-            // Obtener los IDs primero (evita el JOIN sobre tabla temporal en DELETE)
-            $ids = $query->select($relatedQualifiedKey)->pluck($relatedKey)->toArray();
-
-            if (empty($ids)) {
-                return;
-            }
+            $sql = $query->select($relatedQualifiedKey)->toRaw();
 
             \DB::table($tablePivot)
                 ->where("$tablePivot.$foreignPivotKey", $this->getParent()->id)
-                ->whereIn("$tablePivot.$relatedPivotKey", $ids)
+                ->join(\DB::raw('(' . $sql . ') AS tmp_table_related'), function ($join) use ($relatedKey, $tablePivot, $relatedPivotKey) {
+                    $join->on("tmp_table_related.$relatedKey", '=', "$tablePivot.$relatedPivotKey");
+                })
+                ->whereNotNull("tmp_table_related.$relatedKey")
                 ->delete();
         });
 
@@ -231,32 +231,16 @@ class QueryBuilderMacrosProvider extends ServiceProvider
             if (!$loader->hasSelect())
                 return;
 
-            // Capturar el estado actual del pivot ANTES de cualquier DML.
-            // setQueryStored guarda la query (lazy) que puebla la TempTable con los IDs
-            // actualmente asociados en user_device_pivot.
-            if ($loader->hasDetach() && !$loader->getQueryStored()) {
-                $loader->setQueryStored($this->getQuery());
+            if ($loader->hasDetach()) {
+                if (!$loader->getQueryStored()) {
+                    $loader->setQueryStored($this->getQuery());
+                }
+
+                $this->detachQuery($loader->getQueryDetach());
             }
 
-            // Pre-materializar ambas queries AHORA (antes de cualquier DML).
-            // getQueryAttach/getQueryDetach crean la TempTable, que internamente ejecuta
-            // INSERT INTO tmp_xxx SELECT id FROM user_device_pivot (lectura del pivot).
-            // Si esta lectura ocurriera DESPUÉS de un DELETE, MariaDB 10.11 lanzaría
-            // error 1020 ("Record has changed since last read") en el INSERT siguiente.
-            $queryAttach = $loader->hasAttach() ? $loader->getQueryAttach() : null;
-            $queryDetach = $loader->hasDetach() ? $loader->getQueryDetach() : null;
-
-            // INSERT primero (attach), luego DELETE (detach).
-            // Orden crítico para MariaDB 10.11: hacer DELETE y luego INSERT sobre el mismo
-            // índice único dentro de la misma transacción provoca error 1020 porque InnoDB
-            // detecta el índice modificado al verificar unicidad del INSERT.
-            // Con INSERT primero y DELETE después el problema no se reproduce.
-            if ($queryAttach !== null) {
-                $this->attachQuery($queryAttach);
-            }
-
-            if ($queryDetach !== null) {
-                $this->detachQuery($queryDetach);
+            if ($loader->hasAttach()) {
+                $this->attachQuery($loader->getQueryAttach());
             }
         });
 

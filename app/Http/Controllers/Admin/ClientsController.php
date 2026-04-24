@@ -459,6 +459,7 @@ class ClientsController extends BaseController
                 'mininter' => ['logs' => 0],
                 'wisetrack' => ['active' => 0, 'token' => null, 'logs' => 0, 'url' => null],
                 'sidersales' => ['active' => 0, 'logs' => 0, 'environment' => 'prd', 'client_id' => null, 'client_secret' => null],
+                'epscenter' => ['active' => 0, 'logs' => 0],
             ];
 
             foreach ($defaultServices as $service => $defaults) {

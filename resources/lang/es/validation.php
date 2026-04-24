@@ -852,6 +852,16 @@ return [
         'google_play_link' => 'Enlace de GooglePlay',
         'apple_store_link' => 'Enlace AppleStore',
         'date_from' => 'Fecha desde',
+        'mtc' => 'Sutran',
+        'sutran' => 'Sutran',
+        'osinergmin' => 'Osinergmin',
+        'mininter' => 'Mininter',
+        'consatel' => 'Consatel',
+        'wisetrack' => 'Wisetrack',
+        'sidersales' => 'Sidersales (Gerdau)',
+        'epscenter' => 'EPS Center',
+        'epscenter_id_transporte' => 'EPS Center — ID Transporte',
+        'epscenter_telefono' => 'EPS Center — Teléfono',
     ],
     'custom' => [
         'attribute-name' => [

@@ -84,6 +84,8 @@
                             'mininter' => 'MININTER',
                             'consatel' => 'CONSATEL',
                             'wisetrack' => 'WISETRACK',
+                            'sidersales' => 'SIDERSALES',
+                            'epscenter' => 'EPS CENTER',
                         ],
                         request('filter_webservices'),
                         [

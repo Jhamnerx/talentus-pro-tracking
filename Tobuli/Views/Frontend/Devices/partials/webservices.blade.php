@@ -50,3 +50,11 @@
         {!! Form::label('sidersales', 'Sidersales (Gerdau)') !!}
     </div>
 @endif
+
+@if (Auth::User()->perm('webservice.epscenter', 'edit'))
+    <div class="checkbox">
+        {!! Form::hidden('epscenter', 0) !!}
+        {!! Form::checkbox('epscenter', 1, $item->epscenter) !!}
+        {!! Form::label('epscenter', 'EPS Center') !!}
+    </div>
+@endif

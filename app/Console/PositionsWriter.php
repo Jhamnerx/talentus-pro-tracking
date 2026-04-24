@@ -12,6 +12,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceSensor;
+use Tobuli\Entities\EpsCenter;
 use Tobuli\Entities\TraccarPosition as Position;
 use Tobuli\Entities\UserDriver;
 use Tobuli\Helpers\Alerts\Check\Checker;
@@ -672,6 +673,38 @@ class PositionsWriter
             //REGISTRAR BASE DE DATOS SIDERSALES (Gerdau)
             $this->saveDataSidersales($this->device, $this->position);
         }
+
+        if ($this->device->epscenter) {
+            //REGISTRAR BASE DE DATOS EPS CENTER
+            $this->saveDataEpsCenter($this->device, $this->position);
+        }
+    }
+
+    public function saveDataEpsCenter($device, $position)
+    {
+        $timezone   = new DateTimeZone('America/Lima');
+        $deviceTime = new DateTime($position->device_time);
+        $deviceTime->setTimezone($timezone);
+
+        // Mapear nivel de batería (porcentaje 1-100) a escala 1-5
+        // El parámetro 'batterylevel' es enviado por el equipo GPS (sensor tipo Batería)
+        $batteryPct = (int) $position->getParameter('batterylevel', 100);
+        $bateria    = (int) ceil($batteryPct / 20);
+        $bateria    = max(1, min(5, $bateria ?: 5));
+
+        $device->dataEpsCenter()->create([
+            'device_id'     => $device->id,
+            'id_empresa'    => 22,
+            'id_transporte' => $device->imei,
+            'telefono'      => '999999999',
+            'latitud'       => round($position->latitude, 8),
+            'longitud'      => round($position->longitude, 8),
+            'fecha'         => $deviceTime->format('Y-m-d'),
+            'hora'          => $deviceTime->format('H:i:s'),
+            'velocidad'     => round($position->speed, 2),
+            'bateria'       => $bateria,
+            'mensaje'       => 'Ok',
+        ]);
     }
 
     public function saveDataSidersales($device, $position)

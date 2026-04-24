@@ -138,6 +138,13 @@ return [
             'level' => 'info',
             'days' => 7,
         ],
+
+        'epscenter' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/epscenter.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
     ],
 
 ];

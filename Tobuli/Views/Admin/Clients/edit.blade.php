@@ -686,7 +686,7 @@
                             'services[sidersales][environment]',
                             [
                                 'dev' => 'DEV — dev-experience-gerdau-sidersales-pe.us-e1.cloudhub.io',
-                                'qa'  => 'QA — qa-experience-gerdau-sidersales-pe.us-e1.cloudhub.io',
+                                'qa' => 'QA — qa-experience-gerdau-sidersales-pe.us-e1.cloudhub.io',
                                 'prd' => 'PRD — api.gerdau.com/experience-gerdau-sidersales-pe/api/gps-tracking',
                             ],
                             $item->services['sidersales']['environment'] ?? 'prd',
@@ -713,6 +713,32 @@
                             'placeholder' => $item->services['sidersales']['client_secret'] ? '••••••••••••••••' : '',
                         ]) !!}
                         <small class="text-muted">Dejar vacío para no modificar el secreto almacenado.</small>
+                    </div>
+                </div>
+            </div>
+            <hr style="border-color: #052062;">
+
+            <div class="form-group">
+                <h4>EPS CENTER</h4>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[epscenter][active]', 1, $item->services['epscenter']['active'] ?? 0, [
+                                'class' => 'checkbox-epscenter',
+                            ]) !!}
+                            {!! Form::label('services[epscenter][active]', 'Activar') !!}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[epscenter][logs]', 1, $item->services['epscenter']['logs'] ?? 0) !!}
+                            {!! Form::label('services[epscenter][logs]', 'Logs') !!}
+                        </div>
                     </div>
                 </div>
             </div>
