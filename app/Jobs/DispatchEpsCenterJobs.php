@@ -28,12 +28,27 @@ class DispatchEpsCenterJobs implements ShouldQueue
 
             $imeis = $user->devices()->where('epscenter', 1)->pluck('imei')->toArray();
 
+            Log::channel('epscenter')->info('EPS Center - IMEIs activos', [
+                'user_id' => $user->id,
+                'imeis'   => $imeis,
+            ]);
+
             if (empty($imeis)) {
+                Log::channel('epscenter')->info('EPS Center - Sin IMEIs activos para usuario', ['user_id' => $user->id]);
                 continue;
             }
 
             $batchSize    = 500;
             $totalRecords = EpsCenter::whereIn('id_transporte', $imeis)->count();
+            $totalAll     = EpsCenter::count();
+            $sample       = EpsCenter::limit(3)->pluck('id_transporte');
+
+            Log::channel('epscenter')->info('EPS Center - Conteo registros', [
+                'user_id'       => $user->id,
+                'total_en_tabla' => $totalAll,
+                'total_match'   => $totalRecords,
+                'muestra_ids'   => $sample,
+            ]);
 
             if ($totalRecords === 0) {
                 continue;
