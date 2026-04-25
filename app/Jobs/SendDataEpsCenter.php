@@ -44,8 +44,7 @@ class SendDataEpsCenter implements ShouldQueue
         $this->logService = app(LogService::class);
         $this->logService->setUserId($this->userId);
 
-        $query = EpsCenter::where('id_empresa', 22)
-            ->whereNotNull('id_transporte');
+        $query = EpsCenter::whereNotNull('id_transporte');
 
         if (!empty($this->imeis)) {
             $query->whereIn('id_transporte', $this->imeis);
