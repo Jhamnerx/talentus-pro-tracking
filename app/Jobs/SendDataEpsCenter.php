@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Services\LogService;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Bus\Queueable;
@@ -22,20 +23,35 @@ class SendDataEpsCenter implements ShouldQueue
     protected $offset;
     protected $batchSize;
     protected $url;
+    protected $service;
+    protected $imeis;
+    protected $userId;
+    protected $logService;
 
-    public function __construct(int $offset, int $batchSize, string $url)
+    public function __construct(int $offset, int $batchSize, string $url, array $service = [], array $imeis = [], ?int $userId = null)
     {
         $this->offset    = $offset;
         $this->batchSize = $batchSize;
         $this->url       = $url;
+        $this->service   = $service;
+        $this->imeis     = $imeis;
+        $this->userId    = $userId;
         $this->onQueue('web-services-epscenter');
     }
 
     public function handle()
     {
-        $registros = EpsCenter::where('id_empresa', 22)
-            ->whereNotNull('id_transporte')
-            ->offset($this->offset)
+        $this->logService = app(LogService::class);
+        $this->logService->setUserId($this->userId);
+
+        $query = EpsCenter::where('id_empresa', 22)
+            ->whereNotNull('id_transporte');
+
+        if (!empty($this->imeis)) {
+            $query->whereIn('id_transporte', $this->imeis);
+        }
+
+        $registros = $query->offset($this->offset)
             ->limit($this->batchSize)
             ->get();
 
@@ -82,6 +98,19 @@ class SendDataEpsCenter implements ShouldQueue
             $status = $response->getStatusCode();
 
             if ($status === 200 || $status === 201) {
+                if (!empty($this->service['logs'])) {
+                    $this->logService->logToDatabase(
+                        'EpsCenter',
+                        $registro->id_transporte,
+                        'success',
+                        $params,
+                        ['status' => $status, 'message' => 'Registro exitoso.'],
+                        [],
+                        $registro->fecha . ' ' . $registro->hora,
+                        $registro->id_transporte
+                    );
+                }
+
                 Log::channel('epscenter')->info('Registro EPS Center enviado correctamente', [
                     'device_id'     => $registro->device_id,
                     'id_transporte' => $registro->id_transporte,
@@ -94,6 +123,19 @@ class SendDataEpsCenter implements ShouldQueue
 
                 return false;
             } else {
+                if (!empty($this->service['logs'])) {
+                    $this->logService->logToDatabase(
+                        'EpsCenter',
+                        $registro->id_transporte,
+                        'error',
+                        $params,
+                        ['status' => $status, 'message' => 'Respuesta inesperada'],
+                        [],
+                        $registro->fecha . ' ' . $registro->hora,
+                        $registro->id_transporte
+                    );
+                }
+
                 Log::channel('epscenter')->warning('Respuesta inesperada de EPS Center', [
                     'device_id' => $registro->device_id,
                     'status'    => $status,
@@ -110,15 +152,45 @@ class SendDataEpsCenter implements ShouldQueue
                     return true; // rate limited — detener batch
                 }
 
+                $body = (string) $e->getResponse()->getBody();
+
+                if (!empty($this->service['logs'])) {
+                    $this->logService->logToDatabase(
+                        'EpsCenter',
+                        $registro->id_transporte,
+                        'error',
+                        $params,
+                        ['status' => $status, 'message' => $body],
+                        [],
+                        $registro->fecha . ' ' . $registro->hora,
+                        $registro->id_transporte
+                    );
+                }
+
                 Log::channel('epscenter')->error('Error al enviar registro a EPS Center', [
                     'device_id' => $registro->device_id,
                     'status'    => $status,
-                    'response'  => (string) $e->getResponse()->getBody(),
+                    'response'  => $body,
                 ]);
             } else {
+                $errorMsg = $e->getMessage();
+
+                if (!empty($this->service['logs'])) {
+                    $this->logService->logToDatabase(
+                        'EpsCenter',
+                        $registro->id_transporte,
+                        'error',
+                        $params,
+                        ['message' => $errorMsg],
+                        [],
+                        $registro->fecha . ' ' . $registro->hora,
+                        $registro->id_transporte
+                    );
+                }
+
                 Log::channel('epscenter')->error('Error al enviar registro a EPS Center', [
                     'device_id' => $registro->device_id,
-                    'error'     => $e->getMessage(),
+                    'error'     => $errorMsg,
                 ]);
             }
 

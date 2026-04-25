@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Log;
+use CustomFacades\Repositories\UserRepo;
 
 class DispatchEpsCenterJobs implements ShouldQueue
 {
@@ -20,19 +21,32 @@ class DispatchEpsCenterJobs implements ShouldQueue
 
     public function handle()
     {
-        $batchSize     = 500;
-        $totalRecords  = EpsCenter::count();
+        $users = UserRepo::getActiveServiceManagers(1, 'epscenter');
 
-        if ($totalRecords === 0) {
-            return;
-        }
+        foreach ($users as $user) {
+            $service = $user->services['epscenter'] ?? [];
 
-        Log::channel('epscenter')->info('Iniciando dispatch de jobs EPS Center', [
-            'total_records' => $totalRecords,
-        ]);
+            $imeis = $user->devices()->where('epscenter', 1)->pluck('imei')->toArray();
 
-        for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-            SendDataEpsCenter::dispatch($i, $batchSize, self::URL);
+            if (empty($imeis)) {
+                continue;
+            }
+
+            $batchSize    = 500;
+            $totalRecords = EpsCenter::whereIn('id_transporte', $imeis)->count();
+
+            if ($totalRecords === 0) {
+                continue;
+            }
+
+            Log::channel('epscenter')->info('Despachando lotes EPS Center', [
+                'user_id'       => $user->id,
+                'total_records' => $totalRecords,
+            ]);
+
+            for ($i = 0; $i < $totalRecords; $i += $batchSize) {
+                SendDataEpsCenter::dispatch($i, $batchSize, self::URL, $service, $imeis, $user->id);
+            }
         }
     }
 }

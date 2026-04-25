@@ -23,6 +23,7 @@ class LogService
         'consatel'   => 'comsatel',
         'mininter'   => 'mininter',
         'wisetrack'  => 'wisetrack',
+        'epscenter'  => 'epscenter',
     ];
 
     /**
