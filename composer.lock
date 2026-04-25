@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7e6a7541da9a4522b2f4c7f73001e6be",
+    "content-hash": "cb8a4bc1ed0b7de8e26f54077defbe3f",
     "packages": [
         {
             "name": "alchemy/binary-driver",
@@ -3197,16 +3197,16 @@
         },
         {
             "name": "laravel/tinker",
-            "version": "v2.11.1",
+            "version": "v3.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/tinker.git",
-                "reference": "c9f80cc835649b5c1842898fb043f8cc098dd741"
+                "reference": "eaa762692fda3c8b7caae5121897adf85d94ca33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/tinker/zipball/c9f80cc835649b5c1842898fb043f8cc098dd741",
-                "reference": "c9f80cc835649b5c1842898fb043f8cc098dd741",
+                "url": "https://api.github.com/repos/laravel/tinker/zipball/eaa762692fda3c8b7caae5121897adf85d94ca33",
+                "reference": "eaa762692fda3c8b7caae5121897adf85d94ca33",
                 "shasum": ""
             },
             "require": {
@@ -3257,9 +3257,9 @@
             ],
             "support": {
                 "issues": "https://github.com/laravel/tinker/issues",
-                "source": "https://github.com/laravel/tinker/tree/v2.11.1"
+                "source": "https://github.com/laravel/tinker/tree/v3.0.1"
             },
-            "time": "2026-02-06T14:12:35+00:00"
+            "time": "2026-02-10T18:46:04+00:00"
         },
         {
             "name": "laravel/ui",

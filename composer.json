@@ -41,7 +41,7 @@
     "laravel/ui": "^3.4",
     "fakerphp/faker": "^1.23",
     "spatie/laravel-activitylog": "^3.9",
-    "laravel/tinker": "^2.11"
+    "laravel/tinker": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.0",
