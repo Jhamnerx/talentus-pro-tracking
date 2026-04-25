@@ -22,7 +22,7 @@ class DispatchEpsCenterJobs implements ShouldQueue
     public function handle()
     {
         $users = UserRepo::getActiveServiceManagers(1, 'epscenter');
-
+        Log::channel('epscenter')->info('Iniciando dispatch de jobs EPS Center', ['user_count' => $users->count()]);
         foreach ($users as $user) {
             $service = $user->services['epscenter'] ?? [];
 
