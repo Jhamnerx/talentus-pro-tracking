@@ -33,18 +33,29 @@ class SendDataEpsCenter implements ShouldQueue
 
     public function handle()
     {
-        $registros = EpsCenter::offset($this->offset)
+        $registros = EpsCenter::where('id_empresa', 22)
+            ->whereNotNull('id_transporte')
+            ->offset($this->offset)
             ->limit($this->batchSize)
             ->get();
 
         $client = new Client(['verify' => false]);
 
         foreach ($registros as $registro) {
-            $this->enviarRegistro($client, $registro);
+            $rateLimited = $this->enviarRegistro($client, $registro);
+
+            if ($rateLimited) {
+                Log::channel('epscenter')->warning('Rate limit alcanzado (429), reencolar en 60s');
+                $this->release(60);
+                return;
+            }
         }
     }
 
-    protected function enviarRegistro(Client $client, EpsCenter $registro): void
+    /**
+     * @return bool  true si se recibió 429 (rate limited), false en caso contrario
+     */
+    protected function enviarRegistro(Client $client, EpsCenter $registro): bool
     {
         $params = [
             'id_empresa'    => $registro->id_empresa,
@@ -63,6 +74,9 @@ class SendDataEpsCenter implements ShouldQueue
             $response = $client->request('POST', $this->url, [
                 'query'   => $params,
                 'body'    => '',  // La API requiere body (aunque vacío) en POST
+                'headers' => [
+                    'Accept' => 'application/json',
+                ],
             ]);
 
             $status = $response->getStatusCode();
@@ -77,18 +91,38 @@ class SendDataEpsCenter implements ShouldQueue
                 ]);
 
                 $registro->delete();
+
+                return false;
             } else {
                 Log::channel('epscenter')->warning('Respuesta inesperada de EPS Center', [
                     'device_id' => $registro->device_id,
                     'status'    => $status,
                     'body'      => (string) $response->getBody(),
                 ]);
+
+                return false;
             }
         } catch (RequestException $e) {
-            Log::channel('epscenter')->error('Error al enviar registro a EPS Center', [
-                'device_id' => $registro->device_id,
-                'error'     => $e->getMessage(),
-            ]);
+            if ($e->hasResponse()) {
+                $status = $e->getResponse()->getStatusCode();
+
+                if ($status === 429) {
+                    return true; // rate limited — detener batch
+                }
+
+                Log::channel('epscenter')->error('Error al enviar registro a EPS Center', [
+                    'device_id' => $registro->device_id,
+                    'status'    => $status,
+                    'response'  => (string) $e->getResponse()->getBody(),
+                ]);
+            } else {
+                Log::channel('epscenter')->error('Error al enviar registro a EPS Center', [
+                    'device_id' => $registro->device_id,
+                    'error'     => $e->getMessage(),
+                ]);
+            }
+
+            return false;
         }
     }
 }

@@ -12,7 +12,7 @@ class CreateEpscenterTableAndAddDeviceColumns extends Migration
             $table->id();
             $table->unsignedInteger('device_id')->index();
             $table->unsignedSmallInteger('id_empresa')->default(22);
-            $table->unsignedInteger('id_transporte')->nullable();
+            $table->string('id_transporte', 15)->nullable();
             $table->string('telefono', 12)->nullable();
             $table->double('latitud', 15, 8)->nullable();
             $table->double('longitud', 15, 8)->nullable();
