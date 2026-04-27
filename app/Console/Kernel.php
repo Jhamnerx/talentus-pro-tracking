@@ -109,6 +109,16 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping();
 
         $schedule
+            ->command('alerts:check')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule
+            ->command('events:check')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule
             ->command('schedules:check')
             ->everyMinute();
 
@@ -130,7 +140,8 @@ class Kernel extends ConsoleKernel
 
         $schedule
             ->command('server:check')
-            ->daily();
+            ->daily()
+            ->withoutOverlapping();
 
         $schedule
             ->command('sharing:clean')
@@ -138,6 +149,7 @@ class Kernel extends ConsoleKernel
 
         $schedule
             ->command('checklists:archive')
+            ->everyMinute()
             ->withoutOverlapping();
 
         $schedule
@@ -145,19 +157,42 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping();
 
-        //WEB SERVICES JOBS
-        $schedule->job(new DispatchSutranJobs)->everyMinute();
-        $schedule->job(new DispatchComsatelJobs)->everyMinute();
-        $schedule->job(new DispatchOsinergminJobs)->everyMinute();
-        $schedule->job(new DispatchMininterJobs)->everyMinute();
-        $schedule->job(new DispatchWisetrackJobs)->everyMinute();
-        $schedule->job(new DispatchSidersalesJobs)->everyMinute();
-        $schedule->job(new DispatchEpsCenterJobs)->everyMinute();
-        $schedule->job(new RenewSidersalesToken)->everyFifteenMinutes();
+        //WEB SERVICES JOBS — dispatch manejado por Supervisor, estos solo programan
+        $schedule->job(new DispatchSutranJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new DispatchComsatelJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new DispatchOsinergminJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new DispatchMininterJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new DispatchWisetrackJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new DispatchSidersalesJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new DispatchEpsCenterJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new RenewSidersalesToken)->everyFifteenMinutes()->withoutOverlapping();
         $schedule->job(new CleanOldLogsJob(10))->daily();
 
         // Comando para precalcular valores de odómetro cada 15 minutos
         $schedule->command('odometer:cache')->everyFifteenMinutes()->withoutOverlapping();
+
+        // Procesamiento de posiciones GPS (ProcessManager controla solapamiento)
+        $schedule->command('insert:run')->everyMinute();
+
+        // Regeneración de cámaras
+        $schedule->command('device_cameras:regenerate')->everyMinute()->withoutOverlapping();
+
+        // Reinicio del tracker cada hora en el minuto 1
+        $schedule->command('tracker:restart')->hourlyAt(1);
+
+        // Reportes diarios y semanales
+        $schedule->command('reports:daily daily')->everyThreeMinutes()->withoutOverlapping();
+        $schedule->command('reports:daily weekly')->everyThreeMinutes()->withoutOverlapping();
+
+        // Revisión de servicios
+        $schedule->command('service:check')->everyThreeMinutes()->withoutOverlapping();
+        $schedule->command('service:check_expire')->everyThreeMinutes()->withoutOverlapping();
+
+        // Tareas nocturnas
+        $schedule->command('backup:mysql')->dailyAt('03:00');
+        $schedule->command('logs:compress')->dailyAt('00:00');
+        $schedule->command('server:autoclean')->dailyAt('01:00');
+        $schedule->command('server:translations')->dailyAt('02:00');
     }
 
     /**
