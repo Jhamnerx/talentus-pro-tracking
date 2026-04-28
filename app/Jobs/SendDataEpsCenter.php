@@ -46,10 +46,6 @@ class SendDataEpsCenter implements ShouldQueue
 
         $query = EpsCenter::whereNotNull('id_transporte');
 
-        if (!empty($this->imeis)) {
-            $query->whereIn('id_transporte', $this->imeis);
-        }
-
         $registros = $query->offset($this->offset)
             ->limit($this->batchSize)
             ->get();
