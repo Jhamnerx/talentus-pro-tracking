@@ -705,7 +705,7 @@ class PositionsWriter
 
         $device->dataEpsCenter()->create([
             'device_id'     => $device->id,
-            'id_empresa'    => 22,
+            'id_empresa'    => 10,
             'id_transporte' => $idTransporte,
             'telefono'      => '999999999',
             'latitud'       => round($position->latitude, 8),
