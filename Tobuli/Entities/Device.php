@@ -113,6 +113,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'fuel_price',
         'fuel_per_km',
         'sim_number',
+        'operator_sim',
         'device_model',
         'plate_number',
         'vin',

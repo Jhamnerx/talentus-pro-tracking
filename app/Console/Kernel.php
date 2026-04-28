@@ -189,7 +189,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('service:check_expire')->everyThreeMinutes()->withoutOverlapping();
 
         // Tareas nocturnas
-        $schedule->command('backup:mysql')->dailyAt('03:00');
+        $schedule->command('backup:mysql')->hourly();
         $schedule->command('logs:compress')->dailyAt('00:00');
         $schedule->command('server:autoclean')->dailyAt('01:00');
         $schedule->command('server:translations')->dailyAt('02:00');

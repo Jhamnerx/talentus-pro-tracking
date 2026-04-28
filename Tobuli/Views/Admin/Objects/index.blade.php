@@ -73,6 +73,26 @@
                         ],
                     ) !!}
                 </div>
+                <div class="form-group" style="min-width: 150px;">
+                    {!! Form::select(
+                        'filter_operator_sim',
+                        [
+                            '' => 'Todos los operadores',
+                            'M2M' => 'M2M',
+                            'CUY' => 'CUY',
+                            'IOT' => 'IOT',
+                            'MOVISTAR' => 'MOVISTAR',
+                            'CLARO' => 'CLARO',
+                            'ENTEL' => 'ENTEL',
+                            'BITEL' => 'BITEL',
+                        ],
+                        request('filter_operator_sim'),
+                        [
+                            'class' => 'form-control',
+                            'data-filter' => 'true',
+                        ],
+                    ) !!}
+                </div>
                 <div class="form-group" style="min-width: 180px;">
                     {!! Form::select(
                         'filter_webservices',

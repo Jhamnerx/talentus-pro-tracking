@@ -45,6 +45,25 @@
             </div>
         @endif
 
+        <div class="form-group">
+            {!! Form::label('operator_sim', 'Operador SIM:') !!}
+            {!! Form::select(
+                'operator_sim',
+                [
+                    '' => '-- Sin operador --',
+                    'M2M' => 'M2M',
+                    'CUY' => 'CUY',
+                    'IOT' => 'IOT',
+                    'MOVISTAR' => 'MOVISTAR',
+                    'CLARO' => 'CLARO',
+                    'ENTEL' => 'ENTEL',
+                    'BITEL' => 'BITEL',
+                ],
+                $item->operator_sim,
+                ['class' => 'form-control'],
+            ) !!}
+        </div>
+
         @if (settings('plugins.sim_blocking.status') && Auth::user()->can('view', $item, 'msisdn'))
             <div class="form-group">
                 {!! Form::label('msisdn', trans('validation.attributes.msisdn') . ':') !!}

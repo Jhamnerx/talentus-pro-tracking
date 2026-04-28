@@ -1,4 +1,6 @@
-<?php namespace App\Console\Commands;
+<?php
+
+namespace App\Console\Commands;
 
 set_time_limit(0);
 
@@ -8,7 +10,8 @@ use App\Console\ProcessManager;
 use Symfony\Component\Console\Input\InputOption;
 use Tobuli\Helpers\Backup;
 
-class BackupMysqlCommand extends Command {
+class BackupMysqlCommand extends Command
+{
 	/**
 	 * The console command name.
 	 *
@@ -30,23 +33,23 @@ class BackupMysqlCommand extends Command {
 	 */
 	public function handle()
 	{
-        $this->processManager = new ProcessManager($this->name, $timeout = 604800, $limit = 1);
+		$this->processManager = new ProcessManager($this->name, $timeout = 604800, $limit = 1);
 
-        if ( ! $this->processManager->canProcess()) {
-            echo "Cant process \n";
-            return;
-        }
+		if (! $this->processManager->canProcess()) {
+			echo "Cant process \n";
+			return;
+		}
 
-        $settings = settings('backups');
-        $backup = new Backup\BackupService($settings);
+		$settings = settings('backups');
+		$backup = new Backup\BackupService($settings);
 
-        if ($this->option('force')) {
-            $backup->force();
-        } else {
-            $backup->auto();
-        }
+		if ($this->option('force')) {
+			$backup->force();
+		} else {
+			$backup->auto();
+		}
 
-        $this->line("Job done\n");
+		$this->line("Job done\n");
 	}
 
 	/**
@@ -66,8 +69,8 @@ class BackupMysqlCommand extends Command {
 	 */
 	protected function getOptions()
 	{
-        return array(
-            array('force', null, InputOption::VALUE_OPTIONAL, 'Force option.', null),
-        );
+		return array(
+			array('force', null, InputOption::VALUE_OPTIONAL, 'Force option.', null),
+		);
 	}
 }

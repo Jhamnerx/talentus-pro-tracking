@@ -28,10 +28,10 @@ class SendDataSutranBatch implements ShouldQueue
     public $tries = 3;
     public $timeout = 120;
 
-    public function __construct($offset, $batchSize, $service, $plates, $userId = null)
+    public function __construct($minId, $maxId, $service, $plates, $userId = null)
     {
-        $this->offset = $offset;
-        $this->batchSize = $batchSize;
+        $this->offset = $minId;   // reusa $offset para almacenar minId (sin romper serialización)
+        $this->batchSize = $maxId; // reusa $batchSize para almacenar maxId
         $this->service = $service;
         $this->plates = $plates;
         $this->userId = $userId;
@@ -45,13 +45,12 @@ class SendDataSutranBatch implements ShouldQueue
             $this->logService = app(LogService::class);
             $this->logService->setUserId($this->userId);
             $this->logService->logStart('Sutran', 'Iniciando procesamiento de tramas Sutran', [
-                'offset'    => $this->offset,
-                'batchSize' => $this->batchSize,
-                'plates'    => $this->plates,
+                'minId'  => $this->offset,
+                'maxId'  => $this->batchSize,
+                'plates' => $this->plates,
             ]);
 
-            $positions = Sutran::offset($this->offset)
-                ->limit($this->batchSize)
+            $positions = Sutran::whereBetween('id', [$this->offset, $this->batchSize])
                 ->whereIn('plate', $this->plates)
                 ->with('device')
                 ->get();

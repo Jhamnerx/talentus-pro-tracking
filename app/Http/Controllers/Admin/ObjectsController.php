@@ -67,6 +67,11 @@ class ObjectsController extends BaseController
             $query->where('devices.active', (bool)$input['filter_active']);
         }
 
+        // Filtro por operador SIM
+        if (isset($input['filter_operator_sim']) && $input['filter_operator_sim'] !== '') {
+            $query->where('devices.operator_sim', $input['filter_operator_sim']);
+        }
+
         // Filtro por webservices activos
         if (isset($input['filter_webservices']) && $input['filter_webservices'] !== '') {
             $webservice = $input['filter_webservices'];

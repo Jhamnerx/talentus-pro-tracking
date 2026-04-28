@@ -37,11 +37,17 @@ class DispatchSutranJobs implements ShouldQueue
 
             $service = $user->services['sutran'];
 
-            $batchSize = 5000; // Tamaño del lote
-            $totalRecords = Sutran::whereIn('plate', $plates)->count();
+            $batchSize = 5000;
 
-            for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-                SendDataSutranBatch::dispatch($i, $batchSize, $service, $plates, $user->id);
+            // Usar rangos de IDs en vez de offsets: los offsets se corrompen cuando
+            // un job anterior borra registros durante el procesamiento paralelo.
+            $ids = Sutran::whereIn('plate', $plates)
+                ->orderBy('id')
+                ->select('id')
+                ->pluck('id');
+
+            foreach ($ids->chunk($batchSize) as $chunk) {
+                SendDataSutranBatch::dispatch($chunk->first(), $chunk->last(), $service, $plates, $user->id);
             }
         }
     }

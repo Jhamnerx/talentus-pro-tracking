@@ -692,10 +692,21 @@ class PositionsWriter
         $bateria    = (int) ceil($batteryPct / 20);
         $bateria    = max(1, min(5, $bateria ?: 5));
 
+        // Extraer el id_transporte del nombre del dispositivo (número después del '|')
+        // Ejemplo: "EPS CHACHAPOYAS | 1" → id_transporte = "1"
+        $idTransporte = null;
+        if (str_contains($device->name, '|')) {
+            $idTransporte = trim(explode('|', $device->name, 2)[1]);
+        }
+
+        if (empty($idTransporte)) {
+            return; // Sin id_transporte válido, no registrar
+        }
+
         $device->dataEpsCenter()->create([
             'device_id'     => $device->id,
             'id_empresa'    => 22,
-            'id_transporte' => $device->imei,
+            'id_transporte' => $idTransporte,
             'telefono'      => '999999999',
             'latitud'       => round($position->latitude, 8),
             'longitud'      => round($position->longitude, 8),
