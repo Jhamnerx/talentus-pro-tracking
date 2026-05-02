@@ -41,7 +41,7 @@ class DeviceFormValidator extends Validator
             'mininter' => 'boolean',
             'consatel' => 'boolean',
             'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|regex:/^\S+$/',
-            'device_type_id' => 'required',
+            'device_type_id' => 'nullable|exists:device_types,id',
             'object_owner' => 'required_if:wisetrack,1',
         ],
         'update' => [
@@ -73,7 +73,7 @@ class DeviceFormValidator extends Validator
             'mininter' => 'boolean',
             'consatel' => 'boolean',
             'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|regex:/^\S+$/',
-            'device_type_id' => 'required',
+            'device_type_id' => 'nullable|exists:device_types,id',
             'object_owner' => 'required_if:wisetrack,1',
         ],
     ];

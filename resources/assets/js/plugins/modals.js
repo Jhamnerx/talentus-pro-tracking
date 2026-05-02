@@ -283,7 +283,13 @@ var $modal = {
           modal.find('a[href="#' + tab + '"]').addClass("has-error");
         }
       } else {
-        $(errorContainer, modal).prepend(error_block);
+        var alert_block =
+          '<div class="alert alert-danger help-block error input_error_' +
+          name +
+          '" style="margin-bottom:8px">' +
+          value +
+          "</div>";
+        $(errorContainer, modal).prepend(alert_block);
       }
     });
 
