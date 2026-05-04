@@ -27,7 +27,7 @@ class FtpHandler
 
     public function get(string $localFile, string $remoteFile, int $mode = FTP_BINARY, int $offset = 0): bool
     {
-        return $this->execute(fn () => ftp_get($this->getConn(), $localFile, $remoteFile, $mode, $offset));
+        return $this->execute(fn () => ftp_get($this->getConn(), $localFile, $this->path . $remoteFile, $mode, $offset));
     }
 
     /**
