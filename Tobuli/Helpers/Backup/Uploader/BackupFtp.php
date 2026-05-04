@@ -266,15 +266,42 @@ class BackupFtp implements BackupUploaderInterface
     private function downloadFile(string $path): string
     {
         $localPath = storage_path('cache/' . basename($path));
+        $localDir  = dirname($localPath);
 
-        if (!is_dir(dirname($localPath))) {
-            mkdir(dirname($localPath), 0775, true);
+        if (!is_dir($localDir)) {
+            mkdir($localDir, 0775, true);
+            @chmod($localDir, 0775);
         }
 
-        $result = $this->handler->get($localPath, $path);
+        if (!is_writable($localDir)) {
+            throw new \RuntimeException(
+                "Local cache directory is not writable: {$localDir}\n" .
+                "Run: chmod 775 {$localDir}"
+            );
+        }
+
+        try {
+            $result = $this->handler->get($localPath, $path);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(
+                "FTP download failed.\n" .
+                "  Remote path : {$path}\n" .
+                "  Local path  : {$localPath}\n" .
+                "  Dir exists  : " . (is_dir($localDir) ? 'yes' : 'no') . "\n" .
+                "  Dir writable: " . (is_writable($localDir) ? 'yes' : 'no') . "\n" .
+                "  PHP open_basedir: " . (ini_get('open_basedir') ?: '(not set)') . "\n" .
+                "  Original error: " . $e->getMessage(),
+                0,
+                $e
+            );
+        }
 
         if ($result === false || !file_exists($localPath) || filesize($localPath) === 0) {
-            throw new \RuntimeException("Failed to download backup file from FTP: $path → $localPath");
+            throw new \RuntimeException(
+                "FTP download returned no data.\n" .
+                "  Remote path : {$path}\n" .
+                "  Local path  : {$localPath}"
+            );
         }
 
         return $localPath;
