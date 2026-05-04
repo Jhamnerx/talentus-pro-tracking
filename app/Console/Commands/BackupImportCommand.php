@@ -82,6 +82,11 @@ class BackupImportCommand extends Command
 
         $file = $this->ftp->getMainDbFile($this->folder);
 
+        if ($file === null) {
+            $this->error('Main DB file not found in backup folder. Expected filename pattern: ' . \Tobuli\Helpers\Backup\Uploader\BackupFtp::getDatabaseFilename(\Illuminate\Support\Facades\DB::getConfig()) . '*');
+            throw new \RuntimeException('Main DB backup file not found on FTP. Check that DB_HOST in .env matches the backup filename prefix.');
+        }
+
         dispatch_sync(new DatabaseImportJob(DB::getConfig(), $file, null));
 
         $this->line('Main DB successfully restored');
@@ -159,9 +164,9 @@ class BackupImportCommand extends Command
             throw new \RuntimeException('No backups found');
         }
 
-        $items = array_map(fn (FileMeta $item) => $item->getName(), $items);
+        $items = array_map(fn(FileMeta $item) => $item->getName(), $items);
 
-        usort($items, fn ($a, $b) => strcmp($b, $a));
+        usort($items, fn($a, $b) => strcmp($b, $a));
 
         while (!is_numeric($choice)) {
             $pageItems = array_slice($items, $page * self::PAGE_SIZE, self::PAGE_SIZE);

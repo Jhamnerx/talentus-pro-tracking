@@ -28,6 +28,7 @@ use CustomFacades\ModalHelpers\DeviceModalHelper;
 use CustomFacades\Validators\DeviceImageValidator;
 ```
 
+W
 These are registered in `config/app.php` under the 'aliases' section with the `CustomFacades\` prefix.
 
 ### 2. ModalHelpers for Request Processing

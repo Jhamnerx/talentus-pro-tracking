@@ -233,7 +233,7 @@ class BackupFtp implements BackupUploaderInterface
             $rows = [$rows];
         }
 
-        return array_map(fn ($row) => FileMeta::fromFtpRaw($row, $dir), $rows);
+        return array_map(fn($row) => FileMeta::fromFtpRaw($row, $dir), $rows);
     }
 
     public function getMainDbFile(string $folder): ?string
@@ -267,7 +267,15 @@ class BackupFtp implements BackupUploaderInterface
     {
         $localPath = storage_path('cache/' . basename($path));
 
-        $this->handler->get($localPath, $path);
+        if (!is_dir(dirname($localPath))) {
+            mkdir(dirname($localPath), 0775, true);
+        }
+
+        $result = $this->handler->get($localPath, $path);
+
+        if ($result === false || !file_exists($localPath) || filesize($localPath) === 0) {
+            throw new \RuntimeException("Failed to download backup file from FTP: $path → $localPath");
+        }
 
         return $localPath;
     }

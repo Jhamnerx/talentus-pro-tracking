@@ -2,8 +2,8 @@
 return [
     'device_limit' => env('limit'),
     'floating_ip' => env('FLOATING_IP'),
-    'device_memory_limit' => env('OBJECT_MEMORY_LIMIT', '2048M'),
-    'report_memory_limit' => env('REPORT_MEMORY_LIMIT', '6144M'),
+    'device_memory_limit' => env('OBJECT_MEMORY_LIMIT', '4096M'),
+    'report_memory_limit' => env('REPORT_MEMORY_LIMIT', '8192M'),
     'login_redirect_route' => env('LOGIN_REDIRECT_ROUTE', null),
     'entity_loader_page_limit' => env('ENTITY_LOADER_PAGE_LIMIT', 100),
 
