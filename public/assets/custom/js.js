@@ -558,29 +558,57 @@ a[href=\"#routes_edit\"] {
 	
 }
 
-.sign-in-layout .btn {
-	 font-size: 1.1em;
-	 font-weight: 700;
-	 border-radius: 10px;
+/* —— Login: inputs ————————————————————————————— */
+.sign-in-layout .form-group {
+	 margin-bottom: 14px;
+	
+}
+
+.sign-in-layout .input-wrapper {
+	 position: relative;
+	
+}
+
+.sign-in-layout .input-icon-right {
+	 position: absolute;
+	 right: 12px;
+	 top: 50%;
+	 transform: translateY(-50%);
+	 width: 20px;
+	 height: 20px;
+	 cursor: pointer;
+	 opacity: 0.55;
+	 transition: opacity .2s;
+	 z-index: 5;
+	
+}
+
+.sign-in-layout .input-icon-right:hover {
+	 opacity: 1;
 	
 }
 
 #password-reminder-form input[name=\"email\"],
-input#sign-in-form-email {
-	 background-image: url(assets/custom/icons/email.svg) !important;
-	 background-size: 20px;
-	 background-position: 95% center;
-	 background-repeat: no-repeat;
-	 background-color: rgba(255, 255, 255, 0.45);
+input#sign-in-form-email,
+input#sign-in-form-password {
+	 background-image: none !important;
+	 background-color: rgba(255, 255, 255, 0.55);
+	 border: 1.5px solid rgba(255,255,255,0.35);
+	 border-radius: 10px;
+	 padding-left: 14px;
+	 padding-right: 42px;
+	 backdrop-filter: blur(4px);
+	 transition: border-color .2s, background-color .2s;
 	
 }
 
-input#sign-in-form-password {
-	 background-image: url(assets/custom/icons/password.svg) !important;
-	 background-size: 20px;
-	 background-position: 95% center;
-	 background-repeat: no-repeat;
-	 background-color: rgba(255, 255, 255, 0.45);
+#password-reminder-form input[name=\"email\"]:focus,
+input#sign-in-form-email:focus,
+input#sign-in-form-password:focus {
+	 background-color: rgba(255, 255, 255, 0.80);
+	 border-color: rgba(255,255,255,0.8);
+	 outline: none;
+	 box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
 	
 }
 
@@ -590,12 +618,49 @@ input#sign-in-form-password {
 }
 
 .sign-in-layout .form-control {
-	 font-size: 1.2em;
-	 height: 40px;
-	 font-weight: 600;
+	 font-size: 1.05em;
+	 height: 44px;
+	 font-weight: 500;
 	
 }
 
+/* —— Login: botón principal ———————————————————————— */
+.sign-in-layout .btn-primary {
+	 font-size: 1em;
+	 font-weight: 700;
+	 letter-spacing: 0.5px;
+	 border-radius: 10px;
+	 height: 44px;
+	 border: none;
+	 background: var(--base);
+	 color: var(--white);
+	 transition: filter .2s, transform .1s;
+	
+}
+
+.sign-in-layout .btn-primary:hover {
+	 filter: brightness(1.15);
+	 transform: translateY(-1px);
+	
+}
+
+.sign-in-layout .btn-default {
+	 font-size: 0.9em;
+	 font-weight: 600;
+	 border-radius: 10px;
+	 height: 38px;
+	 background: transparent;
+	 border: 1.5px solid rgba(255,255,255,0.45);
+	 transition: background .2s;
+	
+}
+
+.sign-in-layout .btn-default:hover {
+	 background: rgba(255,255,255,0.15);
+	
+}
+
+/* —— Login: logo ————————————————————————————————— */
 .sign-in-layout img.img-responsive.center-block {
 	 width: auto;
 	 max-width: 270px;
@@ -608,6 +673,73 @@ body.sign-in-layout .plan {
 	
 }
 
+/* —— App store badges ———————————————————————————— */
+.sign-in-layout .app-links {
+	 display: flex;
+	 gap: 10px;
+	 justify-content: center;
+	 margin-top: 14px;
+	
+}
+
+.sign-in-layout .app-links .col-xs-6,
+.sign-in-layout .app-links .app-google,
+.sign-in-layout .app-links .app-apple {
+	 width: auto;
+	 padding: 0;
+	 float: none;
+	
+}
+
+.sign-in-layout .app-links a {
+	 display: flex;
+	 align-items: center;
+	 gap: 8px;
+	 padding: 7px 14px;
+	 border-radius: 10px;
+	 background: rgba(0,0,0,0.6);
+	 color: #fff;
+	 text-decoration: none;
+	 font-size: 0.82em;
+	 font-weight: 600;
+	 line-height: 1.2;
+	 transition: background .2s;
+	 white-space: nowrap;
+	
+}
+
+.sign-in-layout .app-links a:hover {
+	 background: rgba(0,0,0,0.82);
+	
+}
+
+.sign-in-layout .app-links a img {
+	 display: none;
+	
+}
+
+.sign-in-layout .app-links a::before {
+	 content: '';
+	 display: inline-block;
+	 width: 22px;
+	 height: 22px;
+	 background-size: contain;
+	 background-repeat: no-repeat;
+	 background-position: center;
+	 flex-shrink: 0;
+	
+}
+
+.sign-in-layout .app-links .app-google a::before {
+	 background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M3.18 23.76c.3.16.64.24.98.22l12-12.01L12.73 8.5 3.18 23.76zm15.76-13.05-3.13-1.77-3.43 3.43 3.43 3.43 3.15-1.79a1.8 1.8 0 0 0 0-3.3zM3 .99C2.69 1.2 2.5 1.55 2.5 2v20c0 .45.19.8.5 1.01L14.27 12 3 .99zm9.73 10.08L3 .99c.19-.13.42-.2.66-.21.35 0 .7.1.99.27l9.62 16.71-3.54-7.69z'/%3E%3C/svg%3E\");
+	
+}
+
+.sign-in-layout .app-links .app-apple a::before {
+	 background-image: url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23fff' d='M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.37 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z'/%3E%3C/svg%3E\");
+	
+}
+
 .sign-in-layout .center-vertical {
 	 height: 100% !important;
 	
@@ -616,11 +748,11 @@ body.sign-in-layout .plan {
 .sign-in-layout .container {
 	 height: 80vh;
 	 width: 350px;
-	 margin-right: 0;
+	 margin-left: 5vh;
+	 margin-right: auto;
 	 padding: 0;
 	 display: flex;
 	 margin-top: 10vh;
-	 margin-right: 5vh;
 	 border-radius: 20px;
 	
 }

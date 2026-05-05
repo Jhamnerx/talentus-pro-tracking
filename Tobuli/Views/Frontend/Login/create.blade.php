@@ -52,17 +52,25 @@
     @if ( Appearance::getSetting('google_play_link') || Appearance::getSetting('apple_store_link') )
         <div class="app-links">
             @if ( Appearance::getSetting('google_play_link') )
-                <div class="col-xs-6">
-                    <a href="{{ Appearance::getSetting('google_play_link') }}" target="_blank"><img src="{{ asset('assets/images/google-play.png') }}" class="img-responsive" /></a>
+                <div class="app-google">
+                    <a href="{{ Appearance::getSetting('google_play_link') }}" target="_blank">
+                        <span>
+                            <small style="font-size:0.7em;font-weight:400;display:block">GET IT ON</small>
+                            Google Play
+                        </span>
+                    </a>
                 </div>
             @endif
-
             @if ( Appearance::getSetting('apple_store_link') )
-                <div class="col-xs-6">
-                    <a href="{{ Appearance::getSetting('apple_store_link') }}" target="_blank"><img src="{{ asset('assets/images/apple-store.png') }}" class="img-responsive" /></a>
+                <div class="app-apple">
+                    <a href="{{ Appearance::getSetting('apple_store_link') }}" target="_blank">
+                        <span>
+                            <small style="font-size:0.7em;font-weight:400;display:block">Download on the</small>
+                            App Store
+                        </span>
+                    </a>
                 </div>
             @endif
-            <div class="clearfix"></div>
         </div>
     @endif
 
