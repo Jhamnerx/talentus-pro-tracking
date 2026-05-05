@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use CustomFacades\Repositories\DeviceRepo;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Services\DeviceVideoService;
@@ -426,5 +427,101 @@ class DeviceVideoController extends Controller
         $channel = (int) ($this->data['channel'] ?? 1);
 
         return $this->json($this->videoService->stopRecording($device, $channel));
+    }
+
+    // =========================================================================
+    // Búsqueda y reproducción de grabaciones — página reproductora
+    // =========================================================================
+
+    /**
+     * GET /device_video/playback
+     *
+     * Página de búsqueda y reproducción de grabaciones (filesSearch + playbackStart).
+     * Muestra todos los dispositivos del usuario con protocolo de video soportado.
+     */
+    public function playbackPage()
+    {
+        $devices = DeviceRepo::whereUserId($this->user->id)
+            ->filter(function ($d) {
+                return in_array(strtolower($d->protocol ?? ''), ['howen', 'jt808', 'jt1078'])
+                    && $d->traccar_device_id;
+            })
+            ->sortBy('name')
+            ->values();
+
+        return view('front::DeviceVideo.playback', compact('devices'));
+    }
+
+    // =========================================================================
+    // Video en vivo HLS — página reproductora + proxy de stream
+    // =========================================================================
+
+    /**
+     * GET /device_video/{device_id}/live
+     *
+     * Página del reproductor de video en vivo (HLS).
+     * Soporta: jt808 (JT1078) y howen.
+     */
+    public function livePage(int $deviceId)
+    {
+        $device = $this->findDevice($deviceId);
+
+        if (! $this->videoService->isSupported($device)) {
+            abort(404, 'El protocolo del dispositivo no soporta video en vivo.');
+        }
+
+        return view('front::DeviceVideo.live', compact('device'));
+    }
+
+    /**
+     * GET /device_video/{device_id}/stream/{file}
+     *
+     * Proxy del stream HLS (.m3u8 / .ts) desde Traccar al navegador.
+     * Reescribe las URLs de segmentos en la playlist para que sigan
+     * pasando a través de este proxy (no expone Traccar directamente).
+     *
+     * Ejemplos:
+     *   GET /device_video/42/stream/live.m3u8
+     *   GET /device_video/42/stream/segment0.ts
+     */
+    public function streamProxy(int $deviceId, string $file): Response
+    {
+        $device = $this->findDevice($deviceId);
+
+        $config     = config('tracker');
+        $traccarUrl = rtrim($this->videoService->getUrl(), '/') . ':' . $config['web.port'];
+        $streamUrl  = "{$traccarUrl}/api/stream/{$device->traccar_device_id}/{$file}";
+
+        $ch = curl_init($streamUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT        => 30,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Basic ' . base64_encode('admin:' . config('app.admin_user')),
+            ],
+        ]);
+
+        $body     = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $mimeType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE) ?: 'application/octet-stream';
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            abort($httpCode ?: 502, 'Error al obtener stream de Traccar');
+        }
+
+        // Reescribir URLs de segmentos .ts para que sigan pasando por el proxy
+        if (str_ends_with($file, '.m3u8')) {
+            $proxyBase = url("device_video/{$deviceId}/stream/");
+            $body      = preg_replace('/^([\w\-]+\.ts)$/m', $proxyBase . '$1', $body);
+            $mimeType  = 'application/vnd.apple.mpegurl';
+        }
+
+        return response($body, 200, [
+            'Content-Type'                => $mimeType,
+            'Access-Control-Allow-Origin' => '*',
+            'Cache-Control'               => 'no-cache, no-store, must-revalidate',
+        ]);
     }
 }

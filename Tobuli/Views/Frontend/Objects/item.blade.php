@@ -205,6 +205,15 @@
                         </a>
                     </li>
                 @endif
+
+                @if (in_array($item->protocol, ['jt808', 'howen']) && $item->traccar_device_id)
+                    <li>
+                        <a href="{{ route('device_video.live.page', $item->id) }}" target="_blank">
+                            <span class="icon play"></span>
+                            <span class="text">{{ trans('front.live_video') }}</span>
+                        </a>
+                    </li>
+                @endif
                 @php
                     $cam = false;
                 @endphp

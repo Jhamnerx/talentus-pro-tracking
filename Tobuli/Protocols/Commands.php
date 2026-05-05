@@ -24,6 +24,9 @@ class Commands
     const TYPE_SET_TIMEZONE = "setTimezone";
     const TYPE_REQUEST_PHOTO = "requestPhoto";
     const TYPE_REQUEST_VIDEO = "requestVideo";
+    const TYPE_VIDEO_START = "videoStart";
+    const TYPE_VIDEO_STOP = "videoStop";
+    const TYPE_AUDIO_LISTEN = "audioListen";
     const TYPE_REBOOT_DEVICE = "rebootDevice";
     const TYPE_SEND_SMS = "sendSms";
     const TYPE_SEND_USSD = "sendUssd";
@@ -44,10 +47,10 @@ class Commands
     const TYPE_DOOR_OPEN = "doorOpen";
     const TYPE_DOOR_CLOSE = "doorClose";
     const TYPE_TEMPLATE = "template";
-    
+
     const TYPE_MODE_POWER_SAVING = "modePowerSaving";
     const TYPE_MODE_DEEP_SLEEP = "modeDeepSleep";
-    
+
     const TYPE_ALARM_GEOFENCE = "movementAlarm";
     const TYPE_ALARM_BATTERY = "alarmBattery";
     const TYPE_ALARM_SOS = "alarmSos";
@@ -56,7 +59,7 @@ class Commands
     const TYPE_ALARM_SPEED = "alarmSpeed";
     const TYPE_ALARM_FALL = "alarmFall";
     const TYPE_ALARM_VIBRATION = "alarmVibration";
-    
+
     const KEY_UNIQUE_ID = "uniqueId";
     const KEY_FREQUENCY = "frequency";
     const KEY_TIMEZONE = "timezone";
@@ -84,7 +87,7 @@ class Commands
                 'attributes' => collect([
                     Field::text(self::KEY_DATA, trans('validation.attributes.message'))
                         ->setRequired()
-                        ->setDescription(trans('front.raw_command_supports') .'<br><br>'. trans('front.gprs_template_variables')),
+                        ->setDescription(trans('front.raw_command_supports') . '<br><br>' . trans('front.gprs_template_variables')),
                 ])
             ],
             self::TYPE_SERIAL => [
@@ -93,7 +96,7 @@ class Commands
                 'attributes' => collect([
                     Field::text(self::KEY_DATA, trans('validation.attributes.message'))
                         ->setRequired()
-                        ->setDescription(trans('front.raw_command_supports') .'<br><br>'. trans('front.gprs_template_variables')),
+                        ->setDescription(trans('front.raw_command_supports') . '<br><br>' . trans('front.gprs_template_variables')),
                 ])
             ],
             self::TYPE_GET_VERSION => [
@@ -238,6 +241,18 @@ class Commands
                 'type' => self::TYPE_REQUEST_VIDEO,
                 'title' => trans('front.request_video')
             ],
+            self::TYPE_VIDEO_START => [
+                'type' => self::TYPE_VIDEO_START,
+                'title' => trans('front.video_start')
+            ],
+            self::TYPE_VIDEO_STOP => [
+                'type' => self::TYPE_VIDEO_STOP,
+                'title' => trans('front.video_stop')
+            ],
+            self::TYPE_AUDIO_LISTEN => [
+                'type' => self::TYPE_AUDIO_LISTEN,
+                'title' => trans('front.audio_listen')
+            ],
             self::TYPE_ENGINE_STOP => [
                 'type' => self::TYPE_ENGINE_STOP,
                 'title' => trans('front.engine_stop')
@@ -372,8 +387,7 @@ class Commands
     {
         $rules = [];
 
-        foreach ($commands as $command)
-        {
+        foreach ($commands as $command) {
             if ($command['type'] != $type)
                 continue;
 

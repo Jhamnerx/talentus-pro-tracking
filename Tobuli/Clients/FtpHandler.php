@@ -27,7 +27,7 @@ class FtpHandler
 
     public function get(string $localFile, string $remoteFile, int $mode = FTP_BINARY, int $offset = 0): bool
     {
-        return $this->execute(fn () => ftp_get($this->getConn(), $localFile, $this->path . $remoteFile, $mode, $offset));
+        return $this->execute(fn() => ftp_get($this->getConn(), $localFile, $this->path . $remoteFile, $mode, $offset));
     }
 
     /**
@@ -35,7 +35,7 @@ class FtpHandler
      */
     public function rawlist(string $directory, bool $recursive = false)
     {
-        return $this->execute(fn () => ftp_rawlist($this->getConn(), $this->path . $directory, $recursive));
+        return $this->execute(fn() => ftp_rawlist($this->getConn(), $this->path . $directory, $recursive));
     }
 
     private function execute(\Closure $callback)

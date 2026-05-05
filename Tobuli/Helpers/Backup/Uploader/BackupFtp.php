@@ -276,7 +276,7 @@ class BackupFtp implements BackupUploaderInterface
         if (!is_writable($localDir)) {
             throw new \RuntimeException(
                 "Local cache directory is not writable: {$localDir}\n" .
-                "Run: chmod 775 {$localDir}"
+                    "Run: chmod 775 {$localDir}"
             );
         }
 
@@ -285,12 +285,12 @@ class BackupFtp implements BackupUploaderInterface
         } catch (\Throwable $e) {
             throw new \RuntimeException(
                 "FTP download failed.\n" .
-                "  Remote path : {$path}\n" .
-                "  Local path  : {$localPath}\n" .
-                "  Dir exists  : " . (is_dir($localDir) ? 'yes' : 'no') . "\n" .
-                "  Dir writable: " . (is_writable($localDir) ? 'yes' : 'no') . "\n" .
-                "  PHP open_basedir: " . (ini_get('open_basedir') ?: '(not set)') . "\n" .
-                "  Original error: " . $e->getMessage(),
+                    "  Remote path : {$path}\n" .
+                    "  Local path  : {$localPath}\n" .
+                    "  Dir exists  : " . (is_dir($localDir) ? 'yes' : 'no') . "\n" .
+                    "  Dir writable: " . (is_writable($localDir) ? 'yes' : 'no') . "\n" .
+                    "  PHP open_basedir: " . (ini_get('open_basedir') ?: '(not set)') . "\n" .
+                    "  Original error: " . $e->getMessage(),
                 0,
                 $e
             );
@@ -299,8 +299,8 @@ class BackupFtp implements BackupUploaderInterface
         if ($result === false || !file_exists($localPath) || filesize($localPath) === 0) {
             throw new \RuntimeException(
                 "FTP download returned no data.\n" .
-                "  Remote path : {$path}\n" .
-                "  Local path  : {$localPath}"
+                    "  Remote path : {$path}\n" .
+                    "  Local path  : {$localPath}"
             );
         }
 

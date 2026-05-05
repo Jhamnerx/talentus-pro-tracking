@@ -412,6 +412,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::resource('device_camera', 'DeviceCamerasController', ['only' => ['store', 'edit', 'destroy']]);
 
     # Device video (Howen MDVR)
+    Route::get('device_video/playback', ['as' => 'device_video.playback.page', 'uses' => 'DeviceVideoController@playbackPage']);
     Route::get('device_video/{device_id}/capabilities', ['as' => 'device_video.capabilities', 'uses' => 'DeviceVideoController@capabilities']);
     Route::get('device_video/{device_id}/status', ['as' => 'device_video.status', 'uses' => 'DeviceVideoController@status']);
     Route::post('device_video/{device_id}/live/start', ['as' => 'device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
@@ -426,6 +427,9 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('device_video/{device_id}/event-clip', ['as' => 'device_video.event_clip', 'uses' => 'DeviceVideoController@eventClip']);
     Route::post('device_video/{device_id}/recording/start', ['as' => 'device_video.recording.start', 'uses' => 'DeviceVideoController@recordingStart']);
     Route::post('device_video/{device_id}/recording/stop', ['as' => 'device_video.recording.stop', 'uses' => 'DeviceVideoController@recordingStop']);
+    Route::get('device_video/{device_id}/live', ['as' => 'device_video.live.page', 'uses' => 'DeviceVideoController@livePage']);
+    Route::get('device_video/{device_id}/stream/{file}', ['as' => 'device_video.stream.proxy', 'uses' => 'DeviceVideoController@streamProxy'])
+        ->where('file', '.*');
 
     # SMS gateway
     Route::get('sms_gateway/test_sms', ['as' => 'sms_gateway.test_sms', 'uses' => 'SmsGatewayController@testSms']);
