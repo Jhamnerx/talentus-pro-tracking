@@ -1529,6 +1529,7 @@ function listsTranslations()
         'gprs_command' => trans('front.gprs_command'),
         'recent_events' => trans('front.recent_events'),
         'driver' => trans('front.driver'),
+        'live_video' => trans('front.live_video'),
     ];
 
     if (! settings('main_settings.streetview_key') && (settings('main_settings.streetview_api') != 'default')) {

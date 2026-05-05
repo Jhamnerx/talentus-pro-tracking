@@ -474,6 +474,22 @@ class DeviceVideoController extends Controller
     }
 
     /**
+     * GET /device_video/{device_id}/live/modal
+     *
+     * Contenido AJAX del modal del reproductor de video en vivo.
+     */
+    public function liveModal(int $deviceId)
+    {
+        $device = $this->findDevice($deviceId);
+
+        if (! $this->videoService->isSupported($device)) {
+            abort(404, 'El protocolo del dispositivo no soporta video en vivo.');
+        }
+
+        return view('front::DeviceVideo.live_modal', compact('device'));
+    }
+
+    /**
      * GET /device_video/{device_id}/stream/{file}
      *
      * Proxy del stream HLS (.m3u8 / .ts) desde Traccar al navegador.

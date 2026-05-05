@@ -208,7 +208,10 @@
 
                 @if (in_array($item->protocol, ['jt808', 'howen']) && $item->traccar_device_id)
                     <li>
-                        <a href="{{ route('device_video.live.page', $item->id) }}" target="_blank">
+                        <a href="javascript:"
+                           data-url="{{ route('device_video.live.modal', $item->id) }}"
+                           data-modal="device_video_live_{{ $item->id }}"
+                           role="button">
                             <span class="icon play"></span>
                             <span class="text">{{ trans('front.live_video') }}</span>
                         </a>

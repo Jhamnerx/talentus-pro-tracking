@@ -428,6 +428,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('device_video/{device_id}/recording/start', ['as' => 'device_video.recording.start', 'uses' => 'DeviceVideoController@recordingStart']);
     Route::post('device_video/{device_id}/recording/stop', ['as' => 'device_video.recording.stop', 'uses' => 'DeviceVideoController@recordingStop']);
     Route::get('device_video/{device_id}/live', ['as' => 'device_video.live.page', 'uses' => 'DeviceVideoController@livePage']);
+    Route::get('device_video/{device_id}/live/modal', ['as' => 'device_video.live.modal', 'uses' => 'DeviceVideoController@liveModal']);
     Route::get('device_video/{device_id}/stream/{file}', ['as' => 'device_video.stream.proxy', 'uses' => 'DeviceVideoController@streamProxy'])
         ->where('file', '.*');
 
