@@ -49,6 +49,11 @@ class DeviceVideoService
     /**
      * Valida que el Device tenga traccar_device_id asignado.
      */
+    public function getUrl($external = false): string
+    {
+        return $this->tracker->getUrl($external);
+    }
+
     private function assertHasTraccarId(Device $device): void
     {
         if (! $device->traccar_device_id) {
