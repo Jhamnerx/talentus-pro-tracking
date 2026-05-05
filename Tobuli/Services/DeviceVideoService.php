@@ -13,15 +13,22 @@ use Tobuli\Protocols\Video\BaseVideoProtocol;
  *
  * Responsabilidades de esta clase:
  *  - Validar que el Device tenga traccar_device_id
- *  - Proveer el transporte HTTP hacia Traccar (heredado de Tracker)
+ *  - Proveer el transporte HTTP hacia Traccar (vía Tracker inyectado)
  *  - Delegar cada operación al VideoProtocol correspondiente vía VideoManager
  *
  * Para añadir soporte a un nuevo protocolo basta con crear:
  *   Tobuli/Protocols/Video/{NombreProtocolo}VideoProtocol.php
  * sin modificar esta clase ni el controlador.
  */
-class DeviceVideoService extends Tracker
+class DeviceVideoService
 {
+    private Tracker $tracker;
+
+    public function __construct()
+    {
+        $this->tracker = new Tracker();
+    }
+
     // =========================================================================
     // Resolución de protocolo
     // =========================================================================
@@ -34,7 +41,7 @@ class DeviceVideoService extends Tracker
     {
         return (new VideoManager)->protocol(
             $device->protocol ?? '',
-            fn($endpoint, $data) => $this->api($endpoint, $data),
+            fn($endpoint, $data) => $this->tracker->api($endpoint, $data),
             fn($endpoint)        => $this->apiGet($endpoint)
         );
     }
@@ -65,7 +72,7 @@ class DeviceVideoService extends Tracker
         $curl->options['CURLOPT_RETURNTRANSFER'] = true;
 
         $config = config('tracker');
-        $url    = $this->getUrl() . ':' . $config['web.port'] . '/' . $endpoint;
+        $url    = $this->tracker->getUrl() . ':' . $config['web.port'] . '/' . $endpoint;
 
         try {
             $response = $curl->get($url);

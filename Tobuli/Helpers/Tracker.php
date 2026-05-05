@@ -345,7 +345,7 @@ class Tracker
      * @param array $data
      * @return array
      */
-    protected function api($endpoint, $data = [])
+    public function api($endpoint, $data = [])
     {
         $curl = new \Curl;
 
