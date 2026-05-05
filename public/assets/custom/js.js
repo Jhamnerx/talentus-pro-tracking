@@ -577,7 +577,8 @@ a[href=\"#routes_edit\"] {
 	 width: 20px;
 	 height: 20px;
 	 cursor: pointer;
-	 opacity: 0.55;
+	 opacity: 0.4;
+	 color: #444;
 	 transition: opacity .2s;
 	 z-index: 5;
 	
@@ -649,14 +650,17 @@ input#sign-in-form-password:focus {
 	 font-weight: 600;
 	 border-radius: 10px;
 	 height: 38px;
-	 background: transparent;
-	 border: 1.5px solid rgba(255,255,255,0.45);
-	 transition: background .2s;
+	 background: rgba(255,255,255,0.12);
+	 border: 1.5px solid rgba(255,255,255,0.55);
+	 color: #ffffff !important;
+	 text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+	 transition: background .2s, border-color .2s;
 	
 }
 
 .sign-in-layout .btn-default:hover {
-	 background: rgba(255,255,255,0.15);
+	 background: rgba(255,255,255,0.25);
+	 border-color: rgba(255,255,255,0.85);
 	
 }
 
