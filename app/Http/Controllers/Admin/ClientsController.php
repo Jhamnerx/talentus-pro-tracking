@@ -1059,7 +1059,9 @@ class ClientsController extends BaseController
 
         if (request()->boolean('for_monitoring')) {
             $usersLoader->setQueryItems(
-                $usersLoader->getQueryItems()->notUser($this->user)
+                $usersLoader->getQueryItems()
+                    ->whereIn('group_id', [1, 3, 5, 6])
+                    ->notUser($this->user)
             );
         } else {
             $usersLoader->setQueryItems(
