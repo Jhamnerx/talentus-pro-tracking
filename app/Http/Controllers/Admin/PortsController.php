@@ -120,7 +120,6 @@ class PortsController extends BaseController
         parsePorts();
 
         $tracker = new Tracker();
-        $tracker->config()->update();
         $tracker->actor($this->user)->restart();
 
         Session::flash('message', trans('admin.successfully_reset_default'));
