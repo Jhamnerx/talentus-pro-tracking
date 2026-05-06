@@ -124,6 +124,7 @@ return [
     'diem_rates' => 'Diem rates',
     'forwards' => 'Forwards',
     'group_6' => 'Supervisor',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'User created before days',
     'reminders_trans' => 'Reminders translations',
     'passwords_trans' => 'Passwords translations',

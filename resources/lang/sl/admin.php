@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Dnevnice',
     'forwards' => 'Naprej',
     'group_6' => 'Nadzornik',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Uporabnik ustvarjen pred dnevi',
     'reminders_trans' => 'Prevodi opomnikov',
     'passwords_trans' => 'Prevodi gesel',

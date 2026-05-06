@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'ອັດ​ຕາ​ການ​ເສຍ​ຊີ​ວິດ​',
     'forwards' => 'ສົ່ງຕໍ່',
     'group_6' => 'ຜູ້ຄຸມງານ',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'ຜູ້ໃຊ້ສ້າງກ່ອນມື້',
     'reminders_trans' => 'ການແປພາສາເຕືອນ',
     'passwords_trans' => 'ການແປລະຫັດຜ່ານ',

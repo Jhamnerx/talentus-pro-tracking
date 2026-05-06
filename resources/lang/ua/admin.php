@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Ставки добових',
     'forwards' => 'Нападаючі',
     'group_6' => 'Керівник',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Користувач створено раніше днів',
     'reminders_trans' => 'Переклади нагадувань',
     'passwords_trans' => 'Переклад паролів',

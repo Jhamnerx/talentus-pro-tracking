@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Normat ditore',
     'forwards' => 'Sulmuesit',
     'group_6' => 'Mbikëqyrësi',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Përdoruesi u krijua para disa ditësh',
     'reminders_trans' => 'Përkthime përkujtues',
     'passwords_trans' => 'Përkthime të fjalëkalimeve',

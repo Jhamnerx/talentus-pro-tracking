@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Stawki diet',
     'forwards' => 'Naprzód',
     'group_6' => 'Kierownik',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Użytkownik utworzony przed kilkoma dniami',
     'reminders_trans' => 'Przypomnienia tłumaczeń',
     'passwords_trans' => 'Tłumaczenia haseł',

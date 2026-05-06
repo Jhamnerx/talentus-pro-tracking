@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'อัตราเบี้ยเลี้ยง',
     'forwards' => 'ไปข้างหน้า',
     'group_6' => 'หัวหน้างาน',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'ผู้ใช้สร้างขึ้นก่อนวัน',
     'reminders_trans' => 'คำเตือนการแปล',
     'passwords_trans' => 'การแปลรหัสผ่าน',

@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'दीम की दरें',
     'forwards' => 'आगे',
     'group_6' => 'पर्यवेक्षक',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'उपयोगकर्ता दिनों से पहले बनाया गया',
     'reminders_trans' => 'अनुस्मारक अनुवाद',
     'passwords_trans' => 'पासवर्ड अनुवाद',

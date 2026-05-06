@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'டைம் விகிதங்கள்',
     'forwards' => 'முன்னோக்கி',
     'group_6' => 'மேற்பார்வையாளர்',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'பயனர் நாட்களுக்கு முன் உருவாக்கப்பட்டது',
     'reminders_trans' => 'நினைவூட்டல் மொழிபெயர்ப்புகள்',
     'passwords_trans' => 'கடவுச்சொற்களின் மொழிபெயர்ப்பு',

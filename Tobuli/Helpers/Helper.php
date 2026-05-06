@@ -1403,6 +1403,7 @@ function listsTranslations()
         '5' => trans('admin.group_5'),
         '2' => trans('admin.group_2'),
         '4' => trans('admin.group_4'),
+        '7' => trans('admin.group_7'),
     ]);
 
     Config::set('tobuli.units_of_distance', [

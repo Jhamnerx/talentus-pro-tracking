@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Rates Diem',
     'forwards' => 'Pêş de',
     'group_6' => 'Gûhliser',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Bikarhêner beriya rojan hatî afirandin',
     'reminders_trans' => 'Wergerên bîranînê',
     'passwords_trans' => 'Wergerên şîfreyan',

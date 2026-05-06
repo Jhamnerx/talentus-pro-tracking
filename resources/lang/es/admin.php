@@ -68,6 +68,7 @@ return [
     'group_4' => 'Manifestación',
     'group_5' => 'Operador',
     'group_6' => 'Supervisor',
+    'group_7' => 'Monitoreo',
     'group_plans_by_duration_type' => 'Planes de facturación grupal por tipo de duración',
     'import_geofences' => 'Geocercas importación',
     'inactivate_selected' => 'Desactivar seleccionado',

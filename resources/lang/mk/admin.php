@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Дневни стапки',
     'forwards' => 'Напаѓачи',
     'group_6' => 'Надзорник',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Корисникот е создаден пред денови',
     'reminders_trans' => 'Преводи на потсетници',
     'passwords_trans' => 'Преводи на лозинки',

@@ -68,7 +68,8 @@ class UserService
         if (isset($data['group_id']) && !in_array($data['group_id'], [
                 PermissionService::GROUP_USER,
                 PermissionService::GROUP_OPERATOR,
-                PermissionService::GROUP_MANAGER
+                PermissionService::GROUP_MANAGER,
+                PermissionService::GROUP_MONITORING
             ])) {
             $data['manager_id'] = null;
         }

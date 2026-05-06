@@ -15,6 +15,7 @@ class PermissionService
     const GROUP_DEMO = 4;
     const GROUP_OPERATOR = 5;
     const GROUP_SUPERVISOR = 6;
+    const GROUP_MONITORING = 7;
 
     public function addToAll($name)
     {
@@ -301,6 +302,9 @@ class PermissionService
                 break;
             case self::GROUP_DEMO:
                 $role = 'demo';
+                break;
+            case self::GROUP_MONITORING:
+                $role = 'user';
                 break;
             default:
                 throw new \Exception('User group not found!');

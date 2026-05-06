@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diárias',
     'forwards' => 'Encaminha',
     'group_6' => 'Supervisor',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Usuário criado antes de dias',
     'reminders_trans' => 'Traduções de lembretes',
     'passwords_trans' => 'Traduções de senhas',
