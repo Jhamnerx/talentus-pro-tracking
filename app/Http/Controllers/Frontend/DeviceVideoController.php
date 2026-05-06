@@ -73,9 +73,9 @@ class DeviceVideoController extends Controller
         if (str_ends_with($file, '.m3u8')) {
             $channel   = (int) (request()->query('channel', 1));
             $streamUrl = "{$traccarUrl}/api/stream/0/live.m3u8?uniqueId={$device->imei}&channel={$channel}";
-        } elseif (preg_match('/^(\d+)\.ts$/', $file, $m)) {
+        } elseif (str_ends_with($file, '.ts')) {
             $channel   = (int) (request()->query('channel', 1));
-            $streamUrl = "{$traccarUrl}/api/stream/0/{$m[1]}.ts?uniqueId={$device->imei}&channel={$channel}";
+            $streamUrl = "{$traccarUrl}/api/stream/0/{$file}?uniqueId={$device->imei}&channel={$channel}";
         } else {
             abort(400, 'Archivo no valido');
         }
@@ -100,9 +100,9 @@ class DeviceVideoController extends Controller
         }
 
         if (str_ends_with($file, '.m3u8')) {
-            $proxyBase = url("device_video/{$deviceId}/stream/");
+            $proxyBase = rtrim(url("device_video/{$deviceId}/stream"), '/') . '/';
             $ch2       = (int) (request()->query('channel', 1));
-            $body      = preg_replace('/^(\d+\.ts)$/m', $proxyBase . '$1?channel=' . $ch2, $body);
+            $body      = preg_replace('/^(\S+\.ts)$/m', $proxyBase . '$1?channel=' . $ch2, $body);
             $mimeType  = 'application/vnd.apple.mpegurl';
         }
 
