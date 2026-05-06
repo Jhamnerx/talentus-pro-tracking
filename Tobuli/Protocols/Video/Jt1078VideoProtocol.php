@@ -48,13 +48,7 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
 
     private function hlsUrl(Device $device, int $channel): string
     {
-        $config  = config('tracker');
-        $baseUrl = rtrim(
-            str_replace('https://', 'http://', config('app.url')),
-            '/'
-        ) . ':' . $config['web.port'];
-
-        return "{$baseUrl}/api/stream/0/live.m3u8?uniqueId={$device->imei}&channel={$channel}";
+        return url("device_video/{$device->id}/stream/live.m3u8") . '?channel=' . $channel;
     }
 
     // ── Implementaciones ─────────────────────────────────────────────────────

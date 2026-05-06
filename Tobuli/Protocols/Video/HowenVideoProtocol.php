@@ -73,9 +73,7 @@ class HowenVideoProtocol extends BaseVideoProtocol
         $result = ($this->post)("api/howen/0/live/start{$qs}", []);
 
         if (! empty($result['session'])) {
-            $config  = config('tracker');
-            $baseUrl = ($this->getBaseUrl)() . ':' . $config['web.port'];
-            $result['hls_url'] = "{$baseUrl}/api/stream/0/live.m3u8?uniqueId={$device->imei}&channel={$channel}";
+            $result['hls_url'] = url("device_video/{$device->id}/stream/live.m3u8") . '?channel=' . $channel;
         }
 
         return $result;

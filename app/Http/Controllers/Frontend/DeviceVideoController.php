@@ -490,7 +490,17 @@ class DeviceVideoController extends Controller
 
         $config     = config('tracker');
         $traccarUrl = rtrim($this->videoService->getUrl(), '/') . ':' . $config['web.port'];
-        $streamUrl  = "{$traccarUrl}/api/stream/{$device->traccar_device_id}/{$file}";
+
+        // Determinar si es .m3u8 o .ts y construir la URL correcta en Traccar
+        if (str_ends_with($file, '.m3u8')) {
+            $channel    = (int) (request()->query('channel', 1));
+            $streamUrl  = "{$traccarUrl}/api/stream/0/live.m3u8?uniqueId={$device->imei}&channel={$channel}";
+        } elseif (preg_match('/^(\d+)\.ts$/', $file, $m)) {
+            $channel    = (int) (request()->query('channel', 1));
+            $streamUrl  = "{$traccarUrl}/api/stream/0/{$m[1]}.ts?uniqueId={$device->imei}&channel={$channel}";
+        } else {
+            abort(400, 'Archivo no válido');
+        }
 
         $ch = curl_init($streamUrl);
         curl_setopt_array($ch, [
@@ -514,7 +524,8 @@ class DeviceVideoController extends Controller
         // Reescribir URLs de segmentos .ts para que sigan pasando por el proxy
         if (str_ends_with($file, '.m3u8')) {
             $proxyBase = url("device_video/{$deviceId}/stream/");
-            $body      = preg_replace('/^([\w\-]+\.ts)$/m', $proxyBase . '$1', $body);
+            $ch2       = (int) (request()->query('channel', 1));
+            $body      = preg_replace('/^(\d+\.ts)$/m', $proxyBase . '$1?channel=' . $ch2, $body);
             $mimeType  = 'application/vnd.apple.mpegurl';
         }
 
