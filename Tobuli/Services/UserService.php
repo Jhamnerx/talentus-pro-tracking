@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Services;
+<?php
+
+namespace Tobuli\Services;
 
 use CustomFacades\Appearance;
 use CustomFacades\Repositories\BillingPlanRepo;
@@ -66,11 +68,11 @@ class UserService
         }
 
         if (isset($data['group_id']) && !in_array($data['group_id'], [
-                PermissionService::GROUP_USER,
-                PermissionService::GROUP_OPERATOR,
-                PermissionService::GROUP_MANAGER,
-                PermissionService::GROUP_MONITORING
-            ])) {
+            PermissionService::GROUP_USER,
+            PermissionService::GROUP_OPERATOR,
+            PermissionService::GROUP_MANAGER,
+            PermissionService::GROUP_MONITORING
+        ])) {
             $data['manager_id'] = null;
         }
 
@@ -102,13 +104,23 @@ class UserService
         $user = User::create($data);
         $this->setDefaultTimezone($user);
 
+        if ($user->isMonitoring() && $user->manager_id) {
+            (new MonitoringDeviceSyncService())->syncFromManager($user);
+        }
+
         return $user;
     }
 
     public function update(User $user, array $data): User
     {
+        $previousManagerId = $user->manager_id;
         $data = $this->normalize($data);
         $user->update($data);
+
+        $user->refresh();
+        if ($user->isMonitoring() && $user->manager_id && $user->manager_id != $previousManagerId) {
+            (new MonitoringDeviceSyncService())->syncFromManager($user);
+        }
 
         return $user;
     }
@@ -159,19 +171,19 @@ class UserService
             case 'exact':
                 $values = array_merge(
                     $values,
-                    Arr::only($data,['date_from', 'date_to'])
+                    Arr::only($data, ['date_from', 'date_to'])
                 );
                 break;
             case 'other':
                 $values = array_merge(
                     $values,
-                    Arr::only($data,['month_from', 'month_to', 'week_pos_from', 'week_pos_to', 'week_day_from', 'week_day_to', 'time_from', 'time_to'])
+                    Arr::only($data, ['month_from', 'month_to', 'week_pos_from', 'week_pos_to', 'week_day_from', 'week_day_to', 'time_from', 'time_to'])
                 );
                 break;
             case 'automatic':
                 $values = array_merge(
                     $values,
-                    Arr::only($data,['country_id'])
+                    Arr::only($data, ['country_id'])
                 );
                 break;
             default:
@@ -205,7 +217,8 @@ class UserService
      * @param array $data
      * @return User
      */
-    public function registration(array $data) {
+    public function registration(array $data)
+    {
         if (settings('main_settings.enable_plans') && settings('main_settings.default_billing_plan')) {
             $plan = BillingPlanRepo::find(settings('main_settings.default_billing_plan'));
             $data['devices_limit'] = $plan->objects;
@@ -214,7 +227,7 @@ class UserService
             if ($plan->price)
                 $expiration = date('Y-m-d H:i:s');
             else
-                $expiration = date('Y-m-d H:i:s', strtotime(date('Y-m-d H:i:s')." + {$plan->duration_value} {$plan->duration_type}"));
+                $expiration = date('Y-m-d H:i:s', strtotime(date('Y-m-d H:i:s') . " + {$plan->duration_value} {$plan->duration_type}"));
 
             $data['subscription_expiration'] = $expiration;
         } else {
@@ -262,7 +275,7 @@ class UserService
             $loginToken = Password::generate(64, ['uppercase', 'lowercase', 'numbers']);
 
             $validator = Validator::make(['token' => $loginToken], ['token' => Rule::unique('users', 'login_token')]);
-        } while($validator->fails());
+        } while ($validator->fails());
 
         $user->login_token = $loginToken;
         $user->save();

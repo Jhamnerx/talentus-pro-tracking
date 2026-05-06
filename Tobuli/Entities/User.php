@@ -444,12 +444,6 @@ class User extends AbstractEntity implements
         if ($this->isAdmin() || $this->isSupervisor()) {
             $instance = new Device();
             $relation = new HasManyTable($instance->newQuery(), $this);
-        } elseif ($this->isMonitoring() && $this->manager_id) {
-            $manager = $this->manager;
-            if ($manager && !$manager->isMonitoring()) {
-                return $manager->accessibleDevices();
-            }
-            $relation = $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id');
         } elseif ($this->isManager()) {
             $instance = new Device();
             $relation = new HasManyTable($instance->newQuery(), $this);
@@ -495,26 +489,12 @@ class User extends AbstractEntity implements
                 ->distinct('devices.id');
         }
 
-        if ($this->isMonitoring() && $this->manager_id) {
-            $manager = $this->manager;
-            if ($manager && !$manager->isMonitoring()) {
-                return $manager->accessibleDevicesWithGroups();
-            }
-        }
-
         return $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id')
             ->withPivot('group_id');
     }
 
     public function devices()
     {
-        if ($this->isMonitoring() && $this->manager_id) {
-            $manager = $this->manager;
-            if ($manager && !$manager->isMonitoring()) {
-                return $manager->accessibleDevices();
-            }
-        }
-
         return $this->belongsToMany('Tobuli\Entities\Device', 'user_device_pivot', 'user_id', 'device_id')
             ->withPivot(['group_id', 'active'])
             ->orderBy('name', 'asc');

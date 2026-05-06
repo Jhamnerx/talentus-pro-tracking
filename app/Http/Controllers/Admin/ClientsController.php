@@ -10,6 +10,7 @@ use Tobuli\Entities\Company;
 use Tobuli\Entities\MapIcon;
 use Tobuli\Helpers\Password;
 use Tobuli\Services\UserService;
+use Tobuli\Services\MonitoringDeviceSyncService;
 use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\EmailTemplate;
 use Illuminate\Support\Facades\View;
@@ -1050,6 +1051,8 @@ class ClientsController extends BaseController
                 (new SyncManager())->sync($user->devices());
             }
         }
+
+        (new MonitoringDeviceSyncService())->syncManagerMonitoringUsers($user);
     }
 
     public function managers()
