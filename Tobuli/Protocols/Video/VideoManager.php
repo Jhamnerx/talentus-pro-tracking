@@ -24,14 +24,14 @@ class VideoManager
      * @param  callable  $post          fn(string $endpoint, array $data): array
      * @param  callable  $get           fn(string $endpoint): array
      */
-    public function protocol(string $protocolName, callable $post, callable $get): BaseVideoProtocol
+    public function protocol(string $protocolName, callable $post, callable $get, callable $getBaseUrl = null): BaseVideoProtocol
     {
         $class = __NAMESPACE__ . '\\' . ucfirst(strtolower($protocolName)) . 'VideoProtocol';
 
         if (class_exists($class)) {
-            return new $class($post, $get);
+            return new $class($post, $get, $getBaseUrl ?? fn() => 'http://localhost');
         }
 
-        return new BaseVideoProtocol($post, $get);
+        return new BaseVideoProtocol($post, $get, $getBaseUrl ?? fn() => 'http://localhost');
     }
 }

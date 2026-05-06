@@ -20,10 +20,14 @@ class BaseVideoProtocol implements VideoProtocol
     /** @var callable fn(string $endpoint): array — GET autenticado a Traccar */
     protected $get;
 
-    public function __construct(callable $post, callable $get)
+    /** @var callable fn(): string — Retorna la URL base interna de Traccar (sin puerto) */
+    protected $getBaseUrl;
+
+    public function __construct(callable $post, callable $get, callable $getBaseUrl = null)
     {
-        $this->post = $post;
-        $this->get  = $get;
+        $this->post       = $post;
+        $this->get        = $get;
+        $this->getBaseUrl = $getBaseUrl ?? fn() => 'http://localhost';
     }
 
     public function isSupported(): bool

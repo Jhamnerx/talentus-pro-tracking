@@ -42,7 +42,8 @@ class DeviceVideoService
         return (new VideoManager)->protocol(
             $device->protocol ?? '',
             fn($endpoint, $data) => $this->tracker->api($endpoint, $data),
-            fn($endpoint)        => $this->apiGet($endpoint)
+            fn($endpoint)        => $this->apiGet($endpoint),
+            fn()                 => $this->tracker->getUrl()
         );
     }
 

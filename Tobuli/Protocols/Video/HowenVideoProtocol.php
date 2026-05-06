@@ -20,6 +20,9 @@ use Tobuli\Entities\Device;
  */
 class HowenVideoProtocol extends BaseVideoProtocol
 {
+    /** ID real de Traccar resuelto por IMEI (caché de instancia). */
+    private ?int $resolvedTid = null;
+
     public function isSupported(): bool
     {
         return true;
@@ -27,9 +30,29 @@ class HowenVideoProtocol extends BaseVideoProtocol
 
     // ── Helper ────────────────────────────────────────────────────────────────
 
+    /**
+     * Resuelve el ID interno de Traccar (tc_devices.id) consultando
+     * GET /api/devices?uniqueId={imei}.
+     *
+     * traccar_device_id almacena el ID de la tabla traccar_devices de talentus,
+     * que NO necesariamente coincide con tc_devices.id en Traccar.
+     */
     private function tid(Device $device): int
     {
-        return (int) $device->traccar_device_id;
+        if ($this->resolvedTid === null) {
+            $imei = (string) $device->imei;
+
+            if ($imei !== '') {
+                $result = ($this->get)('api/devices?uniqueId=' . urlencode($imei));
+                $this->resolvedTid = isset($result[0]['id'])
+                    ? (int) $result[0]['id']
+                    : (int) $device->traccar_device_id;
+            } else {
+                $this->resolvedTid = (int) $device->traccar_device_id;
+            }
+        }
+
+        return $this->resolvedTid;
     }
 
     /**
@@ -73,7 +96,7 @@ class HowenVideoProtocol extends BaseVideoProtocol
 
         if (! empty($result['session'])) {
             $config  = config('tracker');
-            $baseUrl = $this->getUrl() . ':' . $config['web.port'];
+            $baseUrl = ($this->getBaseUrl)() . ':' . $config['web.port'];
             $result['hls_url'] = "{$baseUrl}/api/stream/{$this->tid($device)}/live.m3u8?channel={$channel}";
         }
 
@@ -178,7 +201,4 @@ class HowenVideoProtocol extends BaseVideoProtocol
         return ($this->post)("api/howen/{$this->tid($device)}/recording/stop{$qs}", []);
     }
 
-    // ── Necesitamos getUrl() del Tracker — se accede via el callable $get ────
-    // getUrl() está en Tracker. Como las callables fueron inyectadas con closure
-    // que captura $this (el DeviceVideoService), el acceso es transparente.
 }
