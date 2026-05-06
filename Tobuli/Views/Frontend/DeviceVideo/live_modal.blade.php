@@ -2,9 +2,6 @@
 
 @section('title')
     <i class="icon play"></i> {{ $device->name }}
-    <span id="lvm-badge" style="margin-left:10px;padding:3px 10px;border-radius:12px;font-size:.75rem;background:#e67e22;color:#fff;vertical-align:middle;">
-        {{ trans('front.connecting') }}...
-    </span>
 @stop
 
 @section('modal_class')
@@ -17,72 +14,113 @@
 @section('body')
 
 <style>
-    .modal-video .modal-dialog { max-width: 960px; }
-    #lvm-video { width: 100%; max-height: 500px; display: block; background: #000; }
-    .lvm-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
-    .lvm-tab { padding: 5px 14px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background: #f5f5f5; color: #555; font-size: .82rem; }
-    .lvm-tab.active { background: #1a73e8; border-color: #1a73e8; color: #fff; }
-    .lvm-player { position: relative; background: #000; border-radius: 4px; overflow: hidden; }
-    .lvm-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.72); display: flex; align-items: center; justify-content: center; color: #eee; font-size: .9rem; }
+    .modal-video .modal-dialog { max-width: 1100px; }
+    .lvm-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    @media (max-width: 600px) {
+        .lvm-grid { grid-template-columns: 1fr; }
+    }
+    .lvm-card {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #111;
+    }
+    .lvm-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 6px 10px;
+        background: #1a1a2e;
+        color: #eee;
+        font-size: .82rem;
+        font-weight: 600;
+    }
+    .lvm-badge {
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: .72rem;
+        background: #555;
+        color: #fff;
+    }
+    .lvm-player-wrap { position: relative; background: #000; }
+    .lvm-video { width: 100%; display: block; max-height: 260px; background: #000; }
+    .lvm-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,.7);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #ccc;
+        font-size: .82rem;
+        gap: 8px;
+    }
     .lvm-overlay.hidden { display: none; }
-    .lvm-spinner { width: 32px; height: 32px; border: 4px solid #555; border-top-color: #fff; border-radius: 50%; animation: lvm-spin .8s linear infinite; margin-right: 10px; }
+    .lvm-spinner {
+        width: 28px; height: 28px;
+        border: 3px solid #555;
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: lvm-spin .8s linear infinite;
+    }
     @keyframes lvm-spin { to { transform: rotate(360deg); } }
-    .lvm-controls { display: flex; gap: 8px; margin-top: 10px; }
-    .lvm-btn { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: .85rem; }
+    .lvm-card-footer {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 8px;
+        background: #1a1a2e;
+        flex-wrap: wrap;
+    }
+    .lvm-btn {
+        padding: 4px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: .78rem;
+        font-weight: 600;
+    }
     .lvm-btn:disabled { opacity: .4; cursor: default; }
-    .lvm-error { color: #c0392b; margin-top: 8px; font-size: .85rem; display: none; }
+    .lvm-btn-start { background: #27ae60; color: #fff; }
+    .lvm-btn-stop  { background: #c0392b; color: #fff; }
+    .lvm-err { color: #e74c3c; font-size: .75rem; flex: 1; display: none; }
 </style>
 
-<div class="lvm-tabs">
+<div class="lvm-grid" id="lvm-grid">
     @for ($ch = 1; $ch <= 4; $ch++)
-        <button class="lvm-tab {{ $ch === 1 ? 'active' : '' }}" data-channel="{{ $ch }}">
-            {{ trans('front.channel') }} {{ $ch }}
-        </button>
+    <div class="lvm-card" data-ch="{{ $ch }}">
+        <div class="lvm-card-header">
+            <span>{{ trans('front.channel') }} {{ $ch }}</span>
+            <span class="lvm-badge" id="lvm-badge-{{ $ch }}">Offline</span>
+        </div>
+        <div class="lvm-player-wrap">
+            <video class="lvm-video" id="lvm-video-{{ $ch }}" controls muted playsinline></video>
+            <div class="lvm-overlay" id="lvm-overlay-{{ $ch }}">
+                <span>Ã¢â‚¬â€ {{ trans('front.offline') }} Ã¢â‚¬â€</span>
+            </div>
+        </div>
+        <div class="lvm-card-footer">
+            <button class="lvm-btn lvm-btn-start" id="lvm-start-{{ $ch }}">
+                Ã¢â€“Â¶ {{ trans('front.video_start') }}
+            </button>
+            <button class="lvm-btn lvm-btn-stop" id="lvm-stop-{{ $ch }}" disabled>
+                Ã¢â€“Â  {{ trans('front.video_stop') }}
+            </button>
+            <span class="lvm-err" id="lvm-err-{{ $ch }}"></span>
+        </div>
+    </div>
     @endfor
 </div>
-
-<div class="lvm-player">
-    <video id="lvm-video" controls muted playsinline></video>
-    <div class="lvm-overlay" id="lvm-overlay">
-        <div class="lvm-spinner"></div>
-        <span>{{ trans('front.loading_stream') }}...</span>
-    </div>
-</div>
-
-<div class="lvm-controls">
-    <button class="lvm-btn" style="background:#27ae60;color:#fff" id="lvm-btnStart" disabled>
-        <i class="fa fa-play"></i> {{ trans('front.video_start') }}
-    </button>
-    <button class="lvm-btn" style="background:#c0392b;color:#fff" id="lvm-btnStop" disabled>
-        <i class="fa fa-stop"></i> {{ trans('front.video_stop') }}
-    </button>
-</div>
-
-<p class="lvm-error" id="lvm-error"></p>
 
 <script>
 (function () {
     var deviceId = {{ $device->id }};
-    var channel  = 1;
-    var hls      = null;
-    var video    = document.getElementById('lvm-video');
-    var overlay  = document.getElementById('lvm-overlay');
-    var badge    = document.getElementById('lvm-badge');
-    var errEl    = document.getElementById('lvm-error');
-    var btnStart = document.getElementById('lvm-btnStart');
-    var btnStop  = document.getElementById('lvm-btnStop');
-
-    function setBadge(txt, color) {
-        badge.textContent = txt;
-        badge.style.background = color;
-    }
-
-    function showError(msg) {
-        errEl.textContent = msg;
-        errEl.style.display = 'block';
-        setBadge('Error', '#c0392b');
-        overlay.classList.add('hidden');
-    }
+    var hlsInstances = {};
 
     function csrfToken() {
         var m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
@@ -101,112 +139,146 @@
         }).then(function (r) { return r.json(); });
     }
 
-    function destroyHls() {
-        if (hls) { hls.destroy(); hls = null; }
-        video.src = '';
+    function setBadge(ch, txt, color) {
+        var el = document.getElementById('lvm-badge-' + ch);
+        if (el) { el.textContent = txt; el.style.background = color; }
     }
 
-    function attachHls(url) {
-        if (Hls.isSupported()) {
-            hls = new Hls({ enableWorker: false });
-            hls.loadSource(url);
-            hls.attachMedia(video);
-            hls.on(Hls.Events.MANIFEST_PARSED, function () {
-                overlay.classList.add('hidden');
-                setBadge('LIVE', '#27ae60');
+    function showOverlay(ch, msg) {
+        var ov = document.getElementById('lvm-overlay-' + ch);
+        if (!ov) return;
+        ov.classList.remove('hidden');
+        ov.innerHTML = msg
+            ? '<div class="lvm-spinner"></div><span>' + msg + '</span>'
+            : '<span>Ã¢â‚¬â€ offline Ã¢â‚¬â€</span>';
+    }
+
+    function hideOverlay(ch) {
+        var ov = document.getElementById('lvm-overlay-' + ch);
+        if (ov) ov.classList.add('hidden');
+    }
+
+    function showErr(ch, msg) {
+        var el = document.getElementById('lvm-err-' + ch);
+        if (el) { el.textContent = msg; el.style.display = msg ? 'block' : 'none'; }
+    }
+
+    function destroyHls(ch) {
+        if (hlsInstances[ch]) { hlsInstances[ch].destroy(); delete hlsInstances[ch]; }
+        var v = document.getElementById('lvm-video-' + ch);
+        if (v) v.src = '';
+    }
+
+    function attachHls(ch, url) {
+        var video = document.getElementById('lvm-video-' + ch);
+        if (!video) return;
+        destroyHls(ch);
+        showErr(ch, '');
+
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+            var h = new Hls({
+                enableWorker: false,
+                liveSyncDurationCount: 2,
+                liveMaxLatencyDurationCount: 4,
+                levelLoadingRetryDelay: 1000,
+                fragLoadingMaxRetry: 4,
+                levelLoadingMaxRetry: 6
+            });
+            hlsInstances[ch] = h;
+            h.loadSource(url);
+            h.attachMedia(video);
+            h.on(Hls.Events.MANIFEST_PARSED, function () {
+                hideOverlay(ch);
+                setBadge(ch, 'LIVE', '#27ae60');
                 video.play().catch(function () {});
             });
-            hls.on(Hls.Events.ERROR, function (e, data) {
-                if (data.fatal) { showError('HLS error: ' + data.type); }
+            h.on(Hls.Events.ERROR, function (e, data) {
+                if (data.fatal) {
+                    if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                        h.startLoad();
+                    } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                        h.recoverMediaError();
+                    } else {
+                        showErr(ch, 'Error: ' + data.type);
+                        setBadge(ch, 'Error', '#c0392b');
+                    }
+                }
             });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
             video.src = url;
-            overlay.classList.add('hidden');
-            setBadge('LIVE', '#27ae60');
+            hideOverlay(ch);
+            setBadge(ch, 'LIVE', '#27ae60');
             video.play().catch(function () {});
         } else {
-            showError('{{ trans('front.browser_not_support_html_video') }}');
+            showErr(ch, '{{ trans('front.browser_not_support_html_video') }}');
         }
     }
 
-    function loadHls(url) {
-        destroyHls();
-        if (typeof Hls === 'undefined') {
+    function loadHlsOnce(ch, url) {
+        if (typeof Hls !== 'undefined') {
+            attachHls(ch, url);
+        } else {
             var s = document.createElement('script');
             s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.4.14/dist/hls.min.js';
-            s.onload = function () { attachHls(url); };
-            s.onerror = function () { showError('{{ trans('front.browser_not_support_html_video') }}'); };
+            s.onload  = function () { attachHls(ch, url); };
+            s.onerror = function () { showErr(ch, '{{ trans('front.browser_not_support_html_video') }}'); };
             document.head.appendChild(s);
-        } else {
-            attachHls(url);
         }
     }
 
-    function streamUrl() {
-        return '/device_video/' + deviceId + '/stream/live.m3u8?channel=' + channel;
-    }
+    function startChannel(ch) {
+        setBadge(ch, 'Conectando...', '#e67e22');
+        showOverlay(ch, 'Conectando...');
+        showErr(ch, '');
+        document.getElementById('lvm-start-' + ch).disabled = true;
+        document.getElementById('lvm-stop-' + ch).disabled  = false;
 
-    function startLive() {
-        overlay.classList.remove('hidden');
-        errEl.style.display = 'none';
-        setBadge('{{ trans('front.connecting') }}...', '#e67e22');
-        btnStart.disabled = true;
-        btnStop.disabled  = false;
+        var url = '/device_video/' + deviceId + '/stream/live.m3u8?channel=' + ch;
 
-        post('/device_video/' + deviceId + '/live/start', { channel: channel })
+        post('/device_video/' + deviceId + '/live/start', { channel: ch })
             .then(function () {
-                setTimeout(function () { loadHls(streamUrl()); }, 3000);
+                setTimeout(function () { loadHlsOnce(ch, url); }, 3000);
             })
             .catch(function () {
-                setTimeout(function () { loadHls(streamUrl()); }, 2000);
+                setTimeout(function () { loadHlsOnce(ch, url); }, 2000);
             });
     }
 
-    function stopLive() {
-        destroyHls();
-        overlay.classList.remove('hidden');
-        setBadge('{{ trans('front.offline') }}', '#555');
-        btnStart.disabled = false;
-        btnStop.disabled  = true;
-        post('/device_video/' + deviceId + '/live/stop', { channel: channel }).catch(function () {});
+    function stopChannel(ch) {
+        destroyHls(ch);
+        showOverlay(ch, null);
+        setBadge(ch, 'Offline', '#555');
+        showErr(ch, '');
+        document.getElementById('lvm-start-' + ch).disabled = false;
+        document.getElementById('lvm-stop-' + ch).disabled  = true;
+        post('/device_video/' + deviceId + '/live/stop', { channel: ch }).catch(function () {});
     }
 
-    document.querySelectorAll('.lvm-tab').forEach(function (tab) {
-        tab.addEventListener('click', function () {
-            document.querySelectorAll('.lvm-tab').forEach(function (t) { t.classList.remove('active'); });
-            tab.classList.add('active');
-            channel = parseInt(tab.dataset.channel, 10);
-            if (!btnStop.disabled) {
-                overlay.classList.remove('hidden');
-                post('/device_video/' + deviceId + '/live/start', { channel: channel })
-                    .then(function () {
-                        setTimeout(function () { loadHls(streamUrl()); }, 2000);
-                    })
-                    .catch(function () { loadHls(streamUrl()); });
-            }
-        });
+    // Bind buttons for all channels
+    [1, 2, 3, 4].forEach(function (ch) {
+        var btnStart = document.getElementById('lvm-start-' + ch);
+        var btnStop  = document.getElementById('lvm-stop-' + ch);
+        if (btnStart) btnStart.addEventListener('click', function () { startChannel(ch); });
+        if (btnStop)  btnStop.addEventListener('click',  function () { stopChannel(ch); });
     });
 
-    btnStart.addEventListener('click', startLive);
-    btnStop.addEventListener('click', stopLive);
-
-    var modal = video.closest('.modal') || video.closest('[id]');
-    if (modal) {
-        modal.addEventListener('hidden.bs.modal', function () {
-            destroyHls();
-            if (!btnStop.disabled) {
-                post('/device_video/' + deviceId + '/live/stop', { channel: channel }).catch(function () {});
+    // Cleanup on modal close
+    function cleanupAll() {
+        [1, 2, 3, 4].forEach(function (ch) {
+            var btnStop = document.getElementById('lvm-stop-' + ch);
+            if (btnStop && !btnStop.disabled) {
+                post('/device_video/' + deviceId + '/live/stop', { channel: ch }).catch(function () {});
             }
-        });
-        $(modal).on('hidden', function () {
-            destroyHls();
-            if (!btnStop.disabled) {
-                post('/device_video/' + deviceId + '/live/stop', { channel: channel }).catch(function () {});
-            }
+            destroyHls(ch);
         });
     }
 
-    startLive();
+    var grid = document.getElementById('lvm-grid');
+    var modal = grid ? grid.closest('.modal') || grid.closest('[id]') : null;
+    if (modal) {
+        modal.addEventListener('hidden.bs.modal', cleanupAll);
+        $(modal).on('hidden', cleanupAll);
+    }
 }());
 </script>
 
