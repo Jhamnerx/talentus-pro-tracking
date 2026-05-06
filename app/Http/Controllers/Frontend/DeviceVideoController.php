@@ -453,25 +453,9 @@ class DeviceVideoController extends Controller
     }
 
     // =========================================================================
-    // Video en vivo HLS — página reproductora + proxy de stream
+    // Video en vivo HLS — modal reproductor + proxy de stream
     // =========================================================================
 
-    /**
-     * GET /device_video/{device_id}/live
-     *
-     * Página del reproductor de video en vivo (HLS).
-     * Soporta: jt808 (JT1078) y howen.
-     */
-    public function livePage(int $deviceId)
-    {
-        $device = $this->findDevice($deviceId);
-
-        if (! $this->videoService->isSupported($device)) {
-            abort(404, 'El protocolo del dispositivo no soporta video en vivo.');
-        }
-
-        return view('front::DeviceVideo.live', compact('device'));
-    }
 
     /**
      * GET /device_video/{device_id}/live/modal

@@ -23,6 +23,9 @@ use Tobuli\Entities\Device;
  */
 class Jt1078VideoProtocol extends BaseVideoProtocol
 {
+    /** ID real de Traccar resuelto por IMEI (caché de instancia). */
+    private ?int $resolvedTid = null;
+
     public function isSupported(): bool
     {
         return true;
@@ -30,9 +33,30 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
 
     // ── Helper ────────────────────────────────────────────────────────────────
 
+    /**
+     * Resuelve el ID interno de Traccar (tc_devices.id) consultando
+     * GET /api/devices?uniqueId={imei}.
+     *
+     * El campo traccar_device_id almacena el ID de la tabla traccar_devices
+     * de talentus, que NO necesariamente coincide con el ID de tc_devices
+     * en Traccar. La resolución por IMEI es siempre correcta.
+     */
     private function tid(Device $device): int
     {
-        return (int) $device->traccar_device_id;
+        if ($this->resolvedTid === null) {
+            $imei = (string) $device->imei;
+
+            if ($imei !== '') {
+                $result = ($this->get)('api/devices?uniqueId=' . urlencode($imei));
+                $this->resolvedTid = isset($result[0]['id'])
+                    ? (int) $result[0]['id']
+                    : (int) $device->traccar_device_id; // fallback si la API no responde
+            } else {
+                $this->resolvedTid = (int) $device->traccar_device_id;
+            }
+        }
+
+        return $this->resolvedTid;
     }
 
     private function query(array $params): string
@@ -54,7 +78,7 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
             '/'
         ) . ':' . $config['web.port'];
 
-        return "{$baseUrl}/api/stream/{$device->traccar_device_id}/live.m3u8?channel={$channel}";
+        return "{$baseUrl}/api/stream/{$this->tid($device)}/live.m3u8?channel={$channel}";
     }
 
     // ── Implementaciones ─────────────────────────────────────────────────────
