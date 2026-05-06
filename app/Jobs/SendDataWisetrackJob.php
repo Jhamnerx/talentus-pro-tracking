@@ -125,7 +125,6 @@ class SendDataWisetrackJob implements ShouldQueue
                 $statusCode = $response->getStatusCode();
                 $body = $response->getBody()->getContents();
 
-
                 $this->logService->logError('Wisetrack', 'Error al enviar tramas', [
                     'status'   => $statusCode,
                     'response' => $body,
@@ -135,7 +134,17 @@ class SendDataWisetrackJob implements ShouldQueue
                 if ($statusCode == 403) {
                     $this->logService->logError('Wisetrack', 'Token inválido o sin permisos. Verifica la autenticación.');
                 }
+            } else {
+                $this->logService->logError('Wisetrack', 'Error de conexión al enviar tramas', [
+                    'endpoint' => $endpoint,
+                    'message'  => $e->getMessage(),
+                ]);
             }
+        } catch (\Exception $e) {
+            $this->logService->logError('Wisetrack', 'Error inesperado al enviar tramas', [
+                'endpoint' => $endpoint,
+                'message'  => $e->getMessage(),
+            ]);
         }
     }
 
