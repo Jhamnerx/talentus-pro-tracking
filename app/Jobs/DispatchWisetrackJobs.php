@@ -43,7 +43,7 @@ class DispatchWisetrackJobs implements ShouldQueue
             }
 
             $service = $user->services['wisetrack'];
-            $batchSize = 1800; // Tamaño del lote
+            $batchSize = 500; // Tamaño del lote
             $totalRecords = WiseTrack::whereIn('patente', $plates)->count();
 
             for ($i = 0; $i < $totalRecords; $i += $batchSize) {

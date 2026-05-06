@@ -26,7 +26,8 @@ class SendDataWisetrackJob implements ShouldQueue
     protected $userId;
 
     public $tries = 3;
-    public $timeout = 120;
+    public $timeout = 180;
+    public $failOnTimeout = true;
 
     public function __construct($offset, $batchSize, $service, $plates, $userId = null)
     {
@@ -36,6 +37,18 @@ class SendDataWisetrackJob implements ShouldQueue
         $this->plates = $plates;
         $this->userId = $userId;
         $this->onQueue('web-services-wisetrack');
+    }
+
+    public function failed(\Throwable $exception)
+    {
+        $logService = app(LogService::class);
+        $logService->setUserId($this->userId);
+        $logService->logError('Wisetrack', 'Job fallido definitivamente', [
+            'offset'    => $this->offset,
+            'batchSize' => $this->batchSize,
+            'plates'    => $this->plates,
+            'message'   => $exception->getMessage(),
+        ]);
     }
 
     public function handle()
