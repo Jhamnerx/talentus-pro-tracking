@@ -200,5 +200,4 @@ class HowenVideoProtocol extends BaseVideoProtocol
         $qs = $this->query(['channel' => $channel]);
         return ($this->post)("api/howen/{$this->tid($device)}/recording/stop{$qs}", []);
     }
-
 }

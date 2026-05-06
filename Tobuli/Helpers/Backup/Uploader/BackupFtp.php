@@ -196,6 +196,20 @@ class BackupFtp implements BackupUploaderInterface
         return "backup_$date-$timestamp/";
     }
 
+    /**
+     * Upload a local file to a specific remote path via ncftpput.
+     * The $remotePath is relative to the FTP base path (will be sent as full path to ncftpput).
+     */
+    public function uploadFile(string $localFile, string $remotePath): void
+    {
+        $command = "ncftpput -m -c"
+            . $this->getFtpLoginParams()
+            . $remotePath
+            . " < " . escapeshellarg($localFile);
+
+        $this->run($command);
+    }
+
     public function findBackupFolders(): array
     {
         $list = $this->handler->rawlist('backup_*') ?: [];

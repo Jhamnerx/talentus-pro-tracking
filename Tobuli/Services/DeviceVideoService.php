@@ -2,6 +2,7 @@
 
 namespace Tobuli\Services;
 
+use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\Device;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Tracker;
@@ -39,11 +40,27 @@ class DeviceVideoService
      */
     private function protocol(Device $device): BaseVideoProtocol
     {
+        $label = '[VideoService][device=' . $device->id . ' imei=' . $device->imei . ' proto=' . ($device->protocol ?? 'null') . ']';
+
         return (new VideoManager)->protocol(
             $device->protocol ?? '',
-            fn($endpoint, $data) => $this->tracker->api($endpoint, $data),
-            fn($endpoint)        => $this->apiGet($endpoint),
-            fn()                 => $this->tracker->getUrl()
+            function ($endpoint, $data) use ($label) {
+                $config = config('tracker');
+                $url    = $this->tracker->getUrl() . ':' . $config['web.port'] . '/' . $endpoint;
+                Log::debug($label . ' POST ' . $url . ' body=' . json_encode($data));
+                $result = $this->tracker->api($endpoint, $data);
+                Log::debug($label . ' POST response=' . json_encode($result));
+                return $result;
+            },
+            function ($endpoint) use ($label) {
+                $config = config('tracker');
+                $url    = $this->tracker->getUrl() . ':' . $config['web.port'] . '/' . $endpoint;
+                Log::debug($label . ' GET ' . $url);
+                $result = $this->apiGet($endpoint);
+                Log::debug($label . ' GET response=' . json_encode($result));
+                return $result;
+            },
+            fn() => $this->tracker->getUrl()
         );
     }
 
