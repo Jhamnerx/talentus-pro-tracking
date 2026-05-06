@@ -30,6 +30,25 @@ class FtpHandler
         return $this->execute(fn() => ftp_get($this->getConn(), $localFile, $this->path . $remoteFile, $mode, $offset));
     }
 
+    public function put(string $localFile, string $remoteFile, int $mode = FTP_BINARY): bool
+    {
+        $fullRemote = $this->path . $remoteFile;
+        $this->mkdirRecursive(dirname($fullRemote));
+
+        return $this->execute(fn() => ftp_put($this->getConn(), $fullRemote, $localFile, $mode));
+    }
+
+    private function mkdirRecursive(string $remotePath): void
+    {
+        $parts = array_filter(explode('/', $remotePath));
+        $path  = '';
+
+        foreach ($parts as $part) {
+            $path .= '/' . $part;
+            @ftp_mkdir($this->getConn(), $path);
+        }
+    }
+
     /**
      * @return array|false|string[]
      */
