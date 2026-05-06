@@ -48,7 +48,8 @@ class DeviceVideoService
                 $config = config('tracker');
                 $url    = $this->tracker->getUrl() . ':' . $config['web.port'] . '/' . $endpoint;
                 Log::debug($label . ' POST ' . $url . ' body=' . json_encode($data));
-                $result = $this->tracker->api($endpoint, $data);
+                $raw    = $this->tracker->api($endpoint, $data);
+                $result = $this->parseTrackerResponse($raw);
                 Log::debug($label . ' POST response=' . json_encode($result));
                 return $result;
             },
@@ -99,12 +100,29 @@ class DeviceVideoService
 
         try {
             $response = $curl->get($url);
-            $decoded  = json_decode($response, true);
+            $body     = is_object($response) ? ($response->body ?? '') : (string) $response;
+            $decoded  = json_decode($body, true);
 
             return is_array($decoded) ? $decoded : [];
         } catch (\CurlException $e) {
-            return ['status' => 0, 'message' => $e->getMessage()];
+            return ['error' => $e->getMessage()];
         }
+    }
+
+    /**
+     * Extrae y parsea el JSON body del wrapper que devuelve Tracker::api().
+     * api() retorna {status, message, response} donde response es el objeto
+     * curl con propiedades body/headers.
+     */
+    private function parseTrackerResponse(array $raw): array
+    {
+        if (($raw['status'] ?? 0) === 0) {
+            return ['error' => $raw['message'] ?? 'Unknown error'];
+        }
+        $response = $raw['response'] ?? null;
+        $body     = is_object($response) ? ($response->body ?? '') : (string) ($response ?? '');
+        $decoded  = json_decode($body, true);
+        return is_array($decoded) ? $decoded : [];
     }
 
     // =========================================================================
