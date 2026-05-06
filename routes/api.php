@@ -53,21 +53,9 @@ Route::group(['middleware' => ['auth.api', 'active_subscription'], 'namespace' =
     Route::get('devices/{device_id}/media/file/{filename}', ['as' => 'api.device.media.get', 'uses' => 'DeviceMediaController@getFile']);
     Route::delete('devices/{device_id}/media/{filename?}', ['as' => 'api.device.media.delete', 'uses' => 'DeviceMediaController@remove']);
 
-    # Device video (multi-protocolo: howen, jt1078)
-    Route::get('devices/{device_id}/video/capabilities', ['as' => 'api.device_video.capabilities', 'uses' => 'DeviceVideoController@capabilities']);
-    Route::get('devices/{device_id}/video/status', ['as' => 'api.device_video.status', 'uses' => 'DeviceVideoController@status']);
+    # Device video (Howen / JT808 live video via commands/send)
     Route::post('devices/{device_id}/video/live/start', ['as' => 'api.device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
     Route::post('devices/{device_id}/video/live/stop', ['as' => 'api.device_video.live.stop', 'uses' => 'DeviceVideoController@liveStop']);
-    Route::post('devices/{device_id}/video/snapshot', ['as' => 'api.device_video.snapshot', 'uses' => 'DeviceVideoController@snapshot']);
-    Route::post('devices/{device_id}/video/audio/start', ['as' => 'api.device_video.audio.start', 'uses' => 'DeviceVideoController@audioStart']);
-    Route::post('devices/{device_id}/video/audio/stop', ['as' => 'api.device_video.audio.stop', 'uses' => 'DeviceVideoController@audioStop']);
-    Route::post('devices/{device_id}/video/files/search', ['as' => 'api.device_video.files.search', 'uses' => 'DeviceVideoController@filesSearch']);
-    Route::get('devices/{device_id}/video/files/{session}', ['as' => 'api.device_video.files.poll', 'uses' => 'DeviceVideoController@filesPoll']);
-    Route::post('devices/{device_id}/video/playback/start', ['as' => 'api.device_video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
-    Route::post('devices/{device_id}/video/playback/control', ['as' => 'api.device_video.playback.control', 'uses' => 'DeviceVideoController@playbackControl']);
-    Route::post('devices/{device_id}/video/event-clip', ['as' => 'api.device_video.event_clip', 'uses' => 'DeviceVideoController@eventClip']);
-    Route::post('devices/{device_id}/video/recording/start', ['as' => 'api.device_video.recording.start', 'uses' => 'DeviceVideoController@recordingStart']);
-    Route::post('devices/{device_id}/video/recording/stop', ['as' => 'api.device_video.recording.stop', 'uses' => 'DeviceVideoController@recordingStop']);
 });
 
 Route::group(['middleware' => [], 'namespace' => 'Api'], function () {

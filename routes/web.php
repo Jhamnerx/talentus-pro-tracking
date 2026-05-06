@@ -411,22 +411,9 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::put('device_camera/update', ['as' => 'device_camera.update', 'uses' => 'DeviceCamerasController@update']);
     Route::resource('device_camera', 'DeviceCamerasController', ['only' => ['store', 'edit', 'destroy']]);
 
-    # Device video (Howen MDVR)
-    Route::get('device_video/playback', ['as' => 'device_video.playback.page', 'uses' => 'DeviceVideoController@playbackPage']);
-    Route::get('device_video/{device_id}/capabilities', ['as' => 'device_video.capabilities', 'uses' => 'DeviceVideoController@capabilities']);
-    Route::get('device_video/{device_id}/status', ['as' => 'device_video.status', 'uses' => 'DeviceVideoController@status']);
+    # Device video (Howen / JT808 live video via commands/send + HLS proxy)
     Route::post('device_video/{device_id}/live/start', ['as' => 'device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
     Route::post('device_video/{device_id}/live/stop', ['as' => 'device_video.live.stop', 'uses' => 'DeviceVideoController@liveStop']);
-    Route::post('device_video/{device_id}/snapshot', ['as' => 'device_video.snapshot', 'uses' => 'DeviceVideoController@snapshot']);
-    Route::post('device_video/{device_id}/audio/start', ['as' => 'device_video.audio.start', 'uses' => 'DeviceVideoController@audioStart']);
-    Route::post('device_video/{device_id}/audio/stop', ['as' => 'device_video.audio.stop', 'uses' => 'DeviceVideoController@audioStop']);
-    Route::post('device_video/{device_id}/files/search', ['as' => 'device_video.files.search', 'uses' => 'DeviceVideoController@filesSearch']);
-    Route::get('device_video/{device_id}/files/{session}', ['as' => 'device_video.files.poll', 'uses' => 'DeviceVideoController@filesPoll']);
-    Route::post('device_video/{device_id}/playback/start', ['as' => 'device_video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
-    Route::post('device_video/{device_id}/playback/control', ['as' => 'device_video.playback.control', 'uses' => 'DeviceVideoController@playbackControl']);
-    Route::post('device_video/{device_id}/event-clip', ['as' => 'device_video.event_clip', 'uses' => 'DeviceVideoController@eventClip']);
-    Route::post('device_video/{device_id}/recording/start', ['as' => 'device_video.recording.start', 'uses' => 'DeviceVideoController@recordingStart']);
-    Route::post('device_video/{device_id}/recording/stop', ['as' => 'device_video.recording.stop', 'uses' => 'DeviceVideoController@recordingStop']);
     Route::get('device_video/{device_id}/live/modal', ['as' => 'device_video.live.modal', 'uses' => 'DeviceVideoController@liveModal']);
     Route::get('device_video/{device_id}/stream/{file}', ['as' => 'device_video.stream.proxy', 'uses' => 'DeviceVideoController@streamProxy'])
         ->where('file', '.*');
