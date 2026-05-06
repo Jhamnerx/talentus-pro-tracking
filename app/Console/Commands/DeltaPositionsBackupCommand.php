@@ -121,21 +121,28 @@ class DeltaPositionsBackupCommand extends Command
         $remotePath  = $this->remoteFolder . '/' . BackupFtp::getDevicePositionsRemoteDir($device->id) . $table . '.sql.gz';
         $whereClause = "time >= '{$from}' AND time <= '{$to}'";
 
-        // Pipeline idéntico al backup normal: mysqldump | gzip | ncftpput -m -c
-        // Sin archivo temporal, sin stdin interactivo, sin prompts de contraseña.
+        // MYSQL_PWD evita que mysqldump pida contraseña interactivamente,
+        // además de evitar problemas con caracteres especiales en la contraseña.
         $cmd = "mysqldump"
             . " --insert-ignore"
             . " --no-create-info"
             . " --skip-add-drop-table"
-            . " -u '{$config['username']}'"
-            . " -h {$config['host']}"
-            . " -p'{$config['password']}'"
+            . " -u " . escapeshellarg($config['username'])
+            . " -h " . escapeshellarg($config['host'])
             . " --where=" . escapeshellarg($whereClause)
-            . " {$config['database']} {$table}"
+            . " " . escapeshellarg($config['database'])
+            . " " . escapeshellarg($table)
             . " | gzip -9"
             . " | " . $this->ftp->buildPipeUploadCommand($remotePath);
 
-        $this->runShell($cmd);
+        $process = Process::fromShellCommandline($cmd);
+        $process->setTimeout(300);
+        $process->setEnv(['MYSQL_PWD' => $config['password']]);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
 
         return true;
     }
