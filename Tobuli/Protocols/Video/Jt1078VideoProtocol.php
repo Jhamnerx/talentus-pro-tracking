@@ -2,6 +2,7 @@
 
 namespace Tobuli\Protocols\Video;
 
+use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Device;
 
 /**
@@ -35,11 +36,11 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
 
     /**
      * Resuelve el ID interno de Traccar (tc_devices.id) consultando
-     * GET /api/devices?uniqueId={imei}.
+     * directamente la BD de Traccar por uniqueId (IMEI).
      *
      * El campo traccar_device_id almacena el ID de la tabla traccar_devices
      * de talentus, que NO necesariamente coincide con el ID de tc_devices
-     * en Traccar. La resolución por IMEI es siempre correcta.
+     * en Traccar. La resolución por IMEI en BD es siempre correcta.
      */
     private function tid(Device $device): int
     {
@@ -47,10 +48,12 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
             $imei = (string) $device->imei;
 
             if ($imei !== '') {
-                $result = ($this->get)('api/devices?uniqueId=' . urlencode($imei));
-                $this->resolvedTid = isset($result[0]['id'])
-                    ? (int) $result[0]['id']
-                    : (int) $device->traccar_device_id; // fallback si la API no responde
+                $row = DB::connection('traccar_mysql')
+                    ->table('tc_devices')
+                    ->where('uniqueId', $imei)
+                    ->value('id');
+
+                $this->resolvedTid = $row ? (int) $row : (int) $device->traccar_device_id;
             } else {
                 $this->resolvedTid = (int) $device->traccar_device_id;
             }

@@ -198,14 +198,14 @@ class BackupFtp implements BackupUploaderInterface
 
     /**
      * Upload a local file to a specific remote path via ncftpput.
-     * The $remotePath is relative to the FTP base path (will be sent as full path to ncftpput).
+     * Uses cat pipe (same pattern as regular backup) to avoid stdin conflicts.
      */
     public function uploadFile(string $localFile, string $remotePath): void
     {
-        $command = "ncftpput -m -c"
+        $command = "cat " . escapeshellarg($localFile)
+            . " | ncftpput -m -c"
             . $this->getFtpLoginParams()
-            . $remotePath
-            . " < " . escapeshellarg($localFile);
+            . $remotePath;
 
         $this->run($command);
     }

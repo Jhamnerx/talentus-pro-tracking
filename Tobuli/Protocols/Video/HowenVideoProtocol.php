@@ -2,6 +2,7 @@
 
 namespace Tobuli\Protocols\Video;
 
+use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Device;
 
 /**
@@ -32,7 +33,7 @@ class HowenVideoProtocol extends BaseVideoProtocol
 
     /**
      * Resuelve el ID interno de Traccar (tc_devices.id) consultando
-     * GET /api/devices?uniqueId={imei}.
+     * directamente la BD de Traccar por uniqueId (IMEI).
      *
      * traccar_device_id almacena el ID de la tabla traccar_devices de talentus,
      * que NO necesariamente coincide con tc_devices.id en Traccar.
@@ -43,10 +44,12 @@ class HowenVideoProtocol extends BaseVideoProtocol
             $imei = (string) $device->imei;
 
             if ($imei !== '') {
-                $result = ($this->get)('api/devices?uniqueId=' . urlencode($imei));
-                $this->resolvedTid = isset($result[0]['id'])
-                    ? (int) $result[0]['id']
-                    : (int) $device->traccar_device_id;
+                $row = DB::connection('traccar_mysql')
+                    ->table('tc_devices')
+                    ->where('uniqueId', $imei)
+                    ->value('id');
+
+                $this->resolvedTid = $row ? (int) $row : (int) $device->traccar_device_id;
             } else {
                 $this->resolvedTid = (int) $device->traccar_device_id;
             }
