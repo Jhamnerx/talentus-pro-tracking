@@ -140,10 +140,19 @@
 
     function showHideClientFields() {
         var group_id = $('select[name="group_id"]').val();
+        var $managerSelect = $('select[name="manager_id"]');
+        var baseUrl = $managerSelect.data('ajax-base-url');
+        if (!baseUrl) {
+            baseUrl = $managerSelect.attr('data-ajax');
+            $managerSelect.data('ajax-base-url', baseUrl);
+        }
         if (group_id == 2) {
             $('.field_manager_id').show();
-        }
-        else {
+            $managerSelect.attr('data-ajax', baseUrl);
+        } else if (group_id == 7) {
+            $('.field_manager_id').show();
+            $managerSelect.attr('data-ajax', baseUrl + '?for_monitoring=1');
+        } else {
             $('.field_manager_id').hide();
         }
     }

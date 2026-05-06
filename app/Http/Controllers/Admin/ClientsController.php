@@ -1057,9 +1057,15 @@ class ClientsController extends BaseController
         $usersLoader = new UsersLoader($this->user);
         $usersLoader->setRequestKey('manager_id');
 
-        $usersLoader->setQueryItems(
-            $usersLoader->getQueryItems()->managers()->notUser($this->user)
-        );
+        if (request()->boolean('for_monitoring')) {
+            $usersLoader->setQueryItems(
+                $usersLoader->getQueryItems()->notUser($this->user)
+            );
+        } else {
+            $usersLoader->setQueryItems(
+                $usersLoader->getQueryItems()->managers()->notUser($this->user)
+            );
+        }
 
         return response()->json($usersLoader->get());
     }
