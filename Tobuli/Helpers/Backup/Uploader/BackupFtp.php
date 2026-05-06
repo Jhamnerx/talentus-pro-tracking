@@ -197,16 +197,12 @@ class BackupFtp implements BackupUploaderInterface
     }
 
     /**
-     * Upload a local file to a specific remote path using the PHP FTP connection.
-     * Reuses the already-authenticated session — no password prompts.
+     * Returns the tail of a pipeline command that uploads stdin to $remotePath via ncftpput.
+     * Usage: "mysqldump ... | gzip -9 | " . $ftp->buildPipeUploadCommand($remote)
      */
-    public function uploadFile(string $localFile, string $remotePath): void
+    public function buildPipeUploadCommand(string $remotePath): string
     {
-        $result = $this->handler->put($localFile, $remotePath);
-
-        if (!$result) {
-            throw new \RuntimeException("FTP upload failed for remote path: {$remotePath}");
-        }
+        return "ncftpput -m -c" . $this->getFtpLoginParams() . $remotePath;
     }
 
     public function findBackupFolders(): array

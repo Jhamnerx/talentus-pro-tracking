@@ -118,12 +118,12 @@ class DeltaPositionsBackupCommand extends Command
             return false;
         }
 
-        $localTmp    = storage_path('cache/delta_' . $table . '_' . getmypid() . '.sql.gz');
         $remotePath  = $this->remoteFolder . '/' . BackupFtp::getDevicePositionsRemoteDir($device->id) . $table . '.sql.gz';
         $whereClause = "time >= '{$from}' AND time <= '{$to}'";
 
-        // mysqldump con --where, compatible con las tablas de posiciones de Traccar
-        $dumpCmd = "mysqldump"
+        // Pipeline idéntico al backup normal: mysqldump | gzip | ncftpput -m -c
+        // Sin archivo temporal, sin stdin interactivo, sin prompts de contraseña.
+        $cmd = "mysqldump"
             . " --insert-ignore"
             . " --no-create-info"
             . " --skip-add-drop-table"
@@ -132,19 +132,10 @@ class DeltaPositionsBackupCommand extends Command
             . " -p'{$config['password']}'"
             . " --where=" . escapeshellarg($whereClause)
             . " {$config['database']} {$table}"
-            . " | gzip -9 > " . escapeshellarg($localTmp);
+            . " | gzip -9"
+            . " | " . $this->ftp->buildPipeUploadCommand($remotePath);
 
-        try {
-            $this->runShell($dumpCmd);
-
-            if (!file_exists($localTmp) || filesize($localTmp) === 0) {
-                return false;
-            }
-
-            $this->ftp->uploadFile($localTmp, $remotePath);
-        } finally {
-            @unlink($localTmp);
-        }
+        $this->runShell($cmd);
 
         return true;
     }
