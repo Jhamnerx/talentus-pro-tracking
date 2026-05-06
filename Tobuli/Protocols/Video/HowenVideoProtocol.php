@@ -2,7 +2,6 @@
 
 namespace Tobuli\Protocols\Video;
 
-use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Device;
 
 /**
@@ -21,50 +20,25 @@ use Tobuli\Entities\Device;
  */
 class HowenVideoProtocol extends BaseVideoProtocol
 {
-    /** ID real de Traccar resuelto por IMEI (caché de instancia). */
-    private ?int $resolvedTid = null;
-
     public function isSupported(): bool
     {
         return true;
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────────
-
-    /**
-     * Resuelve el ID interno de Traccar (tc_devices.id) consultando
-     * directamente la BD de Traccar por uniqueId (IMEI).
-     *
-     * traccar_device_id almacena el ID de la tabla traccar_devices de talentus,
-     * que NO necesariamente coincide con tc_devices.id en Traccar.
-     */
-    private function tid(Device $device): int
-    {
-        if ($this->resolvedTid === null) {
-            $imei = (string) $device->imei;
-
-            if ($imei !== '') {
-                $row = DB::connection('traccar_mysql')
-                    ->table('tc_devices')
-                    ->where('uniqueId', $imei)
-                    ->value('id');
-
-                $this->resolvedTid = $row ? (int) $row : (int) $device->traccar_device_id;
-            } else {
-                $this->resolvedTid = (int) $device->traccar_device_id;
-            }
-        }
-
-        return $this->resolvedTid;
-    }
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
      * Construye query string desde array, omitiendo valores nulos.
+     * Siempre incluye uniqueId del dispositivo para que HowenResource.java
+     * pueda resolver el ID interno de Traccar sin depender del traccar_device_id
+     * almacenado en talentus.
      */
-    private function query(array $params): string
+    private function query(Device $device, array $params): string
     {
+        $base = ['uniqueId' => (string) $device->imei];
+        $merged = array_merge($base, $params);
         $pairs = [];
-        foreach ($params as $k => $v) {
+        foreach ($merged as $k => $v) {
             if ($v !== null && $v !== '') {
                 $pairs[] = urlencode($k) . '=' . urlencode((string) $v);
             }
@@ -76,7 +50,8 @@ class HowenVideoProtocol extends BaseVideoProtocol
 
     public function status(Device $device): array
     {
-        return ($this->get)("api/howen/{$this->tid($device)}/status");
+        $qs = $this->query($device, []);
+        return ($this->get)("api/howen/0/status{$qs}");
     }
 
     /**
@@ -88,19 +63,19 @@ class HowenVideoProtocol extends BaseVideoProtocol
      */
     public function liveStart(Device $device, int $channel, int $stream, array $extra = []): array
     {
-        $qs = $this->query(array_merge([
+        $qs = $this->query($device, [
             'channel'     => $channel,
             'stream'      => $stream,
             'mediaServer' => $extra['mediaServer'] ?? null,
             'frameList'   => $extra['frameList']   ?? null,
-        ]));
+        ]);
 
-        $result = ($this->post)("api/howen/{$this->tid($device)}/live/start{$qs}", []);
+        $result = ($this->post)("api/howen/0/live/start{$qs}", []);
 
         if (! empty($result['session'])) {
             $config  = config('tracker');
             $baseUrl = ($this->getBaseUrl)() . ':' . $config['web.port'];
-            $result['hls_url'] = "{$baseUrl}/api/stream/{$this->tid($device)}/live.m3u8?channel={$channel}";
+            $result['hls_url'] = "{$baseUrl}/api/stream/0/live.m3u8?uniqueId={$device->imei}&channel={$channel}";
         }
 
         return $result;
@@ -108,8 +83,8 @@ class HowenVideoProtocol extends BaseVideoProtocol
 
     public function liveStop(Device $device, int $channel, int $stream = 1): array
     {
-        $qs = $this->query(['channel' => $channel, 'stream' => $stream]);
-        return ($this->post)("api/howen/{$this->tid($device)}/live/stop{$qs}", []);
+        $qs = $this->query($device, ['channel' => $channel, 'stream' => $stream]);
+        return ($this->post)("api/howen/0/live/stop{$qs}", []);
     }
 
     /**
@@ -120,8 +95,8 @@ class HowenVideoProtocol extends BaseVideoProtocol
      */
     public function snapshot(Device $device, string $channels, ?string $session = null): array
     {
-        $qs = $this->query(['channel' => $channels, 'session' => $session]);
-        return ($this->post)("api/howen/{$this->tid($device)}/snapshot{$qs}", []);
+        $qs = $this->query($device, ['channel' => $channels, 'session' => $session]);
+        return ($this->post)("api/howen/0/snapshot{$qs}", []);
     }
 
     /**
@@ -131,18 +106,18 @@ class HowenVideoProtocol extends BaseVideoProtocol
      */
     public function audioStart(Device $device, int $channel, int $mode, ?string $mediaServer = null): array
     {
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'     => $channel,
             'mode'        => $mode,
             'mediaServer' => $mediaServer,
         ]);
-        return ($this->post)("api/howen/{$this->tid($device)}/audio/start{$qs}", []);
+        return ($this->post)("api/howen/0/audio/start{$qs}", []);
     }
 
     public function audioStop(Device $device, int $channel): array
     {
-        $qs = $this->query(['channel' => $channel]);
-        return ($this->post)("api/howen/{$this->tid($device)}/audio/stop{$qs}", []);
+        $qs = $this->query($device, ['channel' => $channel]);
+        return ($this->post)("api/howen/0/audio/stop{$qs}", []);
     }
 
     /**
@@ -158,12 +133,14 @@ class HowenVideoProtocol extends BaseVideoProtocol
      */
     public function filesSearch(Device $device, array $params): array
     {
-        return ($this->post)("api/howen/{$this->tid($device)}/files/search", $params);
+        $params['uniqueId'] = (string) $device->imei;
+        return ($this->post)("api/howen/0/files/search", $params);
     }
 
     public function filesPoll(Device $device, string $session): array
     {
-        return ($this->get)("api/howen/{$this->tid($device)}/files/{$session}");
+        $qs = $this->query($device, []);
+        return ($this->get)("api/howen/0/files/{$session}{$qs}");
     }
 
     /**
@@ -181,7 +158,8 @@ class HowenVideoProtocol extends BaseVideoProtocol
      */
     public function playbackStart(Device $device, array $params): array
     {
-        return ($this->post)("api/howen/{$this->tid($device)}/playback/start", $params);
+        $params['uniqueId'] = (string) $device->imei;
+        return ($this->post)("api/howen/0/playback/start", $params);
     }
 
     /**
@@ -190,8 +168,8 @@ class HowenVideoProtocol extends BaseVideoProtocol
      */
     public function recordingStart(Device $device, int $channel): array
     {
-        $qs = $this->query(['channel' => $channel]);
-        return ($this->post)("api/howen/{$this->tid($device)}/recording/start{$qs}", []);
+        $qs = $this->query($device, ['channel' => $channel]);
+        return ($this->post)("api/howen/0/recording/start{$qs}", []);
     }
 
     /**
@@ -200,7 +178,7 @@ class HowenVideoProtocol extends BaseVideoProtocol
      */
     public function recordingStop(Device $device, int $channel): array
     {
-        $qs = $this->query(['channel' => $channel]);
-        return ($this->post)("api/howen/{$this->tid($device)}/recording/stop{$qs}", []);
+        $qs = $this->query($device, ['channel' => $channel]);
+        return ($this->post)("api/howen/0/recording/stop{$qs}", []);
     }
 }

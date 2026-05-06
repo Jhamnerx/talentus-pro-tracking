@@ -2,7 +2,6 @@
 
 namespace Tobuli\Protocols\Video;
 
-use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Device;
 
 /**
@@ -24,48 +23,22 @@ use Tobuli\Entities\Device;
  */
 class Jt1078VideoProtocol extends BaseVideoProtocol
 {
-    /** ID real de Traccar resuelto por IMEI (caché de instancia). */
-    private ?int $resolvedTid = null;
-
     public function isSupported(): bool
     {
         return true;
     }
 
-    // ── Helper ────────────────────────────────────────────────────────────────
+    // ── Helpers ────────────────────────────────────────────────────────────────
 
     /**
-     * Resuelve el ID interno de Traccar (tc_devices.id) consultando
-     * directamente la BD de Traccar por uniqueId (IMEI).
-     *
-     * El campo traccar_device_id almacena el ID de la tabla traccar_devices
-     * de talentus, que NO necesariamente coincide con el ID de tc_devices
-     * en Traccar. La resolución por IMEI en BD es siempre correcta.
+     * Construye query string incluyendo siempre uniqueId del dispositivo.
      */
-    private function tid(Device $device): int
+    private function query(Device $device, array $params): string
     {
-        if ($this->resolvedTid === null) {
-            $imei = (string) $device->imei;
-
-            if ($imei !== '') {
-                $row = DB::connection('traccar_mysql')
-                    ->table('tc_devices')
-                    ->where('uniqueId', $imei)
-                    ->value('id');
-
-                $this->resolvedTid = $row ? (int) $row : (int) $device->traccar_device_id;
-            } else {
-                $this->resolvedTid = (int) $device->traccar_device_id;
-            }
-        }
-
-        return $this->resolvedTid;
-    }
-
-    private function query(array $params): string
-    {
+        $base = ['uniqueId' => (string) $device->imei];
+        $merged = array_merge($base, $params);
         $pairs = [];
-        foreach ($params as $k => $v) {
+        foreach ($merged as $k => $v) {
             if ($v !== null && $v !== '') {
                 $pairs[] = urlencode($k) . '=' . urlencode((string) $v);
             }
@@ -81,7 +54,7 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
             '/'
         ) . ':' . $config['web.port'];
 
-        return "{$baseUrl}/api/stream/{$this->tid($device)}/live.m3u8?channel={$channel}";
+        return "{$baseUrl}/api/stream/0/live.m3u8?uniqueId={$device->imei}&channel={$channel}";
     }
 
     // ── Implementaciones ─────────────────────────────────────────────────────
@@ -91,7 +64,8 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
      */
     public function status(Device $device): array
     {
-        $result = ($this->get)("api/jt1078/{$this->tid($device)}/status");
+        $qs = $this->query($device, []);
+        $result = ($this->get)("api/jt1078/0/status{$qs}");
 
         if (! isset($result['error'])) {
             $result['hls_url'] = $this->hlsUrl($device, 1);
@@ -110,14 +84,14 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
      */
     public function liveStart(Device $device, int $channel, int $stream, array $extra = []): array
     {
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'     => $channel,
             'dataType'    => $extra['dataType']    ?? 0,
             'streamType'  => $stream,
             'mediaServer' => $extra['mediaServer'] ?? null,
         ]);
 
-        $result = ($this->post)("api/jt1078/{$this->tid($device)}/live/start{$qs}", []);
+        $result = ($this->post)("api/jt1078/0/live/start{$qs}", []);
 
         if (! isset($result['error'])) {
             $result['hls_url'] = $this->hlsUrl($device, $channel);
@@ -131,13 +105,13 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
      */
     public function liveStop(Device $device, int $channel, int $stream = 1): array
     {
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'    => $channel,
-            'control'    => 0,       // CONTROL_CANCEL
-            'cancelType' => 0,       // A+V
+            'control'    => 0,
+            'cancelType' => 0,
         ]);
 
-        return ($this->post)("api/jt1078/{$this->tid($device)}/live/control{$qs}", []);
+        return ($this->post)("api/jt1078/0/live/control{$qs}", []);
     }
 
     /**
@@ -155,30 +129,26 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
      */
     public function audioStart(Device $device, int $channel, int $mode, ?string $mediaServer = null): array
     {
-        // dataType 4 = intercom en JT1078; para escucha unidireccional usar 1=audio
         $dataType = $mode >= 1 ? 4 : 1;
 
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'     => $channel,
             'dataType'    => $dataType,
             'streamType'  => 0,
             'mediaServer' => $mediaServer,
         ]);
 
-        return ($this->post)("api/jt1078/{$this->tid($device)}/live/start{$qs}", []);
+        return ($this->post)("api/jt1078/0/live/start{$qs}", []);
     }
 
-    /**
-     * Detiene audio (0x9102 control=4 cancel-intercom, o control=0 para canal).
-     */
     public function audioStop(Device $device, int $channel): array
     {
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'    => $channel,
-            'control'    => 4,   // CONTROL_CANCEL_INTERCOM
+            'control'    => 4,
         ]);
 
-        return ($this->post)("api/jt1078/{$this->tid($device)}/live/control{$qs}", []);
+        return ($this->post)("api/jt1078/0/live/control{$qs}", []);
     }
 
     /**
@@ -194,7 +164,7 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
      */
     public function filesSearch(Device $device, array $params): array
     {
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'      => $params['channel']      ?? 0,
             'startTime'    => $params['startTime']    ?? null,
             'endTime'      => $params['endTime']      ?? null,
@@ -203,15 +173,13 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
             'storageType'  => $params['storageType']  ?? 0,
         ]);
 
-        return ($this->post)("api/jt1078/{$this->tid($device)}/files/search{$qs}", []);
+        return ($this->post)("api/jt1078/0/files/search{$qs}", []);
     }
 
-    /**
-     * Consulta resultados asíncronos de búsqueda de archivos (0x1205).
-     */
     public function filesPoll(Device $device, string $session): array
     {
-        return ($this->get)("api/jt1078/{$this->tid($device)}/files/{$session}");
+        $qs = $this->query($device, []);
+        return ($this->get)("api/jt1078/0/files/{$session}{$qs}");
     }
 
     /**
@@ -230,7 +198,7 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
      */
     public function playbackStart(Device $device, array $params): array
     {
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'      => $params['channel']      ?? 1,
             'avType'       => $params['avType']       ?? 0,
             'streamType'   => $params['streamType']   ?? 0,
@@ -242,7 +210,7 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
             'mediaServer'  => $params['mediaServer']  ?? null,
         ]);
 
-        $result = ($this->post)("api/jt1078/{$this->tid($device)}/playback/start{$qs}", []);
+        $result = ($this->post)("api/jt1078/0/playback/start{$qs}", []);
 
         if (! isset($result['error'])) {
             $channel = $params['channel'] ?? 1;
@@ -263,14 +231,14 @@ class Jt1078VideoProtocol extends BaseVideoProtocol
      */
     public function playbackControl(Device $device, array $params): array
     {
-        $qs = $this->query([
+        $qs = $this->query($device, [
             'channel'    => $params['channel']    ?? 1,
             'control'    => $params['control']    ?? 2,
             'multiplier' => $params['multiplier'] ?? 0,
             'seekTime'   => $params['seekTime']   ?? null,
         ]);
 
-        return ($this->post)("api/jt1078/{$this->tid($device)}/playback/control{$qs}", []);
+        return ($this->post)("api/jt1078/0/playback/control{$qs}", []);
     }
 
     /**
