@@ -112,7 +112,7 @@ class LogsController extends BaseController {
             throw new ValidationException($validator->errors());
 
         $this->trackerConfig->set('logger.level', request()->get('level'));
-        $this->trackerConfig->generate();
+        // $this->trackerConfig->generate();
 
         (new Tracker())->actor($this->user)->restart();
 

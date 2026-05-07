@@ -300,8 +300,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 DeviceModelCache::setDevice($device);
             }
 
-            if ($device->isDirty('forward'))
-                dispatch((new TrackerConfigWithRestart()));
+            // if ($device->isDirty('forward'))
+            //     dispatch((new TrackerConfigWithRestart()));
 
             if ($device->isDirty('active')) {
                 event($device->active ? new DeviceEnabled($device) : new DeviceDisabled($device));
