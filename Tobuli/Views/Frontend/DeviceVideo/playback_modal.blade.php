@@ -33,22 +33,22 @@
 
         /* Sidebar izquierdo */
         .pb-sidebar {
-            width: 220px;
-            min-width: 200px;
+            width: 250px;
+            min-width: 230px;
             background: #1a1a2e;
             color: #eee;
-            padding: 12px 10px;
+            padding: 10px 10px;
             overflow-y: auto;
             flex-shrink: 0;
             border-right: 1px solid #2e2e50;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
         }
 
         .pb-sidebar label {
-            font-size: .74rem;
-            color: #aaa;
+            font-size: .88rem;
+            color: #bbb;
             display: block;
             margin-bottom: 2px;
         }
@@ -57,8 +57,8 @@
             background: #12122a;
             border: 1px solid #3a3a60;
             color: #eee;
-            font-size: .78rem;
-            padding: 4px 6px;
+            font-size: .88rem;
+            padding: 4px 7px;
             border-radius: 4px;
             width: 100%;
         }
@@ -68,18 +68,27 @@
             border-color: #5555aa;
         }
 
+        /* Fila de fecha+hora juntas */
+        .pb-sb-dt-row {
+            display: flex;
+            gap: 4px;
+        }
+        .pb-sb-dt-row .pb-sb-group {
+            flex: 1;
+        }
+
         .pb-sb-group {
             display: flex;
             flex-direction: column;
         }
 
         .pb-sb-title {
-            font-size: .7rem;
+            font-size: .82rem;
             font-weight: 700;
-            letter-spacing: .05em;
-            color: #7878cc;
+            letter-spacing: .04em;
+            color: #8888dd;
             text-transform: uppercase;
-            margin: 6px 0 4px;
+            margin: 5px 0 3px;
         }
 
         .pb-sb-channels {
@@ -91,20 +100,20 @@
         .pb-sb-ch-label {
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: .78rem;
+            gap: 5px;
+            font-size: .88rem;
             cursor: pointer;
         }
 
         .pb-btn {
-            padding: 6px 0;
+            padding: 7px 0;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: .78rem;
+            font-size: .88rem;
             font-weight: 700;
             width: 100%;
-            margin-top: 4px;
+            margin-top: 3px;
         }
 
         .pb-btn:disabled {
@@ -128,9 +137,9 @@
         }
 
         .pb-status-msg {
-            font-size: .72rem;
+            font-size: .84rem;
             color: #e67e22;
-            min-height: 18px;
+            min-height: 20px;
             word-break: break-word;
         }
 
@@ -169,15 +178,15 @@
             padding: 4px 8px;
             background: #1a1a2e;
             color: #eee;
-            font-size: .75rem;
+            font-size: .88rem;
             font-weight: 600;
             flex-shrink: 0;
         }
 
         .pb-badge {
-            padding: 1px 7px;
+            padding: 2px 8px;
             border-radius: 10px;
-            font-size: .68rem;
+            font-size: .78rem;
             background: #444;
             color: #fff;
         }
@@ -208,7 +217,7 @@
             align-items: center;
             justify-content: center;
             color: #aaa;
-            font-size: .78rem;
+            font-size: .88rem;
             gap: 6px;
         }
 
@@ -242,11 +251,11 @@
         }
 
         .pb-btn-sm {
-            padding: 2px 8px;
+            padding: 3px 10px;
             border: none;
             border-radius: 3px;
             cursor: pointer;
-            font-size: .72rem;
+            font-size: .82rem;
             font-weight: 600;
         }
 
@@ -267,7 +276,7 @@
 
         .pb-err {
             color: #e74c3c;
-            font-size: .68rem;
+            font-size: .80rem;
             flex: 1;
             display: none;
         }
@@ -282,8 +291,8 @@
         }
 
         .pb-tl-title {
-            font-size: .70rem;
-            color: #7878cc;
+            font-size: .82rem;
+            color: #8888dd;
             font-weight: 700;
             text-transform: uppercase;
             margin-bottom: 6px;
@@ -292,14 +301,14 @@
         .pb-tl-hours {
             display: flex;
             position: relative;
-            height: 14px;
-            margin-left: 52px;
+            height: 16px;
+            margin-left: 60px;
         }
 
         .pb-tl-hour-label {
             position: absolute;
-            font-size: .62rem;
-            color: #666;
+            font-size: .72rem;
+            color: #777;
             transform: translateX(-50%);
             white-space: nowrap;
         }
@@ -307,21 +316,21 @@
         .pb-tl-row {
             display: flex;
             align-items: center;
-            height: 18px;
-            margin-bottom: 3px;
+            height: 20px;
+            margin-bottom: 4px;
         }
 
         .pb-tl-ch-label {
-            width: 52px;
-            font-size: .70rem;
-            color: #aaa;
+            width: 60px;
+            font-size: .80rem;
+            color: #bbb;
             flex-shrink: 0;
         }
 
         .pb-tl-bar-wrap {
             flex: 1;
             position: relative;
-            height: 12px;
+            height: 14px;
             background: #1e1e3a;
             border-radius: 3px;
             cursor: crosshair;
@@ -367,25 +376,25 @@
         }
 
         .pb-tl-empty {
-            font-size: .72rem;
-            color: #555;
-            padding: 4px 0;
+            font-size: .82rem;
+            color: #666;
+            padding: 6px 0;
             text-align: center;
         }
 
         .pb-tl-legend {
             display: flex;
-            gap: 12px;
-            margin-top: 4px;
+            gap: 14px;
+            margin-top: 5px;
             flex-wrap: wrap;
         }
 
         .pb-tl-legend-item {
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: .65rem;
-            color: #888;
+            gap: 5px;
+            font-size: .78rem;
+            color: #999;
         }
 
         .pb-tl-legend-dot {
@@ -406,10 +415,10 @@
         }
 
         .pb-map-title {
-            padding: 6px 10px;
+            padding: 7px 10px;
             background: #1a1a2e;
-            color: #7878cc;
-            font-size: .70rem;
+            color: #8888dd;
+            font-size: .82rem;
             font-weight: 700;
             text-transform: uppercase;
             border-bottom: 1px solid #2a2a4e;
@@ -423,8 +432,8 @@
 
         .pb-map-info {
             padding: 4px 10px;
-            font-size: .68rem;
-            color: #666;
+            font-size: .78rem;
+            color: #888;
             background: #12122a;
             flex-shrink: 0;
             min-height: 22px;
@@ -437,24 +446,26 @@
         <div class="pb-sidebar">
             <div class="pb-sb-title">Búsqueda</div>
 
-            <div class="pb-sb-group">
-                <label>Fecha inicio</label>
-                <input type="date" id="pb-date-start" class="form-control" value="{{ date('Y-m-d') }}">
+            <div class="pb-sb-dt-row">
+                <div class="pb-sb-group">
+                    <label>Fecha inicio</label>
+                    <input type="date" id="pb-date-start" class="form-control" value="{{ date('Y-m-d') }}">
+                </div>
+                <div class="pb-sb-group">
+                    <label>Hora inicio</label>
+                    <input type="time" id="pb-time-start" class="form-control" value="00:00">
+                </div>
             </div>
 
-            <div class="pb-sb-group">
-                <label>Hora inicio</label>
-                <input type="time" id="pb-time-start" class="form-control" value="00:00">
-            </div>
-
-            <div class="pb-sb-group">
-                <label>Fecha fin</label>
-                <input type="date" id="pb-date-end" class="form-control" value="{{ date('Y-m-d') }}">
-            </div>
-
-            <div class="pb-sb-group">
-                <label>Hora fin</label>
-                <input type="time" id="pb-time-end" class="form-control" value="23:59">
+            <div class="pb-sb-dt-row">
+                <div class="pb-sb-group">
+                    <label>Fecha fin</label>
+                    <input type="date" id="pb-date-end" class="form-control" value="{{ date('Y-m-d') }}">
+                </div>
+                <div class="pb-sb-group">
+                    <label>Hora fin</label>
+                    <input type="time" id="pb-time-end" class="form-control" value="23:59">
+                </div>
             </div>
 
             <div class="pb-sb-group">
@@ -490,7 +501,7 @@
             </div>
 
             <div class="pb-sb-group">
-                <label>Arroyo (stream)</label>
+                <label>Stream</label>
                 <select id="pb-stream" class="form-control">
                     <option value="1" selected>Principal</option>
                     <option value="0">Secundario</option>
@@ -767,7 +778,10 @@
                                 document.getElementById('pb-btn-search').disabled = false;
                                 if (currentFiles.length === 0) {
                                     status('No se encontraron archivos para ese período', '#aaa');
+                                    renderTimeline([]);
                                 } else {
+                                    // Forzar renderizado final aunque el último batch estuviera vacío
+                                    renderTimeline(currentFiles);
                                     status(currentFiles.length +
                                         ' archivos disponibles. Selecciona uno en la línea de tiempo.',
                                         '#27ae60');
@@ -785,10 +799,24 @@
             /* Timeline                                                             */
             /* ------------------------------------------------------------------ */
             function parseTime(str) {
-                // Formato: "YYYY-MM-DD HH:MM:SS"
                 if (!str) return 0;
-                var d = new Date(str.replace(' ', 'T'));
-                return isNaN(d) ? 0 : d.getTime();
+                var s = String(str).trim();
+
+                // "YYYY-MM-DD HH:MM:SS" o "YYYY-MM-DDTHH:MM:SS"
+                var d = new Date(s.replace(' ', 'T'));
+                if (!isNaN(d.getTime())) return d.getTime();
+
+                // "YYYYMMDDHHMMSS" (14 dígitos)
+                var m14 = s.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
+                if (m14) {
+                    return new Date(m14[1]+'-'+m14[2]+'-'+m14[3]+'T'+m14[4]+':'+m14[5]+':'+m14[6]).getTime();
+                }
+
+                // Unix timestamp (segundos o milisegundos)
+                var n = Number(s);
+                if (!isNaN(n) && n > 1000000000) return n > 9999999999 ? n : n * 1000;
+
+                return 0;
             }
 
             function renderTimeline(files) {
@@ -842,9 +870,12 @@
                     var barsHtml = '';
 
                     segs.forEach(function(seg, idx) {
-                        var st = parseTime(seg.st || seg.startTime || seg.start_time);
-                        var et = parseTime(seg.et || seg.endTime || seg.end_time);
-                        if (!st || !et || et <= st) return;
+                        var st = parseTime(seg.st || seg.startTime || seg.start_time || seg.begin_time);
+                        var et = parseTime(seg.et || seg.endTime   || seg.end_time   || seg.finish_time);
+                        if (!st || !et || et <= st) {
+                            console.warn('[PB timeline] seg sin tiempo válido:', JSON.stringify(seg));
+                            return;
+                        }
 
                         var left = Math.max(0, ((st - rangeStart) / rangeMs) * 100);
                         var width = Math.min(100 - left, ((et - st) / rangeMs) * 100);
@@ -868,7 +899,7 @@
                     });
 
                     rowsHtml += '<div class="pb-tl-row">' +
-                        '<span class="pb-tl-ch-label">Canal ' + ch + '</span>' +
+                        '<span class="pb-tl-ch-label">CH ' + ch + '</span>' +
                         '<div class="pb-tl-bar-wrap" data-ch="' + ch + '">' +
                         barsHtml +
                         '<div class="pb-tl-cursor" id="pb-tl-cursor-' + ch + '"></div>' +
@@ -876,8 +907,14 @@
                         '</div>';
                 });
 
+                if (!rowsHtml) {
+                    console.warn('[PB timeline] Sin filas renderizadas. Primer archivo:', JSON.stringify(files[0]));
+                    container.innerHTML = '<div class="pb-tl-empty">Archivos encontrados pero sin rango de tiempo válido &mdash; ver consola</div>';
+                    return;
+                }
+
                 container.innerHTML =
-                    '<div class="pb-tl-hours" style="margin-left:52px;position:relative;height:16px;">' + hoursHtml +
+                    '<div class="pb-tl-hours" style="margin-left:60px;position:relative;height:16px;">' + hoursHtml +
                     '</div>' +
                     rowsHtml;
 
