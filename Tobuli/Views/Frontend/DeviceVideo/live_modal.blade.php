@@ -236,38 +236,60 @@
                 if (v) v.src = '';
             }
 
+            var retryCount = {};
+            var MAX_RETRIES = 12;
+
             function attachHls(ch, url) {
                 var video = document.getElementById('lvm-video-' + ch);
                 if (!video) return;
                 destroyHls(ch);
                 showErr(ch, '');
+                retryCount[ch] = 0;
 
                 if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                     var h = new Hls({
                         enableWorker: false,
                         liveSyncDurationCount: 2,
-                        liveMaxLatencyDurationCount: 4,
-                        levelLoadingRetryDelay: 1000,
-                        fragLoadingMaxRetry: 4,
-                        levelLoadingMaxRetry: 6
+                        liveMaxLatencyDurationCount: 6,
+                        levelLoadingRetryDelay: 2000,
+                        fragLoadingMaxRetry: 6,
+                        levelLoadingMaxRetry: 4
                     });
                     hlsInstances[ch] = h;
                     h.loadSource(url);
                     h.attachMedia(video);
                     h.on(Hls.Events.MANIFEST_PARSED, function() {
+                        retryCount[ch] = 0;
                         hideOverlay(ch);
                         setBadge(ch, 'LIVE', '#27ae60');
                         video.play().catch(function() {});
                     });
                     h.on(Hls.Events.ERROR, function(e, data) {
                         if (data.fatal) {
-                            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-                                h.startLoad();
-                            } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
                                 h.recoverMediaError();
+                                return;
+                            }
+                            // NETWORK_ERROR: reintento con backoff exponencial
+                            retryCount[ch] = (retryCount[ch] || 0) + 1;
+                            if (retryCount[ch] <= MAX_RETRIES) {
+                                var delay = Math.min(1000 * Math.pow(1.5, retryCount[ch] - 1), 8000);
+                                showOverlay(ch, 'Reconectando... (' + retryCount[ch] + '/' + MAX_RETRIES + ')');
+                                setBadge(ch, 'Conectando...', '#e67e22');
+                                setTimeout(function() {
+                                    if (hlsInstances[ch] === h) {
+                                        // startLoad() no funciona tras un error fatal de manifest;
+                                        // hay que recrear la instancia completa.
+                                        attachHls(ch, url);
+                                    }
+                                }, delay);
                             } else {
-                                showErr(ch, 'Error: ' + data.type);
+                                showErr(ch, 'Sin respuesta del dispositivo. Intente de nuevo.');
                                 setBadge(ch, 'Error', '#c0392b');
+                                showOverlay(ch, null);
+                                document.getElementById('lvm-start-' + ch).disabled = false;
+                                document.getElementById('lvm-stop-' + ch).disabled = true;
+                                destroyHls(ch);
                             }
                         }
                     });
@@ -312,12 +334,12 @@
                     .then(function() {
                         setTimeout(function() {
                             loadHlsOnce(ch, url);
-                        }, 3000);
+                        }, 6000);
                     })
                     .catch(function() {
                         setTimeout(function() {
                             loadHlsOnce(ch, url);
-                        }, 2000);
+                        }, 6000);
                     });
             }
 

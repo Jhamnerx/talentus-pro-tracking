@@ -93,7 +93,19 @@ class DeviceVideoController extends Controller
         $body     = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $mimeType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE) ?: 'application/octet-stream';
+        $curlError = curl_error($ch);
         curl_close($ch);
+
+        // Si Traccar aún no tiene la sesión lista devolvemos un M3U8 vacío válido
+        // para que HLS.js siga reintentando en lugar de emitir un error fatal.
+        if ($httpCode !== 200 && str_ends_with($file, '.m3u8')) {
+            $empty = "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:5\n#EXT-X-MEDIA-SEQUENCE:0\n";
+            return response($empty, 200, [
+                'Content-Type'                => 'application/vnd.apple.mpegurl',
+                'Access-Control-Allow-Origin' => '*',
+                'Cache-Control'               => 'no-cache, no-store, must-revalidate',
+            ]);
+        }
 
         if ($httpCode !== 200) {
             abort($httpCode ?: 502, 'Error al obtener stream de Traccar');

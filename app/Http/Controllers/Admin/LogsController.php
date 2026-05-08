@@ -1,4 +1,6 @@
-<?php namespace App\Http\Controllers\Admin;
+<?php
+
+namespace App\Http\Controllers\Admin;
 
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
@@ -8,7 +10,8 @@ use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Tracker;
 use Tobuli\Helpers\TrackerConfig;
 
-class LogsController extends BaseController {
+class LogsController extends BaseController
+{
     private $section = 'logs';
 
     private $trackerConfig;
@@ -38,7 +41,7 @@ class LogsController extends BaseController {
             ->filter(function ($item) {
                 return strpos($item->basename, 'wrapper.log') === false;
             })
-            ->sortByDesc(function($item) {
+            ->sortByDesc(function ($item) {
                 return $item->created_at;
             })
             ->paginate(20);
@@ -74,7 +77,7 @@ class LogsController extends BaseController {
     {
         $ids = Request::input('id');
 
-        if ( ! is_array($ids))
+        if (! is_array($ids))
             $ids = [$ids];
 
         $ids = array_filter($ids);
@@ -82,10 +85,11 @@ class LogsController extends BaseController {
         foreach ($ids as $id) {
             $file = TrackerLog::find($id);
             $file->delete();
-            
+
             try {
                 TrackerLog::find('wrapper.log.' . date('Ymd', strtotime($file->created_at)) . '.gz')->delete();
-            } catch (\Exception $e) {}
+            } catch (\Exception $e) {
+            }
         }
 
         return Response::json(['status' => 1]);
