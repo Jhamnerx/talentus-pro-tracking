@@ -214,6 +214,13 @@
                             <span class="text">{{ trans('front.live_video') }}</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="javascript:" data-url="{{ route('device_video.playback.modal', $item->id) }}"
+                            data-modal="device_video_playback_{{ $item->id }}" role="button">
+                            <span class="icon history"></span>
+                            <span class="text">Reproducción</span>
+                        </a>
+                    </li>
                 @endif
                 @php
                     $cam = false;

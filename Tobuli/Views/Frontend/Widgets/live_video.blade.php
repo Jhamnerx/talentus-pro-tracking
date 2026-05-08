@@ -9,6 +9,10 @@
             style="display:none;">
             <i class="fa fa-play"></i> {{ trans('front.live_video') }}
         </a>
+        <a href="javascript:" id="widget-playback-btn" class="btn btn-default" data-url="" data-modal=""
+            style="display:none; margin-left:6px;">
+            <i class="fa fa-history"></i> Reproducción
+        </a>
         <p class="text-muted small" id="widget-live-video-hint">
             {{ trans('front.select_device') }}
         </p>
@@ -32,9 +36,18 @@
                     btn.setAttribute('data-url', '/device_video/' + deviceId + '/live/modal');
                     btn.setAttribute('data-modal', 'device_video_live_' + deviceId);
                     btn.style.display = 'inline-block';
+                    var pbBtn = document.getElementById('widget-playback-btn');
+                    if (pbBtn) {
+                        pbBtn.setAttribute('data-url', '/device_video/' + deviceId +
+                            '/playback/modal');
+                        pbBtn.setAttribute('data-modal', 'device_video_playback_' + deviceId);
+                        pbBtn.style.display = 'inline-block';
+                    }
                     if (hint) hint.style.display = 'none';
                 } else {
                     btn.style.display = 'none';
+                    var pbBtn2 = document.getElementById('widget-playback-btn');
+                    if (pbBtn2) pbBtn2.style.display = 'none';
                     if (hint) hint.style.display = 'block';
                 }
             });
