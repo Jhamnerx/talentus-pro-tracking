@@ -419,6 +419,12 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('device_video/{device_id}/live/modal', ['as' => 'device_video.live.modal', 'uses' => 'DeviceVideoController@liveModal']);
     Route::get('device_video/{device_id}/stream/{file}', ['as' => 'device_video.stream.proxy', 'uses' => 'DeviceVideoController@streamProxy'])
         ->where('file', '.*');
+    Route::get('device_video/{device_id}/playback/modal', ['as' => 'device_video.playback.modal', 'uses' => 'DeviceVideoController@playbackModal']);
+    Route::post('device_video/{device_id}/playback/search', ['as' => 'device_video.playback.search', 'uses' => 'DeviceVideoController@playbackSearch']);
+    Route::get('device_video/{device_id}/playback/files/{session}', ['as' => 'device_video.playback.poll', 'uses' => 'DeviceVideoController@playbackPoll']);
+    Route::post('device_video/{device_id}/playback/start', ['as' => 'device_video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
+    Route::post('device_video/{device_id}/playback/stop', ['as' => 'device_video.playback.stop', 'uses' => 'DeviceVideoController@playbackStop']);
+    Route::get('device_video/{device_id}/playback/route', ['as' => 'device_video.playback.route', 'uses' => 'DeviceVideoController@playbackRoute']);
 
     # SMS gateway
     Route::get('sms_gateway/test_sms', ['as' => 'sms_gateway.test_sms', 'uses' => 'SmsGatewayController@testSms']);

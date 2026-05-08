@@ -88,6 +88,120 @@ class DeviceVideoController extends Controller
         return view('front::DeviceVideo.live_modal', compact('device'));
     }
 
+    // -------------------------------------------------------------------------
+    // Playback (archivo desde memoria del dispositivo)
+    // -------------------------------------------------------------------------
+
+    public function playbackModal(int $deviceId)
+    {
+        $device = $this->findDevice($deviceId);
+
+        if (! $this->videoService->isSupported($device)) {
+            abort(404, 'El protocolo del dispositivo no soporta video.');
+        }
+
+        return view('front::DeviceVideo.playback_modal', compact('device'));
+    }
+
+    public function playbackSearch(int $deviceId): JsonResponse
+    {
+        $device = $this->findDevice($deviceId);
+
+        $params = [
+            'channels'  => $this->data['channels']  ?? '1;2;3;4',
+            'startTime' => $this->data['startTime']  ?? null,
+            'endTime'   => $this->data['endTime']    ?? null,
+            'fileType'  => $this->data['fileType']   ?? '1',
+        ];
+
+        if (! empty($this->data['storage'])) {
+            $params['storage'] = $this->data['storage'];
+        }
+        if (isset($this->data['stream'])) {
+            $params['stream'] = $this->data['stream'];
+        }
+
+        if (empty($params['startTime']) || empty($params['endTime'])) {
+            return response()->json(['error' => 'startTime y endTime son requeridos'], 422);
+        }
+
+        $result = $this->videoService->searchFiles($device, $params);
+
+        if ($result === null) {
+            return response()->json(['error' => 'Dispositivo no conectado o error de comunicación'], 503);
+        }
+
+        return response()->json($result);
+    }
+
+    public function playbackPoll(int $deviceId, string $session): JsonResponse
+    {
+        $device = $this->findDevice($deviceId);
+        $files  = $this->videoService->pollFileResults($device, $session);
+
+        return response()->json(['files' => $files]);
+    }
+
+    public function playbackStart(int $deviceId): JsonResponse
+    {
+        $device = $this->findDevice($deviceId);
+        $channel = (int) ($this->data['channel'] ?? 1);
+
+        $params = [
+            'channels'  => (string) $channel,
+            'startTime' => $this->data['startTime'] ?? null,
+            'endTime'   => $this->data['endTime']   ?? null,
+        ];
+
+        if (! empty($this->data['fileName'])) {
+            $params['fileName'] = $this->data['fileName'];
+        }
+        if (isset($this->data['stream'])) {
+            $params['stream'] = $this->data['stream'];
+        }
+        if (isset($this->data['act'])) {
+            $params['act'] = $this->data['act'];
+        }
+        if (! empty($this->data['frameList'])) {
+            $params['frameList'] = $this->data['frameList'];
+        }
+
+        $result = $this->videoService->startPlayback($device, $params);
+
+        if ($result === null) {
+            return response()->json(['error' => 'Dispositivo no conectado o error de comunicación'], 503);
+        }
+
+        return response()->json(array_merge($result, [
+            'hls_url' => url("device_video/{$device->id}/stream/live.m3u8") . '?channel=' . $channel,
+        ]));
+    }
+
+    public function playbackStop(int $deviceId): JsonResponse
+    {
+        $device  = $this->findDevice($deviceId);
+        $channel = (int) ($this->data['channel'] ?? 1);
+
+        $this->videoService->stopPlayback($device, $channel);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function playbackRoute(int $deviceId): JsonResponse
+    {
+        $device = $this->findDevice($deviceId);
+        $from   = $this->data['from'] ?? null;
+        $to     = $this->data['to']   ?? null;
+
+        if (! $from || ! $to) {
+            return response()->json(['error' => 'Se requieren los parámetros from y to'], 422);
+        }
+
+        $positions = $this->videoService->getRoute($device, $from, $to);
+
+        return response()->json(['positions' => $positions]);
+    }
+
     public function streamProxy(int $deviceId, string $file): Response
     {
         $device = $this->findDevice($deviceId);
@@ -133,6 +247,15 @@ class DeviceVideoController extends Controller
         }
 
         if ($httpCode !== 200) {
+            // Para segmentos .ts ya eviccionados por FFmpeg devolvemos una respuesta
+            // vacía (no una página de error HTML) para que hls.js descarte el
+            // segmento silenciosamente y continúe con el siguiente.
+            if (str_ends_with($file, '.ts')) {
+                return response('', 404, [
+                    'Content-Type'                => 'video/mp2t',
+                    'Access-Control-Allow-Origin' => '*',
+                ]);
+            }
             abort($httpCode ?: 502, 'Error al obtener stream de Traccar');
         }
 
