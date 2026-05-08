@@ -158,9 +158,9 @@ class SendDataMininter implements ShouldQueue
                     $json['placa'],
                     'success',
                     $json,
-                    ['response' => $response],
-                    [], // <- adicionalData
-                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']), // <- fecha
+                    ['status_code' => $response->getStatusCode()],
+                    [],
+                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']),
                     $json['imei'],
                 );
             }
@@ -175,9 +175,9 @@ class SendDataMininter implements ShouldQueue
                     $json['placa'],
                     'error',
                     $json,
-                    ['response' => $response],
-                    [], // <- adicionalData
-                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']), // <- fecha
+                    ['status_code' => $response->getStatusCode(), 'body' => (string) $response->getBody()],
+                    [],
+                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']),
                     $json['imei'],
                 );
             }

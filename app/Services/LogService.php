@@ -83,15 +83,17 @@ class LogService
      */
     public function logToDatabase($service, $plate, $status = '', $trama = [], $response = [], $additionalData = [], $datePosicion = null, $imei = null): void
     {
+        // Serializar respuesta de forma segura (evitar objetos no serializables como Guzzle Response)
+        $responseData = is_array($response) || is_scalar($response) ? $response : (string) $response;
+
         WebservicesLogs::create([
             'service_name' => $service,
             'method'       => 'POST',
             'date'         => Carbon::now()->format('Y-m-d H:i:s'),
             'plate_number' => $plate,
             'request'      => json_encode($trama),
-            'response'     => json_encode($response),
+            'response'     => json_encode($responseData),
             'status'       => $status,
-            'additional_data' => $additionalData,
             'fecha_hora_posicion' => $datePosicion,
             'imei'         => $imei,
             'user_id'      => $this->userId,

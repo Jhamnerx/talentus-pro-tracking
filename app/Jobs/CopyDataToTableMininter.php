@@ -41,21 +41,21 @@ class CopyDataToTableMininter implements ShouldQueue
 
     public function handle()
     {
-        //$this->getPositions();
-        $this->clonePositions();
+        $this->getPositions();
+        //$this->clonePositions();
     }
 
     public function getPositions()
     {
         //$devices = Device::where('mininter', 1)->get();
         $devices = Device::where('mininter', 1)
-            ->whereIn('plate_number', ['M6H-912'])
+            ->whereIn('plate_number', ['3749-NM', 'EAP-218'])
             ->get();
 
         foreach ($devices as $device) {
 
             $device->positions()
-                ->whereBetween('time', ['2025-10-27 05:00:00', '2025-10-28 05:00:00'])
+                ->whereBetween('time', ['2026-02-01 05:00:00', '2026-04-01 05:00:00'])
                 ->chunk(100, function ($positions) use ($device) {
                     foreach ($positions as $position) {
                         //  Log::info('Device e: ' . $position);

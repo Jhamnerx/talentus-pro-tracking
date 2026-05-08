@@ -24,7 +24,7 @@ class EventWriteService
 
     protected function writeEvents($events)
     {
-        $events = Arr::where($events, function($event, $key) {
+        $events = Arr::where($events, function ($event, $key) {
             return !empty($event);
         });
 
@@ -32,7 +32,7 @@ class EventWriteService
             return;
 
         $now = \Carbon::now();
-        
+
         /** @var Event $event */
         foreach ($events as $event) {
             if (!$event->created_at) {
@@ -44,13 +44,13 @@ class EventWriteService
             }
         }
 
-        $data = array_map(fn (Event $event) => $event->toArrayMassInsert(), $events);
+        $data = array_map(fn(Event $event) => $event->toArrayMassInsert(), $events);
         Event::insert($data);
     }
 
     protected function writeEventFireAt($events)
     {
-        $events = Arr::where($events, function($event) {
+        $events = Arr::where($events, function ($event) {
             return $event->device_id && $event->alert_id;
         });
 
