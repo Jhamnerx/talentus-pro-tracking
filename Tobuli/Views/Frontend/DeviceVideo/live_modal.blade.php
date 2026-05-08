@@ -145,6 +145,50 @@
             flex: 1;
             display: none;
         }
+
+        .lvm-card-footer-audio {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px 6px;
+            background: #1a1a2e;
+            flex-wrap: wrap;
+            border-top: 1px solid #2a2a4e;
+        }
+
+        .lvm-btn-audio {
+            background: #d35400;
+            color: #fff;
+        }
+
+        .lvm-btn-audio.active {
+            background: #e67e22;
+            box-shadow: 0 0 6px rgba(230, 126, 34, .7);
+        }
+
+        .lvm-btn-intercom {
+            background: #6c3483;
+            color: #fff;
+        }
+
+        .lvm-btn-intercom.active {
+            background: #9b59b6;
+            box-shadow: 0 0 6px rgba(155, 89, 182, .7);
+        }
+
+        .lvm-audio-indicator {
+            font-size: .70rem;
+            color: #aaa;
+            flex: 1;
+        }
+
+        .lvm-audio-indicator.on {
+            color: #e67e22;
+        }
+
+        .lvm-audio-indicator.intercom {
+            color: #9b59b6;
+        }
     </style>
 
     <div class="lvm-grid" id="lvm-grid">
@@ -169,6 +213,17 @@
                     </button>
                     <span class="lvm-err" id="lvm-err-{{ $ch }}"></span>
                 </div>
+                <div class="lvm-card-footer-audio">
+                    <button class="lvm-btn lvm-btn-audio" id="lvm-audio-{{ $ch }}" disabled
+                        title="{{ trans('front.audio_mode_listen') }}">
+                        &#128266; {{ trans('front.audio_mode_listen') }}
+                    </button>
+                    <button class="lvm-btn lvm-btn-intercom" id="lvm-intercom-{{ $ch }}" disabled
+                        title="{{ trans('front.audio_mode_intercom') }}">
+                        &#127908; {{ trans('front.audio_mode_intercom') }}
+                    </button>
+                    <span class="lvm-audio-indicator" id="lvm-audio-status-{{ $ch }}"></span>
+                </div>
             </div>
         @endfor
     </div>
@@ -177,6 +232,7 @@
         (function() {
             var deviceId = {{ $device->id }};
             var hlsInstances = {};
+            var audioState = {}; // ch -> 'off' | 'listen' | 'intercom'
 
             function csrfToken() {
                 var m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
@@ -227,6 +283,37 @@
                 }
             }
 
+            function setAudioButtons(ch, enabled) {
+                var btnAudio = document.getElementById('lvm-audio-' + ch);
+                var btnIntercom = document.getElementById('lvm-intercom-' + ch);
+                if (btnAudio) btnAudio.disabled = !enabled;
+                if (btnIntercom) btnIntercom.disabled = !enabled;
+            }
+
+            function setAudioStatus(ch, state) {
+                audioState[ch] = state || 'off';
+                var el = document.getElementById('lvm-audio-status-' + ch);
+                var btnAudio = document.getElementById('lvm-audio-' + ch);
+                var btnIntercom = document.getElementById('lvm-intercom-' + ch);
+                if (!el) return;
+                if (state === 'listen') {
+                    el.textContent = '&#128266; Escuchando...';
+                    el.className = 'lvm-audio-indicator on';
+                    if (btnAudio) btnAudio.classList.add('active');
+                    if (btnIntercom) btnIntercom.classList.remove('active');
+                } else if (state === 'intercom') {
+                    el.textContent = '&#127908; Intercomunicador activo...';
+                    el.className = 'lvm-audio-indicator intercom';
+                    if (btnAudio) btnAudio.classList.remove('active');
+                    if (btnIntercom) btnIntercom.classList.add('active');
+                } else {
+                    el.textContent = '';
+                    el.className = 'lvm-audio-indicator';
+                    if (btnAudio) btnAudio.classList.remove('active');
+                    if (btnIntercom) btnIntercom.classList.remove('active');
+                }
+            }
+
             function destroyHls(ch) {
                 if (hlsInstances[ch]) {
                     hlsInstances[ch].destroy();
@@ -236,113 +323,111 @@
                 if (v) v.src = '';
             }
 
-            var retryCount = {};
-            var MAX_RETRIES = 12;
+            // ── HLS attach ────────────────────────────────────────────────────
+            // NOTE: MANIFEST_PARSED fires even on an empty live playlist (no segments).
+            // We must NOT show "LIVE" there — only after the first video frame plays.
+            // The `video.playing` DOM event is the reliable signal.
 
-            function attachHls(ch, url) {
+            function attachHls(ch, url, overlaySuffix) {
                 var video = document.getElementById('lvm-video-' + ch);
                 if (!video) return;
                 destroyHls(ch);
                 showErr(ch, '');
-                retryCount[ch] = 0;
+
+                var suffix = overlaySuffix || 'Aguardando dispositivo...';
+                showOverlay(ch, suffix);
+                setBadge(ch, 'Conectando...', '#e67e22');
+
+                // Once video actually plays → mark LIVE
+                var onPlaying = function() {
+                    hideOverlay(ch);
+                    setBadge(ch, 'LIVE', '#27ae60');
+                    video.removeEventListener('playing', onPlaying);
+                };
+                video.addEventListener('playing', onPlaying);
 
                 if (typeof Hls !== 'undefined' && Hls.isSupported()) {
                     var h = new Hls({
                         enableWorker: false,
                         liveSyncDurationCount: 2,
-                        liveMaxLatencyDurationCount: 6,
+                        liveMaxLatencyDurationCount: 8,
                         levelLoadingRetryDelay: 2000,
-                        fragLoadingMaxRetry: 6,
-                        levelLoadingMaxRetry: 4
+                        fragLoadingMaxRetry: 8,
+                        levelLoadingMaxRetry: 6,
+                        manifestLoadingMaxRetry: 6,
+                        manifestLoadingRetryDelay: 2000,
                     });
                     hlsInstances[ch] = h;
                     h.loadSource(url);
                     h.attachMedia(video);
+
                     h.on(Hls.Events.MANIFEST_PARSED, function() {
-                        retryCount[ch] = 0;
-                        hideOverlay(ch);
-                        setBadge(ch, 'LIVE', '#27ae60');
+                        // Playlist cargado — puede estar vacío aún; no cambiamos overlay.
+                        // Solo intentamos play(); el evento `playing` del video
+                        // se encargará de mostrar LIVE cuando haya datos reales.
                         video.play().catch(function() {});
                     });
-                    // FRAG_PARSED: hls.js ya parseó el TS y conoce el codec real
+
                     h.on(Hls.Events.FRAG_PARSED, function(e, data) {
                         var level = h.levels && h.levels[h.currentLevel >= 0 ? h.currentLevel : 0];
                         var codec = (level && level.videoCodec) ? level.videoCodec : null;
-                        console.log('[Canal ' + ch + '] FRAG_PARSED codec:', codec,
-                            '| currentLevel:', h.currentLevel,
-                            '| levels:', JSON.stringify((h.levels || []).map(function(l) {
-                                return {
-                                    vc: l.videoCodec,
-                                    ac: l.audioCodec
-                                };
-                            })));
                         if (codec && (codec.indexOf('hvc') === 0 || codec.indexOf('hev') === 0)) {
-                            showErr(ch,
-                                'H.265 detectado — el servidor aun envia H.265. Deployer el JAR con si=0.');
+                            showErr(ch, 'H.265 detectado — transcode pendiente.');
                             setBadge(ch, 'H.265', '#e67e22');
                         }
                     });
+
                     h.on(Hls.Events.ERROR, function(e, data) {
-                        // Log TODOS los errores para diagnosticar
-                        console.warn('[Canal ' + ch + '] hls.js error:', data.type, data.details,
-                            'fatal:', data.fatal, data);
-                        if (data.fatal) {
-                            if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-                                h.recoverMediaError();
-                                return;
-                            }
-                            // NETWORK_ERROR: reintento con backoff exponencial
-                            retryCount[ch] = (retryCount[ch] || 0) + 1;
-                            if (retryCount[ch] <= MAX_RETRIES) {
-                                var delay = Math.min(1000 * Math.pow(1.5, retryCount[ch] - 1), 8000);
-                                showOverlay(ch, 'Reconectando... (' + retryCount[ch] + '/' + MAX_RETRIES + ')');
-                                setBadge(ch, 'Conectando...', '#e67e22');
-                                setTimeout(function() {
-                                    if (hlsInstances[ch] === h) {
-                                        // startLoad() no funciona tras un error fatal de manifest;
-                                        // hay que recrear la instancia completa.
-                                        attachHls(ch, url);
-                                    }
-                                }, delay);
-                            } else {
-                                showErr(ch, 'Sin respuesta del dispositivo. Intente de nuevo.');
-                                setBadge(ch, 'Error', '#c0392b');
-                                showOverlay(ch, null);
-                                document.getElementById('lvm-start-' + ch).disabled = false;
-                                document.getElementById('lvm-stop-' + ch).disabled = true;
-                                destroyHls(ch);
-                            }
+                        if (!data.fatal) return;
+
+                        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                            h.recoverMediaError();
+                            return;
                         }
+
+                        // Fatal network error: reintento con backoff exponencial.
+                        // attachHls() resets el contador por lo que el backoff solo aplica
+                        // dentro de una misma "sesión de attach".
+                        var rc = (h._lvmRetry = (h._lvmRetry || 0) + 1);
+                        var delay = Math.min(1500 * Math.pow(1.6, rc - 1), 12000);
+                        showOverlay(ch, 'Reconectando... (' + rc + ')');
+                        setTimeout(function() {
+                            if (hlsInstances[ch] === h) {
+                                attachHls(ch, url, 'Reconectando...');
+                            }
+                        }, delay);
                     });
+
                 } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                    // Safari native HLS
                     video.src = url;
-                    hideOverlay(ch);
-                    setBadge(ch, 'LIVE', '#27ae60');
+                    video.load();
                     video.play().catch(function() {});
                 } else {
                     showErr(ch, '{{ trans('front.browser_not_support_html_video') }}');
                 }
             }
 
-            function loadHlsOnce(ch, url) {
+            function loadHlsLib(cb) {
                 if (typeof Hls !== 'undefined') {
-                    attachHls(ch, url);
-                } else {
-                    var s = document.createElement('script');
-                    s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.4.14/dist/hls.min.js';
-                    s.onload = function() {
-                        attachHls(ch, url);
-                    };
-                    s.onerror = function() {
-                        showErr(ch, '{{ trans('front.browser_not_support_html_video') }}');
-                    };
-                    document.head.appendChild(s);
+                    cb();
+                    return;
                 }
+                var s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.4.14/dist/hls.min.js';
+                s.onload = cb;
+                s.onerror = function() {
+                    console.warn('hls.js failed to load from CDN');
+                    cb(); // proceed anyway; canPlayType fallback may work
+                };
+                document.head.appendChild(s);
             }
 
+            // ── Video start/stop ──────────────────────────────────────────────
+
             function startChannel(ch) {
-                setBadge(ch, 'Conectando...', '#e67e22');
-                showOverlay(ch, 'Conectando...');
+                setBadge(ch, 'Enviando comando...', '#e67e22');
+                showOverlay(ch, 'Enviando comando...');
                 showErr(ch, '');
                 document.getElementById('lvm-start-' + ch).disabled = true;
                 document.getElementById('lvm-stop-' + ch).disabled = false;
@@ -352,15 +437,27 @@
                 post('/device_video/' + deviceId + '/live/start', {
                         channel: ch
                     })
-                    .then(function() {
-                        setTimeout(function() {
-                            loadHlsOnce(ch, url);
-                        }, 6000);
+                    .then(function(res) {
+                        // `initial_delay`: 6000 ms si device conectado, 20000 ms si offline
+                        var delay = (res && res.initial_delay) ? res.initial_delay : 8000;
+                        var msg = (res && res.connected === false) ?
+                            'Dispositivo offline — comando en cola (' + Math.round(delay / 1000) + ' s)...' :
+                            'Aguardando dispositivo...';
+                        showOverlay(ch, msg);
+                        setBadge(ch, 'Conectando...', '#e67e22');
+                        loadHlsLib(function() {
+                            setTimeout(function() {
+                                attachHls(ch, url, msg);
+                            }, delay);
+                        });
                     })
                     .catch(function() {
-                        setTimeout(function() {
-                            loadHlsOnce(ch, url);
-                        }, 6000);
+                        // Fallback: mismo comportamiento con delay fijo
+                        loadHlsLib(function() {
+                            setTimeout(function() {
+                                attachHls(ch, url, 'Aguardando dispositivo...');
+                            }, 8000);
+                        });
                     });
             }
 
@@ -369,31 +466,93 @@
                 showOverlay(ch, null);
                 setBadge(ch, 'Offline', '#555');
                 showErr(ch, '');
+                setAudioButtons(ch, false);
+                setAudioStatus(ch, 'off');
                 document.getElementById('lvm-start-' + ch).disabled = false;
                 document.getElementById('lvm-stop-' + ch).disabled = true;
                 post('/device_video/' + deviceId + '/live/stop', {
                     channel: ch
                 }).catch(function() {});
+                post('/device_video/' + deviceId + '/audio/stop', {
+                    channel: ch
+                }).catch(function() {});
             }
 
-            // Bind buttons for all channels
+            // ── Audio listen / intercom ───────────────────────────────────────
+
+            function toggleAudio(ch, mode) {
+                // mode: 0 = listen, 1 = intercom
+                var modeLabel = mode === 0 ? 'listen' : 'intercom';
+                var current = audioState[ch] || 'off';
+
+                // Toggle off if same mode active
+                if ((mode === 0 && current === 'listen') || (mode === 1 && current === 'intercom')) {
+                    setAudioStatus(ch, 'off');
+                    post('/device_video/' + deviceId + '/audio/stop', {
+                        channel: ch
+                    }).catch(function() {});
+                    return;
+                }
+
+                setAudioStatus(ch, modeLabel);
+                post('/device_video/' + deviceId + '/audio/start', {
+                        channel: ch,
+                        mode: mode
+                    })
+                    .then(function(res) {
+                        if (res && res.error) {
+                            setAudioStatus(ch, 'off');
+                            showErr(ch, res.error);
+                        }
+                    })
+                    .catch(function() {
+                        setAudioStatus(ch, 'off');
+                    });
+            }
+
+            // ── Button binding ────────────────────────────────────────────────
+
             [1, 2, 3, 4].forEach(function(ch) {
                 var btnStart = document.getElementById('lvm-start-' + ch);
                 var btnStop = document.getElementById('lvm-stop-' + ch);
+                var btnAudio = document.getElementById('lvm-audio-' + ch);
+                var btnIntercom = document.getElementById('lvm-intercom-' + ch);
+
                 if (btnStart) btnStart.addEventListener('click', function() {
                     startChannel(ch);
                 });
                 if (btnStop) btnStop.addEventListener('click', function() {
                     stopChannel(ch);
                 });
+                if (btnAudio) btnAudio.addEventListener('click', function() {
+                    toggleAudio(ch, 0);
+                });
+                if (btnIntercom) btnIntercom.addEventListener('click', function() {
+                    toggleAudio(ch, 1);
+                });
+
+                // Enable audio buttons when video is active (playing event on video element)
+                var video = document.getElementById('lvm-video-' + ch);
+                if (video) {
+                    video.addEventListener('playing', function() {
+                        setAudioButtons(ch, true);
+                    });
+                    video.addEventListener('pause', function() {
+                        if (!hlsInstances[ch]) setAudioButtons(ch, false);
+                    });
+                }
             });
 
-            // Cleanup on modal close
+            // ── Modal cleanup ─────────────────────────────────────────────────
+
             function cleanupAll() {
                 [1, 2, 3, 4].forEach(function(ch) {
                     var btnStop = document.getElementById('lvm-stop-' + ch);
                     if (btnStop && !btnStop.disabled) {
                         post('/device_video/' + deviceId + '/live/stop', {
+                            channel: ch
+                        }).catch(function() {});
+                        post('/device_video/' + deviceId + '/audio/stop', {
                             channel: ch
                         }).catch(function() {});
                     }

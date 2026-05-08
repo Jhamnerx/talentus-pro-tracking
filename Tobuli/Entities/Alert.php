@@ -38,6 +38,7 @@ class Alert extends AbstractEntity implements DisplayInterface
         'notifications',
         'for_all_user_devices',
         'speed_tolerance',
+        'min_overspeed_duration',
         'zone',
         'schedule',
         'overspeed',
@@ -317,6 +318,11 @@ class Alert extends AbstractEntity implements DisplayInterface
 
         $this->setProperty('distance', $value);
     }
+    public function getSpeedToleranceAttribute()
+    {
+        return Formatter::speed()->format($this->getSpeedTolerance());
+    }
+
     public function setSpeedToleranceAttribute($value)
     {
         $value = round(Formatter::speed()->reverse($value), 0);
@@ -327,6 +333,21 @@ class Alert extends AbstractEntity implements DisplayInterface
     public function getSpeedTolerance()
     {
         return Arr::get($this->data, 'speed_tolerance', 0);
+    }
+
+    public function getMinOverspeedDurationAttribute()
+    {
+        return $this->getMinOverspeedDuration();
+    }
+
+    public function setMinOverspeedDurationAttribute($value)
+    {
+        $this->setProperty('min_overspeed_duration', intval($value));
+    }
+
+    public function getMinOverspeedDuration(): int
+    {
+        return (int) Arr::get($this->data, 'min_overspeed_duration', 0);
     }
 
     public function getDistanceTolerance()

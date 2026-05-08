@@ -40,6 +40,7 @@ class AlertFormValidator extends Validator
             'distance'          => 'required_if:type,distance|numeric',
             'distance_tolerance' => 'required_if:type,poi_stop_duration,poi_idle_duration|numeric',
             'speed_tolerance'   => 'required_if:type,geofence_overspeed|numeric',
+            'min_overspeed_duration' => 'nullable|numeric|min:0',
 
             'command.active'    => 'in:0,1',
             'command.type'      => 'required_if:command.active,1',
@@ -67,6 +68,7 @@ class AlertFormValidator extends Validator
             'distance'          => 'required_if:type,distance|numeric',
             'distance_tolerance' => 'required_if:type,poi_stop_duration,poi_idle_duration|numeric',
             'speed_tolerance'   => 'required_if:type,geofence_overspeed|numeric',
+            'min_overspeed_duration' => 'nullable|numeric|min:0',
 
             'command.active'    => 'in:0,1',
             'command.type'      => 'required_if:command.active,1',

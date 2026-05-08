@@ -414,6 +414,8 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     # Device video (Howen / JT808 live video via commands/send + HLS proxy)
     Route::post('device_video/{device_id}/live/start', ['as' => 'device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
     Route::post('device_video/{device_id}/live/stop', ['as' => 'device_video.live.stop', 'uses' => 'DeviceVideoController@liveStop']);
+    Route::post('device_video/{device_id}/audio/start', ['as' => 'device_video.audio.start', 'uses' => 'DeviceVideoController@audioStart']);
+    Route::post('device_video/{device_id}/audio/stop', ['as' => 'device_video.audio.stop', 'uses' => 'DeviceVideoController@audioStop']);
     Route::get('device_video/{device_id}/live/modal', ['as' => 'device_video.live.modal', 'uses' => 'DeviceVideoController@liveModal']);
     Route::get('device_video/{device_id}/stream/{file}', ['as' => 'device_video.stream.proxy', 'uses' => 'DeviceVideoController@streamProxy'])
         ->where('file', '.*');

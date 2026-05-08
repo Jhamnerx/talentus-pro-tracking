@@ -52,6 +52,31 @@ class DeviceVideoController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function audioStart(int $deviceId): JsonResponse
+    {
+        $device  = $this->findDevice($deviceId);
+        $channel = (int) ($this->data['channel'] ?? 1);
+        $mode    = (int) ($this->data['mode']    ?? 0); // 0=listen, 1=intercom
+
+        if (! $this->videoService->isSupported($device)) {
+            return response()->json(['error' => 'Audio not supported for this device protocol'], 422);
+        }
+
+        $this->videoService->startAudio($device, $channel, $mode);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function audioStop(int $deviceId): JsonResponse
+    {
+        $device  = $this->findDevice($deviceId);
+        $channel = (int) ($this->data['channel'] ?? 1);
+
+        $this->videoService->stopAudio($device, $channel);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function liveModal(int $deviceId)
     {
         $device = $this->findDevice($deviceId);

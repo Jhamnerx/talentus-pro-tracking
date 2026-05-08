@@ -589,7 +589,12 @@ class AlertModalHelper extends ModalHelper
                             'speed_tolerance',
                             'Tolerancia de velocidad (' . Formatter::speed()->getUnit() . ')',
                             $alert ? $alert->speed_tolerance : 0
-                        )
+                        ),
+                        Field::number(
+                            'min_overspeed_duration',
+                            'Duración mínima de exceso (segundos)',
+                            $alert ? $alert->min_overspeed_duration : 0
+                        ),
                     ]);
                     break;
                 case 'custom':

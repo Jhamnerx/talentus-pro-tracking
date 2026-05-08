@@ -5,6 +5,7 @@ namespace Tobuli\Helpers\Alerts\Check;
 use Tobuli\Entities\Alert;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Event;
+use Illuminate\Support\Facades\Cache;
 
 class GeofenceAlertCheck extends AlertCheck
 {
@@ -111,6 +112,7 @@ class GeofenceAlertCheck extends AlertCheck
                 return false;
             case 'geofence_overspeed':
                 if (!$this->checkGeofenceWithSchedules($position, $geofence)) {
+                    $this->clearOverspeedTracking($geofence);
                     return false;
                 }
 
@@ -121,16 +123,50 @@ class GeofenceAlertCheck extends AlertCheck
 
                 $isCurrentIn = $this->checkGeofence($position, $geofence);
 
-                // Si la velocidad excede el límite y no hemos comenzado a rastrear, establecer la hora de inicio
-                if ($this->checkSpeed($position, $geofence) &&  $isCurrentIn) {
-                    return 'geofence_overspeed';
+                if ($this->checkSpeed($position, $geofence) && $isCurrentIn) {
+                    return $this->checkOverspeedDuration($geofence);
                 }
 
+                $this->clearOverspeedTracking($geofence);
                 return false;
             default:
                 return false;
         }
     }
+    protected function getOverspeedTrackingKey($geofence): string
+    {
+        return 'geofence_overspeed_start_' . $this->alert->id . '_' . $this->device->id . '_' . $geofence->id;
+    }
+
+    protected function checkOverspeedDuration($geofence)
+    {
+        $minDuration = $this->alert->getMinOverspeedDuration();
+
+        if (!$minDuration) {
+            return 'geofence_overspeed';
+        }
+
+        $cacheKey = $this->getOverspeedTrackingKey($geofence);
+        $startTime = Cache::get($cacheKey);
+
+        if (!$startTime) {
+            Cache::put($cacheKey, time(), now()->addHours(24));
+            return false;
+        }
+
+        if ((time() - $startTime) >= $minDuration) {
+            Cache::forget($cacheKey);
+            return 'geofence_overspeed';
+        }
+
+        return false;
+    }
+
+    protected function clearOverspeedTracking($geofence): void
+    {
+        Cache::forget($this->getOverspeedTrackingKey($geofence));
+    }
+
     public function checkSpeed($position, $geofence)
     {
         $tolerance = $this->alert->getSpeedTolerance() ?: 0;
