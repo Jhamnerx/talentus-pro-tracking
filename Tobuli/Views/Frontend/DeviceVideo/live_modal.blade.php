@@ -258,8 +258,17 @@
                     hlsInstances[ch] = h;
                     h.loadSource(url);
                     h.attachMedia(video);
-                    h.on(Hls.Events.MANIFEST_PARSED, function() {
+                    h.on(Hls.Events.MANIFEST_PARSED, function(e, data) {
                         retryCount[ch] = 0;
+                        // Detectar si el stream usa H.265 (no soportado por Chrome/Firefox vía MSE)
+                        var level = h.levels && h.levels[0];
+                        var codec = level && level.videoCodec ? level.videoCodec : '';
+                        if (codec && (codec.indexOf('hvc') === 0 || codec.indexOf('hev') === 0)) {
+                            showErr(ch, 'H.265 no soportado en este navegador. Actualizando servidor...');
+                            setBadge(ch, 'H.265', '#e67e22');
+                            hideOverlay(ch);
+                            return;
+                        }
                         hideOverlay(ch);
                         setBadge(ch, 'LIVE', '#27ae60');
                         video.play().catch(function() {});
