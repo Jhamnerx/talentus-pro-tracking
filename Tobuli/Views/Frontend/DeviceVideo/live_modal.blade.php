@@ -258,22 +258,34 @@
                     hlsInstances[ch] = h;
                     h.loadSource(url);
                     h.attachMedia(video);
-                    h.on(Hls.Events.MANIFEST_PARSED, function(e, data) {
+                    h.on(Hls.Events.MANIFEST_PARSED, function() {
                         retryCount[ch] = 0;
-                        // Detectar si el stream usa H.265 (no soportado por Chrome/Firefox vía MSE)
-                        var level = h.levels && h.levels[0];
-                        var codec = level && level.videoCodec ? level.videoCodec : '';
-                        if (codec && (codec.indexOf('hvc') === 0 || codec.indexOf('hev') === 0)) {
-                            showErr(ch, 'H.265 no soportado en este navegador. Actualizando servidor...');
-                            setBadge(ch, 'H.265', '#e67e22');
-                            hideOverlay(ch);
-                            return;
-                        }
                         hideOverlay(ch);
                         setBadge(ch, 'LIVE', '#27ae60');
                         video.play().catch(function() {});
                     });
+                    // FRAG_PARSED: hls.js ya parseó el TS y conoce el codec real
+                    h.on(Hls.Events.FRAG_PARSED, function(e, data) {
+                        var level = h.levels && h.levels[h.currentLevel >= 0 ? h.currentLevel : 0];
+                        var codec = (level && level.videoCodec) ? level.videoCodec : null;
+                        console.log('[Canal ' + ch + '] FRAG_PARSED codec:', codec,
+                            '| currentLevel:', h.currentLevel,
+                            '| levels:', JSON.stringify((h.levels || []).map(function(l) {
+                                return {
+                                    vc: l.videoCodec,
+                                    ac: l.audioCodec
+                                };
+                            })));
+                        if (codec && (codec.indexOf('hvc') === 0 || codec.indexOf('hev') === 0)) {
+                            showErr(ch,
+                                'H.265 detectado — el servidor aun envia H.265. Deployer el JAR con si=0.');
+                            setBadge(ch, 'H.265', '#e67e22');
+                        }
+                    });
                     h.on(Hls.Events.ERROR, function(e, data) {
+                        // Log TODOS los errores para diagnosticar
+                        console.warn('[Canal ' + ch + '] hls.js error:', data.type, data.details,
+                            'fatal:', data.fatal, data);
                         if (data.fatal) {
                             if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
                                 h.recoverMediaError();
