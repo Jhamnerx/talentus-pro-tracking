@@ -197,6 +197,7 @@
             background: #000;
             flex: 1;
             min-height: 0;
+            max-height: 130px;
         }
 
         .pb-video {
@@ -535,7 +536,7 @@
                             <span class="pb-badge" id="pb-badge-{{ $ch }}">Parado</span>
                         </div>
                         <div class="pb-player-wrap">
-                            <video class="pb-video" id="pb-video-{{ $ch }}" controls muted playsinline></video>
+                            <video class="pb-video" id="pb-video-{{ $ch }}" controls playsinline></video>
                             <div class="pb-overlay" id="pb-overlay-{{ $ch }}">
                                 <span>&mdash; inactivo &mdash;</span>
                             </div>
@@ -957,6 +958,16 @@
             /* Reproducción                                                         */
             /* ------------------------------------------------------------------ */
             function startChannelPlayback(ch, seg) {
+                // Detener y limpiar reproducción anterior del canal antes de iniciar nueva
+                if (hlsInstances[ch]) {
+                    hlsInstances[ch].destroy();
+                    delete hlsInstances[ch];
+                }
+                var vPrev = document.getElementById('pb-video-' + ch);
+                if (vPrev) { vPrev.pause(); vPrev.removeAttribute('src'); vPrev.load(); }
+                // Notificar al dispositivo que pare el stream anterior (fire-and-forget)
+                apiPost('/device_video/' + deviceId + '/playback/stop', { channel: ch }).catch(function() {});
+
                 showOverlay(ch, 'Iniciando reproducción…');
                 setBadge(ch, 'Cargando', '#e67e22');
                 showErr(ch, '');
