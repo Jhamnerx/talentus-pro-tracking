@@ -157,9 +157,11 @@
         .pb-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
-            padding: 6px;
+            grid-template-rows: 1fr 1fr;
+            gap: 4px;
+            padding: 4px;
             flex: 1;
+            min-height: 0;
             overflow: hidden;
         }
 
@@ -170,6 +172,7 @@
             background: #111;
             display: flex;
             flex-direction: column;
+            min-height: 0;
         }
 
         .pb-card-header {
@@ -197,7 +200,7 @@
             background: #000;
             flex: 1;
             min-height: 0;
-            max-height: 130px;
+            overflow: hidden;
         }
 
         .pb-video {
@@ -206,8 +209,6 @@
             display: block;
             background: #000;
             object-fit: contain;
-            min-height: 70px;
-            max-height: 140px;
         }
 
         .pb-overlay {
@@ -964,9 +965,15 @@
                     delete hlsInstances[ch];
                 }
                 var vPrev = document.getElementById('pb-video-' + ch);
-                if (vPrev) { vPrev.pause(); vPrev.removeAttribute('src'); vPrev.load(); }
+                if (vPrev) {
+                    vPrev.pause();
+                    vPrev.removeAttribute('src');
+                    vPrev.load();
+                }
                 // Notificar al dispositivo que pare el stream anterior (fire-and-forget)
-                apiPost('/device_video/' + deviceId + '/playback/stop', { channel: ch }).catch(function() {});
+                apiPost('/device_video/' + deviceId + '/playback/stop', {
+                    channel: ch
+                }).catch(function() {});
 
                 showOverlay(ch, 'Iniciando reproducción…');
                 setBadge(ch, 'Cargando', '#e67e22');
