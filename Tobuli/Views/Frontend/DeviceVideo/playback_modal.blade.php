@@ -73,6 +73,7 @@
             display: flex;
             gap: 4px;
         }
+
         .pb-sb-dt-row .pb-sb-group {
             flex: 1;
         }
@@ -204,8 +205,8 @@
             display: block;
             background: #000;
             object-fit: contain;
-            min-height: 120px;
-            max-height: 220px;
+            min-height: 70px;
+            max-height: 140px;
         }
 
         .pb-overlay {
@@ -766,7 +767,8 @@
                                         var obj = typeof f === 'string' ? JSON.parse(f) : f;
                                         currentFiles.push(obj);
                                     } catch (e) {
-                                        /* ignorar */ }
+                                        /* ignorar */
+                                    }
                                 });
                                 renderTimeline(currentFiles);
                                 status('Encontrados ' + currentFiles.length + ' archivos');
@@ -791,7 +793,8 @@
                             }
                         })
                         .catch(function() {
-                            /* ignorar errores de polling */ });
+                            /* ignorar errores de polling */
+                        });
                 }, 1000);
             }
 
@@ -809,7 +812,8 @@
                 // "YYYYMMDDHHMMSS" (14 dígitos)
                 var m14 = s.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
                 if (m14) {
-                    return new Date(m14[1]+'-'+m14[2]+'-'+m14[3]+'T'+m14[4]+':'+m14[5]+':'+m14[6]).getTime();
+                    return new Date(m14[1] + '-' + m14[2] + '-' + m14[3] + 'T' + m14[4] + ':' + m14[5] + ':' + m14[6])
+                        .getTime();
                 }
 
                 // Unix timestamp (segundos o milisegundos)
@@ -859,7 +863,8 @@
                 // Agrupar por canal
                 var byChannel = {};
                 files.forEach(function(f) {
-                    var ch = String(f.chl || f.ch || f.channel || '1');
+                    var fi = f.fi || f;
+                    var ch = String(fi.chl || fi.ch || fi.channel || '1');
                     if (!byChannel[ch]) byChannel[ch] = [];
                     byChannel[ch].push(f);
                 });
@@ -870,8 +875,9 @@
                     var barsHtml = '';
 
                     segs.forEach(function(seg, idx) {
-                        var st = parseTime(seg.st || seg.startTime || seg.start_time || seg.begin_time);
-                        var et = parseTime(seg.et || seg.endTime   || seg.end_time   || seg.finish_time);
+                        var fi = seg.fi || seg;
+                        var st = parseTime(fi.st || fi.startTime || fi.start_time || fi.begin_time);
+                        var et = parseTime(fi.et || fi.endTime || fi.end_time || fi.finish_time);
                         if (!st || !et || et <= st) {
                             console.warn('[PB timeline] seg sin tiempo válido:', JSON.stringify(seg));
                             return;
@@ -881,13 +887,13 @@
                         var width = Math.min(100 - left, ((et - st) / rangeMs) * 100);
                         if (width < 0.2) width = 0.2;
 
-                        var ft = String(seg.ft || seg.fileType || '1');
+                        var ft = String(fi.ft || fi.fileType || '1');
                         var typeClass = {
                             '1': 'pb-tl-type-1',
                             '2': 'pb-tl-type-2',
                             '3': 'pb-tl-type-3'
                         } [ft] || 'pb-tl-type-other';
-                        var title = 'CH' + ch + ' | ' + (seg.st || '') + ' → ' + (seg.et || '') +
+                        var title = 'CH' + ch + ' | ' + (fi.st || '') + ' → ' + (fi.et || '') +
                             ' | Tipo: ' + ft;
 
                         barsHtml += '<div class="pb-tl-segment ' + typeClass + '"' +
@@ -909,7 +915,8 @@
 
                 if (!rowsHtml) {
                     console.warn('[PB timeline] Sin filas renderizadas. Primer archivo:', JSON.stringify(files[0]));
-                    container.innerHTML = '<div class="pb-tl-empty">Archivos encontrados pero sin rango de tiempo válido &mdash; ver consola</div>';
+                    container.innerHTML =
+                        '<div class="pb-tl-empty">Archivos encontrados pero sin rango de tiempo válido &mdash; ver consola</div>';
                     return;
                 }
 
@@ -938,8 +945,9 @@
                     seg: seg,
                     ch: ch
                 };
-                var info = 'CH' + ch + ': ' + (seg.st || '') + ' → ' + (seg.et || '');
-                status('Seleccionado: ' + info + ' — haz clic en ▶ Play', '#27ae60');
+                var fi = seg.fi || seg;
+                var info = 'CH' + ch + ': ' + (fi.st || '') + ' → ' + (fi.et || '');
+                status('Seleccionado: ' + info + ' — haz clic en ▶ Play o en «Reproducir selección»', '#27ae60');
                 // Habilitar el play del canal correspondiente
                 setPlayBtns(ch, true);
                 document.getElementById('pb-btn-play-all').disabled = false;
@@ -953,13 +961,14 @@
                 setBadge(ch, 'Cargando', '#e67e22');
                 showErr(ch, '');
 
+                var fi = seg.fi || seg;
                 var body = {
                     channel: ch,
-                    startTime: seg.st || seg.startTime || '',
-                    endTime: seg.et || seg.endTime || '',
+                    startTime: fi.st || fi.startTime || '',
+                    endTime: fi.et || fi.endTime || '',
                 };
-                if (seg.fn) body.fileName = seg.fn;
-                if (seg.si !== undefined) body.stream = String(seg.si);
+                if (fi.fn) body.fileName = fi.fn;
+                if (fi.si !== undefined) body.stream = String(fi.si);
 
                 apiPost('/device_video/' + deviceId + '/playback/start', body)
                     .then(function(res) {
