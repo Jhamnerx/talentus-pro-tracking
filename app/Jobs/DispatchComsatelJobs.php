@@ -10,7 +10,6 @@ use CustomFacades\Repositories\UserRepo;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Contracts\Queue\ShouldBeUnique;
 
 class DispatchComsatelJobs implements ShouldQueue
 {
@@ -18,14 +17,12 @@ class DispatchComsatelJobs implements ShouldQueue
 
     public $tries = 3;
 
-
     public function handle()
     {
         $users = UserRepo::getActiveServiceManagers(1, 'consatel');
         Log::channel('comsatel')->info('Iniciando dispatch de jobs Comsatel', ['user_count' => $users->count()]);
 
         foreach ($users as $user) {
-
             $plates = $user->devices()->where('consatel', 1)->get()->pluck('plate_number')->map(function ($plate) {
                 return trim($plate);
             })->toArray();
@@ -35,13 +32,14 @@ class DispatchComsatelJobs implements ShouldQueue
                 continue;
             }
 
-            $service = $user->services['consatel'];
-            $batchSize = 500; // Tamaño del lote
-            $totalRecords = Comsatel::whereIn('placa', $plates)->count();
-
-            for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-                SendDataComsatelJob::dispatch($i, $batchSize, $service, $plates, $user->id);
+            $total = Comsatel::whereIn('placa', $plates)->count();
+            if ($total === 0) {
+                continue;
             }
+
+            $service = $user->services['consatel'];
+
+            SendDataComsatelJob::dispatch(0, 500, $service, $plates, $user->id);
         }
     }
 }

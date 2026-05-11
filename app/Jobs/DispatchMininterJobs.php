@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use Tobuli\Entities\User;
 
 class DispatchMininterJobs implements ShouldQueue
@@ -19,18 +20,25 @@ class DispatchMininterJobs implements ShouldQueue
 
     public function handle()
     {
-        $batchSize = 1000;
+        $queueName = 'web-services-mininter';
+
+        $pending = Queue::size($queueName);
+        if ($pending > 0) {
+            Log::channel('mininter')->info("DispatchMininterJobs omitido: {$pending} jobs aún en cola.");
+            return;
+        }
+
         $totalRecords = Mininter::count();
+        if ($totalRecords === 0) {
+            return;
+        }
+
         Log::channel('mininter')->info('Iniciando dispatch de jobs Mininter', ['total_records' => $totalRecords]);
 
         $user = User::where('id', 1)->first();
         $service = $user->services['mininter'];
-
         $url_mininter = config('app.env') == 'local' ? config('app.url_mininter_beta') : config('app.url_mininter_prod');
 
-        for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-
-            SendDataMininter::dispatch($i, $batchSize, $url_mininter, $service, $user->id);
-        }
+        SendDataMininter::dispatch(0, 1000, $url_mininter, $service, $user->id);
     }
 }

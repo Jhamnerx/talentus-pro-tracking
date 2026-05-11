@@ -9,6 +9,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Queue;
 use CustomFacades\Repositories\UserRepo;
 
 class DispatchEpsCenterJobs implements ShouldQueue
@@ -21,29 +22,30 @@ class DispatchEpsCenterJobs implements ShouldQueue
 
     public function handle()
     {
-        $users = UserRepo::getActiveServiceManagers(1, 'epscenter');
+        $queueName = 'web-services-epscenter';
 
-        // Tomar el servicio del primer manager activo
+        $pending = Queue::size($queueName);
+        if ($pending > 0) {
+            Log::channel('epscenter')->info("DispatchEpsCenterJobs omitido: {$pending} jobs aún en cola.");
+            return;
+        }
+
+        $totalRecords = EpsCenter::count();
+        if ($totalRecords === 0) {
+            return;
+        }
+
+        $users = UserRepo::getActiveServiceManagers(1, 'epscenter');
         $service = [];
+        $userId = null;
         foreach ($users as $user) {
             $service = $user->services['epscenter'] ?? [];
             $userId  = $user->id;
             break;
         }
 
-        $batchSize    = 500;
-        $totalRecords = EpsCenter::count();
+        Log::channel('epscenter')->info('Despachando lote EPS Center', ['total_records' => $totalRecords]);
 
-        if ($totalRecords === 0) {
-            return;
-        }
-
-        Log::channel('epscenter')->info('Despachando lotes EPS Center', [
-            'total_records' => $totalRecords,
-        ]);
-
-        for ($i = 0; $i < $totalRecords; $i += $batchSize) {
-            SendDataEpsCenter::dispatch($i, $batchSize, self::URL, $service, [], $userId ?? null);
-        }
+        SendDataEpsCenter::dispatch(0, 500, self::URL, $service, [], $userId);
     }
 }
