@@ -42,27 +42,44 @@ class CompressLogsCommand extends Command
         $traccarLogFile = $config['logger.file'] ?? null;
 
         if ($traccarLogFile) {
-            $path = pathinfo($traccarLogFile, PATHINFO_DIRNAME) . '/*.log.*';
-            $this->line("Buscando logs Traccar en: {$path}");
+            $dir = pathinfo($traccarLogFile, PATHINFO_DIRNAME);
 
-            $files = glob($path);
-            $this->line("Archivos encontrados: " . count($files));
-
-            foreach ($files as $file) {
+            // 1. Comprimir logs ya rotados: tracker-server.log.YYYYMMDD
+            $rotatedFiles = glob($dir . '/*.log.*');
+            foreach ($rotatedFiles as $file) {
                 $arr = explode('.', $file);
-                $ex = end($arr);
-                if ($ex == 'gz' || $ex == date('Ymd')) {
+                $ex  = end($arr);
+                if ($ex === 'gz' || $ex === date('Ymd')) {
                     $this->line("Omitiendo: {$file}");
                     continue;
                 }
-
-                $this->line("Comprimiendo: {$file}");
+                $this->line("Comprimiendo rotado: {$file}");
                 exec('gzip ' . escapeshellarg($file), $output, $returnCode);
                 if ($returnCode !== 0) {
                     $this->error("Error al comprimir: {$file} (código: {$returnCode})");
                 } else {
                     $this->line("OK: {$file}.gz");
                 }
+            }
+
+            // 2. Rotar el log activo: copiar a archivo fechado, truncar original
+            if (file_exists($traccarLogFile) && filesize($traccarLogFile) > 0) {
+                $dated = $traccarLogFile . '.' . date('Ymd');
+                if (file_exists($dated) || file_exists($dated . '.gz')) {
+                    $this->line("Ya existe rotación de hoy, omitiendo log activo.");
+                } else {
+                    $this->line("Rotando log activo: {$traccarLogFile}");
+                    copy($traccarLogFile, $dated);
+                    file_put_contents($traccarLogFile, ''); // truncar, Traccar sigue escribiendo
+                    exec('gzip ' . escapeshellarg($dated), $output, $returnCode);
+                    if ($returnCode !== 0) {
+                        $this->error("Error al comprimir log activo (código: {$returnCode})");
+                    } else {
+                        $this->line("OK: {$dated}.gz");
+                    }
+                }
+            } else {
+                $this->line("Log activo vacío o no encontrado: {$traccarLogFile}");
             }
         } else {
             $this->warn("tracker.logger.file no configurado, omitiendo logs Traccar.");
