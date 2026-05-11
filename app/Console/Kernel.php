@@ -83,6 +83,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\DeleteInvalidFuelEventsCommand',
         'App\Console\Commands\DeviceServerReconfigCommand',
         \App\Console\Commands\CacheOdometerValuesCommand::class,
+        'App\Console\Commands\CleanMininterErrorsCommand',
     ];
 
     /**
@@ -195,6 +196,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('logs:compress')->dailyAt('00:00');
         $schedule->command('server:autoclean')->dailyAt('01:00');
         $schedule->command('server:translations')->dailyAt('02:00');
+        $schedule->command('mininter:clean-errors')->dailyAt('02:30');
     }
 
     /**

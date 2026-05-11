@@ -56,6 +56,7 @@ class SendDataMininter implements ShouldQueue
         $ip = $this->url_mininter;
         $tramas = Mininter::offset($this->offset)
             ->limit($this->batchSize)
+            ->whereNull('status')
             ->with('device', 'device.users')->get();
 
         // Preparar payloads indexados por ID
@@ -109,6 +110,7 @@ class SendDataMininter implements ShouldQueue
     {
         $client      = new Client(['verify' => false, 'timeout' => 15, 'connect_timeout' => 5]);
         $successIds  = [];
+        $errorIds    = [];
         $errorLogs   = [];
         $concurrency = 20; // peticiones paralelas simultáneas
 
@@ -127,7 +129,7 @@ class SendDataMininter implements ShouldQueue
 
         $pool = new \GuzzleHttp\Pool($client, $requests(), [
             'concurrency' => $concurrency,
-            'fulfilled'   => function ($response, $id) use ($payloads, &$successIds, &$errorLogs) {
+            'fulfilled'   => function ($response, $id) use ($payloads, &$successIds, &$errorIds, &$errorLogs) {
                 $json = $payloads[$id];
                 if ($response->getStatusCode() == 201) {
                     $successIds[] = $id;
@@ -143,6 +145,8 @@ class SendDataMininter implements ShouldQueue
                         ];
                     }
                 } else {
+                    // API rechaza el registro permanentemente → marcar como error
+                    $errorIds[] = $id;
                     if ($this->service['logs']) {
                         $errorLogs[] = [
                             'service_name' => 'Mininter',
@@ -154,11 +158,10 @@ class SendDataMininter implements ShouldQueue
                             'imei'         => $json['imei'],
                         ];
                     }
-                    // Eliminar igual para no acumular registros que el API rechaza permanentemente
-                    $successIds[] = $id;
                 }
             },
             'rejected' => function ($reason, $id) use ($payloads, &$errorLogs) {
+                // Error de red/timeout → NO marcar como error, se reintentará el próximo ciclo
                 $json = $payloads[$id];
                 if ($this->service['logs']) {
                     $errorLogs[] = [
@@ -171,16 +174,21 @@ class SendDataMininter implements ShouldQueue
                         'imei'         => $json['imei'],
                     ];
                 }
-                // No eliminar en errores de red — se reintentará en el próximo ciclo
+                // No agregar a $errorIds — se reintentará en el próximo ciclo
             },
         ]);
 
         $promise = $pool->promise();
         $promise->wait();
 
-        // Batch delete de registros exitosos (y rechazados por API)
+        // Batch delete de registros exitosos
         if (!empty($successIds)) {
             Mininter::whereIn('id', $successIds)->delete();
+        }
+
+        // Marcar como error los rechazados permanentemente por la API
+        if (!empty($errorIds)) {
+            Mininter::whereIn('id', $errorIds)->update(['status' => 'error']);
         }
 
         // Batch insert de logs

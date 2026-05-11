@@ -28,7 +28,7 @@ class DispatchMininterJobs implements ShouldQueue
             return;
         }
 
-        $totalRecords = Mininter::count();
+        $totalRecords = Mininter::whereNull('status')->count();
         if ($totalRecords === 0) {
             return;
         }

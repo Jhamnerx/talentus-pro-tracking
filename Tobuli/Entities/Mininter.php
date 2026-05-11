@@ -41,6 +41,7 @@ class Mininter extends AbstractEntity
         'valid',
         'velocidad',
         'other',
+        'status',
     ];
 
     protected $casts = [
