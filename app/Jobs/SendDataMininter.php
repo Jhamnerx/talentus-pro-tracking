@@ -6,12 +6,12 @@ use DateTime;
 use DateTimeZone;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
+use GuzzleHttp\Pool;
 use App\Services\LogService;
 use Illuminate\Bus\Queueable;
 use Tobuli\Entities\Mininter;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Queue\InteractsWithQueue;
-use GuzzleHttp\Exception\RequestException;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 
@@ -58,127 +58,143 @@ class SendDataMininter implements ShouldQueue
             ->limit($this->batchSize)
             ->with('device', 'device.users')->get();
 
+        // Preparar payloads indexados por ID
+        $payloads = [];
         foreach ($tramas as $trama) {
-
             $idMunicipalidad = $trama->idMunicipalidad;
-            $ubigeo = $trama->ubigeo;
+            $ubigeo          = $trama->ubigeo;
 
-            // Verificar si el campo idMunicipalidad y ubigeo están vacíos
-            if ($trama->idMunicipalidad == "") {
-
+            if ($idMunicipalidad == '' || $ubigeo == '') {
                 $user = $trama->device->users->where('is_municipalidad', true)->first();
-
                 if ($user && $user->is_municipalidad) {
-                    $idMunicipalidad = $user->token_muni;
-                }
-            }
-
-            if ($trama->ubigeo == "") {
-                $user = $trama->device->users->where('is_municipalidad', true)->first();
-
-                if ($user && $user->is_municipalidad) {
-                    $ubigeo = $user->ubigeo_muni;
+                    if ($idMunicipalidad == '') $idMunicipalidad = $user->token_muni;
+                    if ($ubigeo == '')          $ubigeo          = $user->ubigeo_muni;
                 }
             }
 
             $datetime = new DateTime('@' . $trama['timestamp']);
             $datetime->setTimezone(new DateTimeZone('America/Lima'));
 
-            // Crear JSON para enviar a MININTER
-            $json = [
-                'id' => $trama->id,
-                'alarma' => $trama->alarma,
-                'altitud' => $trama->altitud,
-                'angulo' => $trama->angulo,
-                'distancia' => doubleval($trama->other['distance']),
-                'fechaHora' => $datetime->format('d/m/Y H:i:s'),
-                'horasMotor' => $trama->horasMotor,
+            $payloads[$trama->id] = [
+                'id'              => $trama->id,
+                'alarma'          => $trama->alarma,
+                'altitud'         => $trama->altitud,
+                'angulo'          => $trama->angulo,
+                'distancia'       => doubleval($trama->other['distance']),
+                'fechaHora'       => $datetime->format('d/m/Y H:i:s'),
+                'horasMotor'      => $trama->horasMotor,
                 'idMunicipalidad' => $idMunicipalidad,
-                'ignition' => $trama->ignition,
-                'imei' => $trama->imei,
-                'latitud' => $trama->latitud,
-                'longitud' => $trama->longitud,
-                'motion' => $trama->motion,
-                'placa' => $trama->placa,
-                'totalDistancia' => $trama->totalDistancia,
+                'ignition'        => $trama->ignition,
+                'imei'            => $trama->imei,
+                'latitud'         => $trama->latitud,
+                'longitud'        => $trama->longitud,
+                'motion'          => $trama->motion,
+                'placa'           => $trama->placa,
+                'totalDistancia'  => $trama->totalDistancia,
                 'totalHorasMotor' => $trama->totalHorasMotor,
-                'ubigeo' => $ubigeo,
-                'valid' => $trama->valid,
-                'velocidad' => $trama->velocidad,
+                'ubigeo'          => $ubigeo,
+                'valid'           => $trama->valid,
+                'velocidad'       => $trama->velocidad,
             ];
-
-            $this->enviarTramas($json, $ip);
         }
+
+        if (empty($payloads)) {
+            return;
+        }
+
+        $this->enviarTramasConcurrente($payloads, $ip);
     }
 
-    public function enviarTramas($json, $ip)
+    public function enviarTramasConcurrente(array $payloads, string $ip)
     {
-        try {
-            $client = new Client(['verify' => false]);
-            $response = $client->request('POST', $ip, [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                ],
-                'body' => json_encode($json),
-            ]);
+        $client      = new Client(['verify' => false, 'timeout' => 15, 'connect_timeout' => 5]);
+        $successIds  = [];
+        $errorLogs   = [];
+        $concurrency = 20; // peticiones paralelas simultáneas
 
-            // Procesar la respuesta de la API
-            $this->processResponse($response, $json);
-        } catch (RequestException $e) {
-            if ($this->service['logs']) {
+        $ids      = array_keys($payloads);
+        $requests = function () use ($ids, $payloads, $ip, $client) {
+            foreach ($ids as $id) {
+                $json = $payloads[$id];
+                yield $id => function () use ($client, $ip, $json) {
+                    return $client->requestAsync('POST', $ip, [
+                        'headers' => ['Content-Type' => 'application/json'],
+                        'body'    => json_encode($json),
+                    ]);
+                };
+            }
+        };
 
-                if ($e->hasResponse()) {
-                    $response = $e->getResponse();
-                    $body = $response->getBody()->getContents();
-
-                    $this->logService->logToDatabase(
-                        'Mininter',
-                        $json['placa'],
-                        'error',
-                        $json,
-                        ['response' => $body],
-                        [],
-                        Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']),
-                        $json['imei'],
-                    );
+        $pool = new \GuzzleHttp\Pool($client, $requests(), [
+            'concurrency' => $concurrency,
+            'fulfilled'   => function ($response, $id) use ($payloads, &$successIds, &$errorLogs) {
+                $json = $payloads[$id];
+                if ($response->getStatusCode() == 201) {
+                    $successIds[] = $id;
+                    if ($this->service['logs']) {
+                        $errorLogs[] = [
+                            'service_name'        => 'Mininter',
+                            'placa'               => $json['placa'],
+                            'status'              => 'success',
+                            'json'                => $json,
+                            'response'            => ['status_code' => 201],
+                            'fechaHora'           => $json['fechaHora'],
+                            'imei'                => $json['imei'],
+                        ];
+                    }
                 } else {
-                    $this->logService->logError('Mininter', 'Error de conexión: ' . $e->getMessage(), ['placa' => $json['placa']]);
+                    if ($this->service['logs']) {
+                        $errorLogs[] = [
+                            'service_name' => 'Mininter',
+                            'placa'        => $json['placa'],
+                            'status'       => 'error',
+                            'json'         => $json,
+                            'response'     => ['status_code' => $response->getStatusCode(), 'body' => (string) $response->getBody()],
+                            'fechaHora'    => $json['fechaHora'],
+                            'imei'         => $json['imei'],
+                        ];
+                    }
+                    // Eliminar igual para no acumular registros que el API rechaza permanentemente
+                    $successIds[] = $id;
                 }
-            }
+            },
+            'rejected' => function ($reason, $id) use ($payloads, &$errorLogs) {
+                $json = $payloads[$id];
+                if ($this->service['logs']) {
+                    $errorLogs[] = [
+                        'service_name' => 'Mininter',
+                        'placa'        => $json['placa'],
+                        'status'       => 'error',
+                        'json'         => $json,
+                        'response'     => ['error' => $reason->getMessage()],
+                        'fechaHora'    => $json['fechaHora'],
+                        'imei'         => $json['imei'],
+                    ];
+                }
+                // No eliminar en errores de red — se reintentará en el próximo ciclo
+            },
+        ]);
+
+        $promise = $pool->promise();
+        $promise->wait();
+
+        // Batch delete de registros exitosos (y rechazados por API)
+        if (!empty($successIds)) {
+            Mininter::whereIn('id', $successIds)->delete();
         }
-    }
 
-    protected function processResponse($response, $json)
-    {
-        if ($response->getStatusCode() == 201) {
-            // Guardar log de éxito en la base de datos
-            if ($this->service['logs']) {
+        // Batch insert de logs
+        if (!empty($errorLogs)) {
+            foreach ($errorLogs as $log) {
                 $this->logService->logToDatabase(
-                    'Mininter',
-                    $json['placa'],
-                    'success',
-                    $json,
-                    ['status_code' => $response->getStatusCode()],
+                    $log['service_name'],
+                    $log['placa'],
+                    $log['status'],
+                    $log['json'],
+                    $log['response'],
                     [],
-                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']),
-                    $json['imei'],
-                );
-            }
-
-            Mininter::where('id', $json['id'])->delete();
-        } else {
-            // Guardar log de error en la base de datos
-            if ($this->service['logs']) {
-
-                $this->logService->logToDatabase(
-                    'Mininter',
-                    $json['placa'],
-                    'error',
-                    $json,
-                    ['status_code' => $response->getStatusCode(), 'body' => (string) $response->getBody()],
-                    [],
-                    Carbon::createFromFormat('d/m/Y H:i:s', $json['fechaHora']),
-                    $json['imei'],
+                    Carbon::createFromFormat('d/m/Y H:i:s', $log['fechaHora']),
+                    $log['imei'],
                 );
             }
         }
