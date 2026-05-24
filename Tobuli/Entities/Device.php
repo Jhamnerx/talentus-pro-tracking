@@ -28,7 +28,6 @@ use App\Events\Device\DeviceDisabled;
 use Illuminate\Support\Facades\Redis;
 use Tobuli\Services\DeviceModelCache;
 use App\Jobs\TrackerConfigWithRestart;
-use App\Jobs\PushMaintenanceToTalentus;
 use Illuminate\Support\Facades\Schema;
 use Tobuli\Services\EventWriteService;
 use Tobuli\Services\DeviceImageService;
@@ -309,6 +308,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 event($device->active ? new DeviceEnabled($device) : new DeviceDisabled($device));
 
                 // Registra automáticamente suspensión o reactivación en el historial
+                // La sincronización con Talentus la gestiona el job programado (PushMaintenanceToTalentus)
                 if (!$device->active) {
                     $device->update(['suspended_at' => now()]);
                     DeviceMaintenance::create([
@@ -318,7 +318,6 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                         'motivo'    => 'Unidad desactivada automáticamente.',
                         'user_id'   => auth()->id(),
                     ]);
-                    PushMaintenanceToTalentus::dispatch();
                 } else {
                     DeviceMaintenance::create([
                         'device_id' => $device->id,
@@ -329,7 +328,6 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                             : 'Unidad reactivada.',
                         'user_id'   => auth()->id(),
                     ]);
-                    PushMaintenanceToTalentus::dispatch();
                     $device->update(['suspended_at' => null]);
                 }
             }
