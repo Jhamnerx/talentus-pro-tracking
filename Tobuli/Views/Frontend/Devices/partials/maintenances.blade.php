@@ -9,7 +9,7 @@
     <div class="form-group" style="margin-bottom: 16px;">
         <div class="row">
             <div class="col-sm-3">
-                <label class="control-label">{{ trans('global.type') ?? 'Tipo' }}</label>
+                <label class="control-label">{{ trans('validation.attributes.type') }}</label>
                 <select id="dm-tipo" class="form-control input-sm">
                     <option value="mantenimiento">Mantenimiento</option>
                     <option value="suspension">Suspensión</option>
@@ -103,7 +103,7 @@
                             '<td>' + (m.synced ?
                                 '<i class="fa fa-check text-success" title="Sincronizado con Talentus"></i>' :
                                 '<i class="fa fa-clock-o text-warning" title="Pendiente de sync"></i>'
-                                ) + '</td>' +
+                            ) + '</td>' +
                             '<td><a href="#" class="dm-delete text-danger" data-id="' + m.id +
                             '"><i class="fa fa-trash"></i></a></td>' +
                             '</tr>';
@@ -143,7 +143,7 @@
                     fecha: fecha,
                     motivo: motivo,
                     notas: notas,
-                    _token: window.Laravel.csrfToken
+                    _token: $('meta[name="csrf-token"]').attr('content')
                 },
             }).done(function(res) {
                 if (res.status === 1) {
@@ -173,7 +173,7 @@
                 url: '/devices/' + deviceId + '/maintenances/' + id,
                 method: 'DELETE',
                 data: {
-                    _token: window.Laravel.csrfToken
+                    _token: $('meta[name="csrf-token"]').attr('content')
                 },
             }).done(function(res) {
                 if (res.status === 1) loadMaintenances();
