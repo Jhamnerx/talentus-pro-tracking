@@ -309,7 +309,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 event($device->active ? new DeviceEnabled($device) : new DeviceDisabled($device));
 
                 // Registra automáticamente suspensión o reactivación en el historial
-                if (! $device->active) {
+                if (!$device->active) {
                     $device->update(['suspended_at' => now()]);
                     DeviceMaintenance::create([
                         'device_id' => $device->id,
