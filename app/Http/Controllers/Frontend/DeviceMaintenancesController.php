@@ -26,7 +26,7 @@ class DeviceMaintenancesController extends Controller
         }
 
         $items = $device->maintenances()
-            ->with('user:id,first_name,last_name,email')
+            ->with('user:id,email')
             ->get()
             ->map(fn(DeviceMaintenance $m) => [
                 'id'          => $m->id,

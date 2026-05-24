@@ -39,6 +39,7 @@
                     placeholder="Opcional">
             </div>
         </div>
+        <div id="dm-msg" style="display:none; margin-top:10px;"></div>
     </div>
 
     {{-- Tabla de registros --}}
@@ -121,6 +122,19 @@
             return $('<div>').text(str).html();
         }
 
+        function showMsg(msg, type) {
+            var $el = $('#dm-msg');
+            $el.removeClass('alert-success alert-danger alert-warning')
+                .addClass('alert alert-' + type)
+                .html(escHtml(msg))
+                .show();
+            if (type === 'success') {
+                setTimeout(function() {
+                    $el.fadeOut();
+                }, 3000);
+            }
+        }
+
         // Guardar
         $(document).on('click', '#dm-save-btn', function() {
             var tipo = $('#dm-tipo').val();
@@ -129,7 +143,7 @@
             var notas = $.trim($('#dm-notas').val());
 
             if (!motivo) {
-                alert('El campo Motivo es obligatorio.');
+                showMsg('El campo Motivo es obligatorio.', 'danger');
                 return;
             }
 
@@ -148,16 +162,19 @@
             }).done(function(res) {
                 if (res.status === 1) {
                     $('#dm-motivo, #dm-notas').val('');
+                    showMsg('Registro guardado correctamente.', 'success');
                     loadMaintenances();
                 } else {
-                    alert('Error al guardar.');
+                    showMsg(res.message || 'Error al guardar.', 'danger');
                 }
             }).fail(function(xhr) {
                 var msg = 'Error al guardar.';
                 if (xhr.responseJSON && xhr.responseJSON.errors) {
-                    msg = Object.values(xhr.responseJSON.errors).flat().join('\n');
+                    msg = Object.values(xhr.responseJSON.errors).flat().join(' ');
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
                 }
-                alert(msg);
+                showMsg(msg, 'danger');
             }).always(function() {
                 btn.removeAttr('disabled').html('<i class="fa fa-plus"></i> Guardar');
             });
