@@ -24,10 +24,14 @@ class PushMaintenanceToTalentus implements ShouldQueue
      */
     public array $backoff = [10, 60, 300];
 
-    public function __construct(
-        private readonly string $action,  // 'upsert' | 'delete'
-        private readonly array  $item
-    ) {}
+    private $action;
+    private $items;
+
+    public function __construct(string $action, array $item)
+    {
+        $this->action = $action;
+        $this->items  = $item;
+    }
 
     public function handle(): void
     {
@@ -42,7 +46,7 @@ class PushMaintenanceToTalentus implements ShouldQueue
             ->post("{$url}/api/tracking/device-maintenances/sync", [
                 'action'     => $this->action,
                 'empresa_id' => (int) $empresaId,
-                'item'       => $this->item,
+                'item'       => $this->items,
             ]);
 
         if (! $response->successful()) {
@@ -63,7 +67,7 @@ class PushMaintenanceToTalentus implements ShouldQueue
     {
         Log::error('PushMaintenanceToTalentus: falló definitivamente', [
             'action' => $this->action,
-            'item'   => $this->item,
+            'item'   => $this->items,
             'error'  => $e->getMessage(),
         ]);
     }
