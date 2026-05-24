@@ -28,7 +28,7 @@ use App\Events\Device\DeviceDisabled;
 use Illuminate\Support\Facades\Redis;
 use Tobuli\Services\DeviceModelCache;
 use App\Jobs\TrackerConfigWithRestart;
-use App\Jobs\PushMaintenanceToTalentus;
+use App\Services\TalentusMaintenanceService;
 use App\Http\Controllers\Frontend\DeviceMaintenancesController;
 use Illuminate\Support\Facades\Schema;
 use Tobuli\Services\EventWriteService;
@@ -319,7 +319,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                         'motivo'    => 'Unidad desactivada automáticamente.',
                         'user_id'   => auth()->id(),
                     ]);
-                    PushMaintenanceToTalentus::dispatch('upsert', DeviceMaintenancesController::buildPayload($m, $device));
+                    $synced = app(TalentusMaintenanceService::class)
+                        ->push('upsert', DeviceMaintenancesController::buildPayload($m, $device));
+                    if ($synced) {
+                        $m->markAsSynced();
+                    }
                 } else {
                     $m = DeviceMaintenance::create([
                         'device_id' => $device->id,
@@ -330,7 +334,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                             : 'Unidad reactivada.',
                         'user_id'   => auth()->id(),
                     ]);
-                    PushMaintenanceToTalentus::dispatch('upsert', DeviceMaintenancesController::buildPayload($m, $device));
+                    $synced = app(TalentusMaintenanceService::class)
+                        ->push('upsert', DeviceMaintenancesController::buildPayload($m, $device));
+                    if ($synced) {
+                        $m->markAsSynced();
+                    }
                     $device->update(['suspended_at' => null]);
                 }
             }
