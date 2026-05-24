@@ -306,30 +306,6 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
             if ($device->isDirty('active')) {
                 event($device->active ? new DeviceEnabled($device) : new DeviceDisabled($device));
-
-                // Registra automáticamente suspensión o reactivación en el historial
-                // La sincronización con Talentus la gestiona el job programado (PushMaintenanceToTalentus)
-                if (!$device->active) {
-                    $device->update(['suspended_at' => now()]);
-                    DeviceMaintenance::create([
-                        'device_id' => $device->id,
-                        'tipo'      => DeviceMaintenance::TIPO_SUSPENSION,
-                        'fecha'     => now()->toDateString(),
-                        'motivo'    => 'Unidad desactivada automáticamente.',
-                        'user_id'   => auth()->id(),
-                    ]);
-                } else {
-                    DeviceMaintenance::create([
-                        'device_id' => $device->id,
-                        'tipo'      => DeviceMaintenance::TIPO_REACTIVACION,
-                        'fecha'     => now()->toDateString(),
-                        'motivo'    => $device->suspended_at
-                            ? 'Unidad reactivada. Estuvo suspendida desde ' . \Carbon\Carbon::parse($device->suspended_at)->format('d/m/Y') . '.'
-                            : 'Unidad reactivada.',
-                        'user_id'   => auth()->id(),
-                    ]);
-                    $device->update(['suspended_at' => null]);
-                }
             }
         });
 

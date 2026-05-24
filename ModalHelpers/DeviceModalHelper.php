@@ -34,6 +34,7 @@ use Tobuli\Entities\DeviceConfig;
 use Tobuli\Entities\DeviceIcon;
 use Tobuli\Entities\DeviceModel;
 use Tobuli\Entities\DeviceType;
+use Tobuli\Entities\DeviceMaintenance;
 use Tobuli\Entities\Event;
 use Tobuli\Entities\UnregisteredDevice;
 use Tobuli\Entities\User;
@@ -485,7 +486,41 @@ class DeviceModalHelper extends ModalHelper
 
         DeviceFormValidator::validate('update', $this->data, $item->id);
 
+        // Capturar estado anterior de active y suspended_at ANTES de guardar
+        $wasActive      = (bool) $item->active;
+        $suspendedAt    = $item->suspended_at;
+        $newActive      = isset($this->data['active']) ? (bool) $this->data['active'] : $wasActive;
+        $activeChanged  = $wasActive !== $newActive;
+
         $this->deviceService->update($item, $this->data);
+
+        // Registrar mantenimiento automático si cambió el estado active
+        if ($activeChanged) {
+            if (! $newActive) {
+                // Desactivación → suspensión
+                $item->updateQuietly(['suspended_at' => now()]);
+                DeviceMaintenance::create([
+                    'device_id' => $item->id,
+                    'tipo'      => DeviceMaintenance::TIPO_SUSPENSION,
+                    'fecha'     => now()->toDateString(),
+                    'motivo'    => 'Unidad desactivada automáticamente.',
+                    'user_id'   => $this->user->id,
+                ]);
+            } else {
+                // Reactivación
+                $motivo = $suspendedAt
+                    ? 'Unidad reactivada. Estuvo suspendida desde ' . \Carbon\Carbon::parse($suspendedAt)->format('d/m/Y') . '.'
+                    : 'Unidad reactivada.';
+                DeviceMaintenance::create([
+                    'device_id' => $item->id,
+                    'tipo'      => DeviceMaintenance::TIPO_REACTIVACION,
+                    'fecha'     => now()->toDateString(),
+                    'motivo'    => $motivo,
+                    'user_id'   => $this->user->id,
+                ]);
+                $item->updateQuietly(['suspended_at' => null]);
+            }
+        }
 
         return ['status' => 1, 'id' => $item->id];
     }
