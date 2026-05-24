@@ -34,7 +34,7 @@ abstract class TemplateBuilder
 
 
         if ($template instanceof EmailTemplate) {
-            Log::debug('Building email template', ['template' => $template->name, 'user_id' => $template->user_id, 'data' => $data]);
+            //Log::debug('Building email template', ['template' => $template->name, 'user_id' => $template->user_id, 'data' => $data]);
 
             // Si el template es reset_password y data es una cadena, convertirla a array
             $viewData = $data;

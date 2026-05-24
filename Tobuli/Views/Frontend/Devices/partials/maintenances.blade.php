@@ -136,7 +136,7 @@
         }
 
         // Guardar
-        $(document).on('click', '#dm-save-btn', function() {
+        $(document).off('click.dm').on('click.dm', '#dm-save-btn', function() {
             var tipo = $('#dm-tipo').val();
             var fecha = $('#dm-fecha').val();
             var motivo = $.trim($('#dm-motivo').val());
@@ -181,7 +181,7 @@
         });
 
         // Eliminar
-        $(document).on('click', '.dm-delete', function(e) {
+        $(document).off('click.dm-del').on('click.dm-del', '.dm-delete', function(e) {
             e.preventDefault();
             if (!confirm('¿Eliminar este registro?')) return;
 
@@ -198,7 +198,7 @@
         });
 
         // Cargar al abrir el tab (compatibilidad con Bootstrap tabs)
-        $(document).on('shown.bs.tab', 'a[href="#device-form-maintenances"]', function() {
+        $(document).off('shown.bs.tab.dm').on('shown.bs.tab.dm', 'a[href="#device-form-maintenances"]', function() {
             loadMaintenances();
         });
 
