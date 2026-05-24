@@ -28,8 +28,7 @@ use App\Events\Device\DeviceDisabled;
 use Illuminate\Support\Facades\Redis;
 use Tobuli\Services\DeviceModelCache;
 use App\Jobs\TrackerConfigWithRestart;
-use App\Services\TalentusMaintenanceService;
-use App\Http\Controllers\Frontend\DeviceMaintenancesController;
+use App\Jobs\PushMaintenanceToTalentus;
 use Illuminate\Support\Facades\Schema;
 use Tobuli\Services\EventWriteService;
 use Tobuli\Services\DeviceImageService;
@@ -312,20 +311,16 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 // Registra automáticamente suspensión o reactivación en el historial
                 if (! $device->active) {
                     $device->update(['suspended_at' => now()]);
-                    $m = DeviceMaintenance::create([
+                    DeviceMaintenance::create([
                         'device_id' => $device->id,
                         'tipo'      => DeviceMaintenance::TIPO_SUSPENSION,
                         'fecha'     => now()->toDateString(),
                         'motivo'    => 'Unidad desactivada automáticamente.',
                         'user_id'   => auth()->id(),
                     ]);
-                    $synced = app(TalentusMaintenanceService::class)
-                        ->push('upsert', DeviceMaintenancesController::buildPayload($m, $device));
-                    if ($synced) {
-                        $m->markAsSynced();
-                    }
+                    PushMaintenanceToTalentus::dispatch();
                 } else {
-                    $m = DeviceMaintenance::create([
+                    DeviceMaintenance::create([
                         'device_id' => $device->id,
                         'tipo'      => DeviceMaintenance::TIPO_REACTIVACION,
                         'fecha'     => now()->toDateString(),
@@ -334,11 +329,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                             : 'Unidad reactivada.',
                         'user_id'   => auth()->id(),
                     ]);
-                    $synced = app(TalentusMaintenanceService::class)
-                        ->push('upsert', DeviceMaintenancesController::buildPayload($m, $device));
-                    if ($synced) {
-                        $m->markAsSynced();
-                    }
+                    PushMaintenanceToTalentus::dispatch();
                     $device->update(['suspended_at' => null]);
                 }
             }
