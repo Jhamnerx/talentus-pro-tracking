@@ -4,6 +4,7 @@ namespace App\Console;
 
 use App\Jobs\CleanOldLogsJob;
 use App\Jobs\DispatchSutranJobs;
+use App\Jobs\PushMaintenanceToTalentus;
 use App\Jobs\DispatchComsatelJobs;
 use App\Jobs\DispatchMininterJobs;
 use App\Jobs\DispatchWisetrackJobs;
@@ -197,6 +198,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('server:autoclean')->dailyAt('01:00');
         $schedule->command('server:translations')->dailyAt('02:00');
         $schedule->command('mininter:clean-errors')->dailyAt('02:30');
+
+        // Reintento de sincronización de mantenimientos con Talentus
+        $schedule->job(new PushMaintenanceToTalentus)->everyTwoHours()->withoutOverlapping();
     }
 
     /**

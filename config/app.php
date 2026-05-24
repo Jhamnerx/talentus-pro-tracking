@@ -22,6 +22,7 @@ $result = [
 	// Integración con Talentus ERP — push de mantenimientos
 	'talentus_url'        => env('TALENTUS_URL', ''),
 	'talentus_empresa_id' => env('TALENTUS_EMPRESA_ID', ''),
+	'talentus_api_key'    => env('TALENTUS_API_KEY', ''),
 
 	'url_mininter_beta' => env('URL_MININTER_BETA', ''),
 	'url_mininter_prod' => env('URL_MININTER_PROD', ''),

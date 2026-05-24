@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\PushMaintenanceToTalentus;
+use App\Services\TalentusMaintenanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Tobuli\Entities\Device;
@@ -74,7 +74,12 @@ class DeviceMaintenancesController extends Controller
             'user_id'   => $user->id,
         ]);
 
-        PushMaintenanceToTalentus::dispatch('upsert', self::buildPayload($maintenance, $device));
+        $synced = app(TalentusMaintenanceService::class)
+            ->push('upsert', self::buildPayload($maintenance, $device));
+
+        if ($synced) {
+            $maintenance->markAsSynced();
+        }
 
         return response()->json(['status' => 1, 'id' => $maintenance->id]);
     }
@@ -100,7 +105,7 @@ class DeviceMaintenancesController extends Controller
 
         $maintenance->delete();
 
-        PushMaintenanceToTalentus::dispatch('delete', $payload);
+        app(TalentusMaintenanceService::class)->push('delete', $payload);
 
         return response()->json(['status' => 1]);
     }
