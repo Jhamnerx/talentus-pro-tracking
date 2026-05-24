@@ -1,0 +1,223 @@
+================================================================================
+REPORTES DISPONIBLES - SISTEMA GPS TALENTUS
+Total: 97 reportes
+================================================================================
+
+
+----------------------------------------------------------------
+INFORMACIÓN GENERAL
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Información General                            Historial completo de posiciones por dispositivo
+Información General Combinada                  Todos los dispositivos en una sola tabla
+Información General Combinada Personalizada    Versión personalizada del reporte combinado
+Información General Combinada Personalizada 2  Variante personalizada #2
+Información General Combinada Personalizada 3  Variante personalizada #3
+Información General Combinada Personalizada 4  Variante personalizada #4
+Información General Combinada Personalizada 5  Variante personalizada #5
+Información General Combinada Personalizada 6  Variante personalizada #6
+Información General (Turno)                    Información general filtrada por turnos de trabajo
+
+
+----------------------------------------------------------------
+VIAJES Y PARADAS
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Viajes y Paradas                               Resumen de tramos en movimiento y paradas
+Viajes y Paradas / Geocercas                   Viajes y paradas con información de geocercas
+Viajes y Paradas / Conductores                 Viajes y paradas asociados a conductores
+Viajes y Paradas / Conductores (Empresarial)   Viajes empresariales por conductor
+Viajes y Paradas / Conductores (Privado)       Viajes privados por conductor
+Viajes y Paradas Simplificado                  Versión simplificada de viajes y paradas
+Viajes y Paradas Combinados                    Múltiples dispositivos combinados
+Paradas                                        Solo paradas del dispositivo
+Paradas (Filtrado)                             Paradas con filtros adicionales
+Tiempo de Conducción                           Tiempo total de conducción por dispositivo
+Hoja de Ruta                                   Hoja de ruta con detalle de trayectos
+Hoja de Ruta Personalizada                     Hoja de ruta con formato personalizado
+Hoja de Ruta (Empresarial/Privado)             Separada por uso comercial y privado
+
+
+----------------------------------------------------------------
+VELOCIDAD
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Excesos de Velocidad                           Excesos de velocidad detectados
+Velocidad Baja                                 Registros por debajo de velocidad mínima
+Excesos de Velocidad Personalizado             Formato personalizado
+Resumen de Excesos Personalizado               Resumen de excesos de velocidad personalizado
+Reporte de Velocidad                           Reporte general de velocidades registradas
+Excesos de Velocidad en Geocercas              Excesos de velocidad dentro de geocercas
+Comparación de Velocidad GPS/ECM               Compara velocidad GPS vs sensor ECM del vehículo
+Excesos de Velocidad ECM                       Excesos de velocidad usando datos del sensor ECM
+Excesos de Velocidad por Vía                   Clasificados por vía o carretera
+Excesos en Geocercas - Talentus                Excesos en geocercas, formato Talentus
+Excesos en Geocercas - Talentus v2             Versión 2 del reporte Talentus
+Excesos en Geocercas - Buenaventura            Excesos en geocercas, formato Buenaventura
+
+
+----------------------------------------------------------------
+GEOCERCAS
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Entradas y Salidas de Geocercas                Registra cada entrada y salida
+Entradas y Salidas (Modo 24h)                  Entradas/salidas en modo 24 horas
+Entradas y Salidas (Encendido/Apagado)         Con estado de encendido del motor
+Entradas y Salidas (Turno)                     Filtradas por turno de trabajo
+Toque de Todas las Geocercas                   Registra cada contacto con cualquier geocerca
+Toque de Todas las Geocercas 2                 Segunda variante del reporte de contacto
+Geocercas                                      Resumen general de eventos de geocercas
+Entradas a Geocercas Agrupadas                 Entradas agrupadas por zona
+Conteo de Paradas en Geocercas                 Conteo y duración de paradas dentro de geocercas
+Conteo de Paradas en Geocercas (Turno)         Conteo de paradas filtrado por turno
+RAG en Geocercas                               Conducción brusca dentro de geocercas
+Entradas y Salidas Combinadas                  Entradas/salidas combinadas por dispositivo
+Dispositivos en Geocercas                      Dispositivos dentro de geocercas en el período
+Salidas de Geocercas                           Solo eventos de salida de geocercas
+
+
+----------------------------------------------------------------
+COMBUSTIBLE
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Nivel de Combustible                           Nivel de combustible a lo largo del tiempo
+Cargas de Combustible                          Cargas detectadas por el sensor
+Sustracciones de Combustible                   Pérdidas anómalas de combustible
+Uso del Tanque de Combustible                  Consumo y uso del tanque
+Uso del Tanque (Conductor)                     Consumo desglosado por conductor
+Tasa de Flujo de Combustible                   Tasa de flujo del sensor de combustible
+Consumo por Hora                               Consumo de combustible por hora de operación
+Consumo Diario de Combustible                  Consumo diario por dispositivo
+
+
+----------------------------------------------------------------
+TEMPERATURA
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Temperatura                                    Lecturas del sensor de temperatura en el tiempo
+Temperatura con Estadísticas                   Temperatura con min, max y promedio
+
+
+----------------------------------------------------------------
+RAG (CONDUCCIÓN BRUSCA)
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+RAG                                            Aceleración, frenado y giro bruscos
+RAG / Cinturón de Seguridad                    Conducción brusca con uso del cinturón
+RAG 2                                          Segunda versión con análisis de giros
+RAG / Conductor                                Conducción brusca desglosada por conductor
+
+
+----------------------------------------------------------------
+HORAS DE MOTOR Y ODÓMETRO
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Horas de Motor Diarias                         Horas de motor acumuladas por día
+Horas de Motor Actuales                        Horas de motor acumuladas actualmente
+Gráfico de Horas de Motor Diarias              Horas de motor en formato gráfico diario
+Odómetro                                       Lectura del odómetro en el período
+Odómetro Diario                                Odómetro con desglose por día
+
+
+----------------------------------------------------------------
+CONDUCTORES
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Tarifa Diaria por Dispositivo                  Cálculo de tarifa diaria (dieta) por dispositivo
+Tarifa Diaria por Conductor                    Cálculo de tarifa diaria (dieta) por conductor
+Distancia Diaria por Conductor                 Distancia recorrida diariamente por conductor
+RPM Máximas por Conductor                      RPM máximas registradas por conductor
+
+
+----------------------------------------------------------------
+RUTAS
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Rutas                                          Rutas planificadas vs recorridas
+Rutas con Resumen                              Rutas con estadísticas resumidas del recorrido
+
+
+----------------------------------------------------------------
+EVENTOS Y COMANDOS
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Eventos                                        Eventos registrados por los dispositivos
+Encendido / Apagado                            Registros de encendido y apagado del motor
+Comandos Enviados                              Historial de comandos enviados a dispositivos
+Alertas de Dispositivos                        Alertas disparadas por dispositivos
+
+
+----------------------------------------------------------------
+INSTALACIÓN Y ESTADO DE DISPOSITIVOS
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Instalación - Todos los Objetos                Estado de instalación de todos los dispositivos
+Instalación - Objetos Sin Conexión             Dispositivos instalados actualmente sin conexión
+Objetos Sin Conexión                           Dispositivos desconectados en el período
+Última Ubicación                               Última ubicación conocida de cada dispositivo
+
+
+----------------------------------------------------------------
+POI (PUNTOS DE INTERÉS)
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Duración de Paradas en POI                     Duración de paradas en puntos de interés
+Duración de Ralentí en POI                     Tiempo de ralentí en puntos de interés
+
+
+----------------------------------------------------------------
+IVMS
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+IVMS - Lista de Conductores                    Lista de conductores con datos IVMS
+IVMS - Detalle de Viajes por Conductor         Detalle de viajes por conductor IVMS
+IVMS - Reporte de Geocercas                    Geocercas con datos de conductores IVMS
+IVMS - Última Comunicación del Vehículo        Última conexión registrada de vehículos IVMS
+IVMS - Eventos de Conductores                  Eventos registrados de conductores IVMS
+
+
+----------------------------------------------------------------
+PERSONALIZADOS Y ESPECIALES
+----------------------------------------------------------------
+
+Nombre                                         Descripción
+---------------------------------------------  ----------------------------------------------------------
+Personalizado Birla                            Reporte con formato personalizado para cliente Birla
+Historial del Objeto                           Historial completo del dispositivo/objeto
+Personalizado Automon                          Reporte con formato personalizado para cliente Automon
+Carga y Descarga                               Eventos de carga y descarga de mercancía
+Gastos por Dispositivo                         Gastos registrados asociados a cada dispositivo
+Horas Laborables Diarias                       Horas laborables registradas por día
+Reporte de Checklist                           Resultados de checklists completados por conductores
+Limpieza Diaria de Carros                      Registro de limpieza diaria (uso industrial/logístico)
+Historial de Movimiento del Objeto             Reporte histórico de movimiento del dispositivo
+
+================================================================================

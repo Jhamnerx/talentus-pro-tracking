@@ -35,6 +35,7 @@
         @if (Auth::user()->can('view', $item, 'custom_fields') && $item->hasCustomFields())
             <li><a href="#device-custom-fields" role="tab" data-toggle="tab">{!! trans('admin.custom_fields') !!}</a></li>
         @endif
+        <li><a href="#device-form-maintenances" role="tab" data-toggle="tab">Historial</a></li>
     </ul>
 
     {!! Form::open(['route' => 'devices.update', 'method' => 'PUT']) !!}
@@ -93,6 +94,11 @@
                 @include('Frontend.CustomFields.panel')
             </div>
         @endif
+
+        {{-- Historial de mantenimientos / suspensiones --}}
+        <div id="device-form-maintenances" class="tab-pane">
+            @include('Frontend.Devices.partials.maintenances')
+        </div>
     </div>
 
     {!! Form::close() !!}

@@ -1,0 +1,438 @@
+================================================================================
+FUNCIONALIDADES DE LA PLATAFORMA GPS - TALENTUS PRO TRACKING
+================================================================================
+
+
+================================================================
+1. MONITOREO EN TIEMPO REAL
+================================================================
+
+Seguimiento en vivo de dispositivos GPS en el mapa con actualización
+en tiempo real mediante WebSocket (Socket.io + Redis).
+
+  - Visualización de todos los objetos/vehículos en el mapa
+  - Panel lateral con estado de cada dispositivo (en movimiento,
+    detenido, sin conexión)
+  - Filtros y agrupación de objetos en el panel lateral
+  - Vista de lista de objetos con columnas configurables
+  - Seguimiento individual: centrar mapa en un vehículo
+  - Indicador de tiempo de parada actual por dispositivo
+  - Cambio de estado de alarma por dispositivo
+  - Cambio de estado de grupo desde el mapa
+  - Vista de posición de alarma activa
+  - Dashboard configurable con bloques de información
+
+
+================================================================
+2. HISTORIAL Y TRAYECTORIA
+================================================================
+
+Consulta y reproducción del recorrido histórico de cualquier
+dispositivo en un rango de fechas.
+
+  - Reproducción animada del recorrido en el mapa
+  - Visualización de posiciones paginadas con detalle
+  - Exportación del historial (KML, GPX, CSV u otros formatos)
+  - Eliminación de posiciones históricas
+  - Consulta de coordenadas individuales
+
+
+================================================================
+3. GEOCERCAS
+================================================================
+
+Zonas virtuales sobre el mapa para detectar entradas y salidas
+de vehículos.
+
+  - Creación de geocercas: polígonos, círculos, líneas
+  - Organización en grupos
+  - Activar/desactivar geocercas individualmente
+  - Importación y exportación de geocercas
+  - Asignación de geocercas a dispositivos específicos
+  - Uso en alertas y reportes
+
+
+================================================================
+4. ALERTAS Y NOTIFICACIONES
+================================================================
+
+Sistema de alertas configurable que notifica ante eventos del
+vehículo o del conductor.
+
+  Tipos de alerta disponibles:
+  - Exceso de velocidad
+  - Entrada/salida de geocercas
+  - Encendido / apagado del motor
+  - Movimiento no autorizado
+  - Combustible (llenado, sustracción)
+  - Temperatura fuera de rango
+  - Inactividad / sin señal GPS
+  - Eventos personalizados del protocolo
+  - Batería baja
+  - Cinturón de seguridad
+
+  Canales de notificación:
+  - Correo electrónico
+  - SMS
+  - Notificación push (FCM / app móvil)
+  - Webhook (HTTP POST a URL externa)
+  - Comando GPRS automático al dispositivo
+
+  Configuración adicional:
+  - Períodos de tiempo activos por alerta (días y horarios)
+  - Asignación de alertas a múltiples usuarios
+  - Resumen/listado de alertas activas
+
+
+================================================================
+5. REPORTES (97 TIPOS)
+================================================================
+
+Generación de reportes históricos por dispositivo o grupo de
+dispositivos, en múltiples formatos de salida.
+
+  Formatos de exportación:
+  - HTML (visualización en pantalla)
+  - PDF / PDF horizontal
+  - Excel (XLS / XLSX)
+  - CSV
+  - JSON
+
+  Categorías de reportes:
+  - Información general y posiciones
+  - Viajes y paradas
+  - Velocidad y excesos
+  - Geocercas (entradas, salidas, permanencia)
+  - Combustible (nivel, cargas, sustracciones, flujo)
+  - Temperatura
+  - Conducción brusca (RAG)
+  - Horas de motor y odómetro
+  - Conductores
+  - Rutas planificadas vs recorridas
+  - Eventos y comandos enviados
+  - Estado e instalación de dispositivos
+  - Puntos de interés (POI)
+  - IVMS (conductores y vehículos)
+  - Checklists
+  - Gastos por dispositivo
+  - Alertas
+
+  Ver archivo REPORTES_DISPONIBLES.txt para el listado completo.
+
+  Funciones adicionales:
+  - Programación automática de reportes (reportes guardados)
+  - Historial de reportes generados con descarga posterior
+  - Filtros por período semanal y horario
+
+
+================================================================
+6. RUTAS PLANIFICADAS
+================================================================
+
+Definición de rutas esperadas para controlar el cumplimiento
+del recorrido por parte de los vehículos.
+
+  - Creación y edición de rutas en el mapa
+  - Organización en grupos de rutas
+  - Importación y exportación de rutas
+  - Activar/desactivar rutas
+  - Asignación de tipos de ruta por dispositivo
+  - Reportes de cumplimiento de rutas
+
+
+================================================================
+7. SENSORES Y TELEMETRÍA
+================================================================
+
+Lectura y configuración de sensores conectados al dispositivo GPS
+para monitorear parámetros del vehículo.
+
+  Tipos de sensores soportados:
+  - Combustible (analógico, digital, CAN)
+  - Temperatura
+  - RPM del motor
+  - Velocidad ECM (CAN Bus)
+  - Horas de motor
+  - Odómetro
+  - Ignición / encendido
+  - Cinturón de seguridad
+  - Carga / peso
+  - Sensores personalizados con fórmulas de calibración
+
+  - Importación de calibraciones desde archivo
+  - Vista previa del valor del sensor en tiempo real
+  - Sugerencia automática de parámetros por protocolo
+
+
+================================================================
+8. CONDUCTORES
+================================================================
+
+Gestión de conductores asignados a los vehículos para el
+seguimiento de su actividad.
+
+  - Registro de conductores con datos personales
+  - Asignación de conductores a dispositivos
+  - Registro de actividad y log de cambios
+  - Reportes de conducción por conductor
+  - Distancia diaria, RPM máximas, RAG por conductor
+  - Tarifa diaria (dieta) calculada por conductor o vehículo
+  - Módulo IVMS (International Vehicle Management System):
+      * Lista de conductores IVMS
+      * Detalle de viajes por conductor
+      * Geocercas con datos IVMS
+      * Última comunicación del vehículo
+      * Eventos de conductores IVMS
+
+
+================================================================
+9. PUNTOS DE INTERÉS (POI)
+================================================================
+
+Marcadores en el mapa para ubicaciones relevantes (clientes,
+depósitos, zonas de carga, etc.).
+
+  - Creación de POI con nombre, coordenadas e icono
+  - Organización en grupos
+  - Importación y exportación de POI
+  - Activar/desactivar POI
+  - Reportes de paradas e inactividad en POI
+
+
+================================================================
+10. COMANDOS A DISPOSITIVOS
+================================================================
+
+Envío de comandos remotos a los dispositivos GPS desde
+la plataforma.
+
+  - Envío de comandos SMS
+  - Envío de comandos GPRS (TCP/IP)
+  - Plantillas de comandos SMS y GPRS reutilizables
+  - Historial/log de comandos enviados
+  - Envío desde widget del vehículo
+  - Envío desde alertas (automático al dispararse)
+  - Programación automática de comandos (command schedules)
+    con log de ejecución
+
+
+================================================================
+11. REENVÍO A WEBSERVICES EXTERNOS (FORWARDS)
+================================================================
+
+Reenvío automático de posiciones GPS a sistemas externos en
+tiempo real.
+
+  Tipos de conexión:
+  - Personalizado (HTTP POST / JSON / NMEA a cualquier endpoint)
+  - MacroPoint (integración con plataforma de visibilidad de carga)
+  - Pegasus (integración con plataforma Pegasus)
+
+  Integraciones gubernamentales y regulatorias (Perú):
+  - SUTRAN  (Superintendencia de Transporte Terrestre de Personas,
+             Carga y Mercancías)
+  - MININTER (Ministerio del Interior)
+  - OSINERGMIN (Organismo Supervisor de la Inversión en Energía
+               y Minería)
+  - COMSATEL (plataforma de control de flotas gubernamental)
+  - EPS CENTER (servicio de emergencias)
+  - SIDERSALES (integración corporativa)
+  - WISETRACK (plataforma de control de flotas)
+
+  Todas las integraciones usan colas de trabajo (jobs/queues)
+  para garantizar la entrega de datos.
+
+
+================================================================
+12. COMPARTIR UBICACIÓN (SHARING)
+================================================================
+
+Compartición pública de la ubicación de uno o varios vehículos
+mediante enlace sin necesidad de cuenta.
+
+  - Creación de enlaces de seguimiento con expiración
+  - Configuración de qué dispositivos se comparten
+  - Envío del enlace por correo electrónico
+  - Creación instantánea de enlace desde el mapa
+  - Control de acceso por período de tiempo
+
+
+================================================================
+13. CÁMARA Y VIDEO
+================================================================
+
+Gestión de cámaras instaladas en los vehículos para captura
+y reproducción de imágenes y video.
+
+  - Configuración de cámaras por dispositivo
+  - Galería de imágenes capturadas por la cámara
+  - Descarga individual o masiva de imágenes
+  - Organización de medios por categorías
+  - Video en vivo (streaming HLS - Howen / JT808)
+  - Video en diferido / playback con búsqueda por fecha
+  - Audio en vivo (inicio y detención)
+  - Credenciales secundarias para acceso a cámara
+  - Sincronización del recorrido con el video de playback
+
+
+================================================================
+14. MANTENIMIENTO Y SERVICIOS
+================================================================
+
+Control del mantenimiento preventivo y correctivo de la flota.
+
+  - Registro de servicios por vehículo (cambio de aceite,
+    revisión técnica, SOAT, etc.)
+  - Alertas de vencimiento por odómetro u horas de motor
+  - Checklists digitales de pre-inspección:
+      * Plantillas configurables
+      * Llenado desde app con firma digital
+      * Adjunto de fotografías
+      * Código QR por vehículo para acceso rápido
+      * Estado por ítem (ok / observado / falla)
+  - Registro de gastos por dispositivo con categorías
+    y proveedores
+
+
+================================================================
+15. TAREAS Y DESPACHO
+================================================================
+
+Asignación y seguimiento de tareas operativas a vehículos
+o conductores.
+
+  - Creación de tareas con ubicación, descripción y estado
+  - Sets de tareas (conjuntos reutilizables)
+  - Importación masiva de tareas
+  - Asignación de tareas a conductores/dispositivos
+  - Seguimiento del estado de la tarea en tiempo real
+  - Firma digital de recepción de tarea
+  - Ubicaciones de task sets en el mapa
+
+
+================================================================
+16. CONTROL DE BLOQUEO / INMOVILIZACIÓN
+================================================================
+
+Control remoto del estado de bloqueo/desbloqueo del vehículo.
+
+  - Consulta del estado actual de bloqueo
+  - Historial de eventos de bloqueo/desbloqueo
+  - Desbloqueo remoto desde la plataforma
+  - Confirmación de acción antes de ejecutar
+
+
+================================================================
+17. CALL ACTIONS (ACCIONES POR LLAMADA)
+================================================================
+
+Configuración de acciones automáticas disparadas por eventos
+del sistema o del dispositivo.
+
+  - Creación de acciones vinculadas a dispositivos o eventos
+  - Configuración de respuesta automática
+
+
+================================================================
+18. API REST
+================================================================
+
+API completa para integración con sistemas de terceros.
+
+  - Autenticación mediante token (auth.api)
+  - Endpoints para dispositivos, posiciones, alertas,
+    geocercas, conductores, sensores, reportes, tareas,
+    rutas, POI, comandos y más
+  - Respuestas con Fractal Transformers (formato consistente)
+  - Documentación disponible en /public/apidoc/
+
+
+================================================================
+19. ADMINISTRACIÓN DE USUARIOS Y CLIENTES
+================================================================
+
+Panel de administración para gestión de cuentas y permisos.
+
+  - Gestión de usuarios con roles y permisos granulares
+  - Gestión de clientes y sub-cuentas
+  - Planes de dispositivos y suscripciones
+  - Métodos de inicio de sesión por cliente
+    (usuario/contraseña, Azure SSO)
+  - Períodos de acceso permitidos por cliente
+  - Tipos de reporte habilitados por cliente
+  - Campos personalizados para dispositivos
+  - Grupos de sensores personalizados
+  - Plantillas de correo y SMS
+  - Configuración de pasarelas de pago
+    (Stripe, Braintree)
+  - Popups y reglas de notificación en pantalla
+  - Páginas de contenido estático (CMS básico)
+
+
+================================================================
+20. COMUNICACIONES
+================================================================
+
+Canales de comunicación integrados en la plataforma.
+
+  - Chat interno entre usuarios y dispositivos
+    (mensajería en tiempo real)
+  - Gateway SMS propio configurable (Plivo y otros)
+  - Notificaciones push a app móvil (Firebase FCM)
+  - Correos transaccionales (SendGrid / SMTP)
+  - Webhooks de salida configurables por dispositivo
+
+
+================================================================
+21. CONFIGURACIÓN DE DISPOSITIVOS
+================================================================
+
+Gestión y configuración remota de los rastreadores GPS.
+
+  - Configuración de APN por modelo de dispositivo
+  - Envío automático de configuración al instalar
+  - Tipos de dispositivo y modelos con protocolos asociados
+  - Imei por tipo de dispositivo
+  - Iconos personalizados por dispositivo
+  - Imagen del vehículo (foto)
+  - Grupos de dispositivos
+  - Beacons Bluetooth asociados a dispositivos
+  - Planes de dispositivo (billing por dispositivo)
+
+
+================================================================
+22. MAPA Y GEOCODIFICACIÓN
+================================================================
+
+Configuración del mapa y servicios de ubicación.
+
+  - Soporte para múltiples proveedores de mapa
+    (Google Maps, OpenStreetMap, HERE, etc.)
+  - Geocodificación directa e inversa de direcciones
+  - Autocompletado de direcciones
+  - Búsqueda de direcciones
+  - Vista de Street View integrada
+  - Iconos de mapa personalizados (vehículos, POI, sensores)
+
+
+================================================================
+23. ACCESO MÓVIL Y COMPARTICIÓN
+================================================================
+
+Acceso a la plataforma desde dispositivos móviles y
+funcionalidades de acceso externo.
+
+  - Interfaz web responsive para uso desde smartphone
+  - App móvil con soporte de seguimiento y checklists
+  - Enlace de seguimiento público (sharing) sin login
+  - Registro público de nuevos usuarios (configurable)
+  - Recuperación de contraseña por correo
+  - Verificación de correo electrónico
+  - Inicio de sesión con Azure AD (SSO corporativo)
+  - Modo demo para evaluación de la plataforma
+
+
+================================================================================
+FIN DEL DOCUMENTO
+Sistema: GPS Tracking Platform | Laravel 8 | Build 202503200000000000
+================================================================================

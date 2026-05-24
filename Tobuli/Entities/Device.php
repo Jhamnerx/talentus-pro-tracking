@@ -28,6 +28,8 @@ use App\Events\Device\DeviceDisabled;
 use Illuminate\Support\Facades\Redis;
 use Tobuli\Services\DeviceModelCache;
 use App\Jobs\TrackerConfigWithRestart;
+use App\Jobs\PushMaintenanceToTalentus;
+use App\Http\Controllers\Frontend\DeviceMaintenancesController;
 use Illuminate\Support\Facades\Schema;
 use Tobuli\Services\EventWriteService;
 use Tobuli\Services\DeviceImageService;
@@ -43,6 +45,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Tobuli\Entities\DeviceMaintenance;
 
 class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInterface, ChattableInterface
 {
@@ -242,7 +245,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
             $traccarDevice = TraccarDevice::create([
                 'name' => $device->name,
                 'uniqueId' => $device->imei,
-                'database_id' => $device->database_id
+                'database_id' => $device->database_id,
             ]);
 
             unset($device->database_id);
@@ -305,6 +308,31 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
             if ($device->isDirty('active')) {
                 event($device->active ? new DeviceEnabled($device) : new DeviceDisabled($device));
+
+                // Registra automáticamente suspensión o reactivación en el historial
+                if (! $device->active) {
+                    $device->update(['suspended_at' => now()]);
+                    $m = DeviceMaintenance::create([
+                        'device_id' => $device->id,
+                        'tipo'      => DeviceMaintenance::TIPO_SUSPENSION,
+                        'fecha'     => now()->toDateString(),
+                        'motivo'    => 'Unidad desactivada automáticamente.',
+                        'user_id'   => auth()->id(),
+                    ]);
+                    PushMaintenanceToTalentus::dispatch('upsert', DeviceMaintenancesController::buildPayload($m, $device));
+                } else {
+                    $m = DeviceMaintenance::create([
+                        'device_id' => $device->id,
+                        'tipo'      => DeviceMaintenance::TIPO_REACTIVACION,
+                        'fecha'     => now()->toDateString(),
+                        'motivo'    => $device->suspended_at
+                            ? 'Unidad reactivada. Estuvo suspendida desde ' . \Carbon\Carbon::parse($device->suspended_at)->format('d/m/Y') . '.'
+                            : 'Unidad reactivada.',
+                        'user_id'   => auth()->id(),
+                    ]);
+                    PushMaintenanceToTalentus::dispatch('upsert', DeviceMaintenancesController::buildPayload($m, $device));
+                    $device->update(['suspended_at' => null]);
+                }
             }
         });
 
@@ -387,6 +415,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     public function traccar()
     {
         return $this->hasOne('Tobuli\Entities\TraccarDevice', 'id', 'traccar_device_id');
+    }
+
+    public function maintenances()
+    {
+        return $this->hasMany(DeviceMaintenance::class, 'device_id')->orderByDesc('fecha');
     }
 
     public function alerts()

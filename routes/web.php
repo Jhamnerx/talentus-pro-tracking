@@ -203,6 +203,11 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('devices/{device_id}/users', ['as' => 'devices.users.get', 'uses' => 'DeviceUsersController@get']);
     Route::resource('devices', 'DevicesController', ['except' => ['edit', 'update']]);
 
+    # Device Maintenances (historial de mantenimientos/suspensiones por unidad)
+    Route::get('devices/{device_id}/maintenances', ['as' => 'device_maintenances.index', 'uses' => 'DeviceMaintenancesController@index']);
+    Route::post('devices/{device_id}/maintenances', ['as' => 'device_maintenances.store', 'uses' => 'DeviceMaintenancesController@store']);
+    Route::delete('devices/{device_id}/maintenances/{id}', ['as' => 'device_maintenances.destroy', 'uses' => 'DeviceMaintenancesController@destroy']);
+
     Route::post('devices/image/upload/{id?}', ['as' => 'device.image.store', 'uses' => 'DeviceImagesController@store']);
     Route::post('devices/image/delete/{id?}', ['as' => 'device.image.destroy', 'uses' => 'DeviceImagesController@destroy']);
 

@@ -201,15 +201,15 @@
     <script>
         $(document).ready(function() {
             /*
-                var
-                    sendCommands = new Commands();
+                        var
+                            sendCommands = new Commands();
 
-                $(document).on('change', '#alerts-form-add-command select[name="command[type]"]', function() {
-                    var type = $(this).val();
+                        $(document).on('change', '#alerts-form-add-command select[name="command[type]"]', function() {
+                            var type = $(this).val();
 
-                    sendCommands.buildAttributes(type, $('#alerts-form-add-command .attributes'));
-                });
-    */
+                            sendCommands.buildAttributes(type, $('#alerts-form-add-command .attributes'));
+                        });
+            */
             app.alerts.draggerInt();
 
             $('.alert-form select[name="type"]').trigger('change');
