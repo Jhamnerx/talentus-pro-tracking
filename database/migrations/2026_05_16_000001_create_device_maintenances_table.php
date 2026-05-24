@@ -10,13 +10,13 @@ return new class extends Migration
     {
         Schema::create('device_maintenances', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('device_id');
+            $table->unsignedInteger('device_id');
             $table->foreign('device_id')->references('id')->on('devices')->onDelete('cascade');
             $table->enum('tipo', ['mantenimiento', 'suspension', 'reactivacion'])->default('mantenimiento');
             $table->date('fecha');
             $table->string('motivo', 500)->nullable();
             $table->text('notas')->nullable();
-            $table->unsignedBigInteger('user_id')->nullable();
+            $table->unsignedInteger('user_id')->nullable();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             // Fecha en que fue sincronizado con Talentus
             $table->timestamp('synced_at')->nullable();
