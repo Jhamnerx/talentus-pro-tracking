@@ -565,4 +565,64 @@ class ApiController extends Controller
 
         return response()->json($response, $status_code);
     }
+
+    public function getDevicesWithSensors()
+    {
+        if (!$this->user->perm('devices', 'view')) {
+            return response()->json(['status' => 0, 'message' => trans('front.dont_have_permission')], 403);
+        }
+
+        Server::setMemoryLimit(config('server.device_memory_limit'));
+
+        $plateNumber = request()->get('plate_number');
+
+        $query = $this->user->devices()
+            ->with(['sensors', 'traccar'])
+            ->select([
+                'devices.name',
+                'devices.plate_number',
+                'devices.active',
+            ]);
+
+        if (!empty($plateNumber)) {
+            $query->where('devices.plate_number', $plateNumber);
+        }
+
+        $devices = $query->get();
+
+        $items = $devices->map(function ($device) {
+            $traccar = $device->traccar;
+
+            $sensors = $device->sensors->map(function ($sensor) {
+                return [
+                    'id'                  => $sensor->id,
+                    'name'                => $sensor->name,
+                    'type'                => $sensor->type,
+                    'tag_name'            => $sensor->tag_name,
+                    'value'               => $sensor->value,
+                    'unit_of_measurement' => $sensor->unit_of_measurement,
+                    'add_to_history'      => (bool) $sensor->add_to_history,
+                ];
+            })->values()->all();
+
+            return [
+                'name'        => $device->name,
+                'plate_number' => $device->plate_number,
+                'active'      => (bool) $device->active,
+                'lat'         => $traccar ? $traccar->lat : null,
+                'lng'         => $traccar ? $traccar->lng : null,
+                'speed'       => $traccar ? $traccar->speed : null,
+                'course'      => $traccar ? $traccar->course : null,
+                'time'        => $traccar ? $traccar->time : null,
+                'server_time' => $traccar ? $traccar->server_time : null,
+                'sensors'     => $sensors,
+            ];
+        })->values()->all();
+
+        return response()->json([
+            'status' => 1,
+            'total'  => count($items),
+            'items'  => $items,
+        ]);
+    }
 }

@@ -1,0 +1,127 @@
+{
+    "info": {
+        "name": "GPS Tracking — v2/get_devices_by_plate",
+        "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "description": "Endpoint para obtener dispositivos con sus sensores y última posición. Filtro opcional por número de placa.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://plataforma.talentustechnology.com/api",
+            "type": "string"
+        },
+        {
+            "key": "user_api_hash",
+            "value": "REEMPLAZA_CON_TU_API_HASH",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "v2/get_devices_by_plate — Todos los dispositivos (GET)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/v2/get_devices_by_plate?user_api_hash={{user_api_hash}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v2",
+                        "get_devices_by_plate"
+                    ],
+                    "query": [
+                        {
+                            "key": "user_api_hash",
+                            "value": "{{user_api_hash}}",
+                            "description": "Hash de autenticación del usuario (obligatorio)"
+                        }
+                    ]
+                },
+                "description": "Devuelve todos los dispositivos del usuario con sus sensores y última posición."
+            },
+            "response": [
+                {
+                    "name": "Respuesta exitosa",
+                    "status": "OK",
+                    "code": 200,
+                    "body": "{\n  \"status\": 1,\n  \"total\": 1,\n  \"items\": [\n    {\n      \"name\": \"Unidad 01\",\n      \"plate_number\": \"ABC-123\",\n      \"active\": true,\n      \"lat\": -12.046374,\n      \"lng\": -77.042793,\n      \"speed\": 0,\n      \"course\": 180,\n      \"time\": \"2026-05-25 08:30:00\",\n      \"server_time\": \"2026-05-25 08:30:05\",\n      \"sensors\": [\n        {\n          \"id\": 5,\n          \"name\": \"Velocidad GPS\",\n          \"type\": \"speed\",\n          \"tag_name\": \"speed\",\n          \"value\": \"0 km/h\",\n          \"unit_of_measurement\": \"km/h\",\n          \"add_to_history\": true\n        }\n      ]\n    }\n  ]\n}"
+                }
+            ]
+        },
+        {
+            "name": "v2/get_devices_by_plate — Filtrar por placa (GET)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/v2/get_devices_by_plate?user_api_hash={{user_api_hash}}&plate_number=ABC-123",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v2",
+                        "get_devices_by_plate"
+                    ],
+                    "query": [
+                        {
+                            "key": "user_api_hash",
+                            "value": "{{user_api_hash}}",
+                            "description": "Hash de autenticación (obligatorio)"
+                        },
+                        {
+                            "key": "plate_number",
+                            "value": "ABC-123",
+                            "description": "Número de placa exacto (opcional)"
+                        }
+                    ]
+                },
+                "description": "Filtra dispositivos por número de placa exacto."
+            },
+            "response": []
+        },
+        {
+            "name": "v2/get_devices_by_plate — Filtrar por placa (POST, hash en URL)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/x-www-form-urlencoded"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/v2/get_devices_by_plate?user_api_hash={{user_api_hash}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v2",
+                        "get_devices_by_plate"
+                    ],
+                    "query": [
+                        {
+                            "key": "user_api_hash",
+                            "value": "{{user_api_hash}}",
+                            "description": "Hash de autenticación — siempre en la URL aunque sea POST"
+                        }
+                    ]
+                },
+                "body": {
+                    "mode": "urlencoded",
+                    "urlencoded": [
+                        {
+                            "key": "plate_number",
+                            "value": "ABC-123",
+                            "description": "Número de placa (opcional)"
+                        }
+                    ]
+                },
+                "description": "POST con filtro en el body. El user_api_hash siempre va en la query string de la URL."
+            },
+            "response": []
+        }
+    ]
+}

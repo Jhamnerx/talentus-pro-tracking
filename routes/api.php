@@ -92,6 +92,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('get_devices', ['as' => 'api.get_devices', 'uses' => 'ApiController@getDevices']);
         Route::any('get_devices_latest', ['as' => 'api.get_devices_json', 'uses' => 'ApiController@getDevicesJson']);
         Route::get('get_devices_by_plate', ['as' => 'api.get_devices_by_plate', 'uses' => 'ApiController@getDevicesByPlate']);
+        Route::any('v2/get_devices_by_plate', ['as' => 'api.v2.get_devices_by_plate', 'uses' => 'ApiController@getDevicesWithSensors']);
         Route::get('get_devices_transmission_status', ['as' => 'api.get_devices_transmission_status', 'uses' => 'ApiController@getDevicesTransmissionStatus']);
 
         Route::any('add_device_data', ['as' => 'api.add_device_data', 'uses' => 'ApiController@DevicesController#create']);

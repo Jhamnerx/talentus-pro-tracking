@@ -370,7 +370,7 @@ Panel de administración para gestión de cuentas y permisos.
 
 
 ================================================================
-20. COMUNICACIONES
+20. COMUNICACIONESP 
 ================================================================
 
 Canales de comunicación integrados en la plataforma.
@@ -436,3 +436,4 @@ funcionalidades de acceso externo.
 FIN DEL DOCUMENTO
 Sistema: GPS Tracking Platform | Laravel 8 | Build 202503200000000000
 ================================================================================
+-
