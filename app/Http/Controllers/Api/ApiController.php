@@ -593,8 +593,6 @@ class ApiController extends Controller
         $devices = $query->get();
 
         $items = $devices->map(function ($device) {
-            $traccar = $device->traccar;
-
             $sensors = $device->sensors->map(function ($sensor) {
                 return [
                     'id'                  => $sensor->id,
@@ -611,12 +609,12 @@ class ApiController extends Controller
                 'name'        => $device->name,
                 'plate_number' => $device->plate_number,
                 'active'      => (bool) $device->active,
-                'lat'         => $traccar ? $traccar->lat : null,
-                'lng'         => $traccar ? $traccar->lng : null,
-                'speed'       => $traccar ? $traccar->speed : null,
-                'course'      => $traccar ? $traccar->course : null,
-                'time'        => $traccar ? $traccar->time : null,
-                'server_time' => $traccar ? $traccar->server_time : null,
+                'lat'         => $device->lat,
+                'lng'         => $device->lng,
+                'speed'       => $device->speed,
+                'course'      => $device->course,
+                'time'        => $device->time,
+                'server_time' => $device->server_time,
                 'sensors'     => $sensors,
             ];
         })->values()->all();
