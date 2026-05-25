@@ -579,6 +579,8 @@ class ApiController extends Controller
         $query = $this->user->devices()
             ->with(['sensors', 'traccar'])
             ->select([
+                'devices.id',
+                'devices.traccar_device_id',
                 'devices.name',
                 'devices.plate_number',
                 'devices.active',
