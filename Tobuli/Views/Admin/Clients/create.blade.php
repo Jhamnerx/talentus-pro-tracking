@@ -373,6 +373,9 @@
             form.find('select[name="billing_plan_id"]').trigger('change');
 
             checkPerms();
+
+            $('select[name="group_id"]').on('change', showHideClientFields);
+            showHideClientFields();
         });
     </script>
 @stop
