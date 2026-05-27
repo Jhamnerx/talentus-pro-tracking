@@ -58,6 +58,14 @@ function getNavigation()
             'route' => 'admin.objects.logs',
             'childs' => []
         ];
+
+        if (Auth::user()->isAdmin()) {
+            $items[] = [
+                'title'  => '<i class="fa fa-paper-plane-o"></i> ' . '<span class="text"> Reenvío WS </span>',
+                'route'  => 'admin.webservices_reenvio.index',
+                'childs' => []
+            ];
+        }
     }
 
     $items['content'] = [

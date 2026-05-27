@@ -979,6 +979,16 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::any('forwards/destroy', ['as' => 'forwards.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'ForwardsController@destroy']);
     Route::resource('forwards', 'ForwardsController', ['except' => ['destroy']]);
 
+    # Webservices – Reenvío manual
+    Route::get('webservices-reenvio', ['as' => 'webservices_reenvio.index', 'uses' => 'WebservicesReenvioController@index']);
+    Route::get('webservices-reenvio/device/{id}/last-position', ['as' => 'webservices_reenvio.last_position', 'uses' => 'WebservicesReenvioController@lastPosition']);
+    Route::post('webservices-reenvio/sutran/enviar', ['as' => 'webservices_reenvio.sutran', 'uses' => 'WebservicesReenvioController@sutranEnviar']);
+    Route::post('webservices-reenvio/osinergmin/mantener', ['as' => 'webservices_reenvio.osin_mantener', 'uses' => 'WebservicesReenvioController@osinergminMantener']);
+    Route::post('webservices-reenvio/osinergmin/mantener-trama', ['as' => 'webservices_reenvio.osin_mantener_trama', 'uses' => 'WebservicesReenvioController@osinergminMantenerTrama']);
+    Route::post('webservices-reenvio/osinergmin/rango', ['as' => 'webservices_reenvio.osin_rango', 'uses' => 'WebservicesReenvioController@osinergminRango']);
+    Route::post('webservices-reenvio/osinergmin/historial', ['as' => 'webservices_reenvio.osin_historial', 'uses' => 'WebservicesReenvioController@osinergminHistorial']);
+    Route::post('webservices-reenvio/mininter/reenviar', ['as' => 'webservices_reenvio.mininter', 'uses' => 'WebservicesReenvioController@mininterReenviar']);
+
     # User change logs
     Route::get('model_change_logs/index', ['as' => 'model_change_logs.index', 'uses' => 'ModelChangeLogsController@index']);
     Route::get('model_change_logs/show/{id}', ['as' => 'model_change_logs.show', 'uses' => 'ModelChangeLogsController@show']);
