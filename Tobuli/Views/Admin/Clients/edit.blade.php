@@ -821,6 +821,7 @@
             form.find('input[name="enable_expiration_date"]').trigger('change');
             form.find('select[name="billing_plan_id"]').trigger('change');
             checkPerms();
+            showHideClientFields();
         });
     </script>
 @stop

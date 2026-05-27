@@ -1061,10 +1061,16 @@ class ClientsController extends BaseController
         $usersLoader->setRequestKey('manager_id');
 
         if (request()->boolean('for_monitoring')) {
+            $accessibleSubquery = \Tobuli\Entities\User::userAccessible($this->user)
+                ->whereIn('group_id', [3, 5, 6])
+                ->select('users.id');
+
             $usersLoader->setQueryItems(
-                $usersLoader->getQueryItems()
-                    ->whereIn('group_id', [1, 3, 5, 6])
-                    ->notUser($this->user)
+                \Tobuli\Entities\User::query()
+                    ->where(function ($q) use ($accessibleSubquery) {
+                        $q->whereIn('users.id', $accessibleSubquery)
+                            ->orWhere('users.group_id', 1);
+                    })
             );
         } else {
             $usersLoader->setQueryItems(

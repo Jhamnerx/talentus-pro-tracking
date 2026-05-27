@@ -159,12 +159,22 @@
                 baseUrl = $managerSelect.attr('data-ajax');
                 $managerSelect.data('ajax-base-url', baseUrl);
             }
+            var sp = $managerSelect.data('selectpicker');
             if (group_id == 2) {
                 $('.field_manager_id').show();
                 $managerSelect.attr('data-ajax', baseUrl);
+                if (sp) {
+                    sp.options.ajax = baseUrl;
+                    if (sp.list) sp.list.cache = {};
+                }
             } else if (group_id == 7) {
                 $('.field_manager_id').show();
-                $managerSelect.attr('data-ajax', baseUrl + '?for_monitoring=1');
+                var monitoringUrl = baseUrl + '?for_monitoring=1';
+                $managerSelect.attr('data-ajax', monitoringUrl);
+                if (sp) {
+                    sp.options.ajax = monitoringUrl;
+                    if (sp.list) sp.list.cache = {};
+                }
             } else {
                 $('.field_manager_id').hide();
             }
