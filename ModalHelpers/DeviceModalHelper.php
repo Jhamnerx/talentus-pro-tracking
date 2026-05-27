@@ -254,6 +254,8 @@ class DeviceModalHelper extends ModalHelper
             ? Formatter::date()->convert(date('Y-m-d'))
             : null;
 
+        $webservices = $this->getWebservices($item);
+
         return compact(
             'device_groups',
             'sensor_groups',
@@ -271,7 +273,8 @@ class DeviceModalHelper extends ModalHelper
             'apn_configs',
             'device_types',
             'fuel_detect_sec_after_stop_options',
-            'models'
+            'models',
+            'webservices'
         );
     }
 
@@ -406,6 +409,7 @@ class DeviceModalHelper extends ModalHelper
             : [];
 
         $models = $this->getDeviceModels($item);
+        $webservices = $this->getWebservices($item);
 
         $users = [];
         $sel_users = [];
@@ -447,7 +451,8 @@ class DeviceModalHelper extends ModalHelper
             'device_cameras',
             'device_types',
             'fuel_detect_sec_after_stop_options',
-            'models'
+            'models',
+            'webservices'
         );
     }
 
@@ -643,6 +648,34 @@ class DeviceModalHelper extends ModalHelper
             ->pluck('title', 'id')
             ->prepend(trans('front.none'), '')
             ->all();
+    }
+
+    private function getWebservices(Device $item): array
+    {
+        $all = [
+            'mtc'        => ['label' => 'Sutran',      'perm' => 'webservice.sutran'],
+            'osinergmin' => ['label' => 'Osinergmin',  'perm' => 'webservice.osinergmin'],
+            'mininter'   => ['label' => 'Mininter',    'perm' => 'webservice.mininter'],
+            'consatel'   => ['label' => 'Consatel',    'perm' => 'webservice.consatel'],
+            'wisetrack'  => ['label' => 'Wisetrack',   'perm' => 'webservice.wisetrack'],
+            'sidersales' => ['label' => 'Sidersales',  'perm' => 'webservice.sidersales'],
+            'epscenter'  => ['label' => 'EPS Center',  'perm' => 'webservice.epscenter'],
+        ];
+
+        $result = [];
+        foreach ($all as $key => $info) {
+            if (!$this->user->perm($info['perm'], 'edit')) {
+                continue;
+            }
+
+            $result[] = [
+                'key'    => $key,
+                'label'  => $info['label'],
+                'active' => (bool) $item->{$key},
+            ];
+        }
+
+        return $result;
     }
 
     private function usersReachedLimit($device = null)
