@@ -89,7 +89,7 @@ function EventSys(data) {
 
     notificationMessage = notificationMessage.slice(
       0,
-      notificationMessage.length - 2
+      notificationMessage.length - 2,
     );
 
     //app.notice.info(message, window.lang.event, {timeOut: 60000});
@@ -107,7 +107,7 @@ function EventSys(data) {
 
     new Notifications().notify(
       decodeHtmlEntity(notificationTitle),
-      decodeHtmlEntity(notificationMessage)
+      decodeHtmlEntity(notificationMessage),
     );
   };
 
@@ -118,7 +118,7 @@ function EventSys(data) {
       (options.geofence != null ? " (" + options.geofence.name + ")" : "");
 
     var $dropdown = $(
-      '<div class="btn-group dropleft droparrow"  data-position="fixed"><i class="btn icon options" data-toggle="dropdown" data-position="fixed" aria-haspopup="true" aria-expanded="false"></i></div>'
+      '<div class="btn-group dropleft droparrow"  data-position="fixed"><i class="btn icon options" data-toggle="dropdown" data-position="fixed" aria-haspopup="true" aria-expanded="false"></i></div>',
     );
     var $dropdownMenu = $('<ul class="dropdown-menu"></ul>');
 
@@ -129,7 +129,7 @@ function EventSys(data) {
         options.alert_id +
         '" data-modal="alerts_edit"> <span class="icon event"></span><span class="text">' +
         window.lang.alert +
-        "</span></a></li>"
+        "</span></a></li>",
     );
     $dropdownMenu.append(
       '<li><a href="javascript:;" data-url="' +
@@ -138,7 +138,7 @@ function EventSys(data) {
         options.id +
         '" data-modal="events_do_destroy"> <span class="icon delete"></span><span class="text">' +
         window.lang.remove +
-        "</span></a></li>"
+        "</span></a></li>",
     );
     $dropdown.append($dropdownMenu);
 

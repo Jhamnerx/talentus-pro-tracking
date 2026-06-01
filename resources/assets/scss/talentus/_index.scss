@@ -1,0 +1,16 @@
+/* ============================================================
+   TalentusPro Design System · SCSS Entry
+   ------------------------------------------------------------
+   This file is the bridge into the existing Gulp pipeline.
+   It simply re-exports the pure-CSS design system so it can be
+   compiled by the same `sass-all` task into public/assets/css/.
+
+   To enable, add to gulpfile.js (templates pipeline) or import
+   from any other SCSS template:
+
+       @import '../talentus/index';
+
+   ============================================================ */
+
+@import "tokens";
+@import "components";

@@ -1,0 +1,10 @@
+// Mirror of public/assets/talentus/css/tokens.css
+// Kept in SCSS form so the existing Gulp pipeline can compile + minify it
+// alongside the rest of the template files. Source of truth = this file.
+//
+// When editing tokens, edit here and run:
+//   gulp sass-all && gulp minify-css
+// then re-export the resulting CSS to public/assets/talentus/css/tokens.css
+// (or symlink during dev).
+
+@import "../../../../public/assets/talentus/css/tokens.css";

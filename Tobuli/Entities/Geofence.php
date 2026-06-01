@@ -1,4 +1,6 @@
-<?php namespace Tobuli\Entities;
+<?php
+
+namespace Tobuli\Entities;
 
 
 use Illuminate\Database\Eloquent\Builder;
@@ -24,7 +26,7 @@ class Geofence extends AbstractEntity implements DisplayInterface
 
     public static string $displayField = 'name';
 
-	protected $table = 'geofences';
+    protected $table = 'geofences';
 
     protected $fillable = [
         'user_id',
@@ -68,14 +70,15 @@ class Geofence extends AbstractEntity implements DisplayInterface
             }
 
             $polygon = $item->type === self::TYPE_POLYGON
-                ? "PolygonFromText('POLYGON((" . gen_polygon_text(json_decode($item->coordinates, true)) . "))')"
+                ? "ST_PolygonFromText('POLYGON((" . gen_polygon_text(json_decode($item->coordinates, true)) . "))')"
                 : 'NULL';
 
             DB::unprepared("UPDATE geofences SET polygon = $polygon WHERE id = $item->id");
         });
     }
 
-    public function user() {
+    public function user()
+    {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
@@ -212,8 +215,7 @@ class Geofence extends AbstractEntity implements DisplayInterface
      */
     private function getPolygonHelper()
     {
-        if (!isset($this->polygonHelpers[$this->id]))
-        {
+        if (!isset($this->polygonHelpers[$this->id])) {
             $coordinates = json_decode($this->coordinates, TRUE);
 
             $this->polygonHelpers[$this->id] = new PolygonHelper($coordinates ?? []);

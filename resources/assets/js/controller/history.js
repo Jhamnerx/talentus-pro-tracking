@@ -29,7 +29,7 @@ function History() {
 
           app.showControls();
           app.devices.show();
-        }
+        },
       )
       .on("shown.bs.tab", '[data-toggle="tab"][href="#datalog"]', function () {
         $("#graph_sensors").hide();
@@ -45,10 +45,10 @@ function History() {
 
         var item = $(this).data();
         item.other_arr = jQuery.parseJSON(
-          $(this).find(".message_other").html()
+          $(this).find(".message_other").html(),
         );
         item.sensors_arr = jQuery.parseJSON(
-          $(this).find(".message_sensors").html()
+          $(this).find(".message_sensors").html(),
         );
         _this.historyPointPopup(item);
       });
@@ -64,7 +64,7 @@ function History() {
   _this.select = function (history_id) {
     $("#ajax-history [data-history-id]").removeClass("active");
     $('#ajax-history [data-history-id="' + history_id + '"]').addClass(
-      "active"
+      "active",
     );
 
     var item = window.history_items[history_id];
@@ -98,7 +98,7 @@ function History() {
 
     _this.polylineSelect = L.featureGroup();
     _this.polylineSelect.addLayer(
-      L.polyline(coordinates, { color: "#66FF33" })
+      L.polyline(coordinates, { color: "#66FF33" }),
     );
     _this.polylineSelect.addTo(app.map);
 
@@ -365,7 +365,7 @@ function History() {
           angle: angle,
         }).addEventListener("click", function (e) {
           _this.historyPointPopup(position, true, position_start_id);
-        })
+        }),
       );
     });
 
@@ -663,7 +663,7 @@ function History() {
           sensor.key +
           '">' +
           sensor.name +
-          "</a></li>"
+          "</a></li>",
       );
     });
 
@@ -687,7 +687,7 @@ function History() {
           key +
           '" value="' +
           value +
-          '" data-filter />'
+          '" data-filter />',
       ).appendTo($container);
     });
 

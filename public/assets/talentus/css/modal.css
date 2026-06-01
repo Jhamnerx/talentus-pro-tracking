@@ -1,0 +1,336 @@
+/* =====================================================
+ * TalentusPro · tp-modal · Phase 11
+ * Native <dialog>-based modal system, vanilla JS.
+ * ===================================================== */
+
+.tp-modal {
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  box-shadow: var(--shadow-lg);
+  max-width: 560px;
+  width: calc(100% - 32px);
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+}
+.tp-modal::backdrop {
+  background: rgba(6, 11, 52, 0.6);
+  backdrop-filter: blur(2px);
+}
+.tp-modal[open] {
+  animation: tp-modal-in var(--dur-base) var(--ease-out);
+}
+@keyframes tp-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tp-modal--lg {
+  max-width: 760px;
+}
+.tp-modal--xl {
+  max-width: 980px;
+}
+.tp-modal--sm {
+  max-width: 420px;
+}
+
+.tp-modal__inner {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 64px);
+}
+
+.tp-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  flex-shrink: 0;
+}
+.tp-modal__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+.tp-modal__sub {
+  font-size: 12px;
+  color: var(--fg-tertiary);
+  margin-top: 2px;
+}
+.tp-modal__close {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 0;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.tp-modal__close:hover {
+  background: var(--border-default);
+  color: var(--fg-primary);
+}
+
+.tp-modal__body {
+  padding: var(--sp-4);
+  overflow-y: auto;
+  flex: 1 1 auto;
+}
+.tp-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  flex-shrink: 0;
+}
+
+/* ---------- FORM PRIMITIVES (used by tp-modal forms) ---------- */
+.tp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: var(--sp-3);
+}
+.tp-field__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.tp-field__hint {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+}
+.tp-field__error {
+  font-size: 12px;
+  color: var(--status-alert, #ef4444);
+}
+.tp-input,
+.tp-select,
+.tp-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+  color: var(--fg-primary);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.tp-input:focus,
+.tp-select:focus,
+.tp-textarea:focus {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 3px var(--brand-bg-subtle);
+}
+.tp-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.tp-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.tp-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.tp-checkbox input {
+  accent-color: var(--brand-500);
+}
+
+/* ---------- TABS (used by multi-section modals) ---------- */
+.tp-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.tp-tabs__nav {
+  display: flex;
+  gap: 2px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-sunken);
+  padding: 0 var(--sp-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-shrink: 0;
+  margin: calc(var(--sp-4) * -1) calc(var(--sp-4) * -1) var(--sp-3);
+}
+.tp-tabs__nav::-webkit-scrollbar {
+  display: none;
+}
+.tp-tabs__tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--fg-secondary);
+  font: 600 12px/1 inherit;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+  position: relative;
+}
+.tp-tabs__tab:hover {
+  color: var(--fg-primary);
+}
+.tp-tabs__tab.is-active {
+  color: var(--brand-500);
+  border-bottom-color: var(--brand-500);
+}
+.tp-tabs__tab .tp-tabs__badge {
+  margin-left: 6px;
+  font-size: 10px;
+  padding: 1px 6px;
+  background: var(--brand-bg-subtle);
+  color: var(--brand-500);
+  border-radius: 999px;
+}
+.tp-tabs__panels {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.tp-tabs__panel {
+  display: none;
+}
+.tp-tabs__panel.is-active {
+  display: block;
+}
+
+/* multi-select chips */
+.tp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  background: var(--surface-sunken);
+  max-height: 160px;
+  overflow-y: auto;
+}
+.tp-chips__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.tp-chips__chip:hover {
+  border-color: var(--brand-500);
+}
+.tp-chips__chip.is-on {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  color: #fff;
+}
+
+/* ---------- TOAST (used by tpModal.toast) ---------- */
+.tp-toast-host {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 99999;
+  pointer-events: none;
+}
+.tp-toast {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-left: 4px solid var(--brand-500);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--fg-primary);
+  min-width: 240px;
+  max-width: 360px;
+  pointer-events: auto;
+  animation: tp-toast-in var(--dur-base) var(--ease-out);
+}
+.tp-toast--success {
+  border-left-color: var(--status-moving, #10b981);
+}
+.tp-toast--error {
+  border-left-color: var(--status-alert, #ef4444);
+}
+.tp-toast--warning {
+  border-left-color: var(--status-stopped, #f59e0b);
+}
+@keyframes tp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.tp-toast.is-leaving {
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all var(--dur-base) var(--ease-in-out);
+}
+
+/* Loader inside modal foot */
+.tp-modal__busy {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--brand-500);
+  border-radius: 50%;
+  animation: tp-spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes tp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

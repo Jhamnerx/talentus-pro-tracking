@@ -32,7 +32,7 @@ function MapTiles() {
         tile: function () {
           var _tileLayer = new L.TileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            { maxZoom: 18 }
+            { maxZoom: 18 },
           );
 
           _tileLayer.map_id = 2;
@@ -287,7 +287,7 @@ function MapTiles() {
               zoomOffset: -1,
               id: "streets-v11",
               accessToken: app.settings.keys.mapbox_access_token,
-            }
+            },
           );
 
           _tileLayer.map_id = 14;
@@ -311,7 +311,7 @@ function MapTiles() {
               zoomOffset: -1,
               id: "satellite-v9",
               accessToken: app.settings.keys.mapbox_access_token,
-            }
+            },
           );
 
           _tileLayer.map_id = 15;
@@ -335,7 +335,7 @@ function MapTiles() {
               zoomOffset: -1,
               id: "satellite-streets-v11",
               accessToken: app.settings.keys.mapbox_access_token,
-            }
+            },
           );
 
           _tileLayer.map_id = 16;
@@ -361,7 +361,7 @@ function MapTiles() {
               attribution:
                 '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
               crossOrigin: true,
-            }
+            },
           );
 
           _tileLayer.map_id = 17;
@@ -387,7 +387,7 @@ function MapTiles() {
               attribution:
                 '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
               crossOrigin: true,
-            }
+            },
           );
 
           _tileLayer.map_id = 18;
@@ -413,7 +413,7 @@ function MapTiles() {
               attribution:
                 '<a href="https://www.maptiler.com/copyright/" target="_blank">© MapTiler</a> <a href="https://www.openstreetmap.org/copyright" target="_blank">© OpenStreetMap contributors</a>',
               crossOrigin: true,
-            }
+            },
           );
 
           _tileLayer.map_id = 19;
@@ -434,7 +434,7 @@ function MapTiles() {
               minZoom: 1,
               maxZoom: 20,
               crossOrigin: true,
-            }
+            },
           );
 
           _tileLayer.map_id = 21;
@@ -448,7 +448,7 @@ function MapTiles() {
         tile: function () {
           var _tileLayer = new L.TileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            { maxZoom: 18 }
+            { maxZoom: 18 },
           );
           _tileLayer.map_id = 22;
 
@@ -459,7 +459,7 @@ function MapTiles() {
                 '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap',
               subdomains: "abc",
               maxZoom: 18,
-            }
+            },
           );
 
           return _tileLayer;
@@ -471,7 +471,7 @@ function MapTiles() {
         tile: function () {
           var _tileLayer = new L.TileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            { maxZoom: 18 }
+            { maxZoom: 18 },
           );
           _tileLayer.map_id = 23;
 
@@ -482,7 +482,7 @@ function MapTiles() {
                 '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap',
               subdomains: "abc",
               maxZoom: 18,
-            }
+            },
           );
 
           return _tileLayer;
@@ -494,7 +494,7 @@ function MapTiles() {
         tile: function () {
           var _tileLayer = new L.TileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            { maxZoom: 18 }
+            { maxZoom: 18 },
           );
           _tileLayer.map_id = 24;
 
@@ -505,7 +505,7 @@ function MapTiles() {
                 '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap',
               subdomains: "abc",
               maxZoom: 18,
-            }
+            },
           );
 
           return _tileLayer;
@@ -517,7 +517,7 @@ function MapTiles() {
         tile: function () {
           var _tileLayer = new L.TileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            { maxZoom: 18 }
+            { maxZoom: 18 },
           );
           _tileLayer.map_id = 25;
 
@@ -528,7 +528,7 @@ function MapTiles() {
                 '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, Style: <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA 2.0</a> <a href="http://www.openrailwaymap.org/">OpenRailwayMap</a> and OpenStreetMap',
               subdomains: "abc",
               maxZoom: 18,
-            }
+            },
           );
 
           return _tileLayer;
@@ -550,7 +550,7 @@ function MapTiles() {
               maxZoom: 20,
               attribution:
                 '<a href="https://www.tomtom.com" target="_blank">© TomTom</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 26;
@@ -574,7 +574,7 @@ function MapTiles() {
               maxZoom: 19,
               attribution:
                 '<a href="https://www.tomtom.com" target="_blank">© TomTom</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 27;
@@ -602,7 +602,7 @@ function MapTiles() {
               maxZoom: 21,
               attribution:
                 '<a href="https://azure.microsoft.com" target="_blank">© TomTom, Microsoft</a>',
-            }
+            },
           );
 
           _tileLayer.overlayLayer = function () {
@@ -621,8 +621,8 @@ function MapTiles() {
                     tileSize: 256,
                     attribution:
                       '<a href="https://azure.microsoft.com" target="_blank">© TomTom, Microsoft</a>',
-                  }
-                )
+                  },
+                ),
               );
             }
 
@@ -653,7 +653,7 @@ function MapTiles() {
               maxZoom: 19,
               attribution:
                 '<a href="https://azure.microsoft.com" target="_blank">© TomTom, Microsoft</a>',
-            }
+            },
           );
 
           _tileLayer.overlayLayer = function () {
@@ -669,7 +669,7 @@ function MapTiles() {
                   tileSize: 256,
                   attribution:
                     '<a href="https://azure.microsoft.com" target="_blank">© TomTom, Microsoft</a>',
-                }
+                },
               ),
             ];
 
@@ -686,8 +686,8 @@ function MapTiles() {
                     tileSize: 256,
                     attribution:
                       '<a href="https://azure.microsoft.com" target="_blank">© TomTom, Microsoft</a>',
-                  }
-                )
+                  },
+                ),
               );
             }
 
@@ -718,7 +718,7 @@ function MapTiles() {
               maxZoom: 19,
               attribution:
                 '<a href="https://azure.microsoft.com" target="_blank">© TomTom, Microsoft</a>',
-            }
+            },
           );
 
           _tileLayer.overlayLayer = function () {
@@ -737,8 +737,8 @@ function MapTiles() {
                     tileSize: 256,
                     attribution:
                       '<a href="https://azure.microsoft.com" target="_blank">© TomTom, Microsoft</a>',
-                  }
-                )
+                  },
+                ),
               );
             }
 
@@ -755,7 +755,7 @@ function MapTiles() {
         tile: function () {
           var _tileLayer = new L.TileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            { maxZoom: 18 }
+            { maxZoom: 18 },
           );
           var _settings = {};
           var _overlay = false;
@@ -776,7 +776,7 @@ function MapTiles() {
               if (data.bounds instanceof Array && data.bounds.length === 4) {
                 _settings.bounds = new L.LatLngBounds(
                   new L.LatLng(data.bounds[0], data.bounds[1]),
-                  new L.LatLng(data.bounds[2], data.bounds[3])
+                  new L.LatLng(data.bounds[2], data.bounds[3]),
                 );
               }
 
@@ -789,7 +789,7 @@ function MapTiles() {
           if (_overlay) {
             _tileLayer.overlayLayer = L.tileLayer(
               "assets/custom/map-overlays/{z}/{x}/{y}.png",
-              _settings
+              _settings,
             );
           }
 
@@ -812,7 +812,7 @@ function MapTiles() {
               minZoom: 0,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 51;
@@ -834,7 +834,7 @@ function MapTiles() {
               minZoom: 0,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 53;
@@ -856,7 +856,7 @@ function MapTiles() {
               minZoom: 0,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 54;
@@ -878,7 +878,7 @@ function MapTiles() {
               minZoom: 0,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 55;
@@ -900,7 +900,7 @@ function MapTiles() {
               minZoom: 0,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 55;
@@ -922,7 +922,7 @@ function MapTiles() {
               minZoom: 0,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 55;
@@ -941,7 +941,7 @@ function MapTiles() {
               minZoom: 2,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 70;
@@ -960,7 +960,7 @@ function MapTiles() {
               minZoom: 2,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 71;
@@ -979,7 +979,7 @@ function MapTiles() {
               minZoom: 2,
               attribution:
                 '<a href="https://google.com" target="_system">Google Maps</a>',
-            }
+            },
           );
 
           _tileLayer.map_id = 70;
@@ -998,13 +998,13 @@ function MapTiles() {
               maxZoom: 16,
               detectRetina: true,
               attribution: "",
-            }
+            },
           );
 
           _tileLayer._tileOnError = function (done, tile, e) {
             var errorUrl = tile.src.replace(
               "maps-a.onemap.sg/v2/Default",
-              "tile.openstreetmap.org"
+              "tile.openstreetmap.org",
             );
 
             if (errorUrl && tile.src !== errorUrl) {
@@ -1031,13 +1031,13 @@ function MapTiles() {
               subdomains: ["a", "b", "c"],
               attribution:
                 "Copyright <a href='http://www.freemap.sk'>©2016 Freemap Slovakia</a>. <a href='http://www.openstreetmap.org'>OpenStreetMap</a>, Licensed as Creative Commons <a href='http://creativecommons.org/licenses/by-sa/2.0'>CC-BY-SA 2.0</a>. Some rights reserved.",
-            }
+            },
           );
 
           _tileLayer._tileOnError = function (done, tile, e) {
             var errorUrl = tile.src.replace(
               "freemap.sk/T",
-              "tile.openstreetmap.org"
+              "tile.openstreetmap.org",
             );
 
             if (errorUrl && tile.src !== errorUrl) {
@@ -1109,7 +1109,7 @@ function MapTiles() {
       {},
       {
         collapsed: true,
-      }
+      },
     );
 
     layersControl.addTo(_this.map);
@@ -1117,7 +1117,7 @@ function MapTiles() {
     $(layersControl.getContainer()).remove();
 
     $(layersControl.onAdd(_this.map)).insertBefore(
-      $("#map-controls-tile > div").first()
+      $("#map-controls-tile > div").first(),
     );
   };
 

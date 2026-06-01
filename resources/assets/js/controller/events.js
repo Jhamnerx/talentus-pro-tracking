@@ -11,14 +11,14 @@ function DeviceEvents() {
         "#events_search_field",
         $.debounce(500, function () {
           _this.list();
-        })
+        }),
       )
       .on(
         "shown.bs.tab",
         '[data-toggle="tab"][href="#events_tab"]',
         function (e) {
           _this.list();
-        }
+        },
       );
   };
 

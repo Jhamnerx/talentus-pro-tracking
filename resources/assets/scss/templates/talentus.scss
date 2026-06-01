@@ -1,0 +1,14 @@
+// ============================================================
+// TalentusPro · Template entry for Gulp pipeline
+// ------------------------------------------------------------
+// Compiles to: public/assets/css/talentus.css
+// Triggered by the existing `gulp sass-all` task, which picks
+// up everything under resources/assets/scss/templates/*.scss.
+//
+// This template is INDEPENDENT of the legacy Bootstrap styles.
+// It only ships the new TalentusPro design system, prefixed
+// with `.tp-*` to avoid any collision. Include alongside the
+// legacy CSS or in isolated new pages.
+// ============================================================
+
+@import "../talentus/index";

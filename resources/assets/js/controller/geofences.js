@@ -41,7 +41,7 @@ function Geofences() {
             initComponents("#geofences_export");
           },
         });
-      }
+      },
     );
 
     $(document)
@@ -50,14 +50,14 @@ function Geofences() {
         '[data-toggle="tab"][href="#geofencing_create"]',
         function (e) {
           _this.cancelEditing();
-        }
+        },
       )
       .on(
         "hidden.bs.tab",
         '[data-toggle="tab"][href="#geofencing_edit"]',
         function (e) {
           _this.cancelEditing();
-        }
+        },
       );
 
     $(_this.map()).on(
@@ -70,7 +70,7 @@ function Geofences() {
         var layer = geofence.getLayer();
 
         if (layer) _this.map().addLayer(layer);
-      }
+      },
     );
 
     _this.map().on(L.Draw.Event.CREATED, function (e) {
@@ -97,7 +97,7 @@ function Geofences() {
       'input[name="search"]',
       $.debounce(100, function () {
         _this.list();
-      })
+      }),
     );
   };
 
@@ -337,7 +337,7 @@ function Geofences() {
       function () {
         _this.initForm(tmpItem, $container);
       },
-      false
+      false,
     );
 
     app.openTab("geofencing_create");
@@ -397,7 +397,7 @@ function Geofences() {
         {
           name: "type",
           value: "circle",
-        }
+        },
       );
     }
 
@@ -423,7 +423,7 @@ function Geofences() {
       function () {
         _this.initForm(tmpItem, $container);
       },
-      false
+      false,
     );
 
     _this.map().fitBounds(tmpItem.getBounds());
@@ -451,7 +451,7 @@ function Geofences() {
         {
           name: "type",
           value: "polygon",
-        }
+        },
       );
     } else if (tmpItem.getLayer() instanceof L.Circle) {
       data.push(
@@ -474,7 +474,7 @@ function Geofences() {
         {
           name: "type",
           value: "circle",
-        }
+        },
       );
     }
 
@@ -491,7 +491,7 @@ function Geofences() {
     if (!confirmed) {
       $("#deleteGeofence button[onclick]").attr(
         "onclick",
-        "app.geofences.delete(" + id + ', true, "' + modal_id + '");'
+        "app.geofences.delete(" + id + ', true, "' + modal_id + '");',
       );
 
       return;
@@ -550,7 +550,7 @@ function Geofences() {
     tmpItem.update(_options);
 
     $('[name="coordinates"]', $container).val(
-      JSON.stringify(tmpItem.getBounds())
+      JSON.stringify(tmpItem.getBounds()),
     );
 
     dd("geofences.map.click.data", _options);

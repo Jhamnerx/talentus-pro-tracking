@@ -1,0 +1,395 @@
+/* =====================================================
+ * TalentusPro · tp-modal · Phase 11
+ * Native <dialog> modal + toast helpers.
+ * Global: window.tpModal
+ *   open({ title, sub, body, size, buttons, onMount, onClose })
+ *   confirm({ title, message, danger }) -> Promise<bool>
+ *   alert({ title, message })            -> Promise<void>
+ *   toast(message, type='info')
+ *   close(modal?)
+ * ===================================================== */
+(function () {
+  "use strict";
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[c];
+    });
+  }
+
+  var ICON_CLOSE =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+
+  function ensureToastHost() {
+    var host = document.querySelector(".tp-toast-host");
+    if (!host) {
+      host = document.createElement("div");
+      host.className = "tp-toast-host";
+      host.setAttribute("aria-live", "polite");
+      document.body.appendChild(host);
+    }
+    return host;
+  }
+
+  /**
+   * Render and open a modal.
+   * @param {Object} opts
+   * @returns {HTMLDialogElement}
+   */
+  function open(opts) {
+    opts = opts || {};
+    var dlg = document.createElement("dialog");
+    dlg.className =
+      "tp-modal" +
+      (opts.size === "xl"
+        ? " tp-modal--xl"
+        : opts.size === "lg"
+          ? " tp-modal--lg"
+          : opts.size === "sm"
+            ? " tp-modal--sm"
+            : "");
+
+    var buttonsHtml = "";
+    (opts.buttons || []).forEach(function (b, idx) {
+      buttonsHtml +=
+        '<button type="button" class="tp-btn tp-btn--' +
+        (b.variant || "ghost") +
+        ' tp-btn--sm" data-tp-btn="' +
+        idx +
+        '"' +
+        (b.disabled ? " disabled" : "") +
+        ">" +
+        escapeHtml(b.label) +
+        "</button>";
+    });
+
+    dlg.innerHTML =
+      '<div class="tp-modal__inner">' +
+      '<header class="tp-modal__head">' +
+      "<div>" +
+      '<h2 class="tp-modal__title">' +
+      escapeHtml(opts.title || "") +
+      "</h2>" +
+      (opts.sub
+        ? '<div class="tp-modal__sub">' + escapeHtml(opts.sub) + "</div>"
+        : "") +
+      "</div>" +
+      '<button type="button" class="tp-modal__close" aria-label="Cerrar" data-tp-close>' +
+      ICON_CLOSE +
+      "</button>" +
+      "</header>" +
+      '<div class="tp-modal__body" data-tp-body></div>' +
+      (buttonsHtml
+        ? '<footer class="tp-modal__foot" data-tp-foot>' +
+          buttonsHtml +
+          "</footer>"
+        : "") +
+      "</div>";
+
+    var body = dlg.querySelector("[data-tp-body]");
+    if (typeof opts.body === "string") {
+      body.innerHTML = opts.body;
+    } else if (opts.body instanceof Node) {
+      body.appendChild(opts.body);
+    }
+
+    document.body.appendChild(dlg);
+
+    // Close handlers
+    dlg.querySelector("[data-tp-close]").addEventListener("click", function () {
+      close(dlg);
+    });
+    dlg.addEventListener("click", function (e) {
+      // click on backdrop (the dialog itself, not inner content)
+      if (e.target === dlg) close(dlg);
+    });
+    dlg.addEventListener("close", function () {
+      if (typeof opts.onClose === "function") {
+        try {
+          opts.onClose(dlg.returnValue);
+        } catch (e) {}
+      }
+      // Defer removal so any post-close animation completes
+      setTimeout(function () {
+        if (dlg.parentNode) dlg.parentNode.removeChild(dlg);
+      }, 50);
+    });
+
+    // Button handlers
+    (opts.buttons || []).forEach(function (b, idx) {
+      var btn = dlg.querySelector('[data-tp-btn="' + idx + '"]');
+      if (!btn) return;
+      btn.addEventListener("click", function () {
+        if (typeof b.onClick === "function") {
+          var ret = b.onClick(dlg, btn);
+          if (ret === false) return;
+        }
+        if (b.close !== false) close(dlg, b.value);
+      });
+    });
+
+    // Fallback for browsers w/o <dialog>
+    if (typeof dlg.showModal === "function") {
+      dlg.showModal();
+    } else {
+      dlg.setAttribute("open", "");
+    }
+
+    if (typeof opts.onMount === "function") {
+      try {
+        opts.onMount(dlg);
+      } catch (e) {}
+    }
+
+    return dlg;
+  }
+
+  function close(dlg, value) {
+    if (!dlg) {
+      // close top-most
+      var all = document.querySelectorAll(".tp-modal[open]");
+      dlg = all[all.length - 1];
+    }
+    if (!dlg) return;
+    try {
+      if (typeof dlg.close === "function") {
+        dlg.close(value == null ? "" : String(value));
+      } else {
+        dlg.removeAttribute("open");
+        dlg.dispatchEvent(new Event("close"));
+      }
+    } catch (e) {}
+  }
+
+  function confirm(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var done = false;
+      open({
+        title: opts.title || "Confirmar",
+        size: "sm",
+        body:
+          '<p style="margin:0; font-size:14px; line-height:1.5;">' +
+          escapeHtml(opts.message || "¿Continuar?") +
+          "</p>",
+        buttons: [
+          {
+            label: opts.cancelLabel || "Cancelar",
+            variant: "ghost",
+            onClick: function () {
+              done = true;
+              resolve(false);
+            },
+          },
+          {
+            label: opts.confirmLabel || "Aceptar",
+            variant: opts.danger ? "danger" : "primary",
+            onClick: function () {
+              done = true;
+              resolve(true);
+            },
+          },
+        ],
+        onClose: function () {
+          if (!done) resolve(false);
+        },
+      });
+    });
+  }
+
+  function alertBox(opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      open({
+        title: opts.title || "Aviso",
+        size: "sm",
+        body:
+          '<p style="margin:0; font-size:14px; line-height:1.5;">' +
+          escapeHtml(opts.message || "") +
+          "</p>",
+        buttons: [
+          {
+            label: "OK",
+            variant: "primary",
+            onClick: function () {
+              resolve();
+            },
+          },
+        ],
+        onClose: function () {
+          resolve();
+        },
+      });
+    });
+  }
+
+  function toast(message, type) {
+    type = type || "info";
+    var host = ensureToastHost();
+    var t = document.createElement("div");
+    t.className = "tp-toast tp-toast--" + type;
+    t.textContent = String(message == null ? "" : message);
+    host.appendChild(t);
+    setTimeout(function () {
+      t.classList.add("is-leaving");
+      setTimeout(function () {
+        if (t.parentNode) t.parentNode.removeChild(t);
+      }, 250);
+    }, 3200);
+  }
+
+  /* ---------- Form helpers ---------- */
+  function setBusy(dlg, busy) {
+    var btns = dlg.querySelectorAll("[data-tp-btn]");
+    btns.forEach(function (b) {
+      b.disabled = !!busy;
+      if (busy) b.dataset._txt = b.dataset._txt || b.innerHTML;
+      b.innerHTML = busy
+        ? '<span class="tp-modal__busy"></span>' +
+          (b.dataset._txt || "Guardando…")
+        : b.dataset._txt || b.innerHTML;
+      if (!busy) delete b.dataset._txt;
+    });
+  }
+
+  function showFieldErrors(dlg, errors) {
+    // Clear prior errors
+    dlg.querySelectorAll(".tp-field__error").forEach(function (n) {
+      n.remove();
+    });
+    dlg.querySelectorAll(".is-invalid").forEach(function (n) {
+      n.classList.remove("is-invalid");
+    });
+    if (!errors || typeof errors !== "object") return;
+    Object.keys(errors).forEach(function (key) {
+      var msg = Array.isArray(errors[key]) ? errors[key][0] : errors[key];
+      var input = dlg.querySelector('[name="' + key + '"]');
+      if (input) {
+        input.classList.add("is-invalid");
+        var err = document.createElement("div");
+        err.className = "tp-field__error";
+        err.textContent = msg;
+        var holder = input.closest(".tp-field") || input.parentNode;
+        holder.appendChild(err);
+      }
+    });
+  }
+
+  function csrf() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.getAttribute("content") : "";
+  }
+
+  /**
+   * Fetch JSON with CSRF + same-origin.
+   */
+  function fetchJSON(url, opts) {
+    opts = opts || {};
+    var headers = Object.assign(
+      {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      opts.headers || {},
+    );
+    if (opts.method && opts.method !== "GET") headers["X-CSRF-TOKEN"] = csrf();
+    if (opts.json) {
+      headers["Content-Type"] = "application/json";
+      opts.body = JSON.stringify(opts.json);
+      delete opts.json;
+    }
+    opts.headers = headers;
+    opts.credentials = "same-origin";
+    return fetch(url, opts).then(function (r) {
+      return r
+        .json()
+        .then(function (j) {
+          return { ok: r.ok, status: r.status, data: j };
+        })
+        .catch(function () {
+          return { ok: r.ok, status: r.status, data: null };
+        });
+    });
+  }
+
+  window.tpModal = {
+    open: open,
+    close: close,
+    confirm: confirm,
+    alert: alertBox,
+    toast: toast,
+    setBusy: setBusy,
+    showFieldErrors: showFieldErrors,
+    fetchJSON: fetchJSON,
+    escapeHtml: escapeHtml,
+    csrf: csrf,
+    tabs: buildTabs,
+  };
+
+  /**
+   * Build a tabbed UI inside a container.
+   * @param {HTMLElement} container — scope to mount tabs into
+   * @param {Array<{key:string,label:string,html:string,badge?:string}>} tabs
+   * @param {{active?:string}} opts
+   */
+  function buildTabs(container, tabs, opts) {
+    opts = opts || {};
+    var active = opts.active || (tabs[0] && tabs[0].key);
+    var navHtml = '<div class="tp-tabs__nav" role="tablist">';
+    var panelHtml = '<div class="tp-tabs__panels">';
+    tabs.forEach(function (t) {
+      var is = t.key === active ? " is-active" : "";
+      navHtml +=
+        '<button type="button" class="tp-tabs__tab' +
+        is +
+        '" role="tab" data-tp-tab="' +
+        escapeHtml(t.key) +
+        '">' +
+        escapeHtml(t.label) +
+        (t.badge
+          ? '<span class="tp-tabs__badge">' + escapeHtml(t.badge) + "</span>"
+          : "") +
+        "</button>";
+      panelHtml +=
+        '<div class="tp-tabs__panel' +
+        is +
+        '" data-tp-panel="' +
+        escapeHtml(t.key) +
+        '">' +
+        (t.html || "") +
+        "</div>";
+    });
+    navHtml += "</div>";
+    panelHtml += "</div>";
+    container.innerHTML =
+      '<div class="tp-tabs">' + navHtml + panelHtml + "</div>";
+
+    container.querySelectorAll("[data-tp-tab]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var key = btn.getAttribute("data-tp-tab");
+        container.querySelectorAll("[data-tp-tab]").forEach(function (b) {
+          b.classList.toggle("is-active", b === btn);
+        });
+        container.querySelectorAll("[data-tp-panel]").forEach(function (p) {
+          p.classList.toggle(
+            "is-active",
+            p.getAttribute("data-tp-panel") === key,
+          );
+        });
+      });
+    });
+
+    return {
+      activate: function (key) {
+        var btn = container.querySelector('[data-tp-tab="' + key + '"]');
+        if (btn) btn.click();
+      },
+    };
+  }
+})();

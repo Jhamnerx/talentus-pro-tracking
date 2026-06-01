@@ -48,7 +48,7 @@ function Devices() {
         '[data-toggle="tab"][href="#objects_tab"]',
         function (e) {
           _this.disableFitBounds();
-        }
+        },
       )
       .on(
         "shown.bs.tab",
@@ -56,7 +56,7 @@ function Devices() {
         function (e) {
           _this.enableFitBounds();
           _this.fitBounds();
-        }
+        },
       );
 
     $("#objects_tab").on(
@@ -64,7 +64,7 @@ function Devices() {
       'input[name="search"]',
       $.debounce(500, function () {
         _this.list();
-      })
+      }),
     );
 
     app.map
@@ -165,7 +165,7 @@ function Devices() {
         div_id +
         '"><iframe src="' +
         _url +
-        '" style="border: 0; width: 100%; height: 100%;"></iframe></div>'
+        '" style="border: 0; width: 100%; height: 100%;"></iframe></div>',
     );
 
     $("#" + div_id).dialog({
@@ -189,7 +189,7 @@ function Devices() {
 
     dialogMoveToTop(
       $("#" + div_id).parent(".ui-dialog.ui-widget.ui-widget-content"),
-      true
+      true,
     );
   };
 
@@ -269,7 +269,7 @@ function Devices() {
     if (!confirmed) {
       $("#deleteObject button[onclick]").attr(
         "onclick",
-        "app.devices.delete(" + id + ", true);"
+        "app.devices.delete(" + id + ", true);",
       );
 
       return;
@@ -450,7 +450,7 @@ function Devices() {
 
     var map = L.map(container, { zoomControl: false, maxZoom: 18 }).setView(
       device.getLatLng(),
-      18
+      18,
     );
 
     app.maps.init(map);
@@ -703,12 +703,12 @@ function Devices() {
     if (!device) return;
 
     $('[data-device="stop_duration"]', app.widgets).replaceWith(
-      device.dataDOM("stop_duration")
+      device.dataDOM("stop_duration"),
     );
 
     if ($popup.length) {
       $('[data-device="stop_duration"]', $popup).replaceWith(
-        device.dataDOM("stop_duration")
+        device.dataDOM("stop_duration"),
       );
     }
   };
