@@ -11,6 +11,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Longitud (0–10 últimos puntos)</span>
-        <input type="number" min="0" max="10" step="1" name="tail_length" value="{{ $tailLength }}" data-tp-field>
+        <input type="number" min="0" max="10" step="1" name="tail_length" value="{{ $tailLength }}"
+            data-tp-field>
     </label>
 </div>

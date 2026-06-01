@@ -1155,7 +1155,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'talentus', 'as' => 'talentu
 
         // Devices CRUD modal (shared by Live, Fleet, Admin → Fleet)
         Route::get('devices/meta',        ['as' => 'api.devices.meta',    'uses' => 'Talentus\DevicesController@meta']);
-        Route::get('devices/form',        ['as' => 'api.devices.form_new','uses' => 'Talentus\DevicesController@form']);
+        Route::get('devices/form',        ['as' => 'api.devices.form_new', 'uses' => 'Talentus\DevicesController@form']);
         Route::get('devices/{id}/form',   ['as' => 'api.devices.form',    'uses' => 'Talentus\DevicesController@form'])->where('id', '[0-9]+');
         Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Talentus\DevicesController@store']);
         Route::get('devices/{id}/edit',   ['as' => 'api.devices.edit',    'uses' => 'Talentus\DevicesController@edit'])->where('id', '[0-9]+');

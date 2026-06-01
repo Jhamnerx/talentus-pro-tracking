@@ -62,7 +62,7 @@
         Array.prototype.forEach.call(panels, function (p) {
           p.classList.toggle(
             "is-active",
-            p.getAttribute("data-tp-panel") === key
+            p.getAttribute("data-tp-panel") === key,
           );
         });
       });
@@ -116,7 +116,7 @@
     ["active", "lbs", "valid_by_avg_speed", "gprs_templates_only"].forEach(
       function (k) {
         if (k in data) data[k] = data[k] == "1" ? 1 : 0;
-      }
+      },
     );
     return data;
   }
@@ -130,9 +130,7 @@
       : CFG.formNewUrl;
     return tpModal.fetchJSON(url, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        throw new Error(
-          (res.data && res.data.message) || "form_load_failed"
-        );
+        throw new Error((res.data && res.data.message) || "form_load_failed");
       }
       return res.data.html;
     });
@@ -160,8 +158,7 @@
         ? "Modifica los datos del equipo y guarda."
         : "Da de alta una unidad: configuración técnica completa.",
       size: "xl",
-      body:
-        '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
         { label: "Cancelar", variant: "ghost", close: true },
         {
@@ -184,7 +181,7 @@
                 if (res.status === 422) {
                   tpModal.showFieldErrors(
                     dialog,
-                    (res.data && res.data.errors) || {}
+                    (res.data && res.data.errors) || {},
                   );
                   tpModal.toast("Revisa los campos marcados.", "warning");
                   return;
@@ -195,13 +192,13 @@
                       (isEdit
                         ? "No se pudo guardar."
                         : "No se pudo crear el vehículo."),
-                    "error"
+                    "error",
                   );
                   return;
                 }
                 tpModal.toast(
                   isEdit ? "Vehículo actualizado." : "Vehículo creado.",
-                  "success"
+                  "success",
                 );
                 tpModal.close(dialog);
                 if (typeof opts.onSaved === "function") {

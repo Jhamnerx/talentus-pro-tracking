@@ -13,20 +13,18 @@
 
     <label class="tp-form__field tp-form__field--required">
         <span class="tp-form__label">Nombre</span>
-        <input type="text" name="name" required maxlength="80"
-               value="{{ $item->name ?? '' }}" data-tp-field>
+        <input type="text" name="name" required maxlength="80" value="{{ $item->name ?? '' }}" data-tp-field>
     </label>
 
     <label class="tp-form__field tp-form__field--required">
         <span class="tp-form__label">IMEI</span>
         <input type="text" name="imei" required maxlength="32" pattern="[0-9A-Za-z\-]+"
-               value="{{ $item->imei ?? '' }}" data-tp-field>
+            value="{{ $item->imei ?? '' }}" data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">Modelo (texto libre)</span>
-        <input type="text" name="device_model" maxlength="80"
-               value="{{ $item->device_model ?? '' }}" data-tp-field>
+        <input type="text" name="device_model" maxlength="80" value="{{ $item->device_model ?? '' }}" data-tp-field>
     </label>
 
     <label class="tp-form__field">

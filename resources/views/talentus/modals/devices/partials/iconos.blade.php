@@ -1,11 +1,13 @@
 @php
     $iconTypes = $icons_type ?? ['arrow' => 'Flecha', 'rotating' => 'Rotatorio', 'icon' => 'Fijo'];
     $colors = $device_icon_colors ?? [];
-    $icons = collect($device_icons ?? [])->filter(function ($i) {
-        return ($i->type ?? null) !== 'arrow';
-    })->values();
+    $icons = collect($device_icons ?? [])
+        ->filter(function ($i) {
+            return ($i->type ?? null) !== 'arrow';
+        })
+        ->values();
     $iconId = (int) ($item->icon_id ?? 0);
-    $iconType = isset($item->icon) && $item->icon ? ($item->icon->type ?? 'arrow') : 'arrow';
+    $iconType = isset($item->icon) && $item->icon ? $item->icon->type ?? 'arrow' : 'arrow';
     $iconColorsItem = (array) ($item->icon_colors ?? []);
 @endphp
 
@@ -42,7 +44,8 @@
                 <span class="tp-form__label">{{ $stLabel }}</span>
                 <select name="icon_colors[{{ $st }}]" data-tp-field>
                     @foreach ($colors as $cKey => $cLabel)
-                        <option value="{{ $cKey }}" {{ $val === $cKey ? 'selected' : '' }}>{{ $cLabel }}</option>
+                        <option value="{{ $cKey }}" {{ $val === $cKey ? 'selected' : '' }}>
+                            {{ $cLabel }}</option>
                     @endforeach
                 </select>
             </label>

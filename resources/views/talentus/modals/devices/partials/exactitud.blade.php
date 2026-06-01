@@ -21,7 +21,8 @@
         <span class="tp-form__label">Detección de horas de motor</span>
         <select name="engine_hours" data-tp-field>
             @foreach ($eh as $k => $v)
-                <option value="{{ $k }}" {{ ($item->engine_hours ?? 'off') == $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}" {{ ($item->engine_hours ?? 'off') == $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>
@@ -30,7 +31,8 @@
         <span class="tp-form__label">Detección de encendido</span>
         <select name="detect_engine" data-tp-field>
             @foreach ($de as $k => $v)
-                <option value="{{ $k }}" {{ ($item->detect_engine ?? 'off') == $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}" {{ ($item->detect_engine ?? 'off') == $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>
@@ -39,36 +41,43 @@
         <span class="tp-form__label">Detección de velocidad</span>
         <select name="detect_speed" data-tp-field>
             @foreach ($ds as $k => $v)
-                <option value="{{ $k }}" {{ ($item->detect_speed ?? 'off') == $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}" {{ ($item->detect_speed ?? 'off') == $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">Velocidad máxima (km/h)</span>
-        <input type="number" min="0" step="1" name="max_speed" value="{{ $item->max_speed ?? 0 }}" data-tp-field>
+        <input type="number" min="0" step="1" name="max_speed" value="{{ $item->max_speed ?? 0 }}"
+            data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">Vel. mín. de movimiento (km/h)</span>
-        <input type="number" min="0" step="1" name="min_moving_speed" value="{{ $item->min_moving_speed ?? 6 }}" data-tp-field>
+        <input type="number" min="0" step="1" name="min_moving_speed"
+            value="{{ $item->min_moving_speed ?? 6 }}" data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">Mín. carga combustible (L)</span>
-        <input type="number" min="0" step="0.1" name="min_fuel_fillings" value="{{ $item->min_fuel_fillings ?? 10 }}" data-tp-field>
+        <input type="number" min="0" step="0.1" name="min_fuel_fillings"
+            value="{{ $item->min_fuel_fillings ?? 10 }}" data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">Mín. robo combustible (L)</span>
-        <input type="number" min="0" step="0.1" name="min_fuel_thefts" value="{{ $item->min_fuel_thefts ?? 10 }}" data-tp-field>
+        <input type="number" min="0" step="0.1" name="min_fuel_thefts"
+            value="{{ $item->min_fuel_thefts ?? 10 }}" data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">Retraso detección tras detención</span>
         <select name="fuel_detect_sec_after_stop" data-tp-field>
             @foreach ($stops as $k => $v)
-                <option value="{{ $k }}" {{ (string) ($item->fuel_detect_sec_after_stop ?? 0) === (string) $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}"
+                    {{ (string) ($item->fuel_detect_sec_after_stop ?? 0) === (string) $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>

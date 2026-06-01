@@ -8,9 +8,13 @@
 
     $operatorSimOptions = [
         '' => '-- Sin operador --',
-        'M2M' => 'M2M', 'CUY' => 'CUY', 'IOT' => 'IOT',
-        'MOVISTAR' => 'MOVISTAR', 'CLARO' => 'CLARO',
-        'ENTEL' => 'ENTEL', 'BITEL' => 'BITEL',
+        'M2M' => 'M2M',
+        'CUY' => 'CUY',
+        'IOT' => 'IOT',
+        'MOVISTAR' => 'MOVISTAR',
+        'CLARO' => 'CLARO',
+        'ENTEL' => 'ENTEL',
+        'BITEL' => 'BITEL',
     ];
 
     $f = function ($v) {
@@ -23,7 +27,8 @@
         <span class="tp-form__label">Grupo</span>
         <select name="group_id" data-tp-field>
             @foreach ($groups as $gid => $gtitle)
-                <option value="{{ $gid }}" {{ (string) $selGroup === (string) $gid ? 'selected' : '' }}>{{ $gtitle }}</option>
+                <option value="{{ $gid }}" {{ (string) $selGroup === (string) $gid ? 'selected' : '' }}>
+                    {{ $gtitle }}</option>
             @endforeach
         </select>
     </label>
@@ -32,7 +37,8 @@
         <span class="tp-form__label">Tipo de equipo</span>
         <select name="device_type_id" data-tp-field>
             @foreach ($types as $tid => $ttitle)
-                <option value="{{ $tid }}" {{ (string) $selType === (string) $tid ? 'selected' : '' }}>{{ $ttitle }}</option>
+                <option value="{{ $tid }}" {{ (string) $selType === (string) $tid ? 'selected' : '' }}>
+                    {{ $ttitle }}</option>
             @endforeach
         </select>
     </label>
@@ -41,7 +47,8 @@
         <span class="tp-form__label">Zona horaria</span>
         <select name="timezone_id" data-tp-field>
             @foreach ($tzs as $tzid => $tzlabel)
-                <option value="{{ $tzid }}" {{ (string) $selTz === (string) $tzid ? 'selected' : '' }}>{{ $tzlabel }}</option>
+                <option value="{{ $tzid }}" {{ (string) $selTz === (string) $tzid ? 'selected' : '' }}>
+                    {{ $tzlabel }}</option>
             @endforeach
         </select>
     </label>
@@ -55,7 +62,8 @@
         <span class="tp-form__label">Operador SIM</span>
         <select name="operator_sim" data-tp-field>
             @foreach ($operatorSimOptions as $k => $v)
-                <option value="{{ $k }}" {{ ($item->operator_sim ?? '') === $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}" {{ ($item->operator_sim ?? '') === $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>
@@ -67,12 +75,14 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">SIM activación</span>
-        <input type="date" name="sim_activation_date" value="{{ $f($item->sim_activation_date ?? null) }}" data-tp-field>
+        <input type="date" name="sim_activation_date" value="{{ $f($item->sim_activation_date ?? null) }}"
+            data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">SIM expiración</span>
-        <input type="date" name="sim_expiration_date" value="{{ $f($item->sim_expiration_date ?? null) }}" data-tp-field>
+        <input type="date" name="sim_expiration_date" value="{{ $f($item->sim_expiration_date ?? null) }}"
+            data-tp-field>
     </label>
 
     <label class="tp-form__field">
@@ -87,7 +97,8 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">N° de registro</span>
-        <input type="text" name="registration_number" maxlength="40" value="{{ $item->registration_number ?? '' }}" data-tp-field>
+        <input type="text" name="registration_number" maxlength="40" value="{{ $item->registration_number ?? '' }}"
+            data-tp-field>
     </label>
 
     <label class="tp-form__field">
@@ -97,7 +108,8 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Instalación</span>
-        <input type="date" name="installation_date" value="{{ $f($item->installation_date ?? null) }}" data-tp-field>
+        <input type="date" name="installation_date" value="{{ $f($item->installation_date ?? null) }}"
+            data-tp-field>
     </label>
 
     <label class="tp-form__field tp-col-2">
