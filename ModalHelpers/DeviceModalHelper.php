@@ -164,6 +164,8 @@ class DeviceModalHelper extends ModalHelper
 
         $this->usersLoader = new UsersLoader($this->user);
         $this->usersLoader->setRequestKey('user_id');
+
+        $this->talentusSyncService = app(TalentusDeviceSyncService::class);
     }
 
     public function createData()
@@ -338,6 +340,9 @@ class DeviceModalHelper extends ModalHelper
         if ($this->data['configure_device'] ?? false) {
             $this->configureDevice($device);
         }
+
+        // Sincronizar con Talentus ERP (fire-and-forget, no bloquea la respuesta)
+        $this->talentusSyncService->pushDevice($device);
 
         return ['status' => 1, 'id' => $device->id,];
     }
@@ -526,6 +531,9 @@ class DeviceModalHelper extends ModalHelper
                 $item->updateQuietly(['suspended_at' => null]);
             }
         }
+
+        // Sincronizar con Talentus ERP (fire-and-forget, no bloquea la respuesta)
+        $this->talentusSyncService->pushDevice($item->fresh());
 
         return ['status' => 1, 'id' => $item->id];
     }
