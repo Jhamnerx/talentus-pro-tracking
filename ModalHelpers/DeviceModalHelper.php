@@ -4,6 +4,7 @@ namespace ModalHelpers;
 
 use App\Exceptions\DeviceLimitException;
 use App\Exceptions\PermissionException;
+use App\Services\TalentusDeviceSyncService;
 use App\Transformers\ApiV1\DeviceFullJsonTransformer;
 use App\Transformers\ApiV1\DeviceFullTransformer;
 use App\Transformers\Device\DeviceMapFullTransformer;
@@ -12,6 +13,7 @@ use App\Transformers\Event\EventLatestTransformer;
 use Carbon\Carbon;
 use CustomFacades\ModalHelpers\SensorModalHelper;
 use CustomFacades\ModalHelpers\ServiceModalHelper;
+use CustomFacades\Repositories\DeviceCameraRepo;
 use CustomFacades\Repositories\DeviceGroupRepo;
 use CustomFacades\Repositories\DeviceIconRepo;
 use CustomFacades\Repositories\DeviceRepo;
@@ -19,9 +21,9 @@ use CustomFacades\Repositories\DeviceSensorRepo;
 use CustomFacades\Repositories\SensorGroupRepo;
 use CustomFacades\Repositories\TimezoneRepo;
 use CustomFacades\Repositories\UserRepo;
-use CustomFacades\Repositories\DeviceCameraRepo;
 use CustomFacades\Validators\DeviceConfiguratorFormValidator;
 use CustomFacades\Validators\DeviceFormValidator;
+use Formatter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Config;
@@ -32,9 +34,9 @@ use Tobuli\Entities\ApnConfig;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceConfig;
 use Tobuli\Entities\DeviceIcon;
+use Tobuli\Entities\DeviceMaintenance;
 use Tobuli\Entities\DeviceModel;
 use Tobuli\Entities\DeviceType;
-use Tobuli\Entities\DeviceMaintenance;
 use Tobuli\Entities\Event;
 use Tobuli\Entities\UnregisteredDevice;
 use Tobuli\Entities\User;
@@ -43,7 +45,6 @@ use Tobuli\Helpers\SMS\SMSGatewayManager;
 use Tobuli\Services\AlertSoundService;
 use Tobuli\Services\CustomValuesService;
 use Tobuli\Services\DeviceConfigService;
-use Formatter;
 use Tobuli\Services\DeviceSensorsService;
 use Tobuli\Services\DeviceService;
 use Tobuli\Services\DeviceUsersService;
@@ -62,6 +63,8 @@ class DeviceModalHelper extends ModalHelper
      * @var DeviceUsersService
      */
     private $deviceUsersService;
+
+    public $talentusSyncService;
 
     /**
      * @var FractalTransformerService
