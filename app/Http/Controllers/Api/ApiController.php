@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Wrapper;
 use App\Transformers\ApiV1\DeviceAllTransformer;
 use App\Transformers\ApiV1\DeviceFullTransformer;
+use App\Transformers\ApiV1\DeviceSlimTransformer;
+use App\Transformers\ApiV1\DeviceSlimJsonTransformer;
 use CustomFacades\ModalHelpers\DeviceModalHelper;
 use CustomFacades\RemoteUser;
 use CustomFacades\Repositories\DeviceGroupRepo;
@@ -245,6 +247,92 @@ class ApiController extends Controller
         $data = DeviceModalHelper::itemsJson();
 
         return $data;
+    }
+
+    #
+    # V2 Devices — slim payload optimized for mobile/slow connections
+    #
+
+    public function getDevicesV2()
+    {
+        if (!$this->user->perm('devices', 'view')) {
+            return [];
+        }
+
+        Server::setMemoryLimit(config('server.device_memory_limit'));
+
+        $device_groups = DeviceGroupRepo::getWhere(['user_id' => $this->user->id])
+            ->pluck('title', 'id')
+            ->prepend(trans('front.ungrouped'), '0')
+            ->all();
+
+        $grouped = [];
+
+        $query = $this->user->devices()
+            ->search(request()->get('s'))
+            ->filter(request()->all());
+
+        if (request()->has('page') || request()->has('limit')) {
+            $page    = request()->get('page', 1);
+            $limit   = max(1, request()->get('limit', 100));
+            $devices = $query->forPage($page, $limit)->get();
+            $this->groupDevicesSlim($grouped, $device_groups, $devices);
+        } else {
+            $query->chunk(500, function ($devices) use (&$grouped, $device_groups) {
+                $this->groupDevicesSlim($grouped, $device_groups, $devices);
+            });
+        }
+
+        return array_values($grouped);
+    }
+
+    public function getDevicesLatestV2()
+    {
+        if (!$this->user->perm('devices', 'view')) {
+            return ['items' => [], 'events' => [], 'time' => time()];
+        }
+
+        $now  = time();
+        $time = empty(request('time')) ? $now - 5 : intval(request('time'));
+
+        $items = $this->user->devices()
+            ->filter(request()->all())
+            ->updatedAfter(date('Y-m-d H:i:s', $time))
+            ->clearOrdersBy()
+            ->get();
+
+        DeviceSlimJsonTransformer::loadRelations($items);
+
+        $transformed = [];
+        foreach ($items as $device) {
+            $transformed[] = $this->transformerService->item($device, DeviceSlimJsonTransformer::class)->toArray();
+        }
+
+        return [
+            'items' => $transformed,
+            'events' => [],
+            'time'  => $now,
+        ];
+    }
+
+    protected function groupDevicesSlim(&$grouped, $device_groups, $devices)
+    {
+        DeviceSlimTransformer::loadRelations($devices);
+
+        foreach ($devices as $device) {
+            $group_id = empty($device->pivot->group_id) ? 0 : $device->pivot->group_id;
+            $group_id = empty($device_groups[$group_id]) ? 0 : $group_id;
+
+            if (!isset($grouped[$group_id])) {
+                $grouped[$group_id] = [
+                    'id'    => $group_id,
+                    'title' => $device_groups[$group_id],
+                    'items' => [],
+                ];
+            }
+
+            $grouped[$group_id]['items'][] = $this->transformerService->item($device, DeviceSlimTransformer::class)->toArray();
+        }
     }
 
     public function getDevicesByPlate()
