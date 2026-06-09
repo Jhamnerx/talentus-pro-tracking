@@ -17,11 +17,11 @@ Guía para Claude Code sobre la arquitectura, convenciones y flujos de trabajo d
 
 ## Estructura de Namespaces (DUAL)
 
-| Namespace | Ubicación | Propósito |
-|---|---|---|
-| `App\` | `app/` | Capa Laravel estándar (Controllers, Middleware, Events, Jobs) |
-| `Tobuli\` | `Tobuli/` | Dominio de negocio (Entities, Repositories, Services, Validation) |
-| `CustomFacades\` | `Facades/` | Facades custom (Repos, ModalHelpers, Validators) |
+| Namespace        | Ubicación  | Propósito                                                         |
+| ---------------- | ---------- | ----------------------------------------------------------------- |
+| `App\`           | `app/`     | Capa Laravel estándar (Controllers, Middleware, Events, Jobs)     |
+| `Tobuli\`        | `Tobuli/`  | Dominio de negocio (Entities, Repositories, Services, Validation) |
+| `CustomFacades\` | `Facades/` | Facades custom (Repos, ModalHelpers, Validators)                  |
 
 ---
 
@@ -100,6 +100,7 @@ El `GexpExporter` serializa a JSON los atributos explícitamente listados en el 
 Si se agrega un campo nuevo a la entidad, **siempre** añadirlo al array `$attributes` en el controlador de exportación correspondiente.
 
 **Ejemplo — GeofencesExportController:**
+
 ```php
 $attributes = ['id', 'group_id', 'name', 'coordinates', 'polygon_color',
                'type', 'radius', 'center', 'device_id', 'speed_limit'];
@@ -115,27 +116,30 @@ Los campos llegan tal cual desde el reader; el `normalize()` en `GeofenceService
 
 ## Roles y Permisos
 
-| group_id | Rol | Descripción |
-|---|---|---|
-| 1 | Admin | Acceso total |
-| 2 | User | Usuario estándar |
-| 3 | Reseller/Manager | Gestor de clientes |
-| 4 | Demo | Cuenta demo |
-| 5 | Operator | Operador de dispositivos |
-| 6 | Supervisor | Supervisor de operadores |
+| group_id | Rol              | Descripción              |
+| -------- | ---------------- | ------------------------ |
+| 1        | Admin            | Acceso total             |
+| 2        | User             | Usuario estándar         |
+| 3        | Reseller/Manager | Gestor de clientes       |
+| 4        | Demo             | Cuenta demo              |
+| 5        | Operator         | Operador de dispositivos |
+| 6        | Supervisor       | Supervisor de operadores |
 
 **Métodos de comprobación en `User`:**
+
 ```php
 isAdmin() / isReseller() / isOperator() / isSupervisor() / isManager() / isDemo() / isGod()
 ```
 
 **Verificación en controladores:**
+
 ```php
 $this->checkException('geofences', 'view');   // lanza PermissionException si no tiene permiso
 $this->user->perm('geofences', 'edit')        // retorna bool
 ```
 
 **Middleware de rutas:**
+
 - `auth.admin` → solo `isAdmin()`
 - `auth.manager` → `isAdmin() || isManager()`
 - `active_subscription` → requerido en la mayoría de rutas autenticadas
@@ -144,11 +148,11 @@ $this->user->perm('geofences', 'edit')        // retorna bool
 
 ## Estructura de Rutas
 
-| Archivo | Propósito | Namespace de Controllers |
-|---|---|---|
-| `routes/web.php` | Rutas frontend (+1000 líneas, agrupadas por middleware) | `Frontend\`, `Admin\` |
-| `routes/api.php` | API v1 con middleware `auth.api` | `Api\V1\` |
-| `routes/app.php` | Rutas adicionales de aplicación | — |
+| Archivo          | Propósito                                               | Namespace de Controllers |
+| ---------------- | ------------------------------------------------------- | ------------------------ |
+| `routes/web.php` | Rutas frontend (+1000 líneas, agrupadas por middleware) | `Frontend\`, `Admin\`    |
+| `routes/api.php` | API v1 con middleware `auth.api`                        | `Api\V1\`                |
+| `routes/app.php` | Rutas adicionales de aplicación                         | —                        |
 
 ---
 
@@ -185,14 +189,14 @@ socket/                          — Servidor Node.js de WebSocket
 
 ## Integraciones Externas
 
-| Servicio | Propósito | Config |
-|---|---|---|
-| Traccar GPSServer | Backend de rastreo GPS | `TraccarDevice` entity |
-| Redis | Caché, colas, pub/sub tiempo real | `.env` REDIS_* |
-| Socket.io | WebSocket para actualizaciones live | `.env` SOCKET_PORT |
-| SendGrid | Correo transaccional | `config/mail.php` |
-| Plivo | SMS | `config/sms.php` |
-| Azure AD | SSO | `config/azure.php` |
-| FCM | Push notifications | `config/fcm.php` |
-| Stripe / Braintree | Pagos | `config/payments.php` |
-| Google Roads API | Velocidad máxima de vía | `config/services.php` → `speedlimit.key` |
+| Servicio           | Propósito                           | Config                                   |
+| ------------------ | ----------------------------------- | ---------------------------------------- |
+| Traccar GPSServer  | Backend de rastreo GPS              | `TraccarDevice` entity                   |
+| Redis              | Caché, colas, pub/sub tiempo real   | `.env` REDIS\_\*                         |
+| Socket.io          | WebSocket para actualizaciones live | `.env` SOCKET_PORT                       |
+| SendGrid           | Correo transaccional                | `config/mail.php`                        |
+| Plivo              | SMS                                 | `config/sms.php`                         |
+| Azure AD           | SSO                                 | `config/azure.php`                       |
+| FCM                | Push notifications                  | `config/fcm.php`                         |
+| Stripe / Braintree | Pagos                               | `config/payments.php`                    |
+| Google Roads API   | Velocidad máxima de vía             | `config/services.php` → `speedlimit.key` |
