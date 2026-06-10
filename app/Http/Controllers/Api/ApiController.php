@@ -349,7 +349,7 @@ class ApiController extends Controller
 
         $device = $this->user->devices()
             ->where('plate_number', $plateNumber)
-            ->select(['id', 'imei', 'sim_number', 'name', 'plate_number'])
+            ->select(['id', 'active', 'imei', 'sim_number', 'name', 'plate_number'])
             ->first();
 
         if (!$device) {
