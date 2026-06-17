@@ -20,7 +20,7 @@ use Tobuli\History\Actions\AppendPosition;
 use Tobuli\History\Actions\BreakOverspeed;
 use Tobuli\History\Actions\GroupOverspeed;
 use Tobuli\History\Actions\OverspeedStatic;
-use Tobuli\History\Actions\AppendSpeedLimitGeofence;
+use Tobuli\History\Actions\AppendSpeedLimitGeofenceByPriority;
 use Tobuli\History\Actions\AppendOverspeedingProcessOnly;
 use Tobuli\History\Actions\AppendOverspeedOnlyInGeofences;
 
@@ -48,7 +48,7 @@ class OverspeedsInGeofenceCustomReportV2 extends DeviceHistoryReport
             Duration::class,
             Distance::class,
             Speed::class,
-            AppendSpeedLimitGeofence::class,
+            AppendSpeedLimitGeofenceByPriority::class,
             Overspeed::class,
             AppendPosition::class,
             Harsh::class,
