@@ -829,11 +829,15 @@ git commit -m "Make report 904 reusable: only_violations toggle, one row per exc
 
 - [ ] **Step 1: Correr todos los tests nuevos juntos**
 
+`vendor/bin/phpunit` no acepta varios archivos como argumentos posicionales (solo toma el primero, en silencio) — hay que correr cada archivo por separado:
+
 Run:
 ```bash
-vendor/bin/phpunit tests/Unit/PolygonHelperTest.php tests/Unit/GeofenceAreaPriorityTest.php tests/Unit/OverspeedsInGeofenceCustomReportTest.php
+vendor/bin/phpunit tests/Unit/PolygonHelperTest.php
+vendor/bin/phpunit tests/Unit/GeofenceAreaPriorityTest.php
+vendor/bin/phpunit tests/Unit/OverspeedsInGeofenceCustomReportTest.php
 ```
-Expected: `OK (15 tests, 21 assertions)`
+Expected: `OK (2 tests, 2 assertions)`, `OK (8 tests, 9 assertions)`, `OK (5 tests, 10 assertions)` respectivamente (15 tests, 21 assertions en total).
 
 - [ ] **Step 2: Verificar sintaxis de todos los archivos tocados**
 
