@@ -195,6 +195,47 @@ class Geofence extends AbstractEntity implements DisplayInterface
         return $this->getPolygonHelper()->getCenter();
     }
 
+    public function approxAreaSqMeters(): ?float
+    {
+        if ($this->type === self::TYPE_CIRCLE) {
+            if (empty($this->radius))
+                return null;
+
+            return M_PI * pow($this->radius, 2);
+        }
+
+        $area = $this->getPolygonHelper()->getArea();
+
+        if (empty($area))
+            return null;
+
+        $center = $this->getCenter();
+
+        if (empty($center))
+            return null;
+
+        $metersPerDegreeLat = 111320;
+        $metersPerDegreeLng = 111320 * cos(deg2rad($center['lat']));
+
+        return $area * $metersPerDegreeLat * $metersPerDegreeLng;
+    }
+
+    public static function pickBySpeedLimitPriority(iterable $geofences): ?self
+    {
+        $candidates = collect($geofences)->filter(function (self $geofence) {
+            return !empty($geofence->speed_limit);
+        });
+
+        if ($candidates->isEmpty())
+            return null;
+
+        return $candidates->sortBy(function (self $geofence) {
+            $area = $geofence->approxAreaSqMeters();
+
+            return is_null($area) ? PHP_FLOAT_MAX : $area;
+        })->first();
+    }
+
     private function pointInPolygon($point)
     {
         return false !== $this->getPolygonHelper()->pointInPolygon($point);
