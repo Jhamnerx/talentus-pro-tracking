@@ -523,6 +523,8 @@ return [
     'validation' => 'Validación',
     'value' => 'Valor',
     'vat_number' => 'Número de valor agregado',
+    'vehicle_type_id' => 'Tipo de vehículo',
+    'vehicle_state_id' => 'Estado del vehículo',
     'verify_id' => 'Verificar identificación',
     'vin' => 'VIN',
     'visible' => 'Visible',

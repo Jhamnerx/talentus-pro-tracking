@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Geofence;
+use Tobuli\Entities\VehicleState;
 use Tobuli\History\Actions\Duration;
 use Tobuli\History\Actions\GroupGeofenceInOut;
 use Tobuli\History\DeviceHistory;
@@ -98,6 +99,28 @@ class DevicesController extends Controller
     public function changeActive()
     {
         return DeviceModalHelper::changeActive();
+    }
+
+    public function vehicleStateForm($id)
+    {
+        $item = Device::find($id);
+
+        if (!$item) {
+            throw new ResourseNotFoundException(trans('front.vehicle_state'));
+        }
+
+        $this->checkException('devices', 'edit', $item);
+
+        $states = $item->vehicle_type_id
+            ? VehicleState::where('vehicle_type_id', $item->vehicle_type_id)->pluck('name', 'id')
+            : collect();
+
+        return view('front::Devices.vehicleStateForm', compact('item', 'states'));
+    }
+
+    public function changeVehicleState()
+    {
+        return DeviceModalHelper::changeVehicleState();
     }
 
     public function destroy()

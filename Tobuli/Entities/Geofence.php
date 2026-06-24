@@ -4,6 +4,7 @@
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Tobuli\Helpers\PolygonHelper;
 use Tobuli\Traits\ChangeLogs;
@@ -87,6 +88,41 @@ class Geofence extends AbstractEntity implements DisplayInterface
     public function diemRate(): BelongsTo
     {
         return $this->belongsTo(DiemRate::class);
+    }
+
+    public function vehicleSpeedLimits(): HasMany
+    {
+        return $this->hasMany(GeofenceVehicleSpeedLimit::class);
+    }
+
+    /**
+     * Resolves the speed limit that applies to a given vehicle type/state in this
+     * geofence, falling back to the type-level default and finally to the legacy
+     * single speed_limit column.
+     */
+    public function speedLimitFor(?VehicleType $vehicleType, ?VehicleState $vehicleState): ?float
+    {
+        if ($vehicleType) {
+            $limits = $this->relationLoaded('vehicleSpeedLimits')
+                ? $this->vehicleSpeedLimits
+                : $this->vehicleSpeedLimits()->where('vehicle_type_id', $vehicleType->id)->get();
+
+            $limits = $limits->where('vehicle_type_id', $vehicleType->id);
+
+            if ($vehicleState) {
+                $exact = $limits->firstWhere('vehicle_state_id', $vehicleState->id);
+
+                if ($exact)
+                    return (float) $exact->speed_limit;
+            }
+
+            $default = $limits->firstWhere('vehicle_state_id', null);
+
+            if ($default)
+                return (float) $default->speed_limit;
+        }
+
+        return empty($this->speed_limit) ? null : (float) $this->speed_limit;
     }
 
     public function setPolygonAttribute($value)

@@ -555,7 +555,7 @@ class PositionsWriter
         }
         $sat = $this->position->getParameter('sat');
 
-        if ($sat !== null && $sat < 7) {
+        if ($sat !== null && $sat < 4) {
 
             if ($lastValidPosition) {
 

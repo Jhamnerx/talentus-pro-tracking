@@ -44,7 +44,11 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
 
         $this->speedLimitGeofences = Geofence::where('user_id', $this->user->id)
             ->where('active', 1)
-            ->whereNotNull('speed_limit')
+            ->where(function ($query) {
+                $query->whereNotNull('speed_limit')
+                    ->orWhereHas('vehicleSpeedLimits');
+            })
+            ->with('vehicleSpeedLimits')
             ->get();
     }
 
@@ -59,25 +63,39 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
      * la geocerca mas especifica (area mas pequena) -- solo cuando
      * onlyViolations esta desactivado.
      *
-     * @return array<int, array{geofence: Geofence, exceeded: bool}>
+     * El limite usado por geocerca se resuelve segun el tipo/estado de vehiculo
+     * del dispositivo (ver Geofence::speedLimitFor), con fallback al limite
+     * general de la geocerca.
+     *
+     * @return array<int, array{geofence: Geofence, speed_limit: float, exceeded: bool}>
      */
-    protected function resolveGeofenceEvents(array $point, float $speed): array
+    protected function resolveGeofenceEvents(array $point, float $speed, $vehicleType, $vehicleState): array
     {
-        $matches = $this->speedLimitGeofences->filter(function (Geofence $geofence) use ($point) {
-            return $geofence->pointIn($point);
-        });
+        $matches = $this->speedLimitGeofences
+            ->filter(function (Geofence $geofence) use ($point) {
+                return $geofence->pointIn($point);
+            })
+            ->map(function (Geofence $geofence) use ($vehicleType, $vehicleState) {
+                return [
+                    'geofence'    => $geofence,
+                    'speed_limit' => $geofence->speedLimitFor($vehicleType, $vehicleState),
+                ];
+            })
+            ->filter(function (array $match) {
+                return !empty($match['speed_limit']);
+            });
 
         if ($matches->isEmpty()) {
             return [];
         }
 
-        $exceeded = $matches->filter(function (Geofence $geofence) use ($speed) {
-            return $speed > $geofence->speed_limit;
+        $exceeded = $matches->filter(function (array $match) use ($speed) {
+            return $speed > $match['speed_limit'];
         });
 
         if ($exceeded->isNotEmpty()) {
-            return $exceeded->map(function (Geofence $geofence) {
-                return ['geofence' => $geofence, 'exceeded' => true];
+            return $exceeded->map(function (array $match) {
+                return $match + ['exceeded' => true];
             })->values()->all();
         }
 
@@ -85,14 +103,18 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
             return [];
         }
 
-        $primary = Geofence::pickBySpeedLimitPriority($matches);
+        $primary = $matches->sortBy(function (array $match) {
+            $area = $match['geofence']->approxAreaSqMeters();
 
-        return $primary ? [['geofence' => $primary, 'exceeded' => false]] : [];
+            return is_null($area) ? PHP_FLOAT_MAX : $area;
+        })->first();
+
+        return $primary ? [$primary + ['exceeded' => false]] : [];
     }
 
-    protected function buildRow($position, Geofence $geofence, bool $exceeded): array
+    protected function buildRow($position, Geofence $geofence, float $speedLimit, bool $exceeded): array
     {
-        $speedDifference = $exceeded ? round($position->speed - $geofence->speed_limit, 2) : '';
+        $speedDifference = $exceeded ? round($position->speed - $speedLimit, 2) : '';
 
         return [
             'server_time' => Formatter::time()->human($position->server_time),
@@ -103,7 +125,7 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
             'longitude'   => $position->longitude,
             'location'    => $this->getLocation($position, $this->getAddress($position)),
             'geofence_name' => $geofence->name,
-            'speed_limit' => $geofence->speed_limit,
+            'speed_limit' => $speedLimit,
             'speed_difference' => $speedDifference,
             'violation_level' => $exceeded ? $this->getInfringementLevel($speedDifference) : '',
             'speed_limit_exceeded' => $exceeded,
@@ -121,23 +143,26 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
         }
     }
 
-    protected function processPosition($position): array
+    protected function processPosition($position, $vehicleType, $vehicleState): array
     {
         $point = [
             'latitude'  => $position->latitude,
             'longitude' => $position->longitude,
         ];
 
-        $events = $this->resolveGeofenceEvents($point, (float) $position->speed);
+        $events = $this->resolveGeofenceEvents($point, (float) $position->speed, $vehicleType, $vehicleState);
 
         return array_map(function (array $event) use ($position) {
-            return $this->buildRow($position, $event['geofence'], $event['exceeded']);
+            return $this->buildRow($position, $event['geofence'], $event['speed_limit'], $event['exceeded']);
         }, $events);
     }
 
     protected function generateDevice($device)
     {
         $this->onlyViolations = Arr::get($this->parameters, 'only_violations', 1) != 0;
+
+        $vehicleType = $device->vehicleType;
+        $vehicleState = $device->vehicleState;
 
         $rows = [];
         try {
@@ -147,9 +172,9 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
                 ->where('speed', '>', 0)
                 ->chunk(
                     2000,
-                    function ($positions) use (&$rows) {
+                    function ($positions) use (&$rows, $vehicleType, $vehicleState) {
                         foreach ($positions as $position) {
-                            array_push($rows, ...$this->processPosition($position));
+                            array_push($rows, ...$this->processPosition($position, $vehicleType, $vehicleState));
                         }
                     }
                 );

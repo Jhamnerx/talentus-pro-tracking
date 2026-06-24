@@ -40,6 +40,8 @@ use Tobuli\Entities\DeviceType;
 use Tobuli\Entities\Event;
 use Tobuli\Entities\UnregisteredDevice;
 use Tobuli\Entities\User;
+use Tobuli\Entities\VehicleState;
+use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\SMS\SMSGatewayManager;
 use Tobuli\Services\AlertSoundService;
@@ -222,6 +224,7 @@ class DeviceModalHelper extends ModalHelper
             : [];
 
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
+        $vehicle_types = VehicleType::with('states')->where('user_id', $this->user->id)->orderBy('name')->get();
         $models = $this->getDeviceModels(new Device());
 
         if ($this->api) {
@@ -277,6 +280,7 @@ class DeviceModalHelper extends ModalHelper
             'device_configs',
             'apn_configs',
             'device_types',
+            'vehicle_types',
             'fuel_detect_sec_after_stop_options',
             'models',
             'webservices'
@@ -432,6 +436,7 @@ class DeviceModalHelper extends ModalHelper
         $device_cameras = DeviceCameraRepo::searchAndPaginate(['filter' => ['device_id' => $device_id]], 'id', 'desc', 10);
 
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
+        $vehicle_types = VehicleType::with('states')->where('user_id', $this->user->id)->orderBy('name')->get();
 
         return compact(
             'device_id',
@@ -458,6 +463,7 @@ class DeviceModalHelper extends ModalHelper
             'device_icon_colors',
             'device_cameras',
             'device_types',
+            'vehicle_types',
             'fuel_detect_sec_after_stop_options',
             'models',
             'webservices'
@@ -607,6 +613,37 @@ class DeviceModalHelper extends ModalHelper
         }
 
         return ['status' => $updateCount ? 1 : 0];
+    }
+
+    public function changeVehicleState(): array
+    {
+        $validator = Validator::make($this->data, [
+            'id' => 'required|exists:devices,id',
+            'vehicle_state_id' => 'nullable|exists:vehicle_states,id',
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator->errors());
+        }
+
+        /** @var Device $item */
+        $item = Device::findOrFail($this->data['id']);
+
+        $this->checkException('devices', 'edit', $item);
+
+        $stateId = $this->data['vehicle_state_id'] ?? null;
+
+        if ($stateId) {
+            $state = VehicleState::find($stateId);
+
+            if (!$state || $state->vehicle_type_id != $item->vehicle_type_id) {
+                throw new ValidationException(['vehicle_state_id' => [trans('front.no_vehicle_state')]]);
+            }
+        }
+
+        $item->update(['vehicle_state_id' => $stateId]);
+
+        return ['status' => 1];
     }
 
     public function itemsJson()

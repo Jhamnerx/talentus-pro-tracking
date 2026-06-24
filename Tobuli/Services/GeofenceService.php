@@ -26,12 +26,41 @@ class GeofenceService extends ModelService
 
     public function store(array $data)
     {
-        return Geofence::create($data);
+        $geofence = Geofence::create($data);
+
+        $this->syncVehicleSpeedLimits($geofence, $data);
+
+        return $geofence;
     }
 
     public function update($geofence, array $data)
     {
-        return $geofence->update($data);
+        $geofence->update($data);
+
+        $this->syncVehicleSpeedLimits($geofence, $data);
+
+        return $geofence;
+    }
+
+    protected function syncVehicleSpeedLimits(Geofence $geofence, array $data): void
+    {
+        if (!array_key_exists('vehicle_speed_limits', $data))
+            return;
+
+        $geofence->vehicleSpeedLimits()->delete();
+
+        foreach ($data['vehicle_speed_limits'] as $vehicleTypeId => $byState) {
+            foreach ($byState as $vehicleStateId => $speedLimit) {
+                if ($speedLimit === null || $speedLimit === '')
+                    continue;
+
+                $geofence->vehicleSpeedLimits()->create([
+                    'vehicle_type_id'  => $vehicleTypeId,
+                    'vehicle_state_id' => empty($vehicleStateId) ? null : $vehicleStateId,
+                    'speed_limit'      => $speedLimit,
+                ]);
+            }
+        }
     }
 
     public function delete($geofence)
@@ -75,6 +104,16 @@ class GeofenceService extends ModelService
 
         if (array_key_exists('speed_limit', $data)) {
             $data['speed_limit'] = \Formatter::speed()->reverse($data['speed_limit']);
+        }
+
+        if (array_key_exists('vehicle_speed_limits', $data) && is_array($data['vehicle_speed_limits'])) {
+            foreach ($data['vehicle_speed_limits'] as $vehicleTypeId => $byState) {
+                foreach ($byState as $vehicleStateId => $speedLimit) {
+                    $data['vehicle_speed_limits'][$vehicleTypeId][$vehicleStateId] = ($speedLimit === null || $speedLimit === '')
+                        ? null
+                        : \Formatter::speed()->reverse($speedLimit);
+                }
+            }
         }
 
         return $data;

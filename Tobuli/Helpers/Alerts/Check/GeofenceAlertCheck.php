@@ -64,7 +64,7 @@ class GeofenceAlertCheck extends AlertCheck
                 //     Cache::forget('overspeed_end_' . $this->device->id);    // Clear the end time from cache
                 // }
 
-                $event->setAdditional('exceso', ($position->speed - $geofence->speed_limit));
+                $event->setAdditional('exceso', ($position->speed - $this->resolveSpeedLimit($geofence)));
             }
             $this->silent($event);
 
@@ -177,16 +177,23 @@ class GeofenceAlertCheck extends AlertCheck
         if (!$position->isValid())
             return false;
 
-        if (!$geofence->speed_limit)
+        $speedLimit = $this->resolveSpeedLimit($geofence);
+
+        if (!$speedLimit)
             return false;
 
         // Sumar la tolerancia al límite de velocidad de la geofence
-        $adjustedSpeedLimit = $geofence->speed_limit + $tolerance;
+        $adjustedSpeedLimit = $speedLimit + $tolerance;
 
         if ($position->speed <= $adjustedSpeedLimit)
             return false;
 
         return true;
+    }
+
+    protected function resolveSpeedLimit($geofence): ?float
+    {
+        return $geofence->speedLimitFor($this->device->vehicleType, $this->device->vehicleState);
     }
 
     protected function checkGeofence($position, $geofence)

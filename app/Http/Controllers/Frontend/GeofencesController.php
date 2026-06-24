@@ -8,6 +8,7 @@ use FractalTransformer;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\Geofence;
 use Tobuli\Entities\GeofenceGroup;
+use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Services\GeofenceUserService;
 use Tobuli\Services\GroupModelService;
@@ -80,6 +81,7 @@ class GeofencesController extends Controller
         }
 
         $data['item'] = $item;
+        $data['vehicleSpeedLimits'] = $this->getVehicleSpeedLimits($item);
 
         return view('front::Geofences.edit')->with($data);
     }
@@ -93,13 +95,29 @@ class GeofencesController extends Controller
             ->prepend(trans('front.ungrouped'), '0')
             ->all();
 
-        $data = compact('geofenceTypes', 'geofenceGroups');
+        $vehicleTypes = VehicleType::with('states')
+            ->where('user_id', $this->user->id)
+            ->orderBy('name')
+            ->get();
+
+        $data = compact('geofenceTypes', 'geofenceGroups', 'vehicleTypes');
 
         if (settings('plugins.moving_geofence.status')) {
             $data['devices'] = $this->user->devices()->get();
         }
 
         return $data;
+    }
+
+    private function getVehicleSpeedLimits(Geofence $item): array
+    {
+        $limits = [];
+
+        foreach ($item->vehicleSpeedLimits as $limit) {
+            $limits[$limit->vehicle_type_id][$limit->vehicle_state_id ?? 0] = round(\Formatter::speed()->convert($limit->speed_limit));
+        }
+
+        return $limits;
     }
 
     public function store()

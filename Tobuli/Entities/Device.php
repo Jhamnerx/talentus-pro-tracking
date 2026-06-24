@@ -146,6 +146,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'installation_date',
         'msisdn',
         'device_type_id',
+        'vehicle_type_id',
+        'vehicle_state_id',
         'app_tracker_login',
         'fuel_detect_sec_after_stop',
         'lbs',
@@ -480,6 +482,16 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasOne('Tobuli\Entities\DeviceType', 'id', 'device_type_id');
     }
 
+    public function vehicleType()
+    {
+        return $this->hasOne('Tobuli\Entities\VehicleType', 'id', 'vehicle_type_id');
+    }
+
+    public function vehicleState()
+    {
+        return $this->hasOne('Tobuli\Entities\VehicleState', 'id', 'vehicle_state_id');
+    }
+
     public function subscriptions()
     {
         return $this->hasManyThrough(
@@ -500,6 +512,16 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     public function setDeviceTypeIdAttribute($value)
     {
         $this->attributes['device_type_id'] = empty($value) ? null : $value;
+    }
+
+    public function setVehicleTypeIdAttribute($value)
+    {
+        $this->attributes['vehicle_type_id'] = empty($value) ? null : $value;
+    }
+
+    public function setVehicleStateIdAttribute($value)
+    {
+        $this->attributes['vehicle_state_id'] = empty($value) ? null : $value;
     }
 
     public function setTimezoneIdAttribute($value)

@@ -44,12 +44,7 @@
         </div>
     </div>
 
-    @if (settings('plugins.geofences_speed_limit.status'))
-        <div class="form-group">
-            {!! Form::label('speed_limit', trans('validation.attributes.speed_limit') . ':') !!}
-            {!! Form::text('speed_limit', null, ['class' => 'form-control']) !!}
-        </div>
-    @endif
+    @include('front::Geofences.partials.vehicle_speed_limits')
 
     @if (config('addon.reports_geofleet_in'))
         @foreach ([0, 1] as $i)

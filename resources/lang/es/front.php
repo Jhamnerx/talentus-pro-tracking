@@ -1283,4 +1283,16 @@ return [
     'zone_out' => 'Salir de zona',
     'zoom_in' => 'Acercar',
     'zoom_out' => 'Alejar',
+
+    'vehicle_type' => 'Tipo de vehículo',
+    'vehicle_types' => 'Tipos de vehículo',
+    'add_vehicle_type' => 'Añadir tipo de vehículo',
+    'no_vehicle_types' => 'No hay tipos de vehículo.',
+    'vehicle_states' => 'Estados',
+    'add_vehicle_state' => 'Añadir estado',
+    'vehicle_state' => 'Estado del vehículo',
+    'no_vehicle_state' => 'Sin estado',
+    'change_vehicle_state' => 'Cambiar estado del vehículo',
+    'speed_limit_default' => 'Velocidad por defecto',
+    'speed_limit_by_vehicle_type' => 'Velocidad por tipo de vehículo',
 ];

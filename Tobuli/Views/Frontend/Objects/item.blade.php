@@ -99,6 +99,15 @@
                         </a>
                     </li>
                 @endif
+                @if (Auth::User()->perm('devices', 'edit') && $item->vehicle_type_id)
+                    <li>
+                        <a href="javascript:" data-url="{{ route('devices.vehicle_state_form', $item->id) }}"
+                            data-modal="devices_change_vehicle_state">
+                            <span class="icon edit"></span>
+                            <span class="text">{{ trans('front.change_vehicle_state') }}</span>
+                        </a>
+                    </li>
+                @endif
                 @if (Auth::User()->perm('chat', 'view') && $item->canChat())
                     <li>
                         <a href="javascript:" class="chat_device"

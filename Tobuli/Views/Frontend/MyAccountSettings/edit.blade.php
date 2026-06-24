@@ -15,6 +15,8 @@
             <li><a href="#setup-form-drivers" role="tab" data-toggle="tab"
                     data-url="{{ route('user_drivers.index') }}">{!! trans('front.drivers') !!}</a></li>
         @endif
+        <li><a href="#setup-form-vehicle-types" role="tab" data-toggle="tab"
+                data-url="{{ route('vehicle_types.index') }}">{!! trans('front.vehicle_types') !!}</a></li>
         @if (Auth::User()->perm('custom_events', 'view'))
             <li><a href="#setup-form-events" role="tab" data-toggle="tab"
                     data-url="{{ route('custom_events.index') }}">{!! trans('front.events') !!}</a></li>
@@ -194,6 +196,8 @@
         <div id="setup-form-object-groups" class="tab-pane"></div>
 
         <div id="setup-form-drivers" class="tab-pane"></div>
+
+        <div id="setup-form-vehicle-types" class="tab-pane"></div>
 
         <div id="setup-form-events" class="tab-pane"></div>
 

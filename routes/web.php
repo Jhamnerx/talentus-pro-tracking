@@ -188,6 +188,8 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     # Devices
     Route::get('devices/edit/{id?}/{admin?}', ['as' => 'devices.edit', 'uses' => 'DevicesController@edit']);
     Route::post('devices/change_active', ['as' => 'devices.change_active', 'uses' => 'DevicesController@changeActive']);
+    Route::get('devices/{id}/vehicle_state', ['as' => 'devices.vehicle_state_form', 'uses' => 'DevicesController@vehicleStateForm']);
+    Route::post('devices/change_vehicle_state', ['as' => 'devices.change_vehicle_state', 'uses' => 'DevicesController@changeVehicleState']);
     Route::get('devices/follow_map/{id?}', ['as' => 'devices.follow_map', 'uses' => 'DevicesController@followMap']);
     Route::any('devices/commands', ['as' => 'devices.commands', 'uses' => 'SendCommandController@getCommands']);
     Route::get('devices/do_destroy/{id}', ['as' => 'devices.do_destroy', 'uses' => 'DevicesController@doDestroy']);
@@ -311,6 +313,10 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('user_drivers/{id}/activity_log/{table?}', ['as' => 'user_drivers.activity_log', 'uses' => 'UserDriversController@activityLog']);
     Route::get('user_drivers/devices/{id?}', ['as' => 'user_drivers.devices', 'uses' => 'UserDriversController@devices']);
     Route::resource('user_drivers', 'UserDriversController', ['except' => ['update', 'destroy']]);
+
+    # Vehicle types
+    Route::get('vehicle_types/table', ['as' => 'vehicle_types.table', 'uses' => 'VehicleTypesController@table']);
+    Route::resource('vehicle_types', 'VehicleTypesController', ['except' => ['show']]);
 
     # Sensors
     Route::any('sensors/preview', ['as' => 'sensors.preview', 'uses' => 'SensorsController@preview']);
