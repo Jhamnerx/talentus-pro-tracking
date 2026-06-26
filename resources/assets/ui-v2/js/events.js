@@ -16,6 +16,7 @@
 
   var DATA_URL = root.getAttribute("data-data-url");
   var GEO_URL = root.getAttribute("data-geo-url");
+  var ZONES_URL = root.getAttribute("data-zones-url");
   var listEl = document.getElementById("tp-events-list");
   var statusEl = document.getElementById("tp-events-status");
   var hoursSel = document.getElementById("tp-events-hours");
@@ -102,6 +103,12 @@
     // Fix: el contenedor puede tener 0px al crear el mapa → forzar resize.
     state.map.on("load", function () {
       state.map.resize();
+      renderSharedGeofences();
+    });
+    // Re-pintar capas compartidas tras cambiar el estilo (proveedor) — el swap
+    // de estilo borra sources/layers.
+    state.map.on("styledata", function () {
+      renderSharedGeofences();
     });
     setTimeout(function () {
       if (state.map) state.map.resize();
@@ -415,6 +422,25 @@
     });
   if (ziBtn) ziBtn.addEventListener("click", function () { state.map && state.map.zoomIn(); });
   if (zoBtn) zoBtn.addEventListener("click", function () { state.map && state.map.zoomOut(); });
+
+  // Geocercas (estado COMPARTIDO con Live vía tpMapShared)
+  function geofencesVisible() {
+    return !!(window.tpMapShared && window.tpMapShared.get("geofences", false));
+  }
+  function renderSharedGeofences() {
+    if (!window.tpMapShared || !state.map) return;
+    window.tpMapShared.renderGeofences(state.map, ZONES_URL, geofencesVisible());
+  }
+  var gfBtn = document.getElementById("tp-ev-toggle-geofences");
+  if (gfBtn) {
+    gfBtn.setAttribute("aria-pressed", geofencesVisible() ? "true" : "false");
+    gfBtn.addEventListener("click", function () {
+      var v = !geofencesVisible();
+      if (window.tpMapShared) window.tpMapShared.set("geofences", v);
+      gfBtn.setAttribute("aria-pressed", v ? "true" : "false");
+      renderSharedGeofences();
+    });
+  }
 
   initMap();
   load(true);

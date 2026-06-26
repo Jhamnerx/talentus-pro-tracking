@@ -12,7 +12,7 @@
 
 @section('workspace')
     <div class="tp-events" id="tp-events" data-data-url="{{ route('ui.v2.api.events') }}"
-        data-geo-url="{{ route('address.get') }}">
+        data-geo-url="{{ route('address.get') }}" data-zones-url="{{ route('ui.v2.api.zones') }}">
         {{-- Map config (provider IDs, API keys) inyectado para la capa JS --}}
         <script type="application/json" id="tp-events-map-config">@json($mapConfig)</script>
 
@@ -75,6 +75,14 @@
                         <path d="M5 12h14" />
                     </svg>
                 </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
+                    id="tp-ev-toggle-geofences" title="Mostrar geocercas" aria-label="Mostrar geocercas"
+                    aria-pressed="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="4 7 12 3 20 7 20 17 12 21 4 17 4 7" />
+                    </svg>
+                </button>
             </div>
         </main>
     </div>
@@ -83,5 +91,6 @@
 @push('scripts')
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-providers.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=2"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=3"></script>
 @endpush

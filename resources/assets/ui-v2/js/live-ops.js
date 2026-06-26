@@ -1700,13 +1700,17 @@
   Array.prototype.forEach.call(
     document.querySelectorAll(".tp-live__toggle[data-toggle]"),
     function (btn) {
-      // Sync initial state from aria-pressed
+      // Estado inicial: store compartido (cross-página) o aria-pressed.
       var key = btn.getAttribute("data-toggle");
-      state.toggles[key] = btn.getAttribute("aria-pressed") === "true";
+      var initial = btn.getAttribute("aria-pressed") === "true";
+      if (window.tpMapShared) initial = tpMapShared.get(key, initial);
+      state.toggles[key] = initial;
+      btn.setAttribute("aria-pressed", initial ? "true" : "false");
       btn.addEventListener("click", function () {
         var k = btn.getAttribute("data-toggle");
         state.toggles[k] = !state.toggles[k];
         btn.setAttribute("aria-pressed", state.toggles[k] ? "true" : "false");
+        if (window.tpMapShared) tpMapShared.set(k, state.toggles[k]);
         if (k === "poi") {
           if (state.toggles[k] && window.tpModal && tpModal.toast) {
             tpModal.toast("POIs: configura tus puntos en la sección Admin.", {

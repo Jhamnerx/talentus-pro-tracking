@@ -198,3 +198,8 @@
   border: 1px solid var(--border, #e7e9ee);
   box-shadow: var(--shadow-md, 0 4px 14px rgba(0, 0, 0, 0.12));
 }
+.tp-events__map-controls .tp-btn[aria-pressed="true"] {
+  background: var(--brand-500, #2e63d9);
+  border-color: var(--brand-500, #2e63d9);
+  color: #fff;
+}
