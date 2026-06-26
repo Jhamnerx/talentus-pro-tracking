@@ -2,18 +2,21 @@
    UI v2 · Eventos (página dedicada con mapa)
    ============================================================ */
 .tp-events {
-  display: flex;
+  display: grid;
+  grid-template-columns: 340px 1fr;
   height: 100%;
+  position: relative;
   min-height: 0;
 }
 
 /* Panel lista */
 .tp-events__list-panel {
-  width: 340px;
-  flex: 0 0 340px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
+  height: 100%;
+  overflow: hidden;
   border-right: 1px solid var(--border, #e7e9ee);
   background: var(--surface-1, #ffffff);
 }
@@ -90,8 +93,9 @@
 /* Mapa */
 .tp-events__map-area {
   position: relative;
-  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
 }
 .tp-events__map {
   position: absolute;
