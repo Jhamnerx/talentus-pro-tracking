@@ -31,7 +31,7 @@
     // Fallback
     var ta = document.createElement("textarea");
     ta.value = text;
-    document.body.appendChild(ta);
+    document.body.appendChild(ta);/objects
     ta.select();
     try {
       document.execCommand("copy");

@@ -207,6 +207,7 @@ gulp.task("ui-v2-css", function () {
   return gulp
     .src("resources/assets/ui-v2/css/*.css")
     .pipe(postcss([tailwindcss("./tailwind.config.js"), autoprefixer()]))
+    .pipe(cleanCSS()) // minificar la salida de public (las fuentes en resources quedan legibles)
     .pipe(gulp.dest("public/assets/ui/v2/css"))
     .pipe(browserSync.reload({ stream: true }));
 });
