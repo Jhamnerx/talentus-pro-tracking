@@ -1,0 +1,13 @@
+/* ============================================================
+   UI v2 · Tailwind entry
+   ------------------------------------------------------------
+   Se compila a: public/assets/ui/v2/css/tailwind.css
+   Se carga AL FINAL en el layout (resources/views/ui/v2/layout.blade.php)
+   para que las utilidades Tailwind ganen sobre la capa .tp-*.
+
+   Preflight está deshabilitado (ver tailwind.config.js) para coexistir
+   con el design system hecho a mano (tokens.css + components.css + *.css).
+   Usa @layer components + @apply aquí si quieres componer clases nuevas.
+   ============================================================ */
+@tailwind components;
+@tailwind utilities;

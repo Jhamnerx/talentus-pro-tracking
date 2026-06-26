@@ -1105,67 +1105,67 @@ Route::get('/icons', ['as' => 'icons', 'uses' => function () {
 
 
 # ============================================================
-# TalentusPro - Phase 1 routes (shell + command palette + tray)
-# Isolated under /talentus/* prefix. Does not affect legacy UI.
+# UI v2 (new theme) routes — shell + command palette + tray
+# Isolated under /ui/v2/* prefix. Does not affect legacy UI.
 # ============================================================
-Route::group(['middleware' => ['auth'], 'prefix' => 'talentus', 'as' => 'talentus.'], function () {
+Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], function () {
     // Cross-cutting shell endpoints (preview + legacy redirect)
-    Route::get('preview',   ['as' => 'preview',   'uses' => 'Frontend\TalentusController@preview']);
-    Route::get('legacy',    ['as' => 'legacy',    'uses' => 'Frontend\TalentusController@legacy']);
+    Route::get('preview',   ['as' => 'preview',   'uses' => 'Ui\V2\ShellController@preview']);
+    Route::get('legacy',    ['as' => 'legacy',    'uses' => 'Ui\V2\ShellController@legacy']);
 
-    // Per-domain controllers under App\Http\Controllers\Talentus\*
-    Route::get('live',      ['as' => 'live',      'uses' => 'Talentus\DevicesController@live']);
-    Route::get('fleet',     ['as' => 'fleet',     'uses' => 'Talentus\DevicesController@fleet']);
-    Route::get('dashboard', ['as' => 'dashboard', 'uses' => 'Talentus\DashboardController@index']);
-    Route::get('zones',     ['as' => 'zones',     'uses' => 'Talentus\ZonesController@index']);
-    Route::get('alerts',    ['as' => 'alerts',    'uses' => 'Talentus\AlertsController@index']);
-    Route::get('history',   ['as' => 'history',   'uses' => 'Talentus\HistoryController@index']);
-    Route::get('reports',   ['as' => 'reports',   'uses' => 'Talentus\ReportsController@index']);
-    Route::get('admin',     ['as' => 'admin',     'uses' => 'Talentus\AdminController@index']);
-    Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Talentus\CopilotController@index']);
+    // Per-domain controllers under App\Http\Controllers\Ui\V2\*
+    Route::get('live',      ['as' => 'live',      'uses' => 'Ui\V2\DevicesController@live']);
+    Route::get('fleet',     ['as' => 'fleet',     'uses' => 'Ui\V2\DevicesController@fleet']);
+    Route::get('dashboard', ['as' => 'dashboard', 'uses' => 'Ui\V2\DashboardController@index']);
+    Route::get('zones',     ['as' => 'zones',     'uses' => 'Ui\V2\ZonesController@index']);
+    Route::get('alerts',    ['as' => 'alerts',    'uses' => 'Ui\V2\AlertsController@index']);
+    Route::get('history',   ['as' => 'history',   'uses' => 'Ui\V2\HistoryController@index']);
+    Route::get('reports',   ['as' => 'reports',   'uses' => 'Ui\V2\ReportsController@index']);
+    Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
+    Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
     Route::prefix('api')->group(function () {
         // Shell endpoints
-        Route::get('search',         ['as' => 'api.search',        'uses' => 'Frontend\TalentusController@search']);
-        Route::get('notifications',  ['as' => 'api.notifications', 'uses' => 'Frontend\TalentusController@notifications']);
-        Route::post('preferences',   ['as' => 'api.preferences',   'uses' => 'Frontend\TalentusController@preferences']);
+        Route::get('search',         ['as' => 'api.search',        'uses' => 'Ui\V2\ShellController@search']);
+        Route::get('notifications',  ['as' => 'api.notifications', 'uses' => 'Ui\V2\ShellController@notifications']);
+        Route::post('preferences',   ['as' => 'api.preferences',   'uses' => 'Ui\V2\ShellController@preferences']);
 
         // Per-domain feeds
-        Route::get('devices',        ['as' => 'api.devices',       'uses' => 'Talentus\DevicesController@liveData']);
-        Route::get('fleet',          ['as' => 'api.fleet',         'uses' => 'Talentus\DevicesController@fleetData']);
-        Route::get('dashboard',      ['as' => 'api.dashboard',     'uses' => 'Talentus\DashboardController@data']);
-        Route::get('zones',          ['as' => 'api.zones',         'uses' => 'Talentus\ZonesController@data']);
-        Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Talentus\AlertsController@data']);
-        Route::get('history',        ['as' => 'api.history',       'uses' => 'Talentus\HistoryController@data']);
-        Route::get('reports',        ['as' => 'api.reports',       'uses' => 'Talentus\ReportsController@data']);
-        Route::get('admin',          ['as' => 'api.admin',         'uses' => 'Talentus\AdminController@data']);
-        Route::get('copilot/insights', ['as' => 'api.copilot.insights', 'uses' => 'Talentus\CopilotController@insights']);
-        Route::get('copilot/ask',      ['as' => 'api.copilot.ask',      'uses' => 'Talentus\CopilotController@ask']);
+        Route::get('devices',        ['as' => 'api.devices',       'uses' => 'Ui\V2\DevicesController@liveData']);
+        Route::get('fleet',          ['as' => 'api.fleet',         'uses' => 'Ui\V2\DevicesController@fleetData']);
+        Route::get('dashboard',      ['as' => 'api.dashboard',     'uses' => 'Ui\V2\DashboardController@data']);
+        Route::get('zones',          ['as' => 'api.zones',         'uses' => 'Ui\V2\ZonesController@data']);
+        Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
+        Route::get('history',        ['as' => 'api.history',       'uses' => 'Ui\V2\HistoryController@data']);
+        Route::get('reports',        ['as' => 'api.reports',       'uses' => 'Ui\V2\ReportsController@data']);
+        Route::get('admin',          ['as' => 'api.admin',         'uses' => 'Ui\V2\AdminController@data']);
+        Route::get('copilot/insights', ['as' => 'api.copilot.insights', 'uses' => 'Ui\V2\CopilotController@insights']);
+        Route::get('copilot/ask',      ['as' => 'api.copilot.ask',      'uses' => 'Ui\V2\CopilotController@ask']);
 
         // Alerts CRUD
-        Route::get('alerts/meta',         ['as' => 'api.alerts.meta',    'uses' => 'Talentus\AlertsController@meta']);
-        Route::post('alerts',             ['as' => 'api.alerts.store',   'uses' => 'Talentus\AlertsController@store']);
-        Route::get('alerts/{id}/edit',    ['as' => 'api.alerts.edit',    'uses' => 'Talentus\AlertsController@editData'])->where('id', '[0-9]+');
-        Route::put('alerts/{id}',         ['as' => 'api.alerts.update',  'uses' => 'Talentus\AlertsController@update'])->where('id', '[0-9]+');
-        Route::post('alerts/{id}/toggle', ['as' => 'api.alerts.toggle',  'uses' => 'Talentus\AlertsController@toggle'])->where('id', '[0-9]+');
-        Route::delete('alerts/{id}',      ['as' => 'api.alerts.destroy', 'uses' => 'Talentus\AlertsController@destroy'])->where('id', '[0-9]+');
+        Route::get('alerts/meta',         ['as' => 'api.alerts.meta',    'uses' => 'Ui\V2\AlertsController@meta']);
+        Route::post('alerts',             ['as' => 'api.alerts.store',   'uses' => 'Ui\V2\AlertsController@store']);
+        Route::get('alerts/{id}/edit',    ['as' => 'api.alerts.edit',    'uses' => 'Ui\V2\AlertsController@editData'])->where('id', '[0-9]+');
+        Route::put('alerts/{id}',         ['as' => 'api.alerts.update',  'uses' => 'Ui\V2\AlertsController@update'])->where('id', '[0-9]+');
+        Route::post('alerts/{id}/toggle', ['as' => 'api.alerts.toggle',  'uses' => 'Ui\V2\AlertsController@toggle'])->where('id', '[0-9]+');
+        Route::delete('alerts/{id}',      ['as' => 'api.alerts.destroy', 'uses' => 'Ui\V2\AlertsController@destroy'])->where('id', '[0-9]+');
 
         // Zones CRUD
-        Route::get('zones/meta',          ['as' => 'api.zones.meta',     'uses' => 'Talentus\ZonesController@meta']);
-        Route::post('zones',              ['as' => 'api.zones.store',    'uses' => 'Talentus\ZonesController@store']);
-        Route::get('zones/{id}/edit',     ['as' => 'api.zones.edit',     'uses' => 'Talentus\ZonesController@editData'])->where('id', '[0-9]+');
-        Route::put('zones/{id}',          ['as' => 'api.zones.update',   'uses' => 'Talentus\ZonesController@update'])->where('id', '[0-9]+');
-        Route::delete('zones/{id}',       ['as' => 'api.zones.destroy',  'uses' => 'Talentus\ZonesController@destroy'])->where('id', '[0-9]+');
-        Route::post('zones/import',       ['as' => 'api.zones.import',   'uses' => 'Talentus\ZonesController@import']);
-        Route::get('zones/export-items',  ['as' => 'api.zones.export_items', 'uses' => 'Talentus\ZonesController@exportItems']);
+        Route::get('zones/meta',          ['as' => 'api.zones.meta',     'uses' => 'Ui\V2\ZonesController@meta']);
+        Route::post('zones',              ['as' => 'api.zones.store',    'uses' => 'Ui\V2\ZonesController@store']);
+        Route::get('zones/{id}/edit',     ['as' => 'api.zones.edit',     'uses' => 'Ui\V2\ZonesController@editData'])->where('id', '[0-9]+');
+        Route::put('zones/{id}',          ['as' => 'api.zones.update',   'uses' => 'Ui\V2\ZonesController@update'])->where('id', '[0-9]+');
+        Route::delete('zones/{id}',       ['as' => 'api.zones.destroy',  'uses' => 'Ui\V2\ZonesController@destroy'])->where('id', '[0-9]+');
+        Route::post('zones/import',       ['as' => 'api.zones.import',   'uses' => 'Ui\V2\ZonesController@import']);
+        Route::get('zones/export-items',  ['as' => 'api.zones.export_items', 'uses' => 'Ui\V2\ZonesController@exportItems']);
 
         // Devices CRUD modal (shared by Live, Fleet, Admin → Fleet)
-        Route::get('devices/meta',        ['as' => 'api.devices.meta',    'uses' => 'Talentus\DevicesController@meta']);
-        Route::get('devices/form',        ['as' => 'api.devices.form_new', 'uses' => 'Talentus\DevicesController@form']);
-        Route::get('devices/{id}/form',   ['as' => 'api.devices.form',    'uses' => 'Talentus\DevicesController@form'])->where('id', '[0-9]+');
-        Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Talentus\DevicesController@store']);
-        Route::get('devices/{id}/edit',   ['as' => 'api.devices.edit',    'uses' => 'Talentus\DevicesController@edit'])->where('id', '[0-9]+');
-        Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Talentus\DevicesController@update'])->where('id', '[0-9]+');
-        Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Talentus\DevicesController@destroy'])->where('id', '[0-9]+');
+        Route::get('devices/meta',        ['as' => 'api.devices.meta',    'uses' => 'Ui\V2\DevicesController@meta']);
+        Route::get('devices/form',        ['as' => 'api.devices.form_new', 'uses' => 'Ui\V2\DevicesController@form']);
+        Route::get('devices/{id}/form',   ['as' => 'api.devices.form',    'uses' => 'Ui\V2\DevicesController@form'])->where('id', '[0-9]+');
+        Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Ui\V2\DevicesController@store']);
+        Route::get('devices/{id}/edit',   ['as' => 'api.devices.edit',    'uses' => 'Ui\V2\DevicesController@edit'])->where('id', '[0-9]+');
+        Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Ui\V2\DevicesController@update'])->where('id', '[0-9]+');
+        Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');
     });
 });

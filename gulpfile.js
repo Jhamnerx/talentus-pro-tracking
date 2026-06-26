@@ -1,13 +1,16 @@
 const gulp = require("gulp"),
   es = require("event-stream"),
-  sass = require("gulp-sass")(require("node-sass")),
+  sass = require("gulp-sass")(require("sass")), // dart-sass (node-sass no soporta Node moderno)
   sourcemaps = require("gulp-sourcemaps"),
   cleanCSS = require("gulp-clean-css"),
   browserSync = require("browser-sync").create(),
   concat = require("gulp-concat"),
   group = require("gulp-group-files"),
   minify = require("gulp-minify"),
-  purify = require("gulp-purifycss");
+  purify = require("gulp-purifycss"),
+  postcss = require("gulp-postcss"),
+  tailwindcss = require("tailwindcss"),
+  autoprefixer = require("autoprefixer");
 
 var scripts = {
   report: [
@@ -196,6 +199,29 @@ gulp.task("minify-js", function () {
     .pipe(gulp.dest("public/assets/js"));
 });
 
+// ── UI v2 (tema nuevo) ──────────────────────────────────────────
+// CSS: Tailwind + autoprefixer sobre TODO resources/assets/ui-v2/css/*.css
+// (tailwind.css recibe las utilidades; el resto solo se autoprefija/copia)
+// → public/assets/ui/v2/css/
+gulp.task("ui-v2-css", function () {
+  return gulp
+    .src("resources/assets/ui-v2/css/*.css")
+    .pipe(postcss([tailwindcss("./tailwind.config.js"), autoprefixer()]))
+    .pipe(gulp.dest("public/assets/ui/v2/css"))
+    .pipe(browserSync.reload({ stream: true }));
+});
+
+// JS: se conserva la lógica tal cual (un archivo por dominio) desde resources
+// → public/assets/ui/v2/js/
+gulp.task("ui-v2-js", function () {
+  return gulp
+    .src("resources/assets/ui-v2/js/**/*.js")
+    .pipe(gulp.dest("public/assets/ui/v2/js"))
+    .pipe(browserSync.reload({ stream: true }));
+});
+
+gulp.task("ui-v2", gulp.series("ui-v2-css", "ui-v2-js"));
+
 gulp.task("watch", function () {
   browserSync.init({
     //proxy: "http://46.101.121.251"
@@ -205,11 +231,20 @@ gulp.task("watch", function () {
 
   gulp.watch("resources/assets/scss/**/*.scss", gulp.series("sass"));
   gulp.watch("resources/assets/js/**/*.js", gulp.series(["scripts"]));
+  // UI v2: recompila al tocar css/js/blades del tema nuevo
+  gulp.watch(
+    [
+      "resources/assets/ui-v2/css/**/*.css",
+      "resources/views/ui/v2/**/*.blade.php",
+    ],
+    gulp.series("ui-v2-css"),
+  );
+  gulp.watch("resources/assets/ui-v2/js/**/*.js", gulp.series("ui-v2-js"));
 });
 
-gulp.task("default", gulp.series("sass", "scripts", "watch"));
+gulp.task("default", gulp.series("sass", "scripts", "ui-v2", "watch"));
 gulp.task("templates", gulp.series("sass-all", "minify-css"));
 gulp.task(
   "assets",
-  gulp.series("sass-all", "minify-css", "scripts", "minify-js"),
+  gulp.series("sass-all", "minify-css", "scripts", "minify-js", "ui-v2"),
 );
