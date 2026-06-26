@@ -15,7 +15,8 @@
 @section('workspace')
     <div class="tp-live" id="tp-live" data-devices-url="{{ route('ui.v2.api.devices') }}"
         data-updates-url="{{ route('ui.v2.api.devices.updates') }}"
-        data-zones-url="{{ route('ui.v2.api.zones') }}" data-socket-port="{{ $socketPort }}"
+        data-zones-url="{{ route('ui.v2.api.zones') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
+        data-routes-url="{{ route('ui.v2.api.routes') }}" data-socket-port="{{ $socketPort }}"
         data-socket-ssl-port="{{ $socketSslPort }}" data-poll-interval="15000">
 
         {{-- Map config (provider IDs, API keys) injected for the JS layer --}}
@@ -273,6 +274,16 @@
                         <polygon points="4 7 12 3 20 7 20 17 12 21 4 17 4 7" />
                     </svg>
                 </button>
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-routes"
+                    data-toggle="routes" title="Mostrar rutas" aria-label="Mostrar rutas" aria-pressed="false"
+                    type="button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="6" cy="19" r="2" />
+                        <circle cx="18" cy="5" r="2" />
+                        <path d="M8 19h6a4 4 0 0 0 0-8H10a4 4 0 0 1 0-8h6" />
+                    </svg>
+                </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-poi"
                     data-toggle="poi" title="Mostrar POIs" aria-label="Mostrar POIs" aria-pressed="false"
                     type="button">
@@ -466,7 +477,7 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=11"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=12"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

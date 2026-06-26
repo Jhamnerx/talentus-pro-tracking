@@ -12,7 +12,8 @@
 
 @section('workspace')
     <div class="tp-events" id="tp-events" data-data-url="{{ route('ui.v2.api.events') }}"
-        data-geo-url="{{ route('address.get') }}" data-zones-url="{{ route('ui.v2.api.zones') }}">
+        data-geo-url="{{ route('address.get') }}" data-zones-url="{{ route('ui.v2.api.zones') }}"
+        data-pois-url="{{ route('ui.v2.api.pois') }}" data-routes-url="{{ route('ui.v2.api.routes') }}">
         {{-- Map config (provider IDs, API keys) inyectado para la capa JS --}}
         <script type="application/json" id="tp-events-map-config">@json($mapConfig)</script>
 
@@ -83,6 +84,23 @@
                         <polygon points="4 7 12 3 20 7 20 17 12 21 4 17 4 7" />
                     </svg>
                 </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
+                    id="tp-ev-toggle-routes" title="Mostrar rutas" aria-label="Mostrar rutas" aria-pressed="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="6" cy="19" r="2" />
+                        <circle cx="18" cy="5" r="2" />
+                        <path d="M8 19h6a4 4 0 0 0 0-8H10a4 4 0 0 1 0-8h6" />
+                    </svg>
+                </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
+                    id="tp-ev-toggle-poi" title="Mostrar POIs" aria-label="Mostrar POIs" aria-pressed="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s7-7.58 7-13a7 7 0 0 0-14 0c0 5.42 7 13 7 13z" />
+                        <circle cx="12" cy="9" r="2.5" />
+                    </svg>
+                </button>
             </div>
         </main>
     </div>
@@ -92,5 +110,5 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-providers.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=3"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=4"></script>
 @endpush

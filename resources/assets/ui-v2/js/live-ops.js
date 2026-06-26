@@ -25,6 +25,8 @@
     updatesUrl:
       root.dataset.updatesUrl || (root.dataset.devicesUrl || "") + "/updates",
     zonesUrl: root.dataset.zonesUrl || null,
+    poisUrl: root.dataset.poisUrl || null,
+    routesUrl: root.dataset.routesUrl || null,
     socketPort: parseInt(root.dataset.socketPort, 10) || 3000,
     socketSslPort: parseInt(root.dataset.socketSslPort, 10) || 3001,
     pollInterval: parseInt(root.dataset.pollInterval, 10) || 15000,
@@ -484,6 +486,7 @@
       devices: true,
       geofences: false,
       poi: false,
+      routes: false,
       names: false,
       tails: false,
       traffic: false,
@@ -618,6 +621,8 @@
       if (state.toggles.geofences) renderGeofences();
       if (state.toggles.traffic) renderTraffic();
       if (state.toggles.tails) updateTails();
+      renderSharedPois();
+      renderSharedRoutes();
     });
 
     // Theme observer — only swap when followsTheme is true (no explicit pick).
@@ -1696,7 +1701,17 @@
       );
     });
 
-  // Layer toggle buttons (cluster, devices, geofences, poi, names, tails, traffic)
+  // POIs y rutas compartidos (módulo tp-map-shared)
+  function renderSharedPois() {
+    if (window.tpMapShared && state.map)
+      window.tpMapShared.renderPois(state.map, CFG.poisUrl, !!state.toggles.poi);
+  }
+  function renderSharedRoutes() {
+    if (window.tpMapShared && state.map)
+      window.tpMapShared.renderRoutes(state.map, CFG.routesUrl, !!state.toggles.routes);
+  }
+
+  // Layer toggle buttons (cluster, devices, geofences, poi, routes, names, tails, traffic)
   Array.prototype.forEach.call(
     document.querySelectorAll(".tp-live__toggle[data-toggle]"),
     function (btn) {
@@ -1712,11 +1727,11 @@
         btn.setAttribute("aria-pressed", state.toggles[k] ? "true" : "false");
         if (window.tpMapShared) tpMapShared.set(k, state.toggles[k]);
         if (k === "poi") {
-          if (state.toggles[k] && window.tpModal && tpModal.toast) {
-            tpModal.toast("POIs: configura tus puntos en la sección Admin.", {
-              type: "info",
-            });
-          }
+          renderSharedPois();
+          return;
+        }
+        if (k === "routes") {
+          renderSharedRoutes();
           return;
         }
         if (k === "geofences") {

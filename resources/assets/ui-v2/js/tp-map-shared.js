@@ -95,13 +95,11 @@
     return { type: "FeatureCollection", features: features };
   }
 
-  var zonesCache = null;
-  var zonesPromise = null;
-  function loadZones(url) {
+  var jsonCache = {}; // url → Promise<items[]>
+  function loadItems(url) {
     if (!url) return Promise.resolve([]);
-    if (zonesCache) return Promise.resolve(zonesCache);
-    if (zonesPromise) return zonesPromise;
-    zonesPromise = fetch(url, {
+    if (jsonCache[url]) return jsonCache[url];
+    jsonCache[url] = fetch(url, {
       credentials: "same-origin",
       headers: { Accept: "application/json" },
     })
@@ -109,14 +107,12 @@
         return r.ok ? r.json() : { items: [] };
       })
       .then(function (j) {
-        zonesCache = (j && j.items) || [];
-        return zonesCache;
+        return (j && j.items) || [];
       })
       .catch(function () {
-        zonesCache = [];
-        return zonesCache;
+        return [];
       });
-    return zonesPromise;
+    return jsonCache[url];
   }
 
   function renderGeofences(map, zonesUrl, visible) {
@@ -135,7 +131,7 @@
       } catch (e) {}
       return;
     }
-    loadZones(zonesUrl).then(function (zones) {
+    loadItems(zonesUrl).then(function (zones) {
       if (!map || !map.getStyle) return;
       var data = zonesToFeatures(zones);
       try {
@@ -166,11 +162,125 @@
     });
   }
 
+  function renderPois(map, url, visible) {
+    if (!map) return;
+    var srcId = "tp-shared-pois-src";
+    var cId = "tp-shared-pois-circle";
+    function rm() {
+      if (map.getLayer(cId)) map.removeLayer(cId);
+      if (map.getSource(srcId)) map.removeSource(srcId);
+    }
+    if (!visible) {
+      try {
+        rm();
+      } catch (e) {}
+      return;
+    }
+    loadItems(url).then(function (items) {
+      if (!map || !map.getStyle) return;
+      var features = (items || [])
+        .map(function (p) {
+          return {
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [parseFloat(p.lng), parseFloat(p.lat)],
+            },
+            properties: { id: p.id, name: p.name || "" },
+          };
+        })
+        .filter(function (f) {
+          return (
+            !isNaN(f.geometry.coordinates[0]) &&
+            !isNaN(f.geometry.coordinates[1])
+          );
+        });
+      var data = { type: "FeatureCollection", features: features };
+      try {
+        if (map.getSource(srcId)) {
+          map.getSource(srcId).setData(data);
+          return;
+        }
+        if (!map.isStyleLoaded()) {
+          map.once("idle", function () {
+            renderPois(map, url, visible);
+          });
+          return;
+        }
+        map.addSource(srcId, { type: "geojson", data: data });
+        map.addLayer({
+          id: cId,
+          type: "circle",
+          source: srcId,
+          paint: {
+            "circle-radius": 6,
+            "circle-color": "#7c3aed",
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 2,
+          },
+        });
+      } catch (e) {}
+    });
+  }
+
+  function renderRoutes(map, url, visible) {
+    if (!map) return;
+    var srcId = "tp-shared-routes-src";
+    var lId = "tp-shared-routes-line";
+    function rm() {
+      if (map.getLayer(lId)) map.removeLayer(lId);
+      if (map.getSource(srcId)) map.removeSource(srcId);
+    }
+    if (!visible) {
+      try {
+        rm();
+      } catch (e) {}
+      return;
+    }
+    loadItems(url).then(function (items) {
+      if (!map || !map.getStyle) return;
+      var features = (items || [])
+        .filter(function (r) {
+          return r.coordinates && r.coordinates.length >= 2;
+        })
+        .map(function (r) {
+          return {
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: r.coordinates },
+            properties: { id: r.id, name: r.name || "", color: r.color || "#7c3aed" },
+          };
+        });
+      var data = { type: "FeatureCollection", features: features };
+      try {
+        if (map.getSource(srcId)) {
+          map.getSource(srcId).setData(data);
+          return;
+        }
+        if (!map.isStyleLoaded()) {
+          map.once("idle", function () {
+            renderRoutes(map, url, visible);
+          });
+          return;
+        }
+        map.addSource(srcId, { type: "geojson", data: data });
+        map.addLayer({
+          id: lId,
+          type: "line",
+          source: srcId,
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: { "line-color": ["get", "color"], "line-width": 3 },
+        });
+      } catch (e) {}
+    });
+  }
+
   window.tpMapShared = {
     get: get,
     set: set,
     read: read,
-    loadZones: loadZones,
+    loadItems: loadItems,
     renderGeofences: renderGeofences,
+    renderPois: renderPois,
+    renderRoutes: renderRoutes,
   };
 })();

@@ -1140,6 +1140,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('zones',          ['as' => 'api.zones',         'uses' => 'Ui\V2\ZonesController@data']);
         Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
         Route::get('events',         ['as' => 'api.events',        'uses' => 'Ui\V2\EventsController@data']);
+        Route::get('pois',           ['as' => 'api.pois',          'uses' => 'Ui\V2\MapLayersController@pois']);
+        Route::get('routes',         ['as' => 'api.routes',        'uses' => 'Ui\V2\MapLayersController@routes']);
         Route::get('history',        ['as' => 'api.history',       'uses' => 'Ui\V2\HistoryController@data']);
         Route::get('reports',        ['as' => 'api.reports',       'uses' => 'Ui\V2\ReportsController@data']);
         Route::get('admin',          ['as' => 'api.admin',         'uses' => 'Ui\V2\AdminController@data']);

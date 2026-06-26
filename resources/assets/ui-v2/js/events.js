@@ -17,6 +17,8 @@
   var DATA_URL = root.getAttribute("data-data-url");
   var GEO_URL = root.getAttribute("data-geo-url");
   var ZONES_URL = root.getAttribute("data-zones-url");
+  var POIS_URL = root.getAttribute("data-pois-url");
+  var ROUTES_URL = root.getAttribute("data-routes-url");
   var listEl = document.getElementById("tp-events-list");
   var statusEl = document.getElementById("tp-events-status");
   var hoursSel = document.getElementById("tp-events-hours");
@@ -103,12 +105,12 @@
     // Fix: el contenedor puede tener 0px al crear el mapa → forzar resize.
     state.map.on("load", function () {
       state.map.resize();
-      renderSharedGeofences();
+      renderSharedLayers();
     });
     // Re-pintar capas compartidas tras cambiar el estilo (proveedor) — el swap
     // de estilo borra sources/layers.
     state.map.on("styledata", function () {
-      renderSharedGeofences();
+      renderSharedLayers();
     });
     setTimeout(function () {
       if (state.map) state.map.resize();
@@ -423,24 +425,31 @@
   if (ziBtn) ziBtn.addEventListener("click", function () { state.map && state.map.zoomIn(); });
   if (zoBtn) zoBtn.addEventListener("click", function () { state.map && state.map.zoomOut(); });
 
-  // Geocercas (estado COMPARTIDO con Live vía tpMapShared)
-  function geofencesVisible() {
-    return !!(window.tpMapShared && window.tpMapShared.get("geofences", false));
+  // Capas compartidas con Live (geocercas, rutas, POIs) — estado vía tpMapShared
+  function layerVisible(key) {
+    return !!(window.tpMapShared && window.tpMapShared.get(key, false));
   }
-  function renderSharedGeofences() {
+  function renderSharedLayers() {
     if (!window.tpMapShared || !state.map) return;
-    window.tpMapShared.renderGeofences(state.map, ZONES_URL, geofencesVisible());
+    window.tpMapShared.renderGeofences(state.map, ZONES_URL, layerVisible("geofences"));
+    window.tpMapShared.renderRoutes(state.map, ROUTES_URL, layerVisible("routes"));
+    window.tpMapShared.renderPois(state.map, POIS_URL, layerVisible("poi"));
   }
-  var gfBtn = document.getElementById("tp-ev-toggle-geofences");
-  if (gfBtn) {
-    gfBtn.setAttribute("aria-pressed", geofencesVisible() ? "true" : "false");
-    gfBtn.addEventListener("click", function () {
-      var v = !geofencesVisible();
-      if (window.tpMapShared) window.tpMapShared.set("geofences", v);
-      gfBtn.setAttribute("aria-pressed", v ? "true" : "false");
-      renderSharedGeofences();
+  [
+    { id: "tp-ev-toggle-geofences", key: "geofences" },
+    { id: "tp-ev-toggle-routes", key: "routes" },
+    { id: "tp-ev-toggle-poi", key: "poi" },
+  ].forEach(function (t) {
+    var btn = document.getElementById(t.id);
+    if (!btn) return;
+    btn.setAttribute("aria-pressed", layerVisible(t.key) ? "true" : "false");
+    btn.addEventListener("click", function () {
+      var v = !layerVisible(t.key);
+      if (window.tpMapShared) window.tpMapShared.set(t.key, v);
+      btn.setAttribute("aria-pressed", v ? "true" : "false");
+      renderSharedLayers();
     });
-  }
+  });
 
   initMap();
   load(true);
