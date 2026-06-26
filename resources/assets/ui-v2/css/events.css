@@ -211,3 +211,48 @@
   border-color: var(--brand-500, #2e63d9);
   color: #fff;
 }
+
+/* Menú selector de tipo de mapa */
+.tp-events__providers {
+  position: absolute;
+  top: 12px;
+  right: 56px;
+  z-index: 7;
+  min-width: 190px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--border, #e7e9ee);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+}
+.tp-events__providers[hidden] {
+  display: none;
+}
+.tp-events__provider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--text, #1a1f2b);
+}
+.tp-events__provider:hover {
+  background: var(--surface-2, #f7f8fb);
+}
+.tp-events__provider.is-active {
+  color: var(--brand-600, #1b43a3);
+  font-weight: 600;
+}
+.tp-events__provider.is-active::after {
+  content: "✓";
+}

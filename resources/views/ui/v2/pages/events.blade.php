@@ -4,7 +4,7 @@
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=5">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=6">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 @endpush
 
@@ -61,6 +61,14 @@
                         <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
                     </svg>
                 </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-style"
+                    title="Cambiar tipo de mapa" aria-label="Cambiar tipo de mapa" aria-haspopup="menu">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 22 8.5 12 15 2 8.5 12 2" />
+                        <polyline points="2 15.5 12 22 22 15.5" />
+                    </svg>
+                </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-zoom-in"
                     title="Acercar" aria-label="Acercar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -102,6 +110,9 @@
                     </svg>
                 </button>
             </div>
+
+            {{-- Menú de tipos de mapa (selector; persiste en user->map_id, compartido con Live) --}}
+            <div class="tp-events__providers" id="tp-ev-providers" role="menu" hidden></div>
         </main>
     </div>
 @endsection
@@ -110,5 +121,5 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-providers.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=6"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=7"></script>
 @endpush

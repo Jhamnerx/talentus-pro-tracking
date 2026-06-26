@@ -35,6 +35,17 @@
       return {};
     }
   })();
+  var P =
+    window.tpMapProviders && window.tpMapProviders.create
+      ? window.tpMapProviders.create(MAP_CFG)
+      : null;
+  function csrf() {
+    return (
+      (window.Talentus && window.Talentus.csrf) ||
+      (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+      ""
+    );
+  }
 
   var state = {
     events: [],
@@ -46,6 +57,7 @@
     marker: null,
     popup: null,
     selectedId: null,
+    currentMapId: (MAP_CFG && MAP_CFG.mapId) || null,
   };
   var geoCache = {}; // eventId → texto (dirección o nombre de geocerca)
 
@@ -112,11 +124,9 @@
     if (!window.maplibregl) return;
     // Crear el mapa UNA vez con el estilo del proveedor del usuario (mismo tipo
     // que Live). Sin swap OSM→proveedor para no cancelar los tiles.
-    if (window.tpMapProviders && MAP_CFG && MAP_CFG.mapId) {
+    if (P && MAP_CFG && MAP_CFG.mapId) {
       try {
-        window.tpMapProviders
-          .create(MAP_CFG)
-          .resolveStyle(MAP_CFG.mapId)
+        P.resolveStyle(MAP_CFG.mapId)
           .then(function (style) {
             createMap(style || osmStyle());
           })
@@ -422,6 +432,69 @@
     });
   if (ziBtn) ziBtn.addEventListener("click", function () { state.map && state.map.zoomIn(); });
   if (zoBtn) zoBtn.addEventListener("click", function () { state.map && state.map.zoomOut(); });
+
+  // Selector de tipo de mapa (persiste en user->map_id → compartido con Live)
+  var styleBtn = document.getElementById("tp-ev-style");
+  var provMenu = document.getElementById("tp-ev-providers");
+  function buildProviders() {
+    if (!provMenu || !P) return;
+    var items = P.availableSupported
+      ? P.availableSupported()
+      : MAP_CFG.available || [];
+    provMenu.innerHTML =
+      items
+        .map(function (m) {
+          return (
+            '<button type="button" class="tp-events__provider' +
+            (String(m.id) === String(state.currentMapId) ? " is-active" : "") +
+            '" data-map-id="' +
+            m.id +
+            '">' +
+            esc(m.name) +
+            "</button>"
+          );
+        })
+        .join("") ||
+      '<div class="tp-text-xs tp-text-muted" style="padding:8px;">Sin proveedores.</div>';
+  }
+  if (styleBtn && provMenu) {
+    styleBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (provMenu.hidden) {
+        buildProviders();
+        provMenu.hidden = false;
+      } else {
+        provMenu.hidden = true;
+      }
+    });
+    provMenu.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-map-id]");
+      if (!b) return;
+      var id = b.getAttribute("data-map-id");
+      state.currentMapId = id;
+      provMenu.hidden = true;
+      if (P && state.map)
+        P.applyMapStyle(state.map, id, function () {
+          state.map.resize();
+          renderSharedLayers();
+        });
+      // Persistir (mismo endpoint que Live → user->map_id)
+      try {
+        var fd = new FormData();
+        fd.append("key", "tp_map_id");
+        fd.append("value", String(id));
+        fetch("/ui/v2/api/preferences", {
+          method: "POST",
+          body: fd,
+          credentials: "same-origin",
+          headers: { "X-CSRF-TOKEN": csrf() },
+        }).catch(function () {});
+      } catch (e2) {}
+    });
+    document.addEventListener("click", function () {
+      if (!provMenu.hidden) provMenu.hidden = true;
+    });
+  }
 
   // Capas compartidas con Live (geocercas, rutas, POIs) — estado vía tpMapShared
   function layerVisible(key) {
