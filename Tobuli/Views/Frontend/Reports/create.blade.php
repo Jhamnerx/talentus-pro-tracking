@@ -613,8 +613,13 @@
             if (item.parameters) {
                 $.each(item.parameters, function(index, value) {
                     var $field = parent.find('#report-additional [name^="' + index + '"]');
+                    var $checkbox = $field.filter('[type="checkbox"]');
 
-                    $field.val(value);
+                    if ($checkbox.length) {
+                        $checkbox.prop('checked', !!Number(value));
+                    } else {
+                        $field.val(value);
+                    }
 
                     if ($field.is('select'))
                         $field.selectpicker('refresh');

@@ -50,7 +50,11 @@ class AppendSpeedLimitGeofence extends ActionAppend
             if ($geofence->id != $geofence_id)
                 continue;
 
-            $speed_limit = empty($geofence->speed_limit) ? 0 : $geofence->speed_limit;
+            $device = $this->getDevice();
+
+            $resolved = $geofence->speedLimitFor($device->vehicleType, $device->vehicleState);
+
+            $speed_limit = empty($resolved) ? 0 : $resolved;
             $this->limits[$geofence_id] = $speed_limit;
 
             break;

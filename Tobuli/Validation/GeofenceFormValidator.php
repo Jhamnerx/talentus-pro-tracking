@@ -21,6 +21,7 @@ class GeofenceFormValidator extends Validator {
             'radius'        => 'required_if:type,circle|numeric',
             'polygon_color' => 'required|min:7|max:7',
             'speed_limit'   => 'numeric',
+            'vehicle_speed_limits.*.*' => 'nullable|numeric',
         ],
         'update' => [
             'name'          => 'string',
@@ -34,6 +35,7 @@ class GeofenceFormValidator extends Validator {
             'radius'        => 'required_if:type,circle|numeric|nullable',
             'polygon_color' => 'min:7|max:7',
             'speed_limit'   => 'numeric',
+            'vehicle_speed_limits.*.*' => 'nullable|numeric',
         ],
     ];
 

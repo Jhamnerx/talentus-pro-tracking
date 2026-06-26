@@ -491,6 +491,10 @@ class Event extends AbstractEntity implements DisplayInterface
                 'title' => trans('front.' . Event::TYPE_ZONE_OUT),
             ],
             [
+                'type' => Event::TYPE_ZONE_OVERSPEED,
+                'title' => 'Exceso de Velocidad Geocerca',
+            ],
+            [
                 'type' => Event::TYPE_DRIVER,
                 'title' => trans('front.driver'),
             ],

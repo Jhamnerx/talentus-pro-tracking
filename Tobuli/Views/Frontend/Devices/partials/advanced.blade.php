@@ -19,6 +19,30 @@
     </div>
 @endif
 
+@if (isset($vehicle_types) && $vehicle_types->isNotEmpty())
+    <div class="form-group">
+        {!! Form::label('vehicle_type_id', trans('validation.attributes.vehicle_type_id') . ':') !!}
+        {!! Form::select(
+            'vehicle_type_id',
+            ['' => trans('front.none')] + $vehicle_types->pluck('name', 'id')->all(),
+            $item->vehicle_type_id,
+            ['class' => 'form-control'],
+        ) !!}
+    </div>
+
+    <div class="form-group">
+        {!! Form::label('vehicle_state_id', trans('validation.attributes.vehicle_state_id') . ':') !!}
+        {!! Form::select(
+            'vehicle_state_id',
+            ['' => trans('front.no_vehicle_state')] + $vehicle_types->mapWithKeys(function ($vehicleType) {
+                return [$vehicleType->name => $vehicleType->states->pluck('name', 'id')->all()];
+            })->filter()->all(),
+            $item->vehicle_state_id,
+            ['class' => 'form-control'],
+        ) !!}
+    </div>
+@endif
+
 @if (Auth::user()->can('view', $item, 'authentication'))
     <div class="form-group">
         {!! Form::label('authentication', trans('validation.attributes.authentication') . ':') !!}

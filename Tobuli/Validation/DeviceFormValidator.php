@@ -42,6 +42,8 @@ class DeviceFormValidator extends Validator
             'consatel' => 'boolean',
             'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|regex:/^\S+$/',
             'device_type_id' => 'nullable|exists:device_types,id',
+            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
+            'vehicle_state_id' => 'nullable|exists:vehicle_states,id',
             'object_owner' => 'required_if:wisetrack,1',
         ],
         'update' => [
@@ -74,6 +76,8 @@ class DeviceFormValidator extends Validator
             'consatel' => 'boolean',
             'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|regex:/^\S+$/',
             'device_type_id' => 'nullable|exists:device_types,id',
+            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
+            'vehicle_state_id' => 'nullable|exists:vehicle_states,id',
             'object_owner' => 'required_if:wisetrack,1',
         ],
     ];

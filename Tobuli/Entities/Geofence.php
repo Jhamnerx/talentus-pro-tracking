@@ -6,6 +6,7 @@ namespace Tobuli\Entities;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Tobuli\Helpers\PolygonHelper;
 use Tobuli\Traits\ChangeLogs;
@@ -90,6 +91,41 @@ class Geofence extends AbstractEntity implements DisplayInterface
     public function diemRate(): BelongsTo
     {
         return $this->belongsTo(DiemRate::class);
+    }
+
+    public function vehicleSpeedLimits(): HasMany
+    {
+        return $this->hasMany(GeofenceVehicleSpeedLimit::class);
+    }
+
+    /**
+     * Resolves the speed limit that applies to a given vehicle type/state in this
+     * geofence, falling back to the type-level default and finally to the legacy
+     * single speed_limit column.
+     */
+    public function speedLimitFor(?VehicleType $vehicleType, ?VehicleState $vehicleState): ?float
+    {
+        if ($vehicleType) {
+            $limits = $this->relationLoaded('vehicleSpeedLimits')
+                ? $this->vehicleSpeedLimits
+                : $this->vehicleSpeedLimits()->where('vehicle_type_id', $vehicleType->id)->get();
+
+            $limits = $limits->where('vehicle_type_id', $vehicleType->id);
+
+            if ($vehicleState) {
+                $exact = $limits->firstWhere('vehicle_state_id', $vehicleState->id);
+
+                if ($exact)
+                    return (float) $exact->speed_limit;
+            }
+
+            $default = $limits->firstWhere('vehicle_state_id', null);
+
+            if ($default)
+                return (float) $default->speed_limit;
+        }
+
+        return empty($this->speed_limit) ? null : (float) $this->speed_limit;
     }
 
     public function setPolygonAttribute($value)
@@ -196,6 +232,47 @@ class Geofence extends AbstractEntity implements DisplayInterface
             return $this->center;
 
         return $this->getPolygonHelper()->getCenter();
+    }
+
+    public function approxAreaSqMeters(): ?float
+    {
+        if ($this->type === self::TYPE_CIRCLE) {
+            if (empty($this->radius))
+                return null;
+
+            return M_PI * pow($this->radius, 2);
+        }
+
+        $area = $this->getPolygonHelper()->getArea();
+
+        if (empty($area))
+            return null;
+
+        $center = $this->getCenter();
+
+        if (empty($center))
+            return null;
+
+        $metersPerDegreeLat = 111320;
+        $metersPerDegreeLng = 111320 * cos(deg2rad($center['lat']));
+
+        return $area * $metersPerDegreeLat * $metersPerDegreeLng;
+    }
+
+    public static function pickBySpeedLimitPriority(iterable $geofences): ?self
+    {
+        $candidates = collect($geofences)->filter(function (self $geofence) {
+            return !empty($geofence->speed_limit);
+        });
+
+        if ($candidates->isEmpty())
+            return null;
+
+        return $candidates->sortBy(function (self $geofence) {
+            $area = $geofence->approxAreaSqMeters();
+
+            return is_null($area) ? PHP_FLOAT_MAX : $area;
+        })->first();
     }
 
     private function pointInPolygon($point)

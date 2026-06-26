@@ -405,6 +405,8 @@ return array(
         'distance_tolerance' => 'Distance tolerance',
         'pois' => 'POIs',
         'device_type_id' => 'Device type',
+        'vehicle_type_id' => 'Vehicle type',
+        'vehicle_state_id' => 'Vehicle state',
         'custom_fields' => 'Custom fields',
         'device_name' => 'Device name',
         'auto_hide_notification' => 'Auto hide popup',

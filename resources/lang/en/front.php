@@ -1280,4 +1280,16 @@ return [
     'placeholder_email' => 'Email',
     'placeholder_phone' => 'Phone',
     'create_account' => 'Create account',
+
+    'vehicle_type' => 'Vehicle type',
+    'vehicle_types' => 'Vehicle types',
+    'add_vehicle_type' => 'Add vehicle type',
+    'no_vehicle_types' => 'No vehicle types.',
+    'vehicle_states' => 'States',
+    'add_vehicle_state' => 'Add state',
+    'vehicle_state' => 'Vehicle state',
+    'no_vehicle_state' => 'No state',
+    'change_vehicle_state' => 'Change vehicle state',
+    'speed_limit_default' => 'Default speed limit',
+    'speed_limit_by_vehicle_type' => 'Speed limit by vehicle type',
 ];

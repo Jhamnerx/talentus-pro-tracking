@@ -25,6 +25,8 @@ class PolygonHelper {
 
     private $center;
 
+    private $area;
+
     private $lastPointHash;
     private $lastPointValue;
 
@@ -172,12 +174,21 @@ class PolygonHelper {
             return null;
 
         $area = abs(($area / 2));
+        $this->area = $area;
+
         $cx = -$cx / (6 * $area);
         $cy = -$cy / (6 * $area);
 
         $this->center = ['lat' => $cx, 'lng' => $cy];
 
         return $this->center;
+    }
+
+    function getArea(): ?float
+    {
+        $this->getCenter();
+
+        return $this->area;
     }
 
 }
