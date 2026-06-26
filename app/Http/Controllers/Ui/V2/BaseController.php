@@ -49,6 +49,17 @@ abstract class BaseController extends Controller
             'azure_maps_key'      => settings('main_settings.azure_maps_key'),
         ];
 
+        // Estado de toggles compartido con el legacy: vive en user->map_controls
+        // (keys m_*), con defaults globales settings('map_controls'). Igual que getJsConfig.
+        $mc = (array) ($this->user->map_controls ?? []);
+        $def = (array) settings('map_controls');
+        $tg = function (string $mKey, string $defKey) use ($mc, $def): bool {
+            if (array_key_exists($mKey, $mc)) {
+                return (bool) $mc[$mKey];
+            }
+            return (bool) ($def[$defKey] ?? false);
+        };
+
         return [
             'mapId'            => $this->user->map_id ? (int) $this->user->map_id : null,
             'available'        => $list,
@@ -56,6 +67,22 @@ abstract class BaseController extends Controller
             'openmaptilesUrl'  => settings('main_settings.openmaptiles_url'),
             'googleQueryParam' => '',
             'locale'           => app()->getLocale(),
+            // Toggles de capas (mismo store que el legacy → user->map_controls)
+            'toggles'          => [
+                'devices'   => $tg('m_objects', 'showDevice'),
+                'geofences' => $tg('m_geofences', 'showGeofences'),
+                'routes'    => $tg('m_routes', 'showRoutes'),
+                'poi'       => $tg('m_poi', 'showPoi'),
+                'names'     => $tg('m_show_names', 'showNames'),
+                'tails'     => $tg('m_show_tails', 'showTail'),
+                'traffic'   => $tg('m_traffic', 'showTraffic'),
+                'cluster'   => $tg('m_objects_cluster', 'clusterDevice'),
+            ],
+            // Endpoints legacy de persistencia (estado compartido con la UI clásica)
+            'urls'             => [
+                'changeMapSettings' => route('my_account_settings.change_map_settings'),
+                'changeMap'         => route('my_account.change_map'),
+            ],
         ];
     }
 

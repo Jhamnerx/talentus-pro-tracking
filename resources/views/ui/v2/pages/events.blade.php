@@ -120,6 +120,6 @@
 @push('scripts')
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-providers.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=7"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=8"></script>
 @endpush

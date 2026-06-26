@@ -57,6 +57,14 @@
     }
   })();
 
+  // Sembrar el estado compartido de toggles desde el backend (user->map_controls).
+  if (window.tpMapShared && window.tpMapShared.init) {
+    window.tpMapShared.init({
+      toggles: (MAP_CFG && MAP_CFG.toggles) || {},
+      urls: (MAP_CFG && MAP_CFG.urls) || {},
+    });
+  }
+
   // -----------------------------------------------------------
   // MAP PROVIDERS — mirrors legacy map_id catalog (config/maps.php)
   // Each entry returns a MapLibre GL `style` object (raster sources).

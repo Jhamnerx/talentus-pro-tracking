@@ -10,39 +10,48 @@
 (function () {
   "use strict";
 
-  var KEY = "tp_map_settings";
-  var defaults = {
-    mapId: null,
-    cluster: false,
-    devices: true,
-    geofences: false,
-    poi: false,
-    names: false,
-    tails: false,
-    traffic: false,
+  // Estado compartido con el LEGACY: vive en el backend (user->map_controls).
+  // init() lo siembra desde el mapConfig inyectado (buildMapConfig) y set()
+  // persiste vía el endpoint legacy changeMapSettings (keys m_*).
+  var S = { toggles: {}, urls: {} };
+  var KEYMAP = {
+    geofences: "m_geofences",
+    poi: "m_poi",
+    routes: "m_routes",
+    devices: "m_objects",
+    names: "m_show_names",
+    tails: "m_show_tails",
+    traffic: "m_traffic",
+    cluster: "m_objects_cluster",
   };
 
-  function read() {
-    try {
-      return Object.assign({}, defaults, JSON.parse(localStorage.getItem(KEY) || "{}"));
-    } catch (e) {
-      return Object.assign({}, defaults);
-    }
-  }
-  function write(s) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(s));
-    } catch (e) {}
+  function init(cfg) {
+    cfg = cfg || {};
+    if (cfg.toggles) S.toggles = Object.assign({}, cfg.toggles);
+    if (cfg.urls) S.urls = cfg.urls || {};
   }
   function get(k, fallback) {
-    var s = read();
-    if (k in s && s[k] !== undefined && s[k] !== null) return s[k];
-    return fallback !== undefined ? fallback : defaults[k];
+    if (S.toggles && k in S.toggles) return !!S.toggles[k];
+    return fallback !== undefined ? fallback : false;
   }
   function set(k, v) {
-    var s = read();
-    s[k] = v;
-    write(s);
+    v = !!v;
+    S.toggles[k] = v;
+    var param = KEYMAP[k];
+    var url = S.urls && S.urls.changeMapSettings;
+    if (param && url) {
+      var full =
+        url +
+        (url.indexOf("?") === -1 ? "?" : "&") +
+        "param=" +
+        encodeURIComponent(param) +
+        "&value=" +
+        (v ? "true" : "false");
+      fetch(full, {
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      }).catch(function () {});
+    }
   }
 
   function circlePolygon(lng, lat, radiusMeters, points) {
@@ -275,9 +284,9 @@
   }
 
   window.tpMapShared = {
+    init: init,
     get: get,
     set: set,
-    read: read,
     loadItems: loadItems,
     renderGeofences: renderGeofences,
     renderPois: renderPois,

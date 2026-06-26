@@ -47,6 +47,14 @@
     );
   }
 
+  // Sembrar el estado compartido de toggles desde el backend (user->map_controls).
+  if (window.tpMapShared && window.tpMapShared.init) {
+    window.tpMapShared.init({
+      toggles: (MAP_CFG && MAP_CFG.toggles) || {},
+      urls: (MAP_CFG && MAP_CFG.urls) || {},
+    });
+  }
+
   var state = {
     events: [],
     byId: {},
