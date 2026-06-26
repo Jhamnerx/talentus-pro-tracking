@@ -704,3 +704,38 @@
     display: flex;
   }
 }
+
+/* ── Device widget cards (Live drawer) ───────────────────────── */
+.tp-dw-wrap {
+  margin-top: 4px;
+}
+.tp-dw__image img,
+.tp-dw__streetview img,
+.tp-dw__cam img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--radius-sm, 8px);
+}
+.tp-dw__cameras {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tp-dw__cam {
+  display: block;
+  text-decoration: none;
+}
+.tp-dw__events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tp-dw__events li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

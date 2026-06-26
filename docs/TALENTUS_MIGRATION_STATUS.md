@@ -3,7 +3,34 @@
 > Snapshot al **31 de mayo de 2026** · Rama `nuevo-tema`
 > Convenciones y plan macro: ver [plan de migracion.md](plan%20de%20migracion.md)
 
-Documento vivo que resume **qué está implementado** en el shell nuevo (`/talentus/*`) y **qué falta** por migrar desde el legacy. Lo organizamos por dominio.
+Documento vivo que resume **qué está implementado** en el shell nuevo y **qué falta** por migrar desde el legacy. Lo organizamos por dominio.
+
+---
+
+## 🔄 Actualización · 26 jun 2026 (rama `nuevo-tema`)
+
+> El shell se **debrandeó de `talentus` → `ui/v2`**: rutas `/ui/v2/*` (nombres `ui.v2.*`), controladores `App\Http\Controllers\Ui\V2\*` (shell = `Ui\V2\ShellController`), vistas `resources/views/ui/v2/`, assets fuente `resources/assets/ui-v2/` → compilados a `public/assets/ui/v2/`. La integración ERP **"Talentus" NO se tocó**. (Las rutas antiguas que se citan abajo como `/talentus/*` ya son `/ui/v2/*`.)
+
+**Build**: TailwindCSS integrado en Gulp (`gulp ui-v2`); CSS minificado con clean-css y JS con terser; `gulp-sass` migrado a dart-sass. Fuentes legibles en `resources/`, salida minificada en `public/`.
+
+**Botón "Nueva UI"** en el header legacy (`/objects`) → `ui.v2.live`.
+
+**Widgets del dispositivo en Live · 1ª iteración** — `Ui\V2\DevicesController::widgets($id)` (`GET /ui/v2/api/devices/{id}/widgets`) renderiza `ui.v2.partials.device-widgets` reutilizando datos legacy (GeoLocation, eventos, cámaras, servicios, conductor, sensores) y **honra los widgets activos del usuario** (`getSettings('widgets')`). Se inyectan en el drawer de Live (`#tp-drawer-widgets`) al seleccionar un vehículo.
+
+| Widget | Estado |
+|---|---|
+| Objeto + Telemetría (nativo en drawer) | ✅ |
+| Ubicación (GeoLocation) | ✅ |
+| Imagen | ✅ |
+| Eventos recientes | ✅ |
+| Cámara | ✅ |
+| Conductor | ✅ |
+| Servicios | ⚠️ lista básica (faltan campos/fechas exactas) |
+| Sensores | ⚠️ nombre + tipo (falta valor actual de la última posición) |
+| Vista de calle | ⚠️ requiere `streetview_key`/`google_maps_key` |
+| Video en vivo | ⚠️ enlaza al modal legacy (stopgap) |
+
+**Pendiente inmediato**: página **Eventos** dedicada con mapa (centrar en el evento + marcador del device con popup). Después: topbar de Live con menú Herramientas + selector de idioma; POIs/Rutas (toggle+CRUD); comandos; compartir; mantenimientos.
 
 ---
 

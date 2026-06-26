@@ -1162,6 +1162,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         // Devices CRUD modal (shared by Live, Fleet, Admin → Fleet)
         Route::get('devices/form',        ['as' => 'api.devices.form_new', 'uses' => 'Ui\V2\DevicesController@form']);
         Route::get('devices/{id}/form',   ['as' => 'api.devices.form',    'uses' => 'Ui\V2\DevicesController@form'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/widgets', ['as' => 'api.devices.widgets', 'uses' => 'Ui\V2\DevicesController@widgets'])->where('id', '[0-9]+');
         Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Ui\V2\DevicesController@store']);
         Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Ui\V2\DevicesController@update'])->where('id', '[0-9]+');
         Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');

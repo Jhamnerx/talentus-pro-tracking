@@ -1279,6 +1279,34 @@
     if (sel) sel.removeAttribute("aria-selected");
   }
 
+  var widgetsBox = null;
+  function loadDeviceWidgets(id) {
+    widgetsBox = widgetsBox || document.getElementById("tp-drawer-widgets");
+    if (!widgetsBox) return;
+    widgetsBox.innerHTML =
+      '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Cargando información…</div>';
+    var base = root.getAttribute("data-devices-url") || "/ui/v2/api/devices";
+    fetch(base + "/" + id + "/widgets", {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin",
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (res) {
+        if (state.selectedId != id) return; // el usuario cambió de vehículo
+        widgetsBox.innerHTML =
+          res && res.ok && res.html
+            ? res.html
+            : '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Sin widgets disponibles.</div>';
+      })
+      .catch(function () {
+        if (state.selectedId != id) return;
+        widgetsBox.innerHTML =
+          '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">No se pudieron cargar los widgets.</div>';
+      });
+  }
+
   function fillDrawer(d) {
     var status = classify(d);
     var statusLabels = {
@@ -1382,6 +1410,7 @@
     // Drawer
     fillDrawer(d);
     openDrawer();
+    loadDeviceWidgets(id);
     // Center map (smooth)
     if (centerMap && d.lat != null && d.lng != null && state.map) {
       state.map.flyTo({

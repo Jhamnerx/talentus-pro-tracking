@@ -392,6 +392,9 @@
                     </dl>
                 </div>
 
+                {{-- Device widgets (cards) — rellenado por live-ops.js al abrir el drawer --}}
+                <div id="tp-drawer-widgets" class="tp-dw-wrap"></div>
+
                 {{-- Quick actions --}}
                 <div class="tp-stack" style="gap:8px;">
                     <button class="tp-btn tp-btn--secondary tp-btn--block" id="tp-drawer-center" type="button">

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Ui\V2;
 
 use App\Transformers\Device\DeviceMapTransformer;
+use CustomFacades\GeoLocation;
 use CustomFacades\Repositories\DeviceRepo;
 use ModalHelpers\DeviceModalHelper;
+use Tobuli\Entities\File\DeviceCameraMedia;
 use FractalTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -352,5 +354,115 @@ class DevicesController extends BaseController
             'status_group' => $this->groupStatus($st),
             'active'       => (bool) $device->active,
         ];
+    }
+
+    /**
+     * Device detail widgets for the Live drawer.
+     *
+     * Server-renders the new ui/v2 widget cards reusing legacy data
+     * sources (GeoLocation, events, cameras, services, driver, sensors)
+     * and honoring the user's active-widget configuration
+     * (getSettings('widgets'), same as the legacy bottombar).
+     */
+    public function widgets(Request $request, $id): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $device = DeviceRepo::find((int) $id);
+        if (! $device) {
+            return response()->json(['ok' => false, 'message' => 'Vehículo no encontrado.'], 404);
+        }
+
+        // Active widgets per user config (fallback to global settings) — mirrors Widgets/index.blade.
+        $cfg = $this->user->getSettings('widgets');
+        if (empty($cfg) || ! empty($cfg['default'])) {
+            $cfg = settings('widgets');
+        }
+        $active = (! empty($cfg['list']) && is_array($cfg['list'])) ? array_values($cfg['list']) : [];
+
+        $has = function ($key) use ($active) {
+            return in_array($key, $active, true) && config("lists.widgets.$key");
+        };
+
+        $data = ['device' => $device, 'active' => $active];
+
+        if ($has('location')) {
+            try {
+                $loc = GeoLocation::byCoordinates($device->lat, $device->lng);
+                $data['location'] = $loc ? $loc->toArray() : null;
+            } catch (\Throwable $e) {
+                $data['location'] = null;
+            }
+        }
+
+        if ($has('sensors')) {
+            try {
+                $data['sensors'] = $device->sensors()->get();
+            } catch (\Throwable $e) {
+                $data['sensors'] = collect();
+            }
+        }
+
+        if ($has('image')) {
+            $data['image'] = $device->image ? url($device->image) : null;
+        }
+
+        if ($has('services')) {
+            try {
+                $data['services'] = $device->services()->get();
+            } catch (\Throwable $e) {
+                $data['services'] = collect();
+            }
+        }
+
+        if ($has('recent_events') && $this->user->perm('events', 'view')) {
+            try {
+                $data['recent_events'] = $device->events()
+                    ->where('user_id', $this->user->id)
+                    ->latest()->limit(10)->get();
+            } catch (\Throwable $e) {
+                $data['recent_events'] = collect();
+            }
+        }
+
+        if ($has('streetview') && $device->lat && $device->lng) {
+            $key = settings('main_settings.streetview_key') ?: settings('main_settings.google_maps_key');
+            $data['streetview'] = $key
+                ? 'https://maps.googleapis.com/maps/api/streetview?size=600x240&fov=90&location='
+                    . $device->lat . ',' . $device->lng . '&key=' . $key
+                : null;
+        }
+
+        if ($has('camera')) {
+            try {
+                $images = [];
+                foreach ($device->deviceCameras()->showWidget()->get() as $camera) {
+                    $img = DeviceCameraMedia::setEntity($camera)->findLatest();
+                    if ($img) {
+                        $images[$camera->id] = ['camera_name' => $camera->name, 'image' => $img];
+                    }
+                }
+                $data['camera_images']       = $images;
+                $data['camera_device_image'] = DeviceCameraMedia::setEntity($device)->setRecursiveSearch(false)->findLatest();
+            } catch (\Throwable $e) {
+                $data['camera_images']       = [];
+                $data['camera_device_image'] = null;
+            }
+        }
+
+        if ($has('driver')) {
+            $data['driver'] = $device->driver; // hasOne UserDriver (current_driver_id)
+        }
+
+        if ($has('live_video')) {
+            $data['video_live_url']     = url('/device_video/' . $device->id . '/live/modal');
+            $data['video_playback_url'] = url('/device_video/' . $device->id . '/playback/modal');
+        }
+
+        $html = View::make('ui.v2.partials.device-widgets', $data)->render();
+
+        return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
     }
 }
