@@ -87,54 +87,46 @@
     };
   }
 
-  function initMap() {
-    if (!window.maplibregl) return;
+  function createMap(style) {
     state.map = new maplibregl.Map({
       container: "tp-events-map",
-      style: osmStyle(),
+      style: style || osmStyle(),
       center: [-77.0428, -12.0464],
-      zoom: 4,
-      minZoom: 2,
-      maxZoom: 22,
+      zoom: 5,
       attributionControl: { compact: true },
     });
     state.map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
       "bottom-right",
     );
-    // Fix: el contenedor puede tener 0px al crear el mapa → forzar resize.
     state.map.on("load", function () {
       state.map.resize();
       renderSharedLayers();
     });
-    // Re-pintar capas compartidas tras cambiar el estilo (proveedor) — el swap
-    // de estilo borra sources/layers.
     state.map.on("styledata", function () {
       renderSharedLayers();
     });
-    setTimeout(function () {
-      if (state.map) state.map.resize();
-    }, 300);
-    window.addEventListener("resize", function () {
-      if (state.map) state.map.resize();
-    });
+  }
 
-    // Tile del proveedor del usuario (mismo tipo de mapa que Live) si está configurado.
-    try {
-      if (window.tpMapProviders && MAP_CFG && MAP_CFG.mapId) {
-        var P = window.tpMapProviders.create(MAP_CFG);
-        P.resolveStyle(MAP_CFG.mapId)
+  function initMap() {
+    if (!window.maplibregl) return;
+    // Crear el mapa UNA vez con el estilo del proveedor del usuario (mismo tipo
+    // que Live). Sin swap OSM→proveedor para no cancelar los tiles.
+    if (window.tpMapProviders && MAP_CFG && MAP_CFG.mapId) {
+      try {
+        window.tpMapProviders
+          .create(MAP_CFG)
+          .resolveStyle(MAP_CFG.mapId)
           .then(function (style) {
-            if (style) {
-              state.map.setStyle(style);
-              state.map.once("styledata", function () {
-                state.map.resize();
-              });
-            }
+            createMap(style || osmStyle());
           })
-          .catch(function () {});
-      }
-    } catch (e) {}
+          .catch(function () {
+            createMap(osmStyle());
+          });
+        return;
+      } catch (e) {}
+    }
+    createMap(osmStyle());
   }
 
   // ── Geocodificación perezosa (solo filas visibles) ─────────
