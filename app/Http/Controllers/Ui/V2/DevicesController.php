@@ -398,11 +398,25 @@ class DevicesController extends BaseController
         }
 
         if ($has('sensors')) {
-            try {
-                $data['sensors'] = $device->sensors()->get();
-            } catch (\Throwable $e) {
-                $data['sensors'] = collect();
+            // Mismo cálculo que el legacy (DeviceSensorsTransformer): valor actual
+            // desde la última posición (traccar), con fallback al valor almacenado.
+            $rows = [];
+            $traccar = $device->traccar;
+            foreach ($device->sensors as $sensor) {
+                $formatted = '-';
+                try {
+                    if ($traccar) {
+                        $formatted = $sensor->getValueCurrent($traccar)->getFormatted();
+                    }
+                } catch (\Throwable $e) {
+                    $formatted = '-';
+                }
+                $rows[] = [
+                    'name'     => $sensor->formatName(),
+                    'formated' => $formatted,
+                ];
             }
+            $data['sensors'] = $rows;
         }
 
         if ($has('image')) {

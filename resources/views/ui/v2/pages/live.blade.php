@@ -417,9 +417,6 @@
                         </svg>
                         Ver historial (Fase 4)
                     </button>
-                    <a class="tp-btn tp-btn--ghost tp-btn--block" id="tp-drawer-legacy" href="{{ url('/objects') }}">
-                        Abrir en UI cl�sica
-                    </a>
                 </div>
             </div>
         </aside>
@@ -438,7 +435,7 @@
 @push('scripts')
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=5"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=6"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

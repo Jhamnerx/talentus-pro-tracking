@@ -30,8 +30,8 @@
             @if (count($sensors))
                 <dl class="tp-defs">
                     @foreach ($sensors as $sensor)
-                        <dt>{{ $sensor->name ?: ($sensor->type ?? 'Sensor') }}</dt>
-                        <dd class="tp-text-muted">{{ $sensor->type ?? '—' }}</dd>
+                        <dt>{{ $sensor['name'] }}</dt>
+                        <dd>{{ $sensor['formated'] }}</dd>
                     @endforeach
                 </dl>
             @else

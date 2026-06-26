@@ -1280,11 +1280,19 @@
   }
 
   var widgetsBox = null;
-  function loadDeviceWidgets(id) {
+  var widgetsLoad = { id: null, t: 0 };
+  // throttled=true → refresco silencioso (en cada update del feed), sin "Cargando…"
+  // ni geocodificar más de 1 vez cada 30s. throttled=false → carga al abrir.
+  function loadDeviceWidgets(id, throttled) {
     widgetsBox = widgetsBox || document.getElementById("tp-drawer-widgets");
     if (!widgetsBox) return;
-    widgetsBox.innerHTML =
-      '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Cargando información…</div>';
+    if (throttled && widgetsLoad.id === id && Date.now() - widgetsLoad.t < 30000)
+      return;
+    widgetsLoad = { id: id, t: Date.now() };
+    if (!throttled) {
+      widgetsBox.innerHTML =
+        '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Cargando información…</div>';
+    }
     var base = root.getAttribute("data-devices-url") || "/ui/v2/api/devices";
     fetch(base + "/" + id + "/widgets", {
       headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -1295,13 +1303,13 @@
       })
       .then(function (res) {
         if (state.selectedId != id) return; // el usuario cambió de vehículo
-        widgetsBox.innerHTML =
-          res && res.ok && res.html
-            ? res.html
-            : '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Sin widgets disponibles.</div>';
+        if (res && res.ok && res.html) widgetsBox.innerHTML = res.html;
+        else if (!throttled)
+          widgetsBox.innerHTML =
+            '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Sin widgets disponibles.</div>';
       })
       .catch(function () {
-        if (state.selectedId != id) return;
+        if (state.selectedId != id || throttled) return;
         widgetsBox.innerHTML =
           '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">No se pudieron cargar los widgets.</div>';
       });
@@ -1831,7 +1839,10 @@
     recomputeFiltered();
     renderList();
     renderMarkers();
-    if (state.selectedId === payload.id) fillDrawer(existing);
+    if (state.selectedId === payload.id) {
+      fillDrawer(existing);
+      loadDeviceWidgets(payload.id, true); // refresco silencioso (sensores, etc.)
+    }
   }
 
   // -----------------------------------------------------------
