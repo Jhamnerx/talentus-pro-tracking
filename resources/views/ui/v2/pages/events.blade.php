@@ -4,7 +4,7 @@
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=4">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 @endpush
 

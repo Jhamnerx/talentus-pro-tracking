@@ -1,6 +1,15 @@
 /* ============================================================
    UI v2 · Eventos (página dedicada con mapa)
    ============================================================ */
+/* Igual que Live/Zones: el workspace de pantalla completa necesita altura
+   explícita (el .tp-workspace--full base no la define) para que el mapa
+   tenga tamaño y renderice. */
+.tp-scope .tp-workspace--full {
+  padding: 0;
+  height: calc(100vh - var(--topbar-h));
+  overflow: hidden;
+}
+
 .tp-events {
   display: grid;
   grid-template-columns: 340px 1fr;
