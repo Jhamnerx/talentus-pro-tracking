@@ -1,10 +1,12 @@
 /*
  * UI v2 · Eventos (página dedicada con mapa)
- * - Lista de eventos (filtros: rango horas + búsqueda).
- * - Al seleccionar un evento: centra el mapa en su ubicación y muestra el
- *   marcador del dispositivo con un popup de información junto al device.
- * Deps: window.maplibregl, window.tpMapProviders (opcional, para el tile del
- * proveedor del usuario; si no, OSM).
+ * - Lista con scroll infinito (paginación por offset, como el legacy).
+ * - Geocodificación PEREZOSA: solo de las filas visibles (IntersectionObserver),
+ *   reutilizando el endpoint legacy address.get (respeta el plugin
+ *   geofence_over_address → nombre de geocerca en vez de dirección).
+ * - Al seleccionar un evento: centra el mapa y muestra el marcador del device
+ *   con un popup de información.
+ * Deps: window.maplibregl, window.tpMapProviders (opcional).
  */
 (function () {
   "use strict";
@@ -13,6 +15,7 @@
   if (!root) return;
 
   var DATA_URL = root.getAttribute("data-data-url");
+  var GEO_URL = root.getAttribute("data-geo-url");
   var listEl = document.getElementById("tp-events-list");
   var statusEl = document.getElementById("tp-events-status");
   var hoursSel = document.getElementById("tp-events-hours");
@@ -32,11 +35,16 @@
 
   var state = {
     events: [],
+    byId: {},
+    offset: 0,
+    hasMore: true,
+    loading: false,
     map: null,
     marker: null,
     popup: null,
     selectedId: null,
   };
+  var geoCache = {}; // eventId → texto (dirección o nombre de geocerca)
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -56,9 +64,7 @@
         : "#3b82f6";
   }
 
-  // -----------------------------------------------------------
-  // Mapa
-  // -----------------------------------------------------------
+  // ── Mapa ───────────────────────────────────────────────────
   function osmStyle() {
     return {
       version: 8,
@@ -93,88 +99,155 @@
       new maplibregl.NavigationControl({ showCompass: false }),
       "bottom-right",
     );
-    // Tile del proveedor del usuario (Google/Here/…) si está configurado.
+    // Fix: el contenedor puede tener 0px al crear el mapa → forzar resize.
+    state.map.on("load", function () {
+      state.map.resize();
+    });
+    setTimeout(function () {
+      if (state.map) state.map.resize();
+    }, 300);
+    window.addEventListener("resize", function () {
+      if (state.map) state.map.resize();
+    });
+
+    // Tile del proveedor del usuario (mismo tipo de mapa que Live) si está configurado.
     try {
       if (window.tpMapProviders && MAP_CFG && MAP_CFG.mapId) {
         var P = window.tpMapProviders.create(MAP_CFG);
         P.resolveStyle(MAP_CFG.mapId)
           .then(function (style) {
-            if (style) state.map.setStyle(style);
+            if (style) {
+              state.map.setStyle(style);
+              state.map.once("styledata", function () {
+                state.map.resize();
+              });
+            }
           })
           .catch(function () {});
       }
     } catch (e) {}
   }
 
-  // -----------------------------------------------------------
-  // Lista
-  // -----------------------------------------------------------
-  function renderList() {
-    if (!state.events.length) {
-      listEl.innerHTML =
-        '<div class="tp-text-xs tp-text-muted" style="padding:12px;">Sin eventos en el rango seleccionado.</div>';
-      return;
-    }
-    var html = "";
-    state.events.forEach(function (ev) {
-      var hasGeo = ev.lat != null && ev.lng != null;
-      html +=
-        '<button type="button" class="tp-events__row" data-id="' +
-        ev.id +
-        '"' +
-        (state.selectedId === ev.id ? ' aria-selected="true"' : "") +
-        ">" +
-        '<span class="tp-events__dot tp-events__dot--' +
-        sevClass(ev.severity) +
-        '"></span>' +
-        '<span class="tp-events__row-main">' +
-        '<span class="tp-events__row-title">' +
-        esc(ev.message || ev.type) +
-        "</span>" +
-        '<span class="tp-events__row-sub">' +
-        esc(ev.device_name || "#" + (ev.device_id || "")) +
-        " · " +
-        esc(ev.time) +
-        (hasGeo ? "" : " · sin ubicación") +
-        "</span></span></button>";
-    });
-    listEl.innerHTML = html;
+  // ── Geocodificación perezosa (solo filas visibles) ─────────
+  function parseGeo(text) {
+    if (text == null) return "";
+    text = String(text).trim();
+    if (!text) return "";
+    try {
+      var j = JSON.parse(text);
+      if (typeof j === "string") return j;
+      if (j && typeof j === "object")
+        return j.address || j.name || j.title || "";
+    } catch (e) {}
+    return text;
   }
 
-  function selectEvent(id) {
-    var ev = null;
-    for (var i = 0; i < state.events.length; i++) {
-      if (state.events[i].id === id) {
-        ev = state.events[i];
-        break;
-      }
+  function geocodeEvent(ev) {
+    if (!GEO_URL || ev.lat == null || ev.lng == null) return;
+    if (geoCache[ev.id] !== undefined) return; // ya pedido/cacheado
+    geoCache[ev.id] = null; // marca en curso
+    fetch(
+      GEO_URL +
+        (GEO_URL.indexOf("?") === -1 ? "?" : "&") +
+        "lat=" +
+        ev.lat +
+        "&lng=" +
+        ev.lng,
+      { credentials: "same-origin", headers: { Accept: "*/*" } },
+    )
+      .then(function (r) {
+        return r.text();
+      })
+      .then(function (text) {
+        var addr = parseGeo(text);
+        geoCache[ev.id] = addr;
+        var span = listEl.querySelector('.tp-events__addr[data-id="' + ev.id + '"]');
+        if (span) span.textContent = addr || "—";
+        // Si el popup abierto es de este evento, refrescar su dirección.
+        if (state.selectedId === ev.id && state.popup) updatePopupAddress(ev, addr);
+      })
+      .catch(function () {
+        geoCache[ev.id] = "";
+      });
+  }
+
+  var io =
+    "IntersectionObserver" in window
+      ? new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (en) {
+              if (!en.isIntersecting) return;
+              var id = parseInt(en.target.getAttribute("data-geo-id"), 10);
+              var ev = state.byId[id];
+              if (ev) geocodeEvent(ev);
+              io.unobserve(en.target);
+            });
+          },
+          { root: listEl, rootMargin: "100px" },
+        )
+      : null;
+
+  // ── Lista ──────────────────────────────────────────────────
+  function rowHtml(ev) {
+    var hasGeo = ev.lat != null && ev.lng != null;
+    var addr =
+      geoCache[ev.id] != null
+        ? esc(geoCache[ev.id])
+        : hasGeo
+          ? "…"
+          : "sin ubicación";
+    return (
+      '<button type="button" class="tp-events__row" data-id="' +
+      ev.id +
+      '" data-geo-id="' +
+      ev.id +
+      '"' +
+      (state.selectedId === ev.id ? ' aria-selected="true"' : "") +
+      ">" +
+      '<span class="tp-events__dot tp-events__dot--' +
+      sevClass(ev.severity) +
+      '"></span>' +
+      '<span class="tp-events__row-main">' +
+      '<span class="tp-events__row-title">' +
+      esc(ev.message || ev.type) +
+      "</span>" +
+      '<span class="tp-events__row-sub">' +
+      esc(ev.device_name || "#" + (ev.device_id || "")) +
+      " · " +
+      esc(ev.time) +
+      "</span>" +
+      '<span class="tp-events__addr" data-id="' +
+      ev.id +
+      '">' +
+      addr +
+      "</span>" +
+      "</span></button>"
+    );
+  }
+
+  function appendRows(events) {
+    if (!events.length) return;
+    var frag = document.createElement("div");
+    frag.innerHTML = events.map(rowHtml).join("");
+    while (frag.firstChild) {
+      var node = frag.firstChild;
+      listEl.appendChild(node);
+      if (io && node.getAttribute) io.observe(node);
     }
-    if (!ev) return;
-    state.selectedId = id;
+  }
 
-    var prev = listEl.querySelector('[aria-selected="true"]');
-    if (prev) prev.removeAttribute("aria-selected");
-    var now = listEl.querySelector('[data-id="' + id + '"]');
-    if (now) now.setAttribute("aria-selected", "true");
+  // ── Selección / mapa ───────────────────────────────────────
+  function updatePopupAddress(ev, addr) {
+    if (!state.popup) return;
+    var el = state.popup.getElement();
+    if (!el) return;
+    var dd = el.querySelector("[data-ev-addr]");
+    if (dd) dd.textContent = addr || "—";
+  }
 
-    if (ev.lat == null || ev.lng == null || !state.map) {
-      if (window.tpModal && window.tpModal.toast)
-        window.tpModal.toast("Este evento no tiene ubicación.", "warning");
-      return;
-    }
-    if (hintEl) hintEl.hidden = true;
-
-    var coords = [parseFloat(ev.lng), parseFloat(ev.lat)];
-
-    if (!state.marker) {
-      var el = document.createElement("div");
-      el.className = "tp-events__marker";
-      state.marker = new maplibregl.Marker({ element: el, anchor: "bottom" });
-    }
-    state.marker.getElement().style.setProperty("--ev-color", sevColor(ev.severity));
-    state.marker.setLngLat(coords).addTo(state.map);
-
-    var popupHtml =
+  function popupHtml(ev) {
+    var addr = geoCache[ev.id] != null ? geoCache[ev.id] : "…";
+    return (
       '<div class="tp-ev-popup">' +
       '<div class="tp-ev-popup__title">' +
       esc(ev.device_name || "#" + (ev.device_id || "")) +
@@ -189,6 +262,9 @@
       "<dt>Hora</dt><dd>" +
       esc(ev.time) +
       "</dd>" +
+      "<dt>Ubicación</dt><dd data-ev-addr>" +
+      esc(addr) +
+      "</dd>" +
       (ev.speed != null
         ? "<dt>Velocidad</dt><dd>" + Math.round(ev.speed) + " km/h</dd>"
         : "") +
@@ -196,11 +272,40 @@
       parseFloat(ev.lat).toFixed(5) +
       ", " +
       parseFloat(ev.lng).toFixed(5) +
-      "</dd></dl></div>";
+      "</dd></dl></div>"
+    );
+  }
+
+  function selectEvent(id) {
+    var ev = state.byId[id];
+    if (!ev) return;
+    state.selectedId = id;
+
+    var prev = listEl.querySelector('[aria-selected="true"]');
+    if (prev) prev.removeAttribute("aria-selected");
+    var now = listEl.querySelector('.tp-events__row[data-id="' + id + '"]');
+    if (now) now.setAttribute("aria-selected", "true");
+
+    if (ev.lat == null || ev.lng == null || !state.map) {
+      if (window.tpModal && window.tpModal.toast)
+        window.tpModal.toast("Este evento no tiene ubicación.", "warning");
+      return;
+    }
+    if (hintEl) hintEl.hidden = true;
+    geocodeEvent(ev); // asegura dirección para el popup
+
+    var coords = [parseFloat(ev.lng), parseFloat(ev.lat)];
+    if (!state.marker) {
+      var el = document.createElement("div");
+      el.className = "tp-events__marker";
+      state.marker = new maplibregl.Marker({ element: el, anchor: "bottom" });
+    }
+    state.marker.getElement().style.setProperty("--ev-color", sevColor(ev.severity));
+    state.marker.setLngLat(coords).addTo(state.map);
 
     if (!state.popup)
       state.popup = new maplibregl.Popup({ offset: 26, closeButton: true });
-    state.popup.setLngLat(coords).setHTML(popupHtml).addTo(state.map);
+    state.popup.setLngLat(coords).setHTML(popupHtml(ev)).addTo(state.map);
 
     state.map.flyTo({
       center: coords,
@@ -209,19 +314,32 @@
     });
   }
 
-  // -----------------------------------------------------------
-  // Carga
-  // -----------------------------------------------------------
-  function loadEvents() {
+  // ── Carga (scroll infinito) ────────────────────────────────
+  function load(reset) {
+    if (state.loading) return;
+    if (!reset && !state.hasMore) return;
+    state.loading = true;
+    if (reset) {
+      state.offset = 0;
+      state.hasMore = true;
+      state.events = [];
+      state.byId = {};
+      state.selectedId = null;
+      listEl.innerHTML = "";
+    }
+    if (statusEl)
+      statusEl.textContent = reset ? "Cargando…" : "Cargando más…";
+
     var hours = hoursSel ? hoursSel.value : 24;
     var q = searchEl ? searchEl.value.trim() : "";
-    if (statusEl) statusEl.textContent = "Cargando…";
     fetch(
       DATA_URL +
         "?hours=" +
         encodeURIComponent(hours) +
         "&q=" +
         encodeURIComponent(q) +
+        "&offset=" +
+        state.offset +
         "&_=" +
         Date.now(),
       { credentials: "same-origin", headers: { Accept: "application/json" } },
@@ -230,36 +348,74 @@
         return r.json();
       })
       .then(function (res) {
-        state.events = (res && res.events) || [];
-        state.selectedId = null;
-        renderList();
-        if (statusEl) statusEl.textContent = state.events.length + " eventos";
+        state.loading = false;
+        var rows = (res && res.events) || [];
+        rows.forEach(function (ev) {
+          state.events.push(ev);
+          state.byId[ev.id] = ev;
+        });
+        state.offset = res && res.offset != null ? res.offset : state.offset + rows.length;
+        state.hasMore = !!(res && res.has_more);
+
+        if (reset && !state.events.length) {
+          listEl.innerHTML =
+            '<div class="tp-text-xs tp-text-muted" style="padding:12px;">Sin eventos en el rango seleccionado.</div>';
+        } else {
+          appendRows(rows);
+        }
+        if (statusEl)
+          statusEl.textContent =
+            state.events.length + " eventos" + (state.hasMore ? " (+)" : "");
       })
       .catch(function () {
+        state.loading = false;
         if (statusEl) statusEl.textContent = "Error al cargar";
-        listEl.innerHTML =
-          '<div class="tp-text-xs tp-text-muted" style="padding:12px;">No se pudieron cargar los eventos.</div>';
       });
   }
 
-  // -----------------------------------------------------------
-  // Eventos UI
-  // -----------------------------------------------------------
+  // ── Eventos UI ─────────────────────────────────────────────
   listEl.addEventListener("click", function (e) {
-    var row = e.target.closest("[data-id]");
+    var row = e.target.closest(".tp-events__row[data-id]");
     if (!row) return;
     selectEvent(parseInt(row.getAttribute("data-id"), 10));
   });
-  if (hoursSel) hoursSel.addEventListener("change", loadEvents);
-  if (refreshBtn) refreshBtn.addEventListener("click", loadEvents);
+  listEl.addEventListener("scroll", function () {
+    if (
+      state.hasMore &&
+      !state.loading &&
+      listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 120
+    ) {
+      load(false);
+    }
+  });
+  if (hoursSel) hoursSel.addEventListener("change", function () { load(true); });
+  if (refreshBtn) refreshBtn.addEventListener("click", function () { load(true); });
   if (searchEl) {
     var t = null;
     searchEl.addEventListener("input", function () {
       clearTimeout(t);
-      t = setTimeout(loadEvents, 350);
+      t = setTimeout(function () { load(true); }, 350);
     });
   }
 
+  // Controles de mapa
+  var fsBtn = document.getElementById("tp-ev-fullscreen");
+  var ziBtn = document.getElementById("tp-ev-zoom-in");
+  var zoBtn = document.getElementById("tp-ev-zoom-out");
+  if (fsBtn)
+    fsBtn.addEventListener("click", function () {
+      var area = document.querySelector(".tp-events__map-area");
+      if (!document.fullscreenElement && area && area.requestFullscreen) {
+        area.requestFullscreen().then(function () {
+          if (state.map) setTimeout(function () { state.map.resize(); }, 150);
+        });
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    });
+  if (ziBtn) ziBtn.addEventListener("click", function () { state.map && state.map.zoomIn(); });
+  if (zoBtn) zoBtn.addEventListener("click", function () { state.map && state.map.zoomOut(); });
+
   initMap();
-  loadEvents();
+  load(true);
 })();

@@ -4,14 +4,15 @@
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=2">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
 
 @section('workspace')
-    <div class="tp-events" id="tp-events" data-data-url="{{ route('ui.v2.api.events') }}">
+    <div class="tp-events" id="tp-events" data-data-url="{{ route('ui.v2.api.events') }}"
+        data-geo-url="{{ route('address.get') }}">
         {{-- Map config (provider IDs, API keys) inyectado para la capa JS --}}
         <script type="application/json" id="tp-events-map-config">@json($mapConfig)</script>
 
@@ -46,6 +47,35 @@
         <main class="tp-events__map-area">
             <div id="tp-events-map" class="tp-events__map"></div>
             <div class="tp-events__hint" id="tp-events-hint">Selecciona un evento para verlo en el mapa</div>
+
+            {{-- Controles de mapa --}}
+            <div class="tp-events__map-controls">
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-fullscreen"
+                    title="Pantalla completa" aria-label="Pantalla completa">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2" />
+                        <path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                        <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
+                        <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                    </svg>
+                </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-zoom-in"
+                    title="Acercar" aria-label="Acercar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14" />
+                        <path d="M5 12h14" />
+                    </svg>
+                </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-zoom-out"
+                    title="Alejar" aria-label="Alejar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                    </svg>
+                </button>
+            </div>
         </main>
     </div>
 @endsection
@@ -53,5 +83,5 @@
 @push('scripts')
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-providers.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=2"></script>
 @endpush

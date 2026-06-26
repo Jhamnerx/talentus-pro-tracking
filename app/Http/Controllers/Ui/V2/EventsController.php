@@ -34,11 +34,12 @@ class EventsController extends BaseController
             return response()->json(['ok' => false], 403);
         }
 
-        $hours = min(168, max(1, (int) $request->get('hours', 24)));
-        $limit = min(1000, max(50, (int) $request->get('limit', 300)));
-        $type  = trim((string) $request->get('type', ''));
-        $q     = trim((string) $request->get('q', ''));
-        $since = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
+        $hours   = min(168, max(1, (int) $request->get('hours', 24)));
+        $offset  = max(0, (int) $request->get('offset', 0));
+        $perPage = min(100, max(20, (int) $request->get('per_page', 50)));
+        $type    = trim((string) $request->get('type', ''));
+        $q       = trim((string) $request->get('q', ''));
+        $since   = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
 
         $query = $this->user->events()
             ->with(['device:id,name,plate_number'])
@@ -54,7 +55,12 @@ class EventsController extends BaseController
             });
         }
 
-        $rows = $query->limit($limit)->get();
+        // Paginación por offset (scroll infinito): pedimos uno extra para saber si hay más.
+        $rows = $query->offset($offset)->limit($perPage + 1)->get();
+        $hasMore = $rows->count() > $perPage;
+        if ($hasMore) {
+            $rows = $rows->slice(0, $perPage);
+        }
 
         $events = [];
         $byType = [];
@@ -78,10 +84,12 @@ class EventsController extends BaseController
         }
 
         return response()->json([
-            'ok'      => true,
-            'hours'   => $hours,
-            'events'  => $events,
-            'by_type' => $byType,
+            'ok'       => true,
+            'hours'    => $hours,
+            'events'   => $events,
+            'by_type'  => $byType,
+            'offset'   => $offset + count($events),
+            'has_more' => $hasMore,
         ]);
     }
 }
