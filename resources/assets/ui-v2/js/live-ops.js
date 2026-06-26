@@ -22,6 +22,8 @@
   // -----------------------------------------------------------
   var CFG = {
     devicesUrl: root.dataset.devicesUrl,
+    updatesUrl:
+      root.dataset.updatesUrl || (root.dataset.devicesUrl || "") + "/updates",
     zonesUrl: root.dataset.zonesUrl || null,
     socketPort: parseInt(root.dataset.socketPort, 10) || 3000,
     socketSslPort: parseInt(root.dataset.socketSslPort, 10) || 3001,
@@ -1787,14 +1789,67 @@
       });
   }
 
+  // -----------------------------------------------------------
+  // Updates incrementales (delta) — espeja legacy objects/items_json:
+  // solo trae los devices cambiados desde ?time= + el nuevo time del server.
+  // -----------------------------------------------------------
+  function applyDeltas(items) {
+    if (!items || !items.length) return;
+    items.forEach(function (d) {
+      var existing = state.index[d.id];
+      if (existing) {
+        for (var k in d) {
+          if (Object.prototype.hasOwnProperty.call(d, k)) existing[k] = d[k];
+        }
+      } else {
+        state.index[d.id] = d;
+        state.devices.push(d);
+      }
+    });
+    recomputeFiltered();
+    renderList();
+    renderMarkers();
+    if (state.selectedId && state.index[state.selectedId]) {
+      fillDrawer(state.index[state.selectedId]);
+      loadDeviceWidgets(state.selectedId, true);
+    }
+  }
+
+  function pollUpdates() {
+    if (document.visibilityState !== "visible") return;
+    var url =
+      CFG.updatesUrl +
+      "?time=" +
+      encodeURIComponent(state.checkTime || "") +
+      "&_=" +
+      Date.now();
+    fetch(url, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (res) {
+        if (!res) return;
+        if (res.time) state.checkTime = res.time;
+        applyDeltas(res.items);
+        statusText.textContent =
+          Object.keys(state.index).length +
+          " vehículos · " +
+          new Date().toLocaleTimeString();
+      })
+      .catch(function () {});
+  }
+
   function startPolling() {
     if (state.pollHandle) clearInterval(state.pollHandle);
     state.pollHandle = setInterval(function () {
-      if (document.visibilityState === "visible") fetchDevices(false);
+      if (document.visibilityState === "visible") pollUpdates();
     }, CFG.pollInterval);
   }
   document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") fetchDevices(false);
+    if (document.visibilityState === "visible") pollUpdates();
   });
 
   // -----------------------------------------------------------

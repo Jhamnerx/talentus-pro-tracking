@@ -479,4 +479,28 @@ class DevicesController extends BaseController
 
         return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
     }
+
+    /**
+     * Incremental device updates (delta) — espeja el legacy objects/items_json.
+     * Reutiliza DeviceModalHelper::itemsJson(): devuelve SOLO los dispositivos
+     * que cambiaron desde ?time= (vía ->updatedAfter) + eventos nuevos + el
+     * nuevo `time` del servidor. El JS hace polling y fusiona los deltas en el
+     * mapa en vivo (posición, estado, engine, stop_duration, total_distance…).
+     */
+    public function updates(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['items' => [], 'events' => [], 'time' => time()], 403);
+        }
+
+        $helper = app(DeviceModalHelper::class);
+        $helper->setUser($this->user);
+        $helper->setApi(false);
+        $helper->setData([
+            'time'    => $request->get('time'),
+            'filters' => $request->get('filters'),
+        ]);
+
+        return response()->json($helper->itemsJson());
+    }
 }

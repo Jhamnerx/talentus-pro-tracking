@@ -14,6 +14,7 @@
 
 @section('workspace')
     <div class="tp-live" id="tp-live" data-devices-url="{{ route('ui.v2.api.devices') }}"
+        data-updates-url="{{ route('ui.v2.api.devices.updates') }}"
         data-zones-url="{{ route('ui.v2.api.zones') }}" data-socket-port="{{ $socketPort }}"
         data-socket-ssl-port="{{ $socketSslPort }}" data-poll-interval="15000">
 
@@ -466,7 +467,7 @@
 @push('scripts')
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=8"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=9"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
