@@ -140,6 +140,9 @@
       if (j && typeof j === "object")
         return j.address || j.name || j.title || "";
     } catch (e) {}
+    // Defensa: si el backend (DebugBar) inyectó HTML, corta en el primer "<".
+    var lt = text.indexOf("<");
+    if (lt !== -1) text = text.slice(0, lt).trim();
     return text;
   }
 
@@ -154,7 +157,10 @@
         ev.lat +
         "&lng=" +
         ev.lng,
-      { credentials: "same-origin", headers: { Accept: "*/*" } },
+      {
+        credentials: "same-origin",
+        headers: { Accept: "*/*", "X-Requested-With": "XMLHttpRequest" },
+      },
     )
       .then(function (r) {
         return r.text();
