@@ -1,7 +1,7 @@
 /* =====================================================
  * TalentusPro · History & Replay · Phase 7
  * - Device picker + datetime range + quick presets
- * - Fetches positions from /talentus/api/history
+ * - Fetches positions from /ui/v2/api/history
  * - Renders polyline + start/end + stop markers on MapLibre
  * - Scrubber with playback at 1×/4×/16×/64×
  * - Animated cursor marker via requestAnimationFrame

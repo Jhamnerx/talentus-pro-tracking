@@ -14,7 +14,7 @@
   var META_URL = root.getAttribute("data-meta-url");
   var STORE_URL = root.getAttribute("data-store-url");
   var TOGGLE_BASE =
-    root.getAttribute("data-toggle-url") || "/talentus/api/alerts";
+    root.getAttribute("data-toggle-url") || "/ui/v2/api/alerts";
   var CAN_EDIT = root.getAttribute("data-can-edit") === "1";
   var CAN_CREATE = root.getAttribute("data-can-create") === "1";
   var META_CACHE = null;
@@ -393,14 +393,14 @@
       var lat = btn.getAttribute("data-lat");
       var lng = btn.getAttribute("data-lng");
       var dev = btn.getAttribute("data-device");
-      var url = "/talentus/live?";
+      var url = "/ui/v2/live?";
       if (dev) url += "device=" + encodeURIComponent(dev) + "&";
       url +=
         "lat=" + encodeURIComponent(lat) + "&lng=" + encodeURIComponent(lng);
       window.location.href = url;
     } else if (act === "device") {
       window.location.href =
-        "/talentus/live?device=" +
+        "/ui/v2/live?device=" +
         encodeURIComponent(btn.getAttribute("data-device"));
     }
   });

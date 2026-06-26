@@ -1,6 +1,6 @@
 /* =====================================================
    TalentusPro · Dashboard · Phase 3
-   - Fetches /talentus/api/dashboard
+   - Fetches /ui/v2/api/dashboard
    - Renders KPIs, ECharts (pie + bar), top table, health bars
    - Polls every 60s; reacts to theme changes
    ===================================================== */

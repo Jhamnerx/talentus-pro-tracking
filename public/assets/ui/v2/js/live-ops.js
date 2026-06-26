@@ -3,7 +3,7 @@
  * ------------------------------------------------------------
  * Responsibilities:
  *   - Initialize MapLibre GL with light/dark style support
- *   - Fetch devices via /talentus/api/devices and render markers
+ *   - Fetch devices via /ui/v2/api/devices and render markers
  *   - Render virtualized device list (windowing) bound to filters
  *   - Open drawer with device detail on row/marker click
  *   - Poll devices every 15s; reconnect Socket.io for events
@@ -659,7 +659,7 @@
         var fd = new FormData();
         fd.append("key", "tp_map_id");
         fd.append("value", String(mapId));
-        fetch("/talentus/api/preferences", {
+        fetch("/ui/v2/api/preferences", {
           method: "POST",
           body: fd,
           credentials: "same-origin",

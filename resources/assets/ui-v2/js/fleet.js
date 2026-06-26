@@ -330,7 +330,7 @@
     var btn = e.target.closest("[data-view]");
     if (!btn) return;
     var id = btn.getAttribute("data-view");
-    window.location.href = "/talentus/live?device=" + encodeURIComponent(id);
+    window.location.href = "/ui/v2/live?device=" + encodeURIComponent(id);
   });
 
   // CSV export (current page)

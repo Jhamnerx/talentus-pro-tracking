@@ -8,9 +8,9 @@
  *   - admin → fleet
  *
  * Estrategia: el HTML del formulario se renderiza con Blade
- * (resources/views/talentus/modals/devices/*) y se entrega vía:
- *   GET /talentus/api/devices/form        → form de creación
- *   GET /talentus/api/devices/{id}/form   → form de edición
+ * (resources/views/ui/v2/modals/devices/*) y se entrega vía:
+ *   GET /ui/v2/api/devices/form        → form de creación
+ *   GET /ui/v2/api/devices/{id}/form   → form de edición
  *
  * Este script SOLO se encarga de:
  *   1. Abrir el shell del modal (window.tpModal).
@@ -18,8 +18,8 @@
  *   3. Wirear pestañas, galería de iconos, submit.
  *
  * Endpoints de submit (sin cambios):
- *   POST   /talentus/api/devices            → crear
- *   PUT    /talentus/api/devices/{id}       → actualizar
+ *   POST   /ui/v2/api/devices            → crear
+ *   PUT    /ui/v2/api/devices/{id}       → actualizar
  *
  * Depende de window.tpModal (modal.js).
  * ---------------------------------------------------------------
@@ -39,10 +39,10 @@
   }
 
   var CFG = readConfig() || {
-    formNewUrl: "/talentus/api/devices/form",
-    formUrl: "/talentus/api/devices/{id}/form",
-    storeUrl: "/talentus/api/devices",
-    updateUrl: "/talentus/api/devices/{id}",
+    formNewUrl: "/ui/v2/api/devices/form",
+    formUrl: "/ui/v2/api/devices/{id}/form",
+    storeUrl: "/ui/v2/api/devices",
+    updateUrl: "/ui/v2/api/devices/{id}",
     canCreate: true,
     canEdit: true,
   };

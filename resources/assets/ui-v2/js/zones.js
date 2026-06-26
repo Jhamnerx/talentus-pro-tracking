@@ -15,7 +15,7 @@
   var DATA_URL = root.getAttribute("data-data-url");
   var META_URL = root.getAttribute("data-meta-url");
   var STORE_URL = root.getAttribute("data-store-url");
-  var BASE_URL = root.getAttribute("data-base-url") || "/talentus/api/zones";
+  var BASE_URL = root.getAttribute("data-base-url") || "/ui/v2/api/zones";
   var CAN_EDIT = root.getAttribute("data-can-edit") === "1";
   var CAN_CREATE = root.getAttribute("data-can-create") === "1";
   var IMPORT_URL = root.getAttribute("data-import-url") || "";
