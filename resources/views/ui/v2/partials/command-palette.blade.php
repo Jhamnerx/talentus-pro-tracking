@@ -9,7 +9,7 @@
                 <path d="m21 21-4.35-4.35" />
             </svg>
             <input type="text" id="tp-cmdk-input" class="tp-cmdk__input"
-                placeholder="Buscar veh�culo, conductor, geocerca, comando�" autocomplete="off" spellcheck="false" />
+                placeholder="Buscar vehículo, conductor, geocerca, comando…" autocomplete="off" spellcheck="false" />
             <kbd class="tp-kbd">ESC</kbd>
         </div>
 
@@ -20,17 +20,17 @@
             </div>
 
             <div class="tp-cmdk__group" data-group="actions">
-                <div class="tp-cmdk__group-title">Acciones r�pidas</div>
+                <div class="tp-cmdk__group-title">Acciones rápidas</div>
 
                 <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/preview">
                     <span class="tp-cmdk__item-icon">??</span>
                     <span class="tp-cmdk__item-label">Ir a Live Ops</span>
-                    <span class="tp-cmdk__item-meta">Navegaci�n</span>
+                    <span class="tp-cmdk__item-meta">Navegación</span>
                 </button>
                 <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/preview#dash">
                     <span class="tp-cmdk__item-icon">??</span>
                     <span class="tp-cmdk__item-label">Abrir Command Center</span>
-                    <span class="tp-cmdk__item-meta">Navegaci�n</span>
+                    <span class="tp-cmdk__item-meta">Navegación</span>
                 </button>
                 <button class="tp-cmdk__item" data-action="theme-toggle">
                     <span class="tp-cmdk__item-icon">??</span>
@@ -44,7 +44,7 @@
                 </button>
                 <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/legacy">
                     <span class="tp-cmdk__item-icon">?</span>
-                    <span class="tp-cmdk__item-label">Volver a UI cl�sica</span>
+                    <span class="tp-cmdk__item-label">Volver a UI clásica</span>
                     <span class="tp-cmdk__item-meta">Sistema</span>
                 </button>
             </div>
@@ -60,7 +60,7 @@
             <span class="tp-cmdk__hint"><kbd class="tp-kbd">?</kbd> seleccionar</span>
             <span class="tp-cmdk__hint"><kbd class="tp-kbd">ESC</kbd> cerrar</span>
             <span class="tp-cmdk__spacer"></span>
-            <span class="tp-cmdk__hint" id="tp-cmdk-status">�</span>
+            <span class="tp-cmdk__hint" id="tp-cmdk-status">—</span>
         </div>
     </div>
 </div>

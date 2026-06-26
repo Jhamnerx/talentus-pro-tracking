@@ -89,13 +89,13 @@
 @section('workspace')
 
     <section class="preview-hero">
-        <span class="tp-chip" style="background:rgba(255,255,255,0.14); color:#fff; border-color:transparent;">Fase 1 � Shell
+        <span class="tp-chip" style="background:rgba(255,255,255,0.14); color:#fff; border-color:transparent;">Fase 1 · Shell
             & Navigation</span>
         <h1 class="tp-h1" style="margin-top:12px;">Bienvenido al nuevo Command Center</h1>
         <p class="sub">
-            Esta es la vista previa de la nueva experiencia <strong>TalentusPro</strong>: shell redise�ado, b�squeda global,
+            Esta es la vista previa de la nueva experiencia <strong>TalentusPro</strong>: shell rediseñado, búsqueda global,
             notificaciones, multi-empresa y modo claro/oscuro.
-            Convive con tu UI cl�sica sin afectar las operaciones. Cuando quieras volver, usa el men� de usuario.
+            Convive con tu UI clásica sin afectar las operaciones. Cuando quieras volver, usa el menú de usuario.
         </p>
         <div class="cta">
             <button class="tp-btn tp-btn--primary" id="open-palette-cta">
@@ -107,7 +107,7 @@
                 Probar Command Palette (Ctrl+K)
             </button>
             <button class="tp-btn tp-btn--secondary" id="open-notif-cta">Ver notificaciones</button>
-            <a class="tp-btn tp-btn--secondary" href="{{ url('/ui/v2/legacy') }}">Volver a UI cl�sica</a>
+            <a class="tp-btn tp-btn--secondary" href="{{ url('/ui/v2/legacy') }}">Volver a UI clásica</a>
         </div>
     </section>
 
@@ -115,7 +115,7 @@
     <section class="tp-mb-6">
         <div class="tp-row tp-row-between tp-mb-4">
             <div>
-                <h2 class="tp-h3">Operaci�n � Hoy</h2>
+                <h2 class="tp-h3">Operación · Hoy</h2>
                 <div class="tp-text-sm tp-text-muted">Resumen ejecutivo en tiempo real</div>
             </div>
             <div class="tp-segmented">
@@ -128,7 +128,7 @@
         <div class="tp-grid tp-grid-6">
             <div class="tp-kpi">
                 <div class="tp-kpi__label">Live</div>
-                <div class="tp-kpi__value" data-live-count="moving">�</div>
+                <div class="tp-kpi__value" data-live-count="moving">—</div>
                 <div class="tp-kpi__delta tp-kpi__delta--up">? 4% vs ayer</div>
                 <svg class="tp-kpi__spark" viewBox="0 0 80 28" preserveAspectRatio="none">
                     <polyline class="demo-spark demo-spark--up"
@@ -137,23 +137,23 @@
             </div>
             <div class="tp-kpi">
                 <div class="tp-kpi__label">Idle</div>
-                <div class="tp-kpi__value" data-live-count="idle">�</div>
+                <div class="tp-kpi__value" data-live-count="idle">—</div>
                 <div class="tp-kpi__delta tp-kpi__delta--flat">= sin cambio</div>
             </div>
             <div class="tp-kpi">
                 <div class="tp-kpi__label">Offline</div>
-                <div class="tp-kpi__value" data-live-count="offline">�</div>
+                <div class="tp-kpi__value" data-live-count="offline">—</div>
                 <div class="tp-kpi__delta tp-kpi__delta--down">? 2%</div>
             </div>
             <div class="tp-kpi">
-                <div class="tp-kpi__label">Alertas cr�ticas</div>
+                <div class="tp-kpi__label">Alertas críticas</div>
                 <div class="tp-kpi__value" style="color:var(--danger-500);">7</div>
                 <div class="tp-kpi__delta tp-kpi__delta--down">? 1 nueva</div>
             </div>
             <div class="tp-kpi">
                 <div class="tp-kpi__label">Distancia hoy</div>
                 <div class="tp-kpi__value">8,420</div>
-                <div class="tp-kpi__delta tp-kpi__delta--up">km � ? 12%</div>
+                <div class="tp-kpi__delta tp-kpi__delta--up">km · ? 12%</div>
             </div>
             <div class="tp-kpi">
                 <div class="tp-kpi__label">SOS activos</div>
@@ -175,8 +175,8 @@
                 </div>
                 <h3 class="tp-h5">Command Palette</h3>
                 <p class="tp-text-sm tp-text-secondary">
-                    Busca veh�culos, geocercas, POIs y ejecuta acciones desde cualquier pantalla.
-                    Reduce 4�7 clics a una sola pulsaci�n.
+                    Busca vehículos, geocercas, POIs y ejecuta acciones desde cualquier pantalla.
+                    Reduce 4-7 clics a una sola pulsación.
                 </p>
                 <div class="tp-card__footer">
                     <span class="tp-text-xs tp-text-muted">Datos en vivo desde tu flota</span>
@@ -190,7 +190,7 @@
                 <h3 class="tp-h5">Notificaciones contextuales</h3>
                 <p class="tp-text-sm tp-text-secondary">
                     Bandeja de eventos con severidad, filtros y acceso directo al origen.
-                    Polling autom�tico cada 30s mientras llega WebSocket en Fase 2.
+                    Polling automático cada 30s mientras llega WebSocket en Fase 2.
                 </p>
                 <div class="tp-card__footer">
                     <span class="tp-text-xs tp-text-muted">Inbox unificado</span>
@@ -217,7 +217,7 @@
                 </div>
                 <h3 class="tp-h5">Densidad enterprise</h3>
                 <p class="tp-text-sm tp-text-secondary">
-                    Comfortable para gesti�n, Compact para operadores con mucha info.
+                    Comfortable para gestión, Compact para operadores con mucha info.
                     Cambia y persiste por usuario.
                 </p>
                 <div class="tp-card__footer">
@@ -245,7 +245,7 @@
                 </div>
                 <h3 class="tp-h5">Estado operacional vivo</h3>
                 <p class="tp-text-sm tp-text-secondary">
-                    Colores sem�nticos para movimiento, idle, offline, alerta y SOS pulsante.
+                    Colores semánticos para movimiento, idle, offline, alerta y SOS pulsante.
                     Coherentes en mapa, listas y notificaciones.
                 </p>
                 <div class="tp-card__footer">
@@ -271,7 +271,7 @@
                             <th>Fase</th>
                             <th>Entregable</th>
                             <th>Estado</th>
-                            <th>Pr�ximo paso</th>
+                            <th>Próximo paso</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -285,13 +285,13 @@
                             <td><span class="tp-chip tp-chip--brand">1</span></td>
                             <td>Shell, Command Palette, notificaciones, multi-empresa</td>
                             <td><span class="tp-chip tp-chip--brand">En curso</span></td>
-                            <td class="tp-text-muted">Est�s aqu� ?</td>
+                            <td class="tp-text-muted">Estás aquí ?</td>
                         </tr>
                         <tr>
                             <td><span class="tp-chip">2</span></td>
                             <td>Live Ops nuevo (mapa + lista + drawer + socket)</td>
                             <td><span class="tp-chip">Pendiente</span></td>
-                            <td class="tp-text-muted">MapLibre + virtualizaci�n</td>
+                            <td class="tp-text-muted">MapLibre + virtualización</td>
                         </tr>
                         <tr>
                             <td><span class="tp-chip">3</span></td>
@@ -371,7 +371,7 @@
             // Welcome toast on first visit
             setTimeout(function() {
                 window.tpToast && window.tpToast({
-                    title: '�Bienvenido al nuevo Command Center!',
+                    title: '¡Bienvenido al nuevo Command Center!',
                     description: 'Presiona Ctrl+K para abrir el buscador global.',
                     variant: 'info',
                     duration: 5000

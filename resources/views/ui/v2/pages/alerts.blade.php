@@ -17,12 +17,12 @@
         data-can-edit="{{ $canEdit ? 1 : 0 }}"
         data-can-create="{{ $canCreate ? 1 : 0 }}">
 
-        {{-- LEFT � RULES --}}
+        {{-- LEFT · RULES --}}
         <aside class="tp-alerts__rules">
             <header class="tp-alerts__rules-head">
                 <div>
                     <h1 class="tp-h6 tp-mb-0">Reglas</h1>
-                    <span class="tp-text-muted tp-text-sm" id="tp-alerts-rules-count">�</span>
+                    <span class="tp-text-muted tp-text-sm" id="tp-alerts-rules-count">—</span>
                 </div>
                 @if ($canCreate)
                     <button class="tp-btn tp-btn--primary tp-btn--sm" id="tp-alerts-new" type="button">+ Nueva</button>
@@ -30,21 +30,21 @@
             </header>
 
             <div class="tp-alerts__rules-search">
-                <input type="search" class="tp-input tp-input--sm" id="tp-alerts-rules-search" placeholder="Buscar regla�"
+                <input type="search" class="tp-input tp-input--sm" id="tp-alerts-rules-search" placeholder="Buscar regla…"
                     autocomplete="off">
             </div>
 
             <div class="tp-alerts__rules-list" id="tp-alerts-rules-list" role="list">
-                <div class="tp-text-muted tp-text-center" style="padding:24px;">Cargando�</div>
+                <div class="tp-text-muted tp-text-center" style="padding:24px;">Cargando…</div>
             </div>
         </aside>
 
-        {{-- RIGHT � FEED --}}
+        {{-- RIGHT · FEED --}}
         <section class="tp-alerts__feed">
             <header class="tp-alerts__feed-head">
                 <div class="tp-row" style="gap:14px; align-items:center; flex-wrap:wrap;">
                     <h2 class="tp-h5 tp-mb-0">Feed de eventos</h2>
-                    <span class="tp-text-muted tp-text-sm" id="tp-alerts-feed-count">�</span>
+                    <span class="tp-text-muted tp-text-sm" id="tp-alerts-feed-count">—</span>
                 </div>
 
                 <div class="tp-row" style="gap:8px; flex-wrap:wrap; align-items:center;">
@@ -57,13 +57,13 @@
 
                     <div class="tp-alerts__seg" role="tablist" aria-label="Severidad">
                         <button class="tp-seg__btn is-active" role="tab" data-sev="">Todas</button>
-                        <button class="tp-seg__btn" role="tab" data-sev="critical">Cr�ticas</button>
+                        <button class="tp-seg__btn" role="tab" data-sev="critical">Críticas</button>
                         <button class="tp-seg__btn" role="tab" data-sev="warning">Aviso</button>
                         <button class="tp-seg__btn" role="tab" data-sev="info">Info</button>
                     </div>
 
                     <input type="search" class="tp-input tp-input--sm" id="tp-alerts-feed-search"
-                        placeholder="Buscar en mensaje o direcci�n�" style="min-width:240px;">
+                        placeholder="Buscar en mensaje o dirección…" style="min-width:240px;">
 
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-alerts-export" title="Exportar CSV">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -85,7 +85,7 @@
             </header>
 
             <div class="tp-alerts__feed-list" id="tp-alerts-feed-list" role="list">
-                <div class="tp-text-muted tp-text-center" style="padding:48px;">Cargando�</div>
+                <div class="tp-text-muted tp-text-center" style="padding:48px;">Cargando…</div>
             </div>
         </section>
     </div>

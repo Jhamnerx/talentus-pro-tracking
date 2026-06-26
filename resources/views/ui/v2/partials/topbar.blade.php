@@ -1,4 +1,4 @@
-{{-- Topbar � brand + workspace switcher + global search + status + notifications + user --}}
+{{-- Topbar · brand + workspace switcher + global search + status + notifications + user --}}
 @php
     $user = auth()->user();
     $userName = $user ? trim($user->name ?? ($user->email ?? 'User')) : 'Guest';
@@ -61,7 +61,7 @@
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
         </svg>
-        <span class="tp-topbar__search-placeholder">Buscar veh�culo, conductor, geocerca, comando�</span>
+        <span class="tp-topbar__search-placeholder">Buscar vehículo, conductor, geocerca, comando…</span>
         <span class="tp-topbar__kbd"><kbd>?</kbd><kbd>K</kbd></span>
     </button>
 
@@ -70,8 +70,8 @@
     {{-- Live status pill --}}
     <a href="{{ url('/ui/v2/preview') }}" class="tp-topbar__status" id="tp-live-status" title="Estado de la flota">
         <span class="tp-dot tp-dot--moving"></span>
-        <span><span data-live-count="moving">�</span> live � <span data-live-count="idle">�</span> idle � <span
-                data-live-count="offline">�</span> offline</span>
+        <span><span data-live-count="moving">—</span> live · <span data-live-count="idle">—</span> idle · <span
+                data-live-count="offline">—</span> offline</span>
     </a>
 
     {{-- Theme toggle --}}
@@ -108,7 +108,7 @@
 
     {{-- User menu --}}
     <button class="tp-topbar__user" id="tp-user-btn" aria-haspopup="menu" aria-expanded="false"
-        aria-label="Men� de usuario">
+        aria-label="Menú de usuario">
         <div class="tp-avatar">{{ $userInit }}</div>
     </button>
 
@@ -142,7 +142,7 @@
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />
             </svg>
-            Volver a UI cl�sica
+            Volver a UI clásica
         </a>
         <hr class="tp-divider" />
         <a class="tp-menu__item tp-menu__item--danger" href="{{ url('logout') }}" role="menuitem">
@@ -152,7 +152,7 @@
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-            Cerrar sesi�n
+            Cerrar sesión
         </a>
     </div>
 

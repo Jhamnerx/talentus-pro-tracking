@@ -20,9 +20,9 @@
         <header class="tp-history__toolbar">
             <div class="tp-row" style="gap:8px; align-items:center; flex-wrap:wrap;">
                 <div class="tp-history__field">
-                    <label class="tp-text-muted tp-text-xs">Veh�culo</label>
+                    <label class="tp-text-muted tp-text-xs">Vehículo</label>
                     <select class="tp-input tp-input--sm" id="tp-hist-device" style="min-width:220px;">
-                        <option value="">Cargando�</option>
+                        <option value="">Cargando…</option>
                     </select>
                 </div>
 
@@ -36,7 +36,7 @@
                     <input class="tp-input tp-input--sm" type="datetime-local" id="tp-hist-to">
                 </div>
 
-                <div class="tp-seg" role="tablist" aria-label="Rango r�pido" id="tp-hist-quick">
+                <div class="tp-seg" role="tablist" aria-label="Rango rápido" id="tp-hist-quick">
                     <button class="tp-seg__btn" data-quick="1h">1h</button>
                     <button class="tp-seg__btn is-active" data-quick="today">Hoy</button>
                     <button class="tp-seg__btn" data-quick="yesterday">Ayer</button>
@@ -45,22 +45,22 @@
 
                 <button class="tp-btn tp-btn--primary tp-btn--sm" id="tp-hist-load">Cargar</button>
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-hist-legacy"
-                    title="Abrir reporte detallado en UI cl�sica">Detalle cl�sico</button>
+                    title="Abrir reporte detallado en UI clásica">Detalle clásico</button>
             </div>
 
             <div class="tp-history__kpis" id="tp-hist-kpis" hidden>
                 <div class="tp-history__kpi"><span class="tp-history__kpi-label">Distancia</span><strong
-                        id="kpi-dist">�</strong><span class="tp-text-muted tp-text-xs">km</span></div>
-                <div class="tp-history__kpi"><span class="tp-history__kpi-label">Duraci�n</span><strong
-                        id="kpi-dur">�</strong></div>
-                <div class="tp-history__kpi"><span class="tp-history__kpi-label">V. m�x</span><strong
-                        id="kpi-max">�</strong><span class="tp-text-muted tp-text-xs">km/h</span></div>
+                        id="kpi-dist">—</strong><span class="tp-text-muted tp-text-xs">km</span></div>
+                <div class="tp-history__kpi"><span class="tp-history__kpi-label">Duración</span><strong
+                        id="kpi-dur">—</strong></div>
+                <div class="tp-history__kpi"><span class="tp-history__kpi-label">V. máx</span><strong
+                        id="kpi-max">—</strong><span class="tp-text-muted tp-text-xs">km/h</span></div>
                 <div class="tp-history__kpi"><span class="tp-history__kpi-label">V. prom</span><strong
-                        id="kpi-avg">�</strong><span class="tp-text-muted tp-text-xs">km/h</span></div>
+                        id="kpi-avg">—</strong><span class="tp-text-muted tp-text-xs">km/h</span></div>
                 <div class="tp-history__kpi"><span class="tp-history__kpi-label">Paradas</span><strong
-                        id="kpi-stops">�</strong></div>
+                        id="kpi-stops">—</strong></div>
                 <div class="tp-history__kpi"><span class="tp-history__kpi-label">Puntos</span><strong
-                        id="kpi-pts">�</strong></div>
+                        id="kpi-pts">—</strong></div>
             </div>
         </header>
 
@@ -76,12 +76,12 @@
                     </svg>
                 </div>
                 <h2 class="tp-h6">Reproductor de recorridos</h2>
-                <p class="tp-text-muted">Selecciona un veh�culo, un rango y pulsa <strong>Cargar</strong>.</p>
+                <p class="tp-text-muted">Selecciona un vehículo, un rango y pulsa <strong>Cargar</strong>.</p>
             </div>
 
             <div class="tp-history__loading" id="tp-hist-loading" hidden>
                 <div class="tp-spinner" aria-hidden="true"></div>
-                <span>Cargando recorrido�</span>
+                <span>Cargando recorrido…</span>
             </div>
         </section>
 
@@ -107,28 +107,28 @@
                     </svg>
                 </button>
                 <div class="tp-seg tp-seg--xs" role="tablist" aria-label="Velocidad" id="tp-hist-speed">
-                    <button class="tp-seg__btn" data-rate="1">1�</button>
-                    <button class="tp-seg__btn is-active" data-rate="4">4�</button>
-                    <button class="tp-seg__btn" data-rate="16">16�</button>
-                    <button class="tp-seg__btn" data-rate="64">64�</button>
+                    <button class="tp-seg__btn" data-rate="1">1×</button>
+                    <button class="tp-seg__btn is-active" data-rate="4">4×</button>
+                    <button class="tp-seg__btn" data-rate="16">16×</button>
+                    <button class="tp-seg__btn" data-rate="64">64×</button>
                 </div>
             </div>
 
             <div class="tp-history__scrub-track">
-                <div class="tp-history__scrub-time tp-text-xs tp-text-muted" id="tp-hist-time-start">�</div>
+                <div class="tp-history__scrub-time tp-text-xs tp-text-muted" id="tp-hist-time-start">—</div>
                 <div class="tp-history__scrub-rail">
                     <input type="range" class="tp-history__scrub-range" id="tp-hist-range" min="0"
-                        max="100" step="1" value="0" aria-label="Posici�n temporal">
+                        max="100" step="1" value="0" aria-label="Posición temporal">
                     <div class="tp-history__scrub-marks" id="tp-hist-marks" aria-hidden="true"></div>
                 </div>
-                <div class="tp-history__scrub-time tp-text-xs tp-text-muted" id="tp-hist-time-end">�</div>
+                <div class="tp-history__scrub-time tp-text-xs tp-text-muted" id="tp-hist-time-end">—</div>
             </div>
 
             <div class="tp-history__scrub-info">
                 <div class="tp-history__scrub-current">
                     <span class="tp-text-muted tp-text-xs">Cursor</span>
-                    <strong id="tp-hist-cursor-time">�</strong>
-                    <span class="tp-pill tp-pill--info tp-pill--sm" id="tp-hist-cursor-speed">� km/h</span>
+                    <strong id="tp-hist-cursor-time">—</strong>
+                    <span class="tp-pill tp-pill--info tp-pill--sm" id="tp-hist-cursor-speed">— km/h</span>
                 </div>
             </div>
         </footer>

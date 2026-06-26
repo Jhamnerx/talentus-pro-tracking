@@ -30,7 +30,7 @@
         <header class="tp-fleet__toolbar">
             <div class="tp-fleet__title">
                 <h1 class="tp-h5 tp-mb-0">Fleet</h1>
-                <span class="tp-text-muted tp-text-sm" id="tp-fleet-count">�</span>
+                <span class="tp-text-muted tp-text-sm" id="tp-fleet-count">—</span>
             </div>
 
             <div class="tp-fleet__search">
@@ -40,7 +40,7 @@
                     <path d="M21 21l-4.3-4.3" />
                 </svg>
                 <input type="search" class="tp-input tp-input--sm" id="tp-fleet-search"
-                    placeholder="Buscar por nombre, IMEI, placa, VIN�" autocomplete="off">
+                    placeholder="Buscar por nombre, IMEI, placa, VIN…" autocomplete="off">
             </div>
 
             <div class="tp-fleet__filters" role="tablist" aria-label="Estado">
@@ -95,14 +95,14 @@
                         <th>SIM</th>
                         <th class="tp-text-right" data-sort="speed">km/h</th>
                         <th class="tp-text-right">Motor (h)</th>
-                        <th>�ltimo movimiento</th>
+                        <th>último movimiento</th>
                         <th>Expira</th>
                         <th class="tp-fleet__th-actions"></th>
                     </tr>
                 </thead>
                 <tbody id="tp-fleet-tbody">
                     <tr>
-                        <td colspan="12" class="tp-text-muted tp-text-center" style="padding:32px;">Cargando�</td>
+                        <td colspan="12" class="tp-text-muted tp-text-center" style="padding:32px;">Cargando…</td>
                     </tr>
                 </tbody>
             </table>
@@ -113,10 +113,10 @@
                 <span><strong id="tp-fleet-selection-count">0</strong> seleccionados</span>
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-selection-clear">Limpiar</button>
             </div>
-            <nav class="tp-fleet__pager" aria-label="Paginaci�n">
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-prev" disabled>�</button>
-                <span class="tp-text-sm tp-text-muted" id="tp-fleet-page">�</span>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-next" disabled>�</button>
+            <nav class="tp-fleet__pager" aria-label="Paginación">
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-prev" disabled>—</button>
+                <span class="tp-text-sm tp-text-muted" id="tp-fleet-page">—</span>
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-next" disabled>—</button>
             </nav>
         </footer>
     </div>

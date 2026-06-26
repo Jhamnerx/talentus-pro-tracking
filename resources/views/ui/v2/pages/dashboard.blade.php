@@ -15,7 +15,7 @@
         <header class="tp-dash__head">
             <div>
                 <h1 class="tp-h4 tp-mb-0">Command Center</h1>
-                <p class="tp-text-muted tp-mb-0">Vista ejecutiva de tu flota � KPIs, distribuci�n y actividad.</p>
+                <p class="tp-text-muted tp-mb-0">Vista ejecutiva de tu flota · KPIs, distribución y actividad.</p>
             </div>
             <div class="tp-row" style="gap:8px;">
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-dash-refresh" title="Actualizar">
@@ -42,7 +42,7 @@
                     ['key' => 'avgSpeed', 'label' => 'Vel. promedio', 'icon' => 'reports', 'suffix' => ' km/h'],
                     [
                         'key' => 'utilization',
-                        'label' => 'Utilizaci�n',
+                        'label' => 'Utilización',
                         'icon' => 'sparkle',
                         'tone' => 'brand',
                         'suffix' => '%',
@@ -55,7 +55,7 @@
                     <div class="tp-kpi__icon">@include('ui.v2.partials.icons', ['name' => $k['icon']])</div>
                     <div class="tp-kpi__body">
                         <div class="tp-kpi__label">{{ $k['label'] }}</div>
-                        <div class="tp-kpi__value" data-kpi-value>�</div>
+                        <div class="tp-kpi__value" data-kpi-value>—</div>
                     </div>
                 </article>
             @endforeach
@@ -66,7 +66,7 @@
 
             <article class="tp-widget tp-widget--span-6" data-widget="distribution">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Distribuci�n por estado</h3>
+                    <h3 class="tp-h6 tp-mb-0">Distribución por estado</h3>
                     <span class="tp-widget__hint">Tiempo real</span>
                 </header>
                 <div class="tp-widget__body">
@@ -76,7 +76,7 @@
 
             <article class="tp-widget tp-widget--span-6" data-widget="activity">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Actividad �ltimas 24h</h3>
+                    <h3 class="tp-h6 tp-mb-0">Actividad últimas 24h</h3>
                     <span class="tp-widget__hint">Movimientos por hora</span>
                 </header>
                 <div class="tp-widget__body">
@@ -86,7 +86,7 @@
 
             <article class="tp-widget tp-widget--span-6" data-widget="topspeed">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Top 5 � velocidad actual</h3>
+                    <h3 class="tp-h6 tp-mb-0">Top 5 · velocidad actual</h3>
                     <a href="{{ url('/ui/v2/live') }}" class="tp-link tp-text-sm">Ver mapa ?</a>
                 </header>
                 <div class="tp-widget__body">
@@ -101,7 +101,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td colspan="4" class="tp-text-muted tp-text-center">Cargando�</td>
+                                <td colspan="4" class="tp-text-muted tp-text-center">Cargando…</td>
                             </tr>
                         </tbody>
                     </table>
@@ -119,19 +119,19 @@
                             <span class="tp-health__label">Conectividad</span>
                             <div class="tp-health__bar"><span class="tp-health__fill" data-health="connectivity"
                                     style="width:0%"></span></div>
-                            <span class="tp-health__val" data-health-val="connectivity">�</span>
+                            <span class="tp-health__val" data-health-val="connectivity">—</span>
                         </div>
                         <div class="tp-health__row">
-                            <span class="tp-health__label">Utilizaci�n</span>
+                            <span class="tp-health__label">Utilización</span>
                             <div class="tp-health__bar"><span class="tp-health__fill" data-health="utilization"
                                     style="width:0%"></span></div>
-                            <span class="tp-health__val" data-health-val="utilization">�</span>
+                            <span class="tp-health__val" data-health-val="utilization">—</span>
                         </div>
                         <div class="tp-health__row">
                             <span class="tp-health__label">Activos / Total</span>
                             <div class="tp-health__bar"><span class="tp-health__fill" data-health="active"
                                     style="width:0%"></span></div>
-                            <span class="tp-health__val" data-health-val="active">�</span>
+                            <span class="tp-health__val" data-health-val="active">—</span>
                         </div>
                     </div>
                 </div>

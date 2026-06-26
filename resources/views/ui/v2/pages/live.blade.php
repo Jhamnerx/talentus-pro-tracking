@@ -1,6 +1,6 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Live Ops � Mapa')
+@section('title', $pageTitle ?? 'Live Ops · Mapa')
 @section('rail-active', 'live')
 
 @push('head')
@@ -72,7 +72,7 @@
                         </svg>
                     </span>
                     <input type="text" class="tp-input tp-input--with-icon" id="tp-live-search"
-                        placeholder="Buscar nombre, placa, IMEI�" autocomplete="off">
+                        placeholder="Buscar nombre, placa, IMEI…" autocomplete="off">
                 </div>
 
                 {{-- Status filter --}}
@@ -98,7 +98,7 @@
 
             {{-- Virtualized list --}}
             <div class="tp-live__list-wrap">
-                <div class="tp-live__list" id="tp-live-list" role="listbox" aria-label="Lista de veh�culos">
+                <div class="tp-live__list" id="tp-live-list" role="listbox" aria-label="Lista de vehículos">
                     {{-- Skeleton --}}
                     <div class="tp-live__skeleton">
                         @for ($i = 0; $i < 8; $i++)
@@ -121,7 +121,7 @@
             </div>
 
             <footer class="tp-live__filters-foot">
-                <span class="tp-text-xs tp-text-muted" id="tp-live-status-text">Cargando�</span>
+                <span class="tp-text-xs tp-text-muted" id="tp-live-status-text">Cargando…</span>
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-live-refresh" type="button">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -135,7 +135,7 @@
 
         {{-- COLLAPSED FILTERS HANDLE (when filters panel is hidden) --}}
         <button class="tp-live__filters-handle" id="tp-live-filters-expand" type="button" hidden title="Mostrar lista"
-            aria-label="Mostrar lista de veh�culos">
+            aria-label="Mostrar lista de vehículos">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m9 18 6-6-6-6" />
@@ -370,8 +370,8 @@
                 <div class="tp-row" style="gap:12px; align-items:center; min-width:0;">
                     <span class="tp-dot" id="tp-drawer-dot"></span>
                     <div style="min-width:0;">
-                        <h3 class="tp-h5 tp-mb-0 tp-text-truncate" id="tp-drawer-name">�</h3>
-                        <div class="tp-text-xs tp-text-muted tp-text-truncate" id="tp-drawer-plate">�</div>
+                        <h3 class="tp-h5 tp-mb-0 tp-text-truncate" id="tp-drawer-name">—</h3>
+                        <div class="tp-text-xs tp-text-muted tp-text-truncate" id="tp-drawer-plate">—</div>
                     </div>
                 </div>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-drawer-close" type="button"
@@ -392,44 +392,44 @@
                 <div class="tp-grid tp-grid-2 tp-mb-5">
                     <div class="tp-kpi tp-kpi--sm">
                         <div class="tp-kpi__label">Velocidad</div>
-                        <div class="tp-kpi__value" id="tp-drawer-speed">�</div>
+                        <div class="tp-kpi__value" id="tp-drawer-speed">—</div>
                         <div class="tp-text-xs tp-text-muted">km/h</div>
                     </div>
                     <div class="tp-kpi tp-kpi--sm">
                         <div class="tp-kpi__label">Rumbo</div>
-                        <div class="tp-kpi__value" id="tp-drawer-course">�</div>
+                        <div class="tp-kpi__value" id="tp-drawer-course">—</div>
                         <div class="tp-text-xs tp-text-muted">grados</div>
                     </div>
                     <div class="tp-kpi tp-kpi--sm">
                         <div class="tp-kpi__label">Detenido</div>
-                        <div class="tp-kpi__value" id="tp-drawer-stop">�</div>
+                        <div class="tp-kpi__value" id="tp-drawer-stop">—</div>
                         <div class="tp-text-xs tp-text-muted">tiempo</div>
                     </div>
                     <div class="tp-kpi tp-kpi--sm">
                         <div class="tp-kpi__label">Distancia</div>
-                        <div class="tp-kpi__value" id="tp-drawer-distance">�</div>
+                        <div class="tp-kpi__value" id="tp-drawer-distance">—</div>
                         <div class="tp-text-xs tp-text-muted">km totales</div>
                     </div>
                 </div>
 
                 {{-- Telemetry list --}}
                 <div class="tp-card tp-card--flat tp-mb-4">
-                    <h4 class="tp-h6 tp-mb-3">Telemetr�a</h4>
+                    <h4 class="tp-h6 tp-mb-3">Telemetría</h4>
                     <dl class="tp-defs">
-                        <dt>�ltima se�al</dt>
-                        <dd id="tp-drawer-lastseen">�</dd>
+                        <dt>última señal</dt>
+                        <dd id="tp-drawer-lastseen">—</dd>
                         <dt>Coordenadas</dt>
-                        <dd class="tp-text-mono" id="tp-drawer-coords">�</dd>
+                        <dd class="tp-text-mono" id="tp-drawer-coords">—</dd>
                         <dt>Altitud</dt>
-                        <dd id="tp-drawer-altitude">�</dd>
+                        <dd id="tp-drawer-altitude">—</dd>
                         <dt>Motor</dt>
-                        <dd id="tp-drawer-engine">�</dd>
+                        <dd id="tp-drawer-engine">—</dd>
                         <dt>IMEI</dt>
-                        <dd class="tp-text-mono" id="tp-drawer-imei">�</dd>
+                        <dd class="tp-text-mono" id="tp-drawer-imei">—</dd>
                         <dt>Modelo</dt>
-                        <dd id="tp-drawer-model">�</dd>
+                        <dd id="tp-drawer-model">—</dd>
                         <dt>SIM</dt>
-                        <dd class="tp-text-mono" id="tp-drawer-sim">�</dd>
+                        <dd class="tp-text-mono" id="tp-drawer-sim">—</dd>
                     </dl>
                 </div>
 

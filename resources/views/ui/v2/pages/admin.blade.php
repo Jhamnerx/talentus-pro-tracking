@@ -16,7 +16,7 @@
         <header class="tp-admin__head">
             <div>
                 <h1 class="tp-h5 tp-mb-0">Admin & Integrations</h1>
-                <p class="tp-text-muted tp-text-sm tp-mb-0">API, webhooks, SSO, branding y accesos r�pidos al panel cl�sico.
+                <p class="tp-text-muted tp-text-sm tp-mb-0">API, webhooks, SSO, branding y accesos rápidos al panel clásico.
                 </p>
             </div>
             <div class="tp-row" style="gap:8px;">
@@ -39,25 +39,25 @@
                     </div>
                     <div class="tp-admin__card-title">
                         <h3 class="tp-h6 tp-mb-0">API Access</h3>
-                        <span class="tp-text-muted tp-text-xs">REST � OAuth-like token</span>
+                        <span class="tp-text-muted tp-text-xs">REST · OAuth-like token</span>
                     </div>
-                    <span class="tp-pill tp-pill--info tp-pill--sm" id="api-status">�</span>
+                    <span class="tp-pill tp-pill--info tp-pill--sm" id="api-status">—</span>
                 </header>
                 <dl class="tp-admin__dl">
                     <dt>Base URL</dt>
-                    <dd class="tp-admin__mono"><span id="api-base">�</span>
+                    <dd class="tp-admin__mono"><span id="api-base">—</span>
                         <button class="tp-btn tp-btn--ghost tp-btn--xs" data-copy="#api-base" type="button">Copiar</button>
                     </dd>
                     <dt>Token</dt>
-                    <dd id="api-token">�</dd>
+                    <dd id="api-token">—</dd>
                     <dt>Expira</dt>
-                    <dd id="api-expires">�</dd>
+                    <dd id="api-expires">—</dd>
                 </dl>
                 <footer class="tp-admin__card-foot">
                     <a class="tp-btn tp-btn--ghost tp-btn--xs" href="#" id="api-docs" target="_blank"
-                        rel="noopener">Documentaci�n</a>
+                        rel="noopener">Documentación</a>
                     <a class="tp-btn tp-btn--ghost tp-btn--xs" href="{{ url('/user/settings') }}" target="_blank"
-                        rel="noopener">Regenerar / cambiar contrase�a</a>
+                        rel="noopener">Regenerar / cambiar contraseña</a>
                 </footer>
             </article>
 
@@ -74,7 +74,7 @@
                         <h3 class="tp-h6 tp-mb-0">Webhooks & Forwards</h3>
                         <span class="tp-text-muted tp-text-xs">Eventos hacia sistemas externos</span>
                     </div>
-                    <span class="tp-pill tp-pill--info tp-pill--sm" id="wh-count">�</span>
+                    <span class="tp-pill tp-pill--info tp-pill--sm" id="wh-count">—</span>
                 </header>
 
                 <div class="tp-admin__meta">
@@ -84,7 +84,7 @@
                 </div>
 
                 <div class="tp-admin__list" id="wh-list">
-                    <div class="tp-text-muted tp-text-center" style="padding:16px;">Cargando�</div>
+                    <div class="tp-text-muted tp-text-center" style="padding:16px;">Cargando…</div>
                 </div>
 
                 <footer class="tp-admin__card-foot">
@@ -109,13 +109,13 @@
                         <h3 class="tp-h6 tp-mb-0">Single Sign-On</h3>
                         <span class="tp-text-muted tp-text-xs">Azure Active Directory</span>
                     </div>
-                    <span class="tp-pill tp-pill--muted tp-pill--sm" id="sso-status">�</span>
+                    <span class="tp-pill tp-pill--muted tp-pill--sm" id="sso-status">—</span>
                 </header>
                 <dl class="tp-admin__dl">
                     <dt>Proveedor</dt>
                     <dd>Microsoft Azure AD</dd>
                     <dt>Tenant ID</dt>
-                    <dd id="sso-tenant" class="tp-admin__mono">�</dd>
+                    <dd id="sso-tenant" class="tp-admin__mono">—</dd>
                 </dl>
                 <footer class="tp-admin__card-foot">
                     <a class="tp-btn tp-btn--ghost tp-btn--xs" href="https://entra.microsoft.com" target="_blank"
@@ -140,12 +140,12 @@
                 </header>
                 <dl class="tp-admin__dl">
                     <dt>Nombre app</dt>
-                    <dd id="br-name">�</dd>
+                    <dd id="br-name">—</dd>
                     <dt>Color principal</dt>
                     <dd><span class="tp-admin__swatch" id="br-swatch"></span> <code id="br-color"
-                            class="tp-admin__mono">�</code></dd>
+                            class="tp-admin__mono">—</code></dd>
                     <dt>Logo</dt>
-                    <dd id="br-logo">�</dd>
+                    <dd id="br-logo">—</dd>
                 </dl>
                 <footer class="tp-admin__card-foot">
                     @if ($isAdmin)
@@ -165,11 +165,11 @@
             <div class="tp-admin__counts">
                 <div class="tp-admin__kpi">
                     <span class="tp-admin__kpi-label">Usuarios</span>
-                    <strong id="cnt-users">�</strong>
+                    <strong id="cnt-users">—</strong>
                 </div>
                 <div class="tp-admin__kpi">
                     <span class="tp-admin__kpi-label">Dispositivos</span>
-                    <strong id="cnt-devices">�</strong>
+                    <strong id="cnt-devices">—</strong>
                 </div>
             </div>
         </section>
@@ -177,11 +177,11 @@
         {{-- ====== QUICK LINKS ====== --}}
         <section class="tp-admin__panel">
             <header class="tp-admin__panel-head">
-                <h2 class="tp-h6 tp-mb-0">Accesos r�pidos</h2>
-                <span class="tp-text-muted tp-text-sm">Se abren en el panel cl�sico</span>
+                <h2 class="tp-h6 tp-mb-0">Accesos rápidos</h2>
+                <span class="tp-text-muted tp-text-sm">Se abren en el panel clásico</span>
             </header>
             <div class="tp-admin__quick" id="quick-grid">
-                <div class="tp-text-muted tp-text-center" style="padding:24px; grid-column:1/-1;">Cargando�</div>
+                <div class="tp-text-muted tp-text-center" style="padding:24px; grid-column:1/-1;">Cargando…</div>
             </div>
         </section>
     </div>

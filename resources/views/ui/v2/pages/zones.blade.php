@@ -35,18 +35,18 @@
         <aside class="tp-zones__panel">
             <header class="tp-zones__panel-head">
                 <h1 class="tp-h6 tp-mb-0">Zones & Routes</h1>
-                <span class="tp-text-muted tp-text-sm" id="tp-zones-count">�</span>
+                <span class="tp-text-muted tp-text-sm" id="tp-zones-count">—</span>
             </header>
 
             <div class="tp-zones__search">
-                <input type="search" class="tp-input tp-input--sm" id="tp-zones-search" placeholder="Buscar geocerca�"
+                <input type="search" class="tp-input tp-input--sm" id="tp-zones-search" placeholder="Buscar geocerca…"
                     autocomplete="off">
             </div>
 
             <div class="tp-zones__filters" role="tablist">
                 <button class="tp-seg__btn is-active" role="tab" data-type="">Todas</button>
-                <button class="tp-seg__btn" role="tab" data-type="polygon">Pol�gonos</button>
-                <button class="tp-seg__btn" role="tab" data-type="circle">C�rculos</button>
+                <button class="tp-seg__btn" role="tab" data-type="polygon">Polígonos</button>
+                <button class="tp-seg__btn" role="tab" data-type="circle">Círculos</button>
             </div>
 
             <div class="tp-zones__group-row">
@@ -57,7 +57,7 @@
             </div>
 
             <div class="tp-zones__list" id="tp-zones-list" role="listbox" aria-label="Geocercas">
-                <div class="tp-text-muted tp-text-center" style="padding:24px;">Cargando�</div>
+                <div class="tp-text-muted tp-text-center" style="padding:24px;">Cargando…</div>
             </div>
 
             @if ($canCreate)
@@ -128,7 +128,7 @@
                 <header class="tp-zones__detail-head">
                     <div class="tp-row" style="gap:8px; align-items:center; min-width:0;">
                         <span class="tp-zones__detail-swatch" id="tp-zones-detail-swatch"></span>
-                        <h3 class="tp-h6 tp-mb-0 tp-text-truncate" id="tp-zones-detail-name">�</h3>
+                        <h3 class="tp-h6 tp-mb-0 tp-text-truncate" id="tp-zones-detail-name">—</h3>
                     </div>
                     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-zones-detail-close"
                         aria-label="Cerrar">
@@ -141,15 +141,15 @@
                 </header>
                 <dl class="tp-zones__detail-grid">
                     <dt>Tipo</dt>
-                    <dd id="tp-zones-detail-type">�</dd>
+                    <dd id="tp-zones-detail-type">—</dd>
                     <dt>Estado</dt>
-                    <dd id="tp-zones-detail-active">�</dd>
+                    <dd id="tp-zones-detail-active">—</dd>
                     <dt>Grupo</dt>
-                    <dd id="tp-zones-detail-group">�</dd>
-                    <dt>V�rtices / Radio</dt>
-                    <dd id="tp-zones-detail-size">�</dd>
-                    <dt>Velocidad l�mite</dt>
-                    <dd id="tp-zones-detail-speed">�</dd>
+                    <dd id="tp-zones-detail-group">—</dd>
+                    <dt>Vértices / Radio</dt>
+                    <dd id="tp-zones-detail-size">—</dd>
+                    <dt>Velocidad límite</dt>
+                    <dd id="tp-zones-detail-speed">—</dd>
                 </dl>
                 @if ($canEdit)
                     <div class="tp-row" style="gap:6px; margin-top:12px;">

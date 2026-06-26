@@ -22,11 +22,11 @@
             </div>
             <div class="tp-copilot__hero-text">
                 <h1 class="tp-h4 tp-mb-1">Co-Pilot IA</h1>
-                <p class="tp-text-muted tp-mb-0">Tu copiloto operativo: detecta anomal�as, propone acciones y responde
+                <p class="tp-text-muted tp-mb-0">Tu copiloto operativo: detecta anomalías, propone acciones y responde
                     preguntas en lenguaje natural.</p>
             </div>
             <div class="tp-copilot__hero-meta" id="cp-meta">
-                <span class="tp-text-muted tp-text-xs">Analizando�</span>
+                <span class="tp-text-muted tp-text-xs">Analizando…</span>
             </div>
         </header>
 
@@ -41,15 +41,15 @@
                     </svg>
                 </div>
                 <input type="text" class="tp-copilot__ask-input" id="cp-q"
-                    placeholder="Preg�ntame algo� ej. �veh�culos parados�, �excesos de velocidad�, �ABC-123�"
+                    placeholder="Pregúntame algo… ej. "vehículos parados", "excesos de velocidad", "ABC-123""
                     autocomplete="off" maxlength="200">
                 <button class="tp-btn tp-btn--primary tp-btn--sm" id="cp-go" type="button">Preguntar</button>
             </form>
 
-            <div class="tp-copilot__suggestions" id="cp-quickq" aria-label="Sugerencias r�pidas">
-                <button class="tp-copilot__chip" type="button" data-q="veh�culos parados">Parados</button>
+            <div class="tp-copilot__suggestions" id="cp-quickq" aria-label="Sugerencias rápidas">
+                <button class="tp-copilot__chip" type="button" data-q="vehículos parados">Parados</button>
                 <button class="tp-copilot__chip" type="button" data-q="excesos de velocidad">Excesos velocidad</button>
-                <button class="tp-copilot__chip" type="button" data-q="veh�culos offline">Offline</button>
+                <button class="tp-copilot__chip" type="button" data-q="vehículos offline">Offline</button>
                 <button class="tp-copilot__chip" type="button" data-q="alertas sos">SOS</button>
                 <button class="tp-copilot__chip" type="button" data-q="reporte de ayer">Reporte ayer</button>
                 <button class="tp-copilot__chip" type="button" data-q="historial">Historial</button>
@@ -60,10 +60,10 @@
 
         {{-- ===== KPIs ===== --}}
         <section class="tp-copilot__kpis" id="cp-kpis" hidden>
-            <div class="tp-copilot__kpi"><span>Flota total</span><strong id="kpi-total">�</strong></div>
-            <div class="tp-copilot__kpi"><span>Utilizaci�n</span><strong id="kpi-util">�</strong></div>
-            <div class="tp-copilot__kpi"><span>Eventos 24h</span><strong id="kpi-evt">�</strong></div>
-            <div class="tp-copilot__kpi"><span>Insights</span><strong id="kpi-ins">�</strong></div>
+            <div class="tp-copilot__kpi"><span>Flota total</span><strong id="kpi-total">—</strong></div>
+            <div class="tp-copilot__kpi"><span>Utilización</span><strong id="kpi-util">—</strong></div>
+            <div class="tp-copilot__kpi"><span>Eventos 24h</span><strong id="kpi-evt">—</strong></div>
+            <div class="tp-copilot__kpi"><span>Insights</span><strong id="kpi-ins">—</strong></div>
         </section>
 
         {{-- ===== INSIGHTS ===== --}}
@@ -79,24 +79,24 @@
                 </button>
             </header>
             <div class="tp-copilot__insights" id="cp-insights">
-                <div class="tp-text-muted tp-text-center" style="padding:32px;">Analizando tu operaci�n�</div>
+                <div class="tp-text-muted tp-text-center" style="padding:32px;">Analizando tu operación…</div>
             </div>
         </section>
 
         {{-- ===== SUGGESTIONS ===== --}}
         <section class="tp-copilot__panel">
             <header class="tp-copilot__panel-head">
-                <h2 class="tp-h6 tp-mb-0">Pr�ximas acciones</h2>
+                <h2 class="tp-h6 tp-mb-0">Próximas acciones</h2>
             </header>
             <div class="tp-copilot__shortcuts" id="cp-shortcuts">
-                <div class="tp-text-muted tp-text-center" style="padding:24px; grid-column:1/-1;">�</div>
+                <div class="tp-text-muted tp-text-center" style="padding:24px; grid-column:1/-1;">—</div>
             </div>
         </section>
 
         <footer class="tp-copilot__foot">
             <span class="tp-text-muted tp-text-xs">
-                Co-Pilot opera con heur�sticas deterministas sobre tus propios datos.
-                No env�a informaci�n a servicios externos.
+                Co-Pilot opera con heurísticas deterministas sobre tus propios datos.
+                No envía información a servicios externos.
             </span>
         </footer>
     </div>

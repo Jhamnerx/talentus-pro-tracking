@@ -1,4 +1,4 @@
-{{-- Rail � primary navigation --}}
+{{-- Rail · primary navigation --}}
 @php
     $active = $active ?? 'live';
     $items = [
@@ -17,7 +17,7 @@
     ];
 @endphp
 
-<aside class="tp-rail" aria-label="Navegaci�n principal">
+<aside class="tp-rail" aria-label="Navegación principal">
     <a href="{{ url('/ui/v2/preview') }}" class="tp-rail__logo" aria-label="TalentusPro Home">T</a>
 
     @foreach ($items as $it)

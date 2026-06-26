@@ -1,17 +1,17 @@
 {{--
-    TalentusPro � Master Layout (Fase 1)
+    TalentusPro · Master Layout (Fase 1)
     ============================================================
     Layout aislado del legacy. NO toca app.blade.php ni Tobuli.
     Usa el design system v1.0 (.tp-* prefixed, scope .tp-scope).
 
     Slots / yields disponibles:
-      @section('title')       t�tulo de la pesta�a
-      @section('rail-active') secci�n activa: live|dashboard|fleet|zones|alerts|history|reports|integrations|admin
-      @section('workspace')   contenido principal de la p�gina
+      @section('title')       título de la pestaña
+      @section('rail-active') sección activa: live|dashboard|fleet|zones|alerts|history|reports|integrations|admin
+      @section('workspace')   contenido principal de la página
       @push('head')           tags extra en <head>
       @push('scripts')        scripts al final de <body>
 
-    Activaci�n: ver TalentusController::preview()
+    Activación: ver TalentusController::preview()
 ============================================================ --}}
 @php
     $user = auth()->user();
@@ -29,7 +29,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>@yield('title', 'TalentusPro') � Command Center</title>
+    <title>@yield('title', 'TalentusPro') · Command Center</title>
 
     <link rel="preconnect" href="https://rsms.me/" crossorigin>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
