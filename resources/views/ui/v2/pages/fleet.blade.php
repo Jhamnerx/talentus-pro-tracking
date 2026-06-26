@@ -16,11 +16,9 @@
         @php
             $tpDevicesBase = url('/ui/v2/api/devices');
             $tpDeviceModalConfig = [
-                'metaUrl' => route('ui.v2.api.devices.meta'),
                 'formNewUrl' => route('ui.v2.api.devices.form_new'),
                 'formUrl' => $tpDevicesBase . '/{id}/form',
                 'storeUrl' => route('ui.v2.api.devices.store'),
-                'editUrl' => $tpDevicesBase . '/{id}/edit',
                 'updateUrl' => $tpDevicesBase . '/{id}',
                 'canCreate' => $canCreate ?? false,
                 'canEdit' => $canCreate ?? false,
