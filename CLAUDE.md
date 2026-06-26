@@ -2,16 +2,28 @@
 
 Guía para Claude Code sobre la arquitectura, convenciones y flujos de trabajo de este proyecto.
 
+> **Nota sobre la migración de estilos en curso:** se está migrando la UI a un estilo más
+> profesional. La sección [**Frontend / UI**](#frontend--ui-vistas-estilos-mapas-modales-js) es el
+> mapa completo de vistas, SCSS/temas, mapas, modales, permisos y archivos JS por módulo. Léela
+> antes de tocar cualquier estilo.
+
 ---
 
 ## Stack Tecnológico
 
+### Backend
 - **Laravel 8** (PHP 8.x)
 - **MySQL** — base de datos principal
 - **Redis** — caché, colas y pub/sub para tiempo real
-- **Socket.io + Node.js** — servidor WebSocket en `socket/socket.js`
-- **Gulp** — compilación de assets (NO usa Laravel Mix)
 - **Fractal** — transformers para respuestas API
+
+### Frontend
+- **Blade** — templating (vistas en `Tobuli/Views/`, NO en `resources/views/`)
+- **jQuery 3.2.1 + Bootstrap 3** — base de UI (NO React/Vue; JS imperativo "vanilla + jQuery")
+- **Leaflet 1.0.3** — motor de mapas (con plugins: draw, editable, markercluster, googleMutant, yandex, bing…)
+- **SCSS (node-sass)** compilado con **Gulp** — sistema de temas multi-color (NO usa Laravel Mix/Vite)
+- **Socket.io + Node.js** — servidor WebSocket en `socket/socket.js` (tiempo real GPS)
+- **Flot** — gráficas (reportes, historial, dashboard)
 
 ---
 
@@ -22,6 +34,9 @@ Guía para Claude Code sobre la arquitectura, convenciones y flujos de trabajo d
 | `App\`           | `app/`     | Capa Laravel estándar (Controllers, Middleware, Events, Jobs)     |
 | `Tobuli\`        | `Tobuli/`  | Dominio de negocio (Entities, Repositories, Services, Validation) |
 | `CustomFacades\` | `Facades/` | Facades custom (Repos, ModalHelpers, Validators)                  |
+
+> ⚠️ Las **vistas Blade NO están en `resources/views/`** sino en **`Tobuli/Views/`**
+> (`Frontend/` y `Admin/`). `resources/views/` solo tiene cascarones (`app.blade.php`, auth, errors).
 
 ---
 
@@ -34,9 +49,14 @@ php artisan serve
 # Servidor de sockets (tiempo real GPS)
 cd socket && node socket.js
 
-# Assets (SCSS + JS)
-gulp
-gulp watch
+# ── Assets (Gulp, NO Laravel Mix) ───────────────────────────────
+gulp                # sass (tema light-blue) + scripts (3 bundles) + watch con browser-sync
+gulp watch          # observa scss/ y js/ y recompila
+gulp sass           # compila SOLO el tema activo de dev (templates/light-blue.scss)
+gulp sass-all       # compila TODOS los temas (templates/*.scss → public/assets/css/*.css)
+gulp scripts        # reconstruye los 3 bundles JS (core.js, app.js, report.js)
+gulp templates      # sass-all + minify-css  (regenerar todos los temas para producción)
+gulp assets         # sass-all + minify-css + scripts + minify-js (build completo de producción)
 
 # Base de datos
 php artisan migrate
@@ -44,9 +64,278 @@ php artisan db:seed
 php artisan devices:update-config
 ```
 
+> Tras editar SCSS o JS hay que **recompilar con Gulp**: el navegador carga los archivos ya
+> compilados de `public/assets/` (`*.css` y `core.js`/`app.js`), nunca los fuentes de `resources/`.
+
 ---
 
-## Patrones Críticos
+## Frontend / UI (vistas, estilos, mapas, modales, JS)
+
+> Esta es la sección central para la migración de estilos. Cubre el pipeline de assets, el sistema
+> de temas SCSS, el layout maestro, mapas, modales, permisos en la vista, y qué JS gobierna cada módulo.
+
+### A. Pipeline de assets (Gulp → `public/assets/`)
+
+Definido en `gulpfile.js`. **Tres bundles JS** (se concatenan, en este orden):
+
+| Bundle (`public/assets/js/`) | Contenido | Dónde se usa |
+| ---------------------------- | --------- | ------------ |
+| `core.js`  | jQuery, jQuery-UI, Bootstrap, bootstrap-select, datepicker/datetimepicker, colorpicker, **modalmanager**, toastr, dataTables, intl-tel-input, flot, + `helpers/` + **todos los `plugins/`** | Toda página logueada (base de UI) |
+| `app.js`   | moment, **Leaflet + todos sus plugins**, **todos los `controller/`**, **todos los `model/`**, socket.io, `plugins/chat.js` | Mapa principal / app en vivo |
+| `report.js`| jQuery, moment, flot, Leaflet + polylineDecorator | Vistas de reportes generados |
+
+El layout maestro carga `core.js` y luego `app.js` (ver `loged.blade.php`).
+`-debug.js` son las versiones sin minificar.
+
+**SCSS → CSS:** `gulp sass-all` compila cada `resources/assets/scss/templates/*.scss` a
+`public/assets/css/<nombre>.css`. El `<nombre>` del template = nombre del tema (ej. `light-blue.css`).
+
+### B. Estructura de carpetas Frontend
+
+```
+resources/assets/
+├── js/
+│   ├── controller/   ← un "controlador" JS por módulo del mapa (ver tabla §G)
+│   ├── model/        ← modelos JS por entidad (Device, Geofence, Poi, Route, Alert, Event, MapTiles)
+│   ├── plugins/      ← widgets/utilidades reutilizables (modals, tables, loader, actions, chat…)
+│   ├── helpers/      ← helper.js (utilidades globales), fileread.js
+│   └── lib/          ← librerías de terceros (jquery, bootstrap, leaflet/*, flot/*, moment…)
+├── scss/
+│   ├── _index.scss       ← orquestador: variables → mixins → libraries → layout
+│   ├── _variables (en layout/) ← TODA la paleta y tipografía base (tokens de diseño)
+│   ├── colouring/    ← temas: _main-<color> (define $brand-primary) + _base-ligth/_base-dark
+│   ├── templates/    ← ENTRYPOINTS por tema (light-blue.scss, dark-red.scss, facelift.scss…)
+│   ├── layout/       ← componentes propios (header, sidebar, map, modals, forms, buttons, dashboard…)
+│   ├── libraries/    ← override de estilos de terceros (bootstrap, leaflet, font-awesome, select…)
+│   └── mixins/
+└── lang/             ← (i18n PHP, no estilos)
+
+Tobuli/Views/Frontend/   ← vistas Blade de usuario final (~70 módulos, ver §F)
+Tobuli/Views/Admin/      ← panel de administración
+public/assets/           ← SALIDA compilada (css/, js/, fonts/, icons/, images/, plugins/)
+```
+
+### C. Sistema de Temas y Estilos (SCSS) — clave para la migración
+
+**Cascada de un tema** (ej. `templates/light-blue.scss`):
+
+```scss
+@import '../colouring/main-blue';   // 1. acento de marca: define $brand-primary (#1b99bd)
+@import '../colouring/base-ligth';  // 2. modo claro u oscuro (fondos, textos)
+@import '../index';                 // 3. todo el resto del sistema
+```
+
+`_index.scss` carga en orden: **`layout/variables` → `mixins/index` → `libraries/index` → `layout/index`.**
+
+- **`layout/_variables.scss`** = los **design tokens**. Paleta semántica con escalas
+  (`$color-bg-000…300`, `$color-text-000…900`, `$color-border-*`, `$color-shadow`), tipografía
+  (`$font-family-sans-serif: "Open Sans"`, `$font-size-base: 12px` + escalas), z-index, y mapeos
+  Bootstrap (`$body-bg`, `$text-color`, `$component-active-bg: $brand-primary`…). **Editar aquí
+  cambia todo el sistema** — es el primer lugar a tocar para un restyle.
+- **`colouring/_main-<color>.scss`** — cada uno define **solo `$brand-primary`** (el color de acento).
+  Hay 13 colores (blue, cyan, golden, gray, green, indigo, ocean-blue, orange, pink, purple, red,
+  black, win10-blue).
+- **`colouring/_base-ligth.scss` / `_base-dark.scss`** — variante clara/oscura (sobreescriben
+  fondos/textos antes de cargar `_index`).
+- **`templates/*.scss`** — 26 combinaciones (13 colores × light/dark) **+** especiales:
+  `facelift.scss`, `report.scss`, `report-map.scss`, `rtl.scss`. Cada uno produce un `.css` en
+  `public/assets/css/`.
+
+**Orden de componentes en `layout/_index.scss`** (cada uno es un parcial `layout/_<nombre>.scss`):
+`base, icons, header, scrollbar, sidebar, navs, navbars, buttons, input-groups, list-group,
+dropdown, forms, modals, tables, map, pagination, widgets, groups, panels, loader, sign-in, dialog,
+plans, bottombar, chat, dashboard, autocomplete-select, thumbnails, banner, datatables`.
+
+**Overrides de terceros en `libraries/_index.scss`:** bootstrap (carpeta completa), jquery-ui,
+animate, font-awesome, **font-custom** (los iconos `.icon` del UI), bootstrap-checkbox/datepicker/
+datetimepicker/select/colorpicker/toastr, **leaflet** (leaflet, controls-layer, markers-cluster,
+draw, popup), autocomplete, intl-tel-input.
+
+**¿Qué tema se sirve?** En `Layouts/partials/head.blade.php`:
+```blade
+<link rel="stylesheet"
+  href="{{ asset_resource('assets/css/' . Appearance::getSetting('template_color') . '.css') }}">
+```
+`Appearance::getSetting('template_color')` (ej. `light-blue`) decide el CSS. Además se inyecta CSS/JS
+custom por marca blanca si existe (`Appearance::assetFileExists('css'|'js')`), y `rtl.css` si el
+idioma es RTL.
+
+> **Recetas de migración:**
+> 1. Restyle global de tokens → editar `layout/_variables.scss` (paleta/tipografía) y/o el
+>    `colouring/_main-*` del acento; `gulp sass` para previsualizar el tema de dev.
+> 2. Restyle de un componente → editar su parcial en `layout/` (ej. `_modals.scss`, `_map.scss`,
+>    `_buttons.scss`, `_header.scss`, `_sidebar.scss`).
+> 3. Tema nuevo desde cero → crear `templates/mi-tema.scss` (copiando el patrón de 3 imports),
+>    `gulp sass-all`, y poner `template_color = mi-tema` en Appearance.
+> 4. Recompilar producción → `gulp templates` (CSS) y/o `gulp assets` (todo + minify).
+
+### D. Layout maestro y partials
+
+**`Tobuli/Views/Frontend/Layouts/loged.blade.php`** — esqueleto de TODA la app logueada:
+
+- `@include('Frontend.Layouts.partials.head')` → `<head>` (CSS del tema, meta, csrf).
+- `partials.header` → barra superior (logo, menú "Tools", cuenta) — ver §E permisos.
+- `#sidebar.sidebar.left` → panel lateral con **tabs**: `objects_tab`, `events_tab`, `history_tab`,
+  y tabs ocultos para alerts/geofencing/routes/pois. El contenido lo inyecta `@yield('items')`
+  (en la home es `Objects/index.blade.php`).
+- `#mapWrap > #map` → contenedor Leaflet + `#map-controls` (zoom, capas, cluster, fit, mostrar
+  objetos/geocercas/rutas/pois/nombres/tail/tráfico, controles de historial).
+- `#bottombar` → History.bottom + Widgets.
+- Carga `core.js` + `app.js`, luego `partials.trans` (cadenas i18n a JS), `partials.app`
+  (inyecta `getJsConfig()` en `app`), y arranca con `app.init()` en `window.load`.
+- Define el modal genérico de confirmación `#js-confirm-link`.
+
+**Layouts de modal** (los usan las vistas que se cargan por AJAX dentro de un modal):
+- `Layouts/modal.blade.php` — modal estándar: `@yield('title')`, `@yield('body')`/`@section('content')`,
+  y footer con botones por defecto **Guardar** (`data-submit="modal"`) / **Cancelar** (`data-dismiss`).
+- `Layouts/modal_full.blade.php` — modal a pantalla completa (`.modal-full`).
+
+`Layouts/partials/`: `head`, `header` (18 KB, el menú principal), `app` (config JS), `trans`
+(i18n→JS), `loading`, `modal_warning`, `confirmed_delete/`.
+
+### E. Permisos en el Frontend
+
+Mismo motor que el backend (`User::perm($module, $action)`), pero usado en Blade para **mostrar/ocultar
+UI** y en controladores para autorizar. En las vistas:
+
+```blade
+@if (Auth::user()->perm('geofences', 'view'))   ... @endif
+@if (isAdmin())                                  ... @endif   {{-- helper global --}}
+```
+
+Ejemplos reales (`partials/header.blade.php`): el menú **Tools** muestra cada entrada
+(alerts, geofencing, routes, reports, poi, send_command, camera, tasks, maintenance…) solo si
+`Auth::user()->perm('<module>', 'view')`. El tab **Events** del sidebar y secciones del mapa
+también se condicionan por permiso. Roles/acciones completos en [Roles y Permisos](#roles-y-permisos).
+
+> Al reestilizar el header/sidebar, conservar los `@if (...perm...)` y los hooks de comportamiento
+> (`data-modal`, `data-url`, `onclick="app.X.list()"`, `data-toggle="tab"`); cambiar solo marcado/clases.
+
+### F. Módulos de vista (Blade) — `Tobuli/Views/Frontend/`
+
+~70 módulos (un folder por feature). Los más grandes / relevantes para la UI:
+
+| Módulo | Nº blades | Rol en la UI |
+| ------ | --------- | ------------ |
+| `Objects/` | 20 | **Mapa principal**: `index` (tabs), `item` (tarjeta de objeto), `tabs/` (objects, events, history, alerts, geofencing, routes, pois), `partials/delete*`, `tools/` (showPoint, showAddress) |
+| `Reports/` | 111 | Formularios y plantillas de los ~130 reportes |
+| `Dashboard/` | 24 | Widgets y bloques del dashboard |
+| `Devices/` | 22 | CRUD de dispositivos (modales create/edit, tabs de config) |
+| `Widgets/` | 15 | Tarjetas/paneles del bottombar |
+| `Geofences/`, `Pois/`, `Routes/` | 10–11 c/u | CRUD de capas del mapa (create/edit/item/items/modal/table/export/import) |
+| `Sensors/`, `Alerts/`, `Sharing/`, `SendCommand/`, `Checklist/` | 7–11 | Modales de gestión |
+| `VehicleTypes/` | 4 | CRUD de tipos/estados de vehículo (ver sección dedicada) |
+| `Layouts/` | 13 | Esqueletos (loged, modal, modal_full, sharing) y partials |
+
+Convención CRUD por módulo: `index/items` (listado), `item` (fila/tarjeta), `create`/`edit`
+(formularios que se sirven dentro de un modal vía `@extends('Frontend.Layouts.modal')`), `table`,
+`groups`, y `export/import` cuando aplica.
+
+### G. Modelos, Controllers y Plugins JS
+
+**Patrón.** No hay framework reactivo. Cada módulo del mapa es una **función-constructor** (clase) en
+`controller/`, instanciada **una sola vez** dentro del objeto global `app` (`controller/app.js`):
+
+```js
+// controller/app.js
+var app = {
+  maps:    new MapTiles(),  history: new History(),  devices:  new Devices(),
+  geofences: new Geofences(), pois: new Pois(), routes: new Routes(),
+  alerts:  new Alerts(),    events: new DeviceEvents(), deviceMedia: new DeviceMedia(),
+  chat:    new Chat(),      dashboard: new Dashboard(), ...
+};
+```
+
+Un **controller** (ej. `Geofences`) gestiona una colección de **models** (ej. `Geofence`); el model
+encapsula `options` (datos) + su `layer`/`popup` de Leaflet. Patrón interno: `var _this = this;`,
+métodos públicos `_this.metodo = function(){}`, y `_this.events()` para enlazar eventos jQuery.
+
+| `controller/*.js` | `model/*.js` | Responsabilidad | Vistas Blade asociadas |
+| ----------------- | ------------ | --------------- | ---------------------- |
+| `app.js` | — | Núcleo: `app.init()`, mapa, settings, `initComponents()`, tabs, ruler, fullscreen | `Layouts/loged`, `Objects/index` |
+| `devices.js` | `device.js` | Objetos/vehículos en el mapa (marcadores, lista, follow, sensores, widgets) | `Objects/item`, `Devices/*` |
+| `geofences.js` | `geofence.js` | Geocercas (dibujo, edición, colores) | `Geofences/*`, `Objects/tabs/geofencing` |
+| `pois.js` | `poi.js` | Puntos de interés | `Pois/*`, `Objects/tabs/pois` |
+| `routes.js` | `route.js` | Rutas | `Routes/*`, `Objects/tabs/routes` |
+| `alerts.js` | `alert.js` | Alertas | `Alerts/*`, `Objects/tabs/alerts` |
+| `events.js` | `event.js` | Eventos en vivo | `Events/*`, `Objects/tabs/events` |
+| `history.js`, `historyPlayer.js`, `historyGraph.js` | — | Reproducción de historial + gráfica Flot | `History/*`, `Objects/tabs/history` |
+| `dashboard.js` | — | Dashboard de widgets | `Dashboard/*` |
+| `listview.js` | — | Vista de lista de objetos (alternativa al mapa) | `ObjectsList/*` |
+| `notifications.js` | — | Notificaciones popup/sonido | `Popups/*` |
+| `commands.js` | — | Envío de comandos GPRS | `SendCommand/*` |
+| `deviceMedia.js` | — | Cámaras/fotos del dispositivo | `DeviceMedia/*` |
+| — | `MapTiles.js` | Catálogo de capas base (Google×4, OSM, Yandex, Bing, Here, Mapbox, TomTom, Azure, MapTiler…) | controles de capa en `loged` |
+
+**Plugins (`js/plugins/`, van en `core.js`):**
+
+| Plugin | Función |
+| ------ | ------- |
+| `modals.js` | **Sistema de modales AJAX** (ver §H) |
+| `tables.js` | Tablas/listados dinámicos |
+| `loader.js` | Spinner (`loader.add($el)` / `loader.remove($el)`) |
+| `actions.js` | Acciones masivas sobre selección (`actions.execute()`) |
+| `checklists.js`, `multi-checkbox.js`, `jquery.element-disabler.js` | Inputs/selección avanzada |
+| `dragger.js`, `outer-html.js`, `jquery.databox.js` | Utilidades DOM |
+| `chat.js` | Chat (va en `app.js`) |
+
+### H. Sistema de Modales (AJAX) — `plugins/modals.js`
+
+No hay modales pre-renderizados: se **cargan por AJAX** y se inyectan en el DOM. Flujo:
+
+1. **Abrir:** un elemento con `data-modal="<id>"` (+ opcional `data-url`, `data-method`). El click
+   crea `<div class="modal fade" id="<id>"><div class="contents"></div></div>` si no existe, hace GET
+   a `data-url`, mete el HTML en `.contents`, muestra el modal y ejecuta **`initComponents(modal)`**
+   (inicializa selectpicker, datepickers, colorpickers, etc.).
+2. **Enviar:** un botón `data-submit="modal"` (o `.update`/`.update_hidden`/`.update_with_files`)
+   serializa el `<form>` del modal y hace POST (convierte PUT/DELETE a POST + `_method`).
+   Soporta `FormData` cuando hay `input[type=file]`.
+3. **Respuesta JSON:** `res.status` → `1` éxito (cierra modal), `0`/otro mantiene abierto; `res.trigger`
+   dispara un evento global; errores de validación se pintan inline por nombre de campo
+   (`.help-block.error`, `.has-error`), warnings en panel `.alert-warning`.
+4. **Callbacks por convención** (definir en la vista, ver `Objects/index.blade.php`):
+   `function <modal_id>_modal_callback(res){}` y `<modal_id>_modal_error_callback(res){}`.
+5. **Eventos custom** por modal: `modal-<id>-content-success`, `-post-success`, `-post-error`,
+   `-post-warning`.
+
+> Para reestilizar modales: el marcado vive en `Layouts/modal.blade.php` (+ cada `create`/`edit`),
+> los estilos en `layout/_modals.scss`. **No** renombrar `.modal`, `.modal-dialog`, `.modal-content`,
+> `.contents`, `.modal-body`, `.modal-footer`, `data-submit="modal"`, `data-dismiss`, ni los IDs de
+> modal: el JS depende de ellos. Cambiar clases cosméticas y estructura visual interna, sí.
+
+### I. Mapas (Leaflet) — `model/MapTiles.js` + `controller/app.js`
+
+- **Motor:** Leaflet 1.0.3 (`lib/leaflet/`). Plugins activos: `markerCluster`, `draw`, `editable`,
+  `ruler`, `polylineDecorator` (flechas de ruta), `rotatedMarker`/`marker.rotate` (rumbo del vehículo),
+  `Marker.SlideTo` (animación de movimiento), `GoogleMutant`, `Yandex`, `bing`, `circle.topolygon`.
+- **Capas base** en `MapTiles.js`: catálogo numerado (`1` Google Normal, `2` OSM, `3` Google Hybrid,
+  `4` Satellite, `5` Terrain, `6` Yandex, … + Here/Mapbox/TomTom/Azure/MapTiler). Cada entrada tiene
+  `name`, `maxZoom`, `traffic` y un `tile()` que construye la `TileLayer`. Las disponibles por usuario
+  vienen de `availableMaps`/`map_id` (en `getJsConfig`), y las **API keys** de `settings.keys`.
+- **Controles** (marcado en `loged.blade.php` `#map-controls`, comportamiento en `app.js`):
+  zoom in/out, fullscreen (`app.mapFull()`), selector de capa, y toggles `app.changeSetting(...)`
+  para cluster, fit-bounds, objetos, geocercas, rutas, pois, nombres, tail, tráfico, y el grupo
+  `#history-control-layers` para la reproducción.
+- **Estilos del mapa:** `layout/_map.scss` (contenedor, controles, popups del marcador) +
+  `libraries/leaflet/*` (overrides de la librería).
+
+### J. Config y datos inyectados a JS
+
+- **`getJsConfig()`** (`Tobuli/Helpers/Helper.php`) se serializa a JSON y se mezcla en `app` desde
+  `Layouts/partials/app.blade.php`. Incluye: `user_id`, `version`, `lang`, `offlineTimeout`,
+  frecuencias de polling, `channels` (socket), **`settings`** (units speed/distance/altitude/capacity,
+  formatos de fecha/hora, `mapCenter`/`mapZoom`/`map_id`/`availableMaps`, toggles de capa, `keys` de
+  cada proveedor de mapa, flags de plugins) y **`urls`** (decenas de endpoints AJAX por módulo:
+  devices, geofences, routes, pois, alerts, history, dashboard, chat, lock_status, checklists…).
+- **i18n a JS:** `Layouts/partials/trans.blade.php` (+ variables sueltas en `loged.blade.php` como
+  `titleReports`, `titleAlerts`…). En Blade siempre `trans('...')`.
+- **`initComponents(container)`** (`controller/app.js`): re-inicializa plugins de UI sobre un
+  contenedor recién insertado (datepicker, selectpicker, lazy-load de `img/iframe[data-src]`, etc.).
+  Llamar SIEMPRE tras inyectar HTML por AJAX.
+
+---
+
+## Patrones Críticos (backend)
 
 ### 1. Custom Facades — NO son facades estándar de Laravel
 
@@ -175,6 +464,7 @@ Procesa las posiciones de un dispositivo **una por una** para construir el histo
 - **`getInputParameters()`** define el formulario del reporte con la facade `\Field` (ej. `\Field::checkbox('only_violations', '...', true)`).
 - Registro de tipos: `Tobuli/Reports/ReportTypesConfig.php` y `ReportTypesUserConfig.php`. Las tablas `reports` / `report_logs` guardan `type` como **SMALLINT** (ampliado recientemente — los IDs custom pueden ser >127, ej. overspeed-geofence usa 904).
 - **Familia overspeed-en-geocerca** (trabajo reciente): `OverspeedsInGeofenceCustomReport` (904) y variantes `…V2`, `…Buenaventura`. Resuelven el límite por geocerca con `Geofence::speedLimitFor()` y eligen la geocerca más específica (menor área) cuando solapan.
+- **Vistas:** los formularios y plantillas HTML de los reportes viven en `Tobuli/Views/Frontend/Reports/` (111 blades).
 
 ---
 
@@ -200,7 +490,7 @@ Procesa las posiciones de un dispositivo **una por una** para construir el histo
 | `GeofenceVehicleSpeedLimit` | `geofence_vehicle_speed_limits`  | `unique(geofence_id, vehicle_type_id, vehicle_state_id)`; `state` nullable. |
 
 - `devices` gana `vehicle_type_id` + `vehicle_state_id` (FK `set null`). `Device::vehicleType()` / `vehicleState()`.
-- **CRUD de tipos**: `VehicleTypesController` (`Route::resource('vehicle_types')` + `vehicle_types/table`). Los estados se editan anidados en el form del tipo (`add_state[]`, `edit_state[id]`); validación con `VehicleTypeFormValidator`.
+- **CRUD de tipos**: `VehicleTypesController` (`Route::resource('vehicle_types')` + `vehicle_types/table`). Los estados se editan anidados en el form del tipo (`add_state[]`, `edit_state[id]`); validación con `VehicleTypeFormValidator`. Vistas en `Tobuli/Views/Frontend/VehicleTypes/`.
 - **Asignación rápida de estado a un objeto**: `DevicesController::vehicleStateForm()` + `changeVehicleState()` → `DeviceModalHelper::changeVehicleState()` (valida que el estado pertenezca al tipo del device).
 - **En la geocerca**: partial `Geofences/partials/vehicle_speed_limits.blade.php`. El form envía `vehicle_speed_limits[<type_id>][<state_id>] = velocidad` (clave de estado `0` = límite por defecto del tipo, `vehicle_state_id` null). `GeofenceService::syncVehicleSpeedLimits()` borra y recrea los límites; `normalize()` convierte unidades.
 - **Resolución del límite → `Geofence::speedLimitFor($vehicleType, $vehicleState)`** con fallback en 3 niveles:
@@ -237,6 +527,13 @@ $this->checkException('geofences', 'view');   // lanza PermissionException si no
 $this->user->perm('geofences', 'edit')        // retorna bool
 ```
 
+**Verificación en vistas Blade (controla qué UI se muestra):**
+
+```blade
+@if (Auth::user()->perm('reports', 'view'))  ... @endif
+@if (isAdmin()) ... @endif
+```
+
 **Middleware de rutas:**
 
 - `auth.admin` → solo `isAdmin()`
@@ -253,10 +550,19 @@ $this->user->perm('geofences', 'edit')        // retorna bool
 | `routes/api.php` | API v1 con middleware `auth.api`                        | `Api\V1\`                |
 | `routes/app.php` | Rutas adicionales de aplicación                         | —                        |
 
+> Las URLs que consume el JS NO se hardcodean: se exponen vía `getJsConfig()['urls']` y se leen como
+> `app.urls.<clave>` en los controllers JS.
+
 ---
 
 ## Gotchas Comunes
 
+- **Vistas en `Tobuli/Views/`**, no en `resources/views/`. Referenciar como `Frontend.Modulo.vista`.
+- **Recompilar assets:** editar `resources/assets/{scss,js}` no surte efecto hasta correr Gulp; el
+  navegador sirve `public/assets/`. Para JS, el cambio debe ir al bundle correcto (`core`/`app`/`report`).
+- **No renombrar hooks de JS en el marcado** al reestilizar: clases/atributos como `.modal`,
+  `.contents`, `data-modal`, `data-submit="modal"`, `data-toggle="tab"`, IDs (`#map`, `#sidebar`,
+  `#bottombar`), y `onclick="app...."` son contratos con el JS.
 - **Contexto API vs Web:** Muchas clases revisan `$this->api` o `Config::get('tobuli.api')` para alterar comportamiento. Setear con `Config::set('tobuli.api', 1)` o `ModalHelper::setApi(true)`.
 - **Transacciones en importadores:** Siempre usar `beginTransaction()` / `commitTransaction()` / `rollbackTransaction()` (helpers globales, no `DB::beginTransaction()`).
 - **Formateo de unidades:** `speed_limit` se almacena en unidad base; convertir con `Formatter::speed()->reverse()` al guardar y `Formatter::speed()->format()` al mostrar.
@@ -271,6 +577,7 @@ $this->user->perm('geofences', 'edit')        // retorna bool
 ## Directorios Clave
 
 ```
+# Backend
 app/Http/Controllers/Frontend/   — Controllers de usuario final
 app/Http/Controllers/Admin/      — Panel de administración
 app/Http/Controllers/Api/V1/     — API REST v1
@@ -280,15 +587,25 @@ Tobuli/Repositories/             — Acceso a datos (patrón repositorio)
 Tobuli/Exporters/                — Lógica de exportación (GEXP, Excel, etc.)
 Tobuli/Importers/                — Lógica de importación (KML, GeoJSON, GEXP)
 Tobuli/Validation/               — Validadores de formulario
-Tobuli/Views/                    — Blade views del dominio
 Tobuli/History/                  — Pipeline de procesamiento de posiciones (Actions)
 Tobuli/Reports/                  — Reportes (DeviceReport, ~130 tipos)
 Tobuli/Helpers/Alerts/           — Alertas: Check (tipos), Notification (canales), Filter
 Tobuli/Sensors/                  — Tipos de sensores de dispositivo
 ModalHelpers/                    — Procesamiento de requests de formularios
 Facades/                         — Custom facades (Repos, ModalHelpers, Validators)
-resources/assets/js/controller/  — Controladores JS del frontend
 socket/                          — Servidor Node.js de WebSocket
+
+# Frontend / UI
+Tobuli/Views/Frontend/           — Vistas Blade de usuario final (~70 módulos)
+Tobuli/Views/Admin/              — Vistas Blade del panel admin
+Tobuli/Views/Frontend/Layouts/   — Layout maestro (loged) + layouts de modal + partials
+resources/assets/js/controller/  — Controladores JS por módulo del mapa
+resources/assets/js/model/       — Modelos JS por entidad (+ MapTiles)
+resources/assets/js/plugins/     — Widgets/utilidades JS (modals, tables, loader…)
+resources/assets/js/lib/         — Librerías de terceros (leaflet/*, flot/*, jquery, bootstrap…)
+resources/assets/scss/           — Fuentes de estilos (variables, colouring, templates, layout, libraries)
+public/assets/                   — SALIDA compilada (css/, js/ bundles, fonts, icons, images)
+gulpfile.js                      — Pipeline de build (sass + 3 bundles JS)
 ```
 
 ---
@@ -306,6 +623,7 @@ socket/                          — Servidor Node.js de WebSocket
 | FCM                | Push notifications                  | `config/fcm.php`                         |
 | Stripe / Braintree | Pagos                               | `config/payments.php`                    |
 | Google Roads API   | Velocidad máxima de vía             | `config/services.php` → `speedlimit.key` |
+| Google / Yandex / Bing / Here / Mapbox / TomTom / Azure / MapTiler | Capas de mapa (tiles) | keys en `main_settings.*` → `getJsConfig()['settings']['keys']` |
 
 ### Integraciones regulatorias (Perú)
 
