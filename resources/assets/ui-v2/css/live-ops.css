@@ -747,27 +747,81 @@
   right: 12px;
   bottom: 12px;
   display: none;
-  gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
+  align-items: flex-end;
+  gap: 8px;
   z-index: 6;
   pointer-events: none;
-  padding-bottom: 4px;
 }
 .tp-live[data-bottombar-open] .tp-live__bottombar {
   display: flex;
 }
-.tp-live__bottombar > .tp-card {
+.tp-live[data-bottombar-open][data-bottombar-collapsed] .tp-live__bottombar {
+  display: none;
+}
+.tp-live__bottombar-cards {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1 1 auto;
+  padding-bottom: 4px;
+}
+.tp-live__bottombar-cards > .tp-card {
   pointer-events: auto;
   flex: 0 0 auto;
   width: 260px;
   margin: 0;
-  max-height: 230px;
+  max-height: 232px;
   overflow: auto;
   background: var(--surface-1, #ffffff);
-  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+  border: 1px solid var(--border, #e7e9ee);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.14));
+}
+.tp-live__bottombar-cards > .tp-card > .tp-h6 {
+  position: sticky;
+  top: 0;
+  background: inherit;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border, #eef0f4);
 }
 .tp-live__bottombar .tp-dw__streetview img,
 .tp-live__bottombar .tp-dw__cam img {
   border-radius: var(--radius-sm, 8px);
+}
+/* Control column (config + collapse) */
+.tp-live__bottombar-ctl {
+  pointer-events: auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--border, #e7e9ee);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.14));
+}
+/* Expand handle (when collapsed) */
+.tp-live__bottombar-handle {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 6;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text, #1a1f2b);
+  cursor: pointer;
+  background: var(--surface-1, #ffffff);
+  border: 1px solid var(--border, #e7e9ee);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.14));
+}
+.tp-live__bottombar-handle[hidden] {
+  display: none;
 }

@@ -1271,8 +1271,11 @@
     root.removeAttribute("data-drawer-open");
     drawer.setAttribute("aria-hidden", "true");
     root.removeAttribute("data-bottombar-open");
-    var bb = document.getElementById("tp-live-bottombar");
-    if (bb) bb.innerHTML = "";
+    root.removeAttribute("data-bottombar-collapsed");
+    var bbCards = document.getElementById("tp-live-bottombar-cards");
+    if (bbCards) bbCards.innerHTML = "";
+    var bbExpand = document.getElementById("tp-bottombar-expand");
+    if (bbExpand) bbExpand.hidden = true;
     if (state.selectedId && state.markerEls[state.selectedId]) {
       state.markerEls[state.selectedId].removeAttribute("data-selected");
     }
@@ -1290,7 +1293,7 @@
   // update del feed (máx 1 cada 30s, sin "Cargando…"). false → carga al abrir.
   function loadDeviceWidgets(id, throttled) {
     widgetsBox = widgetsBox || document.getElementById("tp-drawer-widgets");
-    bottomBar = bottomBar || document.getElementById("tp-live-bottombar");
+    bottomBar = bottomBar || document.getElementById("tp-live-bottombar-cards");
     if (!widgetsBox) return;
     if (throttled && widgetsLoad.id === id && Date.now() - widgetsLoad.t < 30000)
       return;
@@ -1407,6 +1410,22 @@
   document
     .getElementById("tp-drawer-close")
     .addEventListener("click", closeDrawer);
+
+  // Bottombar: colapsar / expandir
+  (function () {
+    var collapseBtn = document.getElementById("tp-bottombar-collapse");
+    var expandBtn = document.getElementById("tp-bottombar-expand");
+    if (collapseBtn)
+      collapseBtn.addEventListener("click", function () {
+        root.setAttribute("data-bottombar-collapsed", "true");
+        if (expandBtn) expandBtn.hidden = false;
+      });
+    if (expandBtn)
+      expandBtn.addEventListener("click", function () {
+        root.removeAttribute("data-bottombar-collapsed");
+        expandBtn.hidden = true;
+      });
+  })();
   document
     .getElementById("tp-drawer-center")
     .addEventListener("click", function () {

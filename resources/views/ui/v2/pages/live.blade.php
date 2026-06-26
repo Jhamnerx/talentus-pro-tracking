@@ -4,7 +4,7 @@
 @section('rail-active', 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=5">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=6">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -323,7 +323,35 @@
             </div>
         
             {{-- Bottom widget cards (servicios, eventos, vista de calle, cámara, conductor, video) --}}
-            <div class="tp-live__bottombar" id="tp-live-bottombar" aria-hidden="true"></div>
+            <div class="tp-live__bottombar" id="tp-live-bottombar" aria-hidden="true">
+                <div class="tp-live__bottombar-cards" id="tp-live-bottombar-cards"></div>
+                <div class="tp-live__bottombar-ctl">
+                    <a class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-bottombar-config"
+                        href="{{ route('my_account_settings.edit') }}" target="_blank" rel="noopener"
+                        title="Configurar widgets" aria-label="Configurar widgets">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3" />
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                        </svg>
+                    </a>
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-bottombar-collapse"
+                        title="Colapsar widgets" aria-label="Colapsar widgets">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <button type="button" class="tp-live__bottombar-handle" id="tp-bottombar-expand" hidden
+                title="Mostrar widgets" aria-label="Mostrar widgets">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m18 15-6-6-6 6" />
+                </svg>
+                <span>Widgets</span>
+            </button>
         </main>
 
         {{-- DEVICE DRAWER (right) --}}
@@ -438,7 +466,7 @@
 @push('scripts')
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=7"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=8"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
