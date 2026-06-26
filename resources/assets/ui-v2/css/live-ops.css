@@ -825,3 +825,40 @@
 .tp-live__bottombar-handle[hidden] {
   display: none;
 }
+
+/* ── Modal de configuración de widgets ───────────────────────── */
+.tp-widgets-config__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.tp-widgets-config__row input,
+.tp-widget-opt input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+.tp-widgets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.tp-widget-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #e7e9ee);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+@media (max-width: 640px) {
+  .tp-widgets-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

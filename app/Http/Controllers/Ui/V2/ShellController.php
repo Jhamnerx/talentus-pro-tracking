@@ -206,4 +206,56 @@ class ShellController extends BaseController
 
         return response()->json(['ok' => true]);
     }
+
+    /**
+     * Widget configuration modal (UI v2). Renders the new modal reusing the
+     * legacy widget catalog (config('lists.widgets')) and the user's current
+     * config (getSettings('widgets')). No legacy redirect.
+     */
+    public function widgetsConfig(Request $request): JsonResponse
+    {
+        if (function_exists('listsTranslations')) {
+            listsTranslations(); // asegura config('lists.widgets')
+        }
+        $catalog = config('lists.widgets', []);
+
+        $current = $this->user->getSettings('widgets');
+        if (empty($current)) {
+            $current = settings('widgets');
+        }
+
+        $html = View::make('ui.v2.modals.widgets-config', [
+            'catalog' => $catalog,
+            'current' => $current,
+        ])->render();
+
+        return response()->json(['ok' => true, 'html' => $html]);
+    }
+
+    /**
+     * Persist the widget configuration (mirrors MyAccountSettingsModalHelper:
+     * setSettings('widgets', [default, status, list], true)).
+     */
+    public function widgetsConfigSave(Request $request): JsonResponse
+    {
+        if (function_exists('listsTranslations')) {
+            listsTranslations();
+        }
+        $catalog = config('lists.widgets', []);
+
+        $list = array_values(array_filter(
+            (array) $request->input('list', []),
+            fn ($key) => isset($catalog[$key])
+        ));
+
+        $widgets = [
+            'default' => $request->input('default') ? 1 : 0,
+            'status'  => $request->input('status') ? 1 : 0,
+            'list'    => $list,
+        ];
+
+        $this->user->setSettings('widgets', $widgets, true);
+
+        return response()->json(['ok' => true]);
+    }
 }

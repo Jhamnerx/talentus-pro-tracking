@@ -1129,6 +1129,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('search',         ['as' => 'api.search',        'uses' => 'Ui\V2\ShellController@search']);
         Route::get('notifications',  ['as' => 'api.notifications', 'uses' => 'Ui\V2\ShellController@notifications']);
         Route::post('preferences',   ['as' => 'api.preferences',   'uses' => 'Ui\V2\ShellController@preferences']);
+        Route::get('widgets/config',  ['as' => 'api.widgets.config',      'uses' => 'Ui\V2\ShellController@widgetsConfig']);
+        Route::post('widgets/config', ['as' => 'api.widgets.config_save', 'uses' => 'Ui\V2\ShellController@widgetsConfigSave']);
 
         // Per-domain feeds
         Route::get('devices',        ['as' => 'api.devices',       'uses' => 'Ui\V2\DevicesController@liveData']);

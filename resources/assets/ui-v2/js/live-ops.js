@@ -1413,10 +1413,87 @@
     .getElementById("tp-drawer-close")
     .addEventListener("click", closeDrawer);
 
-  // Bottombar: colapsar / expandir
+  // Modal nativo de configuración de widgets (v2, no legacy)
+  function openWidgetsConfig(configUrl, saveUrl) {
+    if (!configUrl || !window.tpModal) return;
+    window.tpModal.fetchJSON(configUrl, { method: "GET" }).then(function (res) {
+      if (!res || !res.ok || !res.data || !res.data.ok) {
+        window.tpModal.toast &&
+          window.tpModal.toast("No se pudo cargar la configuración.", "error");
+        return;
+      }
+      var dlg = window.tpModal.open({
+        title: "Widgets",
+        size: "lg",
+        body: res.data.html,
+        buttons: [
+          { label: "Cancelar", variant: "ghost" },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (dialog, btn) {
+              var form = dialog.querySelector("#tp-widgets-config-form");
+              if (!form) return false;
+              var checked = [];
+              form
+                .querySelectorAll('input[name="widgets[]"]:checked')
+                .forEach(function (i) {
+                  checked.push(i.value);
+                });
+              var payload = {
+                default: form.querySelector('[name="default"]').checked ? 1 : 0,
+                status: form.querySelector('[name="status"]').checked ? 1 : 0,
+                list: checked,
+              };
+              btn.disabled = true;
+              window.tpModal
+                .fetchJSON(saveUrl, { method: "POST", json: payload })
+                .then(function (r) {
+                  btn.disabled = false;
+                  if (r && r.ok && r.data && r.data.ok) {
+                    window.tpModal.toast &&
+                      window.tpModal.toast("Widgets actualizados.", "success");
+                    window.tpModal.close(dialog);
+                    if (state.selectedId)
+                      loadDeviceWidgets(state.selectedId, false);
+                  } else {
+                    window.tpModal.toast &&
+                      window.tpModal.toast("No se pudo guardar.", "error");
+                  }
+                })
+                .catch(function () {
+                  btn.disabled = false;
+                  window.tpModal.toast &&
+                    window.tpModal.toast("Error de red.", "error");
+                });
+              return false; // mantener abierto hasta éxito
+            },
+          },
+        ],
+      });
+      // "Predeterminado Widgets" deshabilita la lista (como el legacy)
+      var def = dlg.querySelector('[name="default"]');
+      var fields = dlg.querySelector("#tp-widgets-config-fields");
+      function syncDefault() {
+        if (!fields) return;
+        fields.style.opacity = def && def.checked ? "0.45" : "";
+        fields.querySelectorAll("input").forEach(function (i) {
+          i.disabled = def && def.checked;
+        });
+      }
+      if (def) {
+        def.addEventListener("change", syncDefault);
+        syncDefault();
+      }
+    });
+  }
+
+  // Bottombar: colapsar / expandir / configurar
   (function () {
     var collapseBtn = document.getElementById("tp-bottombar-collapse");
     var expandBtn = document.getElementById("tp-bottombar-expand");
+    var configBtn = document.getElementById("tp-bottombar-config");
     if (collapseBtn)
       collapseBtn.addEventListener("click", function () {
         root.setAttribute("data-bottombar-collapsed", "true");
@@ -1426,6 +1503,13 @@
       expandBtn.addEventListener("click", function () {
         root.removeAttribute("data-bottombar-collapsed");
         expandBtn.hidden = true;
+      });
+    if (configBtn)
+      configBtn.addEventListener("click", function () {
+        openWidgetsConfig(
+          configBtn.getAttribute("data-config-url"),
+          configBtn.getAttribute("data-save-url"),
+        );
       });
   })();
   document
