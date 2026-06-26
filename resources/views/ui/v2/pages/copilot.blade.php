@@ -41,7 +41,7 @@
                     </svg>
                 </div>
                 <input type="text" class="tp-copilot__ask-input" id="cp-q"
-                    placeholder="Pregúntame algo… ej. "vehículos parados", "excesos de velocidad", "ABC-123""
+                    placeholder="Pregúntame algo… ej. «vehículos parados», «excesos de velocidad», «ABC-123»"
                     autocomplete="off" maxlength="200">
                 <button class="tp-btn tp-btn--primary tp-btn--sm" id="cp-go" type="button">Preguntar</button>
             </form>
