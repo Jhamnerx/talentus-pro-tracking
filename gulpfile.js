@@ -10,7 +10,8 @@ const gulp = require("gulp"),
   purify = require("gulp-purifycss"),
   postcss = require("gulp-postcss"),
   tailwindcss = require("tailwindcss"),
-  autoprefixer = require("autoprefixer");
+  autoprefixer = require("autoprefixer"),
+  terser = require("gulp-terser");
 
 var scripts = {
   report: [
@@ -217,6 +218,7 @@ gulp.task("ui-v2-css", function () {
 gulp.task("ui-v2-js", function () {
   return gulp
     .src("resources/assets/ui-v2/js/**/*.js")
+    .pipe(terser()) // minifica ES6+ (no rompe arrow/const/templates); fuentes en resources quedan legibles
     .pipe(gulp.dest("public/assets/ui/v2/js"))
     .pipe(browserSync.reload({ stream: true }));
 });

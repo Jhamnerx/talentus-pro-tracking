@@ -18,6 +18,15 @@
 
             <div class="collapse navbar-collapse" id="bs-header-navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
+                    {{-- Cambiar a la nueva interfaz (UI v2) — siempre al mapa Live (equivalente a objects) --}}
+                    <li>
+                        <a href="{!! route('ui.v2.live') !!}" role="button" rel="tooltip" data-placement="bottom"
+                            title="Nueva interfaz (v2)">
+                            <span class="icon icon-fa fa-rocket"></span>
+                            <span class="text">Nueva UI</span>
+                        </a>
+                    </li>
+
                     @if (isAdmin())
                         <li>
                             <a href="{!! route('admin') !!}" role="button" rel="tooltip" data-placement="bottom"
