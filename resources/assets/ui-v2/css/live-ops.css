@@ -739,3 +739,35 @@
   flex-direction: column;
   gap: 2px;
 }
+
+/* ── Bottom widget cards strip (Live) ────────────────────────── */
+.tp-live__bottombar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: none;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  z-index: 6;
+  pointer-events: none;
+  padding-bottom: 4px;
+}
+.tp-live[data-bottombar-open] .tp-live__bottombar {
+  display: flex;
+}
+.tp-live__bottombar > .tp-card {
+  pointer-events: auto;
+  flex: 0 0 auto;
+  width: 260px;
+  margin: 0;
+  max-height: 230px;
+  overflow: auto;
+  background: var(--surface-1, #ffffff);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+}
+.tp-live__bottombar .tp-dw__streetview img,
+.tp-live__bottombar .tp-dw__cam img {
+  border-radius: var(--radius-sm, 8px);
+}

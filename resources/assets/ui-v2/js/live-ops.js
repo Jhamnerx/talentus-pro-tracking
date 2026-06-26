@@ -1270,6 +1270,9 @@
   function closeDrawer() {
     root.removeAttribute("data-drawer-open");
     drawer.setAttribute("aria-hidden", "true");
+    root.removeAttribute("data-bottombar-open");
+    var bb = document.getElementById("tp-live-bottombar");
+    if (bb) bb.innerHTML = "";
     if (state.selectedId && state.markerEls[state.selectedId]) {
       state.markerEls[state.selectedId].removeAttribute("data-selected");
     }
@@ -1280,11 +1283,14 @@
   }
 
   var widgetsBox = null;
+  var bottomBar = null;
   var widgetsLoad = { id: null, t: 0 };
-  // throttled=true → refresco silencioso (en cada update del feed), sin "Cargando…"
-  // ni geocodificar más de 1 vez cada 30s. throttled=false → carga al abrir.
+  // El endpoint devuelve 2 grupos: .tp-dw--side (drawer) y .tp-dw--bottom
+  // (barra inferior de cards). throttled=true → refresco silencioso en cada
+  // update del feed (máx 1 cada 30s, sin "Cargando…"). false → carga al abrir.
   function loadDeviceWidgets(id, throttled) {
     widgetsBox = widgetsBox || document.getElementById("tp-drawer-widgets");
+    bottomBar = bottomBar || document.getElementById("tp-live-bottombar");
     if (!widgetsBox) return;
     if (throttled && widgetsLoad.id === id && Date.now() - widgetsLoad.t < 30000)
       return;
@@ -1303,10 +1309,26 @@
       })
       .then(function (res) {
         if (state.selectedId != id) return; // el usuario cambió de vehículo
-        if (res && res.ok && res.html) widgetsBox.innerHTML = res.html;
-        else if (!throttled)
+        var sideHtml = "",
+          bottomHtml = "";
+        if (res && res.ok && res.html) {
+          var tmp = document.createElement("div");
+          tmp.innerHTML = res.html;
+          var sideEl = tmp.querySelector(".tp-dw--side");
+          var bottomEl = tmp.querySelector(".tp-dw--bottom");
+          sideHtml = sideEl ? sideEl.innerHTML.trim() : "";
+          bottomHtml = bottomEl ? bottomEl.innerHTML.trim() : "";
+        }
+        if (sideHtml || !throttled) {
           widgetsBox.innerHTML =
-            '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Sin widgets disponibles.</div>';
+            sideHtml ||
+            '<div class="tp-text-xs tp-text-muted" style="padding:8px 2px;">Sin información adicional.</div>';
+        }
+        if (bottomBar) {
+          bottomBar.innerHTML = bottomHtml;
+          if (bottomHtml) root.setAttribute("data-bottombar-open", "true");
+          else root.removeAttribute("data-bottombar-open");
+        }
       })
       .catch(function () {
         if (state.selectedId != id || throttled) return;

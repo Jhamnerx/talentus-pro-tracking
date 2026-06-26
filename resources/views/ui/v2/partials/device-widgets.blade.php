@@ -1,10 +1,15 @@
 {{--
-    UI v2 · Device widget cards (Live drawer)
-    Renderizado por Ui\V2\DevicesController::widgets(). Cada bloque solo
-    aparece si el widget está activo en la config del usuario (el controller
-    solo define la variable cuando corresponde). Reutiliza datos del legacy.
+    UI v2 · Device widgets (Live)
+    Renderizado por Ui\V2\DevicesController::widgets(). Devuelve DOS grupos:
+      .tp-dw--side   → drawer derecho (ubicación, sensores, imagen)
+      .tp-dw--bottom → barra inferior de cards (servicios, eventos, vista de
+                       calle, cámara, conductor, video en vivo)
+    live-ops.js separa cada grupo y lo coloca en su contenedor. Cada bloque
+    solo aparece si el widget está activo en la config del usuario.
 --}}
-<div class="tp-dw">
+
+{{-- ════════ GRUPO LATERAL (drawer) ════════ --}}
+<div class="tp-dw tp-dw--side">
 
     {{-- Ubicación --}}
     @isset($location)
@@ -54,9 +59,14 @@
         </section>
     @endisset
 
+</div>
+
+{{-- ════════ GRUPO INFERIOR (bottombar) ════════ --}}
+<div class="tp-dw tp-dw--bottom">
+
     {{-- Servicios --}}
     @isset($services)
-        <section class="tp-card tp-card--flat tp-mb-4">
+        <section class="tp-card tp-card--flat">
             <h4 class="tp-h6 tp-mb-3">Servicios</h4>
             @if (count($services))
                 <dl class="tp-defs">
@@ -73,7 +83,7 @@
 
     {{-- Eventos recientes --}}
     @isset($recent_events)
-        <section class="tp-card tp-card--flat tp-mb-4">
+        <section class="tp-card tp-card--flat">
             <h4 class="tp-h6 tp-mb-3">Eventos recientes</h4>
             @if (count($recent_events))
                 <ul class="tp-dw__events">
@@ -92,7 +102,7 @@
 
     {{-- Vista de calle --}}
     @isset($streetview)
-        <section class="tp-card tp-card--flat tp-mb-4">
+        <section class="tp-card tp-card--flat">
             <h4 class="tp-h6 tp-mb-3">Vista de calle</h4>
             @if ($streetview)
                 <div class="tp-dw__streetview">
@@ -107,7 +117,7 @@
     {{-- Cámara --}}
     @isset($camera_images)
         @if (!empty($camera_images) || !empty($camera_device_image))
-            <section class="tp-card tp-card--flat tp-mb-4">
+            <section class="tp-card tp-card--flat">
                 <h4 class="tp-h6 tp-mb-3">Cámara</h4>
                 <div class="tp-dw__cameras">
                     @if (!empty($camera_device_image))
@@ -130,7 +140,7 @@
 
     {{-- Conductor --}}
     @isset($driver)
-        <section class="tp-card tp-card--flat tp-mb-4">
+        <section class="tp-card tp-card--flat">
             <h4 class="tp-h6 tp-mb-3">Conductor</h4>
             @if ($driver)
                 <dl class="tp-defs">
@@ -147,7 +157,7 @@
 
     {{-- Video en vivo --}}
     @isset($video_live_url)
-        <section class="tp-card tp-card--flat tp-mb-4">
+        <section class="tp-card tp-card--flat">
             <h4 class="tp-h6 tp-mb-3">Video en vivo</h4>
             <div class="tp-stack" style="gap:8px;">
                 <a class="tp-btn tp-btn--secondary tp-btn--block" href="{{ $video_live_url }}" target="_blank" rel="noopener">En vivo</a>
