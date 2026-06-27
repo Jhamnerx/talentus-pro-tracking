@@ -31,7 +31,7 @@
     socketSslPort: parseInt(root.dataset.socketSslPort, 10) || 3001,
     pollInterval: parseInt(root.dataset.pollInterval, 10) || 15000,
     rowHeight: 56,
-    rowGap: 2,
+    rowGap: 6,
     groupHeaderHeight: 34,
     bufferRows: 6,
     offlineThresholdSec: 600, // 10 min without ack → offline
@@ -1419,16 +1419,22 @@
       document.removeEventListener("click", closeRowMenu);
     }
   }
-  // Posiciona el menú flotante junto al botón kebab.
+  // Posiciona el menú flotante: se abre HACIA LA DERECHA del botón kebab,
+  // fuera del sidebar y por encima del mapa (como el legacy). Si no cabe a la
+  // derecha, cae a la izquierda; el alto se ajusta al viewport.
   function positionRowMenu(btn) {
     if (!rowMenuEl) return;
     var r = btn.getBoundingClientRect();
+    var w = rowMenuEl.offsetWidth || 240;
+    var h = rowMenuEl.offsetHeight || 0;
     rowMenuEl.style.position = "fixed";
+    var left = r.right + 6; // a la derecha del kebab → sobre el mapa
+    if (left + w > window.innerWidth - 8) {
+      left = Math.max(8, r.left - w - 6); // fallback: a la izquierda
+    }
+    rowMenuEl.style.left = left + "px";
     rowMenuEl.style.top =
-      Math.min(r.bottom + 4, window.innerHeight - 10 - rowMenuEl.offsetHeight) +
-      "px";
-    rowMenuEl.style.left =
-      Math.max(8, r.right - rowMenuEl.offsetWidth) + "px";
+      Math.max(8, Math.min(r.top, window.innerHeight - 10 - h)) + "px";
   }
 
   // Enruta el click de un ítem del menú según data-act (HTML servido por backend).

@@ -101,9 +101,17 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  /* Ocultar la barra de desplazamiento (el item ocupa todo el ancho) */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.tp-live__list-wrap::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 .tp-live__list {
-  padding: var(--sp-2) var(--sp-2);
+  padding: var(--sp-2) 0;
   min-height: 100%;
 }
 
@@ -129,9 +137,11 @@
   padding: 10px var(--sp-3);
   border-radius: var(--r-md);
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-in-out);
-  border: 1px solid transparent;
-  margin-bottom: 2px;
+  transition: background var(--dur-fast) var(--ease-in-out),
+    border-color var(--dur-fast) var(--ease-in-out);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  margin-bottom: 4px;
   position: relative;
 }
 /* Toggle "active" (mostrar en el mapa) */
@@ -242,13 +252,14 @@
 }
 /* Menú de acciones flotante del kebab */
 .tp-row-menu {
-  min-width: 220px;
-  max-width: 280px;
+  min-width: 230px;
+  max-width: 290px;
   padding: 6px;
   background: var(--surface-raised, #fff);
   border: 1px solid var(--border-default, #e7e9ee);
   border-radius: 10px;
   box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+  z-index: 4000; /* sobre el mapa y el sidebar */
 }
 .tp-row-menu__item {
   display: flex;
@@ -292,6 +303,7 @@
 }
 .tp-live__row:hover {
   background: var(--surface-sunken);
+  border-color: var(--border-default);
 }
 .tp-live__row[aria-selected="true"] {
   background: var(--brand-bg-subtle);
