@@ -1499,6 +1499,34 @@
         def.addEventListener("change", syncDefault);
         syncDefault();
       }
+
+      // Drag-sort: reordena los widgets; el orden se guarda en list (orden del DOM).
+      if (fields) {
+        var dragEl = null;
+        fields.querySelectorAll(".tp-widget-opt").forEach(function (it) {
+          it.addEventListener("dragstart", function (e) {
+            dragEl = it;
+            it.classList.add("is-dragging");
+            if (e.dataTransfer) {
+              e.dataTransfer.effectAllowed = "move";
+              try {
+                e.dataTransfer.setData("text/plain", "");
+              } catch (_) {}
+            }
+          });
+          it.addEventListener("dragend", function () {
+            it.classList.remove("is-dragging");
+            dragEl = null;
+          });
+          it.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            if (!dragEl || dragEl === it) return;
+            var box = it.getBoundingClientRect();
+            var before = e.clientX < box.left + box.width / 2;
+            fields.insertBefore(dragEl, before ? it : it.nextSibling);
+          });
+        });
+      }
     });
   }
 

@@ -224,8 +224,22 @@ class ShellController extends BaseController
             $current = settings('widgets');
         }
 
+        // Orden del catálogo según la lista guardada (drag-sort), luego el resto.
+        $list = (array) ($current['list'] ?? []);
+        $ordered = [];
+        foreach ($list as $k) {
+            if (isset($catalog[$k])) {
+                $ordered[$k] = $catalog[$k];
+            }
+        }
+        foreach ($catalog as $k => $label) {
+            if (! isset($ordered[$k])) {
+                $ordered[$k] = $label;
+            }
+        }
+
         $html = View::make('ui.v2.modals.widgets-config', [
-            'catalog' => $catalog,
+            'catalog' => $ordered,
             'current' => $current,
         ])->render();
 
