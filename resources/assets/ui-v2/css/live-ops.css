@@ -251,7 +251,9 @@
   box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
 }
 .tp-row-menu__item {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   width: 100%;
   text-align: left;
   padding: 8px 10px;
@@ -265,6 +267,18 @@
 }
 .tp-row-menu__item:hover {
   background: var(--surface-sunken, #f1f2f6);
+}
+.tp-row-menu__icon {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--fg-tertiary, #8a90a0);
+}
+.tp-row-menu__item:hover .tp-row-menu__icon {
+  color: var(--brand-primary, #1b99bd);
 }
 .tp-row-menu__sep {
   height: 1px;
