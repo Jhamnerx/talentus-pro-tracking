@@ -71,6 +71,7 @@ class DeviceMapTransformer extends DeviceTransformer
             'lat' => $entity->lat,
             'lng' => $entity->lng,
             'speed' => $entity->speed,
+            'speed_text' => Formatter::speed()->human($entity->getSpeed()),
             'course' => $entity->course,
             'altitude' => $entity->altitude,
             'time' => $entity->time,

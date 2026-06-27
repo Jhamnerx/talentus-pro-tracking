@@ -802,6 +802,7 @@
     var seen = {};
     state.filtered.forEach(function (d) {
       if (d.lat == null || d.lng == null) return;
+      if (d.active === false) return; // toggle "active" desactivado → fuera del mapa
       seen[d.id] = true;
       var lngLat = [parseFloat(d.lng), parseFloat(d.lat)];
       if (state.markers[d.id]) {
@@ -1181,10 +1182,12 @@
 
   function rowTemplate(d, top) {
     var status = classify(d);
-    var speed = Math.round(parseFloat(d.speed) || 0);
+    var speedNum = Math.round(parseFloat(d.speed) || 0);
+    var speedTxt = d.speed_text || speedNum + " km/h";
     var ago = fmtTimeAgo(d.acktimestamp || d.timestamp);
     var meta = d.plate_number || "";
     if (d.imei && !meta) meta = d.imei;
+    var isActive = d.active !== false; // null/true → activo
     return (
       "" +
       '<div class="tp-live__row" data-id="' +
@@ -1197,6 +1200,12 @@
       'px; left:8px; right:8px;"' +
       (state.selectedId === d.id ? ' aria-selected="true"' : "") +
       ">" +
+      '  <label class="tp-live__row-active" title="Mostrar en el mapa">' +
+      '<input type="checkbox" data-id="' +
+      d.id +
+      '"' +
+      (isActive ? " checked" : "") +
+      "></label>" +
       '  <span class="tp-live__row-dot" aria-hidden="true"></span>' +
       '  <div class="tp-live__row-main">' +
       '    <div class="tp-live__row-name">' +
@@ -1208,14 +1217,20 @@
       "  </div>" +
       '  <div class="tp-live__row-end">' +
       '    <span class="tp-live__row-speed' +
-      (speed === 0 ? " tp-live__row-speed--zero" : "") +
+      (speedNum === 0 ? " tp-live__row-speed--zero" : "") +
       '">' +
-      speed +
-      " km/h</span>" +
+      escapeHtml(speedTxt) +
+      "</span>" +
       '    <span class="tp-live__row-time">' +
       ago +
       "</span>" +
       "  </div>" +
+      '  <button type="button" class="tp-live__row-menu" data-id="' +
+      d.id +
+      '" title="Acciones" aria-label="Acciones">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">' +
+      '<circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>' +
+      "</button>" +
       "</div>"
     );
   }
@@ -1255,11 +1270,124 @@
   }
 
   // Click on a row → select
+  function csrfToken() {
+    return (
+      (window.Talentus && window.Talentus.csrf) ||
+      (document.querySelector('meta[name="csrf-token"]') || {}).content ||
+      ""
+    );
+  }
+
+  function persistActive(id, active) {
+    try {
+      var fd = new FormData();
+      fd.append("id", id);
+      fd.append("active", active ? "1" : "0");
+      fetch("/devices/change_active", {
+        method: "POST",
+        body: fd,
+        credentials: "same-origin",
+        headers: {
+          "X-CSRF-TOKEN": csrfToken(),
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  // Menú de acciones por dispositivo (kebab) — flotante (la lista es virtual)
+  var rowMenuEl = null;
+  function closeRowMenu() {
+    if (rowMenuEl) {
+      rowMenuEl.remove();
+      rowMenuEl = null;
+      document.removeEventListener("click", closeRowMenu);
+    }
+  }
+  function openRowMenu(btn, id) {
+    closeRowMenu();
+    var d = state.index[id];
+    if (!d) return;
+    var items = [
+      { t: "Mostrar historial (última hora)", a: function () { goHistory(id, "last_hour"); } },
+      { t: "Mostrar historial (hoy)", a: function () { goHistory(id, "today"); } },
+      { t: "Mostrar historial (ayer)", a: function () { goHistory(id, "yesterday"); } },
+      { t: "Seguir", a: function () { followDevice(id); } },
+      {
+        t: "Editar",
+        a: function () {
+          if (window.tpDeviceModal)
+            window.tpDeviceModal.openEdit(id, function () {
+              fetchDevices(true);
+            });
+        },
+      },
+    ];
+    rowMenuEl = document.createElement("div");
+    rowMenuEl.className = "tp-row-menu";
+    rowMenuEl.innerHTML = items
+      .map(function (it, i) {
+        return (
+          '<button type="button" class="tp-row-menu__item" data-i="' +
+          i +
+          '">' +
+          it.t +
+          "</button>"
+        );
+      })
+      .join("");
+    document.body.appendChild(rowMenuEl);
+    var r = btn.getBoundingClientRect();
+    rowMenuEl.style.position = "fixed";
+    rowMenuEl.style.top =
+      Math.min(r.bottom + 4, window.innerHeight - 10 - rowMenuEl.offsetHeight) +
+      "px";
+    rowMenuEl.style.left =
+      Math.max(8, r.right - rowMenuEl.offsetWidth) + "px";
+    rowMenuEl.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-i]");
+      if (!b) return;
+      var idx = parseInt(b.getAttribute("data-i"), 10);
+      closeRowMenu();
+      if (items[idx]) items[idx].a();
+    });
+    setTimeout(function () {
+      document.addEventListener("click", closeRowMenu);
+    }, 0);
+  }
+  function goHistory(id, range) {
+    window.location.href = "/ui/v2/history?device=" + id + "&range=" + range;
+  }
+  function followDevice(id) {
+    state.followId = id;
+    selectDevice(id, true);
+  }
+
   listEl.addEventListener("click", function (e) {
+    // El toggle "active" y el kebab no deben seleccionar la fila.
+    if (e.target.closest(".tp-live__row-active")) return;
+    var menuBtn = e.target.closest(".tp-live__row-menu");
+    if (menuBtn) {
+      e.stopPropagation();
+      openRowMenu(menuBtn, parseInt(menuBtn.getAttribute("data-id"), 10));
+      return;
+    }
     var row = e.target.closest(".tp-live__row");
     if (!row || row.classList.contains("tp-live__row--skeleton")) return;
     var id = parseInt(row.getAttribute("data-id"), 10);
     if (id) selectDevice(id, true);
+  });
+
+  listEl.addEventListener("change", function (e) {
+    var cb = e.target;
+    if (!cb.matches || !cb.matches('.tp-live__row-active input[type="checkbox"]'))
+      return;
+    var id = parseInt(cb.getAttribute("data-id"), 10);
+    var d = state.index[id];
+    if (!d) return;
+    d.active = cb.checked;
+    renderMarkers();
+    persistActive(id, cb.checked);
   });
 
   // Virtualization scroll handler (rAF throttled)
@@ -1285,6 +1413,7 @@
   function closeDrawer() {
     root.removeAttribute("data-drawer-open");
     drawer.setAttribute("aria-hidden", "true");
+    state.followId = null;
     root.removeAttribute("data-bottombar-open");
     root.removeAttribute("data-bottombar-collapsed");
     var bbCards = document.getElementById("tp-live-bottombar-cards");
@@ -1951,6 +2080,15 @@
     if (state.selectedId && state.index[state.selectedId]) {
       fillDrawer(state.index[state.selectedId]);
       loadDeviceWidgets(state.selectedId, true);
+    }
+    // "Seguir": recentra el mapa en el dispositivo seguido en cada actualización.
+    if (state.followId && state.index[state.followId] && state.map) {
+      var fdev = state.index[state.followId];
+      if (fdev.lat != null && fdev.lng != null)
+        state.map.easeTo({
+          center: [parseFloat(fdev.lng), parseFloat(fdev.lat)],
+          duration: 600,
+        });
     }
   }
 
