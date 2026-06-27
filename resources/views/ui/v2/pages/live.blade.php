@@ -4,7 +4,7 @@
 @section('rail-active', 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=9">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=10">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -43,15 +43,30 @@
                     <h3 class="tp-h6 tp-mb-0">Flota</h3>
                     <div class="tp-row" style="gap:6px;align-items:center;">
                         @if (!empty($canCreate))
-                            <button class="tp-btn tp-btn--primary tp-btn--sm" type="button" id="tp-live-create-device"
-                                title="Nuevo vehículo">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <button class="tp-btn tp-btn--primary tp-btn--icon tp-btn--sm" type="button"
+                                id="tp-live-create-device" title="Nuevo vehículo" aria-label="Nuevo vehículo">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M12 5v14M5 12h14" />
                                 </svg>
-                                Nuevo
                             </button>
                         @endif
+                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button"
+                            id="tp-live-group-toggle" title="Agrupar por grupo" aria-label="Agrupar por grupo"
+                            aria-pressed="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 7h18M3 12h18M3 17h18" />
+                                <circle cx="6" cy="7" r="0.5" fill="currentColor" />
+                            </svg>
+                        </button>
+                        <a class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" href="{{ route('ui.v2.fleet') }}"
+                            id="tp-live-listview" title="Ver lista de vehículos" aria-label="Ver lista de vehículos">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+                            </svg>
+                        </a>
                         <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button"
                             id="tp-live-filters-collapse" title="Colapsar panel" aria-label="Colapsar panel">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -477,7 +492,7 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=15"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=16"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

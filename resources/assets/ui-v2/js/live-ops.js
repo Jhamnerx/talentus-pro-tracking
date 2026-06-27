@@ -32,6 +32,7 @@
     pollInterval: parseInt(root.dataset.pollInterval, 10) || 15000,
     rowHeight: 56,
     rowGap: 2,
+    groupHeaderHeight: 34,
     bufferRows: 6,
     offlineThresholdSec: 600, // 10 min without ack → offline
     idleThresholdSec: 300, // engine on but speed=0
@@ -477,6 +478,11 @@
     markers: {}, // id → maplibregl.Marker
     markerEls: {}, // id → DOM element
     filtered: [], // current filtered + sorted view
+    visual: [], // visual rows (group headers + devices) for the virtualizer
+    visualTotalH: 0,
+    groups: [], // [{id,title}] from backend (deviceGroups)
+    grouped: true, // group list by device group name (like legacy)
+    collapsedGroups: {}, // gid → true when collapsed
     statusFilter: "all",
     searchQuery: "",
     selectedId: null,
@@ -506,6 +512,12 @@
     trafficLayerId: "tp-live-traffic",
     bootstrapped: false,
   };
+
+  // Preferencia de "vista por grupos" persistida localmente.
+  try {
+    var savedGrouped = localStorage.getItem("tp_live_grouped");
+    if (savedGrouped !== null) state.grouped = savedGrouped === "1";
+  } catch (e) {}
 
   // -----------------------------------------------------------
   // Status classification (operational, not legacy)
@@ -1171,6 +1183,69 @@
         offline: counts.offline,
       });
     }
+    buildVisualRows();
+  }
+
+  // Nombre del grupo por id (0 = "Sin grupo", como el legacy).
+  function groupTitle(gid) {
+    if (!gid) return "Sin grupo";
+    for (var i = 0; i < state.groups.length; i++) {
+      if (state.groups[i].id === gid) return state.groups[i].title;
+    }
+    return "Grupo " + gid;
+  }
+
+  // Construye las filas "visuales" (cabeceras de grupo + devices) con sus
+  // alturas/offsets acumulados, para el virtualizador de altura variable.
+  function buildVisualRows() {
+    var rowH = CFG.rowHeight + CFG.rowGap;
+    var visual = [];
+    var top = 0;
+
+    if (state.grouped) {
+      var byGroup = {};
+      state.filtered.forEach(function (d) {
+        var gid = d.group_id || 0;
+        (byGroup[gid] = byGroup[gid] || []).push(d);
+      });
+      // Orden: grupos del backend (por título) y al final los no listados (ej. 0).
+      var order = [];
+      state.groups.forEach(function (g) {
+        if (byGroup[g.id]) order.push(g.id);
+      });
+      Object.keys(byGroup).forEach(function (k) {
+        var gid = parseInt(k, 10);
+        if (order.indexOf(gid) === -1) order.push(gid);
+      });
+      order.forEach(function (gid) {
+        var items = byGroup[gid];
+        var collapsed = !!state.collapsedGroups[gid];
+        visual.push({
+          type: "group",
+          gid: gid,
+          title: groupTitle(gid),
+          count: items.length,
+          collapsed: collapsed,
+          h: CFG.groupHeaderHeight,
+          top: top,
+        });
+        top += CFG.groupHeaderHeight;
+        if (!collapsed) {
+          items.forEach(function (d) {
+            visual.push({ type: "device", d: d, h: rowH, top: top });
+            top += rowH;
+          });
+        }
+      });
+    } else {
+      state.filtered.forEach(function (d) {
+        visual.push({ type: "device", d: d, h: rowH, top: top });
+        top += rowH;
+      });
+    }
+
+    state.visual = visual;
+    state.visualTotalH = top;
   }
 
   // -----------------------------------------------------------
@@ -1235,11 +1310,49 @@
     );
   }
 
+  function groupHeaderTemplate(entry) {
+    return (
+      '<div class="tp-live__group" data-gid="' +
+      entry.gid +
+      '" role="button" tabindex="0"' +
+      (entry.collapsed ? ' data-collapsed="1"' : "") +
+      ' style="position:absolute; top:' +
+      entry.top +
+      'px; left:8px; right:8px; height:' +
+      CFG.groupHeaderHeight +
+      'px;">' +
+      '<svg class="tp-live__group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
+      '<span class="tp-live__group-title">' +
+      escapeHtml(entry.title) +
+      "</span>" +
+      '<span class="tp-live__group-count">' +
+      entry.count +
+      "</span>" +
+      "</div>"
+    );
+  }
+
+  // Búsqueda binaria de la primera fila visual visible dado scrollTop.
+  function firstVisibleIndex(scrollTop) {
+    var arr = state.visual;
+    var lo = 0,
+      hi = arr.length - 1,
+      ans = 0;
+    while (lo <= hi) {
+      var mid = (lo + hi) >> 1;
+      if (arr[mid].top + arr[mid].h >= scrollTop) {
+        ans = mid;
+        hi = mid - 1;
+      } else {
+        lo = mid + 1;
+      }
+    }
+    return ans;
+  }
+
   function renderList() {
-    var rows = state.filtered;
-    var rowH = CFG.rowHeight + CFG.rowGap;
-    var total = rows.length;
-    var totalH = total * rowH;
+    var arr = state.visual;
+    var total = arr.length;
     // Clear skeleton on first real render
     var sk = listEl.querySelector(".tp-live__skeleton");
     if (sk) sk.remove();
@@ -1252,19 +1365,21 @@
     }
     emptyEl.hidden = true;
     listEl.style.position = "relative";
-    listEl.style.height = totalH + "px";
+    listEl.style.height = state.visualTotalH + "px";
 
     var scrollTop = listWrap.scrollTop;
     var viewH = listWrap.clientHeight;
-    var first = Math.max(0, Math.floor(scrollTop / rowH) - CFG.bufferRows);
-    var last = Math.min(
-      total,
-      Math.ceil((scrollTop + viewH) / rowH) + CFG.bufferRows,
-    );
+    var bufferPx = CFG.bufferRows * (CFG.rowHeight + CFG.rowGap);
+    var top0 = scrollTop - bufferPx;
+    var top1 = scrollTop + viewH + bufferPx;
 
+    var start = firstVisibleIndex(top0);
     var html = "";
-    for (var i = first; i < last; i++) {
-      html += rowTemplate(rows[i], i * rowH);
+    for (var i = start; i < total; i++) {
+      var e = arr[i];
+      if (e.top > top1) break;
+      html +=
+        e.type === "group" ? groupHeaderTemplate(e) : rowTemplate(e.d, e.top);
     }
     listEl.innerHTML = html;
   }
@@ -1304,39 +1419,9 @@
       document.removeEventListener("click", closeRowMenu);
     }
   }
-  function openRowMenu(btn, id) {
-    closeRowMenu();
-    var d = state.index[id];
-    if (!d) return;
-    var items = [
-      { t: "Mostrar historial (última hora)", a: function () { goHistory(id, "last_hour"); } },
-      { t: "Mostrar historial (hoy)", a: function () { goHistory(id, "today"); } },
-      { t: "Mostrar historial (ayer)", a: function () { goHistory(id, "yesterday"); } },
-      { t: "Seguir", a: function () { followDevice(id); } },
-      {
-        t: "Editar",
-        a: function () {
-          if (window.tpDeviceModal)
-            window.tpDeviceModal.openEdit(id, function () {
-              fetchDevices(true);
-            });
-        },
-      },
-    ];
-    rowMenuEl = document.createElement("div");
-    rowMenuEl.className = "tp-row-menu";
-    rowMenuEl.innerHTML = items
-      .map(function (it, i) {
-        return (
-          '<button type="button" class="tp-row-menu__item" data-i="' +
-          i +
-          '">' +
-          it.t +
-          "</button>"
-        );
-      })
-      .join("");
-    document.body.appendChild(rowMenuEl);
+  // Posiciona el menú flotante junto al botón kebab.
+  function positionRowMenu(btn) {
+    if (!rowMenuEl) return;
     var r = btn.getBoundingClientRect();
     rowMenuEl.style.position = "fixed";
     rowMenuEl.style.top =
@@ -1344,13 +1429,69 @@
       "px";
     rowMenuEl.style.left =
       Math.max(8, r.right - rowMenuEl.offsetWidth) + "px";
+  }
+
+  // Enruta el click de un ítem del menú según data-act (HTML servido por backend).
+  function handleRowMenuClick(e, id) {
+    var item = e.target.closest(".tp-row-menu__item");
+    if (!item) return;
+    var act = item.getAttribute("data-act");
+    closeRowMenu();
+    if (act === "history") {
+      goHistory(id, item.getAttribute("data-range") || "today");
+    } else if (act === "follow") {
+      followDevice(id);
+    } else if (act === "edit") {
+      if (window.tpDeviceModal)
+        window.tpDeviceModal.openEdit(id, function () {
+          fetchDevices(true);
+        });
+    } else if (act === "pending") {
+      // Acción legacy aún no portada a v2 (send_command, sharing, alerts,
+      // camera, route_types, call_action, chat, qr, device_config,
+      // device_plans, vehicle_state, video). El permiso ya se validó en el
+      // backend al renderizar el menú; la funcionalidad queda pendiente.
+      if (window.tpModal && tpModal.toast)
+        tpModal.toast("Función disponible próximamente.", "info");
+    }
+  }
+
+  function openRowMenu(btn, id) {
+    closeRowMenu();
+    if (!state.index[id]) return;
+    rowMenuEl = document.createElement("div");
+    rowMenuEl.className = "tp-row-menu";
+    rowMenuEl.innerHTML =
+      '<div class="tp-row-menu__loading">Cargando…</div>';
+    document.body.appendChild(rowMenuEl);
+    positionRowMenu(btn);
     rowMenuEl.addEventListener("click", function (e) {
-      var b = e.target.closest("[data-i]");
-      if (!b) return;
-      var idx = parseInt(b.getAttribute("data-i"), 10);
-      closeRowMenu();
-      if (items[idx]) items[idx].a();
+      handleRowMenuClick(e, id);
     });
+    // Carga el menú server-rendered (mismo gating de permisos que el legacy).
+    var base = root.getAttribute("data-devices-url") || "/ui/v2/api/devices";
+    fetch(base + "/" + id + "/actions", {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin",
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (res) {
+        if (!rowMenuEl) return; // ya se cerró
+        if (res && res.ok && res.html) {
+          rowMenuEl.innerHTML = res.html;
+        } else {
+          rowMenuEl.innerHTML =
+            '<div class="tp-row-menu__loading">Sin acciones.</div>';
+        }
+        positionRowMenu(btn);
+      })
+      .catch(function () {
+        if (rowMenuEl)
+          rowMenuEl.innerHTML =
+            '<div class="tp-row-menu__loading">Error al cargar.</div>';
+      });
     setTimeout(function () {
       document.addEventListener("click", closeRowMenu);
     }, 0);
@@ -1363,7 +1504,20 @@
     selectDevice(id, true);
   }
 
+  function toggleGroup(gid) {
+    if (state.collapsedGroups[gid]) delete state.collapsedGroups[gid];
+    else state.collapsedGroups[gid] = true;
+    buildVisualRows();
+    renderList();
+  }
+
   listEl.addEventListener("click", function (e) {
+    // Cabecera de grupo → colapsar/expandir.
+    var groupEl = e.target.closest(".tp-live__group");
+    if (groupEl) {
+      toggleGroup(parseInt(groupEl.getAttribute("data-gid"), 10));
+      return;
+    }
     // El toggle "active" y el kebab no deben seleccionar la fila.
     if (e.target.closest(".tp-live__row-active")) return;
     var menuBtn = e.target.closest(".tp-live__row-menu");
@@ -1743,6 +1897,25 @@
     renderMarkers();
   });
 
+  // Toggle "vista por grupos" (agrupar / desagrupar la lista, como el legacy).
+  var groupToggleEl = document.getElementById("tp-live-group-toggle");
+  if (groupToggleEl) {
+    var syncGroupToggle = function () {
+      groupToggleEl.setAttribute("aria-pressed", state.grouped ? "true" : "false");
+      groupToggleEl.classList.toggle("is-active", state.grouped);
+    };
+    syncGroupToggle();
+    groupToggleEl.addEventListener("click", function () {
+      state.grouped = !state.grouped;
+      try {
+        localStorage.setItem("tp_live_grouped", state.grouped ? "1" : "0");
+      } catch (e) {}
+      syncGroupToggle();
+      buildVisualRows();
+      renderList();
+    });
+  }
+
   var searchEl = document.getElementById("tp-live-search");
   var searchTimer = null;
   searchEl.addEventListener("input", function () {
@@ -2015,6 +2188,7 @@
       .then(function (json) {
         var rows =
           json && json.data ? json.data : Array.isArray(json) ? json : [];
+        if (json && Array.isArray(json.groups)) state.groups = json.groups;
         state.devices = rows;
         state.index = {};
         rows.forEach(function (d) {

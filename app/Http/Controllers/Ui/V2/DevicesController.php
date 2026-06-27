@@ -80,6 +80,16 @@ class DevicesController extends BaseController
             unset($row);
         }
 
+        // Grupos del usuario (id → título) para agrupar la lista como el legacy.
+        // El group_id de cada device viene del pivot vía DeviceMapTransformer.
+        $payload['groups'] = $this->user->deviceGroups()
+            ->orderBy('title')
+            ->get(['id', 'title'])
+            ->map(function ($g) {
+                return ['id' => (int) $g->id, 'title' => $g->title];
+            })
+            ->all();
+
         return response()->json($payload);
     }
 
@@ -476,6 +486,30 @@ class DevicesController extends BaseController
         }
 
         $html = View::make('ui.v2.partials.device-widgets', $data)->render();
+
+        return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
+    }
+
+    /**
+     * Per-device actions menu (kebab) for the Live list.
+     *
+     * Server-renders ui.v2.partials.device-actions, which mirrors the
+     * legacy Objects/item.blade dropdown — SAME permission gating and
+     * per-device flags. Fetched lazily when the kebab is clicked so the
+     * virtualized list payload stays small and permissions stay authoritative.
+     */
+    public function actions(Request $request, $id): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $device = DeviceRepo::find((int) $id);
+        if (! $device) {
+            return response()->json(['ok' => false, 'message' => 'Vehículo no encontrado.'], 404);
+        }
+
+        $html = View::make('ui.v2.partials.device-actions', ['device' => $device])->render();
 
         return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
     }

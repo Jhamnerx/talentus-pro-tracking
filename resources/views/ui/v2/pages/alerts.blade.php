@@ -25,7 +25,13 @@
                     <span class="tp-text-muted tp-text-sm" id="tp-alerts-rules-count">—</span>
                 </div>
                 @if ($canCreate)
-                    <button class="tp-btn tp-btn--primary tp-btn--sm" id="tp-alerts-new" type="button">+ Nueva</button>
+                    <button class="tp-btn tp-btn--primary tp-btn--icon tp-btn--sm" id="tp-alerts-new" type="button"
+                        title="Nueva regla" aria-label="Nueva regla">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
                 @endif
             </header>
 

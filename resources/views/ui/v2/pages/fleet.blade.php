@@ -53,13 +53,12 @@
 
             <div class="tp-fleet__actions">
                 @if (!empty($canCreate))
-                    <button class="tp-btn tp-btn--primary tp-btn--sm" type="button" id="tp-fleet-create-device"
-                        title="Nuevo vehículo">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <button class="tp-btn tp-btn--primary tp-btn--icon tp-btn--sm" type="button"
+                        id="tp-fleet-create-device" title="Nuevo vehículo" aria-label="Nuevo vehículo">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M12 5v14M5 12h14" />
                         </svg>
-                        <span>Nuevo</span>
                     </button>
                 @endif
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-export" title="Exportar CSV">
