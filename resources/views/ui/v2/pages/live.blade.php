@@ -1,10 +1,10 @@
 @extends('ui.v2.layout')
 
 @section('title', $pageTitle ?? 'Live Ops · Mapa')
-@section('rail-active', 'live')
+@section('rail-active', request('panel') === 'pois' ? 'pois' : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=15">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=16">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -39,9 +39,25 @@
 
         {{-- LEFT FILTER PANEL --}}
         <aside class="tp-live__filters" id="tp-live-filters">
-            <header class="tp-live__filters-head">
-                <div class="tp-row tp-row-between" style="width:100%;">
-                    <h3 class="tp-h6 tp-mb-0">Flota</h3>
+            {{-- Panel switcher: un solo mapa, el sidebar cambia de panel (como el legacy) --}}
+            <div class="tp-live__paneltabs">
+                <div class="tp-live__paneltabs-group" role="tablist">
+                    <button class="tp-live__paneltab is-active" data-panel-tab="objects" type="button">Objetos</button>
+                    <button class="tp-live__paneltab" data-panel-tab="pois" type="button">POIs</button>
+                </div>
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button" id="tp-live-filters-collapse"
+                    title="Colapsar panel" aria-label="Colapsar panel">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="tp-live__panel" id="tp-panel-objects" data-panel="objects">
+                <header class="tp-live__filters-head">
+                    <div class="tp-row tp-row-between" style="width:100%;">
+                        <h3 class="tp-h6 tp-mb-0">Flota</h3>
                     <div class="tp-row" style="gap:6px;align-items:center;">
                         @if (!empty($canCreate))
                             <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button"
@@ -68,13 +84,6 @@
                                 <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
                             </svg>
                         </a>
-                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button"
-                            id="tp-live-filters-collapse" title="Colapsar panel" aria-label="Colapsar panel">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m15 18-6-6 6-6" />
-                            </svg>
-                        </button>
                     </div>
                 </div>
 
@@ -152,6 +161,54 @@
                     Refrescar
                 </button>
             </footer>
+            </div>{{-- /#tp-panel-objects --}}
+
+            {{-- POIs panel — mismo mapa de Live (no crea otro mapa) --}}
+            <div class="tp-live__panel" id="tp-panel-pois" data-panel="pois" hidden>
+                <header class="tp-live__filters-head">
+                    <div class="tp-row tp-row-between" style="width:100%;">
+                        <h3 class="tp-h6 tp-mb-0">POIs <span class="tp-text-muted tp-text-sm"
+                                id="tp-pois-count"></span></h3>
+                        @if (auth()->user()->perm('poi', 'edit'))
+                            <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button" id="tp-pois-new"
+                                title="Nuevo POI" aria-label="Nuevo POI">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
+                    <div class="tp-input-wrap tp-mt-3">
+                        <span class="tp-input-wrap__icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.35-4.35" />
+                            </svg>
+                        </span>
+                        <input type="text" class="tp-input tp-input--with-icon" id="tp-pois-search"
+                            placeholder="Buscar POI…" autocomplete="off">
+                    </div>
+                    <div class="tp-mt-3">
+                        <select id="tp-pois-group" class="tp-input tp-input--sm tp-full">
+                            <option value="">Todos los grupos</option>
+                        </select>
+                    </div>
+                </header>
+                <div class="tp-live__list-wrap">
+                    <div class="tp-pois-list" id="tp-pois-list" role="listbox" aria-label="Lista de POIs"></div>
+                    <div class="tp-live__empty" id="tp-pois-empty" hidden>
+                        <div class="tp-mt-2">Sin POIs</div>
+                    </div>
+                </div>
+                <footer class="tp-live__filters-foot" style="gap:6px;">
+                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ route('pois.export') }}"
+                        target="_blank">Exportar</a>
+                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ route('pois.import') }}"
+                        target="_blank">Importar</a>
+                </footer>
+            </div>{{-- /#tp-panel-pois --}}
         </aside>
 
         {{-- COLLAPSED FILTERS HANDLE (when filters panel is hidden) --}}
@@ -500,7 +557,7 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=22"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=23"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

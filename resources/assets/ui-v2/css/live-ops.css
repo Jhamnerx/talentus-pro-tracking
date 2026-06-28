@@ -69,6 +69,107 @@
   visibility: hidden;
 }
 
+/* Conmutador de paneles del sidebar (Objetos / POIs) sobre un solo mapa */
+.tp-live__paneltabs {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px var(--sp-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tp-live__paneltabs-group {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 4px;
+  background: var(--surface-sunken);
+  border-radius: var(--r-md);
+  padding: 3px;
+}
+.tp-live__paneltab {
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  border-radius: calc(var(--r-md) - 3px);
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-secondary);
+  cursor: pointer;
+}
+.tp-live__paneltab.is-active {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  box-shadow: var(--shadow-xs);
+}
+/* Cada panel ocupa el alto restante; solo el activo se muestra */
+.tp-live__panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tp-live__panel[hidden] {
+  display: none;
+}
+
+/* Filas del panel de POIs */
+.tp-poi-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  margin: 0 8px 4px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.tp-poi-row:hover {
+  border-color: var(--border-default);
+  background: var(--surface-sunken);
+}
+.tp-poi-row__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.tp-poi-row__name {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tp-poi-row__group {
+  font-size: 11px;
+  color: var(--fg-tertiary);
+}
+.tp-poi-row__actions {
+  display: flex;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.tp-poi-row__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg-tertiary);
+  cursor: pointer;
+}
+.tp-poi-row__btn:hover {
+  background: var(--surface-app);
+  color: var(--brand-accent, #1b99bd);
+}
+.tp-poi-row__btn--danger:hover {
+  color: var(--danger-500, #e5484d);
+}
+
 .tp-live__filters-head {
   padding: var(--sp-4);
   border-bottom: 1px solid var(--border-subtle);

@@ -6,6 +6,7 @@
         ['key' => 'dashboard', 'label' => 'Command Center', 'url' => url('/ui/v2/dashboard'), 'icon' => 'dashboard'],
         ['key' => 'fleet', 'label' => 'Fleet', 'url' => url('/ui/v2/fleet'), 'icon' => 'fleet'],
         ['key' => 'zones', 'label' => 'Zones & Routes', 'url' => url('/ui/v2/zones'), 'icon' => 'zones'],
+        ['key' => 'pois', 'label' => 'POIs', 'url' => url('/ui/v2/live?panel=pois'), 'icon' => 'poi'],
         ['key' => 'alerts', 'label' => 'Alerts', 'url' => url('/ui/v2/alerts'), 'icon' => 'alerts', 'badge' => 3],
         ['key' => 'events', 'label' => 'Eventos', 'url' => url('/ui/v2/events'), 'icon' => 'events'],
         ['key' => 'history', 'label' => 'History & Replay', 'url' => url('/ui/v2/history'), 'icon' => 'history'],

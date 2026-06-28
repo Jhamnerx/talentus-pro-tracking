@@ -25,6 +25,10 @@ class MapLayersController extends BaseController
             return response()->json(['items' => []], 403);
         }
 
+        $groups = PoiGroup::where('user_id', $this->user->id)
+            ->orderBy('title')->get(['id', 'title']);
+        $gmap = $groups->pluck('title', 'id');
+
         $items = [];
         foreach ($this->user->pois()->get() as $poi) {
             $c = (array) ($poi->coordinates ?? []);
@@ -34,14 +38,21 @@ class MapLayersController extends BaseController
                 continue;
             }
             $items[] = [
-                'id'   => (int) $poi->id,
-                'name' => (string) $poi->name,
-                'lat'  => (float) $lat,
-                'lng'  => (float) $lng,
+                'id'       => (int) $poi->id,
+                'name'     => (string) $poi->name,
+                'lat'      => (float) $lat,
+                'lng'      => (float) $lng,
+                'group_id' => (int) ($poi->group_id ?? 0),
+                'group'    => $poi->group_id ? ($gmap[$poi->group_id] ?? null) : null,
             ];
         }
 
-        return response()->json(['items' => $items]);
+        return response()->json([
+            'items'  => $items,
+            'groups' => $groups->map(function ($g) {
+                return ['id' => (int) $g->id, 'title' => $g->title];
+            })->all(),
+        ]);
     }
 
     /* =================================================================

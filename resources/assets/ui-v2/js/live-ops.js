@@ -2330,6 +2330,7 @@
                       tpModal.toast(id ? "POI actualizado." : "POI creado.", "success");
                     tpModal.close(dialog);
                     ensurePoiVisible();
+                    refreshPoisPanel();
                   } else if (r && r.data && r.data.errors) {
                     tpModal.toast && tpModal.toast("Revisa los campos.", "warning");
                   } else {
@@ -2357,6 +2358,7 @@
           if (r && r.ok && r.data && r.data.ok) {
             tpModal.toast && tpModal.toast("POI eliminado.", "success");
             renderSharedPois();
+            refreshPoisPanel();
           } else {
             tpModal.toast && tpModal.toast("No se pudo eliminar.", "error");
           }
@@ -2378,6 +2380,48 @@
     }
   }
 
+  // Popup de un POI (editar/eliminar). Reutilizado por el clic en el mapa y
+  // por el clic en una fila del panel de POIs.
+  function openPoiPopup(coords, id, name) {
+    if (!state.map) return;
+    if (!poiPopup)
+      poiPopup = new maplibregl.Popup({
+        offset: 12,
+        closeButton: true,
+        className: "tp-dev-popup-wrap",
+      });
+    var canEdit = !!document.getElementById("tp-pois-new");
+    poiPopup
+      .setLngLat(coords)
+      .setHTML(
+        '<div class="tp-dev-popup"><div class="tp-dev-popup__head">' +
+          '<span class="tp-dev-popup__name">' +
+          escapeHtml(name || "POI") +
+          "</span></div>" +
+          (canEdit
+            ? '<div class="tp-poi-popup__actions">' +
+              '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-poi-edit>Editar</button>' +
+              '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-poi-del>Eliminar</button>' +
+              "</div>"
+            : "") +
+          "</div>",
+      )
+      .addTo(state.map);
+    var pe = poiPopup.getElement();
+    var be = pe && pe.querySelector("[data-poi-edit]");
+    var bd = pe && pe.querySelector("[data-poi-del]");
+    if (be)
+      be.addEventListener("click", function () {
+        poiPopup.remove();
+        openPoiModal({ lat: coords[1], lng: coords[0] }, id);
+      });
+    if (bd)
+      bd.addEventListener("click", function () {
+        poiPopup.remove();
+        deletePoi(id);
+      });
+  }
+
   function bindPoiInteractions() {
     if (poiClickBound || !state.map) return;
     poiClickBound = true;
@@ -2388,41 +2432,11 @@
       if (poiPlaceMode) return;
       var f = e.features && e.features[0];
       if (!f) return;
-      var pid = f.properties.id;
-      var pname = f.properties.name || "POI";
-      var coords = f.geometry.coordinates.slice();
-      if (!poiPopup)
-        poiPopup = new maplibregl.Popup({
-          offset: 12,
-          closeButton: true,
-          className: "tp-dev-popup-wrap",
-        });
-      poiPopup
-        .setLngLat(coords)
-        .setHTML(
-          '<div class="tp-dev-popup"><div class="tp-dev-popup__head">' +
-            '<span class="tp-dev-popup__name">' +
-            escapeHtml(pname) +
-            "</span></div>" +
-            '<div class="tp-poi-popup__actions">' +
-            '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-poi-edit>Editar</button>' +
-            '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-poi-del>Eliminar</button>' +
-            "</div></div>",
-        )
-        .addTo(state.map);
-      var pe = poiPopup.getElement();
-      var be = pe && pe.querySelector("[data-poi-edit]");
-      var bd = pe && pe.querySelector("[data-poi-del]");
-      if (be)
-        be.addEventListener("click", function () {
-          poiPopup.remove();
-          openPoiModal({ lat: coords[1], lng: coords[0] }, pid);
-        });
-      if (bd)
-        bd.addEventListener("click", function () {
-          poiPopup.remove();
-          deletePoi(pid);
-        });
+      openPoiPopup(
+        f.geometry.coordinates.slice(),
+        f.properties.id,
+        f.properties.name || "POI",
+      );
     });
     state.map.on("mouseenter", layerId, function () {
       if (!poiPlaceMode) state.map.getCanvas().style.cursor = "pointer";
@@ -2446,6 +2460,183 @@
       ensurePoiVisible();
       startPoiPlaceMode();
     });
+
+  // -----------------------------------------------------------
+  // Panel de POIs en el sidebar (mismo mapa de Live, como el legacy)
+  // -----------------------------------------------------------
+  var poisData = { items: [], groups: [] };
+  var poisLoaded = false;
+
+  function loadPoisPanel(force) {
+    if (poisLoaded && !force) {
+      renderPoisList();
+      return;
+    }
+    fetch(POI_BASE, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (j) {
+        poisData.items = (j && j.items) || [];
+        poisData.groups = (j && j.groups) || [];
+        poisLoaded = true;
+        fillPoiGroupSelect();
+        renderPoisList();
+      })
+      .catch(function () {});
+  }
+  function refreshPoisPanel() {
+    if (poisLoaded) loadPoisPanel(true);
+  }
+
+  function fillPoiGroupSelect() {
+    var sel = document.getElementById("tp-pois-group");
+    if (!sel) return;
+    var cur = sel.value;
+    var html = '<option value="">Todos los grupos</option>';
+    poisData.groups.forEach(function (g) {
+      html += '<option value="' + g.id + '">' + escapeHtml(g.title) + "</option>";
+    });
+    sel.innerHTML = html;
+    sel.value = cur;
+  }
+
+  var POI_ICONS = {
+    go: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-7.16 7-12a7 7 0 0 0-14 0c0 4.84 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+    edit: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>',
+    del: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+  };
+
+  function renderPoisList() {
+    var listEl = document.getElementById("tp-pois-list");
+    if (!listEl) return;
+    var q = ((document.getElementById("tp-pois-search") || {}).value || "")
+      .trim()
+      .toLowerCase();
+    var gsel = (document.getElementById("tp-pois-group") || {}).value || "";
+    var rows = poisData.items.filter(function (p) {
+      if (gsel && String(p.group_id || 0) !== String(gsel)) return false;
+      if (q && (p.name || "").toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    var canEdit = !!document.getElementById("tp-pois-new");
+    var countEl = document.getElementById("tp-pois-count");
+    if (countEl) countEl.textContent = rows.length ? "· " + rows.length : "";
+    var emptyEl = document.getElementById("tp-pois-empty");
+    if (emptyEl) emptyEl.hidden = rows.length > 0;
+    listEl.innerHTML = rows
+      .map(function (p) {
+        return (
+          '<div class="tp-poi-row" data-id="' +
+          p.id +
+          '" data-lat="' +
+          p.lat +
+          '" data-lng="' +
+          p.lng +
+          '" role="option">' +
+          '<div class="tp-poi-row__main">' +
+          '<div class="tp-poi-row__name">' +
+          escapeHtml(p.name || "#" + p.id) +
+          "</div>" +
+          (p.group
+            ? '<div class="tp-poi-row__group">' + escapeHtml(p.group) + "</div>"
+            : "") +
+          "</div>" +
+          '<div class="tp-poi-row__actions">' +
+          '<button type="button" class="tp-poi-row__btn" data-poi-go title="Centrar">' +
+          POI_ICONS.go +
+          "</button>" +
+          (canEdit
+            ? '<button type="button" class="tp-poi-row__btn" data-poi-edit title="Editar">' +
+              POI_ICONS.edit +
+              "</button>" +
+              '<button type="button" class="tp-poi-row__btn tp-poi-row__btn--danger" data-poi-del title="Eliminar">' +
+              POI_ICONS.del +
+              "</button>"
+            : "") +
+          "</div></div>"
+        );
+      })
+      .join("");
+  }
+
+  var poisListEl = document.getElementById("tp-pois-list");
+  if (poisListEl)
+    poisListEl.addEventListener("click", function (e) {
+      var row = e.target.closest(".tp-poi-row");
+      if (!row) return;
+      var id = parseInt(row.getAttribute("data-id"), 10);
+      var lat = parseFloat(row.getAttribute("data-lat"));
+      var lng = parseFloat(row.getAttribute("data-lng"));
+      var name = (row.querySelector(".tp-poi-row__name") || {}).textContent || "";
+      if (e.target.closest("[data-poi-edit]")) {
+        openPoiModal({ lat: lat, lng: lng }, id);
+        return;
+      }
+      if (e.target.closest("[data-poi-del]")) {
+        deletePoi(id);
+        return;
+      }
+      // fila / centrar → vuela al POI + popup
+      ensurePoiVisible();
+      if (state.map)
+        state.map.flyTo({
+          center: [lng, lat],
+          zoom: Math.max(state.map.getZoom(), 15),
+          duration: 600,
+        });
+      openPoiPopup([lng, lat], id, name);
+    });
+
+  var poisSearchEl = document.getElementById("tp-pois-search");
+  if (poisSearchEl) poisSearchEl.addEventListener("input", renderPoisList);
+  var poisGroupEl = document.getElementById("tp-pois-group");
+  if (poisGroupEl) poisGroupEl.addEventListener("change", renderPoisList);
+  var poisNewBtn = document.getElementById("tp-pois-new");
+  if (poisNewBtn)
+    poisNewBtn.addEventListener("click", function () {
+      ensurePoiVisible();
+      startPoiPlaceMode();
+    });
+
+  // Conmutador de paneles del sidebar (Objetos / POIs) sobre el mismo mapa.
+  function switchPanel(name) {
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".tp-live__panel"),
+      function (p) {
+        p.hidden = p.getAttribute("data-panel") !== name;
+      },
+    );
+    Array.prototype.forEach.call(
+      document.querySelectorAll(".tp-live__paneltab"),
+      function (t) {
+        t.classList.toggle(
+          "is-active",
+          t.getAttribute("data-panel-tab") === name,
+        );
+      },
+    );
+    if (name === "pois") {
+      ensurePoiVisible();
+      loadPoisPanel(false);
+    }
+  }
+  Array.prototype.forEach.call(
+    document.querySelectorAll(".tp-live__paneltab"),
+    function (t) {
+      t.addEventListener("click", function () {
+        switchPanel(t.getAttribute("data-panel-tab"));
+      });
+    },
+  );
+  // Deep-link desde el rail (?panel=pois) abre el panel de POIs.
+  try {
+    if (new URLSearchParams(location.search).get("panel") === "pois")
+      switchPanel("pois");
+  } catch (e) {}
 
   // Layer toggle buttons (cluster, devices, geofences, poi, routes, names, tails, traffic)
   Array.prototype.forEach.call(
