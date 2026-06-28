@@ -795,28 +795,217 @@
   // -----------------------------------------------------------
   // Markers
   // -----------------------------------------------------------
-  function buildMarkerEl(device) {
-    var tpl = document.getElementById("tp-live-marker-template");
-    var el = tpl.content.firstElementChild.cloneNode(true);
-    var status = classify(device);
-    el.setAttribute("data-status", status);
-    el.setAttribute("data-id", device.id);
-    var hasHeading = (device.speed || 0) > 1 && device.course != null;
-    if (!hasHeading) el.setAttribute("data-no-heading", "true");
-    var arrow = el.querySelector(".tp-live-marker__arrow");
-    if (arrow && hasHeading) {
-      arrow.style.transform =
-        "translateX(-50%) rotate(" + (parseFloat(device.course) || 0) + "deg)";
-      arrow.style.transformOrigin = "50% 14px";
+  // Resuelve una ruta de asset relativa a absoluta desde la raíz web.
+  function assetPath(p) {
+    if (!p) return "";
+    if (/^https?:\/\//.test(p) || p.charAt(0) === "/") return p;
+    return "/" + p;
+  }
+
+  // Replica device.js updateLayer: resuelve el icono del device según su TIPO.
+  //  - arrow:    PNG por color de estado (images/device_icons/estados/<color>.png), 25×33, rota por course, ancla centro
+  //  - rotating: imagen propia (icon.path), rota por course, ancla centro
+  //  - icon:     imagen propia (icon.path), NO rota, ancla abajo-centro
+  function deviceIconInfo(d) {
+    var icon = d.icon || {};
+    var type = icon.type || "arrow";
+    if (type === "arrow") {
+      var color = d.icon_color || icon.color || "gray";
+      return {
+        src: "/images/device_icons/estados/" + color + ".png",
+        w: 25,
+        h: 33,
+        rotate: true,
+        anchor: "center",
+      };
     }
+    if (type === "rotating") {
+      return {
+        src: assetPath(icon.path),
+        w: icon.width || 32,
+        h: icon.height || 32,
+        rotate: true,
+        anchor: "center",
+      };
+    }
+    // 'icon' (estático) o cualquier otro tipo
+    return {
+      src: assetPath(icon.path),
+      w: icon.width || 32,
+      h: icon.height || 32,
+      rotate: false,
+      anchor: "bottom",
+    };
+  }
+
+  // Aplica el icono (src/tamaño/rotación) + estado + etiqueta al elemento marcador.
+  function applyMarkerIcon(el, d) {
+    el.setAttribute("data-status", classify(d));
+    var info = deviceIconInfo(d);
+    var img = el.querySelector(".tp-live-marker__img");
+    if (img) {
+      if (img.getAttribute("src") !== info.src) img.setAttribute("src", info.src);
+      img.style.width = info.w + "px";
+      img.style.height = info.h + "px";
+      img.style.transform = info.rotate
+        ? "rotate(" + (parseFloat(d.course) || 0) + "deg)"
+        : "";
+    }
+    // El contenedor toma el tamaño del icono para que MapLibre ancle bien.
+    el.style.width = info.w + "px";
+    el.style.height = info.h + "px";
     var label = el.querySelector(".tp-live-marker__label");
-    if (label)
-      label.textContent = device.plate_number || device.name || "#" + device.id;
+    if (label) label.textContent = d.name || d.plate_number || "#" + d.id;
+  }
+
+  function buildMarkerEl(device) {
+    var el = document.createElement("div");
+    el.className = "tp-live-marker tp-live-marker--img";
+    el.setAttribute("data-id", device.id);
+    var label = document.createElement("span");
+    label.className = "tp-live-marker__label";
+    el.appendChild(label);
+    var img = document.createElement("img");
+    img.className = "tp-live-marker__img";
+    img.alt = "";
+    img.draggable = false;
+    el.appendChild(img);
+    applyMarkerIcon(el, device);
     el.addEventListener("click", function (e) {
       e.stopPropagation();
-      selectDevice(device.id, true);
+      openDevicePopup(device.id);
     });
     return el;
+  }
+
+  // -----------------------------------------------------------
+  // Popup del marcador (paridad con el legacy device.js openPopup,
+  // versión concisa: estado, velocidad, hora, ubicación, detalles)
+  // -----------------------------------------------------------
+  var GEO_URL = root.getAttribute("data-geo-url") || "";
+  var devicePopup = null;
+  var addrCache = {};
+
+  var STATUS_LABELS = {
+    online: "En movimiento",
+    excessive_speed: "Exceso de velocidad",
+    move: "En movimiento",
+    engine: "Motor encendido",
+    idle: "Ralentí",
+    ack: "Detenido",
+    stop: "Detenido",
+    park: "Estacionado",
+    blocked: "Bloqueado",
+    offline: "Desconectado",
+    expired: "Expirado",
+    inactive: "Inactivo",
+  };
+
+  function statusLabel(d) {
+    return STATUS_LABELS[d && d.online] || (d && d.online) || "—";
+  }
+
+  function fetchDeviceAddress(d, cb) {
+    if (!GEO_URL || d.lat == null || d.lng == null) return cb("");
+    if (addrCache[d.id]) return cb(addrCache[d.id]);
+    fetch(
+      GEO_URL +
+        (GEO_URL.indexOf("?") === -1 ? "?" : "&") +
+        "lat=" +
+        d.lat +
+        "&lng=" +
+        d.lng,
+      {
+        credentials: "same-origin",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      },
+    )
+      .then(function (r) {
+        return r.text();
+      })
+      .then(function (txt) {
+        var i = txt.indexOf("<");
+        if (i !== -1) txt = txt.slice(0, i); // corta DebugBar
+        var addr = txt.trim();
+        try {
+          var j = JSON.parse(addr);
+          addr = j.address || j.name || j.title || addr;
+        } catch (e) {}
+        addrCache[d.id] = addr;
+        cb(addr);
+      })
+      .catch(function () {
+        cb("");
+      });
+  }
+
+  function devicePopupHtml(d) {
+    var status = classify(d);
+    var speed = d.speed_text || (Math.round(parseFloat(d.speed) || 0) + " km/h");
+    return (
+      '<div class="tp-dev-popup" data-status="' +
+      status +
+      '">' +
+      '<div class="tp-dev-popup__head">' +
+      '<span class="tp-dev-popup__dot"></span>' +
+      '<span class="tp-dev-popup__name">' +
+      escapeHtml(d.name || "#" + d.id) +
+      "</span>" +
+      "</div>" +
+      '<div class="tp-dev-popup__status">' +
+      escapeHtml(statusLabel(d)) +
+      "</div>" +
+      '<dl class="tp-dev-popup__defs">' +
+      (d.plate_number
+        ? "<dt>Placa</dt><dd>" + escapeHtml(d.plate_number) + "</dd>"
+        : "") +
+      "<dt>Velocidad</dt><dd>" +
+      escapeHtml(speed) +
+      "</dd>" +
+      "<dt>Hora</dt><dd>" +
+      escapeHtml(d.time || "—") +
+      "</dd>" +
+      '<dt>Ubicación</dt><dd data-pop-addr>Cargando…</dd>' +
+      "<dt>Posición</dt><dd>" +
+      parseFloat(d.lat).toFixed(5) +
+      ", " +
+      parseFloat(d.lng).toFixed(5) +
+      "</dd>" +
+      "</dl>" +
+      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>Ver detalles</button>' +
+      "</div>"
+    );
+  }
+
+  function openDevicePopup(id) {
+    var d = state.index[id];
+    if (!d || !state.map || d.lat == null || d.lng == null) return;
+    if (!devicePopup) {
+      devicePopup = new maplibregl.Popup({
+        offset: 18,
+        closeButton: true,
+        maxWidth: "280px",
+        className: "tp-dev-popup-wrap",
+      });
+    }
+    devicePopup
+      .setLngLat([parseFloat(d.lng), parseFloat(d.lat)])
+      .setHTML(devicePopupHtml(d))
+      .addTo(state.map);
+
+    var popEl = devicePopup.getElement();
+    // Dirección perezosa (respeta plugin geofence_over_address del legacy).
+    fetchDeviceAddress(d, function (addr) {
+      if (!devicePopup || !devicePopup.isOpen()) return;
+      var slot = popEl && popEl.querySelector("[data-pop-addr]");
+      if (slot) slot.textContent = addr || "—";
+    });
+    // "Ver detalles" → abre el drawer.
+    var btn = popEl && popEl.querySelector("[data-pop-details]");
+    if (btn)
+      btn.addEventListener("click", function () {
+        selectDevice(id, true);
+      });
   }
 
   function renderMarkers() {
@@ -828,21 +1017,15 @@
       seen[d.id] = true;
       var lngLat = [parseFloat(d.lng), parseFloat(d.lat)];
       if (state.markers[d.id]) {
-        // Update position + status + heading
+        // Update position + icon (src/color/rotation) + status + label
         state.markers[d.id].setLngLat(lngLat);
-        var el = state.markerEls[d.id];
-        var status = classify(d);
-        el.setAttribute("data-status", status);
-        var hasHeading = (d.speed || 0) > 1 && d.course != null;
-        el.toggleAttribute("data-no-heading", !hasHeading);
-        var arrow = el.querySelector(".tp-live-marker__arrow");
-        if (arrow && hasHeading) {
-          arrow.style.transform =
-            "translateX(-50%) rotate(" + (parseFloat(d.course) || 0) + "deg)";
-        }
+        applyMarkerIcon(state.markerEls[d.id], d);
       } else {
         var el2 = buildMarkerEl(d);
-        var marker = new maplibregl.Marker({ element: el2, anchor: "center" })
+        var marker = new maplibregl.Marker({
+          element: el2,
+          anchor: deviceIconInfo(d).anchor,
+        })
           .setLngLat(lngLat)
           .addTo(state.map);
         state.markers[d.id] = marker;

@@ -4,7 +4,7 @@
 @section('rail-active', 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=12">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=13">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -16,7 +16,8 @@
     <div class="tp-live" id="tp-live" data-devices-url="{{ route('ui.v2.api.devices') }}"
         data-updates-url="{{ route('ui.v2.api.devices.updates') }}"
         data-zones-url="{{ route('ui.v2.api.zones') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
-        data-routes-url="{{ route('ui.v2.api.routes') }}" data-socket-port="{{ $socketPort }}"
+        data-routes-url="{{ route('ui.v2.api.routes') }}" data-geo-url="{{ route('address.get') }}"
+        data-socket-port="{{ $socketPort }}"
         data-socket-ssl-port="{{ $socketSslPort }}" data-poll-interval="15000">
 
         {{-- Map config (provider IDs, API keys) injected for the JS layer --}}
@@ -478,21 +479,13 @@
         </aside>
     </div>
 
-    {{-- Custom-shaped marker (CSS triangle pointing in heading direction) --}}
-    <template id="tp-live-marker-template">
-        <div class="tp-live-marker" data-status="offline">
-            <span class="tp-live-marker__dot"></span>
-            <span class="tp-live-marker__arrow"></span>
-            <span class="tp-live-marker__label"></span>
-        </div>
-    </template>
 @endsection
 
 @push('scripts')
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=20"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=21"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

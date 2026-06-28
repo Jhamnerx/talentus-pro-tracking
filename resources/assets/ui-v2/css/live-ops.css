@@ -669,6 +669,81 @@
   cursor: pointer;
   --marker-color: var(--status-offline);
 }
+/* Marcador con icono real del device (arrow PNG / rotating / icon) */
+.tp-live-marker--img {
+  display: block;
+}
+.tp-live-marker__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: center center;
+  pointer-events: auto;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+.tp-live-marker--img[data-selected="true"] .tp-live-marker__img {
+  filter: drop-shadow(0 0 0 #2e63d9) drop-shadow(0 0 4px rgba(46, 99, 217, 0.9));
+}
+
+/* Popup del marcador (MapLibre) */
+.tp-dev-popup-wrap .maplibregl-popup-content {
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
+  background: var(--surface-raised, #fff);
+  color: var(--fg-primary, #1a1f2b);
+}
+.tp-dev-popup__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tp-dev-popup__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--status-offline);
+  flex: 0 0 auto;
+}
+.tp-dev-popup[data-status="moving"] .tp-dev-popup__dot {
+  background: var(--status-moving);
+}
+.tp-dev-popup[data-status="idle"] .tp-dev-popup__dot {
+  background: var(--status-idle);
+}
+.tp-dev-popup[data-status="stopped"] .tp-dev-popup__dot {
+  background: var(--status-stopped);
+}
+.tp-dev-popup[data-status="offline"] .tp-dev-popup__dot {
+  background: var(--status-offline);
+}
+.tp-dev-popup__name {
+  font-weight: 700;
+  font-size: 13px;
+}
+.tp-dev-popup__status {
+  font-size: 11px;
+  color: var(--fg-tertiary, #8a90a0);
+  margin: 1px 0 8px;
+}
+.tp-dev-popup__defs {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+.tp-dev-popup__defs dt {
+  color: var(--fg-tertiary, #8a90a0);
+  font-weight: 500;
+}
+.tp-dev-popup__defs dd {
+  margin: 0;
+  text-align: right;
+  color: var(--fg-primary, #1a1f2b);
+  word-break: break-word;
+}
 .tp-live-marker[data-status="moving"] {
   --marker-color: var(--status-moving);
 }

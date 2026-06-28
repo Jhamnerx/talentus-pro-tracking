@@ -69,6 +69,69 @@
   };
   var geoCache = {}; // eventId → texto (dirección o nombre de geocerca)
 
+  // ── Icono del device (mismo criterio que live-ops.js) ──────
+  function assetPath(p) {
+    if (!p) return "";
+    if (/^https?:\/\//.test(p) || p.charAt(0) === "/") return p;
+    return "/" + p;
+  }
+  function deviceIconInfo(ev) {
+    var icon = ev.icon || null;
+    if (!icon) return null; // sin icono → marcador genérico por severidad
+    var type = icon.type || "arrow";
+    if (type === "arrow") {
+      var color = ev.icon_color || icon.color || "gray";
+      return {
+        src: "/images/device_icons/estados/" + color + ".png",
+        w: 25,
+        h: 33,
+        rotate: true,
+        anchor: "center",
+      };
+    }
+    if (type === "rotating") {
+      return {
+        src: assetPath(icon.path),
+        w: icon.width || 32,
+        h: icon.height || 32,
+        rotate: true,
+        anchor: "center",
+      };
+    }
+    return {
+      src: assetPath(icon.path),
+      w: icon.width || 32,
+      h: icon.height || 32,
+      rotate: false,
+      anchor: "bottom",
+    };
+  }
+  function buildEventMarkerEl(ev) {
+    var info = deviceIconInfo(ev);
+    if (!info) {
+      // Fallback: marcador genérico coloreado por severidad.
+      var g = document.createElement("div");
+      g.className = "tp-events__marker";
+      g.style.setProperty("--ev-color", sevColor(ev.severity));
+      return { el: g, anchor: "bottom" };
+    }
+    var el = document.createElement("div");
+    el.className = "tp-events__marker tp-events__marker--img";
+    el.style.width = info.w + "px";
+    el.style.height = info.h + "px";
+    var img = document.createElement("img");
+    img.className = "tp-events__marker-img";
+    img.src = info.src;
+    img.alt = "";
+    img.draggable = false;
+    img.style.width = info.w + "px";
+    img.style.height = info.h + "px";
+    if (info.rotate)
+      img.style.transform = "rotate(" + (parseFloat(ev.course) || 0) + "deg)";
+    el.appendChild(img);
+    return { el: el, anchor: info.anchor };
+  }
+
   function esc(s) {
     return String(s == null ? "" : s)
       .replace(/&/g, "&amp;")
@@ -320,12 +383,16 @@
     geocodeEvent(ev); // asegura dirección para el popup
 
     var coords = [parseFloat(ev.lng), parseFloat(ev.lat)];
-    if (!state.marker) {
-      var el = document.createElement("div");
-      el.className = "tp-events__marker";
-      state.marker = new maplibregl.Marker({ element: el, anchor: "bottom" });
+    // Recreamos el marcador (el ancla depende del tipo de icono del device).
+    if (state.marker) {
+      state.marker.remove();
+      state.marker = null;
     }
-    state.marker.getElement().style.setProperty("--ev-color", sevColor(ev.severity));
+    var built = buildEventMarkerEl(ev);
+    state.marker = new maplibregl.Marker({
+      element: built.el,
+      anchor: built.anchor,
+    });
     state.marker.setLngLat(coords).addTo(state.map);
 
     if (!state.popup)

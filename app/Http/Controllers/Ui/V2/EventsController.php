@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Ui\V2;
 
+use App\Transformers\Device\DeviceIconTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
@@ -41,8 +42,12 @@ class EventsController extends BaseController
         $q       = trim((string) $request->get('q', ''));
         $since   = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
 
+        // Cargamos el device con su icono + traccar para reconstruir el MARCADOR
+        // real (arrow/rotating/icon) igual que el mapa Live.
         $query = $this->user->events()
-            ->with(['device:id,name,plate_number'])
+            ->with(['device' => function ($q) {
+                $q->with(['icon', 'traccar']);
+            }])
             ->where('time', '>=', $since)
             ->orderBy('time', 'desc');
 
@@ -64,9 +69,30 @@ class EventsController extends BaseController
 
         $events = [];
         $byType = [];
+        $iconTransformer = new DeviceIconTransformer();
+        $iconCache = [];
         foreach ($rows as $e) {
             $t = (string) $e->type;
             $byType[$t] = ($byType[$t] ?? 0) + 1;
+
+            // Icono del device (cacheado por device → varios eventos comparten device).
+            $icon = null;
+            $iconColor = null;
+            $course = null;
+            if ($e->device) {
+                $did = $e->device->id;
+                if (! array_key_exists($did, $iconCache)) {
+                    $dev = $e->device;
+                    $iconCache[$did] = [
+                        'icon'       => $iconTransformer->transform($dev),
+                        'icon_color' => $dev->getStatusColor(),
+                        'course'     => $dev->course,
+                    ];
+                }
+                $icon      = $iconCache[$did]['icon'];
+                $iconColor = $iconCache[$did]['icon_color'];
+                $course    = $iconCache[$did]['course'];
+            }
 
             $events[] = [
                 'id'          => (int) $e->id,
@@ -80,6 +106,9 @@ class EventsController extends BaseController
                 'lat'         => $e->latitude !== null ? (float) $e->latitude : null,
                 'lng'         => $e->longitude !== null ? (float) $e->longitude : null,
                 'speed'       => $e->speed !== null ? (float) $e->speed : null,
+                'icon'        => $icon,
+                'icon_color'  => $iconColor,
+                'course'      => $course !== null ? (float) $course : null,
             ];
         }
 
