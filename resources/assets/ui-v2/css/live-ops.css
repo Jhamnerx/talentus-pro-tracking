@@ -780,6 +780,74 @@
   color: var(--fg-primary, #1a1f2b);
   word-break: break-word;
 }
+
+/* Acciones del popup de POI */
+.tp-poi-popup__actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.tp-poi-popup__actions .tp-btn {
+  flex: 1 1 auto;
+}
+
+/* Formulario de POI (modal) */
+.tp-poi-form .tp-field {
+  margin-bottom: 12px;
+}
+.tp-poi-form .tp-field__label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-secondary, #5a6172);
+  margin-bottom: 4px;
+}
+.tp-poi-form .tp-field__error {
+  color: var(--danger-500, #e5484d);
+  font-size: 11px;
+  margin-top: 3px;
+  min-height: 0;
+}
+.tp-poi-form textarea.tp-input {
+  resize: vertical;
+}
+.tp-poi-icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--border-default, #e7e9ee);
+  border-radius: 8px;
+}
+.tp-poi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+.tp-poi-icon:hover {
+  background: var(--surface-sunken, #f1f2f6);
+}
+.tp-poi-icon img {
+  max-width: 28px;
+  max-height: 28px;
+  display: block;
+}
+.tp-poi-icon input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.tp-poi-icon:has(input:checked) {
+  border-color: var(--brand-accent, #1b99bd);
+  background: var(--surface-sunken, #eef6f9);
+}
 .tp-live-marker[data-status="moving"] {
   --marker-color: var(--status-moving);
 }

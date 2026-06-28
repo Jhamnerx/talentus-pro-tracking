@@ -1141,6 +1141,11 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
         Route::get('events',         ['as' => 'api.events',        'uses' => 'Ui\V2\EventsController@data']);
         Route::get('pois',           ['as' => 'api.pois',          'uses' => 'Ui\V2\MapLayersController@pois']);
+        Route::get('pois/form',      ['as' => 'api.pois.form',     'uses' => 'Ui\V2\MapLayersController@poiForm']);
+        Route::get('pois/{id}/form', ['as' => 'api.pois.form_edit', 'uses' => 'Ui\V2\MapLayersController@poiForm'])->where('id', '[0-9]+');
+        Route::post('pois',          ['as' => 'api.pois.store',    'uses' => 'Ui\V2\MapLayersController@storePoi']);
+        Route::put('pois/{id}',      ['as' => 'api.pois.update',   'uses' => 'Ui\V2\MapLayersController@updatePoi'])->where('id', '[0-9]+');
+        Route::delete('pois/{id}',   ['as' => 'api.pois.destroy',  'uses' => 'Ui\V2\MapLayersController@destroyPoi'])->where('id', '[0-9]+');
         Route::get('routes',         ['as' => 'api.routes',        'uses' => 'Ui\V2\MapLayersController@routes']);
         Route::get('history',        ['as' => 'api.history',       'uses' => 'Ui\V2\HistoryController@data']);
         Route::get('reports',        ['as' => 'api.reports',       'uses' => 'Ui\V2\ReportsController@data']);

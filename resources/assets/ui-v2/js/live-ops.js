@@ -641,6 +641,7 @@
 
     state.map.on("load", function () {
       bindClusterZoom();
+      bindPoiInteractions();
       if (state.devices.length) {
         renderMarkers();
         fitToFleet(false);
@@ -2245,6 +2246,206 @@
     if (window.tpMapShared && state.map)
       window.tpMapShared.renderRoutes(state.map, CFG.routesUrl, !!state.toggles.routes);
   }
+
+  // -----------------------------------------------------------
+  // POIs — CRUD nativo v2 (modo "colocar" + modal + popup editar/eliminar).
+  // Reutiliza PoiUserService en el backend; render compartido (tp-map-shared).
+  // -----------------------------------------------------------
+  var POI_BASE = CFG.poisUrl || "/ui/v2/api/pois";
+  var poiPlaceMode = false;
+  var poiClickBound = false;
+  var poiPopup = null;
+
+  function ensurePoiVisible() {
+    if (!state.toggles.poi) {
+      state.toggles.poi = true;
+      var b = document.querySelector('.tp-live__toggle[data-toggle="poi"]');
+      if (b) b.setAttribute("aria-pressed", "true");
+      if (window.tpMapShared) tpMapShared.set("poi", true);
+    }
+    renderSharedPois();
+  }
+
+  function startPoiPlaceMode() {
+    poiPlaceMode = true;
+    if (state.map) state.map.getCanvas().style.cursor = "crosshair";
+    if (window.tpModal && tpModal.toast)
+      tpModal.toast("Haz clic en el mapa para ubicar el POI.", "info");
+  }
+  function stopPoiPlaceMode() {
+    poiPlaceMode = false;
+    if (state.map) state.map.getCanvas().style.cursor = "";
+  }
+
+  function readPoiForm(dialog, coords, id) {
+    var form = dialog.querySelector("#tp-poi-form");
+    if (!form) return null;
+    var icon = form.querySelector('input[name="map_icon_id"]:checked');
+    var val = function (sel) {
+      var el = form.querySelector(sel);
+      return el ? el.value : "";
+    };
+    return {
+      id: id || undefined,
+      name: val('[name="name"]'),
+      description: val('[name="description"]'),
+      group_id: val('[name="group_id"]') || "0",
+      map_icon_id: icon ? icon.value : null,
+      coordinates: { lat: coords.lat, lng: coords.lng },
+    };
+  }
+
+  function openPoiModal(coords, id) {
+    if (!window.tpModal) return;
+    var url = id ? POI_BASE + "/" + id + "/form" : POI_BASE + "/form";
+    tpModal.fetchJSON(url, { method: "GET" }).then(function (res) {
+      if (!res || !res.ok || !res.data || !res.data.ok) {
+        tpModal.toast && tpModal.toast("No se pudo cargar el formulario.", "error");
+        return;
+      }
+      tpModal.open({
+        title: id ? "Editar POI" : "Nuevo POI",
+        size: "md",
+        body: res.data.html,
+        buttons: [
+          { label: "Cancelar", variant: "ghost" },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (dialog, btn) {
+              var payload = readPoiForm(dialog, coords, id);
+              if (!payload || !payload.name.trim()) {
+                tpModal.toast && tpModal.toast("El nombre es obligatorio.", "warning");
+                return false;
+              }
+              btn.disabled = true;
+              var saveUrl = id ? POI_BASE + "/" + id : POI_BASE;
+              tpModal
+                .fetchJSON(saveUrl, { method: id ? "PUT" : "POST", json: payload })
+                .then(function (r) {
+                  btn.disabled = false;
+                  if (r && r.ok && r.data && r.data.ok) {
+                    tpModal.toast &&
+                      tpModal.toast(id ? "POI actualizado." : "POI creado.", "success");
+                    tpModal.close(dialog);
+                    ensurePoiVisible();
+                  } else if (r && r.data && r.data.errors) {
+                    tpModal.toast && tpModal.toast("Revisa los campos.", "warning");
+                  } else {
+                    tpModal.toast && tpModal.toast("No se pudo guardar.", "error");
+                  }
+                })
+                .catch(function () {
+                  btn.disabled = false;
+                  tpModal.toast && tpModal.toast("Error de red.", "error");
+                });
+              return false;
+            },
+          },
+        ],
+      });
+    });
+  }
+
+  function deletePoi(id) {
+    if (!window.tpModal) return;
+    var doDel = function () {
+      tpModal
+        .fetchJSON(POI_BASE + "/" + id, { method: "DELETE" })
+        .then(function (r) {
+          if (r && r.ok && r.data && r.data.ok) {
+            tpModal.toast && tpModal.toast("POI eliminado.", "success");
+            renderSharedPois();
+          } else {
+            tpModal.toast && tpModal.toast("No se pudo eliminar.", "error");
+          }
+        });
+    };
+    if (tpModal.confirm) {
+      tpModal
+        .confirm({
+          title: "Eliminar POI",
+          message: "¿Eliminar este POI?",
+          confirmLabel: "Eliminar",
+          danger: true,
+        })
+        .then(function (ok) {
+          if (ok) doDel();
+        });
+    } else {
+      doDel();
+    }
+  }
+
+  function bindPoiInteractions() {
+    if (poiClickBound || !state.map) return;
+    poiClickBound = true;
+    var layerId = "tp-shared-pois-circle";
+
+    // Clic en un POI existente → popup editar / eliminar.
+    state.map.on("click", layerId, function (e) {
+      if (poiPlaceMode) return;
+      var f = e.features && e.features[0];
+      if (!f) return;
+      var pid = f.properties.id;
+      var pname = f.properties.name || "POI";
+      var coords = f.geometry.coordinates.slice();
+      if (!poiPopup)
+        poiPopup = new maplibregl.Popup({
+          offset: 12,
+          closeButton: true,
+          className: "tp-dev-popup-wrap",
+        });
+      poiPopup
+        .setLngLat(coords)
+        .setHTML(
+          '<div class="tp-dev-popup"><div class="tp-dev-popup__head">' +
+            '<span class="tp-dev-popup__name">' +
+            escapeHtml(pname) +
+            "</span></div>" +
+            '<div class="tp-poi-popup__actions">' +
+            '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-poi-edit>Editar</button>' +
+            '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-poi-del>Eliminar</button>' +
+            "</div></div>",
+        )
+        .addTo(state.map);
+      var pe = poiPopup.getElement();
+      var be = pe && pe.querySelector("[data-poi-edit]");
+      var bd = pe && pe.querySelector("[data-poi-del]");
+      if (be)
+        be.addEventListener("click", function () {
+          poiPopup.remove();
+          openPoiModal({ lat: coords[1], lng: coords[0] }, pid);
+        });
+      if (bd)
+        bd.addEventListener("click", function () {
+          poiPopup.remove();
+          deletePoi(pid);
+        });
+    });
+    state.map.on("mouseenter", layerId, function () {
+      if (!poiPlaceMode) state.map.getCanvas().style.cursor = "pointer";
+    });
+    state.map.on("mouseleave", layerId, function () {
+      if (!poiPlaceMode) state.map.getCanvas().style.cursor = "";
+    });
+
+    // Clic en el mapa en modo "colocar" → nuevo POI.
+    state.map.on("click", function (e) {
+      if (!poiPlaceMode) return;
+      var c = e.lngLat;
+      stopPoiPlaceMode();
+      openPoiModal({ lat: c.lat, lng: c.lng });
+    });
+  }
+
+  var addPoiBtn = document.getElementById("tp-live-add-poi");
+  if (addPoiBtn)
+    addPoiBtn.addEventListener("click", function () {
+      ensurePoiVisible();
+      startPoiPlaceMode();
+    });
 
   // Layer toggle buttons (cluster, devices, geofences, poi, routes, names, tails, traffic)
   Array.prototype.forEach.call(

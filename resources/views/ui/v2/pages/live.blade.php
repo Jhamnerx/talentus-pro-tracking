@@ -4,7 +4,7 @@
 @section('rail-active', 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=15">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -314,6 +314,16 @@
                         <circle cx="12" cy="9" r="2.5" />
                     </svg>
                 </button>
+                @if (auth()->user()->perm('poi', 'edit'))
+                    <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-add-poi"
+                        title="Agregar POI" aria-label="Agregar POI" type="button">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s7-7.58 7-13a7 7 0 0 0-14 0c0 5.42 7 13 7 13z" />
+                            <path d="M12 6v6M9 9h6" />
+                        </svg>
+                    </button>
+                @endif
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-names"
                     data-toggle="names" title="Mostrar nombres" aria-label="Mostrar nombres sobre los vehículos"
                     aria-pressed="false" type="button">
@@ -490,7 +500,7 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=21"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=22"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
