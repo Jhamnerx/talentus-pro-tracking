@@ -70,8 +70,8 @@
     {{-- Live status pill --}}
     <a href="{{ url('/ui/v2/preview') }}" class="tp-topbar__status" id="tp-live-status" title="Estado de la flota">
         <span class="tp-dot tp-dot--moving"></span>
-        <span><span data-live-count="moving">—</span> live · <span data-live-count="idle">—</span> idle · <span
-                data-live-count="offline">—</span> offline</span>
+        <span><span data-live-count="moving">—</span> en mov. · <span data-live-count="idle">—</span> ralentí · <span
+                data-live-count="offline">—</span> desc.</span>
     </a>
 
     {{-- Theme toggle --}}

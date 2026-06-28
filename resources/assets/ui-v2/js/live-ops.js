@@ -522,16 +522,25 @@
   // -----------------------------------------------------------
   // Status classification (operational, not legacy)
   // -----------------------------------------------------------
+  // Clasifica un device en uno de los 3 buckets del filtro a partir del estado
+  // AUTORITATIVO del backend (Device::getStatus(), enviado en d.online). No se
+  // re-deriva de timestamps para que coincida exactamente con el legacy.
   function classify(d) {
-    if (!d || d.lat == null || d.lng == null) return "offline";
-    if (d.online === "offline" || d.online === "expired") return "offline";
-    var nowSec = Math.floor(Date.now() / 1000);
-    var lastSeen = parseInt(d.acktimestamp || d.timestamp || 0, 10);
-    if (lastSeen && nowSec - lastSeen > CFG.offlineThresholdSec)
-      return "offline";
-    if ((d.speed || 0) > 1) return "moving";
-    if (d.engine_status === true || d.engine_status === "on") return "idle";
-    return "stopped";
+    switch (d && d.online) {
+      case "online":
+      case "excessive_speed":
+      case "move":
+        return "moving";
+      case "engine":
+      case "ack":
+      case "stop":
+      case "idle":
+      case "park":
+      case "blocked":
+        return "idle";
+      default: // offline, expired, inactive, null
+        return "offline";
+    }
   }
 
   function fmtTimeAgo(ts) {
@@ -1140,14 +1149,12 @@
       moving: 0,
       idle: 0,
       offline: 0,
-      stopped: 0,
     };
     state.filtered = state.devices.filter(function (d) {
       var cls = classify(d);
       if (cls === "moving") counts.moving++;
       else if (cls === "idle") counts.idle++;
-      else if (cls === "offline") counts.offline++;
-      else counts.stopped++;
+      else counts.offline++;
       if (sf !== "all" && cls !== sf) return false;
       if (q) {
         var hay =

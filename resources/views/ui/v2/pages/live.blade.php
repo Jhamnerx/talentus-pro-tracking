@@ -97,15 +97,15 @@
                         <span class="tp-segmented__count" data-count="all">0</span>
                     </button>
                     <button class="tp-segmented__item" data-filter="moving" type="button">
-                        <span class="tp-dot tp-dot--moving"></span> Live
+                        <span class="tp-dot tp-dot--moving"></span> Movimiento
                         <span class="tp-segmented__count" data-count="moving">0</span>
                     </button>
                     <button class="tp-segmented__item" data-filter="idle" type="button">
-                        <span class="tp-dot tp-dot--idle"></span> Idle
+                        <span class="tp-dot tp-dot--idle"></span> Ralentí
                         <span class="tp-segmented__count" data-count="idle">0</span>
                     </button>
                     <button class="tp-segmented__item" data-filter="offline" type="button">
-                        <span class="tp-dot tp-dot--offline"></span> Offline
+                        <span class="tp-dot tp-dot--offline"></span> Desconectado
                         <span class="tp-segmented__count" data-count="offline">0</span>
                     </button>
                 </div>
@@ -172,12 +172,12 @@
                     <span class="tp-live__map-stat">
                         <span class="tp-dot tp-dot--idle"></span>
                         <strong id="tp-live-stat-idle">0</strong>
-                        <span>idle</span>
+                        <span>en ralentí</span>
                     </span>
                     <span class="tp-live__map-stat">
                         <span class="tp-dot tp-dot--offline"></span>
                         <strong id="tp-live-stat-offline">0</strong>
-                        <span>offline</span>
+                        <span>desconectados</span>
                     </span>
                 </div>
             </div>
@@ -492,7 +492,7 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=17"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=18"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
