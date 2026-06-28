@@ -7,6 +7,32 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 27 jun 2026 (rama `nuevo-tema`)
+
+### Página Eventos (✅ hecha)
+Rail → `/ui/v2/events` (`Ui\V2\EventsController`). Lista con **scroll infinito** (paginación por offset) + mapa MapLibre; al seleccionar un evento centra el mapa y muestra el **marcador real del device** con popup (geocoding perezoso solo de filas visibles vía `address.get`, respeta `geofence_over_address`). Tipo de mapa, geocercas/POIs/rutas compartidos con Live (`tp-map-shared`, estado en backend `user->map_controls` / `user->map_id`).
+
+### Lista de dispositivos en Live (✅ varias mejoras)
+- **Agrupada por group name** como el legacy (`liveData` devuelve `deviceGroups()`; `group_id` por pivot). Cabeceras colapsables + **toggle para desactivar la vista por grupos**. Virtualización de altura variable.
+- **Botón menú (3 rayas) → lista de vehículos** (`/ui/v2/fleet`).
+- **Filtro de estado** en rejilla **2×2** (Todos / Movimiento / Ralentí / Desconectado) con conteos; usa el estado **autoritativo** `Device::getStatus()` (no recalcula por timestamps). Labels en español + overlay del mapa + pill del topbar traducidos.
+- **Tarjetas enriquecidas**: toggle "active" (mostrar en mapa, persiste vía `/devices/change_active`), velocidad con unidad del usuario (`speed_text`), color por estado en nombre/velocidad/fecha, y **menú kebab** server-rendered (`ui.v2.partials.device-actions`) que **espeja el dropdown legacy con el mismo gating de permisos** e iconos por ítem. Acciones nativas: historial/seguir/editar; el resto (comando, compartir, alertas, cámara, tipos de ruta, llamada, chat, qr, config, planes, estado vehículo, video) quedan como stubs (toast) hasta portarlas.
+- **Conteo total real**: `liveData` usa `paginate()` (no cursor) → `pagination.total`; `fetchDevices` carga **todas las páginas** (arregla el cap de 1000/500). Sin `wasConnected()` → cuenta todas las unidades del usuario (`devices()->count()`).
+
+### Marcadores de mapa (✅ Live + Eventos)
+Marcador **real del device** según `DeviceIconTransformer` (icono incluido en `DeviceMapTransformer`), replicando `device.js updateLayer` para los 3 tipos: **arrow** (PNG por color de estado en `images/device_icons/estados/<color>.png`, rota por course), **rotating** (imagen propia, rota), **icon** (imagen propia, no rota, ancla abajo). Popup conciso en Live (estado, velocidad, hora, dirección perezosa, "Ver detalles" → drawer).
+
+### UI
+- **Botón crear (+)** = variante teal `.tp-btn--accent` (`--brand-accent: #1b99bd`), icono blanco, en Live/Fleet/Alerts (el azul del tema chocaba con el acento de marca).
+
+### POIs · CRUD nativo (✅ nuevo)
+`Ui\V2\MapLayersController`: `poiForm` / `storePoi` / `updatePoi` / `destroyPoi` reutilizando **`PoiUserService`** (create/edit/remove + permisos). Rutas `/ui/v2/api/pois{,/form,/{id}/form,/{id}}` (GET/POST/PUT/DELETE). Modal nativo `ui.v2.modals.poi-form` (nombre, descripción, grupo, grid de iconos). En `live-ops.js`: botón **"Agregar POI"** → modo colocar → clic en mapa → modal → guardar; clic en POI existente → popup **Editar/Eliminar**. Botón gateado por `perm('poi','edit')`.
+
+### Pendiente inmediato
+**Rutas CRUD** (dibujo de polilínea), **Enviar comando** (UI compleja: catálogo GPRS/SMS dinámico, schedules), **Compartir**, **Mantenimientos/Servicios**. Afinar: drawer (servicios/streetview/video), modal device (tabs Sensores/Usuarios/Servicios Web), reportes (Schedules), topbar Herramientas + idioma. Cosmético/debrand `.tp-*`/`window.Talentus`/cookies/marca: fuera de alcance hasta pedirlo.
+
+---
+
 ## 🔄 Actualización · 26 jun 2026 (rama `nuevo-tema`)
 
 > El shell se **debrandeó de `talentus` → `ui/v2`**: rutas `/ui/v2/*` (nombres `ui.v2.*`), controladores `App\Http\Controllers\Ui\V2\*` (shell = `Ui\V2\ShellController`), vistas `resources/views/ui/v2/`, assets fuente `resources/assets/ui-v2/` → compilados a `public/assets/ui/v2/`. La integración ERP **"Talentus" NO se tocó**. (Las rutas antiguas que se citan abajo como `/talentus/*` ya son `/ui/v2/*`.)
@@ -30,7 +56,7 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 | Vista de calle | ⚠️ requiere `streetview_key`/`google_maps_key` |
 | Video en vivo | ⚠️ enlaza al modal legacy (stopgap) |
 
-**Pendiente inmediato**: página **Eventos** dedicada con mapa (centrar en el evento + marcador del device con popup). Después: topbar de Live con menú Herramientas + selector de idioma; POIs/Rutas (toggle+CRUD); comandos; compartir; mantenimientos.
+**Pendiente inmediato**: ~~página **Eventos**~~ ✅ hecha · ~~POIs CRUD~~ ✅ hecho (ver actualización 27 jun). Quedan: Rutas CRUD, comandos, compartir, mantenimientos, topbar Herramientas + idioma.
 
 ---
 
