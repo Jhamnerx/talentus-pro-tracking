@@ -2243,7 +2243,12 @@
           acc = acc.concat(rows);
           if (json && Array.isArray(json.groups)) state.groups = json.groups;
 
-          var pg = json && json.meta && json.meta.pagination;
+          // El serializer (ArraySerializer custom) pone la paginación en la
+          // RAÍZ como json.pagination (no json.meta.pagination).
+          var pg =
+            (json && json.pagination) ||
+            (json && json.meta && json.meta.pagination) ||
+            null;
           if (pg && pg.total != null) total = pg.total;
 
           // Commit progresivo: los vehículos aparecen a medida que cargan.

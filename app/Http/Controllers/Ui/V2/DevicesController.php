@@ -62,10 +62,12 @@ class DevicesController extends BaseController
         $perPage = min(2000, max(100, (int) $request->get('limit', 500)));
         $page    = max(1, (int) $request->get('page', 1));
 
+        // NB: sin ->wasConnected() a propósito → el conteo refleja TODAS las
+        // unidades del usuario (devices()->count(), igual que el total del
+        // admin), incluidas las que aún no han reportado (se muestran offline).
         $devices = $this->user
             ->devices()
             ->filter($request->all())
-            ->wasConnected()
             ->clearOrdersBy()
             ->paginate($perPage, ['*'], 'page', $page);
 
