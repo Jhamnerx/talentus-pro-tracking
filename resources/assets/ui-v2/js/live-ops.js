@@ -473,7 +473,8 @@
   // State
   // -----------------------------------------------------------
   var state = {
-    devices: [], // raw devices array (latest fetch)
+    devices: [], // raw devices array (latest fetch, all pages)
+    total: 0, // total de devices del backend (meta.pagination.total)
     index: {}, // id → device
     markers: {}, // id → maplibregl.Marker
     markerEls: {}, // id → DOM element
@@ -2183,57 +2184,84 @@
   var statusText = document.getElementById("tp-live-status-text");
   var inFlight = null;
 
+  // Aplica el conjunto acumulado de devices al estado y re-renderiza.
+  function commitDevices(rows, total) {
+    state.devices = rows;
+    state.total = total || rows.length;
+    state.index = {};
+    rows.forEach(function (d) {
+      state.index[d.id] = d;
+    });
+
+    recomputeFiltered();
+    renderList();
+    if (state.map) {
+      var runRender = function () {
+        renderMarkers();
+        if (!state.bootstrapped) {
+          fitToFleet(false);
+          state.bootstrapped = true;
+        }
+      };
+      if (state.map.loaded()) {
+        runRender();
+      } else {
+        state.map.once("load", runRender);
+      }
+    }
+    joinDeviceChannels();
+    if (state.selectedId && state.index[state.selectedId]) {
+      fillDrawer(state.index[state.selectedId]);
+    }
+  }
+
   function fetchDevices(isManual) {
     if (inFlight) inFlight.abort();
     var ctrl = new AbortController();
     inFlight = ctrl;
     statusText.textContent = isManual ? "Refrescando…" : "Actualizando…";
 
-    fetch(CFG.devicesUrl, {
-      credentials: "same-origin",
-      headers: { Accept: "application/json" },
-      signal: ctrl.signal,
-    })
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP " + r.status);
-        return r.json();
-      })
-      .then(function (json) {
-        var rows =
-          json && json.data ? json.data : Array.isArray(json) ? json : [];
-        if (json && Array.isArray(json.groups)) state.groups = json.groups;
-        state.devices = rows;
-        state.index = {};
-        rows.forEach(function (d) {
-          state.index[d.id] = d;
-        });
+    // Carga TODAS las páginas (el feed pagina; flotas >1000 antes se cortaban).
+    var acc = [];
+    var total = 0;
 
-        recomputeFiltered();
-        renderList();
-        if (state.map) {
-          var runRender = function () {
-            renderMarkers();
-            if (!state.bootstrapped) {
-              fitToFleet(false);
-              state.bootstrapped = true;
-            }
-          };
-          if (state.map.loaded()) {
-            runRender();
-          } else {
-            state.map.once("load", runRender);
+    function loadPage(page) {
+      var sep = CFG.devicesUrl.indexOf("?") === -1 ? "?" : "&";
+      var url = CFG.devicesUrl + sep + "page=" + page;
+      return fetch(url, {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+        signal: ctrl.signal,
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.json();
+        })
+        .then(function (json) {
+          var rows =
+            json && json.data ? json.data : Array.isArray(json) ? json : [];
+          acc = acc.concat(rows);
+          if (json && Array.isArray(json.groups)) state.groups = json.groups;
+
+          var pg = json && json.meta && json.meta.pagination;
+          if (pg && pg.total != null) total = pg.total;
+
+          // Commit progresivo: los vehículos aparecen a medida que cargan.
+          commitDevices(acc, total);
+
+          if (pg && pg.current_page < pg.last_page) {
+            statusText.textContent =
+              "Cargando… " + acc.length + "/" + (total || "?");
+            return loadPage(pg.current_page + 1);
           }
-        }
+          statusText.textContent =
+            (total || acc.length) +
+            " vehículos · " +
+            new Date().toLocaleTimeString();
+        });
+    }
 
-        statusText.textContent =
-          rows.length + " vehículos · " + new Date().toLocaleTimeString();
-        joinDeviceChannels();
-
-        // If selected device exists in new data, refresh drawer.
-        if (state.selectedId && state.index[state.selectedId]) {
-          fillDrawer(state.index[state.selectedId]);
-        }
-      })
+    loadPage(1)
       .catch(function (err) {
         if (err.name === "AbortError") return;
         console.warn("[live-ops] fetch failed", err);

@@ -53,23 +53,23 @@ class DevicesController extends BaseController
     public function liveData(Request $request): JsonResponse
     {
         if (! $this->user->perm('devices', 'view')) {
-            return response()->json(['data' => [], 'meta' => ['total' => 0]], 403);
+            return response()->json(['data' => [], 'meta' => ['pagination' => ['total' => 0]]], 403);
         }
 
-        $limit  = min(2000, max(50, (int) $request->get('limit', 1000)));
-        $cursor = $request->get('cursor');
+        // Paginación estándar (length-aware): expone el TOTAL real en
+        // meta.pagination.total (mismo conteo que /admin/users/objects) y
+        // page links para que el cliente cargue TODAS las páginas (>1000).
+        $perPage = min(2000, max(100, (int) $request->get('limit', 500)));
+        $page    = max(1, (int) $request->get('page', 1));
 
         $devices = $this->user
             ->devices()
             ->filter($request->all())
             ->wasConnected()
             ->clearOrdersBy()
-            ->when(! $cursor, function ($q) {
-                $q->where('devices.id', '>', 0);
-            })
-            ->cursorPaginate($limit);
+            ->paginate($perPage, ['*'], 'page', $page);
 
-        $payload = FractalTransformer::cursorPaginate($devices, DeviceMapTransformer::class)->toArray();
+        $payload = FractalTransformer::paginate($devices, DeviceMapTransformer::class)->toArray();
 
         if (! empty($payload['data']) && is_array($payload['data'])) {
             foreach ($payload['data'] as &$row) {
@@ -81,14 +81,17 @@ class DevicesController extends BaseController
         }
 
         // Grupos del usuario (id → título) para agrupar la lista como el legacy.
-        // El group_id de cada device viene del pivot vía DeviceMapTransformer.
-        $payload['groups'] = $this->user->deviceGroups()
-            ->orderBy('title')
-            ->get(['id', 'title'])
-            ->map(function ($g) {
-                return ['id' => (int) $g->id, 'title' => $g->title];
-            })
-            ->all();
+        // Solo en la primera página (no cambian entre páginas). El group_id de
+        // cada device viene del pivot vía DeviceMapTransformer.
+        if ($page === 1) {
+            $payload['groups'] = $this->user->deviceGroups()
+                ->orderBy('title')
+                ->get(['id', 'title'])
+                ->map(function ($g) {
+                    return ['id' => (int) $g->id, 'title' => $g->title];
+                })
+                ->all();
+        }
 
         return response()->json($payload);
     }
