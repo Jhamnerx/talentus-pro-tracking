@@ -96,6 +96,42 @@
   color: inherit;
 }
 
+/* Filtro de estado en 2×2: con 320px de sidebar no caben 4 etiquetas largas
+   ("Desconectado") en una sola fila legible. Cada celda (~140px) muestra el
+   dot + etiqueta completa + contador, sin truncar. */
+.tp-segmented--grid2 {
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2px;
+}
+.tp-segmented--grid2 .tp-segmented__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 8px;
+  min-width: 0;
+}
+.tp-segmented--grid2 .tp-segmented__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.2;
+}
+.tp-segmented--grid2 .tp-segmented__label .tp-dot {
+  flex: 0 0 auto;
+}
+.tp-segmented--grid2 .tp-segmented__text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-segmented--grid2 .tp-segmented__count {
+  margin-left: 0;
+}
+
 .tp-live__list-wrap {
   flex: 1 1 auto;
   overflow-y: auto;

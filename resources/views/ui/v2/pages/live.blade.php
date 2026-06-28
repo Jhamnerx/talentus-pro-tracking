@@ -4,7 +4,7 @@
 @section('rail-active', 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=13">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=14">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -92,21 +92,26 @@
                 </div>
 
                 {{-- Status filter --}}
-                <div class="tp-segmented tp-segmented--full tp-mt-3" role="tablist" id="tp-live-status-filter">
-                    <button class="tp-segmented__item" data-filter="all" aria-selected="true" type="button">
-                        Todos
+                <div class="tp-segmented tp-segmented--full tp-segmented--grid2 tp-mt-3" role="tablist"
+                    id="tp-live-status-filter">
+                    <button class="tp-segmented__item" data-filter="all" aria-selected="true" type="button"
+                        title="Todos">
+                        <span class="tp-segmented__label">Todos</span>
                         <span class="tp-segmented__count" data-count="all">0</span>
                     </button>
-                    <button class="tp-segmented__item" data-filter="moving" type="button">
-                        <span class="tp-dot tp-dot--moving"></span> Movimiento
+                    <button class="tp-segmented__item" data-filter="moving" type="button" title="En movimiento">
+                        <span class="tp-segmented__label"><span class="tp-dot tp-dot--moving"></span><span
+                                class="tp-segmented__text">Movimiento</span></span>
                         <span class="tp-segmented__count" data-count="moving">0</span>
                     </button>
-                    <button class="tp-segmented__item" data-filter="idle" type="button">
-                        <span class="tp-dot tp-dot--idle"></span> Ralentí
+                    <button class="tp-segmented__item" data-filter="idle" type="button" title="Ralentí">
+                        <span class="tp-segmented__label"><span class="tp-dot tp-dot--idle"></span><span
+                                class="tp-segmented__text">Ralentí</span></span>
                         <span class="tp-segmented__count" data-count="idle">0</span>
                     </button>
-                    <button class="tp-segmented__item" data-filter="offline" type="button">
-                        <span class="tp-dot tp-dot--offline"></span> Desconectado
+                    <button class="tp-segmented__item" data-filter="offline" type="button" title="Desconectado">
+                        <span class="tp-segmented__label"><span class="tp-dot tp-dot--offline"></span><span
+                                class="tp-segmented__text">Desconectado</span></span>
                         <span class="tp-segmented__count" data-count="offline">0</span>
                     </button>
                 </div>
