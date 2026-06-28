@@ -35,8 +35,8 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=1" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=1" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=2" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=2" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=1" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
     {{-- Tailwind (utilidades) — al final para ganar sobre la capa .tp-* --}}

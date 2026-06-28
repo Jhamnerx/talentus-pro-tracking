@@ -201,6 +201,10 @@
   --brand-bg-hover: var(--brand-600);
   --brand-fg-solid: var(--neutral-0);
 
+  /* Accent (teal) — acción de crear, matching the legacy brand accent */
+  --brand-accent: #1b99bd;
+  --brand-accent-hover: #178aac;
+
   /* Semantic surfaces */
   --success-bg: var(--success-soft);
   --warning-bg: var(--warning-soft);

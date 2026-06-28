@@ -323,6 +323,18 @@
   border-color: var(--brand-bg-hover);
 }
 
+/* Accent (teal) — botón de crear (+), matching the legacy brand accent */
+.tp-btn--accent {
+  background: var(--brand-accent, #1b99bd);
+  color: #fff;
+  border-color: var(--brand-accent, #1b99bd);
+  border-radius: var(--r-md);
+}
+.tp-btn--accent:hover {
+  background: var(--brand-accent-hover, #178aac);
+  border-color: var(--brand-accent-hover, #178aac);
+}
+
 .tp-btn--secondary {
   background: var(--surface-raised);
   color: var(--fg-primary);

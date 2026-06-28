@@ -53,7 +53,7 @@
 
             <div class="tp-fleet__actions">
                 @if (!empty($canCreate))
-                    <button class="tp-btn tp-btn--primary tp-btn--icon tp-btn--sm" type="button"
+                    <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button"
                         id="tp-fleet-create-device" title="Nuevo vehículo" aria-label="Nuevo vehículo">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
