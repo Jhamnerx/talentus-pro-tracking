@@ -1,10 +1,10 @@
 @extends('ui.v2.layout')
 
 @section('title', $pageTitle ?? 'Live Ops · Mapa')
-@section('rail-active', request('panel') === 'pois' ? 'pois' : 'live')
+@section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=18">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=19">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
@@ -43,6 +43,7 @@
             <div class="tp-live__paneltabs">
                 <div class="tp-live__paneltabs-group" role="tablist">
                     <button class="tp-live__paneltab is-active" data-panel-tab="objects" type="button">Objetos</button>
+                    <button class="tp-live__paneltab" data-panel-tab="zones" type="button">Geocercas</button>
                     <button class="tp-live__paneltab" data-panel-tab="pois" type="button">POIs</button>
                 </div>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button" id="tp-live-filters-collapse"
@@ -209,6 +210,59 @@
                         target="_blank">Importar</a>
                 </footer>
             </div>{{-- /#tp-panel-pois --}}
+
+            {{-- Geocercas panel — mismo mapa de Live --}}
+            <div class="tp-live__panel" id="tp-panel-zones" data-panel="zones" hidden>
+                <header class="tp-live__filters-head">
+                    <div class="tp-row tp-row-between" style="width:100%;">
+                        <h3 class="tp-h6 tp-mb-0">Geocercas <span class="tp-text-muted tp-text-sm"
+                                id="tp-zones-count"></span></h3>
+                        @if (auth()->user()->perm('geofences', 'edit'))
+                            <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button" id="tp-zones-new"
+                                title="Nueva geocerca" aria-label="Nueva geocerca">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
+                    <div class="tp-input-wrap tp-mt-3">
+                        <span class="tp-input-wrap__icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8" />
+                                <path d="m21 21-4.35-4.35" />
+                            </svg>
+                        </span>
+                        <input type="text" class="tp-input tp-input--with-icon" id="tp-zones-search"
+                            placeholder="Buscar geocerca…" autocomplete="off">
+                    </div>
+                    <div class="tp-segmented tp-segmented--full tp-mt-3" role="tablist" id="tp-zones-type-filter">
+                        <button class="tp-segmented__item" data-ztype="all" aria-selected="true"
+                            type="button">Todas</button>
+                        <button class="tp-segmented__item" data-ztype="polygon" type="button">Polígonos</button>
+                        <button class="tp-segmented__item" data-ztype="circle" type="button">Círculos</button>
+                    </div>
+                    <div class="tp-mt-3">
+                        <select id="tp-zones-group" class="tp-input tp-input--sm tp-full">
+                            <option value="">Todos los grupos</option>
+                        </select>
+                    </div>
+                </header>
+                <div class="tp-live__list-wrap">
+                    <div class="tp-poi-list" id="tp-zones-list" role="listbox" aria-label="Lista de geocercas"></div>
+                    <div class="tp-live__empty" id="tp-zones-empty" hidden>
+                        <div class="tp-mt-2">Sin geocercas</div>
+                    </div>
+                </div>
+                <footer class="tp-live__filters-foot" style="gap:6px;">
+                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ url('/geofences/export') }}"
+                        target="_blank">Exportar</a>
+                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ url('/geofences/import_modal') }}"
+                        target="_blank">Importar</a>
+                </footer>
+            </div>{{-- /#tp-panel-zones --}}
         </aside>
 
         {{-- COLLAPSED FILTERS HANDLE (when filters panel is hidden) --}}
@@ -557,7 +611,7 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=26"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=27"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

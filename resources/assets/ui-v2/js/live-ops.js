@@ -649,6 +649,14 @@
       }
       // POIs: si el toggle está activo, cargar y pintar sus marcadores (icono real).
       if (state.toggles.poi) loadPoisPanel(true);
+      // Si llegamos con un panel de mapa abierto (deep-link), inicializar su capa.
+      var ap = document.querySelector(".tp-live__panel:not([hidden])");
+      var apn = ap && ap.getAttribute("data-panel");
+      if (apn === "zones") {
+        bindZoneMapClick();
+        ensureZonesVisible();
+        loadZones(true);
+      }
       // Re-apply overlays after style swaps (basemap changes wipe sources)
     });
     state.map.on("styledata", function () {
@@ -2755,7 +2763,413 @@
       startPoiPlaceMode();
     });
 
-  // Conmutador de paneles del sidebar (Objetos / POIs) sobre el mismo mapa.
+  // -----------------------------------------------------------
+  // Panel de GEOCERCAS en el sidebar (mismo mapa de Live, como el legacy)
+  // -----------------------------------------------------------
+  var ZONES_BASE = CFG.zonesUrl || "/ui/v2/api/zones";
+  var zonesData = { items: [], groups: [] };
+  var zonesLoaded = false;
+  var zonesTypeFilter = "all";
+  var zonePopup = null;
+  var zoneClickBound = false;
+  var zonesById = {};
+
+  function ensureZonesVisible() {
+    if (!state.toggles.geofences) {
+      state.toggles.geofences = true;
+      var b = document.querySelector('.tp-live__toggle[data-toggle="geofences"]');
+      if (b) b.setAttribute("aria-pressed", "true");
+      if (window.tpMapShared) tpMapShared.set("geofences", true);
+    }
+    renderGeofences();
+  }
+
+  function loadZones(force) {
+    if (zonesLoaded && !force) {
+      renderZonesList();
+      return;
+    }
+    fetch(ZONES_BASE, {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (j) {
+        zonesData.items = (j && j.items) || [];
+        zonesData.groups = (j && j.groups) || [];
+        zonesById = {};
+        zonesData.items.forEach(function (z) {
+          zonesById[z.id] = z;
+        });
+        zonesLoaded = true;
+        // Compartir los datos con la capa del mapa (renderGeofences usa
+        // state.zones); así el mapa refleja altas/ediciones/bajas sin re-fetch.
+        state.zones = zonesData.items;
+        state.zonesLoaded = true;
+        fillZoneGroupSelect();
+        renderZonesList();
+        ensureZonesVisible();
+      })
+      .catch(function () {});
+  }
+  function refreshZones() {
+    if (zonesLoaded) loadZones(true);
+  }
+
+  function fillZoneGroupSelect() {
+    var sel = document.getElementById("tp-zones-group");
+    if (!sel) return;
+    var cur = sel.value;
+    var html = '<option value="">Todos los grupos</option>';
+    zonesData.groups.forEach(function (g) {
+      html += '<option value="' + g.id + '">' + escapeHtml(g.title) + "</option>";
+    });
+    sel.innerHTML = html;
+    sel.value = cur;
+  }
+
+  // Normaliza coordenadas de geocerca a array {lat,lng}.
+  function zoneCoords(z) {
+    return (z.coordinates || [])
+      .map(function (c) {
+        if (Array.isArray(c)) return { lat: +c[0], lng: +c[1] };
+        if (c && c.lat != null) return { lat: +c.lat, lng: +c.lng };
+        if (c && c.y != null) return { lat: +c.y, lng: +c.x };
+        return null;
+      })
+      .filter(Boolean);
+  }
+  function zoneCenter(z) {
+    var c = z.center;
+    if (!c) return null;
+    if (typeof c === "string") {
+      var p = c.split(",");
+      return { lat: parseFloat(p[0]), lng: parseFloat(p[1]) };
+    }
+    if (c.lat != null) return { lat: +c.lat, lng: +c.lng };
+    if (Array.isArray(c)) return { lat: +c[0], lng: +c[1] };
+    return null;
+  }
+  function flyToZone(z) {
+    if (!state.map) return;
+    if (z.type === "circle") {
+      var ctr = zoneCenter(z);
+      if (ctr) state.map.flyTo({ center: [ctr.lng, ctr.lat], zoom: 14, duration: 600 });
+      return;
+    }
+    var pts = zoneCoords(z);
+    if (!pts.length) return;
+    var b = new maplibregl.LngLatBounds();
+    pts.forEach(function (p) {
+      b.extend([p.lng, p.lat]);
+    });
+    state.map.fitBounds(b, { padding: 60, duration: 600, maxZoom: 16 });
+  }
+
+  function openZonePopup(z) {
+    if (!state.map || !z) return;
+    var ctr = z.type === "circle" ? zoneCenter(z) : null;
+    if (!ctr) {
+      var pts = zoneCoords(z);
+      if (pts.length) {
+        var sumLat = 0, sumLng = 0;
+        pts.forEach(function (p) {
+          sumLat += p.lat;
+          sumLng += p.lng;
+        });
+        ctr = { lat: sumLat / pts.length, lng: sumLng / pts.length };
+      }
+    }
+    if (!ctr) return;
+    if (!zonePopup)
+      zonePopup = new maplibregl.Popup({
+        offset: 8,
+        closeButton: true,
+        className: "tp-dev-popup-wrap",
+      });
+    var canEdit = !!document.getElementById("tp-zones-new");
+    zonePopup
+      .setLngLat([ctr.lng, ctr.lat])
+      .setHTML(
+        '<div class="tp-dev-popup"><div class="tp-dev-popup__head">' +
+          '<span class="tp-dev-popup__dot" style="background:' +
+          (z.polygon_color || "#1e88e5") +
+          '"></span><span class="tp-dev-popup__name">' +
+          escapeHtml(z.name || "Geocerca") +
+          "</span></div>" +
+          '<div class="tp-dev-popup__status">' +
+          (z.type === "circle"
+            ? "Círculo · " + (z.radius ? Math.round(z.radius) + " m" : "—")
+            : "Polígono · " + zoneCoords(z).length + " pts") +
+          "</div>" +
+          (canEdit
+            ? '<div class="tp-poi-popup__actions">' +
+              '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zone-edit>Editar</button>' +
+              '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-zone-del>Eliminar</button>' +
+              "</div>"
+            : "") +
+          "</div>",
+      )
+      .addTo(state.map);
+    var pe = zonePopup.getElement();
+    var be = pe && pe.querySelector("[data-zone-edit]");
+    var bd = pe && pe.querySelector("[data-zone-del]");
+    if (be)
+      be.addEventListener("click", function () {
+        zonePopup.remove();
+        openZoneEditModal(z);
+      });
+    if (bd)
+      bd.addEventListener("click", function () {
+        zonePopup.remove();
+        deleteZone(z.id);
+      });
+  }
+
+  // Geometría para guardar (preserva el contrato del backend).
+  function zoneGeometryPayload(z) {
+    if (z.type === "circle") {
+      var ctr = zoneCenter(z);
+      return { type: "circle", center: ctr, radius: z.radius, polygon: [] };
+    }
+    return { type: "polygon", polygon: zoneCoords(z) };
+  }
+
+  function openZoneEditModal(z) {
+    if (!window.tpModal) return;
+    var groupOpts = '<option value="0">Sin grupo</option>';
+    zonesData.groups.forEach(function (g) {
+      groupOpts +=
+        '<option value="' +
+        g.id +
+        '"' +
+        (String(z.group_id || 0) === String(g.id) ? " selected" : "") +
+        ">" +
+        escapeHtml(g.title) +
+        "</option>";
+    });
+    var body =
+      '<form id="tp-zone-form" class="tp-poi-form">' +
+      '<div class="tp-field"><label class="tp-field__label">Nombre</label>' +
+      '<input type="text" name="name" class="tp-input" value="' +
+      escapeHtml(z.name || "") +
+      '"></div>' +
+      '<div class="tp-field"><label class="tp-field__label">Color</label>' +
+      '<input type="color" name="polygon_color" class="tp-input" value="' +
+      (z.polygon_color || "#1e88e5") +
+      '" style="height:38px;padding:4px;"></div>' +
+      '<div class="tp-field"><label class="tp-field__label">Grupo</label>' +
+      '<select name="group_id" class="tp-input">' +
+      groupOpts +
+      "</select></div>" +
+      '<div class="tp-field"><label class="tp-field__label">Límite de velocidad (km/h)</label>' +
+      '<input type="number" name="speed_limit" class="tp-input" min="0" value="' +
+      (z.speed_limit != null ? z.speed_limit : "") +
+      '"></div>' +
+      "</form>";
+    tpModal.open({
+      title: "Editar geocerca",
+      size: "md",
+      body: body,
+      buttons: [
+        { label: "Cancelar", variant: "ghost" },
+        {
+          label: "Guardar",
+          variant: "primary",
+          close: false,
+          onClick: function (dialog, btn) {
+            var f = dialog.querySelector("#tp-zone-form");
+            var name = (f.querySelector('[name="name"]').value || "").trim();
+            if (!name) {
+              tpModal.toast && tpModal.toast("El nombre es obligatorio.", "warning");
+              return false;
+            }
+            var sl = f.querySelector('[name="speed_limit"]').value;
+            var payload = Object.assign(
+              {
+                name: name,
+                polygon_color: f.querySelector('[name="polygon_color"]').value,
+                group_id: parseInt(f.querySelector('[name="group_id"]').value, 10) || 0,
+                active: 1,
+              },
+              zoneGeometryPayload(z),
+            );
+            if (sl !== "") payload.speed_limit = parseFloat(sl);
+            btn.disabled = true;
+            tpModal
+              .fetchJSON(ZONES_BASE + "/" + z.id, { method: "PUT", json: payload })
+              .then(function (r) {
+                btn.disabled = false;
+                if (r && r.ok && r.data && r.data.ok) {
+                  tpModal.toast && tpModal.toast("Geocerca actualizada.", "success");
+                  tpModal.close(dialog);
+                  refreshZones();
+                  ensureZonesVisible();
+                } else {
+                  tpModal.toast && tpModal.toast("No se pudo guardar.", "error");
+                }
+              })
+              .catch(function () {
+                btn.disabled = false;
+                tpModal.toast && tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+
+  function deleteZone(id) {
+    if (!window.tpModal) return;
+    var doDel = function () {
+      tpModal
+        .fetchJSON(ZONES_BASE + "/" + id, { method: "DELETE" })
+        .then(function (r) {
+          if (r && r.ok && r.data && r.data.ok) {
+            tpModal.toast && tpModal.toast("Geocerca eliminada.", "success");
+            refreshZones();
+            ensureZonesVisible();
+          } else {
+            tpModal.toast && tpModal.toast("No se pudo eliminar.", "error");
+          }
+        });
+    };
+    if (tpModal.confirm)
+      tpModal
+        .confirm({
+          title: "Eliminar geocerca",
+          message: "¿Eliminar esta geocerca?",
+          confirmLabel: "Eliminar",
+          danger: true,
+        })
+        .then(function (ok) {
+          if (ok) doDel();
+        });
+    else doDel();
+  }
+
+  function renderZonesList() {
+    var listEl = document.getElementById("tp-zones-list");
+    if (!listEl) return;
+    var q = ((document.getElementById("tp-zones-search") || {}).value || "")
+      .trim()
+      .toLowerCase();
+    var gsel = (document.getElementById("tp-zones-group") || {}).value || "";
+    var rows = zonesData.items.filter(function (z) {
+      if (zonesTypeFilter !== "all" && z.type !== zonesTypeFilter) return false;
+      if (gsel && String(z.group_id || 0) !== String(gsel)) return false;
+      if (q && (z.name || "").toLowerCase().indexOf(q) === -1) return false;
+      return true;
+    });
+    var canEdit = !!document.getElementById("tp-zones-new");
+    var countEl = document.getElementById("tp-zones-count");
+    if (countEl) countEl.textContent = rows.length ? "· " + rows.length : "";
+    var emptyEl = document.getElementById("tp-zones-empty");
+    if (emptyEl) emptyEl.hidden = rows.length > 0;
+    listEl.innerHTML = rows
+      .map(function (z) {
+        var meta =
+          z.type === "circle"
+            ? "Círculo · " + (z.radius ? Math.round(z.radius) + " m" : "—")
+            : "Polígono · " + (z.coordinates || []).length + " pts";
+        return (
+          '<div class="tp-poi-row" data-id="' +
+          z.id +
+          '" role="option">' +
+          '<span class="tp-zone-row__swatch" style="background:' +
+          (z.polygon_color || "#1e88e5") +
+          '"></span>' +
+          '<div class="tp-poi-row__main">' +
+          '<div class="tp-poi-row__name">' +
+          escapeHtml(z.name || "#" + z.id) +
+          "</div>" +
+          '<div class="tp-poi-row__group">' +
+          meta +
+          "</div></div>" +
+          '<div class="tp-poi-row__actions">' +
+          '<button type="button" class="tp-poi-row__btn" data-zone-go title="Centrar">' +
+          POI_ICONS.go +
+          "</button>" +
+          (canEdit
+            ? '<button type="button" class="tp-poi-row__btn" data-zone-edit title="Editar">' +
+              POI_ICONS.edit +
+              "</button>" +
+              '<button type="button" class="tp-poi-row__btn tp-poi-row__btn--danger" data-zone-del title="Eliminar">' +
+              POI_ICONS.del +
+              "</button>"
+            : "") +
+          "</div></div>"
+        );
+      })
+      .join("");
+  }
+
+  var zonesListEl = document.getElementById("tp-zones-list");
+  if (zonesListEl)
+    zonesListEl.addEventListener("click", function (e) {
+      var row = e.target.closest(".tp-poi-row");
+      if (!row) return;
+      var z = zonesById[parseInt(row.getAttribute("data-id"), 10)];
+      if (!z) return;
+      if (e.target.closest("[data-zone-edit]")) {
+        openZoneEditModal(z);
+        return;
+      }
+      if (e.target.closest("[data-zone-del]")) {
+        deleteZone(z.id);
+        return;
+      }
+      ensureZonesVisible();
+      flyToZone(z);
+      openZonePopup(z);
+    });
+
+  var zonesSearchEl = document.getElementById("tp-zones-search");
+  if (zonesSearchEl) zonesSearchEl.addEventListener("input", renderZonesList);
+  var zonesGroupEl = document.getElementById("tp-zones-group");
+  if (zonesGroupEl) zonesGroupEl.addEventListener("change", renderZonesList);
+  var zonesTypeEl = document.getElementById("tp-zones-type-filter");
+  if (zonesTypeEl)
+    zonesTypeEl.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-ztype]");
+      if (!btn) return;
+      zonesTypeEl.querySelectorAll("[data-ztype]").forEach(function (b) {
+        b.setAttribute("aria-selected", "false");
+      });
+      btn.setAttribute("aria-selected", "true");
+      zonesTypeFilter = btn.getAttribute("data-ztype");
+      renderZonesList();
+    });
+  var zonesNewBtn = document.getElementById("tp-zones-new");
+  if (zonesNewBtn)
+    zonesNewBtn.addEventListener("click", function () {
+      // El dibujo de geocercas en el mapa llega en el siguiente paso.
+      if (window.tpModal && tpModal.toast)
+        tpModal.toast("Dibujo de geocercas: próximo paso.", "info");
+    });
+
+  function bindZoneMapClick() {
+    if (zoneClickBound || !state.map) return;
+    zoneClickBound = true;
+    // Capa de geocercas de Live (renderGeofences usa tp-live-zones-fill).
+    state.map.on("click", "tp-live-zones-fill", function (e) {
+      var f = e.features && e.features[0];
+      if (!f) return;
+      var z = zonesById[f.properties.id];
+      if (z) openZonePopup(z);
+    });
+    state.map.on("mouseenter", "tp-live-zones-fill", function () {
+      state.map.getCanvas().style.cursor = "pointer";
+    });
+    state.map.on("mouseleave", "tp-live-zones-fill", function () {
+      if (!poiPlaceMode) state.map.getCanvas().style.cursor = "";
+    });
+  }
+
+  // Conmutador de paneles del sidebar (Objetos / Geocercas / POIs) sobre el mismo mapa.
   function switchPanel(name) {
     Array.prototype.forEach.call(
       document.querySelectorAll(".tp-live__panel"),
@@ -2775,6 +3189,10 @@
     if (name === "pois") {
       ensurePoiVisible();
       loadPoisPanel(false);
+    } else if (name === "zones") {
+      bindZoneMapClick();
+      ensureZonesVisible();
+      loadZones(false);
     }
   }
   Array.prototype.forEach.call(
@@ -2785,32 +3203,36 @@
       });
     },
   );
-  // Deep-link desde el rail (?panel=pois) abre el panel de POIs.
+  // Deep-link desde el rail (?panel=pois|zones) abre el panel correspondiente.
   try {
-    if (new URLSearchParams(location.search).get("panel") === "pois")
-      switchPanel("pois");
+    var initialPanel = new URLSearchParams(location.search).get("panel");
+    if (initialPanel === "pois" || initialPanel === "zones")
+      switchPanel(initialPanel);
   } catch (e) {}
 
   // El rail navega con <a href> (recarga el mapa). Estando YA en el workspace
-  // de Live, interceptamos "Live Ops" y "POIs" para cambiar de panel SIN
-  // recargar (el mapa persiste, como el legacy). Desde otra página sí navega.
+  // de Live, interceptamos "Live Ops", "Geocercas" y "POIs" para cambiar de
+  // panel SIN recargar (el mapa persiste, como el legacy). Desde otra página
+  // sí navega.
   Array.prototype.forEach.call(
     document.querySelectorAll(".tp-rail a[href]"),
     function (a) {
       var href = a.getAttribute("href") || "";
       var toPois = href.indexOf("panel=pois") !== -1;
-      var toLive = !toPois && /\/ui\/v2\/live(\?|$)/.test(href);
-      if (!toPois && !toLive) return;
+      var toZones = href.indexOf("panel=zones") !== -1;
+      var toLive =
+        !toPois && !toZones && /\/ui\/v2\/live(\?|$)/.test(href);
+      if (!toPois && !toZones && !toLive) return;
       a.addEventListener("click", function (e) {
-        // Solo interceptar con clic normal (no nueva pestaña).
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
         e.preventDefault();
-        switchPanel(toPois ? "pois" : "objects");
+        var panel = toPois ? "pois" : toZones ? "zones" : "objects";
+        switchPanel(panel);
         try {
-          var url = toPois ? "/ui/v2/live?panel=pois" : "/ui/v2/live";
+          var url =
+            panel === "objects" ? "/ui/v2/live" : "/ui/v2/live?panel=" + panel;
           history.replaceState(null, "", url);
         } catch (err) {}
-        // Reflejar el ítem activo del rail (usa aria-current="page").
         Array.prototype.forEach.call(
           document.querySelectorAll(".tp-rail__item[aria-current]"),
           function (it) {

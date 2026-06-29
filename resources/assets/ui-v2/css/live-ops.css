@@ -144,6 +144,15 @@
   margin-top: 2px;
 }
 
+/* Muestra de color de geocerca en su fila */
+.tp-zone-row__swatch {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
 /* Filas del panel de POIs */
 .tp-poi-row {
   display: flex;
