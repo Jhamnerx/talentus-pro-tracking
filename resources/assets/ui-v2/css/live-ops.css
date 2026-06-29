@@ -136,6 +136,13 @@
   margin: 10px 12px;
 }
 
+/* Leaflet: divIcon de POI sin caja blanca (fallback sin icono) */
+.leaflet-marker-icon.tp-poi-ldot,
+.tp-poi-ldot {
+  background: transparent;
+  border: 0;
+}
+
 /* Marcador de POI en el mapa (icono real + arrastrable) */
 .tp-poi-marker {
   cursor: pointer;
