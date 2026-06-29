@@ -98,6 +98,8 @@
     autoFit: false,
     geoMarker: null,
     trafficLayer: null,
+    clusterGroup: null,
+    routesLayer: null,
   };
   try {
     var sg = localStorage.getItem("tp_live_grouped");
@@ -271,6 +273,7 @@
       if (d.active === false) return;
       seen[d.id] = true;
       var ll = [parseFloat(d.lat), parseFloat(d.lng)];
+      var cont = markerContainer();
       var m = state.markers[d.id];
       if (m) {
         m.setLatLng(ll);
@@ -280,16 +283,57 @@
         m.on("click", function () {
           openDevicePopup(d.id);
         });
-        m.addTo(state.deviceLayer);
+        cont.addLayer(m);
         state.markers[d.id] = m;
       }
     });
+    var cont2 = markerContainer();
     Object.keys(state.markers).forEach(function (id) {
       if (!seen[id]) {
-        state.deviceLayer.removeLayer(state.markers[id]);
+        cont2.removeLayer(state.markers[id]);
         delete state.markers[id];
       }
     });
+  }
+
+  // Contenedor activo de marcadores: cluster o layerGroup normal.
+  function markerContainer() {
+    return state.toggles.cluster && state.clusterGroup ? state.clusterGroup : state.deviceLayer;
+  }
+  function ensureCluster() {
+    if (!window.L.markerClusterGroup) return null;
+    if (!state.clusterGroup)
+      state.clusterGroup = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50, showCoverageOnHover: false });
+    return state.clusterGroup;
+  }
+  function setClusterMode(on) {
+    var m = state.map;
+    // sacar todos los marcadores de ambos contenedores
+    Object.keys(state.markers).forEach(function (id) {
+      try {
+        state.deviceLayer.removeLayer(state.markers[id]);
+      } catch (e) {}
+      if (state.clusterGroup) {
+        try {
+          state.clusterGroup.removeLayer(state.markers[id]);
+        } catch (e) {}
+      }
+    });
+    state.markers = {};
+    if (on) {
+      var cg = ensureCluster();
+      if (!cg) {
+        state.toggles.cluster = false;
+        window.tpModal && tpModal.toast && tpModal.toast("Agrupación no disponible.", "warning");
+        return;
+      }
+      m.removeLayer(state.deviceLayer);
+      cg.addTo(m);
+    } else {
+      if (state.clusterGroup) m.removeLayer(state.clusterGroup);
+      state.deviceLayer.addTo(m);
+    }
+    renderMarkers();
   }
 
   function fitToFleet() {
@@ -308,12 +352,17 @@
     var on = !!state.toggles[key];
     var m = state.map;
     if (key === "devices") {
-      if (on) state.deviceLayer.addTo(m);
-      else m.removeLayer(state.deviceLayer);
+      var cont = markerContainer();
+      if (on) cont.addTo(m);
+      else m.removeLayer(cont);
+    } else if (key === "cluster") {
+      setClusterMode(on);
     } else if (key === "geofences") {
       if (window.tpLiveZones && tpLiveZones.setVisible) tpLiveZones.setVisible(on);
     } else if (key === "poi") {
       if (window.tpLivePois && tpLivePois.setVisible) tpLivePois.setVisible(on);
+    } else if (key === "routes") {
+      setRoutesVisible(on);
     } else if (key === "traffic") {
       if (on) {
         if (!state.trafficLayer)
@@ -327,8 +376,40 @@
       }
     } else if (key === "names") {
       m.getContainer().classList.toggle("tp-show-names", on);
+    } else if (key === "tails") {
+      window.tpModal && tpModal.toast && tpModal.toast("Estela: disponible próximamente.", "info");
     }
-    // cluster / routes / tails: pendientes de portar (Paso 4).
+  }
+
+  // Rutas: capa de polilíneas desde el endpoint de rutas (lectura).
+  function setRoutesVisible(on) {
+    var m = state.map;
+    if (!on) {
+      if (state.routesLayer) m.removeLayer(state.routesLayer);
+      return;
+    }
+    if (state.routesLayer) {
+      state.routesLayer.addTo(m);
+      return;
+    }
+    fetch(CFG.routesUrl, { credentials: "same-origin", headers: { Accept: "application/json" } })
+      .then(function (r) {
+        return r.json();
+      })
+      .then(function (j) {
+        state.routesLayer = L.layerGroup();
+        ((j && j.items) || []).forEach(function (rt) {
+          var pts = (rt.coordinates || []).map(function (c) {
+            return [c[1], c[0]]; // [lng,lat] → [lat,lng]
+          });
+          if (pts.length < 2) return;
+          L.polyline(pts, { color: rt.color || "#7c3aed", weight: 3, opacity: 0.85 })
+            .bindTooltip(rt.name || "Ruta")
+            .addTo(state.routesLayer);
+        });
+        if (state.toggles.routes) state.routesLayer.addTo(m);
+      })
+      .catch(function () {});
   }
 
   // Modal de configuración de widgets (reusa el endpoint nativo v2).
@@ -544,7 +625,9 @@
           Array.prototype.forEach.call(tmp.querySelectorAll(".tp-dw--side"), function (n) {
             sideHtml += n.outerHTML;
           });
-          Array.prototype.forEach.call(tmp.querySelectorAll(".tp-dw--bottom"), function (n) {
+          // La barra inferior usa cards horizontales: tomamos las .tp-card de
+          // dentro de .tp-dw--bottom como hijos directos (no el wrapper).
+          Array.prototype.forEach.call(tmp.querySelectorAll(".tp-dw--bottom > .tp-card"), function (n) {
             bottomHtml += n.outerHTML;
           });
           // Si la blade no agrupa, todo va al drawer.

@@ -9,6 +9,8 @@
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -426,16 +428,6 @@
                         <circle cx="12" cy="9" r="2.5" />
                     </svg>
                 </button>
-                @if (auth()->user()->perm('poi', 'edit'))
-                    <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-add-poi"
-                        title="Agregar POI" aria-label="Agregar POI" type="button">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 22s7-7.58 7-13a7 7 0 0 0-14 0c0 5.42 7 13 7 13z" />
-                            <path d="M12 6v6M9 9h6" />
-                        </svg>
-                    </button>
-                @endif
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-names"
                     data-toggle="names" title="Mostrar nombres" aria-label="Mostrar nombres sobre los vehículos"
                     aria-pressed="false" type="button">
@@ -612,8 +604,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=2"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=1"></script>
     <script>
