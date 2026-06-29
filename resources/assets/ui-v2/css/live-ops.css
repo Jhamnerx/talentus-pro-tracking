@@ -181,6 +181,20 @@
   width: 90px;
 }
 
+/* Vértice arrastrable de un polígono en dibujo/edición */
+.tp-zone-vertex {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid var(--brand-accent, #1b99bd);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  cursor: grab;
+}
+.tp-zone-vertex:active {
+  cursor: grabbing;
+}
+
 /* Barra flotante mientras se dibuja una geocerca */
 .tp-zonedraw-bar {
   position: absolute;
@@ -982,6 +996,7 @@
 /* Acciones del popup de POI */
 .tp-poi-popup__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
 }

@@ -2909,6 +2909,9 @@
           (canEdit
             ? '<div class="tp-poi-popup__actions">' +
               '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zone-edit>Editar</button>' +
+              (z.type === "polygon"
+                ? '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zone-shape>Editar forma</button>'
+                : "") +
               '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-zone-del>Eliminar</button>' +
               "</div>"
             : "") +
@@ -2917,11 +2920,17 @@
       .addTo(state.map);
     var pe = zonePopup.getElement();
     var be = pe && pe.querySelector("[data-zone-edit]");
+    var bs = pe && pe.querySelector("[data-zone-shape]");
     var bd = pe && pe.querySelector("[data-zone-del]");
     if (be)
       be.addEventListener("click", function () {
         zonePopup.remove();
         openZoneEditModal(z);
+      });
+    if (bs)
+      bs.addEventListener("click", function () {
+        zonePopup.remove();
+        startZoneEditShape(z);
       });
     if (bd)
       bd.addEventListener("click", function () {
@@ -3298,15 +3307,7 @@
     if (!zoneDraw || !state.map.getSource(ZONE_DRAW_SRC)) return;
     var feats = [];
     if (zoneDraw.type === "polygon") {
-      var pts = zoneDraw.points.slice();
-      if (extraLL) pts = pts.concat([extraLL]);
-      pts.forEach(function (p) {
-        feats.push({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-          properties: {},
-        });
-      });
+      var pts = zoneDraw.points;
       if (pts.length >= 3) {
         var ring = pts.map(function (p) {
           return [p.lng, p.lat];
@@ -3352,17 +3353,71 @@
       .getSource(ZONE_DRAW_SRC)
       .setData({ type: "FeatureCollection", features: feats });
   }
-  function showDrawBar(type) {
+
+  // Vértices arrastrables del polígono (mover / eliminar, como el legacy).
+  function addVertex(ll) {
+    var pt = { lat: ll.lat, lng: ll.lng };
+    zoneDraw.points.push(pt);
+    var el = document.createElement("div");
+    el.className = "tp-zone-vertex";
+    el.title = "Arrastra para mover · clic derecho para eliminar";
+    var m = new maplibregl.Marker({ element: el, draggable: true })
+      .setLngLat([pt.lng, pt.lat])
+      .addTo(state.map);
+    m.on("drag", function () {
+      var p = m.getLngLat();
+      pt.lat = p.lat;
+      pt.lng = p.lng;
+      drawPreview();
+    });
+    el.addEventListener("contextmenu", function (e) {
+      e.preventDefault();
+      if (!zoneDraw) return;
+      if (zoneDraw.points.length <= 3) {
+        tpModal.toast &&
+          tpModal.toast("Un polígono necesita al menos 3 vértices.", "warning");
+        return;
+      }
+      var i = zoneDraw.points.indexOf(pt);
+      if (i > -1) zoneDraw.points.splice(i, 1);
+      var vi = zoneDraw.verts.indexOf(m);
+      if (vi > -1) zoneDraw.verts.splice(vi, 1);
+      m.remove();
+      drawPreview();
+    });
+    zoneDraw.verts.push(m);
+    drawPreview();
+  }
+  function clearVertices() {
+    if (zoneDraw && zoneDraw.verts)
+      zoneDraw.verts.forEach(function (m) {
+        m.remove();
+      });
+  }
+  function rebuildVertices(coords) {
+    clearVertices();
+    zoneDraw.points = [];
+    zoneDraw.verts = [];
+    coords.forEach(function (c) {
+      addVertex({ lat: c.lat, lng: c.lng });
+    });
+  }
+
+  function showDrawBar(type, isEdit) {
     hideDrawBar();
     zoneDrawBar = document.createElement("div");
     zoneDrawBar.className = "tp-zonedraw-bar";
+    var hint =
+      type === "polygon"
+        ? "Clic para añadir vértices · arrastra para moverlos · clic derecho para eliminar."
+        : "Clic para el centro y luego para el radio.";
     zoneDrawBar.innerHTML =
       '<span class="tp-zonedraw-bar__hint">' +
-      (type === "polygon"
-        ? "Clic para añadir vértices, luego «Finalizar»."
-        : "Clic para el centro y luego para el radio.") +
+      hint +
       "</span>" +
-      '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-finish>Finalizar</button>' +
+      '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-finish>' +
+      (isEdit ? "Guardar" : "Finalizar") +
+      "</button>" +
       '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zd-cancel>Cancelar</button>';
     var area = root.querySelector(".tp-live__map-area") || document.body;
     area.appendChild(zoneDrawBar);
@@ -3386,8 +3441,7 @@
       if (!zoneDraw) return;
       var ll = { lat: e.lngLat.lat, lng: e.lngLat.lng };
       if (zoneDraw.type === "polygon") {
-        zoneDraw.points.push(ll);
-        drawPreview();
+        addVertex(ll);
       } else if (!zoneDraw.center) {
         zoneDraw.center = ll;
         drawPreview();
@@ -3397,25 +3451,60 @@
         finishZoneDraw();
       }
     });
+    // Preview de radio del círculo mientras se mueve el cursor.
     state.map.on("mousemove", function (e) {
-      if (!zoneDraw) return;
-      var ll = { lat: e.lngLat.lat, lng: e.lngLat.lng };
-      if (zoneDraw.type === "circle" && zoneDraw.center && !zoneDraw.radius)
-        drawPreview(ll);
-      else if (zoneDraw.type === "polygon" && zoneDraw.points.length >= 1)
-        drawPreview(ll);
+      if (
+        !zoneDraw ||
+        zoneDraw.type !== "circle" ||
+        !zoneDraw.center ||
+        zoneDraw.radius
+      )
+        return;
+      drawPreview({ lat: e.lngLat.lat, lng: e.lngLat.lng });
     });
   }
   function startZoneDraw(type) {
     ensureZonesVisible();
     bindZoneDraw();
     ensureDrawLayers();
-    zoneDraw = { type: type, points: [], center: null, radius: 0 };
+    zoneDraw = {
+      type: type,
+      points: [],
+      verts: [],
+      center: null,
+      radius: 0,
+      editId: null,
+    };
     if (state.map.doubleClickZoom) state.map.doubleClickZoom.disable();
     state.map.getCanvas().style.cursor = "crosshair";
-    showDrawBar(type);
+    showDrawBar(type, false);
+  }
+  // Editar la forma de un polígono existente (mover/añadir/eliminar vértices).
+  function startZoneEditShape(z) {
+    if (z.type !== "polygon") {
+      tpModal.toast &&
+        tpModal.toast("Por ahora solo se edita la forma de polígonos.", "info");
+      return;
+    }
+    ensureZonesVisible();
+    bindZoneDraw();
+    ensureDrawLayers();
+    zoneDraw = {
+      type: "polygon",
+      points: [],
+      verts: [],
+      center: null,
+      radius: 0,
+      editId: z.id,
+      editName: z.name,
+    };
+    if (state.map.doubleClickZoom) state.map.doubleClickZoom.disable();
+    state.map.getCanvas().style.cursor = "crosshair";
+    rebuildVertices(zoneCoords(z));
+    showDrawBar("polygon", true);
   }
   function endZoneDraw() {
+    clearVertices();
     zoneDraw = null;
     hideDrawBar();
     if (state.map) {
@@ -3429,6 +3518,8 @@
   }
   function finishZoneDraw() {
     if (!zoneDraw) return;
+    var editId = zoneDraw.editId,
+      editName = zoneDraw.editName;
     var geometry = null;
     if (zoneDraw.type === "polygon") {
       if (zoneDraw.points.length < 3) {
@@ -3454,7 +3545,26 @@
       };
     }
     endZoneDraw();
-    openZoneCreateModal(geometry);
+    if (editId) saveZoneGeometry(editId, editName, geometry);
+    else openZoneCreateModal(geometry);
+  }
+  // Guarda SOLO la geometría de una geocerca existente (preserva metadatos).
+  function saveZoneGeometry(id, name, geometry) {
+    var payload = Object.assign({ name: name }, geometry);
+    tpModal
+      .fetchJSON(ZONES_BASE + "/" + id, { method: "PUT", json: payload })
+      .then(function (r) {
+        if (r && r.ok && r.data && r.data.ok) {
+          tpModal.toast && tpModal.toast("Forma actualizada.", "success");
+          refreshZones();
+          ensureZonesVisible();
+        } else {
+          tpModal.toast && tpModal.toast("No se pudo actualizar la forma.", "error");
+        }
+      })
+      .catch(function () {
+        tpModal.toast && tpModal.toast("Error de red.", "error");
+      });
   }
 
   function openZoneCreateModal(geometry) {
