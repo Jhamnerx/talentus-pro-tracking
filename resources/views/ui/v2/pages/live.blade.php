@@ -614,6 +614,7 @@
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=1"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
