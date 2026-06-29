@@ -4,10 +4,11 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=22">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=23">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
-    {{-- MapLibre GL via CDN (no build step). Pinned version for reproducibility. --}}
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+    {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -608,10 +609,11 @@
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=30"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=1"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
@@ -620,8 +622,8 @@
             btn.addEventListener('click', function() {
                 window.tpDeviceModal.openCreate(function() {
                     // Refresh device feed after a successful create.
-                    if (window.tpLiveOps && typeof window.tpLiveOps.refresh === 'function') {
-                        window.tpLiveOps.refresh();
+                    if (window.tpLive && typeof window.tpLive.refresh === 'function') {
+                        window.tpLive.refresh();
                     } else {
                         // Fallback: full reload — kept simple to avoid coupling.
                         location.reload();

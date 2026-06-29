@@ -114,6 +114,28 @@
   display: none;
 }
 
+/* Leaflet: marcador de device (divIcon) sin la caja blanca por defecto */
+.leaflet-marker-icon.tp-lmarker,
+.tp-lmarker {
+  background: transparent;
+  border: 0;
+}
+.tp-lmarker img {
+  display: block;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+/* Leaflet: popup del device con el mismo estilo que teníamos en MapLibre */
+.tp-dev-popup-wrap .leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.2));
+  background: var(--surface-raised, #fff);
+  color: var(--fg-primary, #1a1f2b);
+}
+.tp-dev-popup-wrap .leaflet-popup-content {
+  margin: 10px 12px;
+}
+
 /* Marcador de POI en el mapa (icono real + arrastrable) */
 .tp-poi-marker {
   cursor: pointer;
