@@ -478,6 +478,7 @@
     index: {}, // id → device
     markers: {}, // id → maplibregl.Marker
     markerEls: {}, // id → DOM element
+    poiMarkers: {}, // poiId → maplibregl.Marker (DOM, icono real, arrastrable)
     filtered: [], // current filtered + sorted view
     visual: [], // visual rows (group headers + devices) for the virtualizer
     visualTotalH: 0,
@@ -646,6 +647,8 @@
         renderMarkers();
         fitToFleet(false);
       }
+      // POIs: si el toggle está activo, cargar y pintar sus marcadores (icono real).
+      if (state.toggles.poi) loadPoisPanel(true);
       // Re-apply overlays after style swaps (basemap changes wipe sources)
     });
     state.map.on("styledata", function () {
@@ -2237,11 +2240,122 @@
       );
     });
 
-  // POIs y rutas compartidos (módulo tp-map-shared)
+  // POIs en Live: marcadores DOM con su ICONO real + arrastrables (NO la capa
+  // circle de tp-map-shared, que se mantiene solo para Eventos).
   function renderSharedPois() {
-    if (window.tpMapShared && state.map)
-      window.tpMapShared.renderPois(state.map, CFG.poisUrl, !!state.toggles.poi);
+    renderPoiMarkers();
   }
+
+  function poiMarkerInner(p) {
+    if (p.icon && p.icon.path) {
+      var w = p.icon.width || 28,
+        h = p.icon.height || 28;
+      var max = Math.max(w, h),
+        scale = max > 40 ? 40 / max : 1; // tope 40px (evita iconos enormes)
+      return (
+        '<img src="' +
+        p.icon.path +
+        '" alt="" draggable="false" style="width:' +
+        Math.round(w * scale) +
+        "px;height:" +
+        Math.round(h * scale) +
+        'px;display:block;">'
+      );
+    }
+    return '<span class="tp-poi-marker__dot"></span>';
+  }
+
+  function removeAllPoiMarkers() {
+    Object.keys(state.poiMarkers).forEach(function (id) {
+      state.poiMarkers[id].remove();
+      delete state.poiMarkers[id];
+    });
+  }
+
+  function updatePoiCoords(id, lngLat) {
+    if (!window.tpModal) return;
+    tpModal
+      .fetchJSON(POI_BASE + "/" + id, {
+        method: "PUT",
+        json: { coordinates: { lat: lngLat.lat, lng: lngLat.lng } },
+      })
+      .then(function (r) {
+        if (r && r.ok && r.data && r.data.ok) {
+          tpModal.toast && tpModal.toast("POI movido.", "success");
+          var it = poisData.items.filter(function (x) {
+            return x.id === id;
+          })[0];
+          if (it) {
+            it.lat = lngLat.lat;
+            it.lng = lngLat.lng;
+          }
+        } else {
+          tpModal.toast && tpModal.toast("No se pudo mover el POI.", "error");
+          loadPoisPanel(true);
+        }
+      })
+      .catch(function () {
+        loadPoisPanel(true);
+      });
+  }
+
+  function renderPoiMarkers() {
+    if (!state.map) return;
+    if (!state.toggles.poi) {
+      removeAllPoiMarkers();
+      return;
+    }
+    if (!poisLoaded) {
+      loadPoisPanel(true); // al terminar vuelve a llamar a renderPoiMarkers()
+      return;
+    }
+    var canEdit = !!document.getElementById("tp-pois-new");
+    var seen = {};
+    poisData.items.forEach(function (p) {
+      if (p.lat == null || p.lng == null) return;
+      seen[p.id] = true;
+      var existing = state.poiMarkers[p.id];
+      if (existing) {
+        existing.setLngLat([p.lng, p.lat]);
+        existing.getElement().innerHTML = poiMarkerInner(p);
+        return;
+      }
+      var el = document.createElement("div");
+      el.className = "tp-poi-marker";
+      el.title = p.name || "";
+      el.innerHTML = poiMarkerInner(p);
+      var mk = new maplibregl.Marker({
+        element: el,
+        anchor: "center",
+        draggable: canEdit,
+      })
+        .setLngLat([p.lng, p.lat])
+        .addTo(state.map);
+      mk.__dragged = false;
+      el.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (mk.__dragged) {
+          mk.__dragged = false;
+          return;
+        }
+        var ll = mk.getLngLat();
+        openPoiPopup([ll.lng, ll.lat], p.id, p.name);
+      });
+      if (canEdit)
+        mk.on("dragend", function () {
+          mk.__dragged = true;
+          updatePoiCoords(p.id, mk.getLngLat());
+        });
+      state.poiMarkers[p.id] = mk;
+    });
+    Object.keys(state.poiMarkers).forEach(function (id) {
+      if (!seen[id]) {
+        state.poiMarkers[id].remove();
+        delete state.poiMarkers[id];
+      }
+    });
+  }
+
   function renderSharedRoutes() {
     if (window.tpMapShared && state.map)
       window.tpMapShared.renderRoutes(state.map, CFG.routesUrl, !!state.toggles.routes);
@@ -2263,7 +2377,8 @@
       if (b) b.setAttribute("aria-pressed", "true");
       if (window.tpMapShared) tpMapShared.set("poi", true);
     }
-    renderSharedPois();
+    if (poisLoaded) renderPoiMarkers();
+    else loadPoisPanel(true);
   }
 
   function startPoiPlaceMode() {
@@ -2425,27 +2540,9 @@
   function bindPoiInteractions() {
     if (poiClickBound || !state.map) return;
     poiClickBound = true;
-    var layerId = "tp-shared-pois-circle";
 
-    // Clic en un POI existente → popup editar / eliminar.
-    state.map.on("click", layerId, function (e) {
-      if (poiPlaceMode) return;
-      var f = e.features && e.features[0];
-      if (!f) return;
-      openPoiPopup(
-        f.geometry.coordinates.slice(),
-        f.properties.id,
-        f.properties.name || "POI",
-      );
-    });
-    state.map.on("mouseenter", layerId, function () {
-      if (!poiPlaceMode) state.map.getCanvas().style.cursor = "pointer";
-    });
-    state.map.on("mouseleave", layerId, function () {
-      if (!poiPlaceMode) state.map.getCanvas().style.cursor = "";
-    });
-
-    // Clic en el mapa en modo "colocar" → nuevo POI.
+    // Clic en el mapa en modo "colocar" → nuevo POI. (Los POIs existentes son
+    // marcadores DOM con su propio handler de clic/arrastre.)
     state.map.on("click", function (e) {
       if (!poiPlaceMode) return;
       var c = e.lngLat;
@@ -2486,6 +2583,7 @@
         poisLoaded = true;
         fillPoiGroupSelect();
         renderPoisList();
+        renderPoiMarkers();
       })
       .catch(function () {});
   }

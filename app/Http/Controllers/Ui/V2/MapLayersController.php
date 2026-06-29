@@ -30,12 +30,20 @@ class MapLayersController extends BaseController
         $gmap = $groups->pluck('title', 'id');
 
         $items = [];
-        foreach ($this->user->pois()->get() as $poi) {
+        foreach ($this->user->pois()->with('mapIcon')->get() as $poi) {
             $c = (array) ($poi->coordinates ?? []);
             $lat = $c['lat'] ?? $c['latitude'] ?? ($c['y'] ?? null);
             $lng = $c['lng'] ?? $c['longitude'] ?? ($c['x'] ?? null);
             if ($lat === null || $lng === null) {
                 continue;
+            }
+            $icon = null;
+            if ($poi->mapIcon) {
+                $icon = [
+                    'path'   => asset($poi->mapIcon->path),
+                    'width'  => (int) $poi->mapIcon->width,
+                    'height' => (int) $poi->mapIcon->height,
+                ];
             }
             $items[] = [
                 'id'       => (int) $poi->id,
@@ -44,6 +52,7 @@ class MapLayersController extends BaseController
                 'lng'      => (float) $lng,
                 'group_id' => (int) ($poi->group_id ?? 0),
                 'group'    => $poi->group_id ? ($gmap[$poi->group_id] ?? null) : null,
+                'icon'     => $icon,
             ];
         }
 
