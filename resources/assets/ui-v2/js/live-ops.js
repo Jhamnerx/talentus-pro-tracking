@@ -2767,7 +2767,7 @@
   // Panel de GEOCERCAS en el sidebar (mismo mapa de Live, como el legacy)
   // -----------------------------------------------------------
   var ZONES_BASE = CFG.zonesUrl || "/ui/v2/api/zones";
-  var zonesData = { items: [], groups: [] };
+  var zonesData = { items: [], groups: [], vehicleTypes: [], speedPlugin: false };
   var zonesLoaded = false;
   var zonesTypeFilter = "all";
   var zonePopup = null;
@@ -2799,6 +2799,8 @@
       .then(function (j) {
         zonesData.items = (j && j.items) || [];
         zonesData.groups = (j && j.groups) || [];
+        zonesData.vehicleTypes = (j && j.vehicle_types) || [];
+        zonesData.speedPlugin = !!(j && j.speed_limit_plugin);
         zonesById = {};
         zonesData.items.forEach(function (z) {
           zonesById[z.id] = z;
@@ -2937,6 +2939,66 @@
     return { type: "polygon", polygon: zoneCoords(z) };
   }
 
+  // Matriz de límite de velocidad por tipo/estado de vehículo (plugin
+  // geofences_speed_limit). Espeja Geofences/partials/vehicle_speed_limits.
+  function speedLimitsMatrixHtml(z) {
+    if (!zonesData.speedPlugin || !zonesData.vehicleTypes.length) return "";
+    var pre = (z && z.vehicle_speed_limits) || {};
+    var val = function (tid, sid) {
+      return pre[tid] && pre[tid][sid] != null ? pre[tid][sid] : "";
+    };
+    var html =
+      '<div class="tp-field"><label class="tp-field__label">Límite por tipo de vehículo (km/h)</label>' +
+      '<div class="tp-zone-vsl">';
+    zonesData.vehicleTypes.forEach(function (vt) {
+      if (!vt.states || !vt.states.length) {
+        html +=
+          '<div class="tp-zone-vsl__row"><span class="tp-zone-vsl__name">' +
+          escapeHtml(vt.name) +
+          "</span>" +
+          '<input type="number" min="0" class="tp-input tp-input--sm" data-vsl-type="' +
+          vt.id +
+          '" data-vsl-state="0" value="' +
+          val(vt.id, 0) +
+          '"></div>';
+      } else {
+        html +=
+          '<div class="tp-zone-vsl__group"><div class="tp-zone-vsl__title">' +
+          escapeHtml(vt.name) +
+          "</div>";
+        vt.states.forEach(function (st) {
+          html +=
+            '<div class="tp-zone-vsl__row"><span class="tp-zone-vsl__name">' +
+            escapeHtml(st.name) +
+            "</span>" +
+            '<input type="number" min="0" class="tp-input tp-input--sm" data-vsl-type="' +
+            vt.id +
+            '" data-vsl-state="' +
+            st.id +
+            '" value="' +
+            val(vt.id, st.id) +
+            '"></div>';
+        });
+        html += "</div>";
+      }
+    });
+    return html + "</div></div>";
+  }
+  // Recoge la matriz en un objeto {typeId:{stateId:value}}. Devuelve {} (no null)
+  // cuando el plugin/tipos existen, para que el backend pueda borrar los quitados.
+  function gatherSpeedLimits(dialog) {
+    if (!zonesData.speedPlugin || !zonesData.vehicleTypes.length) return null;
+    var out = {};
+    dialog.querySelectorAll("[data-vsl-type]").forEach(function (inp) {
+      var v = inp.value;
+      if (v === "" || v == null) return;
+      var t = inp.getAttribute("data-vsl-type"),
+        s = inp.getAttribute("data-vsl-state");
+      (out[t] = out[t] || {})[s] = v;
+    });
+    return out;
+  }
+
   function openZoneEditModal(z) {
     if (!window.tpModal) return;
     var groupOpts = '<option value="0">Sin grupo</option>';
@@ -2968,6 +3030,7 @@
       '<input type="number" name="speed_limit" class="tp-input" min="0" value="' +
       (z.speed_limit != null ? z.speed_limit : "") +
       '"></div>' +
+      speedLimitsMatrixHtml(z) +
       "</form>";
     tpModal.open({
       title: "Editar geocerca",
@@ -2997,6 +3060,8 @@
               zoneGeometryPayload(z),
             );
             if (sl !== "") payload.speed_limit = parseFloat(sl);
+            var vsl = gatherSpeedLimits(dialog);
+            if (vsl) payload.vehicle_speed_limits = vsl;
             btn.disabled = true;
             tpModal
               .fetchJSON(ZONES_BASE + "/" + z.id, { method: "PUT", json: payload })
@@ -3417,6 +3482,7 @@
         : "") +
       '<div class="tp-field"><label class="tp-field__label">Límite de velocidad (km/h)</label>' +
       '<input type="number" name="speed_limit" class="tp-input" min="0"></div>' +
+      speedLimitsMatrixHtml(null) +
       "</form>";
     tpModal.open({
       title: "Nueva geocerca",
@@ -3450,6 +3516,8 @@
             }
             var sl = f.querySelector('[name="speed_limit"]').value;
             if (sl !== "") payload.speed_limit = parseFloat(sl);
+            var vsl = gatherSpeedLimits(dialog);
+            if (vsl) payload.vehicle_speed_limits = vsl;
             btn.disabled = true;
             tpModal
               .fetchJSON(ZONES_BASE, { method: "POST", json: payload })

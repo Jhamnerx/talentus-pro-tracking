@@ -144,6 +144,43 @@
   margin-top: 2px;
 }
 
+/* Matriz de límite de velocidad por tipo/estado de vehículo (modal de geocerca) */
+.tp-zone-vsl {
+  border: 1px solid var(--border-default, #e7e9ee);
+  border-radius: 8px;
+  padding: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.tp-zone-vsl__group {
+  margin-bottom: 8px;
+}
+.tp-zone-vsl__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fg-secondary, #5a6172);
+  margin: 4px 0;
+}
+.tp-zone-vsl__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.tp-zone-vsl__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--fg-primary, #1a1f2b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tp-zone-vsl__row .tp-input {
+  flex: 0 0 90px;
+  width: 90px;
+}
+
 /* Barra flotante mientras se dibuja una geocerca */
 .tp-zonedraw-bar {
   position: absolute;

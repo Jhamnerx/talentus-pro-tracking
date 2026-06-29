@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
 use Tobuli\Entities\Geofence;
+use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Exporters\Util\ExportTypesUtil;
 use Tobuli\Importers\Geofence\GeofenceImportManager;
@@ -45,6 +46,7 @@ class ZonesController extends BaseController
         }
 
         $rows = $this->user->geofences()
+            ->with('vehicleSpeedLimits')
             ->orderBy('name', 'asc')
             ->get();
 
@@ -62,6 +64,7 @@ class ZonesController extends BaseController
                 'center'        => $g->center,
                 'coordinates'   => is_array($coords) ? $coords : [],
                 'speed_limit'   => $g->speed_limit,
+                'vehicle_speed_limits' => $this->vslMap($g),
             ];
         }
 
@@ -76,10 +79,12 @@ class ZonesController extends BaseController
         }
 
         return response()->json([
-            'ok'     => true,
-            'total'  => count($items),
-            'items'  => $items,
-            'groups' => $groups,
+            'ok'                 => true,
+            'total'              => count($items),
+            'items'              => $items,
+            'groups'             => $groups,
+            'vehicle_types'      => $this->vehicleTypesPayload(),
+            'speed_limit_plugin' => (bool) settings('plugins.geofences_speed_limit.status'),
         ]);
     }
 
@@ -304,6 +309,43 @@ class ZonesController extends BaseController
             'center'        => $g->center,
             'coordinates'   => is_array($coords) ? $coords : [],
             'speed_limit'   => $g->speed_limit,
+            'vehicle_speed_limits' => $this->vslMap($g),
         ];
+    }
+
+    /**
+     * Mapa de límites de velocidad por tipo/estado de vehículo de la geocerca,
+     * en la unidad del usuario (igual que el legacy getVehicleSpeedLimits()).
+     * Estructura: { vehicle_type_id: { vehicle_state_id|0: speed } }.
+     */
+    private function vslMap($g): array
+    {
+        $map = [];
+        foreach ($g->vehicleSpeedLimits as $l) {
+            $map[(int) $l->vehicle_type_id][(int) ($l->vehicle_state_id ?? 0)] =
+                round(\Formatter::speed()->convert($l->speed_limit));
+        }
+        return $map;
+    }
+
+    /** Tipos de vehículo del usuario con sus estados (para la matriz del modal). */
+    private function vehicleTypesPayload(): array
+    {
+        if (! settings('plugins.geofences_speed_limit.status')) {
+            return [];
+        }
+        $out = [];
+        $types = VehicleType::with('states')
+            ->where('user_id', $this->user->id)
+            ->orderBy('name')
+            ->get();
+        foreach ($types as $vt) {
+            $states = [];
+            foreach ($vt->states as $s) {
+                $states[] = ['id' => (int) $s->id, 'name' => (string) $s->name];
+            }
+            $out[] = ['id' => (int) $vt->id, 'name' => (string) $vt->name, 'states' => $states];
+        }
+        return $out;
     }
 }
