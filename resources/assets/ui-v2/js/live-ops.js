@@ -2466,6 +2466,7 @@
   // -----------------------------------------------------------
   var poisData = { items: [], groups: [] };
   var poisLoaded = false;
+  var poisCollapsed = {};
 
   function loadPoisPanel(force) {
     if (poisLoaded && !force) {
@@ -2510,6 +2511,43 @@
     del: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
   };
 
+  function poiGroupTitle(gid) {
+    if (!gid) return "Sin grupo";
+    for (var i = 0; i < poisData.groups.length; i++) {
+      if (poisData.groups[i].id === gid) return poisData.groups[i].title;
+    }
+    return "Grupo " + gid;
+  }
+
+  function poiRowHtml(p, canEdit) {
+    return (
+      '<div class="tp-poi-row" data-id="' +
+      p.id +
+      '" data-lat="' +
+      p.lat +
+      '" data-lng="' +
+      p.lng +
+      '" role="option">' +
+      '<div class="tp-poi-row__main">' +
+      '<div class="tp-poi-row__name">' +
+      escapeHtml(p.name || "#" + p.id) +
+      "</div></div>" +
+      '<div class="tp-poi-row__actions">' +
+      '<button type="button" class="tp-poi-row__btn" data-poi-go title="Centrar">' +
+      POI_ICONS.go +
+      "</button>" +
+      (canEdit
+        ? '<button type="button" class="tp-poi-row__btn" data-poi-edit title="Editar">' +
+          POI_ICONS.edit +
+          "</button>" +
+          '<button type="button" class="tp-poi-row__btn tp-poi-row__btn--danger" data-poi-del title="Eliminar">' +
+          POI_ICONS.del +
+          "</button>"
+        : "") +
+      "</div></div>"
+    );
+  }
+
   function renderPoisList() {
     var listEl = document.getElementById("tp-pois-list");
     if (!listEl) return;
@@ -2517,55 +2555,72 @@
       .trim()
       .toLowerCase();
     var gsel = (document.getElementById("tp-pois-group") || {}).value || "";
-    var rows = poisData.items.filter(function (p) {
+    var filtered = poisData.items.filter(function (p) {
       if (gsel && String(p.group_id || 0) !== String(gsel)) return false;
       if (q && (p.name || "").toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
     var canEdit = !!document.getElementById("tp-pois-new");
     var countEl = document.getElementById("tp-pois-count");
-    if (countEl) countEl.textContent = rows.length ? "· " + rows.length : "";
+    if (countEl) countEl.textContent = filtered.length ? "· " + filtered.length : "";
     var emptyEl = document.getElementById("tp-pois-empty");
-    if (emptyEl) emptyEl.hidden = rows.length > 0;
-    listEl.innerHTML = rows
-      .map(function (p) {
-        return (
-          '<div class="tp-poi-row" data-id="' +
-          p.id +
-          '" data-lat="' +
-          p.lat +
-          '" data-lng="' +
-          p.lng +
-          '" role="option">' +
-          '<div class="tp-poi-row__main">' +
-          '<div class="tp-poi-row__name">' +
-          escapeHtml(p.name || "#" + p.id) +
-          "</div>" +
-          (p.group
-            ? '<div class="tp-poi-row__group">' + escapeHtml(p.group) + "</div>"
-            : "") +
-          "</div>" +
-          '<div class="tp-poi-row__actions">' +
-          '<button type="button" class="tp-poi-row__btn" data-poi-go title="Centrar">' +
-          POI_ICONS.go +
-          "</button>" +
-          (canEdit
-            ? '<button type="button" class="tp-poi-row__btn" data-poi-edit title="Editar">' +
-              POI_ICONS.edit +
-              "</button>" +
-              '<button type="button" class="tp-poi-row__btn tp-poi-row__btn--danger" data-poi-del title="Eliminar">' +
-              POI_ICONS.del +
-              "</button>"
-            : "") +
-          "</div></div>"
-        );
-      })
-      .join("");
+    if (emptyEl) emptyEl.hidden = filtered.length > 0;
+
+    // Agrupar por grupo (como el legacy y el panel de Objetos).
+    var byGroup = {};
+    filtered.forEach(function (p) {
+      var gid = p.group_id || 0;
+      (byGroup[gid] = byGroup[gid] || []).push(p);
+    });
+    var order = [];
+    poisData.groups.forEach(function (g) {
+      if (byGroup[g.id]) order.push(g.id);
+    });
+    Object.keys(byGroup).forEach(function (k) {
+      var gid = parseInt(k, 10);
+      if (order.indexOf(gid) === -1) order.push(gid);
+    });
+
+    var chevron =
+      '<svg class="tp-live__group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    var html = "";
+    order.forEach(function (gid) {
+      var items = byGroup[gid];
+      var collapsed = !!poisCollapsed[gid];
+      html +=
+        '<div class="tp-live__group" data-poi-gid="' +
+        gid +
+        '"' +
+        (collapsed ? ' data-collapsed="1"' : "") +
+        ' role="button" tabindex="0">' +
+        chevron +
+        '<span class="tp-live__group-title">' +
+        escapeHtml(poiGroupTitle(gid)) +
+        "</span>" +
+        '<span class="tp-live__group-count">' +
+        items.length +
+        "</span></div>";
+      if (!collapsed)
+        html += items
+          .map(function (p) {
+            return poiRowHtml(p, canEdit);
+          })
+          .join("");
+    });
+    listEl.innerHTML = html;
   }
 
   var poisListEl = document.getElementById("tp-pois-list");
   if (poisListEl)
     poisListEl.addEventListener("click", function (e) {
+      // Cabecera de grupo → colapsar/expandir.
+      var gh = e.target.closest(".tp-live__group");
+      if (gh) {
+        var gid = parseInt(gh.getAttribute("data-poi-gid"), 10);
+        poisCollapsed[gid] = !poisCollapsed[gid];
+        renderPoisList();
+        return;
+      }
       var row = e.target.closest(".tp-poi-row");
       if (!row) return;
       var id = parseInt(row.getAttribute("data-id"), 10);

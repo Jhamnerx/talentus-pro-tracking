@@ -114,6 +114,15 @@
   display: none;
 }
 
+/* Cabeceras de grupo en el panel de POIs (lista en flujo, no virtual) */
+.tp-pois-list .tp-live__group {
+  height: 30px;
+  margin: 6px 8px 2px;
+}
+.tp-pois-list .tp-live__group:first-child {
+  margin-top: 2px;
+}
+
 /* Filas del panel de POIs */
 .tp-poi-row {
   display: flex;
