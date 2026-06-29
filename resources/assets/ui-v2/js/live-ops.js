@@ -3146,9 +3146,7 @@
   var zonesNewBtn = document.getElementById("tp-zones-new");
   if (zonesNewBtn)
     zonesNewBtn.addEventListener("click", function () {
-      // El dibujo de geocercas en el mapa llega en el siguiente paso.
-      if (window.tpModal && tpModal.toast)
-        tpModal.toast("Dibujo de geocercas: próximo paso.", "info");
+      startZoneCreate();
     });
 
   function bindZoneMapClick() {
@@ -3156,6 +3154,7 @@
     zoneClickBound = true;
     // Capa de geocercas de Live (renderGeofences usa tp-live-zones-fill).
     state.map.on("click", "tp-live-zones-fill", function (e) {
+      if (zoneDraw) return; // dibujando: no abrir popup
       var f = e.features && e.features[0];
       if (!f) return;
       var z = zonesById[f.properties.id];
@@ -3165,8 +3164,342 @@
       state.map.getCanvas().style.cursor = "pointer";
     });
     state.map.on("mouseleave", "tp-live-zones-fill", function () {
-      if (!poiPlaceMode) state.map.getCanvas().style.cursor = "";
+      if (!poiPlaceMode && !zoneDraw) state.map.getCanvas().style.cursor = "";
     });
+  }
+
+  // -----------------------------------------------------------
+  // Dibujo de geocercas en el mapa de Live (polígono + círculo, sin librería)
+  // -----------------------------------------------------------
+  var ZONE_DRAW_SRC = "tp-zonedraw-src";
+  var zoneDraw = null; // {type, points:[], center, radius}
+  var zoneDrawBound = false;
+  var zoneDrawBar = null;
+
+  function metersBetween(a, b) {
+    var R = 6371000,
+      toR = Math.PI / 180;
+    var dLat = (b.lat - a.lat) * toR,
+      dLng = (b.lng - a.lng) * toR;
+    var la1 = a.lat * toR,
+      la2 = b.lat * toR;
+    var h =
+      Math.pow(Math.sin(dLat / 2), 2) +
+      Math.cos(la1) * Math.cos(la2) * Math.pow(Math.sin(dLng / 2), 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function ensureDrawLayers() {
+    if (state.map.getSource(ZONE_DRAW_SRC)) return;
+    state.map.addSource(ZONE_DRAW_SRC, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+    state.map.addLayer({
+      id: "tp-zonedraw-fill",
+      type: "fill",
+      source: ZONE_DRAW_SRC,
+      filter: ["==", "$type", "Polygon"],
+      paint: { "fill-color": "#1b99bd", "fill-opacity": 0.2 },
+    });
+    state.map.addLayer({
+      id: "tp-zonedraw-line",
+      type: "line",
+      source: ZONE_DRAW_SRC,
+      paint: { "line-color": "#1b99bd", "line-width": 2 },
+    });
+    state.map.addLayer({
+      id: "tp-zonedraw-pts",
+      type: "circle",
+      source: ZONE_DRAW_SRC,
+      filter: ["==", "$type", "Point"],
+      paint: {
+        "circle-radius": 4,
+        "circle-color": "#ffffff",
+        "circle-stroke-color": "#1b99bd",
+        "circle-stroke-width": 2,
+      },
+    });
+  }
+  function clearDrawLayers() {
+    ["tp-zonedraw-fill", "tp-zonedraw-line", "tp-zonedraw-pts"].forEach(
+      function (id) {
+        if (state.map.getLayer(id)) state.map.removeLayer(id);
+      },
+    );
+    if (state.map.getSource(ZONE_DRAW_SRC))
+      state.map.removeSource(ZONE_DRAW_SRC);
+  }
+  function drawPreview(extraLL) {
+    if (!zoneDraw || !state.map.getSource(ZONE_DRAW_SRC)) return;
+    var feats = [];
+    if (zoneDraw.type === "polygon") {
+      var pts = zoneDraw.points.slice();
+      if (extraLL) pts = pts.concat([extraLL]);
+      pts.forEach(function (p) {
+        feats.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+          properties: {},
+        });
+      });
+      if (pts.length >= 3) {
+        var ring = pts.map(function (p) {
+          return [p.lng, p.lat];
+        });
+        ring.push([pts[0].lng, pts[0].lat]);
+        feats.push({
+          type: "Feature",
+          geometry: { type: "Polygon", coordinates: [ring] },
+          properties: {},
+        });
+      } else if (pts.length >= 2) {
+        feats.push({
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates: pts.map(function (p) {
+              return [p.lng, p.lat];
+            }),
+          },
+          properties: {},
+        });
+      }
+    } else if (zoneDraw.center) {
+      feats.push({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [zoneDraw.center.lng, zoneDraw.center.lat],
+        },
+        properties: {},
+      });
+      var r =
+        zoneDraw.radius ||
+        (extraLL ? metersBetween(zoneDraw.center, extraLL) : 0);
+      if (r > 0)
+        feats.push({
+          type: "Feature",
+          geometry: circlePolygon(zoneDraw.center.lng, zoneDraw.center.lat, r),
+          properties: {},
+        });
+    }
+    state.map
+      .getSource(ZONE_DRAW_SRC)
+      .setData({ type: "FeatureCollection", features: feats });
+  }
+  function showDrawBar(type) {
+    hideDrawBar();
+    zoneDrawBar = document.createElement("div");
+    zoneDrawBar.className = "tp-zonedraw-bar";
+    zoneDrawBar.innerHTML =
+      '<span class="tp-zonedraw-bar__hint">' +
+      (type === "polygon"
+        ? "Clic para añadir vértices, luego «Finalizar»."
+        : "Clic para el centro y luego para el radio.") +
+      "</span>" +
+      '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-finish>Finalizar</button>' +
+      '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zd-cancel>Cancelar</button>';
+    var area = root.querySelector(".tp-live__map-area") || document.body;
+    area.appendChild(zoneDrawBar);
+    zoneDrawBar
+      .querySelector("[data-zd-finish]")
+      .addEventListener("click", finishZoneDraw);
+    zoneDrawBar
+      .querySelector("[data-zd-cancel]")
+      .addEventListener("click", cancelZoneDraw);
+  }
+  function hideDrawBar() {
+    if (zoneDrawBar) {
+      zoneDrawBar.remove();
+      zoneDrawBar = null;
+    }
+  }
+  function bindZoneDraw() {
+    if (zoneDrawBound || !state.map) return;
+    zoneDrawBound = true;
+    state.map.on("click", function (e) {
+      if (!zoneDraw) return;
+      var ll = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+      if (zoneDraw.type === "polygon") {
+        zoneDraw.points.push(ll);
+        drawPreview();
+      } else if (!zoneDraw.center) {
+        zoneDraw.center = ll;
+        drawPreview();
+      } else {
+        zoneDraw.radius = metersBetween(zoneDraw.center, ll);
+        drawPreview();
+        finishZoneDraw();
+      }
+    });
+    state.map.on("mousemove", function (e) {
+      if (!zoneDraw) return;
+      var ll = { lat: e.lngLat.lat, lng: e.lngLat.lng };
+      if (zoneDraw.type === "circle" && zoneDraw.center && !zoneDraw.radius)
+        drawPreview(ll);
+      else if (zoneDraw.type === "polygon" && zoneDraw.points.length >= 1)
+        drawPreview(ll);
+    });
+  }
+  function startZoneDraw(type) {
+    ensureZonesVisible();
+    bindZoneDraw();
+    ensureDrawLayers();
+    zoneDraw = { type: type, points: [], center: null, radius: 0 };
+    if (state.map.doubleClickZoom) state.map.doubleClickZoom.disable();
+    state.map.getCanvas().style.cursor = "crosshair";
+    showDrawBar(type);
+  }
+  function endZoneDraw() {
+    zoneDraw = null;
+    hideDrawBar();
+    if (state.map) {
+      state.map.getCanvas().style.cursor = "";
+      if (state.map.doubleClickZoom) state.map.doubleClickZoom.enable();
+      clearDrawLayers();
+    }
+  }
+  function cancelZoneDraw() {
+    endZoneDraw();
+  }
+  function finishZoneDraw() {
+    if (!zoneDraw) return;
+    var geometry = null;
+    if (zoneDraw.type === "polygon") {
+      if (zoneDraw.points.length < 3) {
+        tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
+        return;
+      }
+      geometry = {
+        type: "polygon",
+        polygon: zoneDraw.points.map(function (p) {
+          return { lat: p.lat, lng: p.lng };
+        }),
+      };
+    } else {
+      if (!zoneDraw.center || !(zoneDraw.radius > 0)) {
+        tpModal.toast && tpModal.toast("Define el centro y el radio.", "warning");
+        return;
+      }
+      geometry = {
+        type: "circle",
+        center: { lat: zoneDraw.center.lat, lng: zoneDraw.center.lng },
+        radius: Math.round(zoneDraw.radius),
+        polygon: [],
+      };
+    }
+    endZoneDraw();
+    openZoneCreateModal(geometry);
+  }
+
+  function openZoneCreateModal(geometry) {
+    if (!window.tpModal) return;
+    var groupOpts = '<option value="0">Sin grupo</option>';
+    zonesData.groups.forEach(function (g) {
+      groupOpts +=
+        '<option value="' + g.id + '">' + escapeHtml(g.title) + "</option>";
+    });
+    var body =
+      '<form id="tp-zone-form" class="tp-poi-form">' +
+      '<div class="tp-field"><label class="tp-field__label">Nombre</label>' +
+      '<input type="text" name="name" class="tp-input"></div>' +
+      '<div class="tp-field"><label class="tp-field__label">Color</label>' +
+      '<input type="color" name="polygon_color" class="tp-input" value="#1b99bd" style="height:38px;padding:4px;"></div>' +
+      '<div class="tp-field"><label class="tp-field__label">Grupo</label>' +
+      '<select name="group_id" class="tp-input">' +
+      groupOpts +
+      "</select></div>" +
+      (geometry.type === "circle"
+        ? '<div class="tp-field"><label class="tp-field__label">Radio (m)</label>' +
+          '<input type="number" name="radius" class="tp-input" value="' +
+          geometry.radius +
+          '"></div>'
+        : "") +
+      '<div class="tp-field"><label class="tp-field__label">Límite de velocidad (km/h)</label>' +
+      '<input type="number" name="speed_limit" class="tp-input" min="0"></div>' +
+      "</form>";
+    tpModal.open({
+      title: "Nueva geocerca",
+      size: "md",
+      body: body,
+      buttons: [
+        { label: "Cancelar", variant: "ghost" },
+        {
+          label: "Crear",
+          variant: "primary",
+          close: false,
+          onClick: function (dialog, btn) {
+            var f = dialog.querySelector("#tp-zone-form");
+            var name = (f.querySelector('[name="name"]').value || "").trim();
+            if (!name) {
+              tpModal.toast && tpModal.toast("El nombre es obligatorio.", "warning");
+              return false;
+            }
+            var payload = Object.assign(
+              {
+                name: name,
+                polygon_color: f.querySelector('[name="polygon_color"]').value,
+                group_id: parseInt(f.querySelector('[name="group_id"]').value, 10) || 0,
+                active: 1,
+              },
+              geometry,
+            );
+            if (geometry.type === "circle") {
+              var rr = parseFloat(f.querySelector('[name="radius"]').value);
+              if (rr > 0) payload.radius = rr;
+            }
+            var sl = f.querySelector('[name="speed_limit"]').value;
+            if (sl !== "") payload.speed_limit = parseFloat(sl);
+            btn.disabled = true;
+            tpModal
+              .fetchJSON(ZONES_BASE, { method: "POST", json: payload })
+              .then(function (r) {
+                btn.disabled = false;
+                if (r && r.ok && r.data && r.data.ok) {
+                  tpModal.toast && tpModal.toast("Geocerca creada.", "success");
+                  tpModal.close(dialog);
+                  refreshZones();
+                  ensureZonesVisible();
+                } else {
+                  tpModal.toast &&
+                    tpModal.toast(
+                      (r.data && r.data.message) || "No se pudo crear.",
+                      "error",
+                    );
+                }
+              })
+              .catch(function () {
+                btn.disabled = false;
+                tpModal.toast && tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+
+  function startZoneCreate() {
+    if (!window.tpModal) return;
+    var dlg = tpModal.open({
+      title: "Nueva geocerca",
+      size: "sm",
+      body:
+        '<p style="margin:0 0 12px;font-size:14px;">¿Qué tipo de geocerca quieres dibujar?</p>' +
+        '<div class="tp-row" style="gap:8px;">' +
+        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="polygon">Polígono</button>' +
+        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="circle">Círculo</button>' +
+        "</div>",
+      buttons: [{ label: "Cancelar", variant: "ghost" }],
+    });
+    if (dlg)
+      dlg.querySelectorAll("[data-zc]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var t = b.getAttribute("data-zc");
+          tpModal.close(dlg);
+          startZoneDraw(t);
+        });
+      });
   }
 
   // Conmutador de paneles del sidebar (Objetos / Geocercas / POIs) sobre el mismo mapa.

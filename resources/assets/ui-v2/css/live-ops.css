@@ -144,6 +144,27 @@
   margin-top: 2px;
 }
 
+/* Barra flotante mientras se dibuja una geocerca */
+.tp-zonedraw-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #e7e9ee);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.18));
+}
+.tp-zonedraw-bar__hint {
+  font-size: 12px;
+  color: var(--fg-secondary, #5a6172);
+}
+
 /* Muestra de color de geocerca en su fila */
 .tp-zone-row__swatch {
   flex: 0 0 auto;
