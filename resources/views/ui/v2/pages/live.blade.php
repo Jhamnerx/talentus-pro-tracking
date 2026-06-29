@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=26">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=27">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -439,7 +439,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-tails"
-                    data-toggle="tails" title="Mostrar estela de recorrido" aria-label="Mostrar estela"
+                    data-toggle="tails" title="Mostrar cola de recorrido" aria-label="Mostrar cola de recorrido"
                     aria-pressed="false" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -606,7 +606,8 @@
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=3"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=4"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=1"></script>
     <script>

@@ -37,40 +37,23 @@
   // -----------------------------------------------------------
   // Capas base (Leaflet). OSM + Google (tiles ≠) + proveedores con key.
   // -----------------------------------------------------------
+  // Capas base: catálogo completo (todos los proveedores) vía tp-basemaps.js,
+  // construido desde las capas disponibles del usuario (MAP_CFG.available).
   function buildBaseLayers() {
-    var L_ = window.L;
-    var layers = {};
-    layers["osm"] = {
-      name: "OpenStreetMap",
-      layer: L_.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap",
-      }),
-    };
-    var g = function (lyrs, name) {
-      return {
-        name: name,
-        layer: L_.tileLayer(
-          "https://mt{s}.google.com/vt/lyrs=" + lyrs + "&x={x}&y={y}&z={z}",
-          { subdomains: ["0", "1", "2", "3"], maxZoom: 21, attribution: "Google" },
-        ),
-      };
-    };
-    layers["g_roadmap"] = g("m", "Google Normal");
-    layers["g_hybrid"] = g("y", "Google Híbrido");
-    layers["g_satellite"] = g("s", "Google Satélite");
-    layers["g_terrain"] = g("p", "Google Terreno");
-    if (KEYS.mapbox_key) {
-      layers["mapbox"] = {
-        name: "Mapbox",
-        layer: L_.tileLayer(
-          "https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=" +
-            KEYS.mapbox_key,
-          { maxZoom: 22, tileSize: 512, zoomOffset: -1, attribution: "Mapbox" },
-        ),
-      };
+    if (window.tpBasemaps && window.tpBasemaps.build) {
+      var bm = window.tpBasemaps.build(MAP_CFG);
+      if (bm && Object.keys(bm).length) return bm;
     }
-    return layers;
+    // Respaldo mínimo si no cargó el módulo.
+    return {
+      "2": {
+        name: "OpenStreetMap",
+        layer: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap",
+        }),
+      },
+    };
   }
 
   var state = {
@@ -100,6 +83,7 @@
     trafficLayer: null,
     clusterGroup: null,
     routesLayer: null,
+    tailLayer: null,
   };
   try {
     var sg = localStorage.getItem("tp_live_grouped");
@@ -162,12 +146,10 @@
     });
     state.baseLayers = buildBaseLayers();
     var firstId =
-      MAP_CFG.mapId && state.baseLayers[MAP_CFG.mapId]
-        ? MAP_CFG.mapId
-        : state.baseLayers["g_roadmap"]
-          ? "g_roadmap"
-          : "osm";
-    setBaseLayer(firstId);
+      window.tpBasemaps && window.tpBasemaps.defaultId
+        ? window.tpBasemaps.defaultId(state.baseLayers, MAP_CFG)
+        : Object.keys(state.baseLayers)[0];
+    if (firstId) setBaseLayer(firstId);
     state.deviceLayer = L.layerGroup().addTo(state.map);
     buildBaseMenu();
   }
@@ -248,6 +230,9 @@
     h = Math.round(h * scale);
     var rot = rotate ? "transform:rotate(" + (parseFloat(d.course) || 0) + "deg);" : "";
     var html =
+      '<span class="tp-lmarker__name">' +
+      esc(d.name || "") +
+      "</span>" +
       '<img src="' +
       src +
       '" width="' +
@@ -294,6 +279,7 @@
         delete state.markers[id];
       }
     });
+    if (state.toggles.tails) renderTails();
   }
 
   // Contenedor activo de marcadores: cluster o layerGroup normal.
@@ -377,8 +363,41 @@
     } else if (key === "names") {
       m.getContainer().classList.toggle("tp-show-names", on);
     } else if (key === "tails") {
-      window.tpModal && tpModal.toast && tpModal.toast("Estela: disponible próximamente.", "info");
+      renderTails();
     }
+  }
+
+  // Cola de recorrido (tail): polilínea de las últimas posiciones de cada device.
+  function renderTails() {
+    var m = state.map;
+    if (!state.tailLayer) state.tailLayer = L.layerGroup();
+    if (!state.toggles.tails) {
+      if (m.hasLayer(state.tailLayer)) m.removeLayer(state.tailLayer);
+      return;
+    }
+    if (!m.hasLayer(state.tailLayer)) state.tailLayer.addTo(m);
+    state.tailLayer.clearLayers();
+    state.filtered.forEach(function (d) {
+      if (d.active === false) return;
+      var tail = d.tail;
+      if (typeof tail === "string") {
+        try {
+          tail = JSON.parse(tail);
+        } catch (e) {
+          tail = null;
+        }
+      }
+      if (!tail || tail.length < 2) return;
+      var pts = tail
+        .map(function (p) {
+          return [parseFloat(p.lat), parseFloat(p.lng)];
+        })
+        .filter(function (x) {
+          return !isNaN(x[0]) && !isNaN(x[1]);
+        });
+      if (pts.length < 2) return;
+      L.polyline(pts, { color: d.tail_color || "#1e88e5", weight: 2, opacity: 0.8 }).addTo(state.tailLayer);
+    });
   }
 
   // Rutas: capa de polilíneas desde el endpoint de rutas (lectura).
@@ -1038,13 +1057,35 @@
     var geo = document.getElementById("tp-live-geolocate");
     if (geo)
       geo.addEventListener("click", function () {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition(function (p) {
-          var ll = [p.coords.latitude, p.coords.longitude];
-          if (state.geoMarker) state.geoMarker.setLatLng(ll);
-          else state.geoMarker = L.circleMarker(ll, { radius: 7, color: "#2e63d9", fillColor: "#2e63d9", fillOpacity: 0.6 }).addTo(state.map);
-          state.map.setView(ll, 15);
-        });
+        if (!navigator.geolocation) {
+          window.tpModal && tpModal.toast && tpModal.toast("Tu navegador no soporta geolocalización.", "warning");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          function (p) {
+            var ll = [p.coords.latitude, p.coords.longitude];
+            if (state.geoMarker) state.geoMarker.setLatLng(ll);
+            else
+              state.geoMarker = L.circleMarker(ll, {
+                radius: 7,
+                color: "#2e63d9",
+                fillColor: "#2e63d9",
+                fillOpacity: 0.6,
+              }).addTo(state.map);
+            state.map.setView(ll, 15);
+          },
+          function (err) {
+            // En orígenes HTTP (no HTTPS) el navegador bloquea la geolocalización.
+            var msg =
+              err && err.code === 1
+                ? location.protocol !== "https:"
+                  ? "La ubicación requiere HTTPS (el sitio está en HTTP)."
+                  : "Permiso de ubicación denegado."
+                : "No se pudo obtener tu ubicación.";
+            window.tpModal && tpModal.toast && tpModal.toast(msg, "warning");
+          },
+          { enableHighAccuracy: true, timeout: 8000 },
+        );
       });
     // Auto-seguir flota
     var af = document.getElementById("tp-live-autofollow");
