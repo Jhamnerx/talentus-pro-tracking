@@ -65,8 +65,9 @@ class MapLayersController extends BaseController
      */
     public function poiForm(Request $request, $id = null): JsonResponse
     {
-        $action = $id ? 'edit' : 'store';
-        if (! $this->user->perm('poi', $action === 'store' ? 'store' : 'edit')) {
+        // 'edit' es el modo válido (perm() solo entiende view|edit|remove);
+        // crear y editar POIs requieren permiso de edición.
+        if (! $this->user->perm('poi', 'edit')) {
             return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
         }
 

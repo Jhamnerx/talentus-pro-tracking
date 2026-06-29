@@ -2638,6 +2638,37 @@
       switchPanel("pois");
   } catch (e) {}
 
+  // El rail navega con <a href> (recarga el mapa). Estando YA en el workspace
+  // de Live, interceptamos "Live Ops" y "POIs" para cambiar de panel SIN
+  // recargar (el mapa persiste, como el legacy). Desde otra página sí navega.
+  Array.prototype.forEach.call(
+    document.querySelectorAll(".tp-rail a[href]"),
+    function (a) {
+      var href = a.getAttribute("href") || "";
+      var toPois = href.indexOf("panel=pois") !== -1;
+      var toLive = !toPois && /\/ui\/v2\/live(\?|$)/.test(href);
+      if (!toPois && !toLive) return;
+      a.addEventListener("click", function (e) {
+        // Solo interceptar con clic normal (no nueva pestaña).
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+        e.preventDefault();
+        switchPanel(toPois ? "pois" : "objects");
+        try {
+          var url = toPois ? "/ui/v2/live?panel=pois" : "/ui/v2/live";
+          history.replaceState(null, "", url);
+        } catch (err) {}
+        // Reflejar el ítem activo del rail (usa aria-current="page").
+        Array.prototype.forEach.call(
+          document.querySelectorAll(".tp-rail__item[aria-current]"),
+          function (it) {
+            it.removeAttribute("aria-current");
+          },
+        );
+        a.setAttribute("aria-current", "page");
+      });
+    },
+  );
+
   // Layer toggle buttons (cluster, devices, geofences, poi, routes, names, tails, traffic)
   Array.prototype.forEach.call(
     document.querySelectorAll(".tp-live__toggle[data-toggle]"),

@@ -557,7 +557,7 @@
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=23"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-ops.js') }}?v=24"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
