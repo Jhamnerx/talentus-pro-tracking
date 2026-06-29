@@ -4,8 +4,8 @@
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=7">
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=8">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -118,8 +118,7 @@
 @endsection
 
 @push('scripts')
-    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-map-providers.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-map-shared.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=9"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=10"></script>
 @endpush
