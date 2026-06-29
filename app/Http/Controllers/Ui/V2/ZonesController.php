@@ -24,16 +24,9 @@ class ZonesController extends BaseController
      */
     public function index(Request $request)
     {
-        if (! $this->user->perm('geofences', 'view')) {
-            abort(403, 'No tienes permiso para ver geocercas.');
-        }
-
-        return View::make('ui.v2.pages.zones', [
-            'pageTitle' => 'Zones & Routes',
-            'mapConfig' => $this->buildMapConfig(),
-            'canEdit'   => $this->user->perm('geofences', 'edit'),
-            'canCreate' => $this->user->perm('geofences', 'edit'),
-        ]);
+        // Las geocercas ahora viven como panel del workspace Live (un solo mapa
+        // Leaflet). La página dedicada queda deprecada → redirige al panel.
+        return redirect('/ui/v2/live?panel=zones');
     }
 
     /**
