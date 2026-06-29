@@ -463,18 +463,32 @@
   }
 
   // ----- Dibujo / edición de forma con leaflet-draw -----
-  function showBar(isEdit) {
+  function showDrawBar(mode) {
     hideBar();
     S.bar = document.createElement("div");
     S.bar.className = "tp-zonedraw-bar";
+    var hint = "",
+      mid = "";
+    if (mode === "edit") {
+      hint = "Arrastra los vértices o el punto medio para ajustar, luego «Guardar».";
+      mid = '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-save>Guardar</button>';
+    } else if (mode === "circle") {
+      hint = "Clic y arrastra en el mapa para definir el círculo.";
+    } else {
+      hint = "Clic para añadir vértices · doble clic o «Terminar».";
+      mid = '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-finish>Terminar</button>';
+    }
     S.bar.innerHTML =
-      '<span class="tp-zonedraw-bar__hint">Dibuja en el mapa · arrastra los vértices o el punto medio para ajustar.</span>' +
-      '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-save>' +
-      (isEdit ? "Guardar" : "Continuar") +
-      "</button><button type=\"button\" class=\"tp-btn tp-btn--sm tp-btn--ghost\" data-zd-cancel>Cancelar</button>";
-    var area = root.querySelector(".tp-live__map-area") || document.body;
-    area.appendChild(S.bar);
-    S.bar.querySelector("[data-zd-save]").addEventListener("click", finishDraw);
+      '<span class="tp-zonedraw-bar__hint">' +
+      hint +
+      "</span>" +
+      mid +
+      '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zd-cancel>Cancelar</button>';
+    (root.querySelector(".tp-live__map-area") || document.body).appendChild(S.bar);
+    var save = S.bar.querySelector("[data-zd-save]");
+    if (save) save.addEventListener("click", finishEditShape);
+    var fin = S.bar.querySelector("[data-zd-finish]");
+    if (fin) fin.addEventListener("click", finishPolygon);
     S.bar.querySelector("[data-zd-cancel]").addEventListener("click", cancelDraw);
   }
   function hideBar() {
@@ -501,36 +515,6 @@
     }
     S.draft = null;
   }
-  function startCreate(type) {
-    var m = map();
-    if (!m) return;
-    disposeDraft();
-    S.editId = null;
-    S.editName = null;
-    var shape = { color: "#1e88e5", weight: 3, fill: true, fillOpacity: 0.3, fillColor: "#1e88e5" };
-    S.drawer =
-      type === "circle"
-        ? new L.Draw.Circle(m, { shapeOptions: shape, metric: true })
-        : new L.Draw.Polygon(m, { shapeOptions: shape, allowIntersection: false, showArea: false });
-    S.drawer.enable();
-    showBar(false);
-  }
-  function startEditShape(g) {
-    var m = map();
-    if (!m) return;
-    disposeDraft();
-    S.editId = g.id;
-    S.editName = g.name;
-    var layer = buildLayerFor(g);
-    if (!layer) return;
-    S.draft = layer.addTo(m);
-    if (layer.editing) {
-      try {
-        layer.editing.enable();
-      } catch (e) {}
-    }
-    showBar(true);
-  }
   function geometryFromLayer(layer) {
     if (layer instanceof L.Circle) {
       var c = layer.getLatLng();
@@ -546,81 +530,102 @@
       }),
     };
   }
-  function finishDraw() {
-    if (!S.draft) {
-      window.tpModal && tpModal.toast && tpModal.toast("Dibuja la geocerca en el mapa.", "warning");
-      return;
+  // Termina un polígono en curso (equivale a doble clic en leaflet-draw).
+  function finishPolygon() {
+    if (S.drawer && S.drawer._finishShape) {
+      try {
+        S.drawer._finishShape();
+        return;
+      } catch (e) {}
     }
-    var geometry = geometryFromLayer(S.draft);
-    if (geometry.type === "polygon" && geometry.polygon.length < 3) {
-      window.tpModal && tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
-      return;
-    }
-    var editId = S.editId,
-      editName = S.editName;
+    window.tpModal &&
+      tpModal.toast &&
+      tpModal.toast("Doble clic en el mapa para terminar el polígono.", "info");
+  }
+  // CREAR: dibujar con leaflet-draw; al terminar abre el modal de datos.
+  function startCreate(type) {
     var m = map();
-    // soltar el draft sin dispararlo de nuevo
-    if (S.draft && S.draft.editing && S.draft.editing.disable) {
-      try { S.draft.editing.disable(); } catch (e) {}
-    }
-    if (S.draft && m) {
-      try { m.removeLayer(S.draft); } catch (e) {}
-    }
-    S.draft = null;
-    if (S.drawer) {
-      try { S.drawer.disable(); } catch (e) {}
-      S.drawer = null;
-    }
-    hideBar();
-    if (editId) {
-      var payload = Object.assign({ name: editName }, geometry);
-      tpModal
-        .fetchJSON(BASE + "/" + editId, { method: "PUT", json: payload })
-        .then(function (r) {
-          if (r && r.ok && r.data && r.data.ok) {
-            tpModal.toast && tpModal.toast("Forma actualizada.", "success");
-            load(true);
-          } else tpModal.toast && tpModal.toast("No se pudo actualizar la forma.", "error");
-        });
-    } else {
-      openCreateModal(geometry);
-    }
-  }
-  function cancelDraw() {
+    if (!m) return;
     disposeDraft();
-    hideBar();
+    S.editId = null;
+    S.editName = null;
+    var shape = { color: "#1e88e5", weight: 3, fill: true, fillOpacity: 0.3, fillColor: "#1e88e5" };
+    S.drawer =
+      type === "circle"
+        ? new L.Draw.Circle(m, { shapeOptions: shape, metric: true })
+        : new L.Draw.Polygon(m, { shapeOptions: shape, allowIntersection: false, showArea: false });
+    S.drawer.enable();
+    showDrawBar(type === "circle" ? "circle" : "polygon");
   }
-
   function bindDrawCreated() {
     var m = map();
     if (!m || m.__zoneDrawBound) return;
     m.__zoneDrawBound = true;
     m.on(L.Draw.Event.CREATED, function (e) {
+      if (S.editId) return; // la edición de forma no usa draw:created
       var t = e.layerType;
       if (t !== "polygon" && t !== "circle") return;
-      disposeDraftKeepFlags();
-      S.draft = e.layer;
-      m.addLayer(S.draft);
-      if (S.draft.editing) {
+      var geometry = geometryFromLayer(e.layer);
+      try {
+        m.removeLayer(e.layer);
+      } catch (err) {}
+      if (S.drawer) {
         try {
-          S.draft.editing.enable();
+          S.drawer.disable();
         } catch (err) {}
+        S.drawer = null;
       }
-      showBar(false);
+      hideBar();
+      if (geometry.type === "polygon" && geometry.polygon.length < 3) {
+        tpModal && tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
+        return;
+      }
+      openCreateModal(geometry); // ← formulario: nombre, color, grupo, velocidad, límites
     });
   }
-  // dispose draft layer pero conservar editId/editName y NO matar drawer reciente
-  function disposeDraftKeepFlags() {
+  // EDITAR FORMA de una geocerca existente (vértices + punto medio).
+  function startEditShape(g) {
     var m = map();
-    if (S.draft && m) {
+    if (!m) return;
+    disposeDraft();
+    S.editId = g.id;
+    S.editName = g.name;
+    var layer = buildLayerFor(g);
+    if (!layer) return;
+    S.draft = layer.addTo(m);
+    if (layer.editing) {
       try {
-        if (S.draft.editing && S.draft.editing.disable) S.draft.editing.disable();
-      } catch (e) {}
-      try {
-        m.removeLayer(S.draft);
+        layer.editing.enable();
       } catch (e) {}
     }
-    S.draft = null;
+    showDrawBar("edit");
+  }
+  function finishEditShape() {
+    if (!S.draft) return;
+    var geometry = geometryFromLayer(S.draft);
+    if (geometry.type === "polygon" && geometry.polygon.length < 3) {
+      tpModal && tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
+      return;
+    }
+    var id = S.editId,
+      name = S.editName;
+    disposeDraft();
+    hideBar();
+    S.editId = null;
+    S.editName = null;
+    var payload = Object.assign({ name: name }, geometry);
+    tpModal.fetchJSON(BASE + "/" + id, { method: "PUT", json: payload }).then(function (r) {
+      if (r && r.ok && r.data && r.data.ok) {
+        tpModal.toast && tpModal.toast("Forma actualizada.", "success");
+        load(true);
+      } else tpModal.toast && tpModal.toast("No se pudo actualizar la forma.", "error");
+    });
+  }
+  function cancelDraw() {
+    disposeDraft();
+    hideBar();
+    S.editId = null;
+    S.editName = null;
   }
 
   function startCreateChooser() {
