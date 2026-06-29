@@ -731,6 +731,10 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  /* Crea contexto de apilamiento propio: confina los panes de Leaflet
+     (z-index hasta ~700) para que los controles flotantes (z-index 4-8)
+     no queden ocultos detrás del mapa. */
+  z-index: 0;
 }
 
 /* MapLibre overrides for theme blending */

@@ -99,7 +99,8 @@
   function renderLayers() {
     var m = map();
     if (!m) return;
-    if (!S.layer) S.layer = L.layerGroup().addTo(m);
+    if (!S.layer) S.layer = L.layerGroup();
+    if (!m.hasLayer(S.layer)) S.layer.addTo(m);
     S.layer.clearLayers();
     S.layersById = {};
     S.filtered().forEach(function (g) {
@@ -727,6 +728,18 @@
       wire();
       bindDrawCreated();
       load(false);
+    },
+    // Toggle de la capa de geocercas desde el control flotante del mapa.
+    setVisible: function (on) {
+      var m = map();
+      if (on) {
+        wire();
+        bindDrawCreated();
+        if (S.loaded) renderLayers();
+        else load(true);
+      } else if (m && S.layer) {
+        m.removeLayer(S.layer);
+      }
     },
   };
 

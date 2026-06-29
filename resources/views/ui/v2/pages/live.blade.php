@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=23">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=24">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -613,8 +613,8 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=2"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=2"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

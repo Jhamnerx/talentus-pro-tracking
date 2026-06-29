@@ -94,6 +94,10 @@
     pollHandle: null,
     bootstrapped: false,
     popup: null,
+    toggles: {},
+    autoFit: false,
+    geoMarker: null,
+    trafficLayer: null,
   };
   try {
     var sg = localStorage.getItem("tp_live_grouped");
@@ -299,6 +303,100 @@
     if (pts.length) state.map.fitBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom: 16 });
   }
 
+  // Aplica un toggle de capa del control flotante.
+  function applyToggle(key) {
+    var on = !!state.toggles[key];
+    var m = state.map;
+    if (key === "devices") {
+      if (on) state.deviceLayer.addTo(m);
+      else m.removeLayer(state.deviceLayer);
+    } else if (key === "geofences") {
+      if (window.tpLiveZones && tpLiveZones.setVisible) tpLiveZones.setVisible(on);
+    } else if (key === "poi") {
+      if (window.tpLivePois && tpLivePois.setVisible) tpLivePois.setVisible(on);
+    } else if (key === "traffic") {
+      if (on) {
+        if (!state.trafficLayer)
+          state.trafficLayer = L.tileLayer(
+            "https://mt{s}.google.com/vt/lyrs=h,traffic&x={x}&y={y}&z={z}",
+            { subdomains: ["0", "1", "2", "3"], opacity: 0.7 },
+          );
+        state.trafficLayer.addTo(m);
+      } else if (state.trafficLayer) {
+        m.removeLayer(state.trafficLayer);
+      }
+    } else if (key === "names") {
+      m.getContainer().classList.toggle("tp-show-names", on);
+    }
+    // cluster / routes / tails: pendientes de portar (Paso 4).
+  }
+
+  // Modal de configuración de widgets (reusa el endpoint nativo v2).
+  function openWidgetsConfig(configUrl, saveUrl) {
+    if (!configUrl || !window.tpModal) return;
+    tpModal.fetchJSON(configUrl, { method: "GET" }).then(function (res) {
+      if (!res || !res.ok || !res.data || !res.data.ok) {
+        tpModal.toast && tpModal.toast("No se pudo cargar la configuración.", "error");
+        return;
+      }
+      var dlg = tpModal.open({
+        title: "Widgets",
+        size: "lg",
+        body: res.data.html,
+        buttons: [
+          { label: "Cancelar", variant: "ghost" },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (dialog, btn) {
+              var form = dialog.querySelector("#tp-widgets-config-form");
+              if (!form) return false;
+              var checked = [];
+              form.querySelectorAll('input[name="widgets[]"]:checked').forEach(function (i) {
+                checked.push(i.value);
+              });
+              var payload = {
+                default: form.querySelector('[name="default"]').checked ? 1 : 0,
+                status: form.querySelector('[name="status"]').checked ? 1 : 0,
+                list: checked,
+              };
+              btn.disabled = true;
+              tpModal
+                .fetchJSON(saveUrl, { method: "POST", json: payload })
+                .then(function (r) {
+                  btn.disabled = false;
+                  if (r && r.ok && r.data && r.data.ok) {
+                    tpModal.toast && tpModal.toast("Widgets actualizados.", "success");
+                    tpModal.close(dialog);
+                    if (state.selectedId) loadDrawerWidgets(state.selectedId);
+                  } else tpModal.toast && tpModal.toast("No se pudo guardar.", "error");
+                })
+                .catch(function () {
+                  btn.disabled = false;
+                  tpModal.toast && tpModal.toast("Error de red.", "error");
+                });
+              return false;
+            },
+          },
+        ],
+      });
+      var def = dlg.querySelector('[name="default"]');
+      var fields = dlg.querySelector("#tp-widgets-config-fields");
+      function syncDef() {
+        if (!fields) return;
+        fields.style.opacity = def && def.checked ? "0.45" : "";
+        fields.querySelectorAll("input").forEach(function (i) {
+          i.disabled = def && def.checked;
+        });
+      }
+      if (def) {
+        def.addEventListener("change", syncDef);
+        syncDef();
+      }
+    });
+  }
+
   // -----------------------------------------------------------
   // Popup de device (conciso, con dirección perezosa)
   // -----------------------------------------------------------
@@ -383,16 +481,51 @@
   function selectDevice(id) {
     state.selectedId = id;
     var d = state.index[id];
-    if (d && d.lat != null) state.map.setView([parseFloat(d.lat), parseFloat(d.lng)], Math.max(state.map.getZoom(), 14));
+    if (d && d.lat != null)
+      state.map.setView([parseFloat(d.lat), parseFloat(d.lng)], Math.max(state.map.getZoom(), 14));
     root.setAttribute("data-drawer-open", "true");
     var drawer = document.getElementById("tp-live-drawer");
     if (drawer) drawer.setAttribute("aria-hidden", "false");
+    if (d) fillDrawer(d);
     loadDrawerWidgets(id);
   }
+  function setText(elId, val) {
+    var el = document.getElementById(elId);
+    if (el) el.textContent = val == null || val === "" ? "—" : val;
+  }
+  function fillDrawer(d) {
+    setText("tp-drawer-name", d.name || "#" + d.id);
+    setText("tp-drawer-plate", d.plate_number || d.imei || "—");
+    var dot = document.getElementById("tp-drawer-dot");
+    if (dot) {
+      var st = classify(d);
+      dot.className = "tp-dot tp-dot--" + (st === "moving" ? "moving" : st === "idle" ? "idle" : "offline");
+    }
+    setText("tp-drawer-speed", d.speed_text ? d.speed_text.replace(/[^\d.,]/g, "") : Math.round(parseFloat(d.speed) || 0));
+    setText("tp-drawer-course", d.course != null ? Math.round(d.course) : "—");
+    setText("tp-drawer-stop", d.stop_duration_text || "—");
+    setText("tp-drawer-distance", d.total_distance != null ? d.total_distance : "—");
+    setText("tp-drawer-lastseen", d.time || "—");
+    setText("tp-drawer-coords", d.lat != null ? parseFloat(d.lat).toFixed(5) + ", " + parseFloat(d.lng).toFixed(5) : "—");
+    setText("tp-drawer-altitude", d.altitude != null ? d.altitude + " m" : "—");
+    setText(
+      "tp-drawer-engine",
+      d.engine_status === true || d.engine_status === "on" ? "Encendido" : d.engine_status != null ? "Apagado" : "—",
+    );
+    setText("tp-drawer-imei", d.imei || "—");
+    setText("tp-drawer-model", d.device_model || "—");
+    setText("tp-drawer-sim", d.sim_number || "—");
+    var sr = document.getElementById("tp-drawer-status-row");
+    if (sr) {
+      var lbl = STATUS_LABELS[d.online] || d.online || "—";
+      sr.innerHTML = '<span class="tp-chip" data-status="' + classify(d) + '">' + esc(lbl) + "</span>";
+    }
+  }
+  // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
   function loadDrawerWidgets(id) {
     var box = document.getElementById("tp-drawer-widgets");
-    if (!box) return;
-    box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">Cargando…</div>';
+    var bottom = document.getElementById("tp-live-bottombar-cards");
+    if (box) box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">Cargando…</div>';
     var base = CFG.devicesUrl || "/ui/v2/api/devices";
     fetch(base + "/" + id + "/widgets", {
       headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -402,7 +535,29 @@
         return r.json();
       })
       .then(function (res) {
-        if (state.selectedId == id && res && res.ok) box.innerHTML = res.html || "";
+        if (state.selectedId != id) return;
+        var sideHtml = "",
+          bottomHtml = "";
+        if (res && res.ok && res.html) {
+          var tmp = document.createElement("div");
+          tmp.innerHTML = res.html;
+          Array.prototype.forEach.call(tmp.querySelectorAll(".tp-dw--side"), function (n) {
+            sideHtml += n.outerHTML;
+          });
+          Array.prototype.forEach.call(tmp.querySelectorAll(".tp-dw--bottom"), function (n) {
+            bottomHtml += n.outerHTML;
+          });
+          // Si la blade no agrupa, todo va al drawer.
+          if (!sideHtml && !bottomHtml) sideHtml = res.html;
+        }
+        if (box) box.innerHTML = sideHtml || "";
+        if (bottom) bottom.innerHTML = bottomHtml || "";
+        if (bottomHtml.trim()) {
+          root.setAttribute("data-bottombar-open", "true");
+          root.removeAttribute("data-bottombar-collapsed");
+        } else {
+          root.removeAttribute("data-bottombar-open");
+        }
       })
       .catch(function () {});
   }
@@ -796,11 +951,71 @@
       if (menu) menu.hidden = true;
     });
 
+    // Geolocalización
+    var geo = document.getElementById("tp-live-geolocate");
+    if (geo)
+      geo.addEventListener("click", function () {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(function (p) {
+          var ll = [p.coords.latitude, p.coords.longitude];
+          if (state.geoMarker) state.geoMarker.setLatLng(ll);
+          else state.geoMarker = L.circleMarker(ll, { radius: 7, color: "#2e63d9", fillColor: "#2e63d9", fillOpacity: 0.6 }).addTo(state.map);
+          state.map.setView(ll, 15);
+        });
+      });
+    // Auto-seguir flota
+    var af = document.getElementById("tp-live-autofollow");
+    if (af)
+      af.addEventListener("click", function () {
+        state.autoFit = !state.autoFit;
+        af.setAttribute("aria-pressed", state.autoFit ? "true" : "false");
+        if (state.autoFit) fitToFleet();
+      });
+
+    // Toggles de capa
+    Array.prototype.forEach.call(root.querySelectorAll(".tp-live__toggle[data-toggle]"), function (btn) {
+      var key = btn.getAttribute("data-toggle");
+      state.toggles[key] = btn.getAttribute("aria-pressed") === "true";
+      btn.addEventListener("click", function () {
+        state.toggles[key] = !state.toggles[key];
+        btn.setAttribute("aria-pressed", state.toggles[key] ? "true" : "false");
+        applyToggle(key);
+      });
+    });
+    // Estado inicial
+    applyToggle("devices");
+
+    // Bottombar (widgets inferiores)
+    var bbCollapse = document.getElementById("tp-bottombar-collapse");
+    if (bbCollapse)
+      bbCollapse.addEventListener("click", function () {
+        root.toggleAttribute("data-bottombar-collapsed");
+      });
+    var bbExpand = document.getElementById("tp-bottombar-expand");
+    if (bbExpand)
+      bbExpand.addEventListener("click", function () {
+        root.setAttribute("data-bottombar-open", "true");
+        root.removeAttribute("data-bottombar-collapsed");
+      });
+    var bbConfig = document.getElementById("tp-bottombar-config");
+    if (bbConfig)
+      bbConfig.addEventListener("click", function () {
+        openWidgetsConfig(bbConfig.getAttribute("data-config-url"), bbConfig.getAttribute("data-save-url"));
+      });
+
+    // "Centrar en mapa" del drawer
+    var center = document.getElementById("tp-drawer-center");
+    if (center)
+      center.addEventListener("click", function () {
+        if (state.selectedId) selectDevice(state.selectedId);
+      });
+
     // Drawer close
     var dc = document.getElementById("tp-drawer-close");
     if (dc)
       dc.addEventListener("click", function () {
         root.removeAttribute("data-drawer-open");
+        root.removeAttribute("data-bottombar-open");
         state.selectedId = null;
       });
 
