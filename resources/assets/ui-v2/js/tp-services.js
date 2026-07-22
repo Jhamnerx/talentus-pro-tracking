@@ -84,6 +84,22 @@
     });
   }
 
+  // Posiciona el menú como "portal" fixed pegado al botón: ningún overflow
+  // (tabla/card con pocas filas) lo recorta; abre hacia arriba si no cabe.
+  function positionKebabMenu(btn, menu) {
+    var r = btn.getBoundingClientRect();
+    menu.style.position = "fixed";
+    menu.style.right = "auto";
+    var w = menu.offsetWidth;
+    var h = menu.offsetHeight;
+    menu.style.left = Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + "px";
+    if (r.bottom + 4 + h > window.innerHeight - 8 && r.top - h - 4 > 8) {
+      menu.style.top = r.top - h - 4 + "px";
+    } else {
+      menu.style.top = r.bottom + 4 + "px";
+    }
+  }
+
   // Abrir/cerrar kebabs (delegado global; las ACCIONES las maneja cada consumidor)
   document.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-svc-kebab]");
@@ -91,12 +107,26 @@
       var menu = btn.parentNode.querySelector(".tp-svc-kebab__menu");
       var wasOpen = menu && !menu.hasAttribute("hidden");
       closeKebabs();
-      if (menu && !wasOpen) menu.removeAttribute("hidden");
+      if (menu && !wasOpen) {
+        menu.removeAttribute("hidden");
+        positionKebabMenu(btn, menu);
+      }
       e.stopPropagation();
       return;
     }
     closeKebabs();
   });
+
+  // El menú es fixed: al scrollear cualquier contenedor se cierra (si no,
+  // quedaría flotando desanclado del botón).
+  window.addEventListener(
+    "scroll",
+    function (e) {
+      if (e.target && e.target.closest && e.target.closest(".tp-svc-kebab__menu")) return;
+      closeKebabs();
+    },
+    true,
+  );
 
   /** Umbrales de la barra de progreso (idénticos al /maintenance legacy). */
   function barClass(pct) {

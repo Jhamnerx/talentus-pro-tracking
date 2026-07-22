@@ -75,6 +75,6 @@
 @push('scripts')
     {{-- defer: modal.js (tpModal) se carga con defer en el layout — estos deben
          ejecutarse DESPUÉS (los defer corren en orden de aparición). --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3" defer></script>
     <script src="{{ asset('assets/ui/v2/js/maintenance.js') }}?v=3" defer></script>
 @endpush
