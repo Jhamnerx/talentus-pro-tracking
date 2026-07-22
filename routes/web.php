@@ -1126,6 +1126,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('routes/table', ['as' => 'routes_table', 'uses' => 'Ui\V2\MapLayersController@routesPage']);
     Route::get('commands',     ['as' => 'commands',     'uses' => 'Ui\V2\CommandsController@page']);
     Route::get('sharing',      ['as' => 'sharing',      'uses' => 'Ui\V2\SharingController@page']);
+    Route::get('drivers',      ['as' => 'drivers',      'uses' => 'Ui\V2\DriversController@page']);
     Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
@@ -1237,6 +1238,13 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('sharing',        ['as' => 'api.sharing.store',   'uses' => 'Ui\V2\SharingController@store']);
         Route::put('sharing/{id}',    ['as' => 'api.sharing.update',  'uses' => 'Ui\V2\SharingController@update'])->where('id', '[0-9]+');
         Route::delete('sharing/{id}', ['as' => 'api.sharing.destroy', 'uses' => 'Ui\V2\SharingController@destroy'])->where('id', '[0-9]+');
+
+        // Conductores (CRUD sobre UserDriverModalHelper legacy)
+        Route::get('drivers',         ['as' => 'api.drivers',         'uses' => 'Ui\V2\DriversController@data']);
+        Route::get('drivers/meta',    ['as' => 'api.drivers.meta',    'uses' => 'Ui\V2\DriversController@meta']);
+        Route::post('drivers',        ['as' => 'api.drivers.store',   'uses' => 'Ui\V2\DriversController@store']);
+        Route::put('drivers/{id}',    ['as' => 'api.drivers.update',  'uses' => 'Ui\V2\DriversController@update'])->where('id', '[0-9]+');
+        Route::delete('drivers/{id}', ['as' => 'api.drivers.destroy', 'uses' => 'Ui\V2\DriversController@destroy'])->where('id', '[0-9]+');
 
         // Servicios / Mantenimiento (modales compartidos + página global)
         Route::get('services',              ['as' => 'api.services',          'uses' => 'Ui\V2\ServicesController@data']);

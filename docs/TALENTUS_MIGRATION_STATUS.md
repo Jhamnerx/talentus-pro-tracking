@@ -7,6 +7,17 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 22 jul 2026 (3) — Conductores (UserDrivers) nativo (rama `nuevo-tema`)
+
+**Módulo Conductores migrado** (`/ui/v2/drivers`, rail activo), delegando 100% en `UserDriverModalHelper` legacy (validación `UserDriverFormValidator`, pivot `user_driver_devices` vía `syncLoader`, vehículo actual con `current`+`device_id` → `Device::changeDriver`/`UserDriver::changeDevice`):
+
+- **Backend** `Ui\V2\DriversController`: página + API `ui.v2.api.drivers{,meta,store,update,destroy}`. Lista con búsqueda (`Searchable`: name/rfid/phone/email) y filtro **Con/Sin dispositivos** (whereHas/whereDoesntHave del pivot). El payload manda `devices[]` (ints, regla del validador) **y** la secuencia `selected_devices[]` (`"s;0;"`+`"id;1;<id>"`) que consume el `UserDevicesGroupLoader`.
+- **`tp-drivers.js`**: tabla Nombre|Dispositivo actual|RFID|Teléfono|Email|Descripción|Dispositivos + kebab Editar/Eliminar; modal estilo referencia con **multiselect de chips** (panel portal con buscador, patrón tp-select) para la asignación N:M y **"Establecer como actual"** (checkbox habilitador + select con `tpSelect.refresh`).
+- El modelo de dominio: `user_drivers.device_id` + `devices.current_driver_id` = conductor ACTUAL (también lo setea el RFID de posición en `PositionsWriter::setCurrentDriver`); pivot `user_driver_devices` = asignados. El widget Conductor del drawer ya leía `$device->driver`.
+- Pendiente menor: **registro de actividad** del conductor (modal `activityLog` sobre `user_driver_position_pivot`) y edición inline del RFID en la tabla (paridad `do_update`).
+
+---
+
 ## 🔄 Actualización · 22 jul 2026 (2) — Compartir (Sharing) nativo (rama `nuevo-tema`)
 
 **Módulo Compartir migrado** (links públicos por vehículo), reutilizando la lógica legacy end-to-end (`SharingService` create/update/remove/syncDevices/sendEmail + `SharingFormValidator` escenario `send` + entidad `Sharing` con hash/link):
@@ -306,7 +317,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `Sharing/` (crear + lista + página pública) | ✅ `/ui/v2/sharing` + `tp-sharing.js` (modal referencia + kebab Live); página pública = legacy reutilizada | ✅ (22-jul; falta solo campo SMS) |
 | `Services/` · `Maintenance/` · `DeviceExpenses/` | ✅ `tp-services.js` (modales compartidos form/lista/eliminar) + página `/ui/v2/maintenance` + widget Live cableado | ⚠️ Gastos (`DeviceExpenses`) y Checklists sin migrar |
 | `Tasks/` · `TaskSets/` · `Checklist/` · `ChecklistTemplates/` | stub | ❌ |
-| `UserDrivers/` (conductores) | widget Conductor (lectura) | ❌ CRUD + asignación |
+| `UserDrivers/` (conductores) | ✅ `/ui/v2/drivers` + `tp-drivers.js` (CRUD + pivot devices + vehículo actual) | ✅ (22-jul; falta activity log + RFID inline) |
 | `Chat/` | stub | ❌ |
 | `CallAction/` | stub | ❌ |
 | `DeviceMedia/` · `DeviceVideo/` · `Video/` · `MediaCategories/` | widget Cámara (lectura) + links video legacy | ❌ galería/live/playback nativos |
