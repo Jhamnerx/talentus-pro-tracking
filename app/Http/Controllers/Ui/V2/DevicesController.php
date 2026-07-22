@@ -230,11 +230,12 @@ class DevicesController extends BaseController
                 $data = $helper->createData();
             }
 
-            // Catálogo de tipos de gasto (para el form nativo del tab Gastos)
+            // Catálogo de tipos de gasto (para el form nativo del tab Gastos).
+            // La columna es `name` (el legacy hace pluck('name','id')).
             $data['expenses_types_list'] = function_exists('expensesTypesExist') && expensesTypesExist()
-                ? \Tobuli\Entities\DeviceExpensesType::orderBy('title')->get()
+                ? \Tobuli\Entities\DeviceExpensesType::orderBy('name')->get()
                     ->map(function ($t) {
-                        return ['id' => (int) $t->id, 'title' => (string) $t->title];
+                        return ['id' => (int) $t->id, 'title' => (string) $t->name];
                     })
                     ->all()
                 : [];
