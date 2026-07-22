@@ -153,12 +153,22 @@
 
     var panel = document.createElement("div");
     panel.className =
-      "tp-dd__panel fixed z-[5000] rounded-xl w-max max-w-[20rem] " +
+      "tp-dd__panel fixed z-[5000] rounded-xl w-max max-w-[30rem] " +
       "border border-solid border-slate-200 bg-white shadow-xl shadow-slate-900/15 " +
       "p-1.5 max-h-64 overflow-y-auto overscroll-contain " +
       "dark:bg-slate-800 dark:border-slate-600 dark:shadow-black/40";
     panel.hidden = true;
     (dlg || document.body).appendChild(panel);
+
+    var groupTitles = {};
+    (meta.groups || []).forEach(function (g) {
+      groupTitles[g.id] = g.title;
+    });
+    var byGroup = {};
+    devices.forEach(function (d) {
+      var gid = d.group_id || 0;
+      (byGroup[gid] = byGroup[gid] || []).push(d);
+    });
 
     function renderChips() {
       Array.prototype.forEach.call(chipsEl.querySelectorAll("[data-drv-chip]"), function (c) {
@@ -169,38 +179,85 @@
       ids.forEach(function (i) {
         var chip = document.createElement("span");
         chip.setAttribute("data-drv-chip", i);
+        // Píldora bien delimitada: borde + fondo sutil de marca
         chip.style.cssText =
-          "display:inline-flex;align-items:center;gap:5px;background:var(--surface-sunken,#f1f5f9);" +
-          "border-radius:8px;padding:2px 8px;font-size:12px;color:var(--fg-primary,#0f172a);";
+          "display:inline-flex;align-items:center;gap:6px;" +
+          "background:var(--brand-bg-subtle,#eef3fb);border:1px solid var(--border-default,#cbd5e1);" +
+          "border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500;" +
+          "color:var(--fg-primary,#0f172a);line-height:1.3;";
         chip.innerHTML =
           esc(byId[i] || "#" + i) +
-          '<button type="button" data-drv-unchip="' + i + '" style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);padding:0;line-height:1;">×</button>';
+          '<button type="button" data-drv-unchip="' + i + '" title="Quitar" ' +
+          'style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);padding:0;line-height:1;font-size:13px;">×</button>';
         chipsEl.insertBefore(chip, chipsEl.lastElementChild);
       });
     }
 
+    // Panel agrupado por grupo (checkbox de grupo + 2 columnas) con pie
+    // "Seleccionar todo" + Cerrar — estilo referencia.
     function renderPanel(q) {
       q = (q || "").toLowerCase();
-      var rows = devices
-        .filter(function (d) {
+      var sections = "";
+      Object.keys(byGroup).forEach(function (gid) {
+        var rows = byGroup[gid].filter(function (d) {
           return !q || d.name.toLowerCase().indexOf(q) >= 0;
-        })
-        .map(function (d) {
-          return (
-            '<label style="display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:13px;" ' +
-            'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'">' +
-            '<input type="checkbox" class="tp-choice-input" data-drv-opt="' + d.id + '"' +
-            (selected[d.id] ? " checked" : "") + ">" +
-            "<span>" + esc(d.name) + "</span></label>"
-          );
-        })
-        .join("");
+        });
+        if (!rows.length) return;
+        sections +=
+          '<div data-drv-gsec="' + gid + '" style="border:1px solid var(--border-default,#eef2f7);border-radius:10px;margin:0 4px 8px;overflow:hidden;">' +
+          '<label style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--surface-sunken,#f8fafc);cursor:pointer;">' +
+          '<input type="checkbox" class="tp-choice-input" data-drv-gchk="' + gid + '">' +
+          '<span style="font-size:13px;font-weight:600;color:var(--fg-secondary,#475569);">' +
+          esc(groupTitles[gid] || "Sin grupo") + "</span>" +
+          '<span style="font-size:11px;color:var(--fg-muted,#94a3b8);">(' + byGroup[gid].length + ")</span>" +
+          "</label>" +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:6px 10px;">' +
+          rows
+            .map(function (d) {
+              return (
+                '<label style="display:flex;align-items:center;gap:9px;padding:5px 2px;border-radius:6px;cursor:pointer;font-size:13px;">' +
+                '<input type="checkbox" class="tp-choice-input" data-drv-opt="' + d.id + '" data-gid="' + gid + '"' +
+                (selected[d.id] ? " checked" : "") + ">" +
+                "<span>" + esc(d.name) + "</span></label>"
+              );
+            })
+            .join("") +
+          "</div></div>";
+      });
+
       panel.innerHTML =
-        '<div style="position:sticky;top:0;background:inherit;padding:2px 4px 6px;">' +
+        '<div style="position:sticky;top:0;background:inherit;padding:2px 4px 6px;z-index:1;">' +
         '<input type="search" data-drv-panel-search placeholder="Búsqueda" autocomplete="off" ' +
         'style="width:100%;height:30px;padding:0 10px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;font-size:13px;background:var(--surface-sunken,#f8fafc);" value="' + esc(q) + '">' +
         "</div>" +
-        (rows || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>');
+        (sections || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>') +
+        '<div style="position:sticky;bottom:0;background:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 4px;border-top:1px solid var(--border-default,#eef2f7);z-index:1;">' +
+        '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">' +
+        '<input type="checkbox" class="tp-choice-input" data-drv-selall> Seleccionar todo</label>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-drv-close>Cerrar</button>' +
+        "</div>";
+
+      syncPanelChecks();
+    }
+
+    // Estados de los checkbox de grupo y del "Seleccionar todo"
+    function syncPanelChecks() {
+      Array.prototype.forEach.call(panel.querySelectorAll("[data-drv-gchk]"), function (g) {
+        var gid = g.getAttribute("data-drv-gchk");
+        var all = byGroup[gid] || [];
+        var on = all.filter(function (d) {
+          return selected[d.id];
+        }).length;
+        g.checked = on > 0 && on === all.length;
+        g.indeterminate = on > 0 && on < all.length;
+      });
+      var selAll = panel.querySelector("[data-drv-selall]");
+      if (selAll) {
+        var total = devices.length;
+        var on = Object.keys(selected).length;
+        selAll.checked = total > 0 && on === total;
+        selAll.indeterminate = on > 0 && on < total;
+      }
     }
 
     function positionPanel() {
@@ -240,11 +297,44 @@
 
     panel.addEventListener("change", function (e) {
       var opt = e.target.closest("[data-drv-opt]");
-      if (!opt) return;
-      var did = opt.getAttribute("data-drv-opt");
-      if (opt.checked) selected[did] = true;
-      else delete selected[did];
-      renderChips();
+      if (opt) {
+        var did = opt.getAttribute("data-drv-opt");
+        if (opt.checked) selected[did] = true;
+        else delete selected[did];
+        renderChips();
+        syncPanelChecks();
+        return;
+      }
+      var gchk = e.target.closest("[data-drv-gchk]");
+      if (gchk) {
+        var gid = gchk.getAttribute("data-drv-gchk");
+        (byGroup[gid] || []).forEach(function (d) {
+          if (gchk.checked) selected[d.id] = true;
+          else delete selected[d.id];
+        });
+        Array.prototype.forEach.call(panel.querySelectorAll('[data-drv-opt][data-gid="' + gid + '"]'), function (c) {
+          c.checked = gchk.checked;
+        });
+        renderChips();
+        syncPanelChecks();
+        return;
+      }
+      var selAll = e.target.closest("[data-drv-selall]");
+      if (selAll) {
+        devices.forEach(function (d) {
+          if (selAll.checked) selected[d.id] = true;
+          else delete selected[d.id];
+        });
+        Array.prototype.forEach.call(panel.querySelectorAll("[data-drv-opt]"), function (c) {
+          c.checked = selAll.checked;
+        });
+        renderChips();
+        syncPanelChecks();
+      }
+    });
+
+    panel.addEventListener("click", function (e) {
+      if (e.target.closest("[data-drv-close]")) closePanel();
     });
 
     panel.addEventListener("input", function (e) {

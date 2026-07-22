@@ -80,16 +80,28 @@ class DriversController extends BaseController
     {
         $this->checkException('drivers', 'view');
 
-        $devices = $this->user->devices()
-            ->clearOrdersBy()
-            ->orderBy('name')
-            ->get(['devices.id', 'devices.name'])
-            ->map(function ($d) {
-                return ['id' => (int) $d->id, 'name' => (string) $d->name];
+        $groups = $this->user->deviceGroups()
+            ->orderBy('title')
+            ->get(['id', 'title'])
+            ->map(function ($g) {
+                return ['id' => (int) $g->id, 'title' => (string) $g->title];
             })
             ->all();
 
-        $out = ['ok' => true, 'devices' => $devices, 'item' => null];
+        $devices = $this->user->devices()
+            ->clearOrdersBy()
+            ->orderBy('name')
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'id'       => (int) $d->id,
+                    'name'     => (string) $d->name,
+                    'group_id' => (int) ($d->pivot->group_id ?? 0),
+                ];
+            })
+            ->all();
+
+        $out = ['ok' => true, 'groups' => $groups, 'devices' => $devices, 'item' => null];
 
         if ($id = (int) $request->get('id')) {
             $driver = UserDriver::userAccessible($this->user)->find($id);
