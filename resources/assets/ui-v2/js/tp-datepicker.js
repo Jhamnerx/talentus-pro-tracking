@@ -62,8 +62,17 @@
       "appearance-none border-0 bg-transparent cursor-pointer rounded-lg w-7 h-7 " +
       "text-slate-500 hover:bg-slate-100 hover:text-slate-800 text-[15px] leading-none " +
       "dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-100",
-    title: "text-[13px] font-semibold text-slate-800 dark:text-slate-100",
+    // Título clicable: días → meses → años (selección rápida como el nativo)
+    title:
+      "appearance-none border-0 bg-transparent cursor-pointer rounded-lg px-2 h-7 " +
+      "text-[13px] font-semibold text-slate-800 hover:bg-slate-100 " +
+      "dark:text-slate-100 dark:hover:bg-slate-700",
     grid: "grid grid-cols-7 gap-0.5",
+    gridMonths: "grid grid-cols-3 gap-1",
+    gridYears: "grid grid-cols-4 gap-1",
+    cell:
+      "appearance-none border-0 bg-transparent cursor-pointer h-9 rounded-lg text-[13px] " +
+      "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700",
     dow: "h-7 flex items-center justify-center text-[10px] font-semibold text-slate-400 dark:text-slate-500",
     day:
       "appearance-none border-0 bg-transparent cursor-pointer h-8 rounded-lg text-[13px] " +
@@ -142,6 +151,7 @@
     var today = new Date();
     this.calY = today.getFullYear();
     this.calM = today.getMonth();
+    this.view = "days"; // days | months | years
 
     input.addEventListener("click", function () {
       if (input.disabled) return;
@@ -158,24 +168,52 @@
     panel.addEventListener("click", function (e) {
       var prev = e.target.closest("[data-dp-prev]");
       var next = e.target.closest("[data-dp-next]");
+      var title = e.target.closest("[data-dp-title]");
       var day = e.target.closest("[data-dp-day]");
+      var month = e.target.closest("[data-dp-month]");
+      var year = e.target.closest("[data-dp-year]");
       var clear = e.target.closest("[data-dp-clear]");
       var todayBtn = e.target.closest("[data-dp-today]");
-      if (prev) {
-        self.calM--;
-        if (self.calM < 0) {
-          self.calM = 11;
-          self.calY--;
+
+      if (prev || next) {
+        var dir = prev ? -1 : 1;
+        if (self.view === "days") {
+          self.calM += dir;
+          if (self.calM < 0) {
+            self.calM = 11;
+            self.calY--;
+          }
+          if (self.calM > 11) {
+            self.calM = 0;
+            self.calY++;
+          }
+        } else if (self.view === "months") {
+          self.calY += dir;
+        } else {
+          self.yearBase += dir * 12;
         }
         self.render();
         return;
       }
-      if (next) {
-        self.calM++;
-        if (self.calM > 11) {
-          self.calM = 0;
-          self.calY++;
+      if (title) {
+        // Selección rápida: días → meses → años
+        if (self.view === "days") self.view = "months";
+        else if (self.view === "months") {
+          self.view = "years";
+          self.yearBase = self.calY - (self.calY % 12);
         }
+        self.render();
+        return;
+      }
+      if (month) {
+        self.calM = parseInt(month.getAttribute("data-dp-month"), 10);
+        self.view = "days";
+        self.render();
+        return;
+      }
+      if (year) {
+        self.calY = parseInt(year.getAttribute("data-dp-year"), 10);
+        self.view = "months";
         self.render();
         return;
       }
@@ -224,30 +262,71 @@
     var todayIso = toIso(now);
     var y = this.calY;
     var m = this.calM;
-    var first = new Date(y, m, 1);
-    var startDow = (first.getDay() + 6) % 7; // lunes = 0
-    var days = new Date(y, m + 1, 0).getDate();
+    var html = "";
+    var i;
 
-    var html =
-      '<div class="' + C.head + '">' +
-      '<button type="button" class="' + C.navBtn + '" data-dp-prev>‹</button>' +
-      '<span class="' + C.title + '">' + MONTHS[m] + " " + y + "</span>" +
-      '<button type="button" class="' + C.navBtn + '" data-dp-next>›</button>' +
-      "</div>" +
-      '<div class="' + C.grid + '">' +
-      DOWS.map(function (d) {
-        return '<span class="' + C.dow + '">' + d + "</span>";
-      }).join("");
-
-    for (var i = 0; i < startDow; i++) html += "<span></span>";
-    for (var d = 1; d <= days; d++) {
-      var iso = y + "-" + pad2(m + 1) + "-" + pad2(d);
-      var cls = C.day;
-      if (sel && iso === toIso(sel)) cls += " " + C.daySel;
-      else if (iso === todayIso) cls += " " + C.dayToday;
-      html += '<button type="button" class="' + cls + '" data-dp-day="' + iso + '">' + d + "</button>";
+    function head(titleText, titleClickable) {
+      return (
+        '<div class="' + C.head + '">' +
+        '<button type="button" class="' + C.navBtn + '" data-dp-prev>‹</button>' +
+        '<button type="button" class="' + C.title + '"' + (titleClickable ? " data-dp-title" : "") + ">" +
+        titleText + (titleClickable ? " ▾" : "") +
+        "</button>" +
+        '<button type="button" class="' + C.navBtn + '" data-dp-next>›</button>' +
+        "</div>"
+      );
     }
-    html += "</div>";
+
+    if (this.view === "years") {
+      // Rejilla de 12 años (paginada con ‹ ›)
+      var base = this.yearBase;
+      html += head(base + " – " + (base + 11), false);
+      html += '<div class="' + C.gridYears + '">';
+      for (i = 0; i < 12; i++) {
+        var yy = base + i;
+        var ycls = C.cell;
+        if (yy === y) ycls += " " + C.daySel;
+        else if (yy === now.getFullYear()) ycls += " " + C.dayToday;
+        html += '<button type="button" class="' + ycls + '" data-dp-year="' + yy + '">' + yy + "</button>";
+      }
+      html += "</div>";
+    } else if (this.view === "months") {
+      // Rejilla de 12 meses del año actual (título → años)
+      html += head(String(y), true);
+      html += '<div class="' + C.gridMonths + '">';
+      for (i = 0; i < 12; i++) {
+        var mcls = C.cell;
+        if (i === m) mcls += " " + C.daySel;
+        else if (i === now.getMonth() && y === now.getFullYear()) mcls += " " + C.dayToday;
+        html +=
+          '<button type="button" class="' + mcls + '" data-dp-month="' + i + '">' +
+          MONTHS[i].slice(0, 3) +
+          "</button>";
+      }
+      html += "</div>";
+    } else {
+      // Vista de días (título → meses)
+      var first = new Date(y, m, 1);
+      var startDow = (first.getDay() + 6) % 7; // lunes = 0
+      var days = new Date(y, m + 1, 0).getDate();
+
+      html += head(MONTHS[m] + " " + y, true);
+      html +=
+        '<div class="' + C.grid + '">' +
+        DOWS.map(function (d) {
+          return '<span class="' + C.dow + '">' + d + "</span>";
+        }).join("");
+
+      for (i = 0; i < startDow; i++) html += "<span></span>";
+      for (var d = 1; d <= days; d++) {
+        var iso = y + "-" + pad2(m + 1) + "-" + pad2(d);
+        var cls = C.day;
+        if (sel && iso === toIso(sel)) cls += " " + C.daySel;
+        else if (iso === todayIso) cls += " " + C.dayToday;
+        html += '<button type="button" class="' + cls + '" data-dp-day="' + iso + '">' + d + "</button>";
+      }
+      html += "</div>";
+    }
 
     html +=
       '<div class="' + C.foot + '">' +
@@ -256,6 +335,7 @@
       "</div>";
 
     this.panel.innerHTML = html;
+    if (!this.panel.hidden) this.position();
   };
 
   Dp.prototype.position = function () {
@@ -278,6 +358,7 @@
     var base = sel || new Date();
     this.calY = base.getFullYear();
     this.calM = base.getMonth();
+    this.view = "days";
     this.render();
     this.panel.hidden = false;
     this.position();
