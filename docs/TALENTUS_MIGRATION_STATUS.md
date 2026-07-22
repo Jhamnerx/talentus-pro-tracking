@@ -7,6 +7,18 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 22 jul 2026 (2) — Compartir (Sharing) nativo (rama `nuevo-tema`)
+
+**Módulo Compartir migrado** (links públicos por vehículo), reutilizando la lógica legacy end-to-end (`SharingService` create/update/remove/syncDevices/sendEmail + `SharingFormValidator` escenario `send` + entidad `Sharing` con hash/link):
+
+- **Backend** `Ui\V2\SharingController`: página `/ui/v2/sharing` + API `ui.v2.api.sharing{,meta,store,update,destroy}`. La selección de devices viaja como **secuencia EntityLoader** `selected_devices[]` (`"s;0;"` + `"id;1;<id>"…` = selección exacta) que consume `UserDevicesGroupLoader` como el legacy. `expiration_by` none|duration|date se normaliza igual que el legacy (date → fin del día; duration → `addMinutes`). Duraciones con fallback propio porque `config('tobuli.object_online_timeouts')` está vacío por defecto. **Migración additiva**: columna `description` en `sharing` (la referencia la tiene; el schema no la tenía).
+- **`tp-sharing.js`** (global): `tpSharing.openForm(id?, {deviceId, onSaved})` — modal estilo referencia (Activo, Expira por con campos condicionales, Nombre, Descripción, Eliminar al expirar, caja de **devices agrupada** con buscador + Seleccionar/Deseleccionar todo + checkbox por grupo con indeterminate, Email con checkbox habilitador y hint de `;`). Página con tabla Activo|Nombre|Link|Expirado|Expiración + búsqueda + **filtro por device** (tp-select) + kebab **Editar / Vista previa / Eliminar** (vista previa abre el link público).
+- **Cableado**: rail "Compartir" → página (deja de estar pending); kebab del device en Live: "Compartir" abre el modal con el vehículo preseleccionado y "Compartiendo" navega a la página filtrada por ese device.
+- **Página pública**: se reutiliza la legacy tal cual (`route('sharing', hash)` → layout standalone con el motor de mapa legacy + polling `items/latest`); expirado → 404 y `sharing:clean` borra los `delete_after_expiration`.
+- Pendiente menor: envío por SMS desde el modal (el service lo soporta; solo falta el campo gated por `canSendSms()`).
+
+---
+
 ## 🔄 Actualización · 22 jul 2026 — Modal device: tabs Sensores / Usuarios / Servicios Web (rama `nuevo-tema`)
 
 Los 3 tabs placeholder del modal de vehículo quedan **nativos**, delegando 100% en los helpers legacy:
@@ -291,7 +303,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `History/` (+ historyPlayer/historyGraph) | `history` (rediseño integrado, pipeline legacy) | ✅ Parcial: export solo CSV (GPX/GeoJSON se quitaron en el rediseño), gráfico solo Velocidad/Altitud (faltan **sensores `add_to_graph`** del device), color "Por sensor" no implementado, borrar posiciones (admin) no |
 | `Reports/` (~130 tipos) | `reports` (templates + genera vía POST legacy `/reports`) | ⚠️ Falta `Schedules/` (envío programado) y formularios `getInputParameters` por tipo |
 | `SendCommand/` · `CommandSchedules/` · `UserGprsTemplates/` · `UserSmsTemplates/` | ✅ modal `tp-commands.js` + hub `/ui/v2/commands` (Horario/Registros/Plantillas GPRS/SMS con CRUD) | ⚠️ logs por schedule y columna usuario (admin) |
-| `Sharing/` (crear + lista + página pública) | stub | ❌ |
+| `Sharing/` (crear + lista + página pública) | ✅ `/ui/v2/sharing` + `tp-sharing.js` (modal referencia + kebab Live); página pública = legacy reutilizada | ✅ (22-jul; falta solo campo SMS) |
 | `Services/` · `Maintenance/` · `DeviceExpenses/` | ✅ `tp-services.js` (modales compartidos form/lista/eliminar) + página `/ui/v2/maintenance` + widget Live cableado | ⚠️ Gastos (`DeviceExpenses`) y Checklists sin migrar |
 | `Tasks/` · `TaskSets/` · `Checklist/` · `ChecklistTemplates/` | stub | ❌ |
 | `UserDrivers/` (conductores) | widget Conductor (lectura) | ❌ CRUD + asignación |

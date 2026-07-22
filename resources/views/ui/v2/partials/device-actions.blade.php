@@ -85,13 +85,11 @@
     </button>
 
     @if ($u->perm('sharing', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="share"
-            data-url="{{ route('sharing.create', ['devices_id' => '__ID__']) }}">
+        <button type="button" class="tp-row-menu__item" data-act="share" data-feature="share">
             <span class="tp-row-menu__icon">{!! $ic['share'] !!}</span>
             <span>{{ trans('front.share') }}</span>
         </button>
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="sharing"
-            data-url="{{ route('sharing.index', ['devices_id' => '__ID__']) }}">
+        <button type="button" class="tp-row-menu__item" data-act="sharing_list" data-feature="sharing">
             <span class="tp-row-menu__icon">{!! $ic['sharing'] !!}</span>
             <span>{{ trans('front.sharing') }}</span>
         </button>

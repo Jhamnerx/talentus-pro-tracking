@@ -16,7 +16,7 @@
         ['key' => 'reports', 'label' => 'Reportes', 'icon' => 'layers', 'url' => url('/ui/v2/reports')],
         ['key' => 'send_command', 'label' => 'Enviar comando', 'icon' => 'send', 'url' => url('/ui/v2/commands')],
         ['key' => 'media', 'label' => 'Cámara / Medios', 'icon' => 'camera', 'pending' => true],
-        ['key' => 'sharing', 'label' => 'Compartir', 'icon' => 'share', 'pending' => true],
+        ['key' => 'sharing', 'label' => 'Compartir', 'icon' => 'share', 'url' => url('/ui/v2/sharing')],
         ['key' => 'maintenance', 'label' => 'Mantenimiento', 'icon' => 'wrench', 'url' => url('/ui/v2/maintenance')],
         ['key' => 'tasks', 'label' => 'Tareas', 'icon' => 'tasks', 'pending' => true],
         ['key' => 'drivers', 'label' => 'Conductores', 'icon' => 'users', 'pending' => true],

@@ -956,6 +956,10 @@
         if (window.tpDeviceModal) window.tpDeviceModal.openEdit(id, function () { fetchDevices(true); });
       } else if (act === "send_command") {
         if (window.tpCommands) tpCommands.open(id);
+      } else if (act === "share") {
+        if (window.tpSharing) tpSharing.openForm(null, { deviceId: id });
+      } else if (act === "sharing_list") {
+        location.href = "/ui/v2/sharing?device_id=" + id;
       } else if (act === "pending" && window.tpModal && tpModal.toast)
         tpModal.toast("Función disponible próximamente.", "info");
     });

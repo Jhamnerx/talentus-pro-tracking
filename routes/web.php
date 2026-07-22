@@ -1125,6 +1125,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('maintenance', ['as' => 'maintenance', 'uses' => 'Ui\V2\ServicesController@page']);
     Route::get('routes/table', ['as' => 'routes_table', 'uses' => 'Ui\V2\MapLayersController@routesPage']);
     Route::get('commands',     ['as' => 'commands',     'uses' => 'Ui\V2\CommandsController@page']);
+    Route::get('sharing',      ['as' => 'sharing',      'uses' => 'Ui\V2\SharingController@page']);
     Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
@@ -1229,6 +1230,13 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('commands/templates',        ['as' => 'api.commands.templates.store',    'uses' => 'Ui\V2\CommandsController@storeTemplate']);
         Route::put('commands/templates/{id}',    ['as' => 'api.commands.templates.update',   'uses' => 'Ui\V2\CommandsController@updateTemplate'])->where('id', '[0-9]+');
         Route::delete('commands/templates/{id}', ['as' => 'api.commands.templates.destroy',  'uses' => 'Ui\V2\CommandsController@destroyTemplate'])->where('id', '[0-9]+');
+
+        // Compartir (links públicos por vehículo — CRUD sobre SharingService legacy)
+        Route::get('sharing',         ['as' => 'api.sharing',         'uses' => 'Ui\V2\SharingController@data']);
+        Route::get('sharing/meta',    ['as' => 'api.sharing.meta',    'uses' => 'Ui\V2\SharingController@meta']);
+        Route::post('sharing',        ['as' => 'api.sharing.store',   'uses' => 'Ui\V2\SharingController@store']);
+        Route::put('sharing/{id}',    ['as' => 'api.sharing.update',  'uses' => 'Ui\V2\SharingController@update'])->where('id', '[0-9]+');
+        Route::delete('sharing/{id}', ['as' => 'api.sharing.destroy', 'uses' => 'Ui\V2\SharingController@destroy'])->where('id', '[0-9]+');
 
         // Servicios / Mantenimiento (modales compartidos + página global)
         Route::get('services',              ['as' => 'api.services',          'uses' => 'Ui\V2\ServicesController@data']);

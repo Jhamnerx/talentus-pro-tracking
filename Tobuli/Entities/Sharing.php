@@ -26,7 +26,7 @@ class Sharing extends AbstractEntity {
      */
     protected $hidden = [];
 
-    protected $fillable = ['name', 'expiration_date', 'active', 'delete_after_expiration'];
+    protected $fillable = ['name', 'description', 'expiration_date', 'active', 'delete_after_expiration'];
 
     public function user()
     {
