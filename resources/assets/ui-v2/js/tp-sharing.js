@@ -332,8 +332,6 @@
     var payload = {
       active: form.querySelector('input[name="active"]').checked ? 1 : 0,
       expiration_by: by,
-      duration: by === "duration" && durEl ? durEl.value : null,
-      expiration_date: by === "date" && expEl ? expEl.value : null,
       name: form.querySelector('input[name="name"]').value.trim(),
       description: form.querySelector('textarea[name="description"]').value.trim(),
       delete_after_expiration: form.querySelector('input[name="delete_after_expiration"]').checked ? 1 : 0,
@@ -346,6 +344,11 @@
         }),
       ),
     };
+
+    // Solo incluir la clave del modo elegido: el validador legacy ejecuta
+    // date/integer sobre null presente (sin nullable) y fallaría.
+    if (by === "duration" && durEl) payload.duration = durEl.value;
+    if (by === "date" && expEl) payload.expiration_date = expEl.value;
 
     var url = id ? API.item.replace("{id}", id) : API.store;
     tpModal.setBusy(dialog, true);
