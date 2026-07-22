@@ -1,21 +1,19 @@
 {{--
-    Tab Sensores — lista de sensores del device + CRUD nativo.
-    La tabla se renderiza server-side ($sensors_list, inyectada por
-    Ui\V2\DevicesController::form()) y el JS (device-modal.js) la
-    re-hidrata tras cada operación vía GET api.devices.sensors.
-    El form de sensor se abre en un modal ANIDADO (tpModal apila
-    <dialog>) y reutiliza SensorModalHelper end-to-end.
+    Tab Sensores — paridad con el legacy (partials/sensors.blade.php +
+    sensor_group.blade.php):
+    · CREAR: solo el select de grupo de sensores a asignar.
+    · EDITAR: buscador + botón añadir + lista con editar/eliminar +
+      select de grupo de sensores al final. El sensor_group_id viaja
+      con el submit del device (igual que el legacy).
+    CRUD del sensor en modal ANIDADO vía SensorModalHelper.
 --}}
 @php
     $isEdit = !empty($item->id);
     $sensorsList = $sensors_list ?? [];
+    $sensorGroups = $sensor_groups ?? [];
 @endphp
 
-@if (!$isEdit)
-    <div class="tp-form__placeholder">
-        Guarda el vehículo primero; después podrás agregar sensores desde esta pestaña.
-    </div>
-@else
+@if ($isEdit)
     @php
         $sensorsCfg = [
             'list'    => route('ui.v2.api.devices.sensors', $item->id),
@@ -31,13 +29,11 @@
     <div data-tp-sensors data-device-id="{{ (int) $item->id }}">
         <script type="application/json" data-sensors-cfg>@json($sensorsCfg)</script>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <p class="tp-form__hint" style="margin: 0;">
-                Sensores configurados en este equipo.
-            </p>
-            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sensor-add>
-                + {{ trans('global.add') }}
-            </button>
+        <div class="tp-group-box__head">
+            <input type="search" class="tp-input" data-sensors-search placeholder="{{ trans('front.search') }}"
+                autocomplete="off" style="max-width: 220px; border-radius: 999px;">
+            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sensor-add
+                style="margin-left: auto;">＋</button>
         </div>
 
         <div class="tp-embed-box">
@@ -71,5 +67,18 @@
                 </tbody>
             </table>
         </div>
+    </div>
+@endif
+
+@if (!empty($sensorGroups))
+    <div class="{{ $isEdit ? 'tp-form__section' : '' }}">
+        <label class="tp-form__field">
+            <span class="tp-form__label">{{ trans('validation.attributes.sensor_group_id') }}</span>
+            <select class="tp-input" style="width: 100%" name="sensor_group_id" data-tp-field>
+                @foreach ($sensorGroups as $sgId => $sgTitle)
+                    <option value="{{ $sgId }}">{{ $sgTitle }}</option>
+                @endforeach
+            </select>
+        </label>
     </div>
 @endif

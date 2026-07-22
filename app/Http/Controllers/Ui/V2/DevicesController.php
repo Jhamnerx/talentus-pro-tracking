@@ -221,16 +221,31 @@ class DevicesController extends BaseController
                         return ['id' => (int) $s->id, 'name' => (string) $s->name, 'type' => (string) $s->type_title];
                     })
                     ->all();
+
+                $data['services_list'] = $this->presentDeviceServices((int) $id);
+                $data['cameras_list']  = $this->presentDeviceCameras((int) $id);
+                $data['expenses_list'] = $this->presentDeviceExpenses((int) $id);
             } else {
                 $helper->setData([]);
                 $data = $helper->createData();
             }
+
+            // Catálogo de tipos de gasto (para el form nativo del tab Gastos)
+            $data['expenses_types_list'] = function_exists('expensesTypesExist') && expensesTypesExist()
+                ? \Tobuli\Entities\DeviceExpensesType::orderBy('title')->get()
+                    ->map(function ($t) {
+                        return ['id' => (int) $t->id, 'title' => (string) $t->title];
+                    })
+                    ->all()
+                : [];
 
             // Caps for conditional tabs (mirror Talentus permission gates).
             $data['caps'] = [
                 'is_admin'             => (bool) $this->user->isAdmin(),
                 'can_edit_users'       => (bool) ($this->user->isAdmin() && $this->user->perm('users', 'view')),
                 'can_view_sensors'     => (bool) $this->user->isAdmin(),
+                'can_view_cameras'     => (bool) $this->user->perm('device_camera', 'view'),
+                'has_expenses'         => (bool) (function_exists('expensesTypesExist') && expensesTypesExist()),
                 'can_view_webservices' => (bool) (
                     $this->user->perm('webservice.consatel',   'view')
                     || $this->user->perm('webservice.mininter', 'view')
@@ -508,6 +523,240 @@ class DevicesController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         }
+    }
+
+    /* =================================================================
+     * Servicios / Cámaras / Gastos del modal device
+     * ================================================================= */
+
+    private function presentDeviceServices(int $deviceId): array
+    {
+        return \Tobuli\Entities\DeviceService::where('device_id', $deviceId)
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($s) {
+                $expiration = '';
+                try {
+                    $expiration = (string) $s->expiration();
+                } catch (\Throwable $e) {
+                }
+
+                return ['id' => (int) $s->id, 'name' => (string) $s->name, 'expiration' => $expiration];
+            })
+            ->all();
+    }
+
+    private function presentDeviceCameras(int $deviceId): array
+    {
+        return \Tobuli\Entities\DeviceCamera::where('device_id', $deviceId)
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($c) {
+                return [
+                    'id'           => (int) $c->id,
+                    'name'         => (string) $c->name,
+                    'show_widget'  => (bool) $c->show_widget,
+                    'ftp_username' => (string) ($c->ftp_username ?? ''),
+                ];
+            })
+            ->all();
+    }
+
+    private function presentDeviceExpenses(int $deviceId): array
+    {
+        return \Tobuli\Entities\DeviceExpense::where('device_id', $deviceId)
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function ($e) {
+                return [
+                    'id'        => (int) $e->id,
+                    'name'      => (string) $e->name,
+                    'type_id'   => (int) $e->type_id,
+                    'quantity'  => (float) $e->quantity,
+                    'unit_cost' => (float) $e->unit_cost,
+                    'total'     => (float) $e->total,
+                    'date'      => (string) $e->date,
+                    'supplier'  => (string) ($e->supplier ?? ''),
+                    'buyer'     => (string) ($e->buyer ?? ''),
+                    'additional' => (string) ($e->additional ?? ''),
+                ];
+            })
+            ->all();
+    }
+
+    /** Lista de cámaras del device. GET devices/{id}/cameras */
+    public function camerasList(Request $request, $id): JsonResponse
+    {
+        $this->cameraDevice((int) $id);
+
+        return response()->json(['ok' => true, 'items' => $this->presentDeviceCameras((int) $id)]);
+    }
+
+    private function cameraDevice(int $deviceId)
+    {
+        if (! $this->user->perm('device_camera', 'view')) {
+            abort(403);
+        }
+
+        $device = DeviceRepo::find($deviceId);
+        if (! $device) {
+            abort(404);
+        }
+
+        $this->checkException('devices', 'edit', $device);
+
+        return $device;
+    }
+
+    /** Crear cámara. POST devices/{id}/cameras */
+    public function cameraStore(Request $request, $id): JsonResponse
+    {
+        $this->cameraDevice((int) $id);
+
+        if (! $this->user->perm('device_camera', 'edit')) {
+            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+        }
+
+        $name = trim((string) $request->get('name'));
+        if ($name === '') {
+            return response()->json(['ok' => false, 'errors' => ['name' => trans('validation.required', ['attribute' => trans('validation.attributes.name')])]], 422);
+        }
+
+        \Tobuli\Entities\DeviceCamera::create([
+            'device_id'   => (int) $id,
+            'name'        => $name,
+            'show_widget' => (int) (bool) $request->get('show_widget'),
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Actualizar cámara. PUT cameras/{id} */
+    public function cameraUpdate(Request $request, $id): JsonResponse
+    {
+        $camera = \Tobuli\Entities\DeviceCamera::find((int) $id);
+        if (! $camera) {
+            abort(404);
+        }
+
+        $this->cameraDevice((int) $camera->device_id);
+
+        if (! $this->user->perm('device_camera', 'edit')) {
+            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+        }
+
+        $name = trim((string) $request->get('name'));
+        if ($name === '') {
+            return response()->json(['ok' => false, 'errors' => ['name' => trans('validation.required', ['attribute' => trans('validation.attributes.name')])]], 422);
+        }
+
+        $camera->update([
+            'name'        => $name,
+            'show_widget' => (int) (bool) $request->get('show_widget'),
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Eliminar cámara. DELETE cameras/{id} */
+    public function cameraDestroy(Request $request, $id): JsonResponse
+    {
+        $camera = \Tobuli\Entities\DeviceCamera::find((int) $id);
+        if (! $camera) {
+            abort(404);
+        }
+
+        $this->cameraDevice((int) $camera->device_id);
+
+        if (! $this->user->perm('device_camera', 'remove') && ! $this->user->perm('device_camera', 'edit')) {
+            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+        }
+
+        $camera->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Lista de gastos del device. GET devices/{id}/expenses */
+    public function expensesList(Request $request, $id): JsonResponse
+    {
+        $this->sensorDevice((int) $id);
+
+        return response()->json(['ok' => true, 'items' => $this->presentDeviceExpenses((int) $id)]);
+    }
+
+    private function expenseInput(Request $request): array
+    {
+        $data = $request->only(['name', 'type_id', 'quantity', 'unit_cost', 'supplier', 'buyer', 'additional', 'date']);
+
+        $validator = \Validator::make($data, [
+            'name'      => 'required|string|max:255',
+            'type_id'   => 'required|integer',
+            'quantity'  => 'required|numeric',
+            'unit_cost' => 'required|numeric',
+            'date'      => 'required|date',
+        ]);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator->messages());
+        }
+
+        // datetime-local llega como "YYYY-MM-DDTHH:mm" → formato MySQL
+        $data['date'] = date('Y-m-d H:i:s', strtotime($data['date']));
+
+        return $data;
+    }
+
+    /** Crear gasto. POST devices/{id}/expenses */
+    public function expenseStore(Request $request, $id): JsonResponse
+    {
+        $this->sensorDevice((int) $id);
+
+        try {
+            $data = $this->expenseInput($request);
+            $data['device_id'] = (int) $id;
+            $data['user_id'] = (int) $this->user->id;
+
+            \Tobuli\Entities\DeviceExpense::create($data);
+
+            return response()->json(['ok' => true]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    /** Actualizar gasto. PUT expenses/{id} */
+    public function expenseUpdate(Request $request, $id): JsonResponse
+    {
+        $expense = \Tobuli\Entities\DeviceExpense::find((int) $id);
+        if (! $expense) {
+            abort(404);
+        }
+
+        $this->sensorDevice((int) $expense->device_id);
+
+        try {
+            $expense->update($this->expenseInput($request));
+
+            return response()->json(['ok' => true]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    /** Eliminar gasto. DELETE expenses/{id} */
+    public function expenseDestroy(Request $request, $id): JsonResponse
+    {
+        $expense = \Tobuli\Entities\DeviceExpense::find((int) $id);
+        if (! $expense) {
+            abort(404);
+        }
+
+        $this->sensorDevice((int) $expense->device_id);
+
+        $expense->delete();
+
+        return response()->json(['ok' => true]);
     }
 
     /**

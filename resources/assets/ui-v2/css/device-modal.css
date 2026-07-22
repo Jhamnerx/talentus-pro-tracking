@@ -188,46 +188,62 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Pestañas del modal device — anula el estilo global uppercase de modal.css
- * (más específico: 2 clases). Sentence case, compactas, acento de marca.
+ * Pestañas del modal device — estilo "caja" de la referencia: rejilla de
+ * celdas bordeadas, inactivas con fondo hundido, activa blanca con
+ * subrayado de marca. Anula el estilo global uppercase de modal.css.
  * ------------------------------------------------------------------------- */
 .tp-device-form .tp-tabs__nav {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: var(--surface-raised, #fff);
-  border-bottom: 1px solid var(--border-default, #e2e8f0);
-  margin-bottom: 14px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  margin-bottom: 16px;
+  background: var(--surface-sunken, #f1f5f9);
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: var(--r-md, 8px) var(--r-md, 8px) 0 0;
+  overflow: hidden;
+}
+@media (max-width: 640px) {
+  .tp-device-form .tp-tabs__nav {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 .tp-device-form .tp-tabs__tab {
   appearance: none;
   background: transparent;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-right: 1px solid var(--border-default, #e2e8f0);
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
   border-radius: 0;
-  padding: 9px 12px;
+  padding: 11px 8px;
   font-family: inherit;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: 0;
   text-transform: none;
+  text-align: center;
   color: var(--fg-secondary, #475569);
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: inset 0 -3px 0 transparent;
   transition:
     color 0.12s ease,
-    border-color 0.12s ease;
+    background 0.12s ease,
+    box-shadow 0.12s ease;
 }
 .tp-device-form .tp-tabs__tab:hover {
   color: var(--fg-primary, #0f172a);
+  background: var(--surface-raised, #fff);
 }
 .tp-device-form .tp-tabs__tab.is-active {
   color: var(--brand-500, #2e63d9);
-  border-bottom-color: var(--brand-500, #2e63d9);
+  background: var(--surface-raised, #fff);
+  box-shadow: inset 0 -3px 0 var(--brand-500, #2e63d9);
   font-weight: 600;
 }
 .tp-device-form .tp-tabs__panel {
@@ -236,6 +252,72 @@
 .tp-device-form .tp-tabs__panel.is-active {
   display: block;
   padding-bottom: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Caja agrupadora (tab Usuarios y similares): borde redondeado, header con
+ * buscador + acciones, cuerpo y paginación al pie (estilo referencia).
+ * ------------------------------------------------------------------------- */
+.tp-form .tp-group-box {
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-raised, #fff);
+  padding: 12px 14px;
+}
+.tp-form .tp-group-box__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.tp-form .tp-group-box__head input[type="search"] {
+  max-width: 220px;
+  border-radius: 999px;
+}
+.tp-form .tp-link-action {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-500, #2e63d9);
+  cursor: pointer;
+}
+.tp-link-action:hover {
+  text-decoration: underline;
+}
+.tp-form .tp-group-box__sep {
+  color: var(--border-strong, #cbd5e1);
+}
+.tp-form .tp-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 10px;
+}
+.tp-form .tp-pagination button {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: var(--fg-secondary, #475569);
+  cursor: pointer;
+}
+.tp-form .tp-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.tp-form .tp-pagination button.is-current {
+  border-color: var(--border-default, #e2e8f0);
+  color: var(--fg-primary, #0f172a);
+  font-weight: 600;
 }
 
 /* ---------------------------------------------------------------------------

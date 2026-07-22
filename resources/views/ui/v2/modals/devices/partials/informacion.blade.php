@@ -91,6 +91,11 @@
     </label>
 
     <label class="tp-form__field">
+        <span class="tp-form__label">{{ trans('validation.attributes.device_model') }}</span>
+        <input type="text" name="device_model" maxlength="80" value="{{ $item->device_model ?? '' }}" data-tp-field>
+    </label>
+
+    <label class="tp-form__field">
         <span class="tp-form__label">Placa</span>
         <input type="text" name="plate_number" maxlength="20" value="{{ $item->plate_number ?? '' }}" data-tp-field>
     </label>

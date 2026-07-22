@@ -106,8 +106,9 @@
       close(dlg);
     });
     dlg.addEventListener("click", function (e) {
-      // click on backdrop (the dialog itself, not inner content)
-      if (e.target === dlg) close(dlg);
+      // click on backdrop (the dialog itself, not inner content).
+      // opts.static = true → no cerrar (formularios largos: evita perder datos)
+      if (e.target === dlg && !opts.static) close(dlg);
     });
     dlg.addEventListener("close", function () {
       if (typeof opts.onClose === "function") {

@@ -12,15 +12,21 @@
 @php
     $caps = $caps ?? [];
     $isEdit = !empty($item->id);
+    // Mismo orden de tabs que el legacy (Devices/edit.blade.php):
+    // Main, Users, Icons, Advanced, Sensors, Services, Accuracy, Tail,
+    // Servicios Web, Expenses, Cameras.
     $tabs = collect([
-        ['key' => 'principal', 'label' => 'Principal'],
-        ['key' => 'usuarios', 'label' => 'Usuarios', 'if' => !empty($caps['can_edit_users'])],
-        ['key' => 'iconos', 'label' => 'Iconos'],
-        ['key' => 'informacion', 'label' => 'Información'],
-        ['key' => 'sensores', 'label' => 'Sensores', 'if' => !empty($caps['can_view_sensors'])],
-        ['key' => 'exactitud', 'label' => 'Exactitud'],
-        ['key' => 'cola', 'label' => 'Cola'],
+        ['key' => 'principal', 'label' => trans('front.main')],
+        ['key' => 'usuarios', 'label' => trans('front.users'), 'if' => !empty($caps['can_edit_users'])],
+        ['key' => 'iconos', 'label' => trans('front.icons')],
+        ['key' => 'informacion', 'label' => trans('front.advanced')],
+        ['key' => 'sensores', 'label' => trans('front.sensors'), 'if' => !empty($caps['can_view_sensors'])],
+        ['key' => 'servicios', 'label' => trans('front.services')],
+        ['key' => 'exactitud', 'label' => trans('front.accuracy')],
+        ['key' => 'cola', 'label' => trans('front.tail')],
         ['key' => 'webservices', 'label' => 'Servicios Web', 'if' => !empty($caps['can_view_webservices'])],
+        ['key' => 'gastos', 'label' => trans('front.expenses'), 'if' => !empty($caps['has_expenses'])],
+        ['key' => 'camaras', 'label' => trans('front.cameras'), 'if' => !empty($caps['can_view_cameras'])],
     ])
         ->filter(function ($t) {
             return !array_key_exists('if', $t) || $t['if'];

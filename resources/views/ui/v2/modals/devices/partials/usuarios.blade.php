@@ -1,29 +1,32 @@
 {{--
-    Tab Usuarios (solo admin) — asignación de usuarios al vehículo.
-    Misma fuente que el multiselect legacy: DeviceUsersController@get/@index
-    (UsersLoader paginado con búsqueda `s`, cada fila trae `selected`).
-    La UI marca/desmarca y el JS acumula DELTAS en inputs ocultos
-    `selected_user_id[]` con el formato del EntityLoader ("id;1;<uid>"
-    = asignar, "id;0;<uid>" = quitar). DeviceModalHelper::setAbleUsers()
-    los lee de request() y sincroniza contra device->users().
+    Tab Usuarios (solo admin) — caja estilo referencia: buscador +
+    "Seleccionar todo | Deseleccionar todo" + lista paginada con checkbox.
+    Misma fuente que el multiselect legacy (DeviceUsersController@get/@index,
+    UsersLoader paginado con búsqueda `s`, cada fila trae `selected`).
+    El JS acumula la selección en inputs ocultos selected_user_id[] con el
+    formato del EntityLoader ("s;1;" todo / "s;0;" nada / "id;1|0;<uid>")
+    que DeviceModalHelper::setAbleUsers() resuelve contra device->users().
+    Sin cambios → no viaja nada → asignaciones intactas.
 --}}
 @php $isEdit = !empty($item->id); @endphp
 
-<div data-tp-users data-users-url="{{ $isEdit ? route('devices.users.get', $item->id) : route('devices.users.index') }}">
-    <p class="tp-form__hint" style="margin: 0 0 10px;">
-        Marca los usuarios con acceso a este vehículo. Los cambios se aplican al guardar.
-    </p>
+<div class="tp-group-box" data-tp-users
+    data-users-url="{{ $isEdit ? route('devices.users.get', $item->id) : route('devices.users.index') }}">
 
-    <input type="search" class="tp-input" data-users-search placeholder="Buscar por email…" autocomplete="off">
-
-    <div data-users-list
-        style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-default, #e2e8f0); border-radius: var(--r-lg, 12px); padding: 6px 10px; margin-top: 10px; background: var(--surface-raised, #fff);">
-        <div class="tp-text-muted" style="padding: 12px 4px; font-size: 13px;">Cargando…</div>
+    <div class="tp-group-box__head">
+        <input type="search" class="tp-input" data-users-search placeholder="{{ trans('front.search') }}"
+            autocomplete="off">
+        <button type="button" class="tp-link-action" data-users-select-all>{{ trans('front.select_all') }}</button>
+        <span class="tp-group-box__sep">|</span>
+        <button type="button" class="tp-link-action" data-users-deselect-all>{{ trans('front.deselect_all') }}</button>
     </div>
 
-    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-users-more hidden
-        style="margin-top: 8px;">Cargar más</button>
+    <div data-users-list style="min-height: 120px;">
+        <div class="tp-text-muted" style="padding: 12px 4px; font-size: 13px;">…</div>
+    </div>
 
-    {{-- Deltas serializados (selected_user_id[]) que viajan con el submit del device --}}
+    <div class="tp-pagination" data-users-pagination hidden></div>
+
+    {{-- Selección serializada (selected_user_id[]) que viaja con el submit del device --}}
     <div data-users-deltas hidden></div>
 </div>

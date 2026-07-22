@@ -83,14 +83,60 @@
     });
   }
 
-  function wireExpirationMirror(scope) {
-    // Mantiene enable_expiration_date sincronizado con expiration_date.
-    var dateInput = scope.querySelector('input[name="expiration_date"]');
-    var mirror = scope.querySelector("[data-tp-mirror-expiration]");
-    if (!dateInput || !mirror) return;
-    dateInput.addEventListener("change", function () {
-      mirror.value = dateInput.value ? "1" : "0";
+  function wireExpiration(scope) {
+    // Paridad legacy: el checkbox enable_expiration_date habilita el input.
+    var toggle = scope.querySelector("[data-tp-expiration-toggle]");
+    var dateInput = scope.querySelector("[data-tp-expiration-date]");
+    if (!toggle || !dateInput) return;
+    toggle.addEventListener("change", function () {
+      dateInput.disabled = !toggle.checked;
     });
+  }
+
+  // Habilitadores genéricos: [data-enable="<idCheckbox>"] → el input se
+  // habilita solo con el checkbox marcado (mismo patrón que el sensor form).
+  function wireEnablers(scope) {
+    function refresh() {
+      Array.prototype.forEach.call(scope.querySelectorAll("[data-enable]"), function (el) {
+        var chk = scope.querySelector("#" + el.getAttribute("data-enable"));
+        if (!chk) return;
+        el.disabled = !(chk.checked && !chk.disabled);
+      });
+    }
+    scope.addEventListener("change", function (e) {
+      if (e.target.type === "checkbox") refresh();
+    });
+    refresh();
+  }
+
+  // Tab Iconos — paridad legacy: arrow → SOLO colores por estado;
+  // icon/rotating → SOLO la galería de su grupo (radios de grupos
+  // ocultos quedan disabled para que icon_id no viaje).
+  function wireIconsTab(scope) {
+    var typeSel = scope.querySelector("[data-tp-icons-type]");
+    if (!typeSel) return;
+
+    function apply() {
+      var type = typeSel.value;
+      Array.prototype.forEach.call(scope.querySelectorAll("[data-tp-icons-group]"), function (g) {
+        var on = g.getAttribute("data-tp-icons-group") === type;
+        g.style.display = on ? "" : "none";
+        Array.prototype.forEach.call(g.querySelectorAll('input[type="radio"]'), function (r) {
+          r.disabled = !on;
+        });
+      });
+      var colors = scope.querySelector("[data-tp-icons-colors]");
+      if (colors) {
+        var isArrow = type === "arrow";
+        colors.style.display = isArrow ? "" : "none";
+        Array.prototype.forEach.call(colors.querySelectorAll("select"), function (s) {
+          s.disabled = !isArrow;
+        });
+      }
+    }
+
+    typeSel.addEventListener("change", apply);
+    apply();
   }
 
   // --------------------------------------------------------------------------
@@ -252,42 +298,80 @@
     var url = root.getAttribute("data-users-url");
     var listEl = root.querySelector("[data-users-list]");
     var searchEl = root.querySelector("[data-users-search]");
-    var moreBtn = root.querySelector("[data-users-more]");
+    var pagEl = root.querySelector("[data-users-pagination]");
     var deltasEl = root.querySelector("[data-users-deltas]");
+    var selAllBtn = root.querySelector("[data-users-select-all]");
+    var deselAllBtn = root.querySelector("[data-users-deselect-all]");
 
     var page = 1;
     var lastPage = 1;
     var search = "";
     var timer = null;
+    // Modelo de selección estilo EntityLoader:
+    //   mode null → estado BD (base) + overrides individuales
+    //   mode 'all'/'none' → "s;1;"/"s;0;" + overrides posteriores
+    var mode = null;
     var base = {}; // uid -> selected en BD (bool)
-    var deltas = {}; // uid -> "1" | "0"
+    var overrides = {}; // uid -> bool
 
     function esc(s) {
       return tpModal.escapeHtml(s);
     }
 
+    function isChecked(uid) {
+      if (uid in overrides) return overrides[uid];
+      if (mode === "all") return true;
+      if (mode === "none") return false;
+      return !!base[uid];
+    }
+
     function rowHtml(row) {
       var uid = String(row.id);
-      var sel = deltas[uid] != null ? deltas[uid] === "1" : !!+row.selected;
       return (
-        '<label class="tp-choice-row" style="display:flex;align-items:center;gap:9px;padding:4px 2px;cursor:pointer;">' +
-        '<input type="checkbox" class="tp-choice-input" data-user-id="' + uid + '"' + (sel ? " checked" : "") + ">" +
+        '<label class="tp-choice-row" style="display:flex;align-items:center;gap:9px;padding:5px 2px;cursor:pointer;">' +
+        '<input type="checkbox" class="tp-choice-input" data-user-id="' + uid + '"' + (isChecked(uid) ? " checked" : "") + ">" +
         '<span style="font-size:13px;">' + esc(row.name) + "</span>" +
         "</label>"
       );
     }
 
+    // Serializa la selección al formato de secuencia del EntityLoader.
     function syncDeltas() {
-      var html = "";
-      Object.keys(deltas).forEach(function (uid) {
-        html +=
-          '<input type="hidden" name="selected_user_id[]" value="id;' +
-          deltas[uid] + ";" + uid + '">';
+      var ops = [];
+      if (mode === "all") ops.push("s;1;");
+      if (mode === "none") ops.push("s;0;");
+      Object.keys(overrides).forEach(function (uid) {
+        var on = overrides[uid];
+        if (mode === "all" && on) return; // redundante
+        if (mode === "none" && !on) return;
+        if (mode === null && on === !!base[uid]) return; // sin cambio real
+        ops.push("id;" + (on ? "1" : "0") + ";" + uid);
       });
-      deltasEl.innerHTML = html;
+      deltasEl.innerHTML = ops
+        .map(function (op) {
+          return '<input type="hidden" name="selected_user_id[]" value="' + op + '">';
+        })
+        .join("");
     }
 
-    function fetchPage(append) {
+    function renderPagination() {
+      if (!pagEl) return;
+      if (lastPage <= 1) {
+        pagEl.hidden = true;
+        return;
+      }
+      pagEl.hidden = false;
+      var html = '<button type="button" data-users-page="' + (page - 1) + '"' + (page <= 1 ? " disabled" : "") + ">‹</button>";
+      var start = Math.max(1, page - 3);
+      var end = Math.min(lastPage, start + 6);
+      for (var p = start; p <= end; p++) {
+        html += '<button type="button" data-users-page="' + p + '" class="' + (p === page ? "is-current" : "") + '">' + p + "</button>";
+      }
+      html += '<button type="button" data-users-page="' + (page + 1) + '"' + (page >= lastPage ? " disabled" : "") + ">›</button>";
+      pagEl.innerHTML = html;
+    }
+
+    function fetchPage() {
       var q = url + (url.indexOf("?") < 0 ? "?" : "&") + "s=" + encodeURIComponent(search) + "&page=" + page;
       tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
         if (!res.ok || !res.data) {
@@ -299,10 +383,10 @@
         rows.forEach(function (r) {
           if (base[String(r.id)] == null) base[String(r.id)] = !!+r.selected;
         });
-        var html = rows.map(rowHtml).join("");
-        if (append) listEl.insertAdjacentHTML("beforeend", html);
-        else listEl.innerHTML = html || '<div class="tp-text-muted" style="padding:10px 4px;font-size:13px;">Sin resultados.</div>';
-        moreBtn.hidden = page >= lastPage;
+        listEl.innerHTML =
+          rows.map(rowHtml).join("") ||
+          '<div class="tp-text-muted" style="padding:10px 4px;font-size:13px;">Sin resultados.</div>';
+        renderPagination();
       });
     }
 
@@ -310,11 +394,35 @@
       var chk = e.target.closest("[data-user-id]");
       if (!chk) return;
       var uid = chk.getAttribute("data-user-id");
-      var original = !!base[uid];
-      if (chk.checked === original) delete deltas[uid];
-      else deltas[uid] = chk.checked ? "1" : "0";
+      overrides[uid] = chk.checked;
       syncDeltas();
     });
+
+    if (pagEl)
+      pagEl.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-users-page]");
+        if (!btn || btn.disabled) return;
+        var p = parseInt(btn.getAttribute("data-users-page"), 10);
+        if (p < 1 || p > lastPage || p === page) return;
+        page = p;
+        fetchPage();
+      });
+
+    if (selAllBtn)
+      selAllBtn.addEventListener("click", function () {
+        mode = "all";
+        overrides = {};
+        syncDeltas();
+        fetchPage();
+      });
+
+    if (deselAllBtn)
+      deselAllBtn.addEventListener("click", function () {
+        mode = "none";
+        overrides = {};
+        syncDeltas();
+        fetchPage();
+      });
 
     if (searchEl)
       searchEl.addEventListener("input", function () {
@@ -322,17 +430,11 @@
         timer = setTimeout(function () {
           search = searchEl.value.trim();
           page = 1;
-          fetchPage(false);
+          fetchPage();
         }, 300);
       });
 
-    if (moreBtn)
-      moreBtn.addEventListener("click", function () {
-        page += 1;
-        fetchPage(true);
-      });
-
-    fetchPage(false);
+    fetchPage();
   }
 
   // --------------------------------------------------------------------------
@@ -353,10 +455,20 @@
     if (!cfg) return;
 
     var rowsEl = root.querySelector("[data-sensors-rows]");
+    var searchEl = root.querySelector("[data-sensors-search]");
 
     function esc(s) {
       return tpModal.escapeHtml(s);
     }
+
+    function applyFilter() {
+      if (!searchEl) return;
+      var q = searchEl.value.trim().toLowerCase();
+      Array.prototype.forEach.call(rowsEl.querySelectorAll("tr[data-sensor-id]"), function (tr) {
+        tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
+      });
+    }
+    if (searchEl) searchEl.addEventListener("input", applyFilter);
 
     function renderRows(items) {
       if (!items.length) {
@@ -377,6 +489,7 @@
           );
         })
         .join("");
+      applyFilter();
     }
 
     function reload() {
@@ -423,6 +536,430 @@
     });
   }
 
+  // --------------------------------------------------------------------------
+  // ── Tab Servicios (mantenimiento) ───────────────────────────────────
+  // Reutiliza los modales compartidos de tp-services.js; la lista se
+  // re-hidrata desde ui.v2.api.services.device/{id}.
+  // --------------------------------------------------------------------------
+  function wireServicesTab(scope) {
+    var root = scope.querySelector("[data-tp-services-tab]");
+    if (!root) return;
+
+    var deviceId = root.getAttribute("data-device-id");
+    var listUrl = root.getAttribute("data-list-url");
+    var destroyUrl = root.getAttribute("data-destroy-url");
+    var rowsEl = root.querySelector("[data-services-rows]");
+    var searchEl = root.querySelector("[data-services-search]");
+
+    function esc(s) {
+      return tpModal.escapeHtml(s);
+    }
+
+    function applyFilter() {
+      if (!searchEl) return;
+      var q = searchEl.value.trim().toLowerCase();
+      Array.prototype.forEach.call(rowsEl.querySelectorAll("tr[data-service-id]"), function (tr) {
+        tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
+      });
+    }
+    if (searchEl) searchEl.addEventListener("input", applyFilter);
+
+    function renderRows(items) {
+      if (!items.length) {
+        rowsEl.innerHTML =
+          '<tr data-services-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
+        return;
+      }
+      rowsEl.innerHTML = items
+        .map(function (s) {
+          var exp = s.expiration != null ? s.expiration : s.expiration_date || "";
+          return (
+            '<tr data-service-id="' + s.id + '">' +
+            "<td>" + esc(s.name || "") + "</td>" +
+            "<td>" + esc(exp) + "</td>" +
+            '<td style="text-align:right;white-space:nowrap;">' +
+            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-service-edit="' + s.id + '" title="Editar">✎</button>' +
+            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-service-del="' + s.id + '" title="Eliminar">🗑</button>' +
+            "</td></tr>"
+          );
+        })
+        .join("");
+      applyFilter();
+    }
+
+    function reload() {
+      tpModal.fetchJSON(listUrl, { method: "GET" }).then(function (res) {
+        if (res.ok && res.data && res.data.ok) renderRows(res.data.items || []);
+      });
+    }
+
+    root.addEventListener("click", function (e) {
+      if (!window.tpServices) return;
+      var add = e.target.closest("[data-service-add]");
+      if (add) {
+        tpServices.openForm(deviceId, null, reload);
+        return;
+      }
+      var edit = e.target.closest("[data-service-edit]");
+      if (edit) {
+        tpServices.openForm(deviceId, edit.getAttribute("data-service-edit"), reload);
+        return;
+      }
+      var del = e.target.closest("[data-service-del]");
+      if (del) {
+        var sid = del.getAttribute("data-service-del");
+        tpModal
+          .confirm({
+            title: "Eliminar servicio",
+            message: "¿Eliminar este servicio?",
+            danger: true,
+            confirmLabel: "Eliminar",
+          })
+          .then(function (okGo) {
+            if (!okGo) return;
+            tpModal.fetchJSON(destroyUrl.replace("{id}", sid), { method: "DELETE" }).then(function (res) {
+              if (res.ok && res.data && (res.data.ok || res.data.status)) {
+                tpModal.toast("Servicio eliminado.", "success");
+                reload();
+              } else {
+                tpModal.toast("No se pudo eliminar.", "error");
+              }
+            });
+          });
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // ── Tab Cámaras ─────────────────────────────────────────────────────
+  // Form nativo mínimo (paridad legacy: name + show_widget); las
+  // credenciales FTP las genera el job del backend al crear.
+  // --------------------------------------------------------------------------
+  function wireCamerasTab(scope) {
+    var root = scope.querySelector("[data-tp-cameras]");
+    if (!root) return;
+
+    var cfg;
+    try {
+      cfg = JSON.parse(root.querySelector("[data-cameras-cfg]").textContent || "null");
+    } catch (e) {
+      cfg = null;
+    }
+    if (!cfg) return;
+
+    var rowsEl = root.querySelector("[data-cameras-rows]");
+
+    function esc(s) {
+      return tpModal.escapeHtml(s);
+    }
+
+    function renderRows(items) {
+      if (!items.length) {
+        rowsEl.innerHTML =
+          '<tr data-cameras-empty><td colspan="4" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
+        return;
+      }
+      rowsEl.innerHTML = items
+        .map(function (c) {
+          return (
+            '<tr data-camera-id="' + c.id + '">' +
+            "<td>" + esc(c.name) + "</td>" +
+            "<td>" + (c.show_widget ? "Sí" : "No") + "</td>" +
+            "<td>" + esc(c.ftp_username || "") + "</td>" +
+            '<td style="text-align:right;white-space:nowrap;">' +
+            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-camera-edit="' + c.id +
+            '" data-name="' + esc(c.name) + '" data-widget="' + (c.show_widget ? 1 : 0) + '" title="Editar">✎</button>' +
+            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-camera-del="' + c.id + '" title="Eliminar">🗑</button>' +
+            "</td></tr>"
+          );
+        })
+        .join("");
+    }
+
+    function reload() {
+      tpModal.fetchJSON(cfg.list, { method: "GET" }).then(function (res) {
+        if (res.ok && res.data && res.data.ok) renderRows(res.data.items || []);
+      });
+    }
+
+    function openForm(id, name, widget) {
+      var isEdit = !!id;
+      tpModal.open({
+        title: isEdit ? "Editar cámara" : "Nueva cámara",
+        size: "sm",
+        static: true,
+        body:
+          '<form class="tp-form tp-camera-form">' +
+          '<div class="tp-form__grid">' +
+          '<label class="tp-form__field tp-form__field--required">' +
+          '<span class="tp-form__label">Nombre</span>' +
+          '<input type="text" name="name" value="' + esc(name || "") + '" data-tp-field>' +
+          "</label>" +
+          '<label class="tp-form__field tp-form__field--checkbox">' +
+          '<input type="checkbox" name="show_widget" value="1"' + (widget ? " checked" : "") + ">" +
+          '<span class="tp-form__label">Mostrar widget</span>' +
+          "</label>" +
+          "</div></form>",
+        buttons: [
+          { label: "Cancelar", variant: "ghost", close: true },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (dialog) {
+              var form = dialog.querySelector("form.tp-camera-form");
+              var payload = {
+                name: form.querySelector('[name="name"]').value.trim(),
+                show_widget: form.querySelector('[name="show_widget"]').checked ? 1 : 0,
+              };
+              var url = isEdit ? cfg.update.replace("{id}", id) : cfg.store;
+              tpModal.setBusy(dialog, true);
+              tpModal
+                .fetchJSON(url, { method: isEdit ? "PUT" : "POST", json: payload })
+                .then(function (res) {
+                  tpModal.setBusy(dialog, false);
+                  if (res.status === 422) {
+                    tpModal.showFieldErrors(dialog, (res.data && res.data.errors) || {});
+                    return;
+                  }
+                  if (!res.ok || !res.data || !res.data.ok) {
+                    tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+                    return;
+                  }
+                  tpModal.toast("Cámara guardada.", "success");
+                  tpModal.close(dialog);
+                  reload();
+                });
+              return false;
+            },
+          },
+        ],
+      });
+    }
+
+    root.addEventListener("click", function (e) {
+      var add = e.target.closest("[data-camera-add]");
+      if (add) {
+        openForm(null);
+        return;
+      }
+      var edit = e.target.closest("[data-camera-edit]");
+      if (edit) {
+        openForm(edit.getAttribute("data-camera-edit"), edit.getAttribute("data-name"), edit.getAttribute("data-widget") === "1");
+        return;
+      }
+      var del = e.target.closest("[data-camera-del]");
+      if (del) {
+        var cid = del.getAttribute("data-camera-del");
+        tpModal
+          .confirm({ title: "Eliminar cámara", message: "¿Eliminar esta cámara?", danger: true, confirmLabel: "Eliminar" })
+          .then(function (okGo) {
+            if (!okGo) return;
+            tpModal.fetchJSON(cfg.destroy.replace("{id}", cid), { method: "DELETE" }).then(function (res) {
+              if (res.ok && res.data && res.data.ok) {
+                tpModal.toast("Cámara eliminada.", "success");
+                reload();
+              } else {
+                tpModal.toast("No se pudo eliminar.", "error");
+              }
+            });
+          });
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // ── Tab Gastos ──────────────────────────────────────────────────────
+  // Form nativo con los campos del legacy DeviceExpenses (name, date,
+  // type_id, quantity, unit_cost, supplier, buyer, additional).
+  // --------------------------------------------------------------------------
+  function wireExpensesTab(scope) {
+    var root = scope.querySelector("[data-tp-expenses]");
+    if (!root) return;
+
+    var cfg;
+    try {
+      cfg = JSON.parse(root.querySelector("[data-expenses-cfg]").textContent || "null");
+    } catch (e) {
+      cfg = null;
+    }
+    if (!cfg) return;
+
+    var rowsEl = root.querySelector("[data-expenses-rows]");
+    var searchEl = root.querySelector("[data-expenses-search]");
+    var cache = {}; // id -> item completo (para editar)
+
+    function esc(s) {
+      return tpModal.escapeHtml(s);
+    }
+
+    function applyFilter() {
+      if (!searchEl) return;
+      var q = searchEl.value.trim().toLowerCase();
+      Array.prototype.forEach.call(rowsEl.querySelectorAll("tr[data-expense-id]"), function (tr) {
+        tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) >= 0 ? "" : "none";
+      });
+    }
+    if (searchEl) searchEl.addEventListener("input", applyFilter);
+
+    function renderRows(items) {
+      cache = {};
+      items.forEach(function (it) {
+        cache[String(it.id)] = it;
+      });
+      if (!items.length) {
+        rowsEl.innerHTML =
+          '<tr data-expenses-empty><td colspan="6" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
+        return;
+      }
+      rowsEl.innerHTML = items
+        .map(function (it) {
+          return (
+            '<tr data-expense-id="' + it.id + '">' +
+            "<td>" + esc(it.name) + "</td>" +
+            "<td>" + esc(it.quantity) + "</td>" +
+            "<td>" + esc(it.unit_cost) + "</td>" +
+            "<td>" + esc(it.total) + "</td>" +
+            "<td>" + esc(it.date || "") + "</td>" +
+            '<td style="text-align:right;white-space:nowrap;">' +
+            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-expense-edit="' + it.id + '" title="Editar">✎</button>' +
+            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-expense-del="' + it.id + '" title="Eliminar">🗑</button>' +
+            "</td></tr>"
+          );
+        })
+        .join("");
+      applyFilter();
+    }
+
+    function reload() {
+      tpModal.fetchJSON(cfg.list, { method: "GET" }).then(function (res) {
+        if (res.ok && res.data && res.data.ok) renderRows(res.data.items || []);
+      });
+    }
+
+    function typeOptions(sel) {
+      return (cfg.types || [])
+        .map(function (t) {
+          return '<option value="' + t.id + '"' + (String(sel) === String(t.id) ? " selected" : "") + ">" + esc(t.title) + "</option>";
+        })
+        .join("");
+    }
+
+    function toLocalDT(s) {
+      // "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM" (datetime-local)
+      if (!s) return "";
+      return s.replace(" ", "T").substring(0, 16);
+    }
+
+    function openForm(item) {
+      var isEdit = !!(item && item.id);
+      item = item || {};
+      tpModal.open({
+        title: isEdit ? "Editar gasto" : "Nuevo gasto",
+        static: true,
+        body:
+          '<form class="tp-form tp-expense-form">' +
+          '<div class="tp-form__grid tp-form__grid--2">' +
+          '<label class="tp-form__field tp-form__field--required tp-col-2">' +
+          '<span class="tp-form__label">Nombre</span>' +
+          '<input type="text" name="name" value="' + esc(item.name || "") + '" data-tp-field></label>' +
+          '<label class="tp-form__field tp-form__field--required">' +
+          '<span class="tp-form__label">Fecha</span>' +
+          '<input type="datetime-local" name="date" value="' + esc(toLocalDT(item.date)) + '" data-tp-field></label>' +
+          '<label class="tp-form__field tp-form__field--required">' +
+          '<span class="tp-form__label">Tipo</span>' +
+          '<select class="tp-input" style="width:100%" name="type_id" data-tp-field>' + typeOptions(item.type_id) + "</select></label>" +
+          '<label class="tp-form__field tp-form__field--required">' +
+          '<span class="tp-form__label">Cantidad</span>' +
+          '<input type="number" step="0.01" name="quantity" value="' + esc(item.quantity != null ? item.quantity : "") + '" data-tp-field></label>' +
+          '<label class="tp-form__field tp-form__field--required">' +
+          '<span class="tp-form__label">Costo unitario</span>' +
+          '<input type="number" step="0.01" name="unit_cost" value="' + esc(item.unit_cost != null ? item.unit_cost : "") + '" data-tp-field></label>' +
+          '<label class="tp-form__field">' +
+          '<span class="tp-form__label">Proveedor</span>' +
+          '<input type="text" name="supplier" value="' + esc(item.supplier || "") + '" data-tp-field></label>' +
+          '<label class="tp-form__field">' +
+          '<span class="tp-form__label">Comprador</span>' +
+          '<input type="text" name="buyer" value="' + esc(item.buyer || "") + '" data-tp-field></label>' +
+          '<label class="tp-form__field tp-col-2">' +
+          '<span class="tp-form__label">Notas adicionales</span>' +
+          '<textarea name="additional" rows="3" data-tp-field>' + esc(item.additional || "") + "</textarea></label>" +
+          "</div></form>",
+        buttons: [
+          { label: "Cancelar", variant: "ghost", close: true },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (dialog) {
+              var form = dialog.querySelector("form.tp-expense-form");
+              var payload = {};
+              ["name", "date", "type_id", "quantity", "unit_cost", "supplier", "buyer", "additional"].forEach(function (k) {
+                var el = form.querySelector('[name="' + k + '"]');
+                if (el) payload[k] = el.value;
+              });
+              var url = isEdit ? cfg.update.replace("{id}", item.id) : cfg.store;
+              tpModal.setBusy(dialog, true);
+              tpModal
+                .fetchJSON(url, { method: isEdit ? "PUT" : "POST", json: payload })
+                .then(function (res) {
+                  tpModal.setBusy(dialog, false);
+                  if (res.status === 422) {
+                    tpModal.showFieldErrors(dialog, (res.data && res.data.errors) || {});
+                    tpModal.toast("Revisa los campos marcados.", "warning");
+                    return;
+                  }
+                  if (!res.ok || !res.data || !res.data.ok) {
+                    tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+                    return;
+                  }
+                  tpModal.toast("Gasto guardado.", "success");
+                  tpModal.close(dialog);
+                  reload();
+                });
+              return false;
+            },
+          },
+        ],
+      });
+    }
+
+    root.addEventListener("click", function (e) {
+      var add = e.target.closest("[data-expense-add]");
+      if (add) {
+        openForm(null);
+        return;
+      }
+      var edit = e.target.closest("[data-expense-edit]");
+      if (edit) {
+        var it = cache[edit.getAttribute("data-expense-edit")];
+        if (it) openForm(it);
+        else reload();
+        return;
+      }
+      var del = e.target.closest("[data-expense-del]");
+      if (del) {
+        var xid = del.getAttribute("data-expense-del");
+        tpModal
+          .confirm({ title: "Eliminar gasto", message: "¿Eliminar este gasto?", danger: true, confirmLabel: "Eliminar" })
+          .then(function (okGo) {
+            if (!okGo) return;
+            tpModal.fetchJSON(cfg.destroy.replace("{id}", xid), { method: "DELETE" }).then(function (res) {
+              if (res.ok && res.data && res.data.ok) {
+                tpModal.toast("Gasto eliminado.", "success");
+                reload();
+              } else {
+                tpModal.toast("No se pudo eliminar.", "error");
+              }
+            });
+          });
+      }
+    });
+
+    // La lista server-rendered no trae los campos completos → precarga el caché.
+    reload();
+  }
+
   // Serializador del form de sensor: soporta calibrations[x] (objeto),
   // mappings[i][k] (array de objetos) y claves planas. Los inputs de
   // bloques ocultos van disabled → FormData los excluye (paridad legacy).
@@ -460,6 +997,7 @@
     var dlg = tpModal.open({
       title: isEdit ? "Editar sensor" : "Nuevo sensor",
       size: "lg",
+      static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
         { label: "Cancelar", variant: "ghost", close: true },
@@ -864,6 +1402,7 @@
         ? "Modifica los datos del equipo y guarda."
         : "Da de alta una unidad: configuración técnica completa.",
       size: "xl",
+      static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
         { label: "Cancelar", variant: "ghost", close: true },
@@ -930,10 +1469,15 @@
         bodyEl.innerHTML = html;
         wireTabs(bodyEl);
         wireIconGallery(bodyEl);
-        wireExpirationMirror(bodyEl);
+        wireIconsTab(bodyEl);
+        wireExpiration(bodyEl);
+        wireEnablers(bodyEl);
         wireRouteColors(bodyEl);
         wireUsersTab(bodyEl);
         wireSensorsTab(bodyEl);
+        wireServicesTab(bodyEl);
+        wireCamerasTab(bodyEl);
+        wireExpensesTab(bodyEl);
       })
       .catch(function () {
         var bodyEl = dlg.querySelector(".tp-modal__body");
