@@ -7,6 +7,16 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 22 jul 2026 (4) — Notificaciones de eventos EN VIVO (rama `nuevo-tema`)
+
+**Popup + sonido + Notification API portados** (paridad con `EventSys.notice()/sound()` + `Notifications()` legacy). Hallazgo clave: en el legacy los eventos en vivo van por **POLLING** (no socket) al `objects.items_json`, con los flags popup/sound/color derivados de `alert.notifications` en cada poll por el `EventLatestTransformer`.
+
+- **Backend**: `Ui\V2\EventsController@live` (`ui.v2.api.events.live?time=`) replica el bloque de eventos del `DeviceModalHelper::itemsJson()`: ventana máx 5 min, `higherTime` (excluye silenciados), filtro `popup.active`, y el mismo `EventLatestTransformer` (sound=URL mp3 vía `AlertSoundService`, color, delay 0|5|10). `ShellController@notifications` deja los datos demo y alimenta el **tray con los últimos 30 eventos reales** (`title`, device·geocerca, `variant` = `eventSeverity()`).
+- **`tp-notify.js`** (global en el layout → funciona en TODAS las páginas v2): poll 15s; por evento → **toast rico apilado** (borde del color de la alerta, mensaje, device·geocerca·velocidad, auto-cierre según `delay`, 0 = fijo; click → página Eventos), **sonido** (`new Audio(ev.sound)`, uno por lote) y **Notification API** (permiso al cargar, como el legacy). El "visto" = timestamp en localStorage (igual que el legacy avanza `checkTimestamp`), compartido entre páginas → sin duplicados al navegar.
+- **Tray** (`notifications.js`): estado "leído" client-side por last-seen en localStorage (la tabla `events` no tiene marcador); "marcar todo" fija el last-seen; tp-notify refresca el tray al llegar eventos.
+
+---
+
 ## 🔄 Actualización · 22 jul 2026 (3) — Conductores (UserDrivers) nativo (rama `nuevo-tema`)
 
 **Módulo Conductores migrado** (`/ui/v2/drivers`, rail activo), delegando 100% en `UserDriverModalHelper` legacy (validación `UserDriverFormValidator`, pivot `user_driver_devices` vía `syncLoader`, vehículo actual con `current`+`device_id` → `Device::changeDriver`/`UserDriver::changeDevice`):
@@ -325,7 +335,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `DevicePlans/` · `DeviceSubscription/` · `Subscriptions/` | stub | ❌ |
 | `MyAccount/` · `MyAccountSettings/` · `Languages/` | tema/densidad/idioma es⇄en en shell | ❌ página cuenta (unidades, TZ, contraseña, plantillas) |
 | `VehicleTypes/` (tipos/estados p/ límites por geocerca) | matriz VSL en modal de geocerca ✅ | ❌ CRUD de tipos/estados |
-| `Popups/` + notifications.js (popup + sonido + desktop Notification) | tray de notificaciones (polling) | ⚠️ sin sonido ni popup por evento en vivo |
+| `Popups/` + notifications.js (popup + sonido + desktop Notification) | ✅ `tp-notify.js` global (toast+sonido+Notification API, feed `events/live`) + tray con eventos reales | ✅ (22-jul; `Popups/` banners admin no portados — otro sistema) |
 | `ObjectsList/` (listview) | `fleet` | ✅ equivalente |
 | `Import/` (masivo devices) | solo geofences/pois import links | ❌ |
 | `Forwards/` · `SecondaryCredentials/` · `SmsGateway/` · `Beacons/` · `Lookup/` · `Addresses/` · `Docs` · `LoginAs/` · `Schedules/` | `admin` (deeplinks) | ⚠️ Solo enlace |

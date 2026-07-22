@@ -19,6 +19,30 @@
   var data = [];
   var pollMs = 30000;
 
+  // Estado "leído" client-side: timestamp last-seen en localStorage (la
+  // tabla events no tiene marcador de lectura; el server manda read=false).
+  var SEEN_KEY = "tp_notif_seen";
+  function getSeen() {
+    try {
+      return parseInt(localStorage.getItem(SEEN_KEY), 10) || 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+  function setSeen(ms) {
+    try {
+      localStorage.setItem(SEEN_KEY, String(ms));
+    } catch (e) {}
+  }
+  function applySeen() {
+    var seen = getSeen();
+    data.forEach(function (n) {
+      if (n.read) return;
+      var t = n.created_at ? new Date(n.created_at).getTime() : 0;
+      n.read = t > 0 && t <= seen;
+    });
+  }
+
   var iconByVariant = {
     critical: "🚨",
     warning: "⚠",
@@ -135,6 +159,7 @@
       })
       .then(function (json) {
         data = (json && json.notifications) || [];
+        applySeen();
         render();
         refreshBadge();
       })
@@ -155,6 +180,7 @@
 
   if (markAll) {
     markAll.addEventListener("click", function () {
+      setSeen(Date.now());
       data.forEach(function (n) {
         n.read = true;
       });
@@ -166,7 +192,6 @@
           variant: "success",
           duration: 2000,
         });
-      // TODO: POST to backend mark-all-read endpoint in Phase 2.
     });
   }
 

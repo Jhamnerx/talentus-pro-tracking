@@ -17,6 +17,41 @@ use Illuminate\Support\Facades\View;
  */
 class EventsController extends BaseController
 {
+    /**
+     * Feed de eventos NUEVOS para notificaciones en vivo (popup + sonido).
+     * Paridad con el bloque de eventos de DeviceModalHelper::itemsJson():
+     * ventana máx 5 min desde `time`, excluye silenciados (higherTime) y
+     * solo alertas con el canal popup activo. El EventLatestTransformer
+     * deriva sound (URL del mp3), color y delay de alert.notifications.
+     */
+    public function live(Request $request): JsonResponse
+    {
+        $now = time();
+
+        if (! $this->user->perm('events', 'view')) {
+            return response()->json(['ok' => true, 'events' => [], 'time' => $now]);
+        }
+
+        $time = (int) $request->get('time') ?: $now - 5;
+        $eventTime = ($now - $time > 300) ? $now - 300 : $time;
+
+        $events = \Tobuli\Entities\Event::userAccessible($this->user)
+            ->higherTime($eventTime, null)
+            ->get()
+            ->filter(function ($event) {
+                return \Illuminate\Support\Arr::get($event, 'alert.notifications.popup.active', true);
+            })
+            ->values();
+
+        $payload = \FractalTransformer::collection($events, \App\Transformers\Event\EventLatestTransformer::class)->toArray();
+
+        return response()->json([
+            'ok'     => true,
+            'events' => $payload['data'] ?? $payload,
+            'time'   => $now,
+        ]);
+    }
+
     public function index(Request $request)
     {
         if (! $this->user->perm('events', 'view')) {

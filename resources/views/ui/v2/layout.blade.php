@@ -60,6 +60,7 @@
             routes: {
                 search: '{{ url('/ui/v2/api/search') }}',
                 notifications: '{{ url('/ui/v2/api/notifications') }}',
+                eventsLive: '{{ url('/ui/v2/api/events/live') }}',
                 preferences: '{{ url('/ui/v2/api/preferences') }}',
             },
             locale: '{{ app()->getLocale() }}'
@@ -102,7 +103,9 @@
     <script src="{{ asset('assets/ui/v2/js/tp-hitos.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/shell.js') }}?v=1" defer></script>
     <script src="{{ asset('assets/ui/v2/js/command-palette.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/notifications.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/notifications.js') }}?v=2" defer></script>
+    {{-- Eventos en vivo: popup + sonido + Notification API (paridad legacy) --}}
+    <script src="{{ asset('assets/ui/v2/js/tp-notify.js') }}?v=1" defer></script>
 
     @stack('scripts')
 

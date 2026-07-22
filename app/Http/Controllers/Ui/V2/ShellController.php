@@ -128,6 +128,11 @@ class ShellController extends BaseController
         ]);
     }
 
+    /**
+     * Tray de notificaciones: últimos eventos de alerta del usuario.
+     * El estado "leído" es client-side (localStorage last-seen en
+     * notifications.js) — la tabla events no tiene marcador de lectura.
+     */
     public function notifications(Request $request): JsonResponse
     {
         $user = $this->user;
@@ -135,29 +140,33 @@ class ShellController extends BaseController
             return response()->json(['notifications' => []], 401);
         }
 
-        $now = now();
-        $items = [
-            [
-                'id'          => 'demo-1',
-                'title'       => 'Bienvenido al nuevo Command Center',
-                'description' => 'Estás viendo la vista previa del rediseño Fase 1.',
-                'variant'     => 'info',
-                'category'    => 'system',
-                'read'        => false,
-                'created_at'  => $now->copy()->subMinutes(1)->toIso8601String(),
-                'url'         => null,
-            ],
-            [
-                'id'          => 'demo-2',
-                'title'       => 'Atajos disponibles',
-                'description' => 'Presiona Ctrl+K para abrir el buscador global.',
-                'variant'     => 'success',
-                'category'    => 'system',
-                'read'        => false,
-                'created_at'  => $now->copy()->subMinutes(2)->toIso8601String(),
-                'url'         => null,
-            ],
-        ];
+        if (! $user->perm('events', 'view')) {
+            return response()->json(['notifications' => []]);
+        }
+
+        $items = \Tobuli\Entities\Event::userAccessible($user)
+            ->with(['device', 'geofence'])
+            ->orderBy('events.id', 'desc')
+            ->take(30)
+            ->get()
+            ->map(function ($event) {
+                $desc = trim(implode(' · ', array_filter([
+                    $event->device->name ?? null,
+                    $event->geofence->name ?? null,
+                ])));
+
+                return [
+                    'id'          => (int) $event->id,
+                    'title'       => (string) $event->title,
+                    'description' => $desc,
+                    'variant'     => $this->eventSeverity((string) $event->type),
+                    'category'    => 'alerts',
+                    'read'        => false, // lo resuelve el cliente (last-seen)
+                    'created_at'  => optional($event->created_at)->toIso8601String(),
+                    'url'         => url('/ui/v2/events'),
+                ];
+            })
+            ->all();
 
         return response()->json(['notifications' => $items]);
     }

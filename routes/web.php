@@ -1145,6 +1145,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('zones',          ['as' => 'api.zones',         'uses' => 'Ui\V2\ZonesController@data']);
         Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
         Route::get('events',         ['as' => 'api.events',        'uses' => 'Ui\V2\EventsController@data']);
+        Route::get('events/live',    ['as' => 'api.events.live',   'uses' => 'Ui\V2\EventsController@live']);
         Route::get('pois',           ['as' => 'api.pois',          'uses' => 'Ui\V2\MapLayersController@pois']);
         Route::get('pois/form',      ['as' => 'api.pois.form',     'uses' => 'Ui\V2\MapLayersController@poiForm']);
         Route::get('pois/{id}/form', ['as' => 'api.pois.form_edit', 'uses' => 'Ui\V2\MapLayersController@poiForm'])->where('id', '[0-9]+');
