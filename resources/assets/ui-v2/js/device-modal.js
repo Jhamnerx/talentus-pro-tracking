@@ -109,6 +109,42 @@
     refresh();
   }
 
+  // Labels dinámicos de combustible (paridad legacy: fuel_title /
+  // distance_title / cost_title cambian según la medición elegida).
+  function wireFuelLabels(scope) {
+    var root = scope.querySelector("[data-tp-fuel]");
+    if (!root) return;
+    var measurements;
+    try {
+      measurements = JSON.parse(root.querySelector("[data-tp-fuel-measurements]").textContent || "[]");
+    } catch (e) {
+      measurements = [];
+    }
+    if (!Array.isArray(measurements)) measurements = Object.values(measurements);
+    var sel = root.querySelector('select[name="fuel_measurement_id"]');
+    if (!sel) return;
+
+    function apply() {
+      var m = null;
+      for (var i = 0; i < measurements.length; i++) {
+        if (String(measurements[i].id) === String(sel.value)) {
+          m = measurements[i];
+          break;
+        }
+      }
+      if (!m) return;
+      var ft = root.querySelector("[data-fuel-title]");
+      var dt = root.querySelector("[data-distance-title]");
+      var ct = root.querySelector("[data-cost-title]");
+      if (ft) ft.textContent = m.fuel_title || "";
+      if (dt) dt.textContent = m.distance_title || "";
+      if (ct) ct.textContent = m.cost_title || "";
+    }
+
+    sel.addEventListener("change", apply);
+    apply();
+  }
+
   // Tab Iconos — paridad legacy: arrow → SOLO colores por estado;
   // icon/rotating → SOLO la galería de su grupo (radios de grupos
   // ocultos quedan disabled para que icon_id no viaje).
@@ -1398,16 +1434,13 @@
 
     var dlg = tpModal.open({
       title: isEdit ? "Editar vehículo" : "Nuevo vehículo",
-      sub: isEdit
-        ? "Modifica los datos del equipo y guarda."
-        : "Da de alta una unidad: configuración técnica completa.",
-      size: "xl",
+      size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
         { label: "Cancelar", variant: "ghost", close: true },
         {
-          label: isEdit ? "Guardar cambios" : "Crear vehículo",
+          label: "Guardar",
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -1472,6 +1505,7 @@
         wireIconsTab(bodyEl);
         wireExpiration(bodyEl);
         wireEnablers(bodyEl);
+        wireFuelLabels(bodyEl);
         wireRouteColors(bodyEl);
         wireUsersTab(bodyEl);
         wireSensorsTab(bodyEl);

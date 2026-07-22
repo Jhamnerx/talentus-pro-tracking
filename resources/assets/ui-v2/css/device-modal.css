@@ -194,15 +194,18 @@
  * ------------------------------------------------------------------------- */
 .tp-device-form .tp-tabs__nav {
   position: sticky;
-  top: 0;
-  z-index: 2;
+  /* full-bleed: compensa el padding del .tp-modal__body para quedar
+     pegado al header del modal (sin franja por la que se vea contenido) */
+  top: calc(var(--sp-4, 16px) * -1);
+  margin: calc(var(--sp-4, 16px) * -1) calc(var(--sp-4, 16px) * -1) 18px;
+  z-index: 5;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 0;
-  margin-bottom: 16px;
   background: var(--surface-sunken, #f1f5f9);
-  border: 1px solid var(--border-default, #e2e8f0);
-  border-radius: var(--r-md, 8px) var(--r-md, 8px) 0 0;
+  border: 0;
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 0;
   overflow: hidden;
 }
 @media (max-width: 640px) {

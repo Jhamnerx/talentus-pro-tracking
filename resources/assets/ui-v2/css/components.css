@@ -36,6 +36,21 @@
   margin: 0;
 }
 
+/* El reset de arriba (color: inherit) pisaba el color de las variantes
+   sólidas de botón (mayor especificidad que .tp-btn--*): re-afirmarlas. */
+.tp-scope button.tp-btn--primary,
+.tp-scope a.tp-btn--primary {
+  color: var(--brand-fg-solid, #fff);
+}
+.tp-scope button.tp-btn--accent,
+.tp-scope a.tp-btn--accent {
+  color: #fff;
+}
+.tp-scope button.tp-btn--danger,
+.tp-scope a.tp-btn--danger {
+  color: #fff;
+}
+
 .tp-scope :focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);

@@ -21,7 +21,7 @@
         <button type="button" class="tp-link-action" data-users-deselect-all>{{ trans('front.deselect_all') }}</button>
     </div>
 
-    <div data-users-list style="min-height: 120px;">
+    <div data-users-list style="min-height: 120px; max-height: 300px; overflow-y: auto;">
         <div class="tp-text-muted" style="padding: 12px 4px; font-size: 13px;">…</div>
     </div>
 
