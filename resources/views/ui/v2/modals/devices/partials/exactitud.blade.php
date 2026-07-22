@@ -19,7 +19,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Detección de horas de motor</span>
-        <select name="engine_hours" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="engine_hours" data-tp-field>
             @foreach ($eh as $k => $v)
                 <option value="{{ $k }}" {{ ($item->engine_hours ?? 'off') == $k ? 'selected' : '' }}>
                     {{ $v }}</option>
@@ -29,7 +29,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Detección de encendido</span>
-        <select name="detect_engine" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="detect_engine" data-tp-field>
             @foreach ($de as $k => $v)
                 <option value="{{ $k }}" {{ ($item->detect_engine ?? 'off') == $k ? 'selected' : '' }}>
                     {{ $v }}</option>
@@ -39,7 +39,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Detección de velocidad</span>
-        <select name="detect_speed" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="detect_speed" data-tp-field>
             @foreach ($ds as $k => $v)
                 <option value="{{ $k }}" {{ ($item->detect_speed ?? 'off') == $k ? 'selected' : '' }}>
                     {{ $v }}</option>
@@ -73,7 +73,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Retraso detección tras detención</span>
-        <select name="fuel_detect_sec_after_stop" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="fuel_detect_sec_after_stop" data-tp-field>
             @foreach ($stops as $k => $v)
                 <option value="{{ $k }}"
                     {{ (string) ($item->fuel_detect_sec_after_stop ?? 0) === (string) $k ? 'selected' : '' }}>

@@ -5,7 +5,7 @@
 
 @push('head')
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=1">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=4">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -122,7 +122,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=3"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=4"></script>
     <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=1" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.

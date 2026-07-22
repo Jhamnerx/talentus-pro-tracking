@@ -40,21 +40,21 @@
             </button>
         </div>
 
-        <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 10px; overflow: hidden;">
-            <table class="tp-table" style="width: 100%; font-size: 13px;">
+        <div class="tp-embed-box">
+            <table>
                 <thead>
                     <tr>
-                        <th style="text-align: left; padding: 8px 12px;">{{ trans('validation.attributes.sensor_name') }}</th>
-                        <th style="text-align: left; padding: 8px 12px;">{{ trans('validation.attributes.sensor_type') }}</th>
+                        <th>{{ trans('validation.attributes.sensor_name') }}</th>
+                        <th>{{ trans('validation.attributes.sensor_type') }}</th>
                         <th style="width: 84px;"></th>
                     </tr>
                 </thead>
                 <tbody data-sensors-rows>
                     @forelse ($sensorsList as $s)
                         <tr data-sensor-id="{{ $s['id'] }}">
-                            <td style="padding: 7px 12px;">{{ $s['name'] }}</td>
-                            <td style="padding: 7px 12px;">{{ $s['type'] }}</td>
-                            <td style="padding: 4px 8px; text-align: right; white-space: nowrap;">
+                            <td>{{ $s['name'] }}</td>
+                            <td>{{ $s['type'] }}</td>
+                            <td style="text-align: right; white-space: nowrap;">
                                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-edit="{{ $s['id'] }}"
                                     title="{{ trans('global.edit') }}">✎</button>
                                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-del="{{ $s['id'] }}"

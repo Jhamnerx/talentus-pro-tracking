@@ -17,7 +17,7 @@
     <input type="search" class="tp-input" data-users-search placeholder="Buscar por email…" autocomplete="off">
 
     <div data-users-list
-        style="max-height: 300px; overflow-y: auto; border: 1px solid rgba(148,163,184,.35); border-radius: 10px; padding: 6px 10px; margin-top: 10px;">
+        style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-default, #e2e8f0); border-radius: var(--r-lg, 12px); padding: 6px 10px; margin-top: 10px; background: var(--surface-raised, #fff);">
         <div class="tp-text-muted" style="padding: 12px 4px; font-size: 13px;">Cargando…</div>
     </div>
 

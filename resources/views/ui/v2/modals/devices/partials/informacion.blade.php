@@ -25,7 +25,7 @@
 <div class="tp-form__grid tp-form__grid--2">
     <label class="tp-form__field">
         <span class="tp-form__label">Grupo</span>
-        <select name="group_id" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="group_id" data-tp-field>
             @foreach ($groups as $gid => $gtitle)
                 <option value="{{ $gid }}" {{ (string) $selGroup === (string) $gid ? 'selected' : '' }}>
                     {{ $gtitle }}</option>
@@ -35,7 +35,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Tipo de equipo</span>
-        <select name="device_type_id" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="device_type_id" data-tp-field>
             @foreach ($types as $tid => $ttitle)
                 <option value="{{ $tid }}" {{ (string) $selType === (string) $tid ? 'selected' : '' }}>
                     {{ $ttitle }}</option>
@@ -45,7 +45,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Zona horaria</span>
-        <select name="timezone_id" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="timezone_id" data-tp-field>
             @foreach ($tzs as $tzid => $tzlabel)
                 <option value="{{ $tzid }}" {{ (string) $selTz === (string) $tzid ? 'selected' : '' }}>
                     {{ $tzlabel }}</option>
@@ -60,7 +60,7 @@
 
     <label class="tp-form__field">
         <span class="tp-form__label">Operador SIM</span>
-        <select name="operator_sim" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="operator_sim" data-tp-field>
             @foreach ($operatorSimOptions as $k => $v)
                 <option value="{{ $k }}" {{ ($item->operator_sim ?? '') === $k ? 'selected' : '' }}>
                     {{ $v }}</option>

@@ -14,7 +14,7 @@
 <div class="tp-form__grid tp-form__grid--2">
     <label class="tp-form__field">
         <span class="tp-form__label">Tipo de ícono</span>
-        <select name="device_icons_type" data-tp-field>
+        <select class="tp-input" style="width: 100%" name="device_icons_type" data-tp-field>
             @foreach ($iconTypes as $k => $label)
                 <option value="{{ $k }}" {{ $iconType === $k ? 'selected' : '' }}>{{ $label }}</option>
             @endforeach
@@ -42,7 +42,7 @@
             @php $val = $iconColorsItem[$st] ?? null; @endphp
             <label class="tp-form__field">
                 <span class="tp-form__label">{{ $stLabel }}</span>
-                <select name="icon_colors[{{ $st }}]" data-tp-field>
+                <select class="tp-input" style="width: 100%" name="icon_colors[{{ $st }}]" data-tp-field>
                     @foreach ($colors as $cKey => $cLabel)
                         <option value="{{ $cKey }}" {{ $val === $cKey ? 'selected' : '' }}>
                             {{ $cLabel }}</option>

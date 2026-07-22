@@ -368,9 +368,9 @@
         .map(function (s) {
           return (
             '<tr data-sensor-id="' + s.id + '">' +
-            '<td style="padding:7px 12px;">' + esc(s.name) + "</td>" +
-            '<td style="padding:7px 12px;">' + esc(s.type) + "</td>" +
-            '<td style="padding:4px 8px;text-align:right;white-space:nowrap;">' +
+            "<td>" + esc(s.name) + "</td>" +
+            "<td>" + esc(s.type) + "</td>" +
+            '<td style="text-align:right;white-space:nowrap;">' +
             '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-edit="' + s.id + '" title="Editar">✎</button>' +
             '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-del="' + s.id + '" title="Eliminar">🗑</button>' +
             "</td></tr>"
@@ -676,8 +676,8 @@
         calRows.insertAdjacentHTML(
           "beforeend",
           "<tr>" +
-            '<td style="padding:5px 10px;">' + esc(x) + '<input type="hidden" name="calibrations[' + esc(x) + ']" value="' + esc(y) + '"></td>' +
-            '<td style="padding:5px 10px;">' + esc(y) + "</td>" +
+            "<td>" + esc(x) + '<input type="hidden" name="calibrations[' + esc(x) + ']" value="' + esc(y) + '"></td>' +
+            "<td>" + esc(y) + "</td>" +
             '<td style="text-align:center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cal-del>×</button></td>' +
             "</tr>",
         );
@@ -777,8 +777,8 @@
       mapRows.insertAdjacentHTML(
         "beforeend",
         "<tr>" +
-          '<td style="padding:5px 10px;">' + esc(vt === "2" ? v + " .. " + t : v) + hid + "</td>" +
-          '<td style="padding:5px 10px;">' + esc(mt === "3" ? "[value]" : mv) + hidMt + "</td>" +
+          "<td>" + esc(vt === "2" ? v + " .. " + t : v) + hid + "</td>" +
+          "<td>" + esc(mt === "3" ? "[value]" : mv) + hidMt + "</td>" +
           "<td></td>" +
           '<td style="text-align:center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-map-del>×</button></td>' +
           "</tr>",

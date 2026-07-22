@@ -46,7 +46,7 @@
 
         <label class="tp-form__field tp-form__field--required">
             <span class="tp-form__label">{{ trans('validation.attributes.sensor_template') }}</span>
-            <select name="sensor_type" class="tp-input" data-tp-field>
+            <select name="sensor_type" class="tp-input" style="width: 100%" data-tp-field>
                 @foreach ($sensors as $type => $title)
                     <option value="{{ $type }}" {{ ($item->type ?? null) == $type ? 'selected' : '' }}>{{ $title }}</option>
                 @endforeach
@@ -56,7 +56,7 @@
         <div data-sensor-input="shown_value_by">
             <label class="tp-form__field">
                 <span class="tp-form__label">{{ trans('validation.attributes.shown_value_by') }}</span>
-                <select name="shown_value_by" class="tp-input" data-value="{{ $item->shown_value_by ?? '' }}" data-tp-field></select>
+                <select name="shown_value_by" class="tp-input" style="width: 100%" data-value="{{ $item->shown_value_by ?? '' }}" data-tp-field></select>
             </label>
         </div>
 
@@ -271,7 +271,7 @@
         <div data-sensor-input="odometer_unit">
             <label class="tp-form__field">
                 <span class="tp-form__label">{{ trans('validation.attributes.unit_of_measurement') }}</span>
-                <select name="odometer_value_unit" class="tp-input" data-tp-field>
+                <select name="odometer_value_unit" class="tp-input" style="width: 100%" data-tp-field>
                     <option value="km" {{ ($item->odometer_value_unit ?? 'km') == 'km' ? 'selected' : '' }}>{{ trans('front.km') }}</option>
                     <option value="mi" {{ ($item->odometer_value_unit ?? '') == 'mi' ? 'selected' : '' }}>{{ trans('front.mi') }}</option>
                 </select>
@@ -303,7 +303,7 @@
 
         {{-- ── Panel de calibración (visible si el tipo lo permite Y el check está marcado) ── --}}
         <div class="tp-col-2" data-panel="calibration" style="display: none;">
-            <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 10px; padding: 12px;">
+            <div style="border: 1px solid var(--border-default, #e2e8f0); border-radius: var(--r-lg, 12px); padding: 12px;">
                 <label class="tp-choice" style="margin-bottom: 8px;">
                     <input type="hidden" name="skip_calibration" value="0">
                     <input type="checkbox" class="tp-choice-input" name="skip_calibration" value="1"
@@ -311,20 +311,20 @@
                     <span>{{ trans('validation.attributes.skip_calibration') }}</span>
                 </label>
 
-                <div style="max-height: 220px; overflow-y: auto; border: 1px solid rgba(148,163,184,.25); border-radius: 8px; margin-bottom: 10px;">
-                    <table class="tp-table" style="width: 100%; font-size: 13px;">
+                <div class="tp-embed-box" style="max-height: 220px; overflow-y: auto; margin-bottom: 10px;">
+                    <table>
                         <thead>
                             <tr>
-                                <th style="text-align: left; padding: 6px 10px;">{{ trans('validation.attributes.tag_value') }}</th>
-                                <th style="text-align: left; padding: 6px 10px;">{{ trans('front.calibrated_value') }}</th>
+                                <th>{{ trans('validation.attributes.tag_value') }}</th>
+                                <th>{{ trans('front.calibrated_value') }}</th>
                                 <th style="width: 40px;"></th>
                             </tr>
                         </thead>
                         <tbody data-cal-rows>
                             @foreach ($item->calibrations ?? [] as $x => $y)
                                 <tr>
-                                    <td style="padding: 5px 10px;">{{ $x }}<input type="hidden" name="calibrations[{{ $x }}]" value="{{ $y }}"></td>
-                                    <td style="padding: 5px 10px;">{{ $y }}</td>
+                                    <td>{{ $x }}<input type="hidden" name="calibrations[{{ $x }}]" value="{{ $y }}"></td>
+                                    <td>{{ $y }}</td>
                                     <td style="text-align: center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cal-del>×</button></td>
                                 </tr>
                             @endforeach
@@ -348,13 +348,13 @@
 
         {{-- ── Panel de mapping (visible si el tipo lo permite Y el check está marcado) ── --}}
         <div class="tp-col-2" data-panel="mapping" style="display: none;">
-            <div style="border: 1px solid rgba(148,163,184,.35); border-radius: 10px; padding: 12px;">
-                <div style="max-height: 220px; overflow-y: auto; border: 1px solid rgba(148,163,184,.25); border-radius: 8px; margin-bottom: 10px;">
-                    <table class="tp-table" style="width: 100%; font-size: 13px;">
+            <div style="border: 1px solid var(--border-default, #e2e8f0); border-radius: var(--r-lg, 12px); padding: 12px;">
+                <div class="tp-embed-box" style="max-height: 220px; overflow-y: auto; margin-bottom: 10px;">
+                    <table>
                         <thead>
                             <tr>
-                                <th style="text-align: left; padding: 6px 10px;">{{ trans('validation.attributes.tag_value') }}</th>
-                                <th style="text-align: left; padding: 6px 10px;">{{ trans('front.mapped_value') }}</th>
+                                <th>{{ trans('validation.attributes.tag_value') }}</th>
+                                <th>{{ trans('front.mapped_value') }}</th>
                                 <th style="width: 44px;"></th>
                                 <th style="width: 40px;"></th>
                             </tr>
@@ -362,7 +362,7 @@
                         <tbody data-map-rows>
                             @foreach ($item->mappings ?? [] as $mi => $mapping)
                                 <tr>
-                                    <td style="padding: 5px 10px;">
+                                    <td>
                                         {{ ($mapping['vt'] ?? '') == '2' ? ($mapping['v'] ?? '') . ' .. ' . ($mapping['t'] ?? '') : $mapping['v'] ?? '' }}
                                         <input type="hidden" name="mappings[{{ $mi }}][vt]" value="{{ $mapping['vt'] ?? '' }}">
                                         <input type="hidden" name="mappings[{{ $mi }}][v]" value="{{ $mapping['v'] ?? '' }}">
@@ -370,7 +370,7 @@
                                             <input type="hidden" name="mappings[{{ $mi }}][t]" value="{{ $mapping['t'] ?? '' }}">
                                         @endif
                                     </td>
-                                    <td style="padding: 5px 10px;">
+                                    <td>
                                         {{ ($mapping['mt'] ?? '') == '3' ? '[value]' : $mapping['mv'] ?? '' }}
                                         <input type="hidden" name="mappings[{{ $mi }}][mt]" value="{{ $mapping['mt'] ?? '' }}">
                                         @if (($mapping['mt'] ?? '') != '3')
@@ -395,7 +395,7 @@
                 <div class="tp-form__grid tp-form__grid--2">
                     <label class="tp-form__field">
                         <span class="tp-form__label">{{ trans('validation.attributes.tag_value') }}</span>
-                        <select class="tp-input" data-map-vt>
+                        <select class="tp-input" style="width: 100%" data-map-vt>
                             <option value="1">{{ trans('front.value') }}</option>
                             <option value="2">{{ trans('front.range') }}</option>
                         </select>
@@ -409,7 +409,7 @@
                     </div>
                     <label class="tp-form__field">
                         <span class="tp-form__label">{{ trans('front.mapped_value') }}</span>
-                        <select class="tp-input" data-map-mt>
+                        <select class="tp-input" style="width: 100%" data-map-mt>
                             <option value="1">{{ trans('front.text') }}</option>
                             <option value="2">{{ trans('front.formula') }}</option>
                             <option value="3">{{ trans('front.value') }}</option>
