@@ -278,6 +278,27 @@
   max-width: 220px;
   border-radius: 999px;
 }
+
+/* Buscador pill con icono de lupa como prefijo (estilo referencia) */
+.tp-form .tp-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 220px;
+  min-width: 140px;
+}
+.tp-form .tp-search svg {
+  position: absolute;
+  left: 12px;
+  pointer-events: none;
+  color: var(--fg-muted, #94a3b8);
+}
+.tp-form .tp-search input[type="search"] {
+  width: 100%;
+  max-width: none;
+  padding-left: 34px;
+  border-radius: 999px;
+}
 .tp-form .tp-link-action {
   background: none;
   border: 0;

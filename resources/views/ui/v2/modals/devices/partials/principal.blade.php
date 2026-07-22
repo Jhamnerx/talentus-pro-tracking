@@ -12,8 +12,9 @@
     $isAdminCap = !empty($caps['is_admin']);
 @endphp
 
-<div class="tp-form__grid tp-form__grid--2">
-    <label class="tp-form__field tp-form__field--checkbox tp-col-2">
+{{-- Una sola columna: campos apilados a todo el ancho (como la referencia) --}}
+<div class="tp-form__grid">
+    <label class="tp-form__field tp-form__field--checkbox">
         <input type="hidden" name="active" value="0">
         <input type="checkbox" name="active" value="1" {{ $isActive ? 'checked' : '' }}>
         <span class="tp-form__label">{{ trans('validation.attributes.active') }}</span>
