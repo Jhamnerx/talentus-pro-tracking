@@ -354,15 +354,15 @@
                         </div>
                         <div class="col-xs-6">
                             <div class="form-group">
-                                <label>Hasta <span class="text-muted">(máx 2h)</span></label>
+                                <label>Hasta <span class="text-muted">(máx 31 días)</span></label>
                                 <input type="datetime-local" id="mi-to" class="form-control">
                             </div>
                         </div>
                     </div>
                     <div class="alert alert-info" style="font-size:12px;padding:8px 12px;margin-bottom:10px">
                         <i class="fa fa-info-circle"></i>
-                        Reenvía las tramas <strong>pendientes</strong> (sin estado) de la tabla Mininter en el rango
-                        indicado.
+                        Carga el <strong>historial</strong> de posiciones del rango (hora Lima) a la tabla Mininter
+                        como pendientes; el job las enviará automáticamente. Omite duplicados.
                     </div>
                     <button class="btn btn-danger btn-block ws-action-btn" id="mi-btn">
                         <i class="fa fa-history"></i> Reenviar a Mininter
