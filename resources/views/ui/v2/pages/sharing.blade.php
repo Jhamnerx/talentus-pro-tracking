@@ -85,5 +85,5 @@
     {{-- tp-services aporta el toggle global del kebab (.tp-svc-kebab) --}}
     @include('ui.v2.partials.services-config')
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3" defer></script>
 @endpush

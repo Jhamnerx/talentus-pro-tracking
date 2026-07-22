@@ -100,12 +100,14 @@
         })
         .join("") +
       "</select></label></div>" +
-      // Fecha (condicional)
+      // Fecha (condicional): fecha + hora
       '<div data-shx-block="date" style="display:none;">' +
-      '<label class="tp-form__field">' +
+      '<div class="tp-form__field">' +
       '<span class="tp-form__label">Fecha de expiración</span>' +
-      '<input type="date" name="expiration_date" value="' + esc(item.expiration_date || "") + '" data-tp-field>' +
-      "</label></div>" +
+      '<div style="display:flex;gap:8px;">' +
+      '<input type="date" name="expiration_date" value="' + esc(item.expiration_date || "") + '" style="flex:1;" data-tp-field>' +
+      '<input type="time" data-sh-exptime value="' + esc(item.expiration_time || "") + '" style="width:104px;">' +
+      "</div></div></div>" +
       // Nombre
       '<label class="tp-form__field">' +
       '<span class="tp-form__label">Nombre</span>' +
@@ -177,6 +179,13 @@
         block.style.display = on ? "" : "none";
         Array.prototype.forEach.call(block.querySelectorAll("input, select"), function (i) {
           i.disabled = !on;
+          // El botón de tp-select copia el disabled del select solo en
+          // refresh — sin esto quedaba bloqueado al habilitar el bloque.
+          if (i.tagName === "SELECT" && i._tpdd && window.tpSelect && tpSelect.refresh) {
+            try {
+              tpSelect.refresh(i);
+            } catch (e) {}
+          }
         });
       });
     }
@@ -348,7 +357,12 @@
     // Solo incluir la clave del modo elegido: el validador legacy ejecuta
     // date/integer sobre null presente (sin nullable) y fallaría.
     if (by === "duration" && durEl) payload.duration = durEl.value;
-    if (by === "date" && expEl) payload.expiration_date = expEl.value;
+    if (by === "date" && expEl) {
+      var timeEl = form.querySelector("[data-sh-exptime]");
+      payload.expiration_date = expEl.value
+        ? expEl.value + " " + ((timeEl && timeEl.value) || "23:59")
+        : "";
+    }
 
     var url = id ? API.item.replace("{id}", id) : API.store;
     tpModal.setBusy(dialog, true);

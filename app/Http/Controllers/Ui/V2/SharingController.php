@@ -154,6 +154,9 @@ class SharingController extends BaseController
                 'delete_after_expiration' => (bool) $sharing->delete_after_expiration,
                 'expiration_by'           => $sharing->expiration_date ? 'date' : 'none',
                 'expiration_date'         => $expirationDate,
+                'expiration_time'         => $sharing->expiration_date
+                    ? substr((string) $sharing->expiration_date, 11, 5)
+                    : '',
                 'link'                    => (string) $sharing->link,
                 'device_ids'              => $sharing->devices()->pluck('devices.id')->map(function ($v) {
                     return (int) $v;
@@ -238,8 +241,12 @@ class SharingController extends BaseController
 
         switch ($data['expiration_by'] ?? 'none') {
             case 'date':
-                // El picker manda YYYY-MM-DD: expira al final del día.
-                $data['expiration_date'] = Carbon::parse($data['expiration_date'])->endOfDay();
+                // "YYYY-MM-DD HH:MM" respeta la hora; solo fecha → fin del día.
+                $exp = Carbon::parse($data['expiration_date']);
+                if (strlen(trim((string) $data['expiration_date'])) <= 10) {
+                    $exp = $exp->endOfDay();
+                }
+                $data['expiration_date'] = $exp;
                 break;
             case 'duration':
                 $data['expiration_date'] = Carbon::now()->addMinutes((int) $data['duration']);
