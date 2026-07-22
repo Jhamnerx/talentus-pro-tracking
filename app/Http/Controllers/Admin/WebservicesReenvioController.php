@@ -43,6 +43,30 @@ class WebservicesReenvioController extends BaseController
     }
 
     /**
+     * Parsea un rango from/to (los datetime-local llegan en HORA LIMA) y lo
+     * convierte a UTC — las posiciones de traccar se guardan en UTC y
+     * app.timezone es UTC, así que Carbon::parse "a secas" corría la ventana
+     * 5 horas y el historial devolvía posiciones incompletas o vacías.
+     * Aplica tope de duración (clamp + warn en hora Lima).
+     *
+     * @return array{0: Carbon, 1: Carbon} [$fromUtc, $toUtc]
+     */
+    private function limaRangeUtc(string $fromInput, string $toInput, int $maxMinutes, array &$logs): array
+    {
+        $lima = new DateTimeZone('America/Lima');
+        $from = Carbon::parse($fromInput, $lima);
+        $to   = Carbon::parse($toInput, $lima);
+
+        if ($from->diffInMinutes($to) > $maxMinutes) {
+            $to = $from->copy()->addMinutes($maxMinutes);
+            $limite = $maxMinutes >= 1440 ? ($maxMinutes / 1440) . ' día(s)' : ($maxMinutes / 60) . ' hora(s)';
+            $this->log($logs, 'warn', "Rango limitado a {$limite}. Fin ajustado a: " . $to->format('Y-m-d H:i') . ' (hora Lima)');
+        }
+
+        return [$from->copy()->setTimezone('UTC'), $to->copy()->setTimezone('UTC')];
+    }
+
+    /**
      * Envía un lote de tramas al endpoint batch de Osinergmin.
      */
     private function sendOsinergminBatch(array $tramas): array
@@ -340,16 +364,12 @@ class WebservicesReenvioController extends BaseController
             return response()->json(['success' => false, 'logs' => $logs]);
         }
 
-        $from     = Carbon::parse($request->from_datetime);
-        $to       = Carbon::parse($request->to_datetime);
+        // Hora Lima → UTC (igual que osinergminMantener): sin esto el gpsDate
+        // salía con la hora de pared Lima estampada como UTC (5h corrido).
+        [$from, $to] = $this->limaRangeUtc($request->from_datetime, $request->to_datetime, 120, $logs);
         $interval = max(1, (int) $request->interval);
         $lat      = floatval($request->latitud);
         $lng      = floatval($request->longitud);
-
-        if ($to->diffInMinutes($from) > 120) {
-            $to = $from->copy()->addHours(2);
-            $this->log($logs, 'warn', 'Rango limitado a 2 horas. Fin ajustado a: ' . $to->format('Y-m-d H:i:s'));
-        }
 
         $tramas  = [];
         $current = $from->copy();
@@ -415,13 +435,11 @@ class WebservicesReenvioController extends BaseController
             return response()->json(['success' => false, 'logs' => $logs]);
         }
 
-        $from = Carbon::parse($request->from_datetime);
-        $to   = Carbon::parse($request->to_datetime);
+        // Hora Lima → UTC (las posiciones se guardan en UTC): sin esta
+        // conversión la ventana quedaba corrida 5h y faltaban mensajes.
+        [$from, $to] = $this->limaRangeUtc($request->from_datetime, $request->to_datetime, 120, $logs);
 
-        if ($to->diffInMinutes($from) > 120) {
-            $to = $from->copy()->addHours(2);
-            $this->log($logs, 'warn', 'Rango limitado a 2 horas. Fin ajustado a: ' . $to->format('Y-m-d H:i:s'));
-        }
+        $this->log($logs, 'info', 'Ventana UTC: ' . $from->format('Y-m-d H:i') . ' → ' . $to->format('Y-m-d H:i'));
 
         $positions = $device->positions()
             ->whereBetween('time', [$from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')])
@@ -504,37 +522,50 @@ class WebservicesReenvioController extends BaseController
             $ubigeo          = $muni->ubigeo_muni ?? '';
         }
 
-        $from = Carbon::parse($request->from_datetime);
-        $to   = Carbon::parse($request->to_datetime);
+        // Hora Lima → UTC. Mininter es inserción a tabla propia (no API
+        // externa): se permite rango por DÍAS (hasta 31) en vez de 2 horas.
+        [$from, $to] = $this->limaRangeUtc($request->from_datetime, $request->to_datetime, 31 * 24 * 60, $logs);
 
-        if ($to->diffInMinutes($from) > 120) {
-            $to = $from->copy()->addHours(2);
-            $this->log($logs, 'warn', 'Rango limitado a 2 horas. Fin ajustado a: ' . $to->format('Y-m-d H:i:s'));
-        }
+        $fromS = $from->format('Y-m-d H:i:s');
+        $toS   = $to->format('Y-m-d H:i:s');
 
-        // Leer posiciones del historial (igual que osinergminHistorial)
-        $positions = $device->positions()
-            ->whereBetween('time', [$from->format('Y-m-d H:i:s'), $to->format('Y-m-d H:i:s')])
-            ->orderBy('time')
-            ->get();
+        $this->log($logs, 'info', 'Ventana UTC: ' . $from->format('Y-m-d H:i') . ' → ' . $to->format('Y-m-d H:i'));
 
-        $this->log($logs, 'info', count($positions) . ' posición(es) encontrada(s) para ' . $device->plate_number . '.');
+        $total = $device->positions()->whereBetween('time', [$fromS, $toS])->count();
+        $this->log($logs, 'info', $total . ' posición(es) encontrada(s) para ' . $device->plate_number . '.');
 
-        if ($positions->isEmpty()) {
+        if (! $total) {
             $this->log($logs, 'warn', 'No se encontraron posiciones en el rango indicado.');
             return response()->json(['success' => false, 'logs' => $logs]);
         }
 
-        $inserted  = 0;
-        $skipped   = 0;
+        // Dedupe en UNA consulta (antes: un exists() por posición — inviable
+        // con rangos de días): set de fechaHora ya presentes en mininter.
+        $existing = Mininter::where('device_id', $device->id)
+            ->whereBetween('fechaHora', [$fromS, $toS])
+            ->pluck('fechaHora')
+            ->map(function ($t) {
+                return (string) $t;
+            })
+            ->flip()
+            ->all();
 
-        foreach ($positions as $pos) {
-            // Evitar duplicados: si ya existe un registro con la misma fechaHora para este device
-            $exists = Mininter::where('device_id', $device->id)
-                ->where('fechaHora', $pos->time)
-                ->exists();
+        $inserted = 0;
+        $skipped  = 0;
+        $now      = now();
+        $batch    = [];
 
-            if ($exists) {
+        $flush = function () use (&$batch, &$inserted) {
+            if ($batch) {
+                Mininter::insert($batch);
+                $inserted += count($batch);
+                $batch = [];
+            }
+        };
+
+        // cursor(): recorre sin cargar todo el rango en memoria
+        foreach ($device->positions()->whereBetween('time', [$fromS, $toS])->orderBy('time')->cursor() as $pos) {
+            if (isset($existing[(string) $pos->time])) {
                 $skipped++;
                 continue;
             }
@@ -548,8 +579,8 @@ class WebservicesReenvioController extends BaseController
                 }
             }
 
-            // Insertar en tabla mininter con status = null para que el job SendDataMininter lo envíe
-            Mininter::create([
+            // status = null → el job SendDataMininter la enviará desde la cola
+            $batch[] = [
                 'device_id'       => $device->id,
                 'alarma'          => 0,
                 'altitud'         => $pos->altitude,
@@ -568,14 +599,18 @@ class WebservicesReenvioController extends BaseController
                 'totalDistancia'  => $others['totaldistance'] ?? 0,
                 'totalHorasMotor' => $others['enginehours'] ?? 0,
                 'ubigeo'          => $ubigeo,
-                'valid'           => $pos->valid,
+                'valid'           => (bool) $pos->valid,
                 'velocidad'       => $pos->speed,
-                'other'           => $others ?: null,
-                // status = null → SendDataMininter job lo procesará desde la cola
-            ]);
+                'other'           => $others ? json_encode($others) : null, // insert masivo: sin cast del modelo
+                'created_at'      => $now,
+                'updated_at'      => $now,
+            ];
 
-            $inserted++;
+            if (count($batch) >= 500) {
+                $flush();
+            }
         }
+        $flush();
 
         $msg = "{$inserted} trama(s) insertadas en cola Mininter para {$device->plate_number}.";
         if ($skipped > 0) {
