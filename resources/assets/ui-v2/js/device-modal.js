@@ -899,15 +899,11 @@
         .join("");
     }
 
-    function toLocalDT(s) {
-      // "YYYY-MM-DD HH:MM:SS" → "YYYY-MM-DDTHH:MM" (datetime-local)
-      if (!s) return "";
-      return s.replace(" ", "T").substring(0, 16);
-    }
-
     function openForm(item) {
       var isEdit = !!(item && item.id);
       item = item || {};
+      var dateVal = item.date ? String(item.date).substring(0, 10) : "";
+      var timeVal = item.date && String(item.date).length >= 16 ? String(item.date).substring(11, 16) : "";
       tpModal.open({
         title: isEdit ? "Editar gasto" : "Nuevo gasto",
         static: true,
@@ -919,7 +915,11 @@
           '<input type="text" name="name" value="' + esc(item.name || "") + '" data-tp-field></label>' +
           '<label class="tp-form__field tp-form__field--required">' +
           '<span class="tp-form__label">Fecha</span>' +
-          '<input type="datetime-local" name="date" value="' + esc(toLocalDT(item.date)) + '" data-tp-field></label>' +
+          '<div style="display:flex;gap:8px;">' +
+          // el input date lo mejora tp-datepicker (name pasa al hidden ISO)
+          '<input type="date" name="date" value="' + esc(dateVal) + '" style="flex:1;" data-tp-field>' +
+          '<input type="time" data-exp-time value="' + esc(timeVal) + '" style="width:104px;">' +
+          "</div></label>" +
           '<label class="tp-form__field tp-form__field--required">' +
           '<span class="tp-form__label">Tipo</span>' +
           '<select class="tp-input" style="width:100%" name="type_id" data-tp-field>' + typeOptions(item.type_id) + "</select></label>" +
@@ -948,10 +948,14 @@
             onClick: function (dialog) {
               var form = dialog.querySelector("form.tp-expense-form");
               var payload = {};
-              ["name", "date", "type_id", "quantity", "unit_cost", "supplier", "buyer", "additional"].forEach(function (k) {
+              ["name", "type_id", "quantity", "unit_cost", "supplier", "buyer", "additional"].forEach(function (k) {
                 var el = form.querySelector('[name="' + k + '"]');
                 if (el) payload[k] = el.value;
               });
+              // Fecha: [name=date] es el hidden ISO del tp-datepicker + hora aparte
+              var dEl = form.querySelector('[name="date"]');
+              var tEl = form.querySelector("[data-exp-time]");
+              payload.date = dEl && dEl.value ? dEl.value + " " + ((tEl && tEl.value) || "00:00") : "";
               var url = isEdit ? cfg.update.replace("{id}", item.id) : cfg.store;
               tpModal.setBusy(dialog, true);
               tpModal

@@ -58,6 +58,8 @@
 .tp-form input[type="text"],
 .tp-form input[type="search"],
 .tp-form input[type="date"],
+.tp-form input[type="time"],
+.tp-form input[type="datetime-local"],
 .tp-form input[type="number"],
 .tp-form select,
 .tp-form textarea {
