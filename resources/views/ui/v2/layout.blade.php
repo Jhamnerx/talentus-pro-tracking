@@ -93,7 +93,7 @@
 
     {{-- tp-select: componente de select propio (100% Tailwind, sin dependencias).
          Auto-enhancea todo select.tp-input / select.tp-select, incl. AJAX. --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=6" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=7" defer></script>
     <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=2" defer></script>
     {{-- Enviar comando (modal compartido; se abre desde rail y kebab de Live) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-commands.js') }}?v=8" defer></script>

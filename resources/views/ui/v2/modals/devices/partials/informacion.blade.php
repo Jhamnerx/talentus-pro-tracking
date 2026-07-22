@@ -242,30 +242,34 @@
         </div>
     </div>
 
-    {{-- ── Reenvío (forward) ── --}}
+    {{-- ── Reenvío (forward): input-group con checkbox embebido + Protocolo ── --}}
     @if ($cv('forward'))
-        <div class="tp-col-2">
-            <div class="tp-form__field">
-                <span class="tp-form__label">{{ trans('validation.attributes.forward') }}</span>
-                <div style="display: flex; gap: 9px; align-items: center;">
-                    <input type="hidden" name="forward[active]" value="0">
-                    <input type="checkbox" name="forward[active]" value="1" id="tp-dev-forward"
-                        {{ !empty($forward['active']) ? 'checked' : '' }}>
-                    <input type="text" name="forward[ip]" placeholder="10.0.0.0:6000"
-                        value="{{ $forward['ip'] ?? '' }}" data-enable="tp-dev-forward"
-                        {{ !empty($forward['active']) ? '' : 'disabled' }} style="flex: 1;" data-tp-field>
-                    <label class="tp-choice" style="margin: 0;">
-                        <input type="radio" class="tp-choice-input" name="forward[protocol]" data-enable="tp-dev-forward" value="TCP"
-                            {{ ($forward['protocol'] ?? '') != 'UDP' ? 'checked' : '' }}>
-                        <span>TCP</span>
-                    </label>
-                    <label class="tp-choice" style="margin: 0;">
-                        <input type="radio" class="tp-choice-input" name="forward[protocol]" data-enable="tp-dev-forward" value="UDP"
-                            {{ ($forward['protocol'] ?? '') == 'UDP' ? 'checked' : '' }}>
-                        <span>UDP</span>
-                    </label>
-                </div>
-                <small class="tp-form__hint">{!! trans('front.forward_semicolon') !!}</small>
+        <div class="tp-form__field">
+            <span class="tp-form__label">{{ trans('validation.attributes.forward') }}</span>
+            <div class="tp-input-group">
+                <input type="hidden" name="forward[active]" value="0">
+                <input type="checkbox" name="forward[active]" value="1" id="tp-dev-forward"
+                    {{ !empty($forward['active']) ? 'checked' : '' }}>
+                <input type="text" name="forward[ip]" placeholder="10.0.0.0:6000"
+                    value="{{ $forward['ip'] ?? '' }}" data-enable="tp-dev-forward"
+                    {{ !empty($forward['active']) ? '' : 'disabled' }} data-tp-field>
+            </div>
+            <small class="tp-form__hint">{!! trans('front.forward_semicolon') !!}</small>
+        </div>
+
+        <div class="tp-form__field">
+            <span class="tp-form__label">Protocolo</span>
+            <div style="display: flex; gap: 18px; align-items: center; height: 36px;">
+                <label class="tp-choice" style="margin: 0;">
+                    <input type="radio" class="tp-choice-input" name="forward[protocol]" data-enable="tp-dev-forward" value="TCP"
+                        {{ ($forward['protocol'] ?? '') != 'UDP' ? 'checked' : '' }}>
+                    <span>TCP</span>
+                </label>
+                <label class="tp-choice" style="margin: 0;">
+                    <input type="radio" class="tp-choice-input" name="forward[protocol]" data-enable="tp-dev-forward" value="UDP"
+                        {{ ($forward['protocol'] ?? '') == 'UDP' ? 'checked' : '' }}>
+                    <span>UDP</span>
+                </label>
             </div>
         </div>
     @endif

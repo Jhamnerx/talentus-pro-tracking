@@ -339,8 +339,15 @@
     this.position();
     this.btn.setAttribute("aria-expanded", "true");
     this.btn.querySelector(".tp-dd__chev").classList.add("rotate-180");
-    // Reposicionar mientras esté abierto (scroll de cualquier contenedor + resize)
-    window.addEventListener("scroll", this._reposition, true);
+    // Scroll de un contenedor EXTERNO → cerrar (comportamiento nativo de un
+    // select): el panel es fixed y si no, queda flotando sobre el contenido.
+    // El scroll interno del propio panel no lo cierra.
+    var self = this;
+    this._onOuterScroll = function (e) {
+      if (self.panel.contains(e.target)) return;
+      self.close();
+    };
+    window.addEventListener("scroll", this._onOuterScroll, true);
     window.addEventListener("resize", this._reposition);
     if (this.searchEl) this.searchEl.focus();
     var selRow = this.panel.querySelector("[data-dd-val].is-selected");
@@ -351,7 +358,10 @@
     this.panel.hidden = true;
     this.btn.setAttribute("aria-expanded", "false");
     this.btn.querySelector(".tp-dd__chev").classList.remove("rotate-180");
-    window.removeEventListener("scroll", this._reposition, true);
+    if (this._onOuterScroll) {
+      window.removeEventListener("scroll", this._onOuterScroll, true);
+      this._onOuterScroll = null;
+    }
     window.removeEventListener("resize", this._reposition);
     if (openInst === this) openInst = null;
   };
