@@ -474,6 +474,34 @@
   }
 
   // --------------------------------------------------------------------------
+  // ── Kebab de acciones (⋮ → Editar / Eliminar) ───────────────────────
+  // Mismo markup/estilos que tpServices.kebabHtml (.tp-svc-kebab, css en
+  // services.css); el TOGGLE lo maneja el delegado global de tp-services.js
+  // ([data-svc-kebab]) — por eso fleet también carga tp-services.
+  // --------------------------------------------------------------------------
+  var K_DOTS =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>';
+  var K_EDIT =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>';
+  var K_TRASH =
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>';
+
+  function kebabCell(editAttr, delAttr, id, editExtra) {
+    return (
+      '<div class="tp-svc-kebab">' +
+      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+      K_DOTS +
+      "</button>" +
+      '<div class="tp-svc-kebab__menu" role="menu" hidden>' +
+      '<button type="button" role="menuitem" ' + editAttr + '="' + id + '"' + (editExtra || "") + ">" +
+      K_EDIT + " Editar</button>" +
+      '<button type="button" role="menuitem" class="is-danger" ' + delAttr + '="' + id + '">' +
+      K_TRASH + " Eliminar</button>" +
+      "</div></div>"
+    );
+  }
+
+  // --------------------------------------------------------------------------
   // ── Tab Sensores ────────────────────────────────────────────────────
   // Tabla del device + form en modal ANIDADO (tpModal apila <dialog>).
   // CRUD contra los endpoints v2 que delegan en SensorModalHelper.
@@ -518,10 +546,7 @@
             '<tr data-sensor-id="' + s.id + '">' +
             "<td>" + esc(s.name) + "</td>" +
             "<td>" + esc(s.type) + "</td>" +
-            '<td style="text-align:right;white-space:nowrap;">' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-edit="' + s.id + '" title="Editar">✎</button>' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-del="' + s.id + '" title="Eliminar">🗑</button>' +
-            "</td></tr>"
+            '<td style="text-align:right;">' + kebabCell("data-sensor-edit", "data-sensor-del", s.id) + "</td></tr>"
           );
         })
         .join("");
@@ -613,10 +638,7 @@
             '<tr data-service-id="' + s.id + '">' +
             "<td>" + esc(s.name || "") + "</td>" +
             "<td>" + esc(exp) + "</td>" +
-            '<td style="text-align:right;white-space:nowrap;">' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-service-edit="' + s.id + '" title="Editar">✎</button>' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-service-del="' + s.id + '" title="Eliminar">🗑</button>' +
-            "</td></tr>"
+            '<td style="text-align:right;">' + kebabCell("data-service-edit", "data-service-del", s.id) + "</td></tr>"
           );
         })
         .join("");
@@ -702,10 +724,9 @@
             "<td>" + esc(c.name) + "</td>" +
             "<td>" + (c.show_widget ? "Sí" : "No") + "</td>" +
             "<td>" + esc(c.ftp_username || "") + "</td>" +
-            '<td style="text-align:right;white-space:nowrap;">' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-camera-edit="' + c.id +
-            '" data-name="' + esc(c.name) + '" data-widget="' + (c.show_widget ? 1 : 0) + '" title="Editar">✎</button>' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-camera-del="' + c.id + '" title="Eliminar">🗑</button>' +
+            '<td style="text-align:right;">' +
+            kebabCell("data-camera-edit", "data-camera-del", c.id,
+              ' data-name="' + esc(c.name) + '" data-widget="' + (c.show_widget ? 1 : 0) + '"') +
             "</td></tr>"
           );
         })
@@ -857,10 +878,7 @@
             "<td>" + esc(it.unit_cost) + "</td>" +
             "<td>" + esc(it.total) + "</td>" +
             "<td>" + esc(it.date || "") + "</td>" +
-            '<td style="text-align:right;white-space:nowrap;">' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-expense-edit="' + it.id + '" title="Editar">✎</button>' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-expense-del="' + it.id + '" title="Eliminar">🗑</button>' +
-            "</td></tr>"
+            '<td style="text-align:right;">' + kebabCell("data-expense-edit", "data-expense-del", it.id) + "</td></tr>"
           );
         })
         .join("");

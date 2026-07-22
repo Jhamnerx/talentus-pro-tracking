@@ -62,11 +62,8 @@
                             <td>{{ $e['unit_cost'] }}</td>
                             <td>{{ $e['total'] }}</td>
                             <td>{{ $e['date'] }}</td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-expense-edit="{{ $e['id'] }}"
-                                    title="{{ trans('global.edit') }}">✎</button>
-                                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-expense-del="{{ $e['id'] }}"
-                                    title="{{ trans('global.delete') }}">🗑</button>
+                            <td style="text-align: right;">
+                                @include('ui.v2.modals.devices.partials.kebab', ['edit' => 'data-expense-edit', 'del' => 'data-expense-del', 'id' => $e['id']])
                             </td>
                         </tr>
                     @empty

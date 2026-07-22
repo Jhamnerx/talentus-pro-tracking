@@ -57,11 +57,8 @@
                         <tr data-sensor-id="{{ $s['id'] }}">
                             <td>{{ $s['name'] }}</td>
                             <td>{{ $s['type'] }}</td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-edit="{{ $s['id'] }}"
-                                    title="{{ trans('global.edit') }}">✎</button>
-                                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-del="{{ $s['id'] }}"
-                                    title="{{ trans('global.delete') }}">🗑</button>
+                            <td style="text-align: right;">
+                                @include('ui.v2.modals.devices.partials.kebab', ['edit' => 'data-sensor-edit', 'del' => 'data-sensor-del', 'id' => $s['id']])
                             </td>
                         </tr>
                     @empty

@@ -397,8 +397,22 @@
 .tp-form .tp-embed-box {
   border: 1px solid var(--border-default, #e2e8f0);
   border-radius: var(--r-lg, 12px);
-  overflow: hidden;
+  /* visible: el menú kebab (absoluto) debe poder salir de la caja.
+     El redondeo de esquinas se aplica por celda (abajo). */
+  overflow: visible;
   background: var(--surface-raised, #fff);
+}
+.tp-form .tp-embed-box thead th:first-child {
+  border-top-left-radius: calc(var(--r-lg, 12px) - 1px);
+}
+.tp-form .tp-embed-box thead th:last-child {
+  border-top-right-radius: calc(var(--r-lg, 12px) - 1px);
+}
+.tp-form .tp-embed-box tbody tr:last-child td:first-child {
+  border-bottom-left-radius: calc(var(--r-lg, 12px) - 1px);
+}
+.tp-form .tp-embed-box tbody tr:last-child td:last-child {
+  border-bottom-right-radius: calc(var(--r-lg, 12px) - 1px);
 }
 .tp-form .tp-embed-box table {
   width: 100%;

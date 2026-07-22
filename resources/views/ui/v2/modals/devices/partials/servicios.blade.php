@@ -47,11 +47,8 @@
                         <tr data-service-id="{{ $s['id'] }}">
                             <td>{{ $s['name'] }}</td>
                             <td>{{ $s['expiration'] }}</td>
-                            <td style="text-align: right; white-space: nowrap;">
-                                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-service-edit="{{ $s['id'] }}"
-                                    title="{{ trans('global.edit') }}">✎</button>
-                                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-service-del="{{ $s['id'] }}"
-                                    title="{{ trans('global.delete') }}">🗑</button>
+                            <td style="text-align: right;">
+                                @include('ui.v2.modals.devices.partials.kebab', ['edit' => 'data-service-edit', 'del' => 'data-service-del', 'id' => $s['id']])
                             </td>
                         </tr>
                     @empty
