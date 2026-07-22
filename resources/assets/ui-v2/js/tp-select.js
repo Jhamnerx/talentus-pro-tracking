@@ -26,7 +26,9 @@
   var C = {
     wrap: "tp-dd relative min-w-0",
     btn:
-      "tp-dd__btn w-full h-9 pl-3 pr-8 rounded-lg border border-slate-300 bg-white " +
+      // appearance-none + border-solid: sin preflight, el <button> nativo
+      // conserva border-style outset (borde inferior/derecho más oscuro).
+      "tp-dd__btn appearance-none w-full h-9 pl-3 pr-8 rounded-lg border border-solid border-slate-300 bg-white " +
       "text-[13px] text-slate-800 text-left truncate cursor-pointer relative " +
       "transition-colors hover:border-slate-400 " +
       "focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 " +
@@ -40,12 +42,12 @@
     // layout de tablas al abrirse.
     panel:
       "tp-dd__panel fixed z-[5000] rounded-xl w-max max-w-[18rem] " +
-      "border border-slate-200 bg-white shadow-xl shadow-slate-900/15 " +
+      "border border-solid border-slate-200 bg-white shadow-xl shadow-slate-900/15 " +
       "p-1.5 max-h-64 overflow-y-auto overscroll-contain " +
       "dark:bg-slate-800 dark:border-slate-600 dark:shadow-black/40",
     searchWrap: "tp-dd__search sticky top-0 z-10 px-1.5 pb-1.5 pt-0.5 bg-inherit",
     search:
-      "w-full h-8 px-2.5 rounded-md border border-slate-200 bg-slate-50 text-[13px] " +
+      "w-full h-8 px-2.5 rounded-md border border-solid border-slate-200 bg-slate-50 text-[13px] " +
       "text-slate-800 placeholder:text-slate-400 " +
       "focus:outline-none focus:border-brand-500 " +
       "dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100",
