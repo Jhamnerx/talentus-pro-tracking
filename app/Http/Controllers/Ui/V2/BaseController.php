@@ -77,6 +77,7 @@ abstract class BaseController extends Controller
                 'tails'     => $tg('m_show_tails', 'showTail'),
                 'traffic'   => $tg('m_traffic', 'showTraffic'),
                 'cluster'   => $tg('m_objects_cluster', 'clusterDevice'),
+                'hitos'     => $tg('m_hitos', 'showHitos'),
             ],
             // Endpoints legacy de persistencia (estado compartido con la UI clásica)
             'urls'             => [

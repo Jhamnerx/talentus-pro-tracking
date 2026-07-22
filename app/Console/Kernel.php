@@ -26,6 +26,8 @@ class Kernel extends ConsoleKernel
     protected $commands = [
         'App\Console\Commands\Inspire',
         'App\Console\Commands\BootTest',
+        'App\Console\Commands\DispatchPendingCommands',
+        'App\Console\Commands\ImportHitosKmCommand',
         'App\Console\Commands\Tracker\RestartCommand',
         'App\Console\Commands\Tracker\ConfigCommand',
         'App\Console\Commands\Tracker\ConfigAliasCommand',
@@ -191,6 +193,9 @@ class Kernel extends ConsoleKernel
         // Revisión de servicios
         $schedule->command('service:check')->everyThreeMinutes()->withoutOverlapping();
         $schedule->command('service:check_expire')->everyThreeMinutes()->withoutOverlapping();
+
+        // Auto-send when online: comandos GPRS en cola → enviar al reconectar
+        $schedule->command('commands:dispatch-pending')->everyMinute()->withoutOverlapping();
 
         // Tareas nocturnas
         $schedule->command('backup:mysql')->hourly();

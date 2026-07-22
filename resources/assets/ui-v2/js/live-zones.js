@@ -673,8 +673,27 @@
         fillGroupSelect();
         renderList();
         renderLayers();
+        settleRedraw();
       })
       .catch(function () {});
+  }
+
+  // Fix 1ª carga: el fitBounds inicial de la flota mueve la vista justo cuando
+  // se añaden estos vectores (SVG) y a veces no se pintan hasta interactuar con
+  // el mapa. Forzamos UN re-render cuando el mapa se asienta.
+  var _settled = false;
+  function settleRedraw() {
+    if (_settled) return;
+    _settled = true;
+    var m = map();
+    if (!m) return;
+    // Quitar + re-agregar la capa (idéntico al toggle manual, que sí redibuja).
+    var redo = function () {
+      if (S.layer && m.hasLayer(S.layer)) m.removeLayer(S.layer);
+      renderLayers();
+    };
+    m.once("moveend zoomend", redo);
+    setTimeout(redo, 500);
   }
 
   // ----- Wiring del panel -----

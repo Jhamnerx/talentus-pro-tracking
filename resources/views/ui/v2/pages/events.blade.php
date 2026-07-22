@@ -22,9 +22,10 @@
             <header class="tp-events__head">
                 <h3 class="tp-h6 tp-mb-2">Eventos</h3>
                 <select class="tp-input tp-input--sm" id="tp-events-hours">
+                    <option value="0" selected>Todos</option>
                     <option value="1">Última hora</option>
                     <option value="6">Últimas 6 horas</option>
-                    <option value="24" selected>Últimas 24 horas</option>
+                    <option value="24">Últimas 24 horas</option>
                     <option value="72">Últimos 3 días</option>
                     <option value="168">Últimos 7 días</option>
                 </select>
@@ -109,6 +110,17 @@
                         <circle cx="12" cy="9" r="2.5" />
                     </svg>
                 </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
+                    id="tp-ev-toggle-hitos" title="{{ trans('front.show_km_markers') }}"
+                    aria-label="{{ trans('front.show_km_markers') }}" aria-pressed="false">
+                    {{-- Hito vial: poste con placa km --}}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 10v11" />
+                        <rect x="6" y="3" width="12" height="7" rx="1.5" />
+                        <path d="M9 6.5h6" />
+                    </svg>
+                </button>
             </div>
 
             {{-- Menú de tipos de mapa (selector; persiste en user->map_id, compartido con Live) --}}
@@ -120,5 +132,5 @@
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=10"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=11"></script>
 @endpush

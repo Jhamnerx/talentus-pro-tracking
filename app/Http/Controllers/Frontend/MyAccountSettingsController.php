@@ -60,6 +60,7 @@ class MyAccountSettingsController extends Controller
             'm_show_tails',
             'm_traffic',
             'm_objects_cluster',
+            'm_hitos',
             'history_control_arrows',
             'history_control_route',
             'history_control_stops',

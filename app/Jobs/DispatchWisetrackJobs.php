@@ -2,14 +2,15 @@
 
 namespace App\Jobs;
 
-use Illuminate\Bus\Queueable;
-use Tobuli\Entities\WiseTrack;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Queue\SerializesModels;
+use App\Jobs\SendDataWisetrackJob;
 use CustomFacades\Repositories\UserRepo;
-use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
+use Tobuli\Entities\WiseTrack;
 
 class DispatchWisetrackJobs implements ShouldQueue
 {
@@ -35,6 +36,7 @@ class DispatchWisetrackJobs implements ShouldQueue
                 continue;
             }
 
+            $batchSize = 500;
             $total = WiseTrack::whereIn('patente', $plates)->count();
             if ($total === 0) {
                 continue;
@@ -42,7 +44,20 @@ class DispatchWisetrackJobs implements ShouldQueue
 
             $service = $user->services['wisetrack'];
 
-            SendDataWisetrackJob::dispatch(0, 500, $service, $plates, $user->id);
+            // Cada job procesa y ELIMINA su lote, por lo que el siguiente debe volver a
+            // consultar desde el inicio (offset 0). Por eso despachamos ceil(total/batch)
+            // jobs con offset 0 en vez de ir avanzando el offset (que se rompería al borrar).
+            $jobCount = (int) ceil($total / $batchSize);
+
+            Log::channel('wisetrack')->info('Despachando jobs Wisetrack', [
+                'user_id' => $user->id,
+                'total'   => $total,
+                'jobs'    => $jobCount,
+            ]);
+
+            for ($i = 0; $i < $jobCount; $i++) {
+                SendDataWisetrackJob::dispatch(0, $batchSize, $service, $plates, $user->id);
+            }
         }
     }
 }

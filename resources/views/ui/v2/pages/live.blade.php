@@ -4,8 +4,9 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=27">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=39">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
@@ -20,6 +21,9 @@
         data-updates-url="{{ route('ui.v2.api.devices.updates') }}"
         data-zones-url="{{ route('ui.v2.api.zones') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
         data-routes-url="{{ route('ui.v2.api.routes') }}" data-geo-url="{{ route('address.get') }}"
+        data-routes-table-url="{{ route('ui.v2.routes_table') }}"
+        data-routes-export-url="{{ route('routes.export.store') }}"
+        data-routes-import-url="{{ route('routes.import') }}"
         data-socket-port="{{ $socketPort }}"
         data-socket-ssl-port="{{ $socketSslPort }}" data-poll-interval="15000">
 
@@ -42,13 +46,9 @@
 
         {{-- LEFT FILTER PANEL --}}
         <aside class="tp-live__filters" id="tp-live-filters">
-            {{-- Panel switcher: un solo mapa, el sidebar cambia de panel (como el legacy) --}}
-            <div class="tp-live__paneltabs">
-                <div class="tp-live__paneltabs-group" role="tablist">
-                    <button class="tp-live__paneltab is-active" data-panel-tab="objects" type="button">Objetos</button>
-                    <button class="tp-live__paneltab" data-panel-tab="zones" type="button">Geocercas</button>
-                    <button class="tp-live__paneltab" data-panel-tab="pois" type="button">POIs</button>
-                </div>
+            {{-- Barra superior: solo el botón de colapsar (la navegación entre
+                 Objetos/Geocercas/POIs ahora vive en el rail izquierdo). --}}
+            <div class="tp-live__paneltop">
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button" id="tp-live-filters-collapse"
                     title="Colapsar panel" aria-label="Colapsar panel">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -266,6 +266,71 @@
                         target="_blank">Importar</a>
                 </footer>
             </div>{{-- /#tp-panel-zones --}}
+
+            {{-- Rutas panel — mismo mapa de Live --}}
+            <div class="tp-live__panel" id="tp-panel-routes" data-panel="routes" hidden>
+                <header class="tp-live__filters-head">
+                    <div class="tp-row tp-row-between" style="width:100%;">
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('front.routes') }} <span class="tp-text-muted tp-text-sm"
+                                id="tp-routes-count"></span></h3>
+                    </div>
+                    <div class="tp-routes-bar tp-mt-3">
+                        <div class="tp-input-wrap" style="flex:1;">
+                            <span class="tp-input-wrap__icon" aria-hidden="true">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="m21 21-4.35-4.35" />
+                                </svg>
+                            </span>
+                            <input type="text" class="tp-input tp-input--with-icon" id="tp-routes-search"
+                                placeholder="{{ trans('front.search') }}…" autocomplete="off">
+                        </div>
+                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button" id="tp-routes-fold"
+                            title="{{ trans('front.groups') }}" aria-label="{{ trans('front.groups') }}"
+                            aria-pressed="true">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                            </svg>
+                        </button>
+                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button" id="tp-routes-table"
+                            title="{{ trans('front.routes') }}" aria-label="{{ trans('front.routes') }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 6h18M3 12h18M3 18h18" />
+                            </svg>
+                        </button>
+                        @if (auth()->user()->perm('routes', 'edit'))
+                            <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button" id="tp-routes-new"
+                                title="{{ trans('front.add_route') }}" aria-label="{{ trans('front.add_route') }}">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
+                </header>
+                {{-- Formulario acoplado (crear/editar): se muestra en el sidebar
+                     mientras la geometría se dibuja/edita en el mapa. --}}
+                <div class="tp-routes-form" id="tp-routes-formwrap" hidden></div>
+                <div class="tp-live__list-wrap">
+                    <div class="tp-poi-list" id="tp-routes-list" role="listbox"
+                        aria-label="{{ trans('front.routes') }}"></div>
+                    <div class="tp-live__empty" id="tp-routes-empty" hidden>
+                        <div class="tp-mt-2">{{ trans('front.no_routes') }}</div>
+                    </div>
+                </div>
+                @if (auth()->user()->perm('routes', 'edit'))
+                    <footer class="tp-live__filters-foot" style="gap:6px;">
+                        <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
+                            id="tp-routes-export">{{ trans('front.export') }}</button>
+                        <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
+                            id="tp-routes-import">{{ trans('front.import') }}</button>
+                    </footer>
+                @endif
+            </div>{{-- /#tp-panel-routes --}}
         </aside>
 
         {{-- COLLAPSED FILTERS HANDLE (when filters panel is hidden) --}}
@@ -426,6 +491,17 @@
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s7-7.58 7-13a7 7 0 0 0-14 0c0 5.42 7 13 7 13z" />
                         <circle cx="12" cy="9" r="2.5" />
+                    </svg>
+                </button>
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-hitos"
+                    data-toggle="hitos" title="{{ trans('front.show_km_markers') }}"
+                    aria-label="{{ trans('front.show_km_markers') }}" aria-pressed="false" type="button">
+                    {{-- Hito vial: poste con placa km --}}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 10v11" />
+                        <rect x="6" y="3" width="12" height="7" rx="1.5" />
+                        <path d="M9 6.5h6" />
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-names"
@@ -591,11 +667,20 @@
                             <path d="M3 3v5h5" />
                             <path d="M12 7v5l4 2" />
                         </svg>
-                        Ver historial (Fase 4)
+                        Ver historial
                     </button>
                 </div>
             </div>
         </aside>
+
+        {{-- Servicios/Mantenimiento: config de los modales compartidos (tp-services.js) --}}
+        @include('ui.v2.partials.services-config')
+
+        {{-- Menú de acciones por device (kebab): TEMPLATE estático de sesión —
+             live.js lo clona por device (flags data-need + __ID__), SIN AJAX. --}}
+        <template id="tp-row-menu-tpl">
+            @include('ui.v2.partials.device-actions')
+        </template>
     </div>
 
 @endsection
@@ -605,11 +690,13 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=2"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=3"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=2"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=18"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=7"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

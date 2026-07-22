@@ -1122,6 +1122,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('events',    ['as' => 'events',    'uses' => 'Ui\V2\EventsController@index']);
     Route::get('history',   ['as' => 'history',   'uses' => 'Ui\V2\HistoryController@index']);
     Route::get('reports',   ['as' => 'reports',   'uses' => 'Ui\V2\ReportsController@index']);
+    Route::get('maintenance', ['as' => 'maintenance', 'uses' => 'Ui\V2\ServicesController@page']);
+    Route::get('routes/table', ['as' => 'routes_table', 'uses' => 'Ui\V2\MapLayersController@routesPage']);
+    Route::get('commands',     ['as' => 'commands',     'uses' => 'Ui\V2\CommandsController@page']);
     Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
@@ -1146,8 +1149,20 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('pois',          ['as' => 'api.pois.store',    'uses' => 'Ui\V2\MapLayersController@storePoi']);
         Route::put('pois/{id}',      ['as' => 'api.pois.update',   'uses' => 'Ui\V2\MapLayersController@updatePoi'])->where('id', '[0-9]+');
         Route::delete('pois/{id}',   ['as' => 'api.pois.destroy',  'uses' => 'Ui\V2\MapLayersController@destroyPoi'])->where('id', '[0-9]+');
+        Route::get('hitos',          ['as' => 'api.hitos',         'uses' => 'Ui\V2\MapLayersController@hitos']);
+        Route::get('hitos/nearest',  ['as' => 'api.hitos.nearest', 'uses' => 'Ui\V2\MapLayersController@hitoNearest']);
         Route::get('routes',         ['as' => 'api.routes',        'uses' => 'Ui\V2\MapLayersController@routes']);
+        Route::post('routes',        ['as' => 'api.routes.store',   'uses' => 'Ui\V2\MapLayersController@storeRoute']);
+        Route::put('routes/{id}',    ['as' => 'api.routes.update',  'uses' => 'Ui\V2\MapLayersController@updateRoute'])->where('id', '[0-9]+');
+        Route::post('routes/{id}/toggle', ['as' => 'api.routes.toggle', 'uses' => 'Ui\V2\MapLayersController@toggleRoute'])->where('id', '[0-9]+');
+        Route::delete('routes/{id}', ['as' => 'api.routes.destroy', 'uses' => 'Ui\V2\MapLayersController@destroyRoute'])->where('id', '[0-9]+');
+        // Grupos de rutas
+        Route::post('route-groups',        ['as' => 'api.route_groups.store',   'uses' => 'Ui\V2\MapLayersController@storeRouteGroup']);
+        Route::put('route-groups/{id}',    ['as' => 'api.route_groups.update',  'uses' => 'Ui\V2\MapLayersController@updateRouteGroup'])->where('id', '[0-9]+');
+        Route::delete('route-groups/{id}', ['as' => 'api.route_groups.destroy', 'uses' => 'Ui\V2\MapLayersController@destroyRouteGroup'])->where('id', '[0-9]+');
         Route::get('history',        ['as' => 'api.history',       'uses' => 'Ui\V2\HistoryController@data']);
+        Route::get('history/devices', ['as' => 'api.history.devices', 'uses' => 'Ui\V2\HistoryController@devices']);
+        Route::get('history/messages', ['as' => 'api.history.messages', 'uses' => 'Ui\V2\HistoryController@messages']);
         Route::get('reports',        ['as' => 'api.reports',       'uses' => 'Ui\V2\ReportsController@data']);
         Route::get('admin',          ['as' => 'api.admin',         'uses' => 'Ui\V2\AdminController@data']);
         Route::get('copilot/insights', ['as' => 'api.copilot.insights', 'uses' => 'Ui\V2\CopilotController@insights']);
@@ -1174,10 +1189,34 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('devices/form',        ['as' => 'api.devices.form_new', 'uses' => 'Ui\V2\DevicesController@form']);
         Route::get('devices/{id}/form',   ['as' => 'api.devices.form',    'uses' => 'Ui\V2\DevicesController@form'])->where('id', '[0-9]+');
         Route::get('devices/{id}/widgets', ['as' => 'api.devices.widgets', 'uses' => 'Ui\V2\DevicesController@widgets'])->where('id', '[0-9]+');
-        Route::get('devices/{id}/actions', ['as' => 'api.devices.actions', 'uses' => 'Ui\V2\DevicesController@actions'])->where('id', '[0-9]+');
         Route::get('devices/updates',     ['as' => 'api.devices.updates', 'uses' => 'Ui\V2\DevicesController@updates']);
         Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Ui\V2\DevicesController@store']);
         Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Ui\V2\DevicesController@update'])->where('id', '[0-9]+');
         Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');
+
+        // Enviar comando (modal compartido GPRS/SMS + hub schedules/logs/plantillas)
+        Route::get('commands/meta',   ['as' => 'api.commands.meta',  'uses' => 'Ui\V2\CommandsController@meta']);
+        Route::post('commands/list',  ['as' => 'api.commands.list',  'uses' => 'Ui\V2\CommandsController@commands']);
+        Route::post('commands/send',  ['as' => 'api.commands.send',  'uses' => 'Ui\V2\CommandsController@send']);
+        Route::get('commands/schedules',         ['as' => 'api.commands.schedules',          'uses' => 'Ui\V2\CommandsController@schedules']);
+        Route::post('commands/schedules',        ['as' => 'api.commands.schedules.store',    'uses' => 'Ui\V2\CommandsController@storeSchedule']);
+        Route::put('commands/schedules/{id}',    ['as' => 'api.commands.schedules.update',   'uses' => 'Ui\V2\CommandsController@updateSchedule'])->where('id', '[0-9]+');
+        Route::delete('commands/schedules/{id}', ['as' => 'api.commands.schedules.destroy',  'uses' => 'Ui\V2\CommandsController@destroySchedule'])->where('id', '[0-9]+');
+        Route::get('commands/schedules/{id}/logs', ['as' => 'api.commands.schedules.logs',  'uses' => 'Ui\V2\CommandsController@scheduleLogs'])->where('id', '[0-9]+');
+        Route::get('commands/pendings',          ['as' => 'api.commands.pendings',           'uses' => 'Ui\V2\CommandsController@pendings']);
+        Route::delete('commands/pendings/{id}',  ['as' => 'api.commands.pendings.destroy',   'uses' => 'Ui\V2\CommandsController@destroyPending'])->where('id', '[0-9]+');
+        Route::get('commands/logs',              ['as' => 'api.commands.logs',               'uses' => 'Ui\V2\CommandsController@logs']);
+        Route::get('commands/templates',         ['as' => 'api.commands.templates',          'uses' => 'Ui\V2\CommandsController@templates']);
+        Route::post('commands/templates',        ['as' => 'api.commands.templates.store',    'uses' => 'Ui\V2\CommandsController@storeTemplate']);
+        Route::put('commands/templates/{id}',    ['as' => 'api.commands.templates.update',   'uses' => 'Ui\V2\CommandsController@updateTemplate'])->where('id', '[0-9]+');
+        Route::delete('commands/templates/{id}', ['as' => 'api.commands.templates.destroy',  'uses' => 'Ui\V2\CommandsController@destroyTemplate'])->where('id', '[0-9]+');
+
+        // Servicios / Mantenimiento (modales compartidos + página global)
+        Route::get('services',              ['as' => 'api.services',          'uses' => 'Ui\V2\ServicesController@data']);
+        Route::get('services/meta',         ['as' => 'api.services.meta',     'uses' => 'Ui\V2\ServicesController@formMeta']);
+        Route::get('services/device/{id}',  ['as' => 'api.services.device',   'uses' => 'Ui\V2\ServicesController@deviceServices'])->where('id', '[0-9]+');
+        Route::post('services',             ['as' => 'api.services.store',    'uses' => 'Ui\V2\ServicesController@store']);
+        Route::put('services/{id}',         ['as' => 'api.services.update',   'uses' => 'Ui\V2\ServicesController@update'])->where('id', '[0-9]+');
+        Route::delete('services/{id}',      ['as' => 'api.services.destroy',  'uses' => 'Ui\V2\ServicesController@destroy'])->where('id', '[0-9]+');
     });
 });

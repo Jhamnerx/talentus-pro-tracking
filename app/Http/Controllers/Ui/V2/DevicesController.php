@@ -166,6 +166,13 @@ class DevicesController extends BaseController
                 'engine_hours'    => (float) ($device->engine_hours ?? 0),
                 'moved_at'        => $device->moved_at,
                 'expiration_date' => $device->expiration_date,
+                // Flags para el menú de acciones (template estático + data-need):
+                'vt'              => (bool) $device->vehicle_type_id,
+                'chat'            => (bool) $device->canChat(),
+                'plans'           => (bool) $device->isPlanAble(),
+                'app_uuid'        => ! empty($device->app_uuid),
+                'general'         => (bool) $device->isGeneral(),
+                'video'           => in_array($device->protocol, ['jt808', 'howen']) && $device->traccar_device_id,
             ];
         }
 
@@ -495,29 +502,11 @@ class DevicesController extends BaseController
         return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
     }
 
-    /**
-     * Per-device actions menu (kebab) for the Live list.
-     *
-     * Server-renders ui.v2.partials.device-actions, which mirrors the
-     * legacy Objects/item.blade dropdown — SAME permission gating and
-     * per-device flags. Fetched lazily when the kebab is clicked so the
-     * virtualized list payload stays small and permissions stay authoritative.
-     */
-    public function actions(Request $request, $id): JsonResponse
-    {
-        if (! $this->user->perm('devices', 'view')) {
-            return response()->json(['ok' => false], 403);
-        }
-
-        $device = DeviceRepo::find((int) $id);
-        if (! $device) {
-            return response()->json(['ok' => false, 'message' => 'Vehículo no encontrado.'], 404);
-        }
-
-        $html = View::make('ui.v2.partials.device-actions', ['device' => $device])->render();
-
-        return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
-    }
+    // NOTA: el menú de acciones del kebab ya NO usa AJAX. Es un TEMPLATE
+    // estático de sesión (ui.v2.partials.device-actions dentro de
+    // <template> en live.blade): los permisos se resuelven al renderizar la
+    // página y los flags por device (vt/chat/sim/plans/app_uuid/general/
+    // video) viajan en el payload de liveData; live.js clona y filtra.
 
     /**
      * Incremental device updates (delta) — espeja el legacy objects/items_json.

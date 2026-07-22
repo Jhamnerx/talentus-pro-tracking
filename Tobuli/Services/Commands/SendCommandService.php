@@ -152,8 +152,13 @@ class SendCommandService
 
     private function handleError($device, $data, $results)
     {
+        // Guardar también en los fallos el cuerpo que se intentó enviar
+        // (antes se logueaba null y el registro quedaba sin parámetros).
+        // connection/type/template_id ya se guardan en sus propias columnas.
+        $attempted = Arr::except($data, ['connection', 'type', 'template_id']);
+
         $this->logSending($device, $data, [
-            'parameters' => null,
+            'parameters' => $attempted ?: null,
             'response'   => $results['error'],
             'status'     => $results['status'],
         ]);

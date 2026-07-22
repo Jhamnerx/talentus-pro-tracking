@@ -94,6 +94,149 @@
   }
 
   // --------------------------------------------------------------------------
+  // ── Colores del recorrido (trips / single / speed / sensor) ─────────
+  function wireRouteColors(scope) {
+    var root = scope.querySelector("[data-tp-routecolors]");
+    if (!root) return;
+    var jsonInput = root.querySelector("[data-rc-json]");
+    var rowsEl = root.querySelector("[data-rc-rows]");
+    var barEl = root.querySelector("[data-rc-bar]");
+    var DEFAULTS = [
+      { from: 0, to: 40, color: "#22d3ee" },
+      { from: 40, to: 60, color: "#3b82f6" },
+      { from: 60, to: 90, color: "#6366f1" },
+      { from: 90, to: 120, color: "#a855f7" },
+      { from: 120, to: null, color: "#ef4444" },
+    ];
+    var ranges;
+    try {
+      ranges = JSON.parse(jsonInput.value || "[]");
+    } catch (e) {
+      ranges = [];
+    }
+    if (!ranges.length) ranges = DEFAULTS.slice();
+
+    function normalize() {
+      // contiguos y ascendentes; el último siempre abierto (to = null)
+      ranges.sort(function (a, b) {
+        return (a.from || 0) - (b.from || 0);
+      });
+      var from = 0;
+      ranges.forEach(function (r, i) {
+        r.from = from;
+        if (i === ranges.length - 1) r.to = null;
+        else {
+          var to = parseFloat(r.to);
+          if (isNaN(to) || to <= from) to = from + 10;
+          r.to = to;
+          from = to;
+        }
+      });
+    }
+    function sync() {
+      normalize();
+      jsonInput.value = JSON.stringify(ranges);
+      renderRows();
+      renderBar();
+    }
+    function renderRows() {
+      rowsEl.innerHTML = ranges
+        .map(function (r, i) {
+          var last = i === ranges.length - 1;
+          return (
+            '<span class="tp-routecolors__row" data-idx="' + i + '">' +
+            '<input type="number" class="tp-input tp-input--sm" value="' + r.from + '" disabled style="width:64px;">' +
+            '<span class="tp-routecolors__dash">–</span>' +
+            (last
+              ? '<span class="tp-routecolors__inf">∞</span>'
+              : '<input type="number" class="tp-input tp-input--sm" data-rc-to value="' + r.to + '" min="1" style="width:64px;">') +
+            '<input type="color" data-rc-color value="' + (r.color || "#2563eb") + '">' +
+            (ranges.length > 1
+              ? '<button type="button" class="tp-routecolors__del" data-rc-del title="Quitar">×</button>'
+              : "") +
+            "</span>"
+          );
+        })
+        .join("");
+    }
+    function renderBar() {
+      if (!barEl) return;
+      var maxB = ranges.length > 1 ? ranges[ranges.length - 1].from : 100;
+      var scale = maxB > 0 ? maxB : 100;
+      barEl.innerHTML = ranges
+        .map(function (r, i) {
+          var last = i === ranges.length - 1;
+          var w = last ? 18 : Math.max(6, ((r.to - r.from) / scale) * 82);
+          return (
+            '<span style="flex:0 0 ' + w + "%;background:" + r.color + '" title="' +
+            r.from + (last ? "+" : "–" + r.to) + '"></span>'
+          );
+        })
+        .join("");
+    }
+
+    rowsEl.addEventListener("change", function (e) {
+      var row = e.target.closest("[data-idx]");
+      if (!row) return;
+      var i = parseInt(row.getAttribute("data-idx"), 10);
+      if (e.target.hasAttribute("data-rc-to")) ranges[i].to = parseFloat(e.target.value);
+      if (e.target.hasAttribute("data-rc-color")) ranges[i].color = e.target.value;
+      sync();
+    });
+    rowsEl.addEventListener("click", function (e) {
+      var del = e.target.closest("[data-rc-del]");
+      if (!del) return;
+      e.preventDefault();
+      var i = parseInt(del.closest("[data-idx]").getAttribute("data-idx"), 10);
+      ranges.splice(i, 1);
+      sync();
+    });
+    var addBtn = root.querySelector("[data-rc-add]");
+    if (addBtn)
+      addBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        var lastFrom = ranges.length > 1 ? ranges[ranges.length - 1].from : 0;
+        ranges.splice(ranges.length - 1, 0, { from: lastFrom, to: lastFrom + 20, color: "#94a3b8" });
+        // seleccionar "por velocidad" al editar rangos
+        var radio = root.querySelector('input[name="route_color_type"][value="speed"]');
+        if (radio) radio.checked = true;
+        markActive();
+        sync();
+      });
+    var resetBtn = root.querySelector("[data-rc-reset]");
+    if (resetBtn)
+      resetBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        ranges = DEFAULTS.slice().map(function (r) {
+          return { from: r.from, to: r.to, color: r.color };
+        });
+        sync();
+      });
+
+    // Swatches rápidos del modo "único"
+    Array.prototype.forEach.call(root.querySelectorAll("[data-rc-swatch]"), function (sw) {
+      sw.addEventListener("click", function (e) {
+        e.preventDefault();
+        var input = root.querySelector("[data-rc-single]");
+        if (input) input.value = sw.getAttribute("data-rc-swatch");
+        var radio = root.querySelector('input[name="route_color_type"][value="single"]');
+        if (radio) radio.checked = true;
+        markActive();
+      });
+    });
+
+    // Atenuar los paneles de modos no seleccionados
+    function markActive() {
+      var checked = root.querySelector('input[name="route_color_type"]:checked');
+      root.setAttribute("data-active", checked ? checked.value : "trips");
+    }
+    Array.prototype.forEach.call(root.querySelectorAll('input[name="route_color_type"]'), function (r) {
+      r.addEventListener("change", markActive);
+    });
+    markActive();
+    sync();
+  }
+
   // Lectura del formulario (FormData → objeto plano + soporte arrays)
   // --------------------------------------------------------------------------
   function readForm(form) {
@@ -225,6 +368,7 @@
         wireTabs(bodyEl);
         wireIconGallery(bodyEl);
         wireExpirationMirror(bodyEl);
+        wireRouteColors(bodyEl);
       })
       .catch(function () {
         var bodyEl = dlg.querySelector(".tp-modal__body");

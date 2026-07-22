@@ -35,12 +35,14 @@ class EventsController extends BaseController
             return response()->json(['ok' => false], 403);
         }
 
-        $hours   = min(168, max(1, (int) $request->get('hours', 24)));
+        // hours = 0 → "Todos" (sin límite temporal, como el legacy: carga todo
+        // paginado por scroll). Cualquier otro valor se acota a [1, 168].
+        $hoursRaw = (int) $request->get('hours', 0);
+        $hours    = $hoursRaw <= 0 ? 0 : min(168, max(1, $hoursRaw));
         $offset  = max(0, (int) $request->get('offset', 0));
         $perPage = min(100, max(20, (int) $request->get('per_page', 50)));
         $type    = trim((string) $request->get('type', ''));
         $q       = trim((string) $request->get('q', ''));
-        $since   = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
 
         // Cargamos el device con su icono + traccar para reconstruir el MARCADOR
         // real (arrow/rotating/icon) igual que el mapa Live.
@@ -48,8 +50,11 @@ class EventsController extends BaseController
             ->with(['device' => function ($q) {
                 $q->with(['icon', 'traccar']);
             }])
-            ->where('time', '>=', $since)
             ->orderBy('time', 'desc');
+
+        if ($hours > 0) {
+            $query->where('time', '>=', date('Y-m-d H:i:s', strtotime("-{$hours} hours")));
+        }
 
         if ($type !== '') {
             $query->where('type', $type);

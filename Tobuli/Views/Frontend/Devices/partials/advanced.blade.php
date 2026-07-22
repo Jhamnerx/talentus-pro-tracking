@@ -297,3 +297,140 @@
     {!! Form::select('timezone_id', $timezones, empty($timezone_id) ? 0 : $timezone_id, ['class' => 'form-control']) !!}
     <small>{!! trans('front.by_default_time') !!}</small>
 </div>
+
+{{-- ================= Colores del recorrido (historial) =================
+     Propiedad del vehículo, estilo Wialon: trips | single | speed | sensor.
+     OJO estructura: el tema estiliza .radio con el input ABSOLUTO cubriendo
+     el contenedor, así que el radio va SOLO (input+label) y los controles
+     fuera, en la misma fila (horizontal). --}}
+@php
+    $rcType = $item->route_color_type ?? 'trips';
+    $rcSingle = $item->route_color ?: '#2563eb';
+    $rcRanges = json_decode($item->route_speed_ranges ?? '', true);
+    if (empty($rcRanges) || !is_array($rcRanges)) {
+        $rcRanges = [
+            ['from' => 0, 'to' => 40, 'color' => '#22d3ee'],
+            ['from' => 40, 'to' => 60, 'color' => '#3b82f6'],
+            ['from' => 60, 'to' => 90, 'color' => '#6366f1'],
+            ['from' => 90, 'to' => 120, 'color' => '#a855f7'],
+            ['from' => 120, 'to' => null, 'color' => '#ef4444'],
+        ];
+    }
+@endphp
+<div class="form-group" id="route-colors-group">
+    {!! Form::label(null, 'Colores del recorrido — Historial:') !!}
+
+    {{-- Por viajes --}}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <div class="radio" style="min-width:130px;">
+            <input type="radio" name="route_color_type" value="trips" {{ $rcType === 'trips' ? 'checked' : '' }}>
+            <label>Por viajes</label>
+        </div>
+    </div>
+
+    {{-- Único --}}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <div class="radio" style="min-width:130px;">
+            <input type="radio" name="route_color_type" value="single" {{ $rcType === 'single' ? 'checked' : '' }}>
+            <label>Único</label>
+        </div>
+        <input type="color" name="route_color" value="{{ $rcSingle }}"
+            style="width:36px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">
+    </div>
+
+    {{-- Por velocidad --}}
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+        <div class="radio" style="min-width:130px;">
+            <input type="radio" name="route_color_type" value="speed" {{ $rcType === 'speed' ? 'checked' : '' }}>
+            <label>Por velocidad</label>
+        </div>
+        <div id="rc-bar" style="display:flex;flex:1 1 auto;max-width:260px;height:10px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.08);"></div>
+        <button type="button" class="btn btn-xs btn-default" id="rc-add-range" title="Añadir rango"
+            style="color:#16a34a;font-weight:700;">+</button>
+        <button type="button" class="btn btn-xs btn-default" id="rc-reset-ranges" title="Restaurar por defecto">&#8634;</button>
+    </div>
+    {{-- Rangos en línea (horizontal, con wrap) --}}
+    <div id="rc-ranges" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 8px 24px;"></div>
+
+    {{-- Por sensor --}}
+    <div style="display:flex;align-items:center;gap:10px;opacity:.55;">
+        <div class="radio" style="min-width:130px;">
+            <input type="radio" name="route_color_type" value="sensor" disabled {{ $rcType === 'sensor' ? 'checked' : '' }}>
+            <label>Por sensor</label>
+        </div>
+        <small>(requiere un sensor con rangos de colores por intervalo)</small>
+    </div>
+
+    <input type="hidden" name="route_speed_ranges" id="rc-json" value="{{ e(json_encode($rcRanges)) }}">
+</div>
+
+<script>
+    (function () {
+        var $rows = $('#rc-ranges'), $json = $('#rc-json'), $bar = $('#rc-bar');
+        var DEFAULTS = [
+            { from: 0, to: 40, color: '#22d3ee' },
+            { from: 40, to: 60, color: '#3b82f6' },
+            { from: 60, to: 90, color: '#6366f1' },
+            { from: 90, to: 120, color: '#a855f7' },
+            { from: 120, to: null, color: '#ef4444' }
+        ];
+        var ranges;
+        try { ranges = JSON.parse($json.val() || '[]'); } catch (e) { ranges = []; }
+        if (!ranges.length) ranges = DEFAULTS.slice();
+
+        function normalize() {
+            ranges.sort(function (a, b) { return (a.from || 0) - (b.from || 0); });
+            var from = 0;
+            $.each(ranges, function (i, r) {
+                r.from = from;
+                if (i === ranges.length - 1) { r.to = null; }
+                else {
+                    var to = parseFloat(r.to);
+                    if (isNaN(to) || to <= from) to = from + 10;
+                    r.to = to; from = to;
+                }
+            });
+        }
+        function render() {
+            normalize();
+            $json.val(JSON.stringify(ranges));
+            $rows.empty();
+            $.each(ranges, function (i, r) {
+                var last = i === ranges.length - 1;
+                var $row = $('<span style="display:inline-flex;align-items:center;gap:4px;">');
+                $row.append($('<input type="number" class="form-control input-sm" disabled style="width:62px;display:inline-block;">').val(r.from));
+                $row.append('<span>&ndash;</span>');
+                if (last) $row.append('<span style="min-width:20px;text-align:center;">&infin;</span>');
+                else $row.append($('<input type="number" class="form-control input-sm rc-to" data-i="' + i + '" style="width:62px;display:inline-block;">').val(r.to));
+                $row.append($('<input type="color" class="rc-color" data-i="' + i + '" style="width:34px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">').val(r.color || '#2563eb'));
+                if (ranges.length > 1) $row.append('<button type="button" class="btn btn-xs btn-default rc-del" data-i="' + i + '">&times;</button>');
+                $rows.append($row);
+            });
+            // Barra preview proporcional
+            $bar.empty();
+            var maxB = ranges.length > 1 ? ranges[ranges.length - 1].from : 100;
+            var scale = maxB > 0 ? maxB : 100;
+            $.each(ranges, function (i, r) {
+                var last = i === ranges.length - 1;
+                var w = last ? 18 : Math.max(6, ((r.to - r.from) / scale) * 82);
+                $bar.append('<span style="flex:0 0 ' + w + '%;background:' + (r.color || '#2563eb') + ';"></span>');
+            });
+        }
+        function selectSpeed() {
+            $('input[name="route_color_type"][value="speed"]').prop('checked', true);
+        }
+        $rows.on('change', '.rc-to', function () { ranges[$(this).data('i')].to = parseFloat($(this).val()); selectSpeed(); render(); });
+        $rows.on('change', '.rc-color', function () { ranges[$(this).data('i')].color = $(this).val(); selectSpeed(); render(); });
+        $rows.on('click', '.rc-del', function () { ranges.splice($(this).data('i'), 1); selectSpeed(); render(); });
+        $('#rc-add-range').on('click', function () {
+            var lastFrom = ranges.length > 1 ? ranges[ranges.length - 1].from : 0;
+            ranges.splice(ranges.length - 1, 0, { from: lastFrom, to: lastFrom + 20, color: '#94a3b8' });
+            selectSpeed(); render();
+        });
+        $('#rc-reset-ranges').on('click', function () {
+            ranges = $.map(DEFAULTS, function (r) { return $.extend({}, r); });
+            render();
+        });
+        render();
+    })();
+</script>

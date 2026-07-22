@@ -187,9 +187,25 @@
     menu.addEventListener("click", function (e) {
       var b = e.target.closest("[data-map-id]");
       if (!b) return;
-      setBaseLayer(b.getAttribute("data-map-id"));
+      var id = b.getAttribute("data-map-id");
+      setBaseLayer(id);
+      persistMapId(id);
       menu.hidden = true;
     });
+  }
+  // Persiste el tipo de mapa en user->map_id (mismo endpoint que Eventos).
+  function persistMapId(id) {
+    try {
+      var fd = new FormData();
+      fd.append("key", "tp_map_id");
+      fd.append("value", String(id));
+      fetch("/ui/v2/api/preferences", {
+        method: "POST",
+        body: fd,
+        credentials: "same-origin",
+        headers: { "X-CSRF-TOKEN": csrf() },
+      }).catch(function () {});
+    } catch (e) {}
   }
 
   // -----------------------------------------------------------
@@ -224,11 +240,10 @@
       h = icon.height || 32;
       anchorBottom = true;
     }
-    var max = Math.max(w, h),
-      scale = max > 44 ? 44 / max : 1;
-    w = Math.round(w * scale);
-    h = Math.round(h * scale);
+    // Tamaño real como el legacy (device.js updateLayer): arrow 25×33,
+    // rotating/icon usan icon.width/height SIN escalar.
     var rot = rotate ? "transform:rotate(" + (parseFloat(d.course) || 0) + "deg);" : "";
+    var selected = state.selectedId === d.id;
     var html =
       '<span class="tp-lmarker__name">' +
       esc(d.name || "") +
@@ -244,7 +259,7 @@
       '" draggable="false">';
     return L.divIcon({
       html: html,
-      className: "tp-lmarker",
+      className: "tp-lmarker" + (selected ? " tp-lmarker--selected" : ""),
       iconSize: [w, h],
       iconAnchor: anchorBottom ? [w / 2, h] : [w / 2, h / 2],
     });
@@ -289,7 +304,22 @@
   function ensureCluster() {
     if (!window.L.markerClusterGroup) return null;
     if (!state.clusterGroup)
-      state.clusterGroup = L.markerClusterGroup({ chunkedLoading: true, maxClusterRadius: 50, showCoverageOnHover: false });
+      state.clusterGroup = L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 50,
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true,
+        iconCreateFunction: function (cluster) {
+          var n = cluster.getChildCount();
+          var tier = n < 10 ? "sm" : n < 100 ? "md" : "lg";
+          var size = n < 10 ? 36 : n < 100 ? 44 : 52;
+          return L.divIcon({
+            html: '<div class="tp-live-cluster tp-live-cluster--' + tier + '">' + n + "</div>",
+            className: "tp-live-cluster-wrap",
+            iconSize: [size, size],
+          });
+        },
+      });
     return state.clusterGroup;
   }
   function setClusterMode(on) {
@@ -334,6 +364,27 @@
   }
 
   // Aplica un toggle de capa del control flotante.
+  // Mapeo toggle UI → clave de map_controls (igual que el legacy app.js saveSetting)
+  var TOGGLE_PARAM = {
+    devices: "m_objects",
+    cluster: "m_objects_cluster",
+    geofences: "m_geofences",
+    routes: "m_routes",
+    poi: "m_poi",
+    names: "m_show_names",
+    tails: "m_show_tails",
+    traffic: "m_traffic",
+    hitos: "m_hitos",
+  };
+  // Persiste el toggle en user->map_controls (estado compartido con la UI legacy).
+  function persistToggle(key, val) {
+    var param = TOGGLE_PARAM[key];
+    var url = MAP_CFG.urls && MAP_CFG.urls.changeMapSettings;
+    if (!param || !url) return;
+    var q = url + (url.indexOf("?") === -1 ? "?" : "&") + "param=" + encodeURIComponent(param) + "&value=" + (val ? "true" : "false");
+    fetch(q, { credentials: "same-origin", headers: { "X-Requested-With": "XMLHttpRequest" } }).catch(function () {});
+  }
+
   function applyToggle(key) {
     var on = !!state.toggles[key];
     var m = state.map;
@@ -348,7 +399,11 @@
     } else if (key === "poi") {
       if (window.tpLivePois && tpLivePois.setVisible) tpLivePois.setVisible(on);
     } else if (key === "routes") {
-      setRoutesVisible(on);
+      // El panel de Rutas (live-routes.js) es dueño de la capa (clic → popup,
+      // CRUD). Delegamos como con geocercas/POIs; si aún no cargó, fallback
+      // de solo lectura.
+      if (window.tpLiveRoutes && tpLiveRoutes.setVisible) tpLiveRoutes.setVisible(on);
+      else setRoutesVisible(on);
     } else if (key === "traffic") {
       if (on) {
         if (!state.trafficLayer)
@@ -364,6 +419,12 @@
       m.getContainer().classList.toggle("tp-show-names", on);
     } else if (key === "tails") {
       renderTails();
+    } else if (key === "hitos") {
+      // Hitos kilométricos (capa compartida tp-hitos.js)
+      if (window.tpHitos) {
+        if (!state.hitosCtrl) state.hitosCtrl = tpHitos.create(m);
+        state.hitosCtrl.setVisible(on);
+      }
     }
   }
 
@@ -563,6 +624,7 @@
       "</dd><dt>Hora</dt><dd>" +
       esc(d.time || "—") +
       '</dd><dt>Ubicación</dt><dd data-pop-addr>Cargando…</dd></dl>' +
+      '<div class="tp-hito-ref" data-pop-hito hidden></div>' +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>Ver detalles</button></div>';
     if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
     state.popup.setLatLng([parseFloat(d.lat), parseFloat(d.lng)]).setContent(html).openOn(state.map);
@@ -572,14 +634,38 @@
       var slot = el && el.querySelector("[data-pop-addr]");
       if (slot) slot.textContent = a || "—";
     });
+    // Referencia vial "PE-1N · km 557" (solo con el toggle de hitos activo)
+    if (state.toggles.hitos && window.tpHitos) {
+      tpHitos.nearest(d.lat, d.lng).then(function (h) {
+        if (!h || !state.popup || !state.popup.isOpen()) return;
+        var slot = el && el.querySelector("[data-pop-hito]");
+        if (slot) {
+          slot.textContent = tpHitos.refText(h);
+          slot.hidden = false;
+        }
+      });
+    }
     var btn = el && el.querySelector("[data-pop-details]");
     if (btn)
       btn.addEventListener("click", function () {
         selectDevice(id);
       });
   }
+  function refreshMarkerIcon(id) {
+    var m = state.markers[id];
+    var dd = state.index[id];
+    if (m && dd) m.setIcon(deviceIcon(dd));
+  }
   function selectDevice(id) {
+    var prev = state.selectedId;
     state.selectedId = id;
+    // resaltar el marcador seleccionado (glow + traer al frente) y limpiar el anterior
+    if (prev != null && prev !== id) {
+      refreshMarkerIcon(prev);
+      if (state.markers[prev]) state.markers[prev].setZIndexOffset(0);
+    }
+    refreshMarkerIcon(id);
+    if (state.markers[id]) state.markers[id].setZIndexOffset(1000);
     var d = state.index[id];
     if (d && d.lat != null)
       state.map.setView([parseFloat(d.lat), parseFloat(d.lng)], Math.max(state.map.getZoom(), 14));
@@ -588,6 +674,13 @@
     if (drawer) drawer.setAttribute("aria-hidden", "false");
     if (d) fillDrawer(d);
     loadDrawerWidgets(id);
+    var histBtn = document.getElementById("tp-drawer-history");
+    if (histBtn) {
+      histBtn.disabled = false;
+      histBtn.onclick = function () {
+        location.href = "/ui/v2/history?device=" + id + "&range=today";
+      };
+    }
   }
   function setText(elId, val) {
     var el = document.getElementById(elId);
@@ -776,7 +869,9 @@
       order.forEach(function (g) {
         var collapsed = !!state.collapsedGroups[g];
         html +=
-          '<div class="tp-live__group" data-gid="' +
+          '<div class="tp-live__group-box"' +
+          (collapsed ? ' data-collapsed="1"' : "") +
+          '><div class="tp-live__group" data-gid="' +
           g +
           '"' +
           (collapsed ? ' data-collapsed="1"' : "") +
@@ -785,7 +880,8 @@
           '</span><span class="tp-live__group-count">' +
           byG[g].length +
           "</span></div>";
-        if (!collapsed) html += byG[g].map(rowTemplate).join("");
+        if (!collapsed) html += '<div class="tp-live__group-items">' + byG[g].map(rowTemplate).join("") + "</div>";
+        html += "</div>";
       });
     } else {
       html = state.filtered.map(rowTemplate).join("");
@@ -796,6 +892,41 @@
   // -----------------------------------------------------------
   // Kebab de acciones (server-rendered, /actions)
   // -----------------------------------------------------------
+  // Menú de acciones por device: SIN AJAX. Los permisos ya vienen resueltos
+  // en el <template id="tp-row-menu-tpl"> (render de sesión) y los flags por
+  // device (vt/chat/sim/plans/app_uuid/general/video) viajan en liveData.
+  // Aquí solo se clona el template, se filtra por data-need y se sustituyen
+  // los placeholders __ID__/__IMEI__ → apertura instantánea.
+  function buildRowMenu(id) {
+    var tpl = document.getElementById("tp-row-menu-tpl");
+    if (!tpl || !tpl.content || !tpl.content.firstElementChild) return null;
+    var d = null;
+    for (var i = 0; i < state.devices.length; i++) {
+      if (state.devices[i].id === id) {
+        d = state.devices[i];
+        break;
+      }
+    }
+    var node = tpl.content.firstElementChild.cloneNode(true);
+    node.setAttribute("data-device-id", id);
+    node.querySelectorAll("[data-need]").forEach(function (el) {
+      var need = el.getAttribute("data-need");
+      var ok =
+        need === "sim" ? !!(d && d.sim) : !!(d && d[need]);
+      if (!ok) el.remove();
+    });
+    node.querySelectorAll("[data-url]").forEach(function (el) {
+      el.setAttribute(
+        "data-url",
+        el
+          .getAttribute("data-url")
+          .replace(/__ID__/g, id)
+          .replace(/__IMEI__/g, (d && d.imei) || ""),
+      );
+    });
+    return node;
+  }
+
   var rowMenu = null;
   function closeRowMenu() {
     if (rowMenu) {
@@ -808,7 +939,6 @@
     closeRowMenu();
     rowMenu = document.createElement("div");
     rowMenu.className = "tp-row-menu";
-    rowMenu.innerHTML = '<div class="tp-row-menu__loading">Cargando…</div>';
     document.body.appendChild(rowMenu);
     var r = btn.getBoundingClientRect();
     rowMenu.style.position = "fixed";
@@ -824,21 +954,16 @@
       else if (act === "follow") selectDevice(id);
       else if (act === "edit") {
         if (window.tpDeviceModal) window.tpDeviceModal.openEdit(id, function () { fetchDevices(true); });
+      } else if (act === "send_command") {
+        if (window.tpCommands) tpCommands.open(id);
       } else if (act === "pending" && window.tpModal && tpModal.toast)
         tpModal.toast("Función disponible próximamente.", "info");
     });
-    var base = CFG.devicesUrl || "/ui/v2/api/devices";
-    fetch(base + "/" + id + "/actions", {
-      headers: { "X-Requested-With": "XMLHttpRequest" },
-      credentials: "same-origin",
-    })
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (res) {
-        if (rowMenu) rowMenu.innerHTML = res && res.ok && res.html ? res.html : '<div class="tp-row-menu__loading">Sin acciones.</div>';
-      })
-      .catch(function () {});
+    // Clonado del template: síncrono e instantáneo, sin petición.
+    var built = buildRowMenu(id);
+    rowMenu.innerHTML = "";
+    if (built) rowMenu.appendChild(built);
+    else rowMenu.innerHTML = '<div class="tp-row-menu__loading">Sin acciones.</div>';
     setTimeout(function () {
       document.addEventListener("click", closeRowMenu);
     }, 0);
@@ -951,7 +1076,20 @@
       })
       .finally(function () {
         inFlight = null;
+        // Overlays del mapa: se cargan tras el 1er load completo de devices
+        // (mapa ya asentado con su fitBounds) — patrón del legacy.
+        seedOverlays();
       });
+  }
+  // Carga inicial de geocercas/POIs/rutas activas UNA sola vez, cuando el mapa
+  // ya está estable (evita el glitch de vectores añadidos durante el fitBounds).
+  var overlaysSeeded = false;
+  function seedOverlays() {
+    if (overlaysSeeded) return;
+    overlaysSeeded = true;
+    ["geofences", "poi", "routes", "hitos"].forEach(function (key) {
+      if (state.toggles[key]) applyToggle(key);
+    });
   }
   function pollUpdates() {
     if (document.visibilityState !== "visible") return;
@@ -1047,7 +1185,19 @@
     if (styleBtn && menu)
       styleBtn.addEventListener("click", function (e) {
         e.stopPropagation();
-        menu.hidden = !menu.hidden;
+        if (menu.hidden) {
+          // Anclar el menú junto al botón (abre hacia la izquierda, ya que el
+          // botón está pegado al borde derecho del mapa).
+          menu.style.position = "fixed";
+          menu.hidden = false;
+          var r = styleBtn.getBoundingClientRect();
+          var mw = menu.offsetWidth || 240;
+          var mh = menu.offsetHeight || 200;
+          menu.style.left = Math.max(8, r.left - mw - 8) + "px";
+          menu.style.top = Math.min(Math.max(8, r.top), window.innerHeight - mh - 8) + "px";
+        } else {
+          menu.hidden = true;
+        }
       });
     document.addEventListener("click", function () {
       if (menu) menu.hidden = true;
@@ -1096,18 +1246,36 @@
         if (state.autoFit) fitToFleet();
       });
 
-    // Toggles de capa
+    // Toggles de capa: el estado inicial viene de la DB (MAP_CFG.toggles =
+    // user->map_controls) y cada cambio se persiste como en el legacy.
+    var cfgToggles = MAP_CFG.toggles || {};
     Array.prototype.forEach.call(root.querySelectorAll(".tp-live__toggle[data-toggle]"), function (btn) {
       var key = btn.getAttribute("data-toggle");
-      state.toggles[key] = btn.getAttribute("aria-pressed") === "true";
+      var initial = Object.prototype.hasOwnProperty.call(cfgToggles, key)
+        ? !!cfgToggles[key]
+        : btn.getAttribute("aria-pressed") === "true";
+      state.toggles[key] = initial;
+      btn.setAttribute("aria-pressed", initial ? "true" : "false");
       btn.addEventListener("click", function () {
         state.toggles[key] = !state.toggles[key];
         btn.setAttribute("aria-pressed", state.toggles[key] ? "true" : "false");
         applyToggle(key);
+        persistToggle(key, state.toggles[key]);
       });
     });
-    // Estado inicial
+    // Estado inicial: devices ya; los toggles síncronos (baratos) se difieren
+    // un tick para que tpLiveZones/tpLivePois/tpLiveRoutes (scripts cargados
+    // después) ya estén definidos. Los OVERLAYS del mapa (geocercas/POIs/rutas)
+    // NO se cargan aquí: se difieren a seedOverlays(), que corre tras el primer
+    // load COMPLETO de devices — igual que el legacy (app.geofences.load() va
+    // dentro del callback de devices.load). Así se añaden a un mapa ya asentado
+    // (fitBounds hecho) y no quedan sin dibujar.
     applyToggle("devices");
+    setTimeout(function () {
+      ["cluster", "names", "tails", "traffic"].forEach(function (key) {
+        if (state.toggles[key]) applyToggle(key);
+      });
+    }, 0);
 
     // Bottombar (widgets inferiores)
     var bbCollapse = document.getElementById("tp-bottombar-collapse");
@@ -1127,6 +1295,24 @@
         openWidgetsConfig(bbConfig.getAttribute("data-config-url"), bbConfig.getAttribute("data-save-url"));
       });
 
+    // Widget de Servicios: "3 rayitas" → modal LISTA, "+ Añadir servicio" → modal FORM.
+    // Modales compartidos en tp-services.js (mismos que usa /ui/v2/maintenance).
+    // Delegado en document porque los widgets del drawer se inyectan por AJAX.
+    document.addEventListener("click", function (e) {
+      var sv = e.target.closest("[data-tp-service]");
+      if (!sv) return;
+      e.preventDefault();
+      if (!window.tpServices) return;
+      var deviceId = parseInt(sv.getAttribute("data-device-id"), 10);
+      if (!deviceId) return;
+      var refresh = function () {
+        if (state.selectedId === deviceId) selectDevice(deviceId);
+      };
+      if (sv.getAttribute("data-tp-service") === "add")
+        tpServices.openForm(deviceId, null, refresh);
+      else tpServices.openList(deviceId, refresh);
+    });
+
     // "Centrar en mapa" del drawer
     var center = document.getElementById("tp-drawer-center");
     if (center)
@@ -1135,12 +1321,33 @@
       });
 
     // Drawer close
+    // Colapsar / expandir el panel izquierdo (lista de elementos)
+    var fCollapse = document.getElementById("tp-live-filters-collapse");
+    var fExpand = document.getElementById("tp-live-filters-expand");
+    if (fCollapse)
+      fCollapse.addEventListener("click", function () {
+        root.setAttribute("data-filters-collapsed", "true");
+        if (fExpand) fExpand.hidden = false;
+        setTimeout(function () { state.map && state.map.invalidateSize(); }, 250);
+      });
+    if (fExpand)
+      fExpand.addEventListener("click", function () {
+        root.removeAttribute("data-filters-collapsed");
+        fExpand.hidden = true;
+        setTimeout(function () { state.map && state.map.invalidateSize(); }, 250);
+      });
+
     var dc = document.getElementById("tp-drawer-close");
     if (dc)
       dc.addEventListener("click", function () {
         root.removeAttribute("data-drawer-open");
         root.removeAttribute("data-bottombar-open");
+        var prev = state.selectedId;
         state.selectedId = null;
+        if (prev != null) {
+          refreshMarkerIcon(prev);
+          if (state.markers[prev]) state.markers[prev].setZIndexOffset(0);
+        }
       });
 
     // Conmutador de paneles
@@ -1149,17 +1356,18 @@
         switchPanel(t.getAttribute("data-panel-tab"));
       });
     });
-    // Rail intercept (Live/Geocercas/POIs) → cambiar panel sin recargar
+    // Rail intercept (Live/Geocercas/POIs/Rutas) → cambiar panel sin recargar
     Array.prototype.forEach.call(document.querySelectorAll(".tp-rail a[href]"), function (a) {
       var href = a.getAttribute("href") || "";
       var toPois = href.indexOf("panel=pois") !== -1;
       var toZones = href.indexOf("panel=zones") !== -1;
-      var toLive = !toPois && !toZones && /\/ui\/v2\/live(\?|$)/.test(href);
-      if (!toPois && !toZones && !toLive) return;
+      var toRoutes = href.indexOf("panel=routes") !== -1;
+      var toLive = !toPois && !toZones && !toRoutes && /\/ui\/v2\/live(\?|$)/.test(href);
+      if (!toPois && !toZones && !toRoutes && !toLive) return;
       a.addEventListener("click", function (e) {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
         e.preventDefault();
-        var panel = toPois ? "pois" : toZones ? "zones" : "objects";
+        var panel = toPois ? "pois" : toZones ? "zones" : toRoutes ? "routes" : "objects";
         switchPanel(panel);
         try {
           history.replaceState(null, "", panel === "objects" ? "/ui/v2/live" : "/ui/v2/live?panel=" + panel);
@@ -1168,7 +1376,7 @@
     });
     try {
       var ip = new URLSearchParams(location.search).get("panel");
-      if (ip === "pois" || ip === "zones") switchPanel(ip);
+      if (ip === "pois" || ip === "zones" || ip === "routes") switchPanel(ip);
     } catch (e) {}
   }
 
@@ -1179,9 +1387,23 @@
     Array.prototype.forEach.call(document.querySelectorAll(".tp-live__paneltab"), function (t) {
       t.classList.toggle("is-active", t.getAttribute("data-panel-tab") === name);
     });
-    // Zonas/POIs: render en el mapa Leaflet (se conectan en el commit siguiente).
+    // Zonas/POIs/Rutas: render en el mapa Leaflet (módulos propios).
     if (window.tpLiveZones && name === "zones") window.tpLiveZones.activate();
     if (window.tpLivePois && name === "pois") window.tpLivePois.activate();
+    if (window.tpLiveRoutes && name === "routes") window.tpLiveRoutes.activate();
+    setRailActive(name);
+  }
+  // Sincroniza el ítem activo del rail al cambiar de panel SIN recargar
+  // (Objetos/Geocercas/POIs/Rutas comparten el mapa de Live).
+  function setRailActive(name) {
+    var items = document.querySelectorAll(".tp-rail__item");
+    Array.prototype.forEach.call(items, function (a) { a.removeAttribute("aria-current"); });
+    var sel = name === "zones" ? '.tp-rail__item[href*="panel=zones"]'
+      : name === "pois" ? '.tp-rail__item[href*="panel=pois"]'
+      : name === "routes" ? '.tp-rail__item[href*="panel=routes"]'
+      : '.tp-rail__item[href$="/ui/v2/live"]';
+    var el = document.querySelector(sel);
+    if (el) el.setAttribute("aria-current", "page");
   }
 
   // -----------------------------------------------------------

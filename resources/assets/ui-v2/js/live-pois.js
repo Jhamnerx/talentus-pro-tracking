@@ -349,8 +349,26 @@
         fillGroupSelect();
         renderList();
         renderMarkers();
+        settleRedraw();
       })
       .catch(function () {});
+  }
+
+  // Fix 1ª carga: el fitBounds inicial de la flota puede mover la vista justo
+  // cuando se añaden estos marcadores → re-render una vez al asentarse el mapa.
+  var _settled = false;
+  function settleRedraw() {
+    if (_settled) return;
+    _settled = true;
+    var m = map();
+    if (!m) return;
+    // Quitar + re-agregar la capa (idéntico al toggle manual, que sí redibuja).
+    var redo = function () {
+      if (S.layer && m.hasLayer(S.layer)) m.removeLayer(S.layer);
+      renderMarkers();
+    };
+    m.once("moveend zoomend", redo);
+    setTimeout(redo, 500);
   }
 
   var wired = false;

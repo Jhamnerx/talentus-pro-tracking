@@ -536,6 +536,11 @@ return [
     'wrong_captcha' => 'Captcha incorrecto',
     'zones_instead' => 'Zonas en lugar de direcciones',
     'attributes' => [
+        'expiration_by' => 'Expira por',
+        'interval' => 'Intervalo',
+        'trigger_event_left' => 'Generar evento cuando falten',
+        'renew_after_expiration' => 'Renovar servicio al expirar',
+        'current_odometer' => 'Odómetro actual',
         'objects' => 'Vehículos',
         'select_all_objects' => 'Seleccionar todos los vehículos',
         'count' => 'Total',

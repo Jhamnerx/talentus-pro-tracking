@@ -69,6 +69,15 @@
   visibility: hidden;
 }
 
+/* Barra superior del panel: solo el botón de colapsar (los tabs se movieron
+   al rail izquierdo). */
+.tp-live__paneltop {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px var(--sp-3) 0;
+}
+
 /* Conmutador de paneles del sidebar (Objetos / POIs) sobre un solo mapa */
 .tp-live__paneltabs {
   flex-shrink: 0;
@@ -124,6 +133,44 @@
   display: block;
   -webkit-user-drag: none;
   user-drag: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+  transition: filter var(--dur-fast, 0.15s) var(--ease-out, ease);
+}
+/* Device seleccionado: sombra/halo que lo hace resaltar (como el legacy) */
+.tp-lmarker--selected {
+  z-index: 1000 !important;
+}
+.tp-lmarker--selected img {
+  filter:
+    drop-shadow(0 0 0 var(--brand-500, #2e63d9))
+    drop-shadow(0 0 6px var(--brand-500, #2e63d9))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+/* Halo pulsante detrás del marcador seleccionado */
+.tp-lmarker--selected::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 38px;
+  height: 38px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--brand-500, #2e63d9);
+  opacity: 0.18;
+  z-index: -1;
+  animation: tp-lmarker-pulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes tp-lmarker-pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.6);
+    opacity: 0.35;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
 }
 /* Etiqueta de nombre del marcador (toggle "nombres") */
 .tp-lmarker__name {
@@ -475,18 +522,47 @@
   color: var(--fg-primary);
 }
 /* Cabecera de grupo (lista agrupada por group name, como el legacy) */
+/* Grupo = CAJA con borde que agrupa el header + todos los devices dentro */
+.tp-live__group-box {
+  border: 1px solid var(--border-default, #e7e9ee);
+  border-radius: 12px;
+  background: var(--surface-raised, #fff);
+  margin-bottom: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
 .tp-live__group {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 8px;
+  padding: 8px 10px;
   cursor: pointer;
-  border-radius: var(--r-md);
   color: var(--fg-secondary, #5a6172);
+  background: var(--surface-sunken, #f4f5f8);
+  border-bottom: 1px solid var(--border-default, #e7e9ee);
   user-select: none;
 }
-.tp-live__group:hover {
-  background: var(--surface-sunken, #f1f2f6);
+.tp-live__group-box[data-collapsed="1"] .tp-live__group {
+  border-bottom: 0;
+}
+/* Devices dentro de la caja (sin borde propio: la caja los agrupa) */
+.tp-live__group-items {
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tp-live__group-items .tp-live__row {
+  border: 0;
+  margin: 0;
+  border-radius: 8px;
+  background: transparent;
+}
+.tp-live__group-items .tp-live__row:hover {
+  background: var(--surface-sunken, #f4f5f8);
+}
+.tp-live__group-items .tp-live__row[aria-selected="true"] {
+  background: var(--brand-bg-subtle);
 }
 .tp-live__group-chevron {
   flex: 0 0 auto;
@@ -722,6 +798,11 @@
   padding: var(--sp-8) var(--sp-4);
   font-size: 13px;
 }
+/* `display:flex` pisa el atributo `hidden` (menor especificidad del UA):
+   esta regla (clase+atributo) gana y oculta el estado vacío cuando hay items. */
+.tp-live__empty[hidden] {
+  display: none;
+}
 
 /* Filter handle (when collapsed) */
 .tp-live__filters-handle {
@@ -835,16 +916,22 @@
   opacity: 0.6;
 }
 .tp-live__map-controls .tp-btn[aria-pressed="true"] {
-  background: var(--brand-bg-subtle);
-  color: var(--brand-700);
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  color: #fff;
 }
 
 /* Cluster marker (shown when "Agrupar" toggle is on) */
+.leaflet-marker-icon.tp-live-cluster-wrap,
+.tp-live-cluster-wrap {
+  background: transparent;
+  border: 0;
+}
 .tp-live-cluster {
-  width: 36px;
-  height: 36px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  background: rgba(37, 99, 235, 0.85);
+  background: var(--brand-500, #2563eb);
   color: #fff;
   display: flex;
   align-items: center;
@@ -852,9 +939,24 @@
   font-weight: 700;
   font-size: 13px;
   border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--brand-500, #2563eb) 28%, transparent),
+    0 2px 8px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   user-select: none;
+  transition: transform var(--dur-fast, 0.15s) var(--ease-out, ease);
+}
+.tp-live-cluster:hover {
+  transform: scale(1.08);
+}
+.tp-live-cluster--sm {
+  font-size: 12px;
+}
+.tp-live-cluster--md {
+  font-size: 14px;
+}
+.tp-live-cluster--lg {
+  font-size: 15px;
 }
 
 /* Name labels under each device marker (toggle: nombres) */
@@ -1382,24 +1484,86 @@
   flex: 1 1 auto;
   padding-bottom: 4px;
 }
+/* Card del bottombar = header fijo (título + icono + acción) + cuerpo scrolleable */
 .tp-live__bottombar-cards > .tp-card {
   pointer-events: auto;
   flex: 0 0 auto;
-  width: 260px;
+  width: 320px;
   margin: 0;
-  max-height: 232px;
-  overflow: auto;
-  background: var(--surface-1, #ffffff);
-  border: 1px solid var(--border, #e7e9ee);
-  border-radius: 12px;
-  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.14));
+  max-height: 248px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  background: var(--surface-raised, #ffffff);
+  border: 1px solid var(--border-default, #e7e9ee);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 12px 28px -8px rgba(15, 23, 42, 0.28);
 }
-.tp-live__bottombar-cards > .tp-card > .tp-h6 {
-  position: sticky;
-  top: 0;
-  background: inherit;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border, #eef0f4);
+/* Header fijo (no scrollea) */
+.tp-live__bottombar-cards > .tp-card > .tp-h6,
+.tp-live__bottombar-cards > .tp-card > .tp-dw__card-head {
+  flex: 0 0 auto;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  min-height: 42px;
+  border-bottom: 1px solid var(--border-default, #eef0f4);
+  background: var(--surface-raised, #ffffff);
+}
+/* Cuerpo scrolleable */
+.tp-live__bottombar-cards > .tp-card > .tp-dw__card-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px;
+}
+/* Título con icono */
+.tp-dw__card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 600;
+}
+.tp-dw__card-title > svg {
+  flex: 0 0 auto;
+  color: var(--brand-500);
+}
+.tp-dw__card-title > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botón de acción del widget (p. ej. "+ Añadir servicio") — slate sólido
+   profesional con texto blanco (colores fijos: no depende de vars de tema para
+   evitar el caso fondo-oscuro/texto-invisible). Resalta sobre la card sin usar
+   el celeste de acento. */
+.tp-scope .tp-dw__add,
+.tp-scope .tp-dw__add:link,
+.tp-scope .tp-dw__add:visited,
+.tp-scope .tp-dw__add:hover {
+  background: #334155;
+  border: 1px solid #334155;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
+  transition: background var(--dur-fast, 0.15s) var(--ease-out, ease);
+}
+.tp-scope .tp-dw__add:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+}
+.tp-scope .tp-dw__add,
+.tp-scope .tp-dw__add > svg,
+.tp-scope .tp-dw__add > span {
+  color: #ffffff;
 }
 .tp-live__bottombar .tp-dw__streetview img,
 .tp-live__bottombar .tp-dw__cam img {
@@ -1488,4 +1652,248 @@
   .tp-widgets-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* ============================================================
+   Panel de RUTAS (live-routes.js): barra de header, lista
+   agrupable, casilla de visibilidad, campo de color y modales.
+   ============================================================ */
+.tp-routes-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tp-routes-bar .tp-input-wrap {
+  min-width: 0;
+}
+
+/* Fila de ruta: checkbox de visibilidad a la izquierda */
+.tp-route-row .tp-route-row__chk {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin-right: 2px;
+  accent-color: var(--brand-accent, #1b99bd);
+  cursor: pointer;
+}
+
+/* Grupo (folder) */
+.tp-rgrp {
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+}
+.tp-rgrp__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.tp-rgrp__head:hover {
+  background: var(--surface-sunken, #f6f7f9);
+}
+.tp-rgrp__chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--fg-tertiary, #6b7280);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease;
+}
+.tp-rgrp__chev.is-collapsed {
+  transform: rotate(-90deg);
+}
+.tp-rgrp__folder {
+  flex: 0 0 auto;
+  color: var(--brand-accent, #1b99bd);
+}
+.tp-rgrp__name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--fg-primary, #1f2430);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-rgrp__count {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--fg-tertiary, #6b7280);
+  background: var(--surface-sunken, #eef2f6);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.tp-rgrp__actions {
+  display: inline-flex;
+  gap: 2px;
+}
+.tp-rgrp__body {
+  padding-left: 6px;
+}
+
+/* Campo de color (swatch nativo + hex + limpiar) */
+.tp-colorfield {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 8px;
+  padding: 4px 8px;
+  background: var(--surface-raised, #fff);
+}
+.tp-colorfield input[type="color"] {
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+.tp-colorfield__hex {
+  flex: 1;
+  font-size: 13px;
+  color: var(--fg-primary, #1f2430);
+  font-variant-numeric: tabular-nums;
+}
+.tp-colorfield__clear {
+  border: none;
+  background: transparent;
+  color: var(--fg-tertiary, #94a3b8);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+.tp-colorfield__clear:hover {
+  color: var(--danger-500, #ef4444);
+}
+
+/* Formulario acoplado de crear/editar ruta (sidebar) */
+.tp-routes-form {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 14px 14px;
+}
+.tp-routes-form[hidden] {
+  display: none;
+}
+.tp-routes-form__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tp-routes-form__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: var(--surface-sunken, #eef2f6);
+  border-radius: 7px;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--fg-secondary, #5a6172);
+  cursor: pointer;
+}
+.tp-routes-form__back:hover {
+  background: var(--border-subtle, #e2e8f0);
+}
+.tp-routes-form__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fg-primary, #1f2430);
+}
+.tp-routes-form__hint {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--fg-tertiary, #6b7280);
+  background: var(--surface-sunken, #f6f7f9);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.tp-routes-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+/* Con el formulario abierto, ocultar la barra/lista/pie del panel */
+#tp-panel-routes.is-form .tp-routes-bar,
+#tp-panel-routes.is-form .tp-live__list-wrap,
+#tp-panel-routes.is-form .tp-live__filters-foot {
+  display: none;
+}
+
+/* Select de grupo + botón "nuevo grupo" */
+.tp-route-groupsel {
+  display: flex;
+  gap: 6px;
+}
+.tp-route-groupsel select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Modal de grupo: barra select-all + lista de rutas con casillas */
+.tp-rgroup-form__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.tp-rgroup-form__sel {
+  display: inline-flex;
+  gap: 12px;
+}
+.tp-linkbtn {
+  border: none;
+  background: none;
+  color: var(--brand-accent, #1b99bd);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+.tp-linkbtn:hover {
+  text-decoration: underline;
+}
+.tp-rgroup-list {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 8px;
+  padding: 4px;
+  margin-top: 8px;
+}
+.tp-rgroup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  margin: 0;
+}
+.tp-rgroup-item:hover {
+  background: var(--surface-sunken, #f6f7f9);
+}
+.tp-rgroup-item input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--brand-accent, #1b99bd);
 }

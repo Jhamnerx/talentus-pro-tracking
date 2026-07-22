@@ -477,6 +477,14 @@
   }
   function setOverlay(kind, on) {
     state.toggles[kind] = on;
+    if (kind === "hitos") {
+      // Hitos kilométricos (capa compartida tp-hitos.js, recarga por viewport)
+      if (window.tpHitos) {
+        if (!state.hitosCtrl) state.hitosCtrl = tpHitos.create(state.map);
+        state.hitosCtrl.setVisible(on);
+      }
+      return;
+    }
     var ov = state.overlays[kind];
     if (on) {
       if (ov) ov.addTo(state.map);
@@ -496,6 +504,7 @@
     { id: "tp-ev-toggle-geofences", key: "geofences" },
     { id: "tp-ev-toggle-routes", key: "routes" },
     { id: "tp-ev-toggle-poi", key: "poi" },
+    { id: "tp-ev-toggle-hitos", key: "hitos" },
   ].forEach(function (t) {
     var btn = document.getElementById(t.id);
     if (!btn) return;

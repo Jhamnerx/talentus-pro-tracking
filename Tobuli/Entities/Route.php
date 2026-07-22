@@ -56,7 +56,8 @@ class Route extends AbstractEntity implements DisplayInterface
 
             $linestring = substr($linestring, 0, -1);
 
-            DB::unprepared("UPDATE routes SET polyline = GeomFromText('LINESTRING($linestring)') WHERE id = '$item->id'");
+            // ST_GeomFromText: GeomFromText (sin prefijo) se eliminó en MySQL 8.
+            DB::unprepared("UPDATE routes SET polyline = ST_GeomFromText('LINESTRING($linestring)') WHERE id = '$item->id'");
         });
     }
 

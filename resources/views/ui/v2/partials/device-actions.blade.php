@@ -1,16 +1,17 @@
 {{--
     UI v2 · Menú de acciones por dispositivo (kebab de la lista Live)
-    Renderizado por Ui\V2\DevicesController::actions($id). Espeja
-    Tobuli/Views/Frontend/Objects/item.blade.php (dropdown) — MISMO gating
-    de permisos y flags por device que el legacy, con iconos por ítem.
-
-    Convención de cada ítem:
-      - data-act="history|follow|edit"  → acción NATIVA v2 (ya implementada)
-      - data-act="pending"              → acción PENDIENTE de portar a v2
-                                          (data-feature + data-url legacy para el futuro)
+    TEMPLATE ESTÁTICO DE SESIÓN (sin AJAX): se renderiza UNA vez dentro de
+    <template id="tp-row-menu-tpl"> en live.blade. Espeja el gating del
+    legacy Objects/item.blade:
+      - Los permisos del usuario se resuelven aquí (server, fijos por sesión).
+      - Las condiciones POR DEVICE van como data-need="vt|chat|sim|plans|
+        app_uuid|general|video": live.js las evalúa con los flags que ya
+        viajan en el JSON de la lista (api.devices) y quita lo que no aplique.
+      - Las URLs llevan __ID__ / __IMEI__ que live.js sustituye al abrir.
+    Convención data-act: history|follow|edit|send_command = acción nativa v2;
+    pending = feature aún legacy (data-url de referencia).
 --}}
 @php
-    /** @var \Tobuli\Entities\Device $device */
     $u = Auth::user();
 
     // Iconos (SVG inline, estilo trazo 16px — consistente con la UI v2).
@@ -37,7 +38,7 @@
         'playback'  => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 9 5 3-5 3Z"/></svg>',
     ];
 @endphp
-<div class="tp-row-menu__list" data-device-id="{{ $device->id }}">
+<div class="tp-row-menu__list" data-device-id="__ID__">
 
     @if ($u->perm('history', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="history" data-range="last_hour">
@@ -56,8 +57,8 @@
     @endif
 
     @if ($u->perm('send_command', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="send_command"
-            data-url="{{ route('send_command.create') }}">
+        {{-- Modal nativo v2 (tp-commands.js), preseleccionando el device --}}
+        <button type="button" class="tp-row-menu__item" data-act="send_command">
             <span class="tp-row-menu__icon">{!! $ic['command'] !!}</span>
             <span>{{ trans('front.send_command') }}</span>
         </button>
@@ -70,9 +71,9 @@
         </button>
     @endif
 
-    @if ($u->perm('devices', 'edit') && $device->vehicle_type_id)
+    @if ($u->perm('devices', 'edit'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="vehicle_state"
-            data-url="{{ route('devices.vehicle_state_form', $device->id) }}">
+            data-need="vt" data-url="{{ route('devices.vehicle_state_form', '__ID__') }}">
             <span class="tp-row-menu__icon">{!! $ic['vehicle_state'] !!}</span>
             <span>{{ trans('front.change_vehicle_state') }}</span>
         </button>
@@ -85,20 +86,20 @@
 
     @if ($u->perm('sharing', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="share"
-            data-url="{{ route('sharing.create', ['devices_id' => $device->id]) }}">
+            data-url="{{ route('sharing.create', ['devices_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['share'] !!}</span>
             <span>{{ trans('front.share') }}</span>
         </button>
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="sharing"
-            data-url="{{ route('sharing.index', ['devices_id' => $device->id]) }}">
+            data-url="{{ route('sharing.index', ['devices_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['sharing'] !!}</span>
             <span>{{ trans('front.sharing') }}</span>
         </button>
     @endif
 
-    @if ($u->perm('chat', 'view') && $device->canChat())
+    @if ($u->perm('chat', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="chat"
-            data-url="{{ route('chat.init', [$device->id, 'device', 1]) }}">
+            data-need="chat" data-url="{{ route('chat.init', ['__ID__', 'device', 1]) }}">
             <span class="tp-row-menu__icon">{!! $ic['chat'] !!}</span>
             <span>{{ trans('front.chat') }}</span>
         </button>
@@ -106,15 +107,15 @@
 
     @if ($u->perm('checklist_qr_code', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="qr"
-            data-url="{{ route('checklist.qr_code_preview', ['device_id' => $device->id]) }}">
+            data-url="{{ route('checklist.qr_code_preview', ['device_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['qr'] !!}</span>
             <span>{{ trans('front.checklist_qr_code') }}</span>
         </button>
     @endif
 
-    @if (!empty($device->sim_number) && $u->able('configure_device'))
+    @if ($u->able('configure_device'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="device_config"
-            data-url="{{ route('device_config.index', ['device_id' => $device->id]) }}">
+            data-need="sim" data-url="{{ route('device_config.index', ['device_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['device_config'] !!}</span>
             <span>{{ trans('front.device_configuration') }}</span>
         </button>
@@ -122,23 +123,21 @@
 
     @if ($u->perm('call_actions', 'view') && $u->perm('events', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="call_action"
-            data-url="{{ route('call_actions.create', ['device_id' => $device->id]) }}">
+            data-url="{{ route('call_actions.create', ['device_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['call'] !!}</span>
             <span>{{ trans('front.call_action') }}</span>
         </button>
     @endif
 
-    @if ($device->isPlanAble())
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="device_plans"
-            data-url="{{ route('device_plans.index', ['device_id' => $device->id]) }}">
-            <span class="tp-row-menu__icon">{!! $ic['plans'] !!}</span>
-            <span>{{ trans('admin.device_plans') }}</span>
-        </button>
-    @endif
+    <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="device_plans"
+        data-need="plans" data-url="{{ route('device_plans.index', ['device_id' => '__ID__']) }}">
+        <span class="tp-row-menu__icon">{!! $ic['plans'] !!}</span>
+        <span>{{ trans('admin.device_plans') }}</span>
+    </button>
 
     @if ($u->perm('alerts', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="alerts"
-            data-url="{{ route('device.alerts.index', ['device_id' => $device->id]) }}">
+            data-url="{{ route('device.alerts.index', ['device_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['alerts'] !!}</span>
             <span>{{ trans('front.device_alerts') }}</span>
         </button>
@@ -146,39 +145,38 @@
 
     @if ($u->perm('device_route_types', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="route_types"
-            data-url="{{ route('device_route_type.show', ['device_id' => $device->id]) }}">
+            data-url="{{ route('device_route_type.show', ['device_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['route'] !!}</span>
             <span>{{ trans('front.route_types') }}</span>
         </button>
     @endif
 
-    @if ($u->perm('devices', 'edit') && $device->app_uuid)
+    @if ($u->perm('devices', 'edit'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="reset_app_uuid"
-            data-url="{{ route('devices.do_reset_app_uuid', $device->id) }}">
+            data-need="app_uuid" data-url="{{ route('devices.do_reset_app_uuid', '__ID__') }}">
             <span class="tp-row-menu__icon">{!! $ic['reset'] !!}</span>
             <span>{{ trans('front.reset_app_uuid') }}</span>
         </button>
     @endif
 
-    @if ($u->perm('camera', 'view') && $device->isGeneral())
+    @if ($u->perm('camera', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="camera"
-            data-url="{{ route('device_media.create', ['search_phrase' => $device->imei, 'device_id' => $device->id]) }}">
+            data-need="general"
+            data-url="{{ route('device_media.create', ['search_phrase' => '__IMEI__', 'device_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['camera'] !!}</span>
             <span>{!! trans('front.camera') !!}</span>
         </button>
     @endif
 
-    @if (in_array($device->protocol, ['jt808', 'howen']) && $device->traccar_device_id)
-        <div class="tp-row-menu__sep"></div>
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="live_video"
-            data-url="{{ route('device_video.live.modal', $device->id) }}">
-            <span class="tp-row-menu__icon">{!! $ic['video'] !!}</span>
-            <span>{{ trans('front.live_video') }}</span>
-        </button>
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="playback"
-            data-url="{{ route('device_video.playback.modal', $device->id) }}">
-            <span class="tp-row-menu__icon">{!! $ic['playback'] !!}</span>
-            <span>Reproducción</span>
-        </button>
-    @endif
+    <div class="tp-row-menu__sep" data-need="video"></div>
+    <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="live_video"
+        data-need="video" data-url="{{ route('device_video.live.modal', '__ID__') }}">
+        <span class="tp-row-menu__icon">{!! $ic['video'] !!}</span>
+        <span>{{ trans('front.live_video') }}</span>
+    </button>
+    <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="playback"
+        data-need="video" data-url="{{ route('device_video.playback.modal', '__ID__') }}">
+        <span class="tp-row-menu__icon">{!! $ic['playback'] !!}</span>
+        <span>{{ trans('front.playback') }}</span>
+    </button>
 </div>

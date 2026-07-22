@@ -248,3 +248,127 @@
 .tp-device-tabs-host .tp-tabs__panel.is-active {
   display: block;
 }
+
+/* ── Colores del recorrido (tab Cola) — estilo Wialon ── */
+.tp-routecolors {
+  margin-top: 4px;
+}
+.tp-routecolors__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--tp-text, #111827);
+}
+.tp-routecolors__opt.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tp-routecolors__opt--block {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.tp-routecolors__opt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tp-routecolors__opt-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  transition: opacity 0.15s ease;
+}
+.tp-routecolors__opt-body--block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-left: 24px;
+}
+/* atenuar paneles de modos no activos */
+.tp-routecolors[data-active="trips"] [data-rc-panel],
+.tp-routecolors[data-active="single"] [data-rc-panel]:not([data-rc-panel="single"]),
+.tp-routecolors[data-active="speed"] [data-rc-panel]:not([data-rc-panel="speed"]),
+.tp-routecolors[data-active="sensor"] [data-rc-panel]:not([data-rc-panel="sensor"]) {
+  opacity: 0.45;
+}
+.tp-routecolors__hex {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--tp-border, #e5e7eb);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tp-routecolors__swatches {
+  display: inline-flex;
+  gap: 4px;
+}
+.tp-routecolors__swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.tp-routecolors__swatch:hover {
+  transform: scale(1.15);
+}
+.tp-routecolors__add,
+.tp-routecolors__reset,
+.tp-routecolors__del {
+  border: 1px solid var(--tp-border, #e5e7eb);
+  background: transparent;
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--tp-text-muted, #6b7280);
+}
+.tp-routecolors__add {
+  color: #16a34a;
+  font-weight: 700;
+}
+.tp-routecolors__del:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.tp-routecolors__bar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+/* Rangos en linea (horizontal, con wrap) */
+.tp-routecolors__rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.tp-routecolors__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tp-routecolors__row input[type="color"] {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--tp-border, #e5e7eb);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tp-routecolors__dash,
+.tp-routecolors__inf {
+  color: var(--tp-text-muted, #6b7280);
+  min-width: 14px;
+  text-align: center;
+}
