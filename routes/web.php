@@ -1194,6 +1194,15 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Ui\V2\DevicesController@update'])->where('id', '[0-9]+');
         Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');
 
+        // Sensores del modal device (tab Sensores — CRUD vía SensorModalHelper)
+        Route::get('devices/{id}/sensors',       ['as' => 'api.devices.sensors',       'uses' => 'Ui\V2\DevicesController@sensorsList'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/sensors/form',  ['as' => 'api.devices.sensors.form',  'uses' => 'Ui\V2\DevicesController@sensorFormCreate'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/sensors',      ['as' => 'api.devices.sensors.store', 'uses' => 'Ui\V2\DevicesController@sensorStore'])->where('id', '[0-9]+');
+        Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
+        Route::get('sensors/{id}/form',          ['as' => 'api.sensors.form',          'uses' => 'Ui\V2\DevicesController@sensorFormEdit'])->where('id', '[0-9]+');
+        Route::put('sensors/{id}',               ['as' => 'api.sensors.update',        'uses' => 'Ui\V2\DevicesController@sensorUpdate'])->where('id', '[0-9]+');
+        Route::delete('sensors/{id}',            ['as' => 'api.sensors.destroy',       'uses' => 'Ui\V2\DevicesController@sensorDestroy'])->where('id', '[0-9]+');
+
         // Enviar comando (modal compartido GPRS/SMS + hub schedules/logs/plantillas)
         Route::get('commands/meta',   ['as' => 'api.commands.meta',  'uses' => 'Ui\V2\CommandsController@meta']);
         Route::post('commands/list',  ['as' => 'api.commands.list',  'uses' => 'Ui\V2\CommandsController@commands']);

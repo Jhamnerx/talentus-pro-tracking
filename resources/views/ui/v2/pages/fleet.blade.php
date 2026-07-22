@@ -122,7 +122,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=2"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=1" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.

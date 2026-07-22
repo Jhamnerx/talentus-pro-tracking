@@ -7,6 +7,16 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 22 jul 2026 — Modal device: tabs Sensores / Usuarios / Servicios Web (rama `nuevo-tema`)
+
+Los 3 tabs placeholder del modal de vehículo quedan **nativos**, delegando 100% en los helpers legacy:
+
+- **Servicios Web**: partial con los 7 checkboxes de integraciones Perú (`mtc`=Sutran, `osinergmin`, `mininter`, `consatel`, `wisetrack`, `sidersales`, `epscenter`) alimentado por `$webservices` (`DeviceModalHelper::getWebservices()`, ya filtrado por `perm('webservice.<x>','edit')`). Patrón hidden 0 + checkbox 1; son columnas fillable del device — el `update()` normal los persiste.
+- **Usuarios** (admin): lista con buscador + paginación ("Cargar más") sobre los endpoints legacy `devices.users.get/{id}` / `devices.users.index` (UsersLoader: búsqueda `s`, cada fila trae `selected`). La UI acumula **deltas** en hidden inputs `selected_user_id[]` con el formato del EntityLoader (`"id;1;<uid>"` asignar / `"id;0;<uid>"` quitar) que `DeviceModalHelper::setAbleUsers()` resuelve contra `device->users()`. Sin cambios → no viaja nada → asignaciones intactas (misma semántica legacy). `readForm()` ganó soporte de arrays `name="x[]"`.
+- **Sensores**: tabla server-rendered (`$sensors_list` en `form()`) + CRUD completo en modal **anidado** (tpModal apila `<dialog>`). Endpoints v2 nuevos en `DevicesController` (`sensorsList/sensorFormCreate/sensorFormEdit/sensorStore/sensorUpdate/sensorDestroy/sensorPreview`, rutas `ui.v2.api.devices.sensors*` + `ui.v2.api.sensors.*`) que delegan en **`SensorModalHelper`** (misma validación/formatInput/permisos). El form (`ui.v2.modals.devices.sensor-form`) replica los `name=` legacy y la lógica condicional por tipo (bloques `[data-sensor-input]`, `shown_value_by` dinámico, habilitadores `data-enable`, paneles de **calibración** y **mapping** con filas add/remove, **vista previa** vía `sensors.preview`). `$types` viaja en `<script type="application/json">` (innerHTML no ejecuta scripts). Gotcha: el hidden de edición es `name="id"` (no `sensor_id`) porque `preview()` lo usa para excluir el sensor de la unicidad por tipo. Pendiente menor: selector de icono por mapping (las filas existentes conservan su icono vía hidden).
+
+---
+
 ## 🔄 Actualización · 21 jul 2026 — Hitos kilométricos del Perú (rama `nuevo-tema`)
 
 **Feature nueva transversal**: capa de hitos KM de la red vial (dataset Provías, 31,723 puntos importados) en TODAS las páginas con mapa + referencia vial en popups. Detalle completo del diseño y los ajustes (sin SQL espacial por MariaDB 10.5, import artisan por versión) en `docs/implementacion_hitos_km.md`. Piezas: tabla `hitos_km` + `HitoKm` + `hitos:import` · endpoints `api.hitos` (bbox/zoom con densidad 1-10-100 y cache 24h) y `api.hitos.nearest` (≤2 km) · **`tp-hitos.js`** compartido (capa con debounce por viewport) · toggle "Mostrar hitos KM" en Live (persistido `m_hitos`), Historial y Eventos · popup de vehículo (Live) y de punto (Historial) muestran "PE-1N · km 557" con el toggle activo.
@@ -271,7 +281,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `Layouts/loged.blade.php` (live shell + mapa) | `live` (Leaflet) | ✅ Falta: **regla de medición** (leaflet.ruler), tools showPoint/showAddress, chat flotante |
 | `Objects/` (sidebar tabs objects/events/history/alerts/geofencing/routes/pois) | live (paneles) + páginas propias | ⚠️ objects/geofencing/pois = paneles ✅; events/history = páginas ✅; **routes tab sin CRUD**; alerts tab → página Alertas |
 | `Dashboard/` (24 widgets) | `dashboard` | ⚠️ KPIs básicos; faltan los widgets configurables del legacy |
-| `Devices/` (CRUD 8 tabs) | `fleet` + modal tabbed | ⚠️ Principal/Iconos/Información/Exactitud/Cola ✅ · **Sensores/Usuarios/Servicios Web = placeholder** (webservices = integraciones Perú, prioritario) |
+| `Devices/` (CRUD 8 tabs) | `fleet` + modal tabbed | ✅ 8 tabs nativos: Principal/Iconos/Información/Exactitud/Cola + **Sensores/Usuarios/Servicios Web** (22-jul; falta solo icon-picker por mapping de sensor) |
 | `DevicesGroups/` | filtro por grupo en lista (lectura) | ❌ CRUD de grupos |
 | `Geofences/` · `GeofencesGroups/` | panel zones (draw + vértices + VSL + import/export) | ✅ (grupos solo lectura) |
 | `Pois/` · `PoisGroups/` | panel pois (CRUD + drag) | ✅ (grupos solo lectura) |

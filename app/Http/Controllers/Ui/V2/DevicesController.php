@@ -212,6 +212,15 @@ class DevicesController extends BaseController
             if ($id) {
                 $helper->setData(['id' => (int) $id]);
                 $data = $helper->editData();
+
+                // Tab Sensores: lista server-rendered (se re-hidrata por AJAX tras cada CRUD).
+                $data['sensors_list'] = \Tobuli\Entities\DeviceSensor::where('device_id', (int) $id)
+                    ->orderBy('id', 'desc')
+                    ->get()
+                    ->map(function ($s) {
+                        return ['id' => (int) $s->id, 'name' => (string) $s->name, 'type' => (string) $s->type_title];
+                    })
+                    ->all();
             } else {
                 $helper->setData([]);
                 $data = $helper->createData();
@@ -350,6 +359,154 @@ class DevicesController extends BaseController
                 'ok'      => false,
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /* =================================================================
+     * Sensores del modal device (tab Sensores)
+     * -----------------------------------------------------------------
+     * CRUD delegado 100% en el SensorModalHelper legacy (createData /
+     * editData / create / edit / destroy / preview): misma validación,
+     * mismos permisos (checkException devices edit/update) y mismos
+     * name= que el form legacy. Este bloque solo traduce HTTP ↔ helper.
+     * ================================================================= */
+
+    /**
+     * Resuelve el device y verifica permiso de edición (el helper legacy
+     * no valida ownership en create/list, así que lo hacemos aquí).
+     */
+    private function sensorDevice(int $deviceId)
+    {
+        $device = DeviceRepo::find($deviceId);
+        if (! $device) {
+            abort(404);
+        }
+
+        $this->checkException('devices', 'edit', $device);
+
+        return $device;
+    }
+
+    private function sensorHelper(array $data): \ModalHelpers\SensorModalHelper
+    {
+        $helper = app(\ModalHelpers\SensorModalHelper::class);
+        $helper->setUser($this->user);
+        $helper->setData($data);
+        $helper->setApi(false);
+
+        return $helper;
+    }
+
+    /**
+     * Lista de sensores del device (re-hidrata la tabla del tab).
+     */
+    public function sensorsList(Request $request, $id): JsonResponse
+    {
+        $this->sensorDevice((int) $id);
+
+        $rows = \Tobuli\Entities\DeviceSensor::where('device_id', (int) $id)
+            ->orderBy('id', 'desc')
+            ->get()
+            ->map(function ($s) {
+                return ['id' => (int) $s->id, 'name' => (string) $s->name, 'type' => (string) $s->type_title];
+            })
+            ->all();
+
+        return response()->json(['ok' => true, 'items' => $rows]);
+    }
+
+    /**
+     * HTML del form de sensor (crear). GET devices/{id}/sensors/form
+     */
+    public function sensorFormCreate(Request $request, $id): JsonResponse
+    {
+        $this->sensorDevice((int) $id);
+
+        $data = $this->sensorHelper([])->createData((int) $id);
+        $data['item'] = null;
+
+        return response()->json([
+            'ok'   => true,
+            'html' => View::make('ui.v2.modals.devices.sensor-form', $data)->render(),
+        ]);
+    }
+
+    /**
+     * HTML del form de sensor (editar). GET sensors/{id}/form
+     * El helper resuelve el device desde el sensor y valida el permiso.
+     */
+    public function sensorFormEdit(Request $request, $id): JsonResponse
+    {
+        $data = $this->sensorHelper(['sensor_id' => (int) $id])->editData();
+
+        return response()->json([
+            'ok'   => true,
+            'html' => View::make('ui.v2.modals.devices.sensor-form', $data)->render(),
+        ]);
+    }
+
+    /**
+     * Crear sensor. POST devices/{id}/sensors
+     */
+    public function sensorStore(Request $request, $id): JsonResponse
+    {
+        $this->sensorDevice((int) $id);
+
+        try {
+            $data = $request->all();
+            $data['device_id'] = (int) $id;
+
+            $this->sensorHelper($data)->create();
+
+            return response()->json(['ok' => true]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    /**
+     * Actualizar sensor. PUT sensors/{id}
+     */
+    public function sensorUpdate(Request $request, $id): JsonResponse
+    {
+        try {
+            $data = $request->all();
+            $data['sensor_id'] = (int) $id;
+
+            $this->sensorHelper($data)->edit();
+
+            return response()->json(['ok' => true]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    /**
+     * Eliminar sensor. DELETE sensors/{id}
+     */
+    public function sensorDestroy(Request $request, $id): JsonResponse
+    {
+        $this->sensorHelper(['sensor_id' => (int) $id])->destroy();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Vista previa del valor del sensor con un input de prueba.
+     * POST sensors/preview
+     */
+    public function sensorPreview(Request $request): JsonResponse
+    {
+        try {
+            $res = $this->sensorHelper($request->all())->preview();
+
+            return response()->json([
+                'ok'        => true,
+                'value'     => $res['value'] ?? null,
+                'formatted' => $res['formatted'] ?? null,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         }
     }
 
