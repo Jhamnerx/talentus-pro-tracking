@@ -1048,38 +1048,16 @@
         var gid = d.group_id || 0;
         (byGroup[gid] = byGroup[gid] || []).push(d);
       });
-
-      // Secciones colapsables: TODAS inician abiertas (el usuario pliega)
-      var sections = Object.keys(byGroup)
-        .map(function (gid) {
-          var open = true;
-          return (
-            '<div data-dgm-sec data-gid="' + gid + '" style="border:1px solid var(--border-default,#e5eaf1);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--surface-raised,#fff);">' +
-            '<div data-dgm-head style="display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;">' +
-            '<span data-dgm-chev style="display:inline-flex;color:var(--fg-muted,#94a3b8);transition:transform .12s ease;' +
-            (open ? "transform:rotate(0deg);" : "transform:rotate(-90deg);") + '">' +
-            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>' +
-            '<input type="checkbox" class="tp-choice-input" data-dgm-gchk="' + gid + '">' +
-            '<span style="font-size:13px;font-weight:600;color:var(--fg-primary,#0f172a);">' +
-            esc(groupTitles[gid] || "Sin grupo") + "</span>" +
-            '<span style="font-size:11px;color:var(--fg-muted,#94a3b8);">' + byGroup[gid].length + "</span>" +
-            "</div>" +
-            '<div data-dgm-body style="display:' + (open ? "grid" : "none") + ';grid-template-columns:1fr 1fr;gap:0 14px;padding:2px 10px 8px 33px;">' +
-            byGroup[gid]
-              .map(function (d) {
-                return (
-                  '<label data-dgm-row data-name="' + esc((d.name || "").toLowerCase()) +
-                  '" style="display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:8px;cursor:pointer;font-size:13px;">' +
-                  '<input type="checkbox" class="tp-choice-input" data-dgm-dev="' + d.id + '" data-gid="' + gid + '"' +
-                  (selected[d.id] ? " checked" : "") + ">" +
-                  '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(d.name || "#" + d.id) + "</span></label>"
-                );
-              })
-              .join("") +
-            "</div></div>"
-          );
-        })
-        .join("");
+      // Orden de secciones: "Sin grupo" primero, luego el orden de la lista
+      var groupOrder = [];
+      if (byGroup[0]) groupOrder.push(0);
+      state.groups.forEach(function (g) {
+        if (byGroup[g.id] && groupOrder.indexOf(g.id) === -1) groupOrder.push(g.id);
+      });
+      Object.keys(byGroup).forEach(function (k) {
+        var g = parseInt(k, 10);
+        if (groupOrder.indexOf(g) === -1) groupOrder.push(g);
+      });
 
       var dlg = tpModal.open({
         title: "Grupos de objetos",
@@ -1093,7 +1071,7 @@
           "</label>" +
           '<div class="tp-form__field"><span class="tp-form__label">Vehículos</span>' +
           '<div class="tp-group-box" data-dgm-box>' +
-          '<div class="tp-group-box__head">' +
+          '<div class="tp-group-box__head" style="margin-bottom:0;">' +
           '<span class="tp-search">' +
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
           '<input type="search" data-dgm-search placeholder="Búsqueda" autocomplete="off">' +
@@ -1102,7 +1080,9 @@
           '<span class="tp-group-box__sep">|</span>' +
           '<button type="button" class="tp-link-action" data-dgm-none>Deseleccionar todo</button>' +
           "</div>" +
-          '<div data-dgm-list style="max-height:300px;overflow-y:auto;">' + sections + "</div>" +
+          '<div style="height:1px;background:var(--border-default,#e9eef5);margin:12px -14px;"></div>' +
+          '<div data-dgm-list></div>' +
+          '<div class="tp-pagination" data-dgm-pager></div>' +
           "</div></div></div>",
         buttons: [
           { label: "Cancelar", variant: "ghost", close: true },
@@ -1145,32 +1125,117 @@
 
       var box = dlg.querySelector("[data-dgm-box]");
       var list = dlg.querySelector("[data-dgm-list]");
+      var pager = dlg.querySelector("[data-dgm-pager]");
+
+      // Estado del listado (estilo referencia): secciones-card colapsables,
+      // búsqueda por nombre y paginación de filas al pie de la caja.
+      var collapsed = {};
+      var PAGE = 30;
+      var page = 1;
+      var q = "";
+
+      function flatVisible() {
+        var flat = [];
+        groupOrder.forEach(function (gid) {
+          byGroup[gid].forEach(function (d) {
+            if (!q || (d.name || "").toLowerCase().indexOf(q) >= 0) flat.push({ gid: gid, d: d });
+          });
+        });
+        return flat;
+      }
+
+      function rowHtml(gid, d) {
+        return (
+          '<label data-dgm-row style="display:flex;align-items:center;gap:10px;min-width:0;padding:9px 4px;cursor:pointer;font-size:13px;font-weight:600;color:var(--fg-primary,#0f172a);">' +
+          '<input type="checkbox" class="tp-choice-input" data-dgm-dev="' + d.id + '" data-gid="' + gid + '"' +
+          (selected[d.id] ? " checked" : "") + ">" +
+          '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(d.name || "#" + d.id) + "</span></label>"
+        );
+      }
+
+      function sectionHtml(sec) {
+        var gid = sec.gid;
+        var isOpen = q ? true : !collapsed[gid];
+        return (
+          '<div data-dgm-sec data-gid="' + gid + '" style="border:1px solid var(--border-default,#e2e8f0);border-radius:10px;background:var(--surface-raised,#fff);margin-bottom:10px;overflow:hidden;">' +
+          '<div data-dgm-head style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;user-select:none;">' +
+          '<span data-dgm-chev style="display:inline-flex;color:var(--fg-secondary,#475569);transition:transform .12s ease;' +
+          (isOpen ? "" : "transform:rotate(-90deg);") + '">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>' +
+          '<input type="checkbox" class="tp-choice-input" data-dgm-gchk="' + gid + '">' +
+          '<span style="font-size:14px;font-weight:700;color:var(--fg-primary,#0f172a);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+          esc(groupTitles[gid] || "Sin grupo") + "</span>" +
+          "</div>" +
+          '<div data-dgm-body style="display:' + (isOpen ? "grid" : "none") +
+          ';grid-template-columns:1fr 1fr;gap:0 24px;border-top:1px solid var(--border-default,#e9eef5);padding:5px 14px 9px;">' +
+          sec.rows
+            .map(function (d) {
+              return rowHtml(gid, d);
+            })
+            .join("") +
+          "</div></div>"
+        );
+      }
 
       function syncGroupChecks() {
         Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-gchk]"), function (gc) {
-          var gid = gc.getAttribute("data-dgm-gchk");
-          var devs = list.querySelectorAll('[data-dgm-dev][data-gid="' + gid + '"]');
-          var on = 0;
-          Array.prototype.forEach.call(devs, function (c) {
-            if (c.checked) on++;
-          });
+          var gid = parseInt(gc.getAttribute("data-dgm-gchk"), 10);
+          var devs = byGroup[gid] || [];
+          var on = devs.filter(function (d) {
+            return selected[d.id];
+          }).length;
           gc.checked = on > 0 && on === devs.length;
           gc.indeterminate = on > 0 && on < devs.length;
         });
       }
-      syncGroupChecks();
+
+      function renderPager(pages) {
+        if (pages <= 1) {
+          pager.innerHTML = "";
+          pager.style.display = "none";
+          return;
+        }
+        pager.style.display = "";
+        var from = Math.max(1, Math.min(page - 2, pages - 4));
+        var to = Math.min(pages, from + 4);
+        var html = '<button type="button" data-dgm-page="' + (page - 1) + '"' + (page <= 1 ? " disabled" : "") + ">&lsaquo;</button>";
+        for (var p = from; p <= to; p++) {
+          html += '<button type="button" data-dgm-page="' + p + '"' + (p === page ? ' class="is-current"' : "") + ">" + p + "</button>";
+        }
+        html += '<button type="button" data-dgm-page="' + (page + 1) + '"' + (page >= pages ? " disabled" : "") + ">&rsaquo;</button>";
+        pager.innerHTML = html;
+      }
+
+      function renderList() {
+        var flat = flatVisible();
+        var pages = Math.max(1, Math.ceil(flat.length / PAGE));
+        if (page > pages) page = pages;
+        var slice = flat.slice((page - 1) * PAGE, page * PAGE);
+        var secs = [];
+        slice.forEach(function (it) {
+          var last = secs[secs.length - 1];
+          if (!last || last.gid !== it.gid) {
+            last = { gid: it.gid, rows: [] };
+            secs.push(last);
+          }
+          last.rows.push(it.d);
+        });
+        list.innerHTML =
+          secs.map(sectionHtml).join("") ||
+          '<div style="padding:12px 4px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>';
+        renderPager(pages);
+        syncGroupChecks();
+      }
+      renderList();
 
       // Colapso por sección: click en la cabecera (excepto el checkbox)
       list.addEventListener("click", function (e) {
         if (e.target.closest("[data-dgm-gchk]")) return;
         var head = e.target.closest("[data-dgm-head]");
         if (!head) return;
-        var sec = head.closest("[data-dgm-sec]");
-        var bodyEl = sec.querySelector("[data-dgm-body]");
-        var chev = sec.querySelector("[data-dgm-chev]");
-        var open = bodyEl.style.display === "none";
-        bodyEl.style.display = open ? "grid" : "none";
-        chev.style.transform = open ? "rotate(0deg)" : "rotate(-90deg)";
+        var gid = head.closest("[data-dgm-sec]").getAttribute("data-gid");
+        collapsed[gid] = !collapsed[gid];
+        renderList();
       });
 
       list.addEventListener("change", function (e) {
@@ -1184,47 +1249,41 @@
         }
         var gc = e.target.closest("[data-dgm-gchk]");
         if (gc) {
-          var gid = gc.getAttribute("data-dgm-gchk");
-          Array.prototype.forEach.call(list.querySelectorAll('[data-dgm-dev][data-gid="' + gid + '"]'), function (c) {
-            c.checked = gc.checked;
-            var cid = +c.getAttribute("data-dgm-dev");
-            if (gc.checked) selected[cid] = true;
-            else delete selected[cid];
+          // Marca/desmarca TODO el grupo (incluidas filas en otras páginas)
+          var gid = parseInt(gc.getAttribute("data-dgm-gchk"), 10);
+          (byGroup[gid] || []).forEach(function (d) {
+            if (gc.checked) selected[d.id] = true;
+            else delete selected[d.id];
           });
-          syncGroupChecks();
+          renderList();
         }
       });
 
+      pager.addEventListener("click", function (e) {
+        var btn = e.target.closest("[data-dgm-page]");
+        if (!btn || btn.disabled) return;
+        page = parseInt(btn.getAttribute("data-dgm-page"), 10);
+        renderList();
+      });
+
       box.querySelector("[data-dgm-all]").addEventListener("click", function () {
-        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-dev]"), function (c) {
-          c.checked = true;
-          selected[+c.getAttribute("data-dgm-dev")] = true;
+        flatVisible().forEach(function (it) {
+          selected[it.d.id] = true;
         });
-        syncGroupChecks();
+        renderList();
       });
       box.querySelector("[data-dgm-none]").addEventListener("click", function () {
-        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-dev]"), function (c) {
-          c.checked = false;
-          delete selected[+c.getAttribute("data-dgm-dev")];
+        flatVisible().forEach(function (it) {
+          delete selected[it.d.id];
         });
-        syncGroupChecks();
+        renderList();
       });
 
       var searchEl = box.querySelector("[data-dgm-search]");
       searchEl.addEventListener("input", function () {
-        var q = searchEl.value.trim().toLowerCase();
-        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-row]"), function (row) {
-          row.style.display = !q || row.getAttribute("data-name").indexOf(q) >= 0 ? "" : "none";
-        });
-        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-sec]"), function (sec) {
-          var visible = sec.querySelectorAll('[data-dgm-row]:not([style*="display: none"])').length;
-          sec.style.display = visible ? "" : "none";
-          // Con búsqueda activa, expandir las secciones con coincidencias
-          if (q && visible) {
-            sec.querySelector("[data-dgm-body]").style.display = "grid";
-            sec.querySelector("[data-dgm-chev]").style.transform = "rotate(0deg)";
-          }
-        });
+        q = searchEl.value.trim().toLowerCase();
+        page = 1;
+        renderList();
       });
     });
   }
