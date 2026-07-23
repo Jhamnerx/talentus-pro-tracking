@@ -538,13 +538,16 @@
       }).join("") +
       "</div>" +
       // Franja horaria del día (period_time_from/to → shift del pipeline):
-      // solo se incluyen posiciones dentro de la franja. Vacías = sin filtro.
-      '<div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px;">' +
-      '<span style="font-size:12px;color:var(--fg-muted,#94a3b8);">Franja horaria</span>' +
-      '<input type="time" data-rep-ptf class="tp-input" style="width:96px;">' +
-      '<span style="color:var(--fg-muted,#94a3b8);">—</span>' +
-      '<input type="time" data-rep-ptt class="tp-input" style="width:96px;">' +
-      "</div></div></div>" +
+      // slider de dos manijas (estilo referencia). Rango completo = sin filtro.
+      '<div style="display:flex;gap:12px;align-items:center;margin-top:12px;padding:0 4px;">' +
+      '<span data-ts-label style="font-size:12px;font-weight:600;min-width:92px;color:var(--fg-primary,#0f172a);">00:00 - 24:00</span>' +
+      '<div data-ts-track style="position:relative;flex:1;height:22px;cursor:pointer;touch-action:none;">' +
+      '<div style="position:absolute;top:9px;left:0;right:0;height:4px;border-radius:999px;background:var(--border-default,#e2e8f0);"></div>' +
+      '<div data-ts-fill style="position:absolute;top:9px;height:4px;border-radius:999px;background:var(--brand-500,#2e63d9);"></div>' +
+      '<div data-ts-tip style="position:absolute;top:-24px;transform:translateX(-50%);background:var(--brand-500,#2e63d9);color:#fff;font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;display:none;white-space:nowrap;">00:00</div>' +
+      '<button type="button" data-ts-h="from" style="position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid var(--border-strong,#cbd5e1);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:grab;transform:translateX(-50%);padding:0;appearance:none;"></button>' +
+      '<button type="button" data-ts-h="to" style="position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid var(--border-strong,#cbd5e1);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:grab;transform:translateX(-50%);padding:0;appearance:none;"></button>' +
+      "</div></div></div></div>" +
       // Tipo | Formato
       '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
       '<select class="tp-input" style="width:100%" name="type" data-tp-field>' +
@@ -639,11 +642,10 @@
       });
       daysWrap.hidden = false;
     }
-    if (item.period_time_from && item.period_time_to) {
-      form.querySelector("[data-rep-ptf]").value = item.period_time_from;
-      form.querySelector("[data-rep-ptt]").value = item.period_time_to;
-      daysWrap.hidden = false;
-    }
+
+    // Slider de franja horaria
+    wireTimeSlider(form, toMin(item.period_time_from), toMin(item.period_time_to));
+    if (item.period_time_from && item.period_time_to) daysWrap.hidden = false;
 
     // ── Chips ──
     form._devices = chipsSelect({
@@ -712,6 +714,101 @@
       applyType(form, meta, typeSel.value, null);
     });
     applyType(form, meta, typeSel.value, item);
+  }
+
+  /* ── Slider de franja horaria (dos manijas, paso 5 min) ── */
+  function fmtMin(m) {
+    return pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
+  }
+
+  function toMin(hhmm) {
+    if (!hhmm || !/^\d{1,2}:\d{2}/.test(hhmm)) return null;
+    var p = hhmm.split(":");
+    return Math.min(1440, +p[0] * 60 + +p[1]);
+  }
+
+  function wireTimeSlider(form, initFrom, initTo) {
+    var track = form.querySelector("[data-ts-track]");
+    if (!track) return;
+    var fill = form.querySelector("[data-ts-fill]");
+    var tip = form.querySelector("[data-ts-tip]");
+    var label = form.querySelector("[data-ts-label]");
+    var hFrom = form.querySelector('[data-ts-h="from"]');
+    var hTo = form.querySelector('[data-ts-h="to"]');
+
+    var st = { from: initFrom != null ? initFrom : 0, to: initTo != null ? initTo : 1440 };
+    form._tsGet = function () {
+      return { from: st.from, to: st.to };
+    };
+
+    function render() {
+      var pf = (st.from / 1440) * 100;
+      var pt = (st.to / 1440) * 100;
+      hFrom.style.left = pf + "%";
+      hTo.style.left = pt + "%";
+      fill.style.left = pf + "%";
+      fill.style.width = pt - pf + "%";
+      label.textContent = fmtMin(st.from) + " - " + fmtMin(st.to);
+    }
+
+    function minutesFromEvent(e) {
+      var r = track.getBoundingClientRect();
+      var x = Math.max(0, Math.min(e.clientX - r.left, r.width));
+      return Math.round(((x / r.width) * 1440) / 5) * 5;
+    }
+
+    function showTip(handle, value) {
+      tip.style.display = "";
+      tip.style.left = handle.style.left;
+      tip.textContent = fmtMin(value);
+    }
+
+    var dragging = null;
+
+    function startDrag(which, e) {
+      dragging = which;
+      e.preventDefault();
+      showTip(which === "from" ? hFrom : hTo, which === "from" ? st.from : st.to);
+      document.addEventListener("pointermove", onMove);
+      document.addEventListener("pointerup", onUp);
+    }
+
+    function onMove(e) {
+      if (!dragging) return;
+      var m = minutesFromEvent(e);
+      if (dragging === "from") st.from = Math.min(m, st.to - 5);
+      else st.to = Math.max(m, st.from + 5);
+      st.from = Math.max(0, st.from);
+      st.to = Math.min(1440, st.to);
+      render();
+      showTip(dragging === "from" ? hFrom : hTo, dragging === "from" ? st.from : st.to);
+    }
+
+    function onUp() {
+      dragging = null;
+      tip.style.display = "none";
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+    }
+
+    hFrom.addEventListener("pointerdown", function (e) {
+      startDrag("from", e);
+    });
+    hTo.addEventListener("pointerdown", function (e) {
+      startDrag("to", e);
+    });
+    track.addEventListener("pointerdown", function (e) {
+      if (e.target === hFrom || e.target === hTo) return;
+      // mueve la manija más cercana al punto clicado
+      var m = minutesFromEvent(e);
+      var which = Math.abs(m - st.from) <= Math.abs(m - st.to) ? "from" : "to";
+      if (which === "from") st.from = Math.min(m, st.to - 5);
+      else st.to = Math.max(m, st.from + 5);
+      render();
+      startDrag(which, e);
+    });
+
+    render();
   }
 
   function schedRow(key, label, on, time, extra) {
@@ -883,12 +980,13 @@
     });
     if (onDays.length && onDays.length < 7) payload.period_weekdays = onDays;
 
-    // Franja horaria (solo si ambas definidas — el pipeline exige el par)
-    var ptf = (form.querySelector("[data-rep-ptf]") || {}).value || "";
-    var ptt = (form.querySelector("[data-rep-ptt]") || {}).value || "";
-    if (ptf && ptt) {
-      payload.period_time_from = ptf;
-      payload.period_time_to = ptt;
+    // Franja horaria del slider: rango completo (00:00–24:00) = sin filtro
+    if (form._tsGet) {
+      var ts = form._tsGet();
+      if (ts.from > 0 || ts.to < 1440) {
+        payload.period_time_from = fmtMin(ts.from);
+        payload.period_time_to = ts.to >= 1440 ? "23:59" : fmtMin(ts.to);
+      }
     }
 
     var ftpEl = form.querySelector('input[name="send_to_ftp"]');
