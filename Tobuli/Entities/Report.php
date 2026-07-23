@@ -26,8 +26,13 @@ class Report extends AbstractEntity implements DisplayInterface
         'daily_time',
         'weekly',
         'weekly_time',
+        'weekly_day',
         'monthly',
         'monthly_time',
+        'monthly_day',
+        'period_weekdays',
+        'period_time_from',
+        'period_time_to',
         'email',
         'ftp',
         'weekly_email_sent',
@@ -45,7 +50,8 @@ class Report extends AbstractEntity implements DisplayInterface
 
     protected $casts = [
         'parameters' => 'array',
-        'metas' => 'array'
+        'metas' => 'array',
+        'period_weekdays' => 'array',
     ];
 
     public $timestamps = false;

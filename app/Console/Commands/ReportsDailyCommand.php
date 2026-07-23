@@ -178,24 +178,52 @@ class ReportsDailyCommand extends Command
             setActingUser($user);
 
             $last_send = Formatter::time()->convert($report->{$field});
-            $send_time = date('Y-m-d', strtotime($last_send)) . ' ' . $report->{$schedule_type . '_time'};
-            $next_send = date("Y-m-d H:i:s", strtotime(date('Y-m-d H:i:s', strtotime($send_time . $next_send_format))));
-            $next_send = Formatter::time()->reverse($next_send);
-            $current_time = date("Y-m-d H:i:s");
 
-            /*
-            echo "title: {$data['title']}" . PHP_EOL;
-            echo "$current_time current_time" . PHP_EOL;
-            echo "$last_send last_send" . PHP_EOL;
-            echo "$send_time send_time" . PHP_EOL;
-            echo "$next_send next_send user time" . PHP_EOL;
-            */
+            // Día concreto (extensión ui/v2): weekly_day (ISO 1-7) /
+            // monthly_day (1-31, con tope al último día del mes). Si está
+            // definido, reemplaza la ventana clásica: se envía SOLO ese día
+            // a partir de la hora programada (hora del usuario), una vez
+            // por semana/mes. Null = comportamiento clásico intacto.
+            $dayTargeted = ($schedule_type == 'weekly' && $report->weekly_day)
+                || ($schedule_type == 'monthly' && $report->monthly_day);
 
-            if (strtotime($next_send) > strtotime($current_time))
-                continue;
+            if ($dayTargeted) {
+                $nowUser = Formatter::time()->now();
 
-            if (strtotime($report->{$field}) > strtotime($next_send))
-                continue;
+                if ($schedule_type == 'weekly') {
+                    if ((int) date('N', $nowUser) !== (int) $report->weekly_day)
+                        continue;
+                } else {
+                    $target = min((int) $report->monthly_day, (int) date('t', $nowUser));
+                    if ((int) date('j', $nowUser) !== $target)
+                        continue;
+                }
+
+                // Hora programada (en hora del usuario → servidor)
+                $sendAt = Formatter::time()->reverse(
+                    date('Y-m-d', $nowUser) . ' ' . $report->{$schedule_type . '_time'}
+                );
+                if (strtotime($sendAt) > time())
+                    continue;
+
+                // Ya enviado en este ciclo (últimos 6 días / este mes)
+                $cycleStart = $schedule_type == 'weekly'
+                    ? strtotime('-6 day')
+                    : strtotime(Formatter::time()->reverse(date('Y-m-01 00:00:00', $nowUser)));
+                if (strtotime($report->{$field}) >= $cycleStart)
+                    continue;
+            } else {
+                $send_time = date('Y-m-d', strtotime($last_send)) . ' ' . $report->{$schedule_type . '_time'};
+                $next_send = date("Y-m-d H:i:s", strtotime(date('Y-m-d H:i:s', strtotime($send_time . $next_send_format))));
+                $next_send = Formatter::time()->reverse($next_send);
+                $current_time = date("Y-m-d H:i:s");
+
+                if (strtotime($next_send) > strtotime($current_time))
+                    continue;
+
+                if (strtotime($report->{$field}) > strtotime($next_send))
+                    continue;
+            }
 
             $report->update([$field => date('Y-m-d H:i:s')]);
 

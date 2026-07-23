@@ -592,9 +592,9 @@
       "</div>" +
       '<div class="tp-form__field"><span class="tp-form__label">Programación</span>' +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
-      schedRow("daily", "Diario", item.daily, item.daily_time) +
-      schedRow("weekly", "Semanal", item.weekly, item.weekly_time) +
-      schedRow("monthly", "Mensual", item.monthly, item.monthly_time) +
+      schedRow("daily", "Diario", item.daily, item.daily_time, "") +
+      schedRow("weekly", "Semanal", item.weekly, item.weekly_time, daySelect("weekly_day", DAY_PILLS, item.weekly_day, "Día de semana…")) +
+      schedRow("monthly", "Mensual", item.monthly, item.monthly_time, daySelect("monthly_day", null, item.monthly_day, "Día del mes…")) +
       "</div></div>" +
       "</div></form>";
 
@@ -615,18 +615,35 @@
       });
     });
 
-    // ── Pills de días ──
+    // ── Pills de días + franja ──
     var daysWrap = form.querySelector("[data-rep-days]");
     form.querySelector("[data-rep-days-toggle]").addEventListener("click", function () {
       daysWrap.hidden = !daysWrap.hidden;
     });
+    function setPill(pill, on) {
+      pill.classList.toggle("is-on", on);
+      pill.style.background = on ? "var(--surface-raised,#fff)" : "var(--surface-sunken,#f1f5f9)";
+      pill.style.opacity = on ? "1" : "0.55";
+    }
     daysWrap.addEventListener("click", function (e) {
       var pill = e.target.closest("[data-rep-day]");
       if (!pill) return;
-      var on = pill.classList.toggle("is-on");
-      pill.style.background = on ? "var(--surface-raised,#fff)" : "var(--surface-sunken,#f1f5f9)";
-      pill.style.opacity = on ? "1" : "0.55";
+      setPill(pill, !pill.classList.contains("is-on"));
     });
+
+    // Precarga del filtro persistido (edición)
+    var savedDays = item.period_weekdays || [];
+    if (savedDays.length) {
+      Array.prototype.forEach.call(form.querySelectorAll("[data-rep-day]"), function (p) {
+        setPill(p, savedDays.indexOf(p.getAttribute("data-rep-day")) >= 0 || savedDays.indexOf(+p.getAttribute("data-rep-day")) >= 0);
+      });
+      daysWrap.hidden = false;
+    }
+    if (item.period_time_from && item.period_time_to) {
+      form.querySelector("[data-rep-ptf]").value = item.period_time_from;
+      form.querySelector("[data-rep-ptt]").value = item.period_time_to;
+      daysWrap.hidden = false;
+    }
 
     // ── Chips ──
     form._devices = chipsSelect({
@@ -697,15 +714,34 @@
     applyType(form, meta, typeSel.value, item);
   }
 
-  function schedRow(key, label, on, time) {
+  function schedRow(key, label, on, time, extra) {
     return (
       '<div style="display:flex;gap:9px;align-items:center;">' +
       '<label class="tp-choice" style="margin:0;min-width:96px;">' +
       '<input type="checkbox" class="tp-choice-input" name="' + key + '" value="1" id="tp-rep-' + key + '"' + (on ? " checked" : "") + ">" +
       "<span>" + label + "</span></label>" +
       '<input type="time" class="tp-input" name="' + key + '_time" value="' + esc(time || "00:00") + '" data-enable="tp-rep-' + key + '"' + (on ? "" : " disabled") + ' style="width:104px;">' +
+      (extra || "") +
       "</div>"
     );
+  }
+
+  // Día concreto del schedule (extensión: weekly_day ISO 1-7 / monthly_day 1-31)
+  function daySelect(name, pills, selected, placeholder) {
+    var key = name === "weekly_day" ? "weekly" : "monthly";
+    var html = '<select class="tp-input" name="' + name + '" data-enable="tp-rep-' + key + '"' +
+      (selected ? "" : " disabled") + ' style="width:150px;">' +
+      '<option value="">' + esc(placeholder) + "</option>";
+    if (pills) {
+      pills.forEach(function (d) {
+        html += '<option value="' + d[0] + '"' + (String(selected) === String(d[0]) ? " selected" : "") + ">" + d[1] + "</option>";
+      });
+    } else {
+      for (var i = 1; i <= 31; i++) {
+        html += '<option value="' + i + '"' + (String(selected) === String(i) ? " selected" : "") + ">" + i + "</option>";
+      }
+    }
+    return html + "</select>";
   }
 
   // Muestra/oculta campos según el tipo y renderiza sus parámetros
@@ -857,6 +893,12 @@
 
     var ftpEl = form.querySelector('input[name="send_to_ftp"]');
     if (ftpEl) payload.send_to_ftp = ftpEl.checked ? 1 : 0;
+
+    // Día concreto del schedule (solo si su checkbox está activo)
+    var wdEl = form.querySelector('select[name="weekly_day"]');
+    payload.weekly_day = payload.weekly && wdEl ? wdEl.value : "";
+    var mdEl = form.querySelector('select[name="monthly_day"]');
+    payload.monthly_day = payload.monthly && mdEl ? mdEl.value : "";
 
     // Parámetros dinámicos
     Array.prototype.forEach.call(form.querySelectorAll("[data-rep-param] [name]"), function (el) {
@@ -1173,13 +1215,20 @@
     if (row) window.open(row.getAttribute("data-log-row"), "_blank", "noopener");
   });
 
-  // Habilitadores del schedule (delegado: el modal se crea después)
+  // Habilitadores del schedule (delegado: el modal se crea después).
+  // Un checkbox puede habilitar varios controles (hora + select de día).
   document.addEventListener("change", function (e) {
     if (e.target.matches && e.target.matches('input[type="checkbox"][id^="tp-rep-"]')) {
       var form = e.target.closest("form.tp-report-form");
       if (!form) return;
-      var t = form.querySelector('[data-enable="' + e.target.id + '"]');
-      if (t) t.disabled = !e.target.checked;
+      Array.prototype.forEach.call(form.querySelectorAll('[data-enable="' + e.target.id + '"]'), function (t) {
+        t.disabled = !e.target.checked;
+        if (t.tagName === "SELECT" && t._tpdd && window.tpSelect && tpSelect.refresh) {
+          try {
+            tpSelect.refresh(t);
+          } catch (err) {}
+        }
+      });
     }
   });
 

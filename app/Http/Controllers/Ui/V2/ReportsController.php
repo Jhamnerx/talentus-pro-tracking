@@ -285,8 +285,13 @@ class ReportsController extends BaseController
                 'daily_time'         => (string) ($report->daily_time ?? '00:00'),
                 'weekly'             => (bool) $report->weekly,
                 'weekly_time'        => (string) ($report->weekly_time ?? '00:00'),
+                'weekly_day'         => $report->weekly_day ? (int) $report->weekly_day : null,
                 'monthly'            => (bool) $report->monthly,
                 'monthly_time'       => (string) ($report->monthly_time ?? '00:00'),
+                'monthly_day'        => $report->monthly_day ? (int) $report->monthly_day : null,
+                'period_weekdays'    => (array) ($report->period_weekdays ?? []),
+                'period_time_from'   => (string) ($report->period_time_from ?? ''),
+                'period_time_to'     => (string) ($report->period_time_to ?? ''),
                 'device_ids'         => $report->devices()->pluck('devices.id')->map(function ($v) {
                     return (int) $v;
                 })->all(),
@@ -301,8 +306,23 @@ class ReportsController extends BaseController
     public function store(Request $request): JsonResponse
     {
         try {
+            $data = $request->all();
+
+            // Día concreto del schedule (extensión): normalizar o limpiar.
+            $wd = (int) ($data['weekly_day'] ?? 0);
+            $data['weekly_day'] = ($wd >= 1 && $wd <= 7) ? $wd : null;
+            $md = (int) ($data['monthly_day'] ?? 0);
+            $data['monthly_day'] = ($md >= 1 && $md <= 31) ? $md : null;
+
+            // Filtro de días/franja persistido (null = sin filtro)
+            if (empty($data['period_weekdays']) || count((array) $data['period_weekdays']) >= 7) {
+                $data['period_weekdays'] = null;
+            }
+            $data['period_time_from'] = ! empty($data['period_time_from']) ? $data['period_time_from'] : null;
+            $data['period_time_to']   = ! empty($data['period_time_to']) ? $data['period_time_to'] : null;
+
             ReportModalHelper::setUser($this->user);
-            ReportModalHelper::setData($request->all());
+            ReportModalHelper::setData($data);
             ReportModalHelper::setApi(false);
 
             ReportModalHelper::create();
