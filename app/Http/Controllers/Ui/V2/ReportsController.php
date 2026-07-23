@@ -122,6 +122,7 @@ class ReportsController extends BaseController
             // URLs legacy que consume el modal
             'typeUrl'     => url('/reports/types') . '/{type}',
             'generateUrl' => url('/reports/update'),
+            'showFtp'     => (bool) config('addon.report_send_to_ftp'),
         ]);
     }
 
@@ -279,6 +280,7 @@ class ReportsController extends BaseController
                 'metas'              => (array) ($report->metas ?? []),
                 'parameters'         => (array) ($report->parameters ?? []),
                 'email'              => (string) ($report->email ?? ''),
+                'ftp'                => (bool) ($report->ftp ?? false),
                 'daily'              => (bool) $report->daily,
                 'daily_time'         => (string) ($report->daily_time ?? '00:00'),
                 'weekly'             => (bool) $report->weekly,

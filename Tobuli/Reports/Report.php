@@ -221,7 +221,7 @@ abstract class Report implements Arrayable
 
     public function setPeriodTimeTo($value)
     {
-        $this->period_time_from = $value;
+        $this->period_time_to = $value;
     }
 
     public function getPeriodTimeTo()

@@ -527,7 +527,8 @@
       '<div class="tp-form__field"><span class="tp-form__label">Periodo</span>' +
       '<input type="text" data-rep-period readonly style="cursor:pointer;background:var(--surface-raised,#fff);" value="">' +
       '<button type="button" data-rep-days-toggle style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:12px;font-weight:600;text-align:center;padding:4px;">Controlar días y horas ▾</button>' +
-      '<div data-rep-days hidden style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">' +
+      '<div data-rep-days hidden>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">' +
       DAY_PILLS.map(function (d) {
         return (
           '<button type="button" data-rep-day="' + d[0] + '" class="is-on" ' +
@@ -535,7 +536,15 @@
           d[1] + "</button>"
         );
       }).join("") +
-      "</div></div>" +
+      "</div>" +
+      // Franja horaria del día (period_time_from/to → shift del pipeline):
+      // solo se incluyen posiciones dentro de la franja. Vacías = sin filtro.
+      '<div style="display:flex;gap:8px;align-items:center;justify-content:center;margin-top:8px;">' +
+      '<span style="font-size:12px;color:var(--fg-muted,#94a3b8);">Franja horaria</span>' +
+      '<input type="time" data-rep-ptf class="tp-input" style="width:96px;">' +
+      '<span style="color:var(--fg-muted,#94a3b8);">—</span>' +
+      '<input type="time" data-rep-ptt class="tp-input" style="width:96px;">' +
+      "</div></div></div>" +
       // Tipo | Formato
       '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
       '<select class="tp-input" style="width:100%" name="type" data-tp-field>' +
@@ -576,7 +585,11 @@
       '<div class="tp-form__field"><span class="tp-form__label">Enviar a email</span>' +
       '<div style="display:flex;gap:8px;"><input type="text" data-rep-email-input placeholder="Email…" style="flex:1;" class="tp-input">' +
       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rep-email-add style="color:var(--brand-500,#2e63d9);font-weight:700;">＋</button></div>' +
-      '<div data-rep-emails style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div></div>' +
+      '<div data-rep-emails style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>' +
+      (meta.showFtp
+        ? '<label class="tp-choice" style="margin-top:8px;"><input type="checkbox" class="tp-choice-input" name="send_to_ftp" value="1"' + (item.ftp ? " checked" : "") + "><span>Enviar a FTP</span></label>"
+        : "") +
+      "</div>" +
       '<div class="tp-form__field"><span class="tp-form__label">Programación</span>' +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
       schedRow("daily", "Diario", item.daily, item.daily_time) +
@@ -833,6 +846,17 @@
       if (p.classList.contains("is-on")) onDays.push(p.getAttribute("data-rep-day"));
     });
     if (onDays.length && onDays.length < 7) payload.period_weekdays = onDays;
+
+    // Franja horaria (solo si ambas definidas — el pipeline exige el par)
+    var ptf = (form.querySelector("[data-rep-ptf]") || {}).value || "";
+    var ptt = (form.querySelector("[data-rep-ptt]") || {}).value || "";
+    if (ptf && ptt) {
+      payload.period_time_from = ptf;
+      payload.period_time_to = ptt;
+    }
+
+    var ftpEl = form.querySelector('input[name="send_to_ftp"]');
+    if (ftpEl) payload.send_to_ftp = ftpEl.checked ? 1 : 0;
 
     // Parámetros dinámicos
     Array.prototype.forEach.call(form.querySelectorAll("[data-rep-param] [name]"), function (el) {
