@@ -538,8 +538,16 @@
                                 <div class="tp-datepick__time-row">
                                     <input type="text" class="tp-input tp-input--sm" id="tp-hist-dp-from-date"
                                         readonly>
-                                    <input type="time" class="tp-input tp-input--sm" id="tp-hist-dp-from-time"
-                                        value="00:00">
+                                    {{-- Hora como select de pasos de 5 min (tp-select, 24h) —
+                                         el input time nativo mostraba AM/PM y se cortaba --}}
+                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-from-time" style="width: 92px">
+                                        @for ($m = 0; $m < 1440; $m += 5)
+                                            <option value="{{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}"
+                                                {{ $m === 0 ? 'selected' : '' }}>
+                                                {{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}</option>
+                                        @endfor
+                                        <option value="23:59">23:59</option>
+                                    </select>
                                 </div>
                             </div>
                             <span class="tp-datepick__sep">—</span>
@@ -547,8 +555,13 @@
                                 <label class="tp-hist__label">{{ trans('front.to') }}</label>
                                 <div class="tp-datepick__time-row">
                                     <input type="text" class="tp-input tp-input--sm" id="tp-hist-dp-to-date" readonly>
-                                    <input type="time" class="tp-input tp-input--sm" id="tp-hist-dp-to-time"
-                                        value="23:59">
+                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-to-time" style="width: 92px">
+                                        @for ($m = 0; $m < 1440; $m += 5)
+                                            <option value="{{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}">
+                                                {{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}</option>
+                                        @endfor
+                                        <option value="23:59" selected>23:59</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -567,5 +580,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=22"></script>
+    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=23"></script>
 @endpush

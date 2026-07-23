@@ -186,6 +186,12 @@
     else if (key === "lastmonth") { a = new Date(n.getFullYear(), n.getMonth() - 1, 1); b = new Date(n.getFullYear(), n.getMonth(), 0); }
     dp.from = a; dp.to = b; dp.calY = a.getFullYear(); dp.calM = a.getMonth();
     $("#tp-hist-dp-from-time").value = ft; $("#tp-hist-dp-to-time").value = tt;
+    // Los selects de hora están mejorados por tp-select: sincronizar el botón
+    [$("#tp-hist-dp-from-time"), $("#tp-hist-dp-to-time")].forEach(function (sel) {
+      if (sel && sel._tpdd && window.tpSelect && tpSelect.refresh) {
+        try { tpSelect.refresh(sel); } catch (e) {}
+      }
+    });
     renderCals();
   }
   function commitRange() {
