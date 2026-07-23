@@ -74,6 +74,13 @@ class ObjectHistoryReport extends DeviceReport
                 ->chunk(2000,
                     function ($positions) use (& $rows, & $parameters, $sensors) {
                         foreach ($positions as $position) {
+                            // Filtro "Controlar días y horas" (period_weekdays
+                            // + franja horaria) — este reporte no pasa por el
+                            // pipeline de History, así que se aplica aquí.
+                            if (! $this->isPositionInPeriod($position)) {
+                                continue;
+                            }
+
                             $rows[] = $this->processPosition($position, $parameters, $sensors);
                         }
                     });

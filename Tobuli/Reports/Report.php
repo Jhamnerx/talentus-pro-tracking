@@ -229,6 +229,62 @@ abstract class Report implements Arrayable
         return $this->period_time_to;
     }
 
+    /** @var array|null Config resuelta del filtro de periodo (lazy) */
+    private $periodShiftResolved = null;
+
+    /**
+     * ¿La posición cae dentro del filtro "días de la semana + franja
+     * horaria" del periodo (period_weekdays / period_time_from/to)?
+     * Misma semántica de TZ que AppendShiftCheck: las horas del usuario
+     * se convierten a UTC (Formatter::time()->reverse) y se comparan con
+     * la hora cruda de la posición; el día se evalúa en la zona horaria
+     * del usuario. Soporta franjas que cruzan medianoche. Sin filtro
+     * definido devuelve siempre true.
+     * Pensado para reportes que iteran posiciones crudas (fuera del
+     * pipeline de History), como ObjectHistoryReport.
+     */
+    protected function isPositionInPeriod($position): bool
+    {
+        if ($this->periodShiftResolved === null) {
+            $from = $this->period_time_from
+                ? Formatter::time()->reverse($this->period_time_from, 'H:i:s')
+                : null;
+            $to = $this->period_time_to
+                ? Formatter::time()->reverse($this->period_time_to, 'H:i:s')
+                : null;
+
+            $this->periodShiftResolved = [
+                'from'     => $from ?: null,
+                'to'       => $to ?: null,
+                'passes'   => $from && $to && $from > $to,
+                'weekdays' => ! empty($this->period_weekdays)
+                    ? array_map('intval', (array) $this->period_weekdays)
+                    : null,
+            ];
+        }
+
+        $ps = $this->periodShiftResolved;
+
+        if ($ps['weekdays']) {
+            $day = (int) Formatter::date()->convert($position->time, 'N');
+            if (! in_array($day, $ps['weekdays'], true)) {
+                return false;
+            }
+        }
+
+        if ($ps['from'] && $ps['to']) {
+            $time = (new \DateTime($position->time))->format('H:i:s');
+            $in = $ps['passes']
+                ? ($time >= $ps['from'] || $time < $ps['to'])
+                : ($time >= $ps['from'] && $time < $ps['to']);
+            if (! $in) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function getFormat()
     {
         return $this->format;
