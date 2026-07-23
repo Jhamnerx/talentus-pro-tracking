@@ -383,11 +383,11 @@
         '<div style="display:flex;gap:10px;align-items:flex-end;margin-top:12px;">' +
         '<div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">Desde</div>' +
         '<div style="display:flex;gap:8px;"><input type="text" class="tp-input" value="' + ymd(dr.from) + '" readonly style="flex:1;background:var(--surface-sunken,#f8fafc);">' +
-        '<input type="time" class="tp-input" data-dr-fromtime value="' + dr.ft + '" style="width:96px;"></div></div>' +
+        '<select class="tp-input" data-dr-fromtime style="width:96px;">' + timeOptionsHtml(dr.ft) + "</select></div></div>" +
         '<span style="padding-bottom:9px;color:var(--fg-muted,#94a3b8);">—</span>' +
         '<div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">Hasta</div>' +
         '<div style="display:flex;gap:8px;"><input type="text" class="tp-input" value="' + ymd(dr.to) + '" readonly style="flex:1;background:var(--surface-sunken,#f8fafc);">' +
-        '<input type="time" class="tp-input" data-dr-totime value="' + dr.tt + '" style="width:96px;"></div></div>' +
+        '<select class="tp-input" data-dr-totime style="width:96px;">' + timeOptionsHtml(dr.tt) + "</select></div></div>" +
         "</div></div></div>";
     }
 
@@ -760,6 +760,28 @@
     return pad2(Math.floor(m / 60)) + ":" + pad2(m % 60);
   }
 
+  // Opciones de hora en pasos de 5 min (24h) + 23:59 — el componente de
+  // hora de la v2 es un select mejorado por tp-select (con buscador),
+  // no el input time nativo (que muestra AM/PM y se corta). Si el valor
+  // guardado no calza en la rejilla, se inyecta como opción propia.
+  function timeOptionsHtml(selected) {
+    var html = "";
+    var found = false;
+    for (var m = 0; m < 1440; m += 5) {
+      var t = fmtMin(m);
+      var sel = t === selected;
+      if (sel) found = true;
+      html += '<option value="' + t + '"' + (sel ? " selected" : "") + ">" + t + "</option>";
+    }
+    var sel59 = selected === "23:59";
+    html += '<option value="23:59"' + (sel59 ? " selected" : "") + ">23:59</option>";
+    if (sel59) found = true;
+    if (!found && selected) {
+      html = '<option value="' + esc(selected) + '" selected>' + esc(selected) + "</option>" + html;
+    }
+    return html;
+  }
+
   function toMin(hhmm) {
     if (!hhmm || !/^\d{1,2}:\d{2}/.test(hhmm)) return null;
     var p = hhmm.split(":");
@@ -856,7 +878,9 @@
       '<label class="tp-choice" style="margin:0;min-width:96px;">' +
       '<input type="checkbox" class="tp-choice-input" name="' + key + '" value="1" id="tp-rep-' + key + '"' + (on ? " checked" : "") + ">" +
       "<span>" + label + "</span></label>" +
-      '<input type="time" class="tp-input" name="' + key + '_time" value="' + esc(time || "00:00") + '" data-enable="tp-rep-' + key + '"' + (on ? "" : " disabled") + ' style="width:104px;">' +
+      '<select class="tp-input" name="' + key + '_time" data-enable="tp-rep-' + key + '"' + (on ? "" : " disabled") + ' style="width:104px;">' +
+      timeOptionsHtml(time || "00:00") +
+      "</select>" +
       (extra || "") +
       "</div>"
     );
@@ -997,11 +1021,11 @@
         })
         .join(";"),
       daily: form.querySelector('input[name="daily"]').checked ? 1 : 0,
-      daily_time: form.querySelector('input[name="daily_time"]').value || "00:00",
+      daily_time: form.querySelector('[name="daily_time"]').value || "00:00",
       weekly: form.querySelector('input[name="weekly"]').checked ? 1 : 0,
-      weekly_time: form.querySelector('input[name="weekly_time"]').value || "00:00",
+      weekly_time: form.querySelector('[name="weekly_time"]').value || "00:00",
       monthly: form.querySelector('input[name="monthly"]').checked ? 1 : 0,
-      monthly_time: form.querySelector('input[name="monthly_time"]').value || "00:00",
+      monthly_time: form.querySelector('[name="monthly_time"]').value || "00:00",
     };
 
     var idEl = form.querySelector('input[name="id"]');
