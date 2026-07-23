@@ -858,9 +858,11 @@
         var g = d.group_id || 0;
         (byG[g] = byG[g] || []).push(d);
       });
+      // "Sin grupo" SIEMPRE primero (paridad legacy), luego grupos por título
       var order = [];
+      if (byG[0]) order.push(0);
       state.groups.forEach(function (g) {
-        if (byG[g.id]) order.push(g.id);
+        if (byG[g.id] && order.indexOf(g.id) === -1) order.push(g.id);
       });
       Object.keys(byG).forEach(function (k) {
         var g = parseInt(k, 10);
@@ -1047,14 +1049,10 @@
         (byGroup[gid] = byGroup[gid] || []).push(d);
       });
 
-      // Secciones colapsables (estilo referencia): "Sin grupo" y los grupos
-      // con vehículos ya seleccionados abren expandidos; el resto plegado.
+      // Secciones colapsables: TODAS inician abiertas (el usuario pliega)
       var sections = Object.keys(byGroup)
         .map(function (gid) {
-          var hasSelected = byGroup[gid].some(function (d) {
-            return selected[d.id];
-          });
-          var open = String(gid) === "0" || hasSelected;
+          var open = true;
           return (
             '<div data-dgm-sec data-gid="' + gid + '" style="border:1px solid var(--border-default,#e5eaf1);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--surface-raised,#fff);">' +
             '<div data-dgm-head style="display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;">' +
