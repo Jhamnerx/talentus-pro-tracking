@@ -470,7 +470,7 @@
       buttons: [
         {
           label: "Generar",
-          variant: "ghost",
+          variant: "outline",
           close: false,
           onClick: function (dialog) {
             doGenerate(dialog);

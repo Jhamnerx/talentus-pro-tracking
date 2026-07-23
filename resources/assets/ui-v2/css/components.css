@@ -36,6 +36,21 @@
   margin: 0;
 }
 
+/* Variante outline: botón con borde para acciones destacadas no-primarias
+   (ej. "Generar" en Reportes = descarga). */
+.tp-scope button.tp-btn--outline,
+.tp-scope a.tp-btn--outline {
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-strong, #cbd5e1);
+  color: var(--fg-primary, #0f172a);
+  font-weight: 600;
+}
+.tp-scope button.tp-btn--outline:hover,
+.tp-scope a.tp-btn--outline:hover {
+  border-color: var(--brand-500, #2e63d9);
+  color: var(--brand-500, #2e63d9);
+}
+
 /* El reset de arriba (color: inherit) pisaba el color de las variantes
    sólidas de botón (mayor especificidad que .tp-btn--*): re-afirmarlas. */
 .tp-scope button.tp-btn--primary,
