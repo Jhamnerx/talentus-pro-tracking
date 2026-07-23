@@ -297,6 +297,9 @@
     var dr = {
       from: range.from ? new Date(range.from + "T00:00") : new Date(),
       to: range.to ? new Date(range.to + "T00:00") : new Date(),
+      // fin por defecto 23:59 = día completo (00:00 confundía: excluía el último día)
+      ft: range.fromTime || "00:00",
+      tt: range.toTime || "23:59",
     };
     var base = new Date(dr.from.getFullYear(), dr.from.getMonth(), 1);
 
@@ -323,8 +326,8 @@
           variant: "primary",
           close: true,
           onClick: function (dialog) {
-            var ft = dialog.querySelector("[data-dr-fromtime]").value || "00:00";
-            var tt = dialog.querySelector("[data-dr-totime]").value || "00:00";
+            var ft = dialog.querySelector("[data-dr-fromtime]").value || dr.ft || "00:00";
+            var tt = dialog.querySelector("[data-dr-totime]").value || dr.tt || "23:59";
             onSet({ from: ymd(dr.from), fromTime: ft, to: ymd(dr.to), toTime: tt });
           },
         },
@@ -380,13 +383,19 @@
         '<div style="display:flex;gap:10px;align-items:flex-end;margin-top:12px;">' +
         '<div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">Desde</div>' +
         '<div style="display:flex;gap:8px;"><input type="text" class="tp-input" value="' + ymd(dr.from) + '" readonly style="flex:1;background:var(--surface-sunken,#f8fafc);">' +
-        '<input type="time" class="tp-input" data-dr-fromtime value="' + (range.fromTime || "00:00") + '" style="width:96px;"></div></div>' +
+        '<input type="time" class="tp-input" data-dr-fromtime value="' + dr.ft + '" style="width:96px;"></div></div>' +
         '<span style="padding-bottom:9px;color:var(--fg-muted,#94a3b8);">—</span>' +
         '<div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">Hasta</div>' +
         '<div style="display:flex;gap:8px;"><input type="text" class="tp-input" value="' + ymd(dr.to) + '" readonly style="flex:1;background:var(--surface-sunken,#f8fafc);">' +
-        '<input type="time" class="tp-input" data-dr-totime value="' + (range.toTime || "00:00") + '" style="width:96px;"></div></div>' +
+        '<input type="time" class="tp-input" data-dr-totime value="' + dr.tt + '" style="width:96px;"></div></div>' +
         "</div></div></div>";
     }
+
+    // Persistir horas editadas (render() re-crea los inputs al navegar meses)
+    body.addEventListener("change", function (e) {
+      if (e.target.matches("[data-dr-fromtime]")) dr.ft = e.target.value || "00:00";
+      if (e.target.matches("[data-dr-totime]")) dr.tt = e.target.value || "23:59";
+    });
 
     body.addEventListener("click", function (e) {
       var prev = e.target.closest("[data-dr-prev]");
@@ -437,6 +446,9 @@
         }
         dr.from = a;
         dr.to = b;
+        // Rango rápido = días completos
+        dr.ft = "00:00";
+        dr.tt = "23:59";
         base = new Date(a.getFullYear(), a.getMonth(), 1);
         render();
       }
@@ -500,12 +512,13 @@
     if (!body) return;
 
     var today = new Date();
-    var tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    // Default: HOY completo (00:00 → 23:59) — el "hasta 00:00 de mañana"
+    // del legacy confundía al usuario.
     var range = {
       from: item.date_from || ymd(today),
       fromTime: item.from_time || "00:00",
-      to: item.date_to || ymd(tomorrow),
-      toTime: item.to_time || "00:00",
+      to: item.date_to || ymd(today),
+      toTime: item.to_time || "23:59",
     };
 
     var groupTitles = {};
