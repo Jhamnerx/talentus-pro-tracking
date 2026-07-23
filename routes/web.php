@@ -1204,6 +1204,12 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Ui\V2\DevicesController@update'])->where('id', '[0-9]+');
         Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');
 
+        // Grupos de dispositivos (pivot user_device_pivot.group_id por usuario)
+        Route::post('device-groups',            ['as' => 'api.device_groups.store',   'uses' => 'Ui\V2\DevicesController@storeDeviceGroup']);
+        Route::get('device-groups/{id}/items',  ['as' => 'api.device_groups.items',   'uses' => 'Ui\V2\DevicesController@deviceGroupItems'])->where('id', '[0-9]+');
+        Route::put('device-groups/{id}',        ['as' => 'api.device_groups.update',  'uses' => 'Ui\V2\DevicesController@updateDeviceGroup'])->where('id', '[0-9]+');
+        Route::delete('device-groups/{id}',     ['as' => 'api.device_groups.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceGroup'])->where('id', '[0-9]+');
+
         // Sensores del modal device (tab Sensores — CRUD vía SensorModalHelper)
         Route::get('devices/{id}/sensors',       ['as' => 'api.devices.sensors',       'uses' => 'Ui\V2\DevicesController@sensorsList'])->where('id', '[0-9]+');
         Route::get('devices/{id}/sensors/form',  ['as' => 'api.devices.sensors.form',  'uses' => 'Ui\V2\DevicesController@sensorFormCreate'])->where('id', '[0-9]+');

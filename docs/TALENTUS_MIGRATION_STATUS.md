@@ -327,7 +327,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `Objects/` (sidebar tabs objects/events/history/alerts/geofencing/routes/pois) | live (paneles) + páginas propias | ⚠️ objects/geofencing/pois = paneles ✅; events/history = páginas ✅; **routes tab sin CRUD**; alerts tab → página Alertas |
 | `Dashboard/` (24 widgets) | `dashboard` | ⚠️ KPIs básicos; faltan los widgets configurables del legacy |
 | `Devices/` (CRUD 8 tabs) | `fleet` + modal tabbed | ✅ 8 tabs nativos: Principal/Iconos/Información/Exactitud/Cola + **Sensores/Usuarios/Servicios Web** (22-jul; falta solo icon-picker por mapping de sensor) |
-| `DevicesGroups/` | filtro por grupo en lista (lectura) | ❌ CRUD de grupos |
+| `DevicesGroups/` | ✅ kebab en cabeceras de grupo de Live (Agregar/Editar/Eliminar) + modal "Grupos de objetos" (título + vehículos agrupados con Seleccionar todo); endpoints `api.device_groups.*` con UPDATE del pivot `user_device_pivot.group_id` por usuario (0 = sin grupo, paridad legacy) | ✅ (23-jul) |
 | `Geofences/` · `GeofencesGroups/` | panel zones (draw + vértices + VSL + import/export) | ✅ (grupos solo lectura) |
 | `Pois/` · `PoisGroups/` | panel pois (CRUD + drag) | ✅ (grupos solo lectura) |
 | `Routes/` · `RoutesGroups/` | panel routes (draw + CRUD + grupos + lista agrupable) `live-routes.js` + página `/ui/v2/routes/table` + export/import nativos | ✅ |

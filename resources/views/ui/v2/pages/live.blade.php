@@ -694,7 +694,7 @@
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=19"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=20"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=7"></script>

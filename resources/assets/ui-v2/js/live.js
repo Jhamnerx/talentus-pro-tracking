@@ -868,6 +868,29 @@
       });
       order.forEach(function (g) {
         var collapsed = !!state.collapsedGroups[g];
+
+        // Kebab de grupo (estilo referencia): "Sin grupo" ofrece crear;
+        // los grupos reales además editar/eliminar.
+        var tools = "";
+        if (CAN_GROUPS) {
+          var items =
+            '<button type="button" role="menuitem" data-dg-new="1">' +
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Agregar nuevo</button>';
+          if (g !== 0) {
+            items +=
+              '<button type="button" role="menuitem" data-dg-edit="' + g + '">' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>' +
+              '<button type="button" role="menuitem" class="is-danger" data-dg-del="' + g + '">' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+          }
+          tools =
+            '<div class="tp-svc-kebab" style="margin-left:auto;">' +
+            '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
+            "</button>" +
+            '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>";
+        }
+
         html +=
           '<div class="tp-live__group-box"' +
           (collapsed ? ' data-collapsed="1"' : "") +
@@ -879,7 +902,9 @@
           esc(groupTitle(g)) +
           '</span><span class="tp-live__group-count">' +
           byG[g].length +
-          "</span></div>";
+          "</span>" +
+          tools +
+          "</div>";
         if (!collapsed) html += '<div class="tp-live__group-items">' + byG[g].map(rowTemplate).join("") + "</div>";
         html += "</div>";
       });
@@ -992,8 +1017,238 @@
     }).catch(function () {});
   }
 
+  // ── Grupos de dispositivos: CRUD (patrón grupos de rutas) ──
+  var CAN_GROUPS = !!document.getElementById("tp-live-create-device"); // perm devices edit
+  var GROUPS_BASE = (CFG.devicesUrl || "/ui/v2/api/devices").replace(/\/devices(\?.*)?$/, "/device-groups");
+
+  function openDeviceGroupModal(groupId) {
+    if (!window.tpModal) return;
+    var isEdit = !!groupId;
+
+    var pre = isEdit
+      ? tpModal.fetchJSON(GROUPS_BASE + "/" + groupId + "/items", { method: "GET" }).then(function (r) {
+          return r.ok && r.data && r.data.ok ? r.data : null;
+        })
+      : Promise.resolve(null);
+
+    pre.then(function (info) {
+      var selected = {};
+      ((info && info.device_ids) || []).forEach(function (id) {
+        selected[id] = true;
+      });
+
+      var groupTitles = {};
+      state.groups.forEach(function (g) {
+        groupTitles[g.id] = g.title;
+      });
+      var byGroup = {};
+      state.devices.forEach(function (d) {
+        var gid = d.group_id || 0;
+        (byGroup[gid] = byGroup[gid] || []).push(d);
+      });
+
+      var sections = Object.keys(byGroup)
+        .map(function (gid) {
+          return (
+            '<div data-dgm-sec style="border:1px solid var(--border-default,#eef2f7);border-radius:10px;margin-bottom:8px;overflow:hidden;">' +
+            '<label style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--surface-sunken,#f8fafc);cursor:pointer;">' +
+            '<input type="checkbox" class="tp-choice-input" data-dgm-gchk="' + gid + '">' +
+            '<span style="font-size:13px;font-weight:600;color:var(--fg-secondary,#475569);">' +
+            esc(groupTitles[gid] || "Sin grupo") + "</span>" +
+            '<span style="font-size:11px;color:var(--fg-muted,#94a3b8);">(' + byGroup[gid].length + ")</span>" +
+            "</label>" +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:6px 10px;">' +
+            byGroup[gid]
+              .map(function (d) {
+                return (
+                  '<label data-dgm-row data-name="' + esc((d.name || "").toLowerCase()) +
+                  '" style="display:flex;align-items:center;gap:9px;padding:5px 2px;cursor:pointer;font-size:13px;">' +
+                  '<input type="checkbox" class="tp-choice-input" data-dgm-dev="' + d.id + '" data-gid="' + gid + '"' +
+                  (selected[d.id] ? " checked" : "") + ">" +
+                  "<span>" + esc(d.name || "#" + d.id) + "</span></label>"
+                );
+              })
+              .join("") +
+            "</div></div>"
+          );
+        })
+        .join("");
+
+      var dlg = tpModal.open({
+        title: "Grupos de objetos",
+        size: "lg",
+        static: true,
+        body:
+          '<div class="tp-form">' +
+          '<label class="tp-form__field" style="margin-bottom:12px;">' +
+          '<span class="tp-form__label">Título</span>' +
+          '<input type="text" data-dgm-title maxlength="100" value="' + esc((info && info.title) || "") + '" data-tp-field>' +
+          "</label>" +
+          '<div class="tp-form__field"><span class="tp-form__label">Vehículos</span>' +
+          '<div class="tp-group-box" data-dgm-box>' +
+          '<div class="tp-group-box__head">' +
+          '<span class="tp-search">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
+          '<input type="search" data-dgm-search placeholder="Búsqueda" autocomplete="off">' +
+          "</span>" +
+          '<button type="button" class="tp-link-action" data-dgm-all>Seleccionar todo</button>' +
+          '<span class="tp-group-box__sep">|</span>' +
+          '<button type="button" class="tp-link-action" data-dgm-none>Deseleccionar todo</button>' +
+          "</div>" +
+          '<div data-dgm-list style="max-height:300px;overflow-y:auto;">' + sections + "</div>" +
+          "</div></div></div>",
+        buttons: [
+          { label: "Cancelar", variant: "ghost", close: true },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (dialog) {
+              var title = dialog.querySelector("[data-dgm-title]").value.trim();
+              if (!title) {
+                tpModal.toast("El título es obligatorio.", "warning");
+                return false;
+              }
+              var ids = Object.keys(selected).map(Number);
+              var url = isEdit ? GROUPS_BASE + "/" + groupId : GROUPS_BASE;
+              tpModal.setBusy(dialog, true);
+              tpModal
+                .fetchJSON(url, { method: isEdit ? "PUT" : "POST", json: { title: title, devices: ids } })
+                .then(function (res) {
+                  tpModal.setBusy(dialog, false);
+                  if (!res.ok || !res.data || !res.data.ok) {
+                    var errors = (res.data && res.data.errors) || {};
+                    var first = Object.keys(errors)[0];
+                    tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "No se pudo guardar.", "error");
+                    return;
+                  }
+                  tpModal.toast(isEdit ? "Grupo actualizado." : "Grupo creado.", "success");
+                  tpModal.close(dialog);
+                  fetchDevices(true);
+                })
+                .catch(function () {
+                  tpModal.setBusy(dialog, false);
+                  tpModal.toast("Error de red.", "error");
+                });
+              return false;
+            },
+          },
+        ],
+      });
+
+      var box = dlg.querySelector("[data-dgm-box]");
+      var list = dlg.querySelector("[data-dgm-list]");
+
+      function syncGroupChecks() {
+        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-gchk]"), function (gc) {
+          var gid = gc.getAttribute("data-dgm-gchk");
+          var devs = list.querySelectorAll('[data-dgm-dev][data-gid="' + gid + '"]');
+          var on = 0;
+          Array.prototype.forEach.call(devs, function (c) {
+            if (c.checked) on++;
+          });
+          gc.checked = on > 0 && on === devs.length;
+          gc.indeterminate = on > 0 && on < devs.length;
+        });
+      }
+      syncGroupChecks();
+
+      list.addEventListener("change", function (e) {
+        var dev = e.target.closest("[data-dgm-dev]");
+        if (dev) {
+          var did = +dev.getAttribute("data-dgm-dev");
+          if (dev.checked) selected[did] = true;
+          else delete selected[did];
+          syncGroupChecks();
+          return;
+        }
+        var gc = e.target.closest("[data-dgm-gchk]");
+        if (gc) {
+          var gid = gc.getAttribute("data-dgm-gchk");
+          Array.prototype.forEach.call(list.querySelectorAll('[data-dgm-dev][data-gid="' + gid + '"]'), function (c) {
+            c.checked = gc.checked;
+            var cid = +c.getAttribute("data-dgm-dev");
+            if (gc.checked) selected[cid] = true;
+            else delete selected[cid];
+          });
+          syncGroupChecks();
+        }
+      });
+
+      box.querySelector("[data-dgm-all]").addEventListener("click", function () {
+        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-dev]"), function (c) {
+          c.checked = true;
+          selected[+c.getAttribute("data-dgm-dev")] = true;
+        });
+        syncGroupChecks();
+      });
+      box.querySelector("[data-dgm-none]").addEventListener("click", function () {
+        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-dev]"), function (c) {
+          c.checked = false;
+          delete selected[+c.getAttribute("data-dgm-dev")];
+        });
+        syncGroupChecks();
+      });
+
+      var searchEl = box.querySelector("[data-dgm-search]");
+      searchEl.addEventListener("input", function () {
+        var q = searchEl.value.trim().toLowerCase();
+        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-row]"), function (row) {
+          row.style.display = !q || row.getAttribute("data-name").indexOf(q) >= 0 ? "" : "none";
+        });
+        Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-sec]"), function (sec) {
+          var visible = sec.querySelectorAll('[data-dgm-row]:not([style*="display: none"])').length;
+          sec.style.display = visible ? "" : "none";
+        });
+      });
+    });
+  }
+
+  function delDeviceGroup(groupId) {
+    tpModal
+      .confirm({
+        title: "Eliminar grupo",
+        message: "¿Eliminar este grupo? Los vehículos quedarán sin grupo.",
+        danger: true,
+        confirmLabel: "Eliminar",
+      })
+      .then(function (okGo) {
+        if (!okGo) return;
+        tpModal.fetchJSON(GROUPS_BASE + "/" + groupId, { method: "DELETE" }).then(function (res) {
+          if (res.ok && res.data && res.data.ok) {
+            tpModal.toast("Grupo eliminado.", "success");
+            fetchDevices(true);
+          } else {
+            tpModal.toast("No se pudo eliminar.", "error");
+          }
+        });
+      });
+  }
+
   if (listEl) {
     listEl.addEventListener("click", function (e) {
+      // Acciones del kebab de grupo (antes del toggle de colapso)
+      var dgNew = e.target.closest("[data-dg-new]");
+      if (dgNew) {
+        e.stopPropagation();
+        openDeviceGroupModal(null);
+        return;
+      }
+      var dgEdit = e.target.closest("[data-dg-edit]");
+      if (dgEdit) {
+        e.stopPropagation();
+        openDeviceGroupModal(parseInt(dgEdit.getAttribute("data-dg-edit"), 10));
+        return;
+      }
+      var dgDel = e.target.closest("[data-dg-del]");
+      if (dgDel) {
+        e.stopPropagation();
+        delDeviceGroup(parseInt(dgDel.getAttribute("data-dg-del"), 10));
+        return;
+      }
+      // El botón ⋮ lo maneja el delegado global de tp-services (no colapsar)
+      if (e.target.closest(".tp-svc-kebab")) return;
+
       var gh = e.target.closest(".tp-live__group");
       if (gh) {
         var g = parseInt(gh.getAttribute("data-gid"), 10);

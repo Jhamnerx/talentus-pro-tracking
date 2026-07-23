@@ -379,6 +379,124 @@ class DevicesController extends BaseController
     }
 
     /* =================================================================
+     * Grupos de dispositivos (patrón espejo de los grupos de rutas v2)
+     * -----------------------------------------------------------------
+     * El grupo vive en user_device_pivot.group_id (POR USUARIO; 0 = sin
+     * grupo). La "sincronización" es siempre un UPDATE del pivote
+     * filtrado por user_id — nunca se insertan/borran filas (paridad con
+     * DevicesGroupsController::syncDevices legacy). Gate: perm devices
+     * edit (devices_groups no es módulo de permisos; solo ownership).
+     * ================================================================= */
+
+    public function storeDeviceGroup(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'edit')) {
+            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+        }
+
+        $title = trim((string) $request->get('title'));
+        if ($title === '') {
+            return response()->json(['ok' => false, 'errors' => ['title' => trans('validation.required', ['attribute' => trans('validation.attributes.title')])]], 422);
+        }
+
+        $group = \Tobuli\Entities\DeviceGroup::create([
+            'title'   => $title,
+            'user_id' => $this->user->id,
+            'open'    => 1,
+        ]);
+
+        $this->syncGroupDevices($group, $request->get('devices'));
+
+        return response()->json(['ok' => true, 'id' => (int) $group->id]);
+    }
+
+    public function updateDeviceGroup(Request $request, $id): JsonResponse
+    {
+        $group = \Tobuli\Entities\DeviceGroup::where('user_id', $this->user->id)->find((int) $id);
+        if (! $group) {
+            abort(404);
+        }
+
+        if (! $this->user->perm('devices', 'edit')) {
+            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+        }
+
+        $title = trim((string) $request->get('title'));
+        if ($title === '') {
+            return response()->json(['ok' => false, 'errors' => ['title' => trans('validation.required', ['attribute' => trans('validation.attributes.title')])]], 422);
+        }
+
+        $group->update(['title' => $title]);
+
+        $this->syncGroupDevices($group, $request->get('devices'));
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function destroyDeviceGroup(Request $request, $id): JsonResponse
+    {
+        $group = \Tobuli\Entities\DeviceGroup::where('user_id', $this->user->id)->find((int) $id);
+        if (! $group) {
+            abort(404);
+        }
+
+        if (! $this->user->perm('devices', 'edit')) {
+            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+        }
+
+        // Paridad legacy: los devices vuelven a "Sin grupo" (0, no NULL)
+        \DB::table('user_device_pivot')->where('group_id', $group->id)->update(['group_id' => 0]);
+        $group->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Ids del device del grupo (para precargar el modal de edición). */
+    public function deviceGroupItems(Request $request, $id): JsonResponse
+    {
+        $group = \Tobuli\Entities\DeviceGroup::where('user_id', $this->user->id)->find((int) $id);
+        if (! $group) {
+            abort(404);
+        }
+
+        $ids = \DB::table('user_device_pivot')
+            ->where('user_id', $this->user->id)
+            ->where('group_id', $group->id)
+            ->pluck('device_id')
+            ->map(function ($v) {
+                return (int) $v;
+            })
+            ->all();
+
+        return response()->json(['ok' => true, 'title' => (string) $group->title, 'device_ids' => $ids]);
+    }
+
+    /** UPDATE del pivote (attach → group_id; detach → 0), solo filas del usuario. */
+    private function syncGroupDevices(\Tobuli\Entities\DeviceGroup $group, $deviceIds): void
+    {
+        if (! is_array($deviceIds)) {
+            return; // sin clave devices → no tocar asignaciones
+        }
+
+        $ids = array_values(array_filter(array_map('intval', $deviceIds)));
+
+        \DB::table('user_device_pivot')
+            ->where('user_id', $this->user->id)
+            ->where('group_id', $group->id)
+            ->when($ids, function ($q) use ($ids) {
+                $q->whereNotIn('device_id', $ids);
+            })
+            ->update(['group_id' => 0]);
+
+        if ($ids) {
+            \DB::table('user_device_pivot')
+                ->where('user_id', $this->user->id)
+                ->whereIn('device_id', $ids)
+                ->update(['group_id' => $group->id]);
+        }
+    }
+
+    /* =================================================================
      * Sensores del modal device (tab Sensores)
      * -----------------------------------------------------------------
      * CRUD delegado 100% en el SensorModalHelper legacy (createData /
