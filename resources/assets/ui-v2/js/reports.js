@@ -517,13 +517,31 @@
       [1, "Lun"], [2, "Mar"], [3, "Mié"], [4, "Jue"], [5, "Vie"], [6, "Sáb"], [7, "Dom"],
     ];
 
+    var HR = '<hr style="border:0;border-top:1px solid var(--border-default,#eef2f7);margin:16px 0;">';
+    var ROW = '<div class="tp-form__grid tp-form__grid--2">';
+
     body.innerHTML =
       '<form class="tp-form tp-report-form">' +
       (item.id ? '<input type="hidden" name="id" value="' + item.id + '">' : "") +
-      '<div class="tp-form__grid tp-form__grid--2">' +
-      // Título | Periodo
+      // ── Fila 1 (layout referencia): izquierda Título/Tipo/Formato
+      //    apilados; derecha el bloque de Periodo ──
+      ROW +
+      '<div style="display:flex;flex-direction:column;gap:12px;">' +
       '<label class="tp-form__field"><span class="tp-form__label">Título</span>' +
       '<input type="text" name="title" maxlength="120" value="' + esc(item.title || "") + '" data-tp-field></label>' +
+      '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
+      '<select class="tp-input" style="width:100%" name="type" data-tp-field>' +
+      (meta.templates || []).map(function (t) {
+        return '<option value="' + t.id + '"' + (String(item.type) === String(t.id) ? " selected" : "") + ">" + esc(t.title) + "</option>";
+      }).join("") +
+      "</select></label>" +
+      '<label class="tp-form__field"><span class="tp-form__label">Formato</span>' +
+      '<select class="tp-input" style="width:100%" name="format" data-tp-field>' +
+      (meta.formats || []).map(function (f) {
+        return '<option value="' + f.id + '"' + ((item.format || "html") === f.id ? " selected" : "") + ">" + esc(f.label) + "</option>";
+      }).join("") +
+      "</select></label>" +
+      "</div>" +
       '<div class="tp-form__field"><span class="tp-form__label">Periodo</span>' +
       '<input type="text" data-rep-period readonly style="cursor:pointer;background:var(--surface-raised,#fff);" value="">' +
       '<button type="button" data-rep-days-toggle style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:12px;font-weight:600;text-align:center;padding:4px;">Controlar días y horas ▾</button>' +
@@ -537,8 +555,7 @@
         );
       }).join("") +
       "</div>" +
-      // Franja horaria del día (period_time_from/to → shift del pipeline):
-      // slider de dos manijas (estilo referencia). Rango completo = sin filtro.
+      // Slider de franja horaria (dos manijas)
       '<div style="display:flex;gap:12px;align-items:center;margin-top:12px;padding:0 4px;">' +
       '<span data-ts-label style="font-size:12px;font-weight:600;min-width:92px;color:var(--fg-primary,#0f172a);">00:00 - 24:00</span>' +
       '<div data-ts-track style="position:relative;flex:1;height:22px;cursor:pointer;touch-action:none;">' +
@@ -548,26 +565,16 @@
       '<button type="button" data-ts-h="from" style="position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid var(--border-strong,#cbd5e1);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:grab;transform:translateX(-50%);padding:0;appearance:none;"></button>' +
       '<button type="button" data-ts-h="to" style="position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid var(--border-strong,#cbd5e1);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:grab;transform:translateX(-50%);padding:0;appearance:none;"></button>' +
       "</div></div></div></div>" +
-      // Tipo | Formato
-      '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
-      '<select class="tp-input" style="width:100%" name="type" data-tp-field>' +
-      (meta.templates || []).map(function (t) {
-        return '<option value="' + t.id + '"' + (String(item.type) === String(t.id) ? " selected" : "") + ">" + esc(t.title) + "</option>";
-      }).join("") +
-      "</select></label>" +
-      '<label class="tp-form__field"><span class="tp-form__label">Formato</span>' +
-      '<select class="tp-input" style="width:100%" name="format" data-tp-field>' +
-      (meta.formats || []).map(function (f) {
-        return '<option value="' + f.id + '"' + ((item.format || "html") === f.id ? " selected" : "") + ">" + esc(f.label) + "</option>";
-      }).join("") +
-      "</select></label>" +
-      '<hr class="tp-col-2" style="border:0;border-top:1px solid var(--border-default,#eef2f7);margin:4px 0;">' +
-      // Devices | Geocercas
+      "</div>" + // /fila1
+      HR +
+      // ── Devices | Geocercas (fila fija: ocultar deja hueco, no re-fluye) ──
+      ROW +
       '<div class="tp-form__field" data-rep-field="devices"><span class="tp-form__label">Dispositivos</span><div data-rep-devices></div></div>' +
       '<div class="tp-form__field" data-rep-field="geofences"><span class="tp-form__label">Geocercas</span><div data-rep-geofences></div></div>' +
+      "</div>" +
       // Parámetros dinámicos por tipo
-      '<div class="tp-col-2" data-rep-extra style="display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;"></div>' +
-      // Campos fijos
+      '<div data-rep-extra class="tp-form__grid tp-form__grid--2" style="margin-top:12px;display:none;"></div>' +
+      '<div class="tp-form__grid tp-form__grid--2" style="margin-top:12px;">' +
       '<div class="tp-form__field" data-rep-field="speed_limit"><span class="tp-form__label">Límite de velocidad</span>' +
       '<input type="text" name="speed_limit" placeholder="60" value="' + esc(item.speed_limit || "") + '" data-tp-field></div>' +
       '<div class="tp-form__field" data-rep-field="stops"><span class="tp-form__label">Paradas</span>' +
@@ -576,6 +583,8 @@
         return '<option value="' + esc(s.value) + '"' + (String(item.stops || "60") === String(s.value) ? " selected" : "") + ">" + esc(s.label) + "</option>";
       }).join("") +
       "</select></div>" +
+      "</div>" +
+      '<div class="tp-form__grid tp-form__grid--2" style="margin-top:12px;">' +
       '<div class="tp-form__field" data-rep-field="metas"><span class="tp-form__label">Metas</span><div data-rep-metas></div></div>' +
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;min-height:36px;">' +
@@ -583,17 +592,21 @@
       '<label class="tp-choice" data-rep-field="zones_instead" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="zones_instead" value="1"' + (item.zones_instead ? " checked" : "") + "><span>Zonas en vez de direcciones</span></label>" +
       '<label class="tp-choice" data-rep-field="show_addresses" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="show_addresses" value="1"' + (item.show_addresses ? " checked" : "") + "><span>Mostrar direcciones</span></label>" +
       "</div></div>" +
-      '<hr class="tp-col-2" style="border:0;border-top:1px solid var(--border-default,#eef2f7);margin:4px 0;">' +
-      // Email | Programación
+      "</div>" +
+      HR +
+      // ── Email (con + integrado) | Programación (alineada al input) ──
+      ROW +
       '<div class="tp-form__field"><span class="tp-form__label">Enviar a email</span>' +
-      '<div style="display:flex;gap:8px;"><input type="text" data-rep-email-input placeholder="Email…" style="flex:1;" class="tp-input">' +
-      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rep-email-add style="color:var(--brand-500,#2e63d9);font-weight:700;">＋</button></div>' +
-      '<div data-rep-emails style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;"></div>' +
+      '<div class="tp-input-group" style="padding-right:4px;padding-left:0;">' +
+      '<input type="text" data-rep-email-input placeholder="Email…" style="padding-left:11px;">' +
+      '<button type="button" data-rep-email-add title="Agregar" style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:16px;font-weight:700;padding:0 8px;line-height:1;">＋</button>' +
+      "</div>" +
+      '<div data-rep-emails style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>' +
       (meta.showFtp
         ? '<label class="tp-choice" style="margin-top:8px;"><input type="checkbox" class="tp-choice-input" name="send_to_ftp" value="1"' + (item.ftp ? " checked" : "") + "><span>Enviar a FTP</span></label>"
         : "") +
       "</div>" +
-      '<div class="tp-form__field"><span class="tp-form__label">Programación</span>' +
+      '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
       schedRow("daily", "Diario", item.daily, item.daily_time, "") +
       schedRow("weekly", "Semanal", item.weekly, item.weekly_time, daySelect("weekly_day", DAY_PILLS, item.weekly_day, "Día de semana…")) +
@@ -682,13 +695,16 @@
     (item.email ? item.email.split(";") : []).forEach(function (e) {
       if (e.trim()) form._emails.push(e.trim());
     });
+    // Filas de email editables con "−" (estilo referencia)
     function renderEmails() {
       emailsWrap.innerHTML = form._emails
         .map(function (e, i) {
           return (
-            '<span style="display:inline-flex;align-items:center;gap:6px;background:var(--brand-bg-subtle,#eef3fb);border:1px solid var(--border-default,#cbd5e1);border-radius:999px;padding:3px 10px;font-size:12px;">' +
-            esc(e) +
-            '<button type="button" data-rep-email-rm="' + i + '" style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);padding:0;">×</button></span>'
+            '<div class="tp-input-group" style="padding-right:4px;padding-left:0;">' +
+            '<input type="text" value="' + esc(e) + '" data-rep-email-idx="' + i + '" style="padding-left:11px;">' +
+            '<button type="button" data-rep-email-rm="' + i + '" title="Quitar" ' +
+            'style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);font-size:16px;font-weight:700;padding:0 8px;line-height:1;">−</button>' +
+            "</div>"
           );
         })
         .join("");
@@ -701,11 +717,21 @@
       emailInput.value = "";
       renderEmails();
     });
+    emailInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        form.querySelector("[data-rep-email-add]").click();
+      }
+    });
     emailsWrap.addEventListener("click", function (e) {
       var rm = e.target.closest("[data-rep-email-rm]");
       if (!rm) return;
       form._emails.splice(+rm.getAttribute("data-rep-email-rm"), 1);
       renderEmails();
+    });
+    emailsWrap.addEventListener("input", function (e) {
+      var idx = e.target.getAttribute && e.target.getAttribute("data-rep-email-idx");
+      if (idx != null) form._emails[+idx] = e.target.value.trim();
     });
 
     // ── Tipo → fields + parámetros dinámicos ──
@@ -952,7 +978,11 @@
       show_addresses: form.querySelector('input[name="show_addresses"]').checked ? 1 : 0,
       zones_instead: form.querySelector('input[name="zones_instead"]').checked ? 1 : 0,
       skip_blank_results: form.querySelector('input[name="skip_blank_results"]').checked ? 1 : 0,
-      send_to_email: form._emails.join(";"),
+      send_to_email: form._emails
+        .filter(function (e) {
+          return e && e.trim();
+        })
+        .join(";"),
       daily: form.querySelector('input[name="daily"]').checked ? 1 : 0,
       daily_time: form.querySelector('input[name="daily_time"]').value || "00:00",
       weekly: form.querySelector('input[name="weekly"]').checked ? 1 : 0,
