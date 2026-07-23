@@ -1047,25 +1047,34 @@
         (byGroup[gid] = byGroup[gid] || []).push(d);
       });
 
+      // Secciones colapsables (estilo referencia): "Sin grupo" y los grupos
+      // con vehículos ya seleccionados abren expandidos; el resto plegado.
       var sections = Object.keys(byGroup)
         .map(function (gid) {
+          var hasSelected = byGroup[gid].some(function (d) {
+            return selected[d.id];
+          });
+          var open = String(gid) === "0" || hasSelected;
           return (
-            '<div data-dgm-sec style="border:1px solid var(--border-default,#eef2f7);border-radius:10px;margin-bottom:8px;overflow:hidden;">' +
-            '<label style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--surface-sunken,#f8fafc);cursor:pointer;">' +
+            '<div data-dgm-sec data-gid="' + gid + '" style="border:1px solid var(--border-default,#e5eaf1);border-radius:12px;margin-bottom:8px;overflow:hidden;background:var(--surface-raised,#fff);">' +
+            '<div data-dgm-head style="display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer;">' +
+            '<span data-dgm-chev style="display:inline-flex;color:var(--fg-muted,#94a3b8);transition:transform .12s ease;' +
+            (open ? "transform:rotate(0deg);" : "transform:rotate(-90deg);") + '">' +
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>' +
             '<input type="checkbox" class="tp-choice-input" data-dgm-gchk="' + gid + '">' +
-            '<span style="font-size:13px;font-weight:600;color:var(--fg-secondary,#475569);">' +
+            '<span style="font-size:13px;font-weight:600;color:var(--fg-primary,#0f172a);">' +
             esc(groupTitles[gid] || "Sin grupo") + "</span>" +
-            '<span style="font-size:11px;color:var(--fg-muted,#94a3b8);">(' + byGroup[gid].length + ")</span>" +
-            "</label>" +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:6px 10px;">' +
+            '<span style="font-size:11px;color:var(--fg-muted,#94a3b8);">' + byGroup[gid].length + "</span>" +
+            "</div>" +
+            '<div data-dgm-body style="display:' + (open ? "grid" : "none") + ';grid-template-columns:1fr 1fr;gap:0 14px;padding:2px 10px 8px 33px;">' +
             byGroup[gid]
               .map(function (d) {
                 return (
                   '<label data-dgm-row data-name="' + esc((d.name || "").toLowerCase()) +
-                  '" style="display:flex;align-items:center;gap:9px;padding:5px 2px;cursor:pointer;font-size:13px;">' +
+                  '" style="display:flex;align-items:center;gap:9px;padding:5px 6px;border-radius:8px;cursor:pointer;font-size:13px;">' +
                   '<input type="checkbox" class="tp-choice-input" data-dgm-dev="' + d.id + '" data-gid="' + gid + '"' +
                   (selected[d.id] ? " checked" : "") + ">" +
-                  "<span>" + esc(d.name || "#" + d.id) + "</span></label>"
+                  '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(d.name || "#" + d.id) + "</span></label>"
                 );
               })
               .join("") +
@@ -1153,6 +1162,19 @@
       }
       syncGroupChecks();
 
+      // Colapso por sección: click en la cabecera (excepto el checkbox)
+      list.addEventListener("click", function (e) {
+        if (e.target.closest("[data-dgm-gchk]")) return;
+        var head = e.target.closest("[data-dgm-head]");
+        if (!head) return;
+        var sec = head.closest("[data-dgm-sec]");
+        var bodyEl = sec.querySelector("[data-dgm-body]");
+        var chev = sec.querySelector("[data-dgm-chev]");
+        var open = bodyEl.style.display === "none";
+        bodyEl.style.display = open ? "grid" : "none";
+        chev.style.transform = open ? "rotate(0deg)" : "rotate(-90deg)";
+      });
+
       list.addEventListener("change", function (e) {
         var dev = e.target.closest("[data-dgm-dev]");
         if (dev) {
@@ -1199,6 +1221,11 @@
         Array.prototype.forEach.call(list.querySelectorAll("[data-dgm-sec]"), function (sec) {
           var visible = sec.querySelectorAll('[data-dgm-row]:not([style*="display: none"])').length;
           sec.style.display = visible ? "" : "none";
+          // Con búsqueda activa, expandir las secciones con coincidencias
+          if (q && visible) {
+            sec.querySelector("[data-dgm-body]").style.display = "grid";
+            sec.querySelector("[data-dgm-chev]").style.transform = "rotate(0deg)";
+          }
         });
       });
     });
