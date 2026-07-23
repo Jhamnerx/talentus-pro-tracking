@@ -19,7 +19,7 @@
         ['key' => 'media', 'label' => 'Cámara / Medios', 'icon' => 'camera', 'pending' => true],
         ['key' => 'sharing', 'label' => 'Compartir', 'icon' => 'share', 'url' => url('/ui/v2/sharing')],
         ['key' => 'maintenance', 'label' => 'Mantenimiento', 'icon' => 'wrench', 'url' => url('/ui/v2/maintenance')],
-        ['key' => 'tasks', 'label' => 'Tareas', 'icon' => 'tasks', 'pending' => true],
+        ['key' => 'tasks', 'label' => 'Tareas', 'icon' => 'tasks', 'url' => url('/ui/v2/tasks')],
         ['key' => 'drivers', 'label' => 'Conductores', 'icon' => 'users', 'url' => url('/ui/v2/drivers')],
         ['key' => 'chat', 'label' => 'Chat', 'icon' => 'chat', 'pending' => true],
         ['key' => 'call_actions', 'label' => 'Acciones de llamada', 'icon' => 'phone', 'pending' => true],

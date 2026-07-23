@@ -1127,6 +1127,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('commands',     ['as' => 'commands',     'uses' => 'Ui\V2\CommandsController@page']);
     Route::get('sharing',      ['as' => 'sharing',      'uses' => 'Ui\V2\SharingController@page']);
     Route::get('drivers',      ['as' => 'drivers',      'uses' => 'Ui\V2\DriversController@page']);
+    Route::get('tasks',        ['as' => 'tasks',        'uses' => 'Ui\V2\TasksController@page']);
     Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
@@ -1259,6 +1260,13 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('drivers',        ['as' => 'api.drivers.store',   'uses' => 'Ui\V2\DriversController@store']);
         Route::put('drivers/{id}',    ['as' => 'api.drivers.update',  'uses' => 'Ui\V2\DriversController@update'])->where('id', '[0-9]+');
         Route::delete('drivers/{id}', ['as' => 'api.drivers.destroy', 'uses' => 'Ui\V2\DriversController@destroy'])->where('id', '[0-9]+');
+
+        // Tareas (CRUD sobre TaskUserService legacy)
+        Route::get('tasks',         ['as' => 'api.tasks',         'uses' => 'Ui\V2\TasksController@data']);
+        Route::get('tasks/meta',    ['as' => 'api.tasks.meta',    'uses' => 'Ui\V2\TasksController@meta']);
+        Route::post('tasks',        ['as' => 'api.tasks.store',   'uses' => 'Ui\V2\TasksController@store']);
+        Route::put('tasks/{id}',    ['as' => 'api.tasks.update',  'uses' => 'Ui\V2\TasksController@update'])->where('id', '[0-9]+');
+        Route::delete('tasks/{id}', ['as' => 'api.tasks.destroy', 'uses' => 'Ui\V2\TasksController@destroy'])->where('id', '[0-9]+');
 
         // Servicios / Mantenimiento (modales compartidos + página global)
         Route::get('services',              ['as' => 'api.services',          'uses' => 'Ui\V2\ServicesController@data']);
