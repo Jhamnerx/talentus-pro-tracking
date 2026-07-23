@@ -1166,7 +1166,14 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('history',        ['as' => 'api.history',       'uses' => 'Ui\V2\HistoryController@data']);
         Route::get('history/devices', ['as' => 'api.history.devices', 'uses' => 'Ui\V2\HistoryController@devices']);
         Route::get('history/messages', ['as' => 'api.history.messages', 'uses' => 'Ui\V2\HistoryController@messages']);
-        Route::get('reports',        ['as' => 'api.reports',       'uses' => 'Ui\V2\ReportsController@data']);
+        // Reportes (tabs guardados/logs + modal Generar/Guardar sobre helpers legacy)
+        Route::get('reports/meta',         ['as' => 'api.reports.meta',        'uses' => 'Ui\V2\ReportsController@meta']);
+        Route::get('reports/saved',        ['as' => 'api.reports.saved',       'uses' => 'Ui\V2\ReportsController@saved']);
+        Route::get('reports/logs',         ['as' => 'api.reports.logs',        'uses' => 'Ui\V2\ReportsController@logs']);
+        Route::get('reports/{id}/item',    ['as' => 'api.reports.item',        'uses' => 'Ui\V2\ReportsController@item'])->where('id', '[0-9]+');
+        Route::post('reports',             ['as' => 'api.reports.store',       'uses' => 'Ui\V2\ReportsController@store']);
+        Route::delete('reports/{id}',      ['as' => 'api.reports.destroy',     'uses' => 'Ui\V2\ReportsController@destroy'])->where('id', '[0-9]+');
+        Route::delete('reports/logs/{id}', ['as' => 'api.reports.logs.destroy', 'uses' => 'Ui\V2\ReportsController@logDestroy'])->where('id', '[0-9]+');
         Route::get('admin',          ['as' => 'api.admin',         'uses' => 'Ui\V2\AdminController@data']);
         Route::get('copilot/insights', ['as' => 'api.copilot.insights', 'uses' => 'Ui\V2\CopilotController@insights']);
         Route::get('copilot/ask',      ['as' => 'api.copilot.ask',      'uses' => 'Ui\V2\CopilotController@ask']);

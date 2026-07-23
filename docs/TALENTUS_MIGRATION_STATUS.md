@@ -7,6 +7,18 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 22 jul 2026 (5) — Reportes rediseñado (rama `nuevo-tema`)
+
+**Módulo Reportes reescrito** (deja de ser el "shim" de generación rápida) con el visual de referencia, 100% sobre la lógica legacy:
+
+- **Página** con tabs **Reportes generados** (tabla `reports` = definiciones guardadas/programadas: Título|Tipo|Formato|Devices|Geocercas|Programación; click en fila o kebab "Abrir" = generar vía `reports/update?id&generate=1(&view=1 html)`; Editar/Eliminar) y **Logs de programados** (`report_logs`: Nombre|Tipo|Formato|Tamaño|Enviado; click/descarga por `reports.log_download`; eliminar). Toolbar: buscador + filtro por tipo + "+". El rail entra con el **modal abierto** (`?create=1`).
+- **Modal Generar/Guardar**: Título · **Periodo** con picker de rango propio (2 meses, rangos rápidos Hoy/Ayer/…, Desde/Hasta con hora) · **"Controlar días"** (pills Lun–Dom → `period_weekdays[]`, solo se envía si desmarcas alguno) · Tipo · Formato (restringido a los del tipo) · Devices (chips agrupados) · Geocercas/Metas (chips) · límite de velocidad · paradas · checkboxes · **Enviar a email** (chips con "+", `send_to_email` con `;`) · programación Diario/Semanal/Mensual con hora.
+- **Campos dinámicos por tipo**: `reports/types/{type}` legacy entrega `fields` (muestra/oculta devices/geofences/metas/speed_limit/stops/zones/addresses) y `parameters` (\Field) — port de `buildReportAttributes`: integer/string/text/checkbox/select/multiselect/multiselect-group.
+- **Backend** `Ui\V2\ReportsController` nuevo: `meta` (tipos habilitados por usuario, formatos, geocercas, stops, metas del createData legacy, devices agrupados), `saved`/`logs` (paginados con búsqueda+filtro), `item` (edición con from/to_formated), `store` → `ReportModalHelper::create()` (devices como `devices[]` + secuencia `selected_devices[]`; el cron `reports:daily` procesa los schedules), `destroy`, `logDestroy`.
+- Nota de paridad: la referencia muestra selects de "día de semana/mes" en el schedule — **no existen en el modelo legacy** (solo flag+hora; el cron calcula la ventana), así que se omiten.
+
+---
+
 ## 🔄 Actualización · 22 jul 2026 (4) — Notificaciones de eventos EN VIVO (rama `nuevo-tema`)
 
 **Popup + sonido + Notification API portados** (paridad con `EventSys.notice()/sound()` + `Notifications()` legacy). Hallazgo clave: en el legacy los eventos en vivo van por **POLLING** (no socket) al `objects.items_json`, con los flags popup/sound/color derivados de `alert.notifications` en cada poll por el `EventLatestTransformer`.
@@ -322,7 +334,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `Alerts/` · `Events/` | `alerts` (reglas CRUD + toggle) · `events` (feed) | ✅ |
 | `DeviceAlerts/` · `CustomEvents/` | — | ❌ |
 | `History/` (+ historyPlayer/historyGraph) | `history` (rediseño integrado, pipeline legacy) | ✅ Parcial: export solo CSV (GPX/GeoJSON se quitaron en el rediseño), gráfico solo Velocidad/Altitud (faltan **sensores `add_to_graph`** del device), color "Por sensor" no implementado, borrar posiciones (admin) no |
-| `Reports/` (~130 tipos) | `reports` (templates + genera vía POST legacy `/reports`) | ⚠️ Falta `Schedules/` (envío programado) y formularios `getInputParameters` por tipo |
+| `Reports/` (~130 tipos) | ✅ página tabs guardados/logs + modal Generar/Guardar (campos por tipo vía `reports/types/{type}`, schedules daily/weekly/monthly, range picker propio) | ✅ (22-jul) |
 | `SendCommand/` · `CommandSchedules/` · `UserGprsTemplates/` · `UserSmsTemplates/` | ✅ modal `tp-commands.js` + hub `/ui/v2/commands` (Horario/Registros/Plantillas GPRS/SMS con CRUD) | ⚠️ logs por schedule y columna usuario (admin) |
 | `Sharing/` (crear + lista + página pública) | ✅ `/ui/v2/sharing` + `tp-sharing.js` (modal referencia + kebab Live); página pública = legacy reutilizada | ✅ (22-jul; falta solo campo SMS) |
 | `Services/` · `Maintenance/` · `DeviceExpenses/` | ✅ `tp-services.js` (modales compartidos form/lista/eliminar) + página `/ui/v2/maintenance` + widget Live cableado | ⚠️ Gastos (`DeviceExpenses`) y Checklists sin migrar |

@@ -1,147 +1,120 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Reports')
+@section('title', $pageTitle ?? trans('front.reports'))
 @section('rail-active', 'reports')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/reports.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
 @endpush
 
-@section('workspace-class', 'tp-workspace--scroll')
+@section('workspace-class', 'tp-workspace--full')
 
 @section('workspace')
-    <div class="tp-reports" id="tp-reports" data-data-url="{{ route('ui.v2.api.reports') }}"
-        data-can-create="{{ $canCreate ? 1 : 0 }}">
+    <div class="tp-maint" id="tp-reports-page"
+        data-meta-url="{{ route('ui.v2.api.reports.meta') }}"
+        data-saved-url="{{ route('ui.v2.api.reports.saved') }}"
+        data-logs-url="{{ route('ui.v2.api.reports.logs') }}"
+        data-item-url="{{ url('/ui/v2/api/reports') . '/{id}/item' }}"
+        data-store-url="{{ route('ui.v2.api.reports.store') }}"
+        data-destroy-url="{{ url('/ui/v2/api/reports') . '/{id}' }}"
+        data-log-destroy-url="{{ url('/ui/v2/api/reports/logs') . '/{id}' }}"
+        data-open-modal="{{ !empty($openModal) ? 1 : 0 }}"
+        data-can-create="{{ !empty($canCreate) ? 1 : 0 }}"
+        data-can-remove="{{ !empty($canRemove) ? 1 : 0 }}">
 
-        <header class="tp-reports__head">
-            <div>
-                <h1 class="tp-h5 tp-mb-0">Reportes</h1>
-                <p class="tp-text-muted tp-text-sm tp-mb-0">Genera, programa y descarga reportes operativos.</p>
-            </div>
-            <div class="tp-row" style="gap:8px;">
-                <a class="tp-btn tp-btn--ghost tp-btn--sm" href="{{ url('/reports/logs') }}" target="_blank" rel="noopener"
-                    title="Historial completo en UI clásica">
-                    Historial completo
-                </a>
-                @if ($canCreate)
-                    <a class="tp-btn tp-btn--primary tp-btn--sm" href="{{ url('/reports') }}" target="_blank"
-                        rel="noopener">
-                        + Nuevo reporte programado
-                    </a>
-                @endif
-            </div>
+        <header class="tp-maint__head">
+            <h2 class="tp-maint__title">
+                <span class="tp-maint__title-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5" />
+                    </svg>
+                </span>
+                {{ trans('front.reports') }}
+            </h2>
         </header>
 
-        {{-- ===== QUICK GENERATE ===== --}}
-        <section class="tp-reports__panel">
-            <header class="tp-reports__panel-head">
-                <h2 class="tp-h6 tp-mb-0">Generación rápida</h2>
-                <span class="tp-text-muted tp-text-sm">Selecciona plantilla, rango y vehículos. Se abre la generación en la
-                    UI clásica.</span>
-            </header>
+        {{-- Tabs: definiciones guardadas | logs de programados enviados --}}
+        <div style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
+            <button type="button" class="tp-rep-tab is-active" data-rep-tab="saved"
+                style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:600;">
+                Reportes generados</button>
+            <button type="button" class="tp-rep-tab" data-rep-tab="logs"
+                style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:500;">
+                Logs de programados</button>
+        </div>
 
-            <form class="tp-reports__form" id="tp-rep-form" onsubmit="return false;">
-                <div class="tp-reports__form-row">
-                    <div class="tp-reports__field" style="grid-column: span 2;">
-                        <label class="tp-text-muted tp-text-xs" for="rep-type">Plantilla</label>
-                        <select class="tp-input tp-input--sm" id="rep-type">
-                            <option value="">Cargando…</option>
-                        </select>
-                    </div>
-
-                    <div class="tp-reports__field">
-                        <label class="tp-text-muted tp-text-xs" for="rep-format">Formato</label>
-                        <select class="tp-input tp-input--sm" id="rep-format">
-                            <option value="pdf">PDF</option>
-                        </select>
-                    </div>
-
-                    <div class="tp-reports__field">
-                        <label class="tp-text-muted tp-text-xs" for="rep-from">Desde</label>
-                        <input class="tp-input tp-input--sm" type="datetime-local" id="rep-from">
-                    </div>
-
-                    <div class="tp-reports__field">
-                        <label class="tp-text-muted tp-text-xs" for="rep-to">Hasta</label>
-                        <input class="tp-input tp-input--sm" type="datetime-local" id="rep-to">
-                    </div>
-                </div>
-
-                <div class="tp-reports__quick" id="tp-rep-quick" role="tablist">
-                    <button class="tp-seg__btn" data-quick="today">Hoy</button>
-                    <button class="tp-seg__btn is-active" data-quick="yesterday">Ayer</button>
-                    <button class="tp-seg__btn" data-quick="7d">últimos 7d</button>
-                    <button class="tp-seg__btn" data-quick="month">Mes actual</button>
-                    <button class="tp-seg__btn" data-quick="lastmonth">Mes pasado</button>
-                </div>
-
-                <div class="tp-reports__devices" id="tp-rep-devices-wrap">
-                    <div class="tp-row" style="justify-content:space-between; align-items:center;">
-                        <label class="tp-text-muted tp-text-xs">Vehículos</label>
-                        <div class="tp-row" style="gap:8px;">
-                            <input class="tp-input tp-input--sm" type="search" id="tp-rep-devices-q"
-                                placeholder="Buscar vehículo…" style="max-width:200px;">
-                            <button class="tp-btn tp-btn--ghost tp-btn--xs" id="tp-rep-devices-all"
-                                type="button">Todos</button>
-                            <button class="tp-btn tp-btn--ghost tp-btn--xs" id="tp-rep-devices-none"
-                                type="button">Ninguno</button>
-                            <span class="tp-text-muted tp-text-xs" id="tp-rep-devices-count">0</span>
-                        </div>
-                    </div>
-                    <div class="tp-reports__device-list" id="tp-rep-devices" tabindex="0" aria-label="Vehículos">
-                        <div class="tp-text-muted tp-text-center" style="padding:24px;">Cargando…</div>
-                    </div>
-                </div>
-
-                <footer class="tp-reports__form-foot">
-                    <span class="tp-text-muted tp-text-xs" id="tp-rep-help">Se abrirá en nueva pestaña.</span>
-                    <button class="tp-btn tp-btn--primary tp-btn--sm" id="tp-rep-go" type="button">Generar</button>
-                </footer>
-            </form>
-        </section>
-
-        {{-- ===== SAVED TEMPLATES ===== --}}
-        <section class="tp-reports__panel">
-            <header class="tp-reports__panel-head">
-                <h2 class="tp-h6 tp-mb-0">Plantillas guardadas</h2>
-                <span class="tp-text-muted tp-text-sm" id="tp-rep-saved-count">—</span>
-            </header>
-
-            <div class="tp-reports__grid" id="tp-rep-saved">
-                <div class="tp-text-muted tp-text-center" style="padding:24px; grid-column:1/-1;">Cargando…</div>
+        <div class="tp-maint__card">
+            <div style="display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border-default,#eef2f7);">
+                <input type="text" class="tp-input" id="tp-rep-search" placeholder="{{ trans('front.search') }}…"
+                    autocomplete="off" style="max-width: 240px; border-radius: 999px;">
+                <select class="tp-input" id="tp-rep-type-filter" style="width: 260px"></select>
+                @if (!empty($canCreate))
+                    <button type="button" class="tp-btn tp-btn--accent" id="tp-rep-add" style="margin-left:auto;">＋</button>
+                @endif
             </div>
-        </section>
 
-        {{-- ===== RUN LOGS ===== --}}
-        <section class="tp-reports__panel">
-            <header class="tp-reports__panel-head">
-                <h2 class="tp-h6 tp-mb-0">Ejecuciones recientes</h2>
-                <span class="tp-text-muted tp-text-sm" id="tp-rep-logs-count">—</span>
-            </header>
-
-            <div class="tp-reports__table-wrap">
-                <table class="tp-table tp-table--sm" id="tp-rep-logs-table">
+            <div class="tp-maint__wrap" data-rep-panel="saved">
+                <table class="tp-svc-table">
                     <thead>
                         <tr>
-                            <th>Fecha</th>
-                            <th>Título</th>
-                            <th>Formato</th>
-                            <th>Tamaño</th>
-                            <th>Estado</th>
-                            <th style="text-align:right;">Acciones</th>
+                            <th>{{ trans('validation.attributes.title') }}</th>
+                            <th>{{ trans('front.type') }}</th>
+                            <th>{{ trans('front.format') }}</th>
+                            <th>{{ trans('front.devices') }}</th>
+                            <th>{{ trans('front.geofences') }}</th>
+                            <th>Programación</th>
+                            <th class="tp-svc-table__actions"></th>
                         </tr>
                     </thead>
-                    <tbody id="tp-rep-logs-body">
-                        <tr>
-                            <td colspan="6" class="tp-text-muted tp-text-center" style="padding:24px;">Cargando…</td>
-                        </tr>
+                    <tbody id="tp-rep-saved-rows">
+                        <tr><td colspan="7" class="tp-svc-table__empty">…</td></tr>
                     </tbody>
                 </table>
             </div>
-        </section>
+
+            <div class="tp-maint__wrap" data-rep-panel="logs" hidden>
+                <table class="tp-svc-table">
+                    <thead>
+                        <tr>
+                            <th>{{ trans('validation.attributes.name') }}</th>
+                            <th>{{ trans('front.type') }}</th>
+                            <th>{{ trans('front.format') }}</th>
+                            <th>Tamaño</th>
+                            <th>{{ trans('global.is_send') }}</th>
+                            <th class="tp-svc-table__actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tp-rep-logs-rows">
+                        <tr><td colspan="6" class="tp-svc-table__empty">…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="tp-maint__foot">
+                <label class="tp-svc-list__limit">{{ trans('front.rows_per_page') }}
+                    <select class="tp-select" id="tp-rep-limit">
+                        <option>20</option>
+                        <option>50</option>
+                        <option>100</option>
+                    </select>
+                </label>
+                <div class="tp-svc-list__pager">
+                    <span id="tp-rep-range">—</span>
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-rep-prev"
+                        aria-label="{{ trans('front.previous') }}">‹</button>
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-rep-next"
+                        aria-label="{{ trans('front.next') }}">›</button>
+                </div>
+            </footer>
+        </div>
     </div>
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/reports.js') }}?v=1"></script>
+    {{-- tp-services aporta el toggle global del kebab (.tp-svc-kebab) --}}
+    @include('ui.v2.partials.services-config')
+    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/reports.js') }}?v=2" defer></script>
 @endpush

@@ -13,7 +13,8 @@
         ['key' => 'live', 'label' => 'Objetos', 'icon' => 'navigation', 'url' => url('/ui/v2/live')],
         ['key' => 'alerts', 'label' => 'Alertas', 'icon' => 'alerts', 'url' => url('/ui/v2/alerts')],
         ['key' => 'history', 'label' => 'Historial', 'icon' => 'history', 'url' => url('/ui/v2/history')],
-        ['key' => 'reports', 'label' => 'Reportes', 'icon' => 'layers', 'url' => url('/ui/v2/reports')],
+        // Reportes: entra con el modal de generar abierto (?create=1)
+        ['key' => 'reports', 'label' => 'Reportes', 'icon' => 'layers', 'url' => url('/ui/v2/reports?create=1')],
         ['key' => 'send_command', 'label' => 'Enviar comando', 'icon' => 'send', 'url' => url('/ui/v2/commands')],
         ['key' => 'media', 'label' => 'Cámara / Medios', 'icon' => 'camera', 'pending' => true],
         ['key' => 'sharing', 'label' => 'Compartir', 'icon' => 'share', 'url' => url('/ui/v2/sharing')],
