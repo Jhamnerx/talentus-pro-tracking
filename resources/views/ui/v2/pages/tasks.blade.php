@@ -30,6 +30,8 @@
         data-can-remove="{{ !empty($canRemove) ? 1 : 0 }}"
         data-can-sets="{{ !empty($canTaskSets) ? 1 : 0 }}">
 
+        <script type="application/json" id="tp-tasks-map-config">@json($mapConfig ?? [])</script>
+
         <header class="tp-maint__head">
             <h2 class="tp-maint__title">
                 <span class="tp-maint__title-ico">
@@ -162,6 +164,7 @@
     {{-- tp-services aporta el toggle global del kebab (.tp-svc-kebab) --}}
     @include('ui.v2.partials.services-config')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-tasks.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-tasks.js') }}?v=3" defer></script>
 @endpush

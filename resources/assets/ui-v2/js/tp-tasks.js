@@ -44,6 +44,29 @@
 
   var DEFAULT_CENTER = [-12.0464, -77.0428]; // Lima
 
+  // Config de mapa del usuario (misma capa base que Live/History)
+  var MAP_CFG = (function () {
+    try {
+      return JSON.parse(document.getElementById("tp-tasks-map-config").textContent || "{}");
+    } catch (e) {
+      return {};
+    }
+  })();
+
+  function userBaseLayer() {
+    if (window.tpBasemaps && tpBasemaps.build) {
+      var maps = tpBasemaps.build(MAP_CFG);
+      var id = tpBasemaps.defaultId ? tpBasemaps.defaultId(maps, MAP_CFG) : null;
+      if (id && maps[id]) return maps[id].layer;
+      var first = Object.keys(maps)[0];
+      if (first) return maps[first].layer;
+    }
+    return L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap",
+    });
+  }
+
   function esc(s) {
     return tpModal.escapeHtml(s);
   }
@@ -352,10 +375,7 @@
     } else {
       setTimeout(function () {
         map = L.map(mapEl).setView(has ? [lat, lng] : DEFAULT_CENTER, has ? 16 : 11);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 19,
-          attribution: "&copy; OpenStreetMap",
-        }).addTo(map);
+        userBaseLayer().addTo(map);
         marker = L.marker(has ? [lat, lng] : map.getCenter(), { draggable: true }).addTo(map);
 
         marker.on("dragend", function () {

@@ -51,6 +51,7 @@ class TasksController extends BaseController
             'canEdit'     => (bool) $this->user->perm('tasks', 'edit'),
             'canRemove'   => (bool) $this->user->perm('tasks', 'remove'),
             'canTaskSets' => (bool) $this->user->perm('task_sets', 'view'),
+            'mapConfig'   => $this->buildMapConfig(),
         ]);
     }
 
