@@ -1274,19 +1274,15 @@ select.tp-input:disabled {
   opacity: 0;
   width: 0;
 }
-/* Logo de marca blanca (Appearance): chip blanco para garantizar contraste
-   con cualquier logo sobre el fondo navy del rail. */
+/* Logo de marca blanca (Appearance): directo sobre el navy del rail,
+   sin fondo (los logos de marca vienen preparados para fondo oscuro). */
 .tp-rail__logo-img {
-  max-height: 30px;
+  max-height: 32px;
   max-width: 100%;
   object-fit: contain;
-  background: #fff;
-  border-radius: var(--r-md);
-  padding: 3px 8px;
 }
 [data-rail='compact'] .tp-rail__logo-img {
   max-width: 44px;
-  padding: 3px 4px;
 }
 .tp-rail__nav {
   flex: 1 1 auto;
