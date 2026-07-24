@@ -8,25 +8,32 @@
 
     // key, label, bi (Bootstrap Icon), url|pending. pending = feature legacy
     // aún no migrada a v2 (avisa "próximamente").
+    // 'can' = misma condición que el menú Tools del legacy (header.blade):
+    // perm(módulo,'view') por ítem; call_actions exige además events (paridad).
+    // Dashboard, Objetos e Historial no se condicionan en el legacy.
     $items = [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'stats', 'url' => url('/ui/v2/dashboard')],
         ['key' => 'live', 'label' => 'Objetos', 'icon' => 'navigation', 'url' => url('/ui/v2/live')],
-        ['key' => 'alerts', 'label' => 'Alertas', 'icon' => 'alerts', 'url' => url('/ui/v2/alerts')],
+        ['key' => 'alerts', 'label' => 'Alertas', 'icon' => 'alerts', 'url' => url('/ui/v2/alerts'), 'can' => $u->perm('alerts', 'view')],
         ['key' => 'history', 'label' => 'Historial', 'icon' => 'history', 'url' => url('/ui/v2/history')],
         // Reportes: entra con el modal de generar abierto (?create=1)
-        ['key' => 'reports', 'label' => 'Reportes', 'icon' => 'layers', 'url' => url('/ui/v2/reports?create=1')],
-        ['key' => 'send_command', 'label' => 'Enviar comando', 'icon' => 'send', 'url' => url('/ui/v2/commands')],
-        ['key' => 'media', 'label' => 'Cámara / Medios', 'icon' => 'camera', 'pending' => true],
-        ['key' => 'sharing', 'label' => 'Compartir', 'icon' => 'share', 'url' => url('/ui/v2/sharing')],
-        ['key' => 'maintenance', 'label' => 'Mantenimiento', 'icon' => 'wrench', 'url' => url('/ui/v2/maintenance')],
-        ['key' => 'tasks', 'label' => 'Tareas', 'icon' => 'tasks', 'url' => url('/ui/v2/tasks')],
-        ['key' => 'drivers', 'label' => 'Conductores', 'icon' => 'users', 'url' => url('/ui/v2/drivers')],
-        ['key' => 'chat', 'label' => 'Chat', 'icon' => 'chat', 'pending' => true],
-        ['key' => 'call_actions', 'label' => 'Acciones de llamada', 'icon' => 'phone', 'pending' => true],
-        ['key' => 'zones', 'label' => 'Geocercas', 'icon' => 'geofence', 'url' => url('/ui/v2/live?panel=zones')],
-        ['key' => 'routes', 'label' => 'Rutas', 'icon' => 'route', 'url' => url('/ui/v2/live?panel=routes')],
-        ['key' => 'pois', 'label' => 'POI', 'icon' => 'mappin', 'url' => url('/ui/v2/live?panel=pois')],
+        ['key' => 'reports', 'label' => 'Reportes', 'icon' => 'layers', 'url' => url('/ui/v2/reports?create=1'), 'can' => $u->perm('reports', 'view')],
+        ['key' => 'send_command', 'label' => 'Enviar comando', 'icon' => 'send', 'url' => url('/ui/v2/commands'), 'can' => $u->perm('send_command', 'view')],
+        ['key' => 'media', 'label' => 'Cámara / Medios', 'icon' => 'camera', 'pending' => true, 'can' => $u->perm('camera', 'view')],
+        ['key' => 'sharing', 'label' => 'Compartir', 'icon' => 'share', 'url' => url('/ui/v2/sharing'), 'can' => $u->perm('sharing', 'view')],
+        ['key' => 'maintenance', 'label' => 'Mantenimiento', 'icon' => 'wrench', 'url' => url('/ui/v2/maintenance'), 'can' => $u->perm('maintenance', 'view')],
+        ['key' => 'tasks', 'label' => 'Tareas', 'icon' => 'tasks', 'url' => url('/ui/v2/tasks'), 'can' => $u->perm('tasks', 'view')],
+        ['key' => 'drivers', 'label' => 'Conductores', 'icon' => 'users', 'url' => url('/ui/v2/drivers'), 'can' => $u->perm('drivers', 'view')],
+        ['key' => 'chat', 'label' => 'Chat', 'icon' => 'chat', 'pending' => true, 'can' => $u->perm('chat', 'view')],
+        ['key' => 'call_actions', 'label' => 'Acciones de llamada', 'icon' => 'phone', 'pending' => true, 'can' => $u->perm('call_actions', 'view') && $u->perm('events', 'view')],
+        ['key' => 'zones', 'label' => 'Geocercas', 'icon' => 'geofence', 'url' => url('/ui/v2/live?panel=zones'), 'can' => $u->perm('geofences', 'view')],
+        ['key' => 'routes', 'label' => 'Rutas', 'icon' => 'route', 'url' => url('/ui/v2/live?panel=routes'), 'can' => $u->perm('routes', 'view')],
+        ['key' => 'pois', 'label' => 'POI', 'icon' => 'mappin', 'url' => url('/ui/v2/live?panel=pois'), 'can' => $u->perm('poi', 'view')],
     ];
+
+    $items = array_filter($items, function ($it) {
+        return ! array_key_exists('can', $it) || $it['can'];
+    });
 @endphp
 
 <aside class="tp-rail" aria-label="Navegación principal">
