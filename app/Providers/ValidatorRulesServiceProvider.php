@@ -15,6 +15,13 @@ class ValidatorRulesServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        // Validator custom: `dimensions` a prueba de PHP 8 en Windows
+        // (getRealPath() false en uploads -> getimagesize('') = ValueError).
+        // Ver App\Validation\PathSafeValidator.
+        Validator::resolver(function ($translator, $data, $rules, $messages, $customAttributes) {
+            return new \App\Validation\PathSafeValidator($translator, $data, $rules, $messages, $customAttributes);
+        });
+
         Validator::extend('same_protocol', function ($attribute, $value, $parameters, $validator) {
 
             $protocols = DeviceRepo::getProtocols($value)->pluck('protocol', 'protocol')->all();
