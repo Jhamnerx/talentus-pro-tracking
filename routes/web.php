@@ -1254,6 +1254,15 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::put('sharing/{id}',    ['as' => 'api.sharing.update',  'uses' => 'Ui\V2\SharingController@update'])->where('id', '[0-9]+');
         Route::delete('sharing/{id}', ['as' => 'api.sharing.destroy', 'uses' => 'Ui\V2\SharingController@destroy'])->where('id', '[0-9]+');
 
+        // Ajustes de cuenta (modal con tabs; reutiliza validadores/servicios legacy)
+        Route::get('account/meta',       ['as' => 'api.account.meta',     'uses' => 'Ui\V2\AccountController@meta']);
+        Route::post('account/locale',    ['as' => 'api.account.locale',   'uses' => 'Ui\V2\AccountController@updateLocale']);
+        Route::post('account/client',    ['as' => 'api.account.client',   'uses' => 'Ui\V2\AccountController@updateClient']);
+        Route::post('account/password',  ['as' => 'api.account.password', 'uses' => 'Ui\V2\AccountController@changePassword']);
+        Route::post('account/sms',       ['as' => 'api.account.sms',      'uses' => 'Ui\V2\AccountController@updateSms']);
+        Route::post('account/widgets',   ['as' => 'api.account.widgets',  'uses' => 'Ui\V2\AccountController@updateWidgets']);
+        Route::post('account/map',       ['as' => 'api.account.map',      'uses' => 'Ui\V2\AccountController@updateMap']);
+
         // Conductores (CRUD sobre UserDriverModalHelper legacy)
         Route::get('drivers',         ['as' => 'api.drivers',         'uses' => 'Ui\V2\DriversController@data']);
         Route::get('drivers/meta',    ['as' => 'api.drivers.meta',    'uses' => 'Ui\V2\DriversController@meta']);

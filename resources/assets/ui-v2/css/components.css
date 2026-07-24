@@ -1551,3 +1551,40 @@ select.tp-input:disabled {
   background-clip: content-box;
   border: 2px solid transparent;
 }
+
+/* ============================================================
+   Ajustes de cuenta · modal con tabs (tp-account)
+   ============================================================ */
+.tp-acc__tabs {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
+  margin-bottom: 16px;
+}
+.tp-scope .tp-acc__tab {
+  appearance: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-secondary, #475569);
+  transition:
+    color var(--dur-fast, 0.12s) var(--ease-out, ease),
+    border-color var(--dur-fast, 0.12s) var(--ease-out, ease);
+}
+.tp-scope .tp-acc__tab:hover {
+  color: var(--fg-primary, #0f172a);
+}
+.tp-scope .tp-acc__tab.is-active {
+  color: var(--brand-500, #2e63d9);
+  border-bottom-color: var(--brand-500, #2e63d9);
+  font-weight: 600;
+}
+.tp-acc__panel {
+  min-height: 220px;
+}

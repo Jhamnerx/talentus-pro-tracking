@@ -38,9 +38,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=2" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=19" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=20" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=1" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
+    {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10" />
     {{-- Tailwind (utilidades) — al final para ganar sobre la capa .tp-* --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tailwind.css') }}?v=11" />
 
@@ -99,6 +101,8 @@
     <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=7" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=2" defer></script>
+    {{-- Ajustes de cuenta (modal con tabs; se abre desde el topbar) --}}
+    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=1" defer></script>
     {{-- Enviar comando (modal compartido; se abre desde rail y kebab de Live) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-commands.js') }}?v=8" defer></script>
     {{-- Hitos kilométricos (capa Leaflet compartida por páginas con mapa) --}}

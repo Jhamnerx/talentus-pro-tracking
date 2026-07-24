@@ -345,7 +345,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `DeviceMedia/` · `DeviceVideo/` · `Video/` · `MediaCategories/` | widget Cámara (lectura) + links video legacy | ❌ galería/live/playback nativos |
 | `DeviceConfig/` · `LockStatus/` · `Sensors/` (modal) | stub | ❌ |
 | `DevicePlans/` · `DeviceSubscription/` · `Subscriptions/` | stub | ❌ |
-| `MyAccount/` · `MyAccountSettings/` · `Languages/` | tema/densidad/idioma es⇄en en shell | ❌ página cuenta (unidades, TZ, contraseña, plantillas) |
+| `MyAccount/` · `MyAccountSettings/` · `Languages/` | ✅ **modal Ajustes de cuenta** (`tp-account.js`, se abre desde el engranaje/menú de usuario del topbar) con tabs Regional (unidades, formatos fecha/hora, inicio de semana, TZ, horario de verano), Cliente/Empresa, Contraseña, SMS gateway (métodos GET/POST/App/Plivo/Server), Widgets y Mapa (capa base) — cada tab guarda por separado contra `AccountController` (ui/v2) reutilizando validadores/servicios legacy (UserAccountSettingsFormValidator, UserService::setDST, UserClientService/UserCompanyService, SMSGatewayFormValidator, setSettings widgets); tema/densidad/idioma es⇄en siguen en el shell | ⚠️ (23-jul) faltan tabs Dashboard/Grupos de objetos/Eventos/Plantillas SMS-GPRS/Membresía/Planes (viven en otros módulos) |
 | `VehicleTypes/` (tipos/estados p/ límites por geocerca) | matriz VSL en modal de geocerca ✅ | ❌ CRUD de tipos/estados |
 | `Popups/` + notifications.js (popup + sonido + desktop Notification) | ✅ `tp-notify.js` global (toast+sonido+Notification API, feed `events/live`) + tray con eventos reales | ✅ (22-jul; `Popups/` banners admin no portados — otro sistema) |
 | `ObjectsList/` (listview) | `fleet` | ✅ equivalente |
