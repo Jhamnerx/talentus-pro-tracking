@@ -1230,6 +1230,14 @@ select.tp-input:disabled {
 .tp-rail__toggle:hover {
   background: rgba(255, 255, 255, 0.16);
 }
+/* El reset .tp-scope button (color: inherit) pisaba el color del toggle:
+   re-afirmar con la misma especificidad para que el icono ☰ sea visible. */
+.tp-scope .tp-rail__toggle {
+  color: #e2e8f0;
+}
+.tp-scope .tp-rail__toggle:hover {
+  color: #fff;
+}
 /* Iconos SVG del rail */
 .tp-rail__icon svg {
   width: 20px;
@@ -1265,6 +1273,20 @@ select.tp-input:disabled {
   overflow: hidden;
   opacity: 0;
   width: 0;
+}
+/* Logo de marca blanca (Appearance): chip blanco para garantizar contraste
+   con cualquier logo sobre el fondo navy del rail. */
+.tp-rail__logo-img {
+  max-height: 30px;
+  max-width: 100%;
+  object-fit: contain;
+  background: #fff;
+  border-radius: var(--r-md);
+  padding: 3px 8px;
+}
+[data-rail='compact'] .tp-rail__logo-img {
+  max-width: 44px;
+  padding: 3px 4px;
 }
 .tp-rail__nav {
   flex: 1 1 auto;
@@ -1325,8 +1347,10 @@ select.tp-input:disabled {
   opacity: 0;
   width: 0;
 }
+/* Ítems pendientes de migrar: mismo aspecto que el resto (sin atenuar) —
+   el aviso "próximamente" lo da el toast al hacer click. */
 .tp-rail__item--pending {
-  opacity: 0.65;
+  opacity: 1;
 }
 .tp-rail__badge {
   position: absolute;

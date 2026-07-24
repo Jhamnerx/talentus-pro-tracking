@@ -828,6 +828,12 @@
   color: var(--brand-500);
   background: var(--surface-sunken);
 }
+/* El display:flex de la clase pisaba el atributo [hidden] (regla UA):
+   los handles solo deben verse con su panel COLAPSADO. */
+.tp-live__filters-handle[hidden],
+.tp-live__bottombar-handle[hidden] {
+  display: none !important;
+}
 
 /* ============================================================
  * Map area

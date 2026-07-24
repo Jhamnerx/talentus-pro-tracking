@@ -29,14 +29,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>@yield('title', 'TalentusPro') · Command Center</title>
+    {{-- Título y favicon desde los ajustes de marca (Appearance, como el legacy) --}}
+    <title>@yield('title', 'Panel') · {{ Appearance::getSetting('server_name') ?: 'TalentusPro' }}</title>
+    <link rel="shortcut icon" href="{{ Appearance::getAssetFileUrl('favicon') }}" type="image/x-icon">
 
     <link rel="preconnect" href="https://rsms.me/" crossorigin>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=2" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=17" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=18" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=1" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
     {{-- Tailwind (utilidades) — al final para ganar sobre la capa .tp-* --}}

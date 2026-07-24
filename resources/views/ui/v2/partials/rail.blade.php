@@ -6,6 +6,10 @@
     $curLang = app()->getLocale();
     $nextLang = $curLang === 'es' ? 'en' : 'es';
 
+    // Marca desde Appearance (mismos ajustes que el legacy: server_name + logo)
+    $serverName = Appearance::getSetting('server_name') ?: 'TalentusPro';
+    $hasLogo = Appearance::assetFileExists('logo');
+
     // key, label, bi (Bootstrap Icon), url|pending. pending = feature legacy
     // aún no migrada a v2 (avisa "próximamente").
     // 'can' = misma condición que el menú Tools del legacy (header.blade):
@@ -46,9 +50,13 @@
         </svg>
     </button>
 
-    <a href="{{ url('/ui/v2/live') }}" class="tp-rail__logo" aria-label="TalentusPro Home">
-        <span class="tp-rail__logo-mark">T</span>
-        <span class="tp-rail__logo-text">TalentusPro</span>
+    <a href="{{ url('/ui/v2/live') }}" class="tp-rail__logo" aria-label="{{ $serverName }}" title="{{ $serverName }}">
+        @if ($hasLogo)
+            <img class="tp-rail__logo-img" src="{{ Appearance::getAssetFileUrl('logo') }}" alt="{{ $serverName }}">
+        @else
+            <span class="tp-rail__logo-mark">{{ mb_strtoupper(mb_substr($serverName, 0, 1)) }}</span>
+            <span class="tp-rail__logo-text">{{ $serverName }}</span>
+        @endif
     </a>
 
     <nav class="tp-rail__nav">
