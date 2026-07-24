@@ -1265,6 +1265,13 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('tasks',         ['as' => 'api.tasks',         'uses' => 'Ui\V2\TasksController@data']);
         Route::get('tasks/meta',    ['as' => 'api.tasks.meta',    'uses' => 'Ui\V2\TasksController@meta']);
         Route::post('tasks',        ['as' => 'api.tasks.store',   'uses' => 'Ui\V2\TasksController@store']);
+        Route::post('tasks/assign', ['as' => 'api.tasks.assign',  'uses' => 'Ui\V2\TasksController@assign']);
+        Route::post('tasks/import/fields', ['as' => 'api.tasks.import_fields', 'uses' => 'Ui\V2\TasksController@importFields']);
+        Route::post('tasks/import',        ['as' => 'api.tasks.import',        'uses' => 'Ui\V2\TasksController@import']);
+        Route::get('tasks/sets',           ['as' => 'api.tasks.sets',          'uses' => 'Ui\V2\TasksController@taskSets']);
+        Route::post('tasks/sets',          ['as' => 'api.tasks.sets.store',    'uses' => 'Ui\V2\TasksController@taskSetStore']);
+        Route::put('tasks/sets/{id}',      ['as' => 'api.tasks.sets.update',   'uses' => 'Ui\V2\TasksController@taskSetUpdate'])->where('id', '[0-9]+');
+        Route::delete('tasks/sets/{id}',   ['as' => 'api.tasks.sets.destroy',  'uses' => 'Ui\V2\TasksController@taskSetDestroy'])->where('id', '[0-9]+');
         Route::put('tasks/{id}',    ['as' => 'api.tasks.update',  'uses' => 'Ui\V2\TasksController@update'])->where('id', '[0-9]+');
         Route::delete('tasks/{id}', ['as' => 'api.tasks.destroy', 'uses' => 'Ui\V2\TasksController@destroy'])->where('id', '[0-9]+');
 

@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers\Ui\V2;
 
+use CustomFacades\Validators\TasksFormValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
+use Tobuli\Entities\Device;
 use Tobuli\Entities\Task;
+use Tobuli\Entities\TaskSet;
 use Tobuli\Entities\TaskStatus;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Importers\ImportUtils;
+use Tobuli\Importers\Task\TaskImportManager;
+use Tobuli\Services\TaskSetUserService;
 use Tobuli\Services\TaskUserService;
 
 /**
@@ -25,10 +31,12 @@ use Tobuli\Services\TaskUserService;
 class TasksController extends BaseController
 {
     private TaskUserService $service;
+    private TaskSetUserService $setService;
 
     protected function afterAuth($user)
     {
         $this->service = new TaskUserService($user);
+        $this->setService = new TaskSetUserService($user);
     }
 
     public function page()
@@ -38,10 +46,11 @@ class TasksController extends BaseController
         }
 
         return View::make('ui.v2.pages.tasks', [
-            'pageTitle' => trans('front.tasks'),
-            'statuses'  => TaskStatus::getList(),
-            'canEdit'   => (bool) $this->user->perm('tasks', 'edit'),
-            'canRemove' => (bool) $this->user->perm('tasks', 'remove'),
+            'pageTitle'   => trans('front.tasks'),
+            'statuses'    => TaskStatus::getList(),
+            'canEdit'     => (bool) $this->user->perm('tasks', 'edit'),
+            'canRemove'   => (bool) $this->user->perm('tasks', 'remove'),
+            'canTaskSets' => (bool) $this->user->perm('task_sets', 'view'),
         ]);
     }
 
@@ -191,6 +200,171 @@ class TasksController extends BaseController
         }
 
         $task->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /* ================= Asignación masiva ================= */
+
+    /** Reasigna las tareas seleccionadas a un device (paridad legacy assign). */
+    public function assign(Request $request): JsonResponse
+    {
+        $data = $request->all();
+
+        try {
+            TasksFormValidator::validate('assign', $data);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+
+        $device = Device::find($data['device_id']);
+
+        $this->checkException('devices', 'own', $device);
+
+        $tasks = Task::whereIn('id', $data['tasks'])->get();
+
+        $assigned = 0;
+        foreach ($tasks as $task) {
+            if (! $this->user->can('edit', $task)) {
+                continue;
+            }
+
+            $task->device()->associate($device);
+            $task->save();
+            $assigned++;
+        }
+
+        return response()->json(['ok' => true, 'assigned' => $assigned]);
+    }
+
+    /* ================= Importación (CSV / XLS / XLSX) ================= */
+
+    /** Cabeceras del archivo + campos del importador (para el mapeo). */
+    public function importFields(Request $request): JsonResponse
+    {
+        $this->checkException('tasks', 'edit');
+
+        $file = $request->file('file');
+        if (! $file || ! $file->isValid()) {
+            return response()->json(['ok' => false, 'errors' => ['file' => trans('validation.attributes.file')]], 422);
+        }
+
+        $manager  = new TaskImportManager();
+        $importer = $manager->getImporter();
+
+        $fileFields = $manager->getImportFields($file);
+        $defaults   = (new ImportUtils())->getDefaultValues($importer->getImportFields(), $fileFields);
+
+        $fields = [];
+        foreach ($defaults as $name => $default) {
+            $fields[] = ['name' => (string) $name, 'default' => $default !== null ? (string) $default : null];
+        }
+
+        return response()->json([
+            'ok'      => true,
+            'headers' => array_values(array_map('strval', $fileFields)),
+            'fields'  => $fields,
+        ]);
+    }
+
+    /** Ejecuta la importación (paridad legacy importSet). */
+    public function import(Request $request): JsonResponse
+    {
+        $this->checkException('tasks', 'edit');
+
+        $file = $request->file('file');
+        if (! $file || ! $file->isValid()) {
+            return response()->json(['ok' => false, 'errors' => ['file' => trans('validation.attributes.file')]], 422);
+        }
+
+        try {
+            $manager = new TaskImportManager();
+            $manager->setFieldsReadMap($request->get('fields', []))
+                ->import($file->getPathName());
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /* ================= Conjuntos de tareas (TaskSets) ================= */
+
+    public function taskSets(Request $request): JsonResponse
+    {
+        $this->checkException('task_sets', 'view');
+
+        $perPage = min(100, max(10, (int) $request->get('per_page', 20)));
+
+        $query = $this->user->taskSets()->selectDeviceId();
+
+        if ($s = trim((string) $request->get('s'))) {
+            $query->where('task_sets.title', 'like', "%{$s}%");
+        }
+
+        $items = $query->orderBy('task_sets.id', 'desc')->paginate($perPage);
+
+        $devices = Device::whereIn('id', $items->pluck('device_id')->filter())->get();
+
+        $rows = [];
+        foreach ($items as $set) {
+            $device = $set->device_id ? $devices->find($set->device_id) : null;
+            $rows[] = [
+                'id'     => (int) $set->id,
+                'title'  => (string) $set->title,
+                'device' => $device ? (string) $device->getDisplayName() : '',
+            ];
+        }
+
+        return response()->json([
+            'ok'    => true,
+            'items' => $rows,
+            'page'  => $items->currentPage(),
+            'last'  => $items->lastPage(),
+            'total' => $items->total(),
+        ]);
+    }
+
+    public function taskSetStore(Request $request): JsonResponse
+    {
+        $this->checkException('task_sets', 'store');
+
+        $title = trim((string) $request->get('title'));
+        if ($title === '') {
+            return response()->json(['ok' => false, 'errors' => ['title' => trans('validation.attributes.title')]], 422);
+        }
+
+        $item = $this->setService->store([
+            'title'   => $title,
+            'user_id' => $this->user->id,
+        ]);
+
+        return response()->json(['ok' => true, 'id' => (int) $item->id]);
+    }
+
+    public function taskSetUpdate(Request $request, $id): JsonResponse
+    {
+        $item = $this->user->taskSets()->findOrFail((int) $id);
+
+        $this->checkException('task_sets', 'edit', $item);
+
+        $title = trim((string) $request->get('title'));
+        if ($title === '') {
+            return response()->json(['ok' => false, 'errors' => ['title' => trans('validation.attributes.title')]], 422);
+        }
+
+        $this->setService->update($item, ['title' => $title]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function taskSetDestroy(Request $request, $id): JsonResponse
+    {
+        $item = $this->user->taskSets()->findOrFail((int) $id);
+
+        $this->checkException('task_sets', 'remove', $item);
+
+        $this->setService->delete($item);
 
         return response()->json(['ok' => true]);
     }

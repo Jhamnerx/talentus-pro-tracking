@@ -28,11 +28,19 @@
     meta: root.getAttribute("data-meta-url"),
     store: root.getAttribute("data-store-url"),
     item: root.getAttribute("data-item-url"),
+    assign: root.getAttribute("data-assign-url"),
+    imp: root.getAttribute("data-import-url"),
+    impFields: root.getAttribute("data-import-fields-url"),
+    sets: root.getAttribute("data-sets-url"),
+    setItem: root.getAttribute("data-set-item-url"),
+    exCsv: root.getAttribute("data-example-csv"),
+    exXls: root.getAttribute("data-example-xls"),
     adrSearch: root.getAttribute("data-address-search-url"),
     adrReverse: root.getAttribute("data-address-reverse-url"),
   };
   var canEdit = root.getAttribute("data-can-edit") === "1";
   var canRemove = root.getAttribute("data-can-remove") === "1";
+  var canSets = root.getAttribute("data-can-sets") === "1";
 
   var DEFAULT_CENTER = [-12.0464, -77.0428]; // Lima
 
@@ -486,9 +494,16 @@
   var prevBtn = document.getElementById("tp-tasks-prev");
   var nextBtn = document.getElementById("tp-tasks-next");
   var addBtn = document.getElementById("tp-tasks-add");
+  var assignBtn = document.getElementById("tp-tasks-assign");
+  var importBtn = document.getElementById("tp-tasks-import");
+  var checkAll = document.getElementById("tp-tasks-checkall");
 
   var state = { page: 1, per: 20, s: "", device_id: "", status: "", last: 1, total: 0 };
   var timer = null;
+  var COLS = canEdit ? 7 : 6;
+  var activeTab = "tasks";
+  var metaCache = null;
+  var sel = {}; // tareas seleccionadas (asignación masiva), persiste entre páginas
 
   var STATUS_STYLE = {
     1: "background:#f1f5f9;color:#475569;", // nueva
@@ -538,7 +553,7 @@
       "&per_page=" + state.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        rowsEl.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+        rowsEl.innerHTML = '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
         return;
       }
       state.last = res.data.last || 1;
@@ -550,6 +565,10 @@
               var addrs = [r.pickup_address, r.delivery_address].filter(Boolean).join(" → ");
               return (
                 "<tr>" +
+                (canEdit
+                  ? '<td><input type="checkbox" class="tp-choice-input" data-tsk-chk="' + r.id + '"' +
+                    (sel[r.id] ? " checked" : "") + "></td>"
+                  : "") +
                 '<td title="' + esc(addrs) + '">' + esc(r.title) + "</td>" +
                 "<td>" + esc(r.device || "–") + "</td>" +
                 "<td>" + statusChip(r) + "</td>" +
@@ -560,21 +579,426 @@
               );
             })
             .join("")
-        : '<tr><td colspan="6" class="tp-svc-table__empty">Sin datos</td></tr>';
+        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">Sin datos</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0;
       var to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;
       prevBtn.disabled = state.page <= 1;
       nextBtn.disabled = state.page >= state.last;
+      syncCheckAll();
+      updateAssign();
     });
   }
+
+  /* ---- Selección para asignación masiva ---- */
+
+  function syncCheckAll() {
+    if (!checkAll) return;
+    var boxes = rowsEl.querySelectorAll("[data-tsk-chk]");
+    var on = 0;
+    Array.prototype.forEach.call(boxes, function (c) {
+      if (c.checked) on++;
+    });
+    checkAll.checked = boxes.length > 0 && on === boxes.length;
+    checkAll.indeterminate = on > 0 && on < boxes.length;
+  }
+
+  function updateAssign() {
+    if (!assignBtn) return;
+    var n = Object.keys(sel).length;
+    assignBtn.textContent = "Asignar (" + n + ")";
+    assignBtn.style.display = activeTab === "tasks" && n ? "" : "none";
+  }
+
+  function openAssign() {
+    var ids = Object.keys(sel);
+    if (!ids.length) return;
+
+    ensureMeta(function (meta) {
+      tpModal.open({
+        title: "Asignar tareas",
+        static: true,
+        body:
+          '<div class="tp-form">' +
+          '<p style="font-size:13px;color:var(--fg-secondary,#475569);margin:0 0 10px;">' +
+          ids.length + " tarea(s) seleccionada(s) se reasignarán al vehículo elegido.</p>" +
+          '<div class="tp-form__field tp-form__field--required">' +
+          '<span class="tp-form__label">Vehículo</span>' +
+          selectHtml(
+            "assign_device_id",
+            (meta.devices || []).map(function (d) {
+              return { id: d.id, title: d.name };
+            }),
+            "",
+            "Seleccionar vehículo…",
+          ) +
+          "</div></div>",
+        buttons: [
+          { label: "Cancelar", variant: "ghost", close: true },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (dialog) {
+              var deviceId = dialog.querySelector('[name="assign_device_id"]').value;
+              if (!deviceId) {
+                tpModal.toast("Selecciona un vehículo.", "warning");
+                return false;
+              }
+              tpModal.setBusy(dialog, true);
+              tpModal
+                .fetchJSON(URLS.assign, { method: "POST", json: { device_id: deviceId, tasks: ids.map(Number) } })
+                .then(function (res) {
+                  tpModal.setBusy(dialog, false);
+                  if (!res.ok || !res.data || !res.data.ok) {
+                    tpModal.toast("No se pudo asignar.", "error");
+                    return;
+                  }
+                  tpModal.toast((res.data.assigned || 0) + " tarea(s) asignadas.", "success");
+                  sel = {};
+                  tpModal.close(dialog);
+                  load();
+                })
+                .catch(function () {
+                  tpModal.setBusy(dialog, false);
+                  tpModal.toast("Error de red.", "error");
+                });
+              return false;
+            },
+          },
+        ],
+      });
+    });
+  }
+
+  function ensureMeta(cb) {
+    if (metaCache) return cb(metaCache);
+    tpModal.fetchJSON(URLS.meta, { method: "GET" }).then(function (res) {
+      if (res.ok && res.data && res.data.ok) {
+        metaCache = res.data;
+        cb(metaCache);
+      }
+    });
+  }
+
+  /* ---- Importación (CSV / XLS / XLSX) ---- */
+
+  function renderImportMap(box, data) {
+    var headers = data.headers || [];
+    box.innerHTML =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;">' +
+      (data.fields || [])
+        .map(function (f) {
+          return (
+            '<label style="display:flex;align-items:center;gap:8px;font-size:12px;min-width:0;">' +
+            '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(f.name) + '">' +
+            esc(f.name) + "</span>" +
+            '<select class="tp-input" data-imp-field="' + esc(f.name) + '" style="width:170px;flex:0 0 170px;">' +
+            '<option value=""></option>' +
+            headers
+              .map(function (h) {
+                return '<option value="' + esc(h) + '"' + (f.default === h ? " selected" : "") + ">" + esc(h) + "</option>";
+              })
+              .join("") +
+            "</select></label>"
+          );
+        })
+        .join("") +
+      "</div>";
+  }
+
+  function loadImportFields(dialog) {
+    var box = dialog.querySelector("[data-imp-fields]");
+    var chk = dialog.querySelector("[data-imp-map]");
+    if (!chk.checked) {
+      box.style.display = "none";
+      return;
+    }
+    box.style.display = "";
+    var fileInput = dialog.querySelector("[data-imp-file]");
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">Selecciona un archivo primero.</div>';
+      return;
+    }
+    box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">Leyendo columnas…</div>';
+    var fd = new FormData();
+    fd.append("file", file);
+    tpModal.fetchJSON(URLS.impFields, { method: "POST", body: fd }).then(function (res) {
+      if (!res.ok || !res.data || !res.data.ok) {
+        box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">No se pudieron leer las columnas del archivo.</div>';
+        return;
+      }
+      renderImportMap(box, res.data);
+    });
+  }
+
+  function openImport() {
+    var dlg = tpModal.open({
+      title: "Importar tareas",
+      size: "lg",
+      static: true,
+      body:
+        '<div class="tp-form">' +
+        '<p style="font-size:12px;color:var(--fg-muted,#94a3b8);margin:0 0 10px;">Formatos: CSV, XLS, XLSX — ejemplos: ' +
+        '<a href="' + esc(URLS.exCsv) + '" download style="color:var(--brand-500,#2e63d9);">example.csv</a> · ' +
+        '<a href="' + esc(URLS.exXls) + '" download style="color:var(--brand-500,#2e63d9);">example.xls</a></p>' +
+        '<div class="tp-form__field tp-form__field--required" style="margin-bottom:10px;">' +
+        '<span class="tp-form__label">Archivo</span>' +
+        '<input type="file" data-imp-file accept=".xlsx,.xls,.csv" class="tp-input" style="height:auto;padding:7px 10px;">' +
+        "</div>" +
+        '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">' +
+        '<input type="checkbox" class="tp-choice-input" data-imp-map> Mapear columnas</label>' +
+        '<div data-imp-fields style="display:none;"></div>' +
+        "</div>",
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Importar",
+          variant: "primary",
+          close: false,
+          onClick: function (dialog) {
+            var fileInput = dialog.querySelector("[data-imp-file]");
+            var file = fileInput.files && fileInput.files[0];
+            if (!file) {
+              tpModal.toast("Selecciona un archivo.", "warning");
+              return false;
+            }
+            var fd = new FormData();
+            fd.append("file", file);
+            if (dialog.querySelector("[data-imp-map]").checked) {
+              Array.prototype.forEach.call(dialog.querySelectorAll("[data-imp-field]"), function (s) {
+                if (s.value) fd.append("fields[" + s.getAttribute("data-imp-field") + "]", s.value);
+              });
+            }
+            tpModal.setBusy(dialog, true);
+            tpModal
+              .fetchJSON(URLS.imp, { method: "POST", body: fd })
+              .then(function (res) {
+                tpModal.setBusy(dialog, false);
+                if (!res.ok || !res.data || !res.data.ok) {
+                  var errors = (res.data && res.data.errors) || {};
+                  var first = Object.keys(errors)[0];
+                  tpModal.toast(
+                    first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "No se pudo importar.",
+                    "error",
+                  );
+                  return;
+                }
+                tpModal.toast("Importación completada.", "success");
+                tpModal.close(dialog);
+                load();
+              })
+              .catch(function () {
+                tpModal.setBusy(dialog, false);
+                tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+
+    dlg.addEventListener("change", function (e) {
+      if (e.target.closest("[data-imp-file]") || e.target.closest("[data-imp-map]")) loadImportFields(dlg);
+    });
+  }
+
+  /* ---- Conjuntos de tareas (TaskSets) ---- */
+
+  var setsRows = document.getElementById("tp-tasksets-rows");
+  var setsRange = document.getElementById("tp-tasksets-range");
+  var setsPrev = document.getElementById("tp-tasksets-prev");
+  var setsNext = document.getElementById("tp-tasksets-next");
+  var setsState = { page: 1, per: 20, s: "", last: 1, total: 0, loaded: false };
+
+  function setKebab(row) {
+    var items = "";
+    if (canEdit)
+      items +=
+        '<button type="button" role="menuitem" data-set-edit="' + row.id + '" data-title="' + esc(row.title) + '">' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>';
+    if (canRemove)
+      items +=
+        '<button type="button" role="menuitem" class="is-danger" data-set-del="' + row.id + '">' +
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+    if (!items) return "";
+    return (
+      '<div class="tp-svc-kebab">' +
+      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
+      "</button>" +
+      '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>"
+    );
+  }
+
+  function loadSets() {
+    setsState.loaded = true;
+    var q =
+      URLS.sets +
+      "?s=" + encodeURIComponent(setsState.s) +
+      "&page=" + setsState.page +
+      "&per_page=" + setsState.per;
+    tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
+      if (!res.ok || !res.data || !res.data.ok) {
+        setsRows.innerHTML = '<tr><td colspan="3" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+        return;
+      }
+      setsState.last = res.data.last || 1;
+      setsState.total = res.data.total || 0;
+      var items = res.data.items || [];
+      setsRows.innerHTML = items.length
+        ? items
+            .map(function (r) {
+              return (
+                "<tr>" +
+                "<td>" + esc(r.title) + "</td>" +
+                "<td>" + esc(r.device || "–") + "</td>" +
+                '<td class="tp-svc-table__actions">' + setKebab(r) + "</td>" +
+                "</tr>"
+              );
+            })
+            .join("")
+        : '<tr><td colspan="3" class="tp-svc-table__empty">Sin datos</td></tr>';
+      var from = setsState.total ? (setsState.page - 1) * setsState.per + 1 : 0;
+      var to = Math.min(setsState.page * setsState.per, setsState.total);
+      setsRange.textContent = from + "–" + to + " / " + setsState.total;
+      setsPrev.disabled = setsState.page <= 1;
+      setsNext.disabled = setsState.page >= setsState.last;
+    });
+  }
+
+  function openSetForm(id, currentTitle) {
+    tpModal.open({
+      title: id ? "Editar conjunto" : "Nuevo conjunto",
+      static: true,
+      body:
+        '<div class="tp-form">' +
+        '<label class="tp-form__field tp-form__field--required">' +
+        '<span class="tp-form__label">Título</span>' +
+        '<input type="text" name="set_title" maxlength="150" value="' + esc(currentTitle || "") + '" data-tp-field>' +
+        "</label></div>",
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Guardar",
+          variant: "primary",
+          close: false,
+          onClick: function (dialog) {
+            var title = dialog.querySelector('[name="set_title"]').value.trim();
+            if (!title) {
+              tpModal.toast("El título es obligatorio.", "warning");
+              return false;
+            }
+            var url = id ? URLS.setItem.replace("{id}", id) : URLS.sets;
+            tpModal.setBusy(dialog, true);
+            tpModal
+              .fetchJSON(url, { method: id ? "PUT" : "POST", json: { title: title } })
+              .then(function (res) {
+                tpModal.setBusy(dialog, false);
+                if (!res.ok || !res.data || !res.data.ok) {
+                  tpModal.toast("No se pudo guardar.", "error");
+                  return;
+                }
+                tpModal.toast(id ? "Conjunto actualizado." : "Conjunto creado.", "success");
+                tpModal.close(dialog);
+                loadSets();
+              })
+              .catch(function () {
+                tpModal.setBusy(dialog, false);
+                tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+
+  setsRows.addEventListener("click", function (e) {
+    var edit = e.target.closest("[data-set-edit]");
+    if (edit) {
+      openSetForm(edit.getAttribute("data-set-edit"), edit.getAttribute("data-title"));
+      return;
+    }
+    var del = e.target.closest("[data-set-del]");
+    if (del) {
+      var sid = del.getAttribute("data-set-del");
+      tpModal
+        .confirm({
+          title: "Eliminar conjunto",
+          message: "¿Eliminar este conjunto de tareas?",
+          danger: true,
+          confirmLabel: "Eliminar",
+        })
+        .then(function (okGo) {
+          if (!okGo) return;
+          tpModal.fetchJSON(URLS.setItem.replace("{id}", sid), { method: "DELETE" }).then(function (res) {
+            if (res.ok && res.data && res.data.ok) {
+              tpModal.toast("Conjunto eliminado.", "success");
+              loadSets();
+            } else {
+              tpModal.toast("No se pudo eliminar.", "error");
+            }
+          });
+        });
+    }
+  });
+
+  setsPrev.addEventListener("click", function () {
+    if (setsState.page > 1) {
+      setsState.page--;
+      loadSets();
+    }
+  });
+  setsNext.addEventListener("click", function () {
+    if (setsState.page < setsState.last) {
+      setsState.page++;
+      loadSets();
+    }
+  });
+
+  /* ---- Tabs Tareas | Conjuntos ---- */
+
+  function setTab(tab) {
+    activeTab = tab;
+    Array.prototype.forEach.call(root.querySelectorAll("[data-tsk-tab]"), function (b) {
+      var on = b.getAttribute("data-tsk-tab") === tab;
+      b.classList.toggle("is-active", on);
+      b.style.borderBottomColor = on ? "var(--brand-500,#2e63d9)" : "transparent";
+      b.style.color = on ? "var(--brand-500,#2e63d9)" : "";
+      b.style.fontWeight = on ? "600" : "500";
+    });
+    Array.prototype.forEach.call(root.querySelectorAll("[data-tsk-panel]"), function (p) {
+      p.style.display = p.getAttribute("data-tsk-panel") === tab ? "" : "none";
+    });
+    Array.prototype.forEach.call(root.querySelectorAll("[data-tsk-only]"), function (el) {
+      el.style.display = el.getAttribute("data-tsk-only") === tab ? "" : "none";
+    });
+    updateAssign();
+    searchEl.placeholder = tab === "sets" ? "Buscar conjunto…" : "Buscar…";
+    if (tab === "sets" && !setsState.loaded) loadSets();
+  }
+
+  root.addEventListener("click", function (e) {
+    var tabBtn = e.target.closest("[data-tsk-tab]");
+    if (tabBtn) setTab(tabBtn.getAttribute("data-tsk-tab"));
+  });
+
+  /* ---- Eventos de la toolbar / tabla ---- */
 
   searchEl.addEventListener("input", function () {
     clearTimeout(timer);
     timer = setTimeout(function () {
-      state.s = searchEl.value.trim();
-      state.page = 1;
-      load();
+      if (activeTab === "sets") {
+        setsState.s = searchEl.value.trim();
+        setsState.page = 1;
+        loadSets();
+      } else {
+        state.s = searchEl.value.trim();
+        state.page = 1;
+        load();
+      }
     }, 300);
   });
   deviceSel.addEventListener("change", function () {
@@ -605,7 +1029,31 @@
     }
   });
   addBtn.addEventListener("click", function () {
-    openForm(null, load);
+    if (activeTab === "sets") openSetForm(null, "");
+    else openForm(null, load);
+  });
+  if (assignBtn) assignBtn.addEventListener("click", openAssign);
+  if (importBtn) importBtn.addEventListener("click", openImport);
+  if (checkAll)
+    checkAll.addEventListener("change", function () {
+      Array.prototype.forEach.call(rowsEl.querySelectorAll("[data-tsk-chk]"), function (c) {
+        c.checked = checkAll.checked;
+        var id = c.getAttribute("data-tsk-chk");
+        if (checkAll.checked) sel[id] = true;
+        else delete sel[id];
+      });
+      syncCheckAll();
+      updateAssign();
+    });
+
+  rowsEl.addEventListener("change", function (e) {
+    var c = e.target.closest("[data-tsk-chk]");
+    if (!c) return;
+    var id = c.getAttribute("data-tsk-chk");
+    if (c.checked) sel[id] = true;
+    else delete sel[id];
+    syncCheckAll();
+    updateAssign();
   });
 
   rowsEl.addEventListener("click", function (e) {
@@ -646,6 +1094,7 @@
   // Filtro de vehículos: catálogo desde meta (con buscador del tp-select)
   tpModal.fetchJSON(URLS.meta, { method: "GET" }).then(function (res) {
     if (!res.ok || !res.data || !res.data.ok) return;
+    metaCache = res.data;
     deviceSel.innerHTML =
       '<option value="">Todos los vehículos</option>' +
       (res.data.devices || [])
@@ -660,5 +1109,6 @@
     }
   });
 
+  setTab("tasks");
   load();
 })();
