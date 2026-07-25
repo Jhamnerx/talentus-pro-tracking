@@ -147,13 +147,21 @@
     }
   }
 
+  function emptyState(msg) {
+    return (
+      '<div class="tp-empty">' +
+      '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.8L7 14"/></svg>' +
+      "<span>" + escapeHtml(msg) + "</span></div>"
+    );
+  }
+
   /* ----- Bar-list (categorías / top-risk / kilometraje) ----- */
   function renderBarList(id, rows, opts) {
     opts = opts || {};
     var el = document.getElementById(id);
     if (!el) return;
     if (!rows || !rows.length) {
-      el.innerHTML = '<div class="tp-text-muted tp-text-sm" style="padding:8px 2px;">Sin datos en el período.</div>';
+      el.innerHTML = emptyState("Sin datos en el período.");
       return;
     }
     var max = rows.reduce(function (m, r) { return Math.max(m, opts.value(r)); }, 0) || 1;
@@ -244,37 +252,52 @@
     return u;
   }
 
+  // Ejecuta un render de forma aislada: si un card falla, NO tumba al resto.
+  function safe(name, fn) {
+    try {
+      fn();
+    } catch (e) {
+      console.warn("[dashboard] render '" + name + "' falló:", e);
+    }
+  }
+
   function load() {
     return fetch(buildUrl(), { credentials: "same-origin", headers: { Accept: "application/json" } })
       .then(function (r) { return r.json(); })
       .then(function (p) {
         if (!p || !p.ok) return;
-        renderKpis(p.kpis || {});
-        renderDonut("tp-chart-health", "tp-legend-health", (p.health || {}).items, (p.health || {}).total);
-        renderDonut("tp-chart-connection", "tp-legend-connection", (p.connection || {}).items, (p.connection || {}).total);
-        renderDonut("tp-chart-movement", "tp-legend-movement", p.distribution, (p.kpis || {}).total);
-        renderDriving(p);
-        renderBarList("tp-dash-bycategory", p.byCategory, {
-          label: function (r) { return r.label; },
-          value: function (r) { return r.count; },
-          display: function (r) { return fmt(r.count); },
-          color: function (r) { return r.color; },
+        safe("kpis", function () { renderKpis(p.kpis || {}); });
+        safe("health", function () { renderDonut("tp-chart-health", "tp-legend-health", (p.health || {}).items, (p.health || {}).total); });
+        safe("connection", function () { renderDonut("tp-chart-connection", "tp-legend-connection", (p.connection || {}).items, (p.connection || {}).total); });
+        safe("movement", function () { renderDonut("tp-chart-movement", "tp-legend-movement", p.distribution, (p.kpis || {}).total); });
+        safe("driving", function () { renderDriving(p); });
+        safe("bycategory", function () {
+          renderBarList("tp-dash-bycategory", p.byCategory, {
+            label: function (r) { return r.label; },
+            value: function (r) { return r.count; },
+            display: function (r) { return fmt(r.count); },
+            color: function (r) { return r.color; },
+          });
         });
-        renderBarList("tp-dash-toprisk", p.topRisk, {
-          label: function (r) { return r.name || "#" + r.id; },
-          value: function (r) { return r.count; },
-          display: function (r) { return fmt(r.count); },
-          color: function () { return "#ef4444"; },
+        safe("toprisk", function () {
+          renderBarList("tp-dash-toprisk", p.topRisk, {
+            label: function (r) { return r.name || "#" + r.id; },
+            value: function (r) { return r.count; },
+            display: function (r) { return fmt(r.count); },
+            color: function () { return "#ef4444"; },
+          });
         });
-        renderBarList("tp-dash-mileage", p.mileage, {
-          label: function (r) { return r.name || "#" + r.id; },
-          value: function (r) { return r.km; },
-          display: function (r) { return fmt(r.km) + " km"; },
-          color: function () { return "#3b82f6"; },
+        safe("mileage", function () {
+          renderBarList("tp-dash-mileage", p.mileage, {
+            label: function (r) { return r.name || "#" + r.id; },
+            value: function (r) { return r.km; },
+            display: function (r) { return fmt(r.km) + " km"; },
+            color: function () { return "#3b82f6"; },
+          });
         });
-        renderNotes(p.notifications);
-        renderTop(p.topSpeed || []);
-        renderActivity(p.activity || []);
+        safe("notes", function () { renderNotes(p.notifications); });
+        safe("top", function () { renderTop(p.topSpeed || []); });
+        safe("activity", function () { renderActivity(p.activity || []); });
 
         var te = $("[data-total-events]");
         if (te) te.textContent = fmt(p.totalEvents || 0) + " eventos";
