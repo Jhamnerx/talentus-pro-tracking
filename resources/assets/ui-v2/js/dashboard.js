@@ -15,6 +15,9 @@
 
   var DATA_URL = root.getAttribute("data-data-url");
   var POLL = parseInt(root.getAttribute("data-poll-interval"), 10) || 60000;
+  // "Hoy" en la ZONA HORARIA DEL USUARIO (calculado en el servidor con
+  // Formatter::time()->now()), no la del navegador.
+  var USER_TODAY = root.getAttribute("data-user-today") || null;
 
   var state = { range: "week", from: null, to: null };
   var charts = {}; // id → echarts instance
@@ -244,9 +247,11 @@
   var CAT_LABEL = {}; // key → label (para bycategory usamos el propio row)
 
   /* ----- Fetch + apply ----- */
+  // El front SIEMPRE envía from/to (fuente única de verdad); range es solo la
+  // etiqueta del preset para el resaltado. El backend consulta esas fechas.
   function buildUrl(scope) {
     var u = DATA_URL + (DATA_URL.indexOf("?") >= 0 ? "&" : "?") + "scope=" + scope + "&range=" + encodeURIComponent(state.range);
-    if (state.range === "custom" && state.from && state.to) {
+    if (state.from && state.to) {
       u += "&from=" + encodeURIComponent(state.from) + "&to=" + encodeURIComponent(state.to);
     }
     return u;
@@ -278,10 +283,19 @@
   function isoDate(d) {
     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
   }
-  // Calcula from/to del preset EN EL FRONTEND (misma lógica que resolveRange
-  // del backend) para reflejarlo al instante en los inputs De/A.
+  // Base "hoy" en la zona del usuario (inyectada por el servidor). Se
+  // construye como fecha LOCAL a medianoche para que la aritmética de días
+  // no dependa de la hora ni la zona del navegador.
+  function baseToday() {
+    if (USER_TODAY) {
+      var p = USER_TODAY.split("-");
+      return new Date(+p[0], +p[1] - 1, +p[2]);
+    }
+    return new Date();
+  }
+  // Calcula from/to del preset con la fecha del usuario (no la del navegador).
   function computeRange(preset) {
-    var now = new Date();
+    var now = baseToday();
     var from = new Date(now), to = new Date(now);
     if (preset === "today") {
       // from = to = hoy
@@ -359,8 +373,9 @@
       $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
       state.range = btn.getAttribute("data-range");
-      // Reflejar las fechas del preset al instante (sin esperar la respuesta)
+      // Calcula las fechas en el front, las refleja en De/A y las manda al back
       var r = computeRange(state.range);
+      state.from = r.from; state.to = r.to;
       setDateInput("tp-dash-from", r.from);
       setDateInput("tp-dash-to", r.to);
       load("period");
@@ -390,6 +405,7 @@
   // Pre-rellena las fechas del rango por defecto (Semana) al instante
   (function () {
     var r = computeRange(state.range);
+    state.from = r.from; state.to = r.to;
     setDateInput("tp-dash-from", r.from);
     setDateInput("tp-dash-to", r.to);
   })();

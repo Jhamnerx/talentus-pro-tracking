@@ -87,7 +87,24 @@ class DashboardController extends BaseController
     private function resolveRange(Request $request): array
     {
         $range = (string) $request->get('range', 'week');
-        $now   = time();
+        // Base "ahora" en la ZONA HORARIA DEL USUARIO (no la del servidor),
+        // igual que ReportsDailyCommand: Formatter::time()->now() ya viene
+        // desplazado a la tz del usuario.
+        $now = (int) \Formatter::time()->now() ?: time();
+
+        // Fuente única de verdad: si el front manda from/to (siempre lo hace,
+        // calculado ahí para los presets también), se consultan EXACTAMENTE
+        // esas fechas. El 'range' queda solo como etiqueta. Solo se recalcula
+        // aquí si no llegaran (compatibilidad / llamadas directas).
+        $reqFrom = strtotime((string) $request->get('from'));
+        $reqTo   = strtotime((string) $request->get('to'));
+        if ($reqFrom && $reqTo) {
+            $from = date('Y-m-d 00:00:00', $reqFrom);
+            $to   = date('Y-m-d 23:59:59', $reqTo);
+            $days = max(1, (int) ceil(($reqTo - $reqFrom) / 86400));
+
+            return [$range, $from, $to, $days];
+        }
 
         switch ($range) {
             case 'today':

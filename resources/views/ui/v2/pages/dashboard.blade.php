@@ -10,7 +10,8 @@
 @section('workspace-class', 'tp-workspace--scroll')
 
 @section('workspace')
-    <div class="tp-dash" id="tp-dash" data-data-url="{{ route('ui.v2.api.dashboard') }}" data-poll-interval="60000">
+    <div class="tp-dash" id="tp-dash" data-data-url="{{ route('ui.v2.api.dashboard') }}" data-poll-interval="60000"
+        data-user-today="{{ date('Y-m-d', \Formatter::time()->now()) }}">
 
         <header class="tp-dash__head">
             <div>
@@ -219,5 +220,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=5" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=6" defer></script>
 @endpush
