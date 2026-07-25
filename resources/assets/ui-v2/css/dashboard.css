@@ -119,12 +119,19 @@
 .tp-widget--span-12 {
   grid-column: span 12;
 }
+.tp-widget--span-8 {
+  grid-column: span 8;
+}
 
 @media (max-width: 1100px) {
   .tp-widget--span-6,
-  .tp-widget--span-4 {
+  .tp-widget--span-4,
+  .tp-widget--span-8 {
     grid-column: span 12;
   }
+}
+.tp-chart--donut {
+  height: 200px;
 }
 
 .tp-widget {
@@ -259,5 +266,275 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--fg-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Dashboard fusionado · toolbar de rango, conducción, bar-lists
+   ============================================================ */
+
+/* Toolbar de rango (Hoy/Ayer/Semana/Mes + custom) */
+.tp-dash__range {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tp-scope .tp-dash__range-btn {
+  appearance: none;
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  color: var(--fg-secondary);
+  border-radius: var(--r-pill, 999px);
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color .12s, background .12s, border-color .12s;
+}
+.tp-scope .tp-dash__range-btn:hover {
+  color: var(--fg-primary);
+  border-color: var(--border-strong);
+}
+.tp-scope .tp-dash__range-btn.is-active {
+  color: #fff;
+  background: var(--brand-500, #2e63d9);
+  border-color: var(--brand-500, #2e63d9);
+}
+.tp-dash__range-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--border-default);
+  margin: 0 2px;
+}
+.tp-scope .tp-input--sm {
+  height: 32px;
+  width: 140px;
+  font-size: 12.5px;
+}
+.tp-dash__meta {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin: -4px 0 4px;
+}
+
+/* Card de conducción */
+.tp-driving {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-template-areas: "score tiles" "trend trend";
+  gap: 16px;
+}
+.tp-driving__score {
+  grid-area: score;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-right: 1px solid var(--border-default);
+  padding-right: 12px;
+}
+.tp-eco {
+  width: 118px;
+  height: 118px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 6px solid var(--status-moving, #10b981);
+  background: color-mix(in srgb, var(--status-moving, #10b981) 8%, transparent);
+}
+.tp-eco[data-tone="warn"] {
+  border-color: #f59e0b;
+  background: color-mix(in srgb, #f59e0b 8%, transparent);
+}
+.tp-eco[data-tone="bad"] {
+  border-color: #ef4444;
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+}
+.tp-eco__value {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fg-primary);
+  font-variant-numeric: tabular-nums;
+}
+.tp-eco__label {
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  margin-top: 4px;
+}
+.tp-driving__risk {
+  text-align: center;
+}
+.tp-driving__risk-val {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ef4444;
+  font-variant-numeric: tabular-nums;
+}
+.tp-driving__risk-lbl {
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+.tp-driving__tiles {
+  grid-area: tiles;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-content: start;
+}
+.tp-behav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md, 10px);
+  position: relative;
+}
+.tp-behav__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  position: absolute;
+  top: 13px;
+  right: 13px;
+}
+.tp-behav__val {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--fg-primary);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.tp-behav__lbl {
+  font-size: 12px;
+  color: var(--fg-secondary);
+}
+.tp-driving__trend {
+  grid-area: trend;
+}
+.tp-widget__subhead {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  margin-bottom: 4px;
+}
+@media (max-width: 640px) {
+  .tp-driving {
+    grid-template-columns: 1fr;
+    grid-template-areas: "score" "tiles" "trend";
+  }
+  .tp-driving__score {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-default);
+    padding: 0 0 12px;
+    flex-direction: row;
+    justify-content: space-around;
+  }
+}
+
+/* Bar-list (categorías, top-risk, kilometraje) */
+.tp-barlist {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.tp-barlist__row {
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.tp-barlist__label {
+  font-size: 12.5px;
+  color: var(--fg-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-barlist__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+.tp-barlist__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  min-width: 3px;
+}
+.tp-barlist__val {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--fg-primary);
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: right;
+}
+
+/* Notificaciones */
+.tp-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.tp-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.15));
+}
+.tp-note:last-child {
+  border-bottom: 0;
+}
+.tp-note__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.tp-note__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tp-note__dev {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-note__msg {
+  font-size: 11.5px;
+  color: var(--fg-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-note__time {
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  flex: 0 0 auto;
   font-variant-numeric: tabular-nums;
 }

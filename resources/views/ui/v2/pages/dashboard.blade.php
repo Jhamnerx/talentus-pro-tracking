@@ -4,7 +4,7 @@
 @section('rail-active', 'dashboard')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=2">
 @endpush
 
 @section('workspace-class', 'tp-workspace--scroll')
@@ -15,20 +15,27 @@
         <header class="tp-dash__head">
             <div>
                 <h1 class="tp-h4 tp-mb-0">Command Center</h1>
-                <p class="tp-text-muted tp-mb-0">Vista ejecutiva de tu flota · KPIs, distribución y actividad.</p>
+                <p class="tp-text-muted tp-mb-0">Flota, conducción y alertas · fusión operativa.</p>
             </div>
-            <div class="tp-row" style="gap:8px;">
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-dash-refresh" title="Actualizar">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2">
+            {{-- Toolbar de rango (estilo Wialon: Hoy / Ayer / Semana / Mes) --}}
+            <div class="tp-dash__range" id="tp-dash-range">
+                <button type="button" class="tp-dash__range-btn" data-range="today">Hoy</button>
+                <button type="button" class="tp-dash__range-btn" data-range="yesterday">Ayer</button>
+                <button type="button" class="tp-dash__range-btn is-active" data-range="week">Semana</button>
+                <button type="button" class="tp-dash__range-btn" data-range="month">Mes</button>
+                <span class="tp-dash__range-sep"></span>
+                <input type="date" class="tp-input tp-input--sm" id="tp-dash-from" title="Desde">
+                <input type="date" class="tp-input tp-input--sm" id="tp-dash-to" title="Hasta">
+                <button type="button" class="tp-btn tp-btn--primary tp-btn--sm" id="tp-dash-apply">Aplicar</button>
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-dash-refresh" title="Actualizar">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 11-3-6.7L21 8" />
                         <path d="M21 3v5h-5" />
                     </svg>
-                    <span>Actualizar</span>
                 </button>
-                <span class="tp-text-muted tp-text-sm" id="tp-dash-fetched"></span>
             </div>
         </header>
+        <div class="tp-dash__meta"><span id="tp-dash-fetched"></span></div>
 
         {{-- KPI ROW --}}
         <section class="tp-dash__kpis" aria-label="Indicadores clave">
@@ -38,15 +45,9 @@
                     ['key' => 'moving', 'label' => 'En movimiento', 'icon' => 'live', 'tone' => 'success'],
                     ['key' => 'idle', 'label' => 'Inactivos', 'icon' => 'history', 'tone' => 'warning'],
                     ['key' => 'stopped', 'label' => 'Detenidos', 'icon' => 'zones', 'tone' => 'info'],
-                    ['key' => 'offline', 'label' => 'Offline', 'icon' => 'alerts', 'tone' => 'muted'],
+                    ['key' => 'offline', 'label' => 'Sin datos', 'icon' => 'alerts', 'tone' => 'muted'],
                     ['key' => 'avgSpeed', 'label' => 'Vel. promedio', 'icon' => 'reports', 'suffix' => ' km/h'],
-                    [
-                        'key' => 'utilization',
-                        'label' => 'Utilización',
-                        'icon' => 'sparkle',
-                        'tone' => 'brand',
-                        'suffix' => '%',
-                    ],
+                    ['key' => 'utilization', 'label' => 'Utilización', 'icon' => 'sparkle', 'tone' => 'brand', 'suffix' => '%'],
                 ];
             @endphp
             @foreach ($kpis as $k)
@@ -64,77 +65,137 @@
         {{-- WIDGETS GRID --}}
         <section class="tp-dash__grid">
 
-            <article class="tp-widget tp-widget--span-6" data-widget="distribution">
+            {{-- Fila 1 · donuts de estado (Wialon) --}}
+            <article class="tp-widget tp-widget--span-4" data-widget="health">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Distribución por estado</h3>
-                    <span class="tp-widget__hint">Tiempo real</span>
+                    <h3 class="tp-h6 tp-mb-0">Estado de dispositivos</h3>
+                    <span class="tp-widget__hint">En vivo</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-chart tp-chart--donut" id="tp-chart-health"></div></div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-4" data-widget="connection">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">Estado de conexión</h3>
+                    <span class="tp-widget__hint">En vivo</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-chart tp-chart--donut" id="tp-chart-connection"></div></div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-4" data-widget="movement">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">Estado de movimiento</h3>
+                    <span class="tp-widget__hint">En vivo</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-chart tp-chart--donut" id="tp-chart-movement"></div></div>
+            </article>
+
+            {{-- Fila 2 · Conducción (analítica propia) + Notificaciones --}}
+            <article class="tp-widget tp-widget--span-8" data-widget="driving">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">Conducción y comportamiento</h3>
+                    <span class="tp-widget__hint" id="tp-driving-range">—</span>
                 </header>
                 <div class="tp-widget__body">
-                    <div class="tp-chart" id="tp-chart-distribution" style="height:280px;"></div>
+                    <div class="tp-driving">
+                        <div class="tp-driving__score">
+                            <div class="tp-eco" id="tp-eco">
+                                <div class="tp-eco__value" data-eco-value>—</div>
+                                <div class="tp-eco__label">Índice de<br>conducción</div>
+                            </div>
+                            <div class="tp-driving__risk">
+                                <span class="tp-driving__risk-val" data-risk-events>—</span>
+                                <span class="tp-driving__risk-lbl">eventos de riesgo</span>
+                            </div>
+                        </div>
+                        <div class="tp-driving__tiles">
+                            <div class="tp-behav" data-behav="harsh_braking">
+                                <span class="tp-behav__dot" style="background:#ef4444"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">Frenados bruscos</span>
+                            </div>
+                            <div class="tp-behav" data-behav="harsh_acceleration">
+                                <span class="tp-behav__dot" style="background:#f97316"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">Aceleraciones</span>
+                            </div>
+                            <div class="tp-behav" data-behav="harsh_turning">
+                                <span class="tp-behav__dot" style="background:#eab308"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">Giros bruscos</span>
+                            </div>
+                            <div class="tp-behav" data-behav="overspeed">
+                                <span class="tp-behav__dot" style="background:#dc2626"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">Exceso de velocidad</span>
+                            </div>
+                        </div>
+                        <div class="tp-driving__trend">
+                            <div class="tp-widget__subhead">Tendencia de eventos de riesgo</div>
+                            <div class="tp-chart" id="tp-chart-trend" style="height:120px;"></div>
+                        </div>
+                    </div>
                 </div>
             </article>
 
-            <article class="tp-widget tp-widget--span-6" data-widget="activity">
+            <article class="tp-widget tp-widget--span-4" data-widget="notifications">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Actividad últimas 24h</h3>
-                    <span class="tp-widget__hint">Movimientos por hora</span>
+                    <h3 class="tp-h6 tp-mb-0">Últimas notificaciones</h3>
                 </header>
                 <div class="tp-widget__body">
-                    <div class="tp-chart" id="tp-chart-activity" style="height:280px;"></div>
+                    <ul class="tp-notes" id="tp-dash-notes">
+                        <li class="tp-text-muted tp-text-sm">Cargando…</li>
+                    </ul>
                 </div>
+            </article>
+
+            {{-- Fila 3 · Alertas por tipo + Top vehículos de riesgo --}}
+            <article class="tp-widget tp-widget--span-6" data-widget="bycategory">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">Alertas por tipo</h3>
+                    <span class="tp-widget__hint" data-total-events>—</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-bycategory"></div></div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-6" data-widget="toprisk">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">Top vehículos con eventos de riesgo</h3>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-toprisk"></div></div>
+            </article>
+
+            {{-- Fila 4 · Kilometraje + Top velocidad --}}
+            <article class="tp-widget tp-widget--span-6" data-widget="mileage">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">Unidades con mayor kilometraje</h3>
+                    <span class="tp-widget__hint">En el período</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-mileage"></div></div>
             </article>
 
             <article class="tp-widget tp-widget--span-6" data-widget="topspeed">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">Top 5 · velocidad actual</h3>
-                    <a href="{{ url('/ui/v2/live') }}" class="tp-link tp-text-sm">Ver mapa ?</a>
+                    <a href="{{ url('/ui/v2/live') }}" class="tp-link tp-text-sm">Ver mapa →</a>
                 </header>
                 <div class="tp-widget__body">
                     <table class="tp-table tp-table--sm" id="tp-dash-top-table">
                         <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Dispositivo</th>
-                                <th>Estado</th>
-                                <th class="tp-text-right">km/h</th>
-                            </tr>
+                            <tr><th>#</th><th>Dispositivo</th><th>Estado</th><th class="tp-text-right">km/h</th></tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td colspan="4" class="tp-text-muted tp-text-center">Cargando…</td>
-                            </tr>
-                        </tbody>
+                        <tbody><tr><td colspan="4" class="tp-text-muted tp-text-center">Cargando…</td></tr></tbody>
                     </table>
                 </div>
             </article>
 
-            <article class="tp-widget tp-widget--span-6" data-widget="health">
+            {{-- Fila 5 · Actividad 24h --}}
+            <article class="tp-widget tp-widget--span-12" data-widget="activity">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Salud operativa</h3>
-                    <span class="tp-widget__hint">Snapshot</span>
+                    <h3 class="tp-h6 tp-mb-0">Actividad últimas 24h</h3>
+                    <span class="tp-widget__hint">Movimientos por hora</span>
                 </header>
-                <div class="tp-widget__body">
-                    <div class="tp-health" id="tp-dash-health">
-                        <div class="tp-health__row">
-                            <span class="tp-health__label">Conectividad</span>
-                            <div class="tp-health__bar"><span class="tp-health__fill" data-health="connectivity"
-                                    style="width:0%"></span></div>
-                            <span class="tp-health__val" data-health-val="connectivity">—</span>
-                        </div>
-                        <div class="tp-health__row">
-                            <span class="tp-health__label">Utilización</span>
-                            <div class="tp-health__bar"><span class="tp-health__fill" data-health="utilization"
-                                    style="width:0%"></span></div>
-                            <span class="tp-health__val" data-health-val="utilization">—</span>
-                        </div>
-                        <div class="tp-health__row">
-                            <span class="tp-health__label">Activos / Total</span>
-                            <div class="tp-health__bar"><span class="tp-health__fill" data-health="active"
-                                    style="width:0%"></span></div>
-                            <span class="tp-health__val" data-health-val="active">—</span>
-                        </div>
-                    </div>
-                </div>
+                <div class="tp-widget__body"><div class="tp-chart" id="tp-chart-activity" style="height:240px;"></div></div>
             </article>
 
         </section>
@@ -143,5 +204,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=2" defer></script>
 @endpush

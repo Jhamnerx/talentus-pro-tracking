@@ -1,8 +1,11 @@
 /* =====================================================
-   TalentusPro · Dashboard · Phase 3
-   - Fetches /ui/v2/api/dashboard
-   - Renders KPIs, ECharts (pie + bar), top table, health bars
-   - Polls every 60s; reacts to theme changes
+   TalentusPro · Dashboard fusionado (flota + conducción + alertas)
+   - GET /ui/v2/api/dashboard?range=today|yesterday|week|month|custom
+   - Donuts de estado (dispositivos/conexión/movimiento) estilo Wialon
+   - Card de Conducción: índice + frenados/aceleraciones/giros/exceso +
+     tendencia de eventos de riesgo (desde la tabla events)
+   - Alertas por tipo, top vehículos de riesgo, kilometraje, notificaciones
+   - ECharts (svg) + reactividad de tema + polling
    ===================================================== */
 (function () {
   "use strict";
@@ -13,281 +16,298 @@
   var DATA_URL = root.getAttribute("data-data-url");
   var POLL = parseInt(root.getAttribute("data-poll-interval"), 10) || 60000;
 
-  var charts = {
-    distribution: null,
-    activity: null,
-  };
+  var state = { range: "week", from: null, to: null };
+  var charts = {}; // id → echarts instance
 
-  /* ----- helpers ----- */
-  function $(sel, ctx) {
-    return (ctx || document).querySelector(sel);
-  }
-  function $$(sel, ctx) {
-    return Array.prototype.slice.call((ctx || document).querySelectorAll(sel));
-  }
+  function $(s, c) { return (c || document).querySelector(s); }
+  function $$(s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); }
 
-  function statusGroup(status) {
-    if (
-      status === "online" ||
-      status === "move" ||
-      status === "excessive_speed"
-    )
-      return "moving";
-    if (status === "idle" || status === "ack" || status === "engine")
-      return "idle";
-    if (status === "stop" || status === "park") return "stopped";
-    return "offline";
-  }
-
-  function fmtNumber(n, suffix) {
+  function fmt(n, suffix) {
     if (n === null || n === undefined || isNaN(n)) return "—";
     return new Intl.NumberFormat().format(n) + (suffix || "");
   }
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function cssVar(name, fb) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name);
+    return (v && v.trim()) || fb;
+  }
+  function textColor() { return cssVar("--fg-secondary", "#888"); }
 
-  function relativeTime(iso) {
-    try {
-      var d = new Date(iso);
-      return d.toLocaleTimeString();
-    } catch (e) {
-      return "";
+  function statusGroup(status) {
+    if (status === "online" || status === "move" || status === "excessive_speed") return "moving";
+    if (status === "idle" || status === "ack" || status === "engine") return "idle";
+    if (status === "stop" || status === "park") return "stopped";
+    return "offline";
+  }
+  function chart(id) {
+    var el = document.getElementById(id);
+    if (!el || typeof echarts === "undefined") return null;
+    if (!charts[id]) charts[id] = echarts.init(el, null, { renderer: "svg" });
+    return charts[id];
+  }
+
+  /* ----- KPIs ----- */
+  function renderKpis(kpis) {
+    $$("[data-kpi]").forEach(function (el) {
+      var v = el.querySelector("[data-kpi-value]");
+      if (v) v.textContent = fmt(kpis[el.getAttribute("data-kpi")], el.getAttribute("data-suffix") || "");
+    });
+  }
+
+  /* ----- Donut genérico con total al centro ----- */
+  function renderDonut(id, items, total) {
+    var c = chart(id);
+    if (!c) return;
+    c.setOption({
+      tooltip: { trigger: "item", formatter: "{b}: <b>{c}</b> ({d}%)" },
+      legend: {
+        type: "scroll", orient: "vertical", right: 4, top: "center",
+        icon: "circle", itemWidth: 9, itemHeight: 9,
+        textStyle: { color: textColor(), fontSize: 11 },
+        formatter: function (name) {
+          var it = (items || []).filter(function (x) { return x.name === name; })[0];
+          return it ? name + "  " + it.value : name;
+        },
+      },
+      series: [{
+        type: "pie", radius: ["58%", "82%"], center: ["32%", "50%"],
+        avoidLabelOverlap: true,
+        itemStyle: { borderRadius: 3, borderColor: cssVar("--surface-raised", "#fff"), borderWidth: 2 },
+        label: {
+          show: true, position: "center",
+          formatter: String(total || 0), fontSize: 22, fontWeight: 700,
+          color: cssVar("--fg-primary", "#0f172a"),
+        },
+        emphasis: { label: { show: true } },
+        labelLine: { show: false },
+        data: (items || []).map(function (d) {
+          return { name: d.name, value: d.value, itemStyle: { color: d.color } };
+        }),
+      }],
+    });
+  }
+
+  /* ----- Conducción ----- */
+  function renderDriving(p) {
+    var d = p.driving || {};
+    $$("[data-behav]").forEach(function (el) {
+      var v = el.querySelector("[data-behav-val]");
+      if (v) v.textContent = fmt(d[el.getAttribute("data-behav")] || 0);
+    });
+    var eco = $("[data-eco-value]");
+    if (eco) eco.textContent = p.ecoScore != null ? p.ecoScore : "—";
+    var ecoBox = $("#tp-eco");
+    if (ecoBox) {
+      var s = p.ecoScore != null ? p.ecoScore : 0;
+      ecoBox.setAttribute("data-tone", s >= 80 ? "good" : s >= 55 ? "warn" : "bad");
+    }
+    var risk = $("[data-risk-events]");
+    if (risk) risk.textContent = fmt(p.riskEvents || 0);
+    var rng = $("#tp-driving-range");
+    if (rng) rng.textContent = (p.from || "") + " → " + (p.to || "");
+
+    // Tendencia
+    var c = chart("tp-chart-trend");
+    if (c) {
+      var col = textColor();
+      var pts = p.trend || [];
+      c.setOption({
+        grid: { left: 30, right: 10, top: 12, bottom: 20 },
+        tooltip: { trigger: "axis" },
+        xAxis: {
+          type: "category",
+          data: pts.map(function (x) { return x.date.slice(5); }),
+          axisLabel: { color: col, fontSize: 9, interval: Math.max(0, Math.floor(pts.length / 8)) },
+          axisLine: { lineStyle: { color: col, opacity: 0.3 } },
+        },
+        yAxis: {
+          type: "value", axisLabel: { color: col, fontSize: 9 },
+          splitLine: { lineStyle: { color: col, opacity: 0.1 } },
+        },
+        series: [{
+          type: "line", smooth: true, symbol: "none",
+          data: pts.map(function (x) { return x.count; }),
+          lineStyle: { color: "#ef4444", width: 2 },
+          areaStyle: { color: "rgba(239,68,68,0.12)" },
+        }],
+      });
     }
   }
 
-  function chartTextColor() {
-    var styles = getComputedStyle(document.documentElement);
-    return (
-      (styles.getPropertyValue("--fg-secondary") || "#888").trim() || "#888"
-    );
+  /* ----- Bar-list (categorías / top-risk / kilometraje) ----- */
+  function renderBarList(id, rows, opts) {
+    opts = opts || {};
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="tp-text-muted tp-text-sm" style="padding:8px 2px;">Sin datos en el período.</div>';
+      return;
+    }
+    var max = rows.reduce(function (m, r) { return Math.max(m, opts.value(r)); }, 0) || 1;
+    el.innerHTML = rows
+      .map(function (r) {
+        var val = opts.value(r);
+        var pct = Math.max(2, Math.round((val / max) * 100));
+        var color = opts.color ? opts.color(r) : "#3b82f6";
+        return (
+          '<div class="tp-barlist__row">' +
+          '<span class="tp-barlist__label" title="' + escapeHtml(opts.label(r)) + '">' + escapeHtml(opts.label(r)) + "</span>" +
+          '<span class="tp-barlist__track"><span class="tp-barlist__fill" style="width:' + pct + "%;background:" + color + '"></span></span>' +
+          '<span class="tp-barlist__val">' + escapeHtml(opts.display(r)) + "</span>" +
+          "</div>"
+        );
+      })
+      .join("");
   }
 
-  /* ----- KPI rendering ----- */
-  function renderKpis(kpis) {
-    $$("[data-kpi]").forEach(function (el) {
-      var key = el.getAttribute("data-kpi");
-      var suf = el.getAttribute("data-suffix") || "";
-      var valEl = el.querySelector("[data-kpi-value]");
-      if (!valEl) return;
-      valEl.textContent = fmtNumber(kpis[key], suf);
-    });
+  /* ----- Notificaciones ----- */
+  function renderNotes(rows) {
+    var el = document.getElementById("tp-dash-notes");
+    if (!el) return;
+    if (!rows || !rows.length) {
+      el.innerHTML = '<li class="tp-text-muted tp-text-sm">No hay información en el período.</li>';
+      return;
+    }
+    el.innerHTML = rows
+      .map(function (r) {
+        var t = r.time ? r.time.slice(5, 16) : "";
+        return (
+          '<li class="tp-note">' +
+          '<span class="tp-note__dot" style="background:' + (r.color || "#cbd5e1") + '"></span>' +
+          '<span class="tp-note__body"><span class="tp-note__dev">' + escapeHtml(r.device) + "</span>" +
+          '<span class="tp-note__msg">' + escapeHtml(r.message) + "</span></span>" +
+          '<span class="tp-note__time">' + escapeHtml(t) + "</span>" +
+          "</li>"
+        );
+      })
+      .join("");
   }
 
-  /* ----- Charts ----- */
-  function renderDistribution(distribution) {
-    var el = document.getElementById("tp-chart-distribution");
-    if (!el || typeof echarts === "undefined") return;
-    if (!charts.distribution)
-      charts.distribution = echarts.init(el, null, { renderer: "svg" });
-
-    charts.distribution.setOption({
-      tooltip: { trigger: "item", formatter: "{b}: <b>{c}</b> ({d}%)" },
-      legend: {
-        bottom: 0,
-        icon: "circle",
-        textStyle: { color: chartTextColor(), fontSize: 12 },
-      },
-      series: [
-        {
-          type: "pie",
-          radius: ["55%", "78%"],
-          avoidLabelOverlap: true,
-          itemStyle: {
-            borderRadius: 4,
-            borderColor: "transparent",
-            borderWidth: 2,
-          },
-          label: { show: false },
-          data: distribution.map(function (d) {
-            return {
-              name: d.name,
-              value: d.value,
-              itemStyle: { color: d.color },
-            };
-          }),
-        },
-      ],
-    });
-  }
-
-  function renderActivity(activity) {
-    var el = document.getElementById("tp-chart-activity");
-    if (!el || typeof echarts === "undefined") return;
-    if (!charts.activity)
-      charts.activity = echarts.init(el, null, { renderer: "svg" });
-
-    var color = chartTextColor();
-    charts.activity.setOption({
-      grid: { left: 32, right: 16, top: 24, bottom: 28 },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
-      xAxis: {
-        type: "category",
-        data: activity.map(function (a) {
-          return a.hour;
-        }),
-        axisLabel: { color: color, fontSize: 10, interval: 2 },
-        axisLine: { lineStyle: { color: color, opacity: 0.3 } },
-      },
-      yAxis: {
-        type: "value",
-        axisLabel: { color: color, fontSize: 10 },
-        splitLine: { lineStyle: { color: color, opacity: 0.1 } },
-      },
-      series: [
-        {
-          type: "bar",
-          data: activity.map(function (a) {
-            return a.count;
-          }),
-          itemStyle: { color: "#3b82f6", borderRadius: [3, 3, 0, 0] },
-          barMaxWidth: 18,
-        },
-      ],
-    });
-  }
-
-  /* ----- Top speed table ----- */
+  /* ----- Top velocidad + Actividad (heredados) ----- */
   function renderTop(top) {
     var tbody = $("#tp-dash-top-table tbody");
     if (!tbody) return;
     if (!top || !top.length) {
-      tbody.innerHTML =
-        '<tr><td colspan="4" class="tp-text-muted tp-text-center">Sin datos.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="tp-text-muted tp-text-center">Sin datos.</td></tr>';
       return;
     }
-    var labels = {
-      moving: "Moviendo",
-      idle: "Inactivo",
-      stopped: "Detenido",
-      offline: "Offline",
-    };
-    var rows = top
+    var labels = { moving: "Moviendo", idle: "Inactivo", stopped: "Detenido", offline: "Sin datos" };
+    tbody.innerHTML = top
       .map(function (d, i) {
-        var grp = statusGroup(d.status);
+        var g = statusGroup(d.status);
         return (
-          "<tr>" +
-          "<td>" +
-          (i + 1) +
-          "</td>" +
-          "<td>" +
-          escapeHtml(d.name || "#" + d.id) +
-          "</td>" +
-          '<td><span class="tp-pill tp-pill--' +
-          grp +
-          '">' +
-          labels[grp] +
-          "</span></td>" +
-          '<td class="tp-text-right">' +
-          (d.speed != null ? Number(d.speed).toFixed(1) : "—") +
-          "</td>" +
-          "</tr>"
+          "<tr><td>" + (i + 1) + "</td><td>" + escapeHtml(d.name || "#" + d.id) + "</td>" +
+          '<td><span class="tp-pill tp-pill--' + g + '">' + labels[g] + "</span></td>" +
+          '<td class="tp-text-right">' + (d.speed != null ? Number(d.speed).toFixed(1) : "—") + "</td></tr>"
         );
       })
       .join("");
-    tbody.innerHTML = rows;
   }
-
-  function escapeHtml(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      }[c];
+  function renderActivity(activity) {
+    var c = chart("tp-chart-activity");
+    if (!c) return;
+    var col = textColor();
+    c.setOption({
+      grid: { left: 32, right: 16, top: 16, bottom: 28 },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      xAxis: {
+        type: "category", data: (activity || []).map(function (a) { return a.hour; }),
+        axisLabel: { color: col, fontSize: 10, interval: 2 },
+        axisLine: { lineStyle: { color: col, opacity: 0.3 } },
+      },
+      yAxis: { type: "value", axisLabel: { color: col, fontSize: 10 }, splitLine: { lineStyle: { color: col, opacity: 0.1 } } },
+      series: [{ type: "bar", data: (activity || []).map(function (a) { return a.count; }), itemStyle: { color: "#3b82f6", borderRadius: [3, 3, 0, 0] }, barMaxWidth: 18 }],
     });
   }
 
-  /* ----- Health bars ----- */
-  function renderHealth(kpis) {
-    var total = kpis.total || 0;
-    var connectivity =
-      total > 0 ? Math.round(((total - kpis.offline) / total) * 100) : 0;
-    var utilization = kpis.utilization || 0;
-    var active =
-      total > 0 ? Math.round(((kpis.moving + kpis.idle) / total) * 100) : 0;
-
-    var values = {
-      connectivity: connectivity,
-      utilization: utilization,
-      active: active,
-    };
-    Object.keys(values).forEach(function (k) {
-      var fill = document.querySelector('[data-health="' + k + '"]');
-      var val = document.querySelector('[data-health-val="' + k + '"]');
-      if (fill) fill.style.width = values[k] + "%";
-      if (val) val.textContent = values[k] + "%";
-    });
-  }
+  var CAT_LABEL = {}; // key → label (para bycategory usamos el propio row)
 
   /* ----- Fetch + apply ----- */
-  function load() {
-    return fetch(DATA_URL, {
-      credentials: "same-origin",
-      headers: { Accept: "application/json" },
-    })
-      .then(function (r) {
-        return r.json();
-      })
-      .then(function (payload) {
-        if (!payload || !payload.ok) return;
-        renderKpis(payload.kpis || {});
-        renderDistribution(payload.distribution || []);
-        renderActivity(payload.activity || []);
-        renderTop(payload.topSpeed || []);
-        renderHealth(payload.kpis || {});
-        var fetched = $("#tp-dash-fetched");
-        if (fetched)
-          fetched.textContent =
-            "Actualizado · " + relativeTime(payload.fetchedAt);
-      })
-      .catch(function (err) {
-        console.warn("[dashboard] load failed", err);
-      });
+  function buildUrl() {
+    var u = DATA_URL + (DATA_URL.indexOf("?") >= 0 ? "&" : "?") + "range=" + encodeURIComponent(state.range);
+    if (state.range === "custom" && state.from && state.to) {
+      u += "&from=" + encodeURIComponent(state.from) + "&to=" + encodeURIComponent(state.to);
+    }
+    return u;
   }
 
-  /* ----- Theme reactivity ----- */
-  new MutationObserver(function () {
-    Object.values(charts).forEach(function (c) {
-      if (c) c.resize();
-    });
-    // Re-apply text colors by re-running set on existing options
-    if (charts.distribution)
-      charts.distribution.setOption({
-        legend: { textStyle: { color: chartTextColor() } },
-      });
-    if (charts.activity) {
-      var col = chartTextColor();
-      charts.activity.setOption({
-        xAxis: {
-          axisLabel: { color: col },
-          axisLine: { lineStyle: { color: col, opacity: 0.3 } },
-        },
-        yAxis: {
-          axisLabel: { color: col },
-          splitLine: { lineStyle: { color: col, opacity: 0.1 } },
-        },
-      });
-    }
-  }).observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["data-theme"],
-  });
+  function load() {
+    return fetch(buildUrl(), { credentials: "same-origin", headers: { Accept: "application/json" } })
+      .then(function (r) { return r.json(); })
+      .then(function (p) {
+        if (!p || !p.ok) return;
+        renderKpis(p.kpis || {});
+        renderDonut("tp-chart-health", (p.health || {}).items, (p.health || {}).total);
+        renderDonut("tp-chart-connection", (p.connection || {}).items, (p.connection || {}).total);
+        renderDonut("tp-chart-movement", p.distribution, (p.kpis || {}).total);
+        renderDriving(p);
+        renderBarList("tp-dash-bycategory", p.byCategory, {
+          label: function (r) { return r.label; },
+          value: function (r) { return r.count; },
+          display: function (r) { return fmt(r.count); },
+          color: function (r) { return r.color; },
+        });
+        renderBarList("tp-dash-toprisk", p.topRisk, {
+          label: function (r) { return r.name || "#" + r.id; },
+          value: function (r) { return r.count; },
+          display: function (r) { return fmt(r.count); },
+          color: function () { return "#ef4444"; },
+        });
+        renderBarList("tp-dash-mileage", p.mileage, {
+          label: function (r) { return r.name || "#" + r.id; },
+          value: function (r) { return r.km; },
+          display: function (r) { return fmt(r.km) + " km"; },
+          color: function () { return "#3b82f6"; },
+        });
+        renderNotes(p.notifications);
+        renderTop(p.topSpeed || []);
+        renderActivity(p.activity || []);
 
-  /* ----- Resize ----- */
-  window.addEventListener("resize", function () {
-    Object.values(charts).forEach(function (c) {
-      if (c) c.resize();
-    });
-  });
+        var te = $("[data-total-events]");
+        if (te) te.textContent = fmt(p.totalEvents || 0) + " eventos";
+        var fetched = $("#tp-dash-fetched");
+        if (fetched) {
+          fetched.textContent = "Rango " + (p.from || "") + " → " + (p.to || "") + " · actualizado " + new Date(p.fetchedAt).toLocaleTimeString();
+        }
+      })
+      .catch(function (err) { console.warn("[dashboard] load failed", err); });
+  }
 
-  /* ----- Refresh button ----- */
-  var refreshBtn = $("#tp-dash-refresh");
-  if (refreshBtn)
-    refreshBtn.addEventListener("click", function () {
+  /* ----- Toolbar de rango ----- */
+  $$("#tp-dash-range [data-range]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });
+      btn.classList.add("is-active");
+      state.range = btn.getAttribute("data-range");
       load();
     });
+  });
+  var applyBtn = $("#tp-dash-apply");
+  if (applyBtn)
+    applyBtn.addEventListener("click", function () {
+      var f = $("#tp-dash-from").value, t = $("#tp-dash-to").value;
+      if (!f || !t) return;
+      state.range = "custom"; state.from = f; state.to = t;
+      $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });
+      load();
+    });
+  var refreshBtn = $("#tp-dash-refresh");
+  if (refreshBtn) refreshBtn.addEventListener("click", load);
 
-  /* ----- Boot + poll ----- */
+  /* ----- Tema / resize ----- */
+  new MutationObserver(function () {
+    Object.keys(charts).forEach(function (k) { if (charts[k]) charts[k].resize(); });
+    load(); // re-render con colores del nuevo tema
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  window.addEventListener("resize", function () {
+    Object.keys(charts).forEach(function (k) { if (charts[k]) charts[k].resize(); });
+  });
+
   load();
   setInterval(load, POLL);
 })();
