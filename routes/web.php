@@ -1128,6 +1128,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('sharing',      ['as' => 'sharing',      'uses' => 'Ui\V2\SharingController@page']);
     Route::get('drivers',      ['as' => 'drivers',      'uses' => 'Ui\V2\DriversController@page']);
     Route::get('tasks',        ['as' => 'tasks',        'uses' => 'Ui\V2\TasksController@page']);
+    Route::get('call-actions', ['as' => 'call_actions', 'uses' => 'Ui\V2\CallActionsController@page']);
+    Route::get('chat',         ['as' => 'chat',         'uses' => 'Ui\V2\ChatController@page']);
     Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
@@ -1264,6 +1266,21 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('account/widgets',   ['as' => 'api.account.widgets',  'uses' => 'Ui\V2\AccountController@updateWidgets']);
         Route::post('account/dashboard', ['as' => 'api.account.dashboard','uses' => 'Ui\V2\AccountController@updateDashboard']);
         Route::post('account/map',       ['as' => 'api.account.map',      'uses' => 'Ui\V2\AccountController@updateMap']);
+
+        // Chat con dispositivos (JSON sobre Chat/ChatService legacy)
+        Route::get('chat/conversations', ['as' => 'api.chat.conversations', 'uses' => 'Ui\V2\ChatController@conversations']);
+        Route::get('chat/unread',        ['as' => 'api.chat.unread',        'uses' => 'Ui\V2\ChatController@unread']);
+        Route::get('chat/open/{deviceId}', ['as' => 'api.chat.open',        'uses' => 'Ui\V2\ChatController@open'])->where('deviceId', '[0-9]+');
+        Route::get('chat/{chatId}/messages', ['as' => 'api.chat.messages',  'uses' => 'Ui\V2\ChatController@messages'])->where('chatId', '[0-9]+');
+        Route::post('chat/{chatId}/send',  ['as' => 'api.chat.send',        'uses' => 'Ui\V2\ChatController@send'])->where('chatId', '[0-9]+');
+
+        // Acciones de llamada (CRUD sobre CallAction legacy)
+        Route::get('call-actions',         ['as' => 'api.call_actions',         'uses' => 'Ui\V2\CallActionsController@data']);
+        Route::get('call-actions/meta',    ['as' => 'api.call_actions.meta',    'uses' => 'Ui\V2\CallActionsController@meta']);
+        Route::get('call-actions/events',  ['as' => 'api.call_actions.events',  'uses' => 'Ui\V2\CallActionsController@events']);
+        Route::post('call-actions',        ['as' => 'api.call_actions.store',   'uses' => 'Ui\V2\CallActionsController@store']);
+        Route::put('call-actions/{id}',    ['as' => 'api.call_actions.update',  'uses' => 'Ui\V2\CallActionsController@update'])->where('id', '[0-9]+');
+        Route::delete('call-actions/{id}', ['as' => 'api.call_actions.destroy', 'uses' => 'Ui\V2\CallActionsController@destroy'])->where('id', '[0-9]+');
 
         // Tipos de vehículo (tab del modal de cuenta)
         Route::get('vehicle-types',         ['as' => 'api.vehicle_types',         'uses' => 'Ui\V2\VehicleTypesController@data']);
