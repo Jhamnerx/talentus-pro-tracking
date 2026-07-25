@@ -244,8 +244,8 @@
   var CAT_LABEL = {}; // key → label (para bycategory usamos el propio row)
 
   /* ----- Fetch + apply ----- */
-  function buildUrl() {
-    var u = DATA_URL + (DATA_URL.indexOf("?") >= 0 ? "&" : "?") + "range=" + encodeURIComponent(state.range);
+  function buildUrl(scope) {
+    var u = DATA_URL + (DATA_URL.indexOf("?") >= 0 ? "&" : "?") + "scope=" + scope + "&range=" + encodeURIComponent(state.range);
     if (state.range === "custom" && state.from && state.to) {
       u += "&from=" + encodeURIComponent(state.from) + "&to=" + encodeURIComponent(state.to);
     }
@@ -261,61 +261,70 @@
     }
   }
 
-  function load() {
-    return fetch(buildUrl(), { credentials: "same-origin", headers: { Accept: "application/json" } })
+  function setBusy(on) {
+    root.classList.toggle("is-loading", !!on);
+    $$("#tp-dash-range [data-range], #tp-dash-apply").forEach(function (b) { b.disabled = !!on; });
+  }
+
+  // scope: "all" (boot) · "period" (cambio de rango, rápido) · "live" (polling)
+  function load(scope) {
+    scope = scope || "all";
+    var showBusy = scope !== "live";
+    if (showBusy) setBusy(true);
+    return fetch(buildUrl(scope), { credentials: "same-origin", headers: { Accept: "application/json" } })
       .then(function (r) { return r.json(); })
       .then(function (p) {
         if (!p || !p.ok) return;
-        safe("kpis", function () { renderKpis(p.kpis || {}); });
-        safe("health", function () { renderDonut("tp-chart-health", "tp-legend-health", (p.health || {}).items, (p.health || {}).total); });
-        safe("connection", function () { renderDonut("tp-chart-connection", "tp-legend-connection", (p.connection || {}).items, (p.connection || {}).total); });
-        safe("movement", function () { renderDonut("tp-chart-movement", "tp-legend-movement", p.distribution, (p.kpis || {}).total); });
-        safe("driving", function () { renderDriving(p); });
-        safe("bycategory", function () {
-          renderBarList("tp-dash-bycategory", p.byCategory, {
-            label: function (r) { return r.label; },
-            value: function (r) { return r.count; },
-            display: function (r) { return fmt(r.count); },
-            color: function (r) { return r.color; },
-          });
-        });
-        safe("toprisk", function () {
-          renderBarList("tp-dash-toprisk", p.topRisk, {
-            label: function (r) { return r.name || "#" + r.id; },
-            value: function (r) { return r.count; },
-            display: function (r) { return fmt(r.count); },
-            color: function () { return "#ef4444"; },
-          });
-        });
-        safe("mileage", function () {
-          renderBarList("tp-dash-mileage", p.mileage, {
-            label: function (r) { return r.name || "#" + r.id; },
-            value: function (r) { return r.km; },
-            display: function (r) { return fmt(r.km) + " km"; },
-            color: function () { return "#3b82f6"; },
-          });
-        });
-        safe("notes", function () { renderNotes(p.notifications); });
-        safe("top", function () { renderTop(p.topSpeed || []); });
-        safe("activity", function () { renderActivity(p.activity || []); });
+        // Solo se renderizan las secciones presentes en el payload (según el
+        // scope), para no borrar los cards que no vinieron en esta respuesta.
+        if (p.kpis) safe("kpis", function () { renderKpis(p.kpis); });
+        if (p.health) safe("health", function () { renderDonut("tp-chart-health", "tp-legend-health", p.health.items, p.health.total); });
+        if (p.connection) safe("connection", function () { renderDonut("tp-chart-connection", "tp-legend-connection", p.connection.items, p.connection.total); });
+        if (p.distribution) safe("movement", function () { renderDonut("tp-chart-movement", "tp-legend-movement", p.distribution, (p.kpis || {}).total); });
+        if (p.topSpeed) safe("top", function () { renderTop(p.topSpeed); });
+        if (p.activity) safe("activity", function () { renderActivity(p.activity); });
 
-        var te = $("[data-total-events]");
-        if (te) te.textContent = fmt(p.totalEvents || 0) + " eventos";
+        if (p.driving) safe("driving", function () { renderDriving(p); });
+        if (p.byCategory) safe("bycategory", function () {
+          renderBarList("tp-dash-bycategory", p.byCategory, {
+            label: function (r) { return r.label; }, value: function (r) { return r.count; },
+            display: function (r) { return fmt(r.count); }, color: function (r) { return r.color; },
+          });
+        });
+        if (p.topRisk) safe("toprisk", function () {
+          renderBarList("tp-dash-toprisk", p.topRisk, {
+            label: function (r) { return r.name || "#" + r.id; }, value: function (r) { return r.count; },
+            display: function (r) { return fmt(r.count); }, color: function () { return "#ef4444"; },
+          });
+        });
+        if (p.mileage) safe("mileage", function () {
+          renderBarList("tp-dash-mileage", p.mileage, {
+            label: function (r) { return r.name || "#" + r.id; }, value: function (r) { return r.km; },
+            display: function (r) { return fmt(r.km) + " km"; }, color: function () { return "#3b82f6"; },
+          });
+        });
+        if ("notifications" in p) safe("notes", function () { renderNotes(p.notifications); });
+
+        if ("totalEvents" in p) {
+          var te = $("[data-total-events]");
+          if (te) te.textContent = fmt(p.totalEvents || 0) + " eventos";
+        }
         var fetched = $("#tp-dash-fetched");
-        if (fetched) {
-          fetched.textContent = "Rango " + (p.from || "") + " → " + (p.to || "") + " · actualizado " + new Date(p.fetchedAt).toLocaleTimeString();
+        if (fetched && p.from) {
+          fetched.textContent = "Rango " + p.from + " → " + p.to + " · actualizado " + new Date(p.fetchedAt).toLocaleTimeString();
         }
       })
-      .catch(function (err) { console.warn("[dashboard] load failed", err); });
+      .catch(function (err) { console.warn("[dashboard] load failed", err); })
+      .then(function () { if (showBusy) setBusy(false); });
   }
 
-  /* ----- Toolbar de rango ----- */
+  /* ----- Toolbar de rango (solo recarga la data de PERÍODO → rápido) ----- */
   $$("#tp-dash-range [data-range]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
       state.range = btn.getAttribute("data-range");
-      load();
+      load("period");
     });
   });
   var applyBtn = $("#tp-dash-apply");
@@ -325,21 +334,21 @@
       if (!f || !t) return;
       state.range = "custom"; state.from = f; state.to = t;
       $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });
-      load();
+      load("period");
     });
   var refreshBtn = $("#tp-dash-refresh");
-  if (refreshBtn) refreshBtn.addEventListener("click", load);
+  if (refreshBtn) refreshBtn.addEventListener("click", function () { load("all"); });
 
   /* ----- Tema / resize ----- */
   new MutationObserver(function () {
     Object.keys(charts).forEach(function (k) { if (charts[k]) charts[k].resize(); });
-    load(); // re-render con colores del nuevo tema
   }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
   window.addEventListener("resize", function () {
     Object.keys(charts).forEach(function (k) { if (charts[k]) charts[k].resize(); });
   });
 
-  load();
-  setInterval(load, POLL);
+  load("all");
+  // Polling: solo refresca la data EN VIVO (donuts/KPIs), el rango se mantiene.
+  setInterval(function () { load("live"); }, POLL);
 })();

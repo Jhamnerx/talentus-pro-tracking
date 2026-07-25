@@ -56,20 +56,31 @@ class DashboardController extends BaseController
             return response()->json(['ok' => false], 403);
         }
 
-        [$range, $from, $to, $days] = $this->resolveRange($request);
+        // scope=all|live|period. Los cards "en vivo" (KPIs + donuts + top
+        // velocidad + actividad) recorren TODA la flota (~1400 devices ≈ 850ms)
+        // y NO dependen del rango; se piden solo en el boot y el polling. Al
+        // cambiar de rango se pide solo scope=period (queries de events +
+        // kilometraje, ~250ms) → los filtros responden rápido.
+        $scope = (string) $request->get('scope', 'all');
+        $out   = ['ok' => true];
 
-        $fleet    = $this->fleetKpis();
-        $driving  = $this->drivingAnalytics($from, $days);
-        $mileage  = $this->mileageTop($from, $to);
-        $notes    = $this->latestNotifications($from);
+        if ($scope === 'all' || $scope === 'live') {
+            $out = array_merge($out, $this->fleetKpis());
+        }
 
-        return response()->json(array_merge(
-            ['ok' => true, 'range' => $range, 'from' => substr($from, 0, 10), 'to' => substr($to, 0, 10)],
-            $fleet,
-            $driving,
-            ['mileage' => $mileage, 'notifications' => $notes],
-            ['fetchedAt' => date('c')],
-        ));
+        if ($scope === 'all' || $scope === 'period') {
+            [$range, $from, $to, $days] = $this->resolveRange($request);
+            $out = array_merge(
+                $out,
+                ['range' => $range, 'from' => substr($from, 0, 10), 'to' => substr($to, 0, 10)],
+                $this->drivingAnalytics($from, $days),
+                ['mileage' => $this->mileageTop($from, $to), 'notifications' => $this->latestNotifications($from)],
+            );
+        }
+
+        $out['fetchedAt'] = date('c');
+
+        return response()->json($out);
     }
 
     /** Presets tipo Wialon (hoy/ayer/semana/mes) o rango custom from/to. */

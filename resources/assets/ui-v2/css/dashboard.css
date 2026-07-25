@@ -623,3 +623,25 @@
 .tp-widget:hover {
   box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06));
 }
+
+/* Estado de carga al cambiar de rango (feedback inmediato) */
+.tp-scope .tp-dash__range-btn:disabled,
+.tp-scope #tp-dash-apply:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+.tp-dash.is-loading #tp-dash-refresh svg {
+  animation: tp-dash-spin 0.7s linear infinite;
+}
+@keyframes tp-dash-spin {
+  to { transform: rotate(360deg); }
+}
+/* Atenúa suavemente los cards de período mientras carga el nuevo rango */
+.tp-dash.is-loading [data-widget="driving"],
+.tp-dash.is-loading [data-widget="bycategory"],
+.tp-dash.is-loading [data-widget="toprisk"],
+.tp-dash.is-loading [data-widget="mileage"],
+.tp-dash.is-loading [data-widget="notifications"] {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
