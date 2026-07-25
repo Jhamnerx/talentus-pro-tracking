@@ -961,13 +961,59 @@ class DevicesController extends BaseController
 
         $data = ['device' => $device, 'active' => $active];
 
-        if ($has('location')) {
+        // Dirección: geocode compartido por los widgets Ubicación y Objeto
+        // (evita pedir la dirección dos veces al mismo proveedor).
+        $address = null;
+        if (($has('location') || $has('device')) && $device->lat && $device->lng) {
             try {
                 $loc = GeoLocation::byCoordinates($device->lat, $device->lng);
-                $data['location'] = $loc ? $loc->toArray() : null;
+                $address = $loc ? $loc->toArray() : null;
             } catch (\Throwable $e) {
-                $data['location'] = null;
+                $address = null;
             }
+        }
+
+        if ($has('location')) {
+            $data['location'] = $address;
+        }
+
+        // Objeto: ficha con datos básicos del vehículo (paridad Widgets/device)
+        if ($has('device')) {
+            $data['device_info'] = [
+                'status'      => $device->getStatus(),
+                'status_text' => trans('front.' . $device->getStatus()),
+                'address'     => $address['address'] ?? null,
+                'time'        => $device->time ? \Formatter::time()->format($device->time) : null,
+                'stop'        => $device->stop_duration, // accessor ya formatea (human)
+                'imei'        => $device->imei,
+                'sim'         => $device->sim_number,
+                'is_admin'    => (bool) $this->user->isAdmin(),
+                'driver'      => $device->driver->name ?? null,
+            ];
+        }
+
+        // Combustible: valor actual de los sensores de tipo fuel_tank
+        if ($has('fuel_graph')) {
+            $fuel = [];
+            $traccar = $device->traccar;
+            foreach ($device->getSensorsByType('fuel_tank') as $sensor) {
+                $val = '-';
+                try {
+                    if ($traccar) {
+                        $val = $sensor->getValueCurrent($traccar)->getFormatted();
+                    }
+                } catch (\Throwable $e) {
+                    $val = '-';
+                }
+                $fuel[] = ['name' => $sensor->formatName(), 'value' => $val];
+            }
+            $data['fuel'] = $fuel;
+        }
+
+        // Comando GPRS: solo se necesita el flag; el card abre el modal de
+        // envío de comando (tp-commands) para este device.
+        if ($has('gprs_command') && $this->user->perm('send_command', 'view')) {
+            $data['gprs_command'] = true;
         }
 
         if ($has('sensors')) {

@@ -1,15 +1,34 @@
 {{--
     UI v2 · Device widgets (Live)
     Renderizado por Ui\V2\DevicesController::widgets(). Devuelve DOS grupos:
-      .tp-dw--side   → drawer derecho (ubicación, sensores, imagen)
+      .tp-dw--side   → drawer derecho (objeto, ubicación, sensores, imagen)
       .tp-dw--bottom → barra inferior de cards (servicios, eventos, vista de
-                       calle, cámara, conductor, video en vivo)
+                       calle, cámara, conductor, combustible, comando GPRS,
+                       video en vivo)
     live-ops.js separa cada grupo y lo coloca en su contenedor. Cada bloque
     solo aparece si el widget está activo en la config del usuario.
 --}}
 
 {{-- ════════ GRUPO LATERAL (drawer) ════════ --}}
 <div class="tp-dw tp-dw--side">
+
+    {{-- Objeto (ficha básica del vehículo) --}}
+    @isset($device_info)
+        <section class="tp-card tp-card--flat tp-mb-4">
+            <h4 class="tp-h6 tp-mb-3">Objeto</h4>
+            <dl class="tp-defs">
+                <dt>Estado</dt><dd>{{ $device_info['status_text'] ?? '—' }}</dd>
+                <dt>Dirección</dt><dd>{{ $device_info['address'] ?? '—' }}</dd>
+                <dt>Hora</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
+                <dt>Duración de parada</dt><dd>{{ $device_info['stop'] ?? '—' }}</dd>
+                @if (!empty($device_info['is_admin']))
+                    <dt>IMEI</dt><dd>{{ $device_info['imei'] ?? '—' }}</dd>
+                    <dt>SIM</dt><dd>{{ $device_info['sim'] ?? '—' }}</dd>
+                @endif
+                <dt>Conductor</dt><dd>{{ $device_info['driver'] ?? '—' }}</dd>
+            </dl>
+        </section>
+    @endisset
 
     {{-- Ubicación --}}
     @isset($location)
@@ -229,6 +248,60 @@
                 @else
                     <p class="tp-text-xs tp-text-muted tp-mb-0">Sin conductor asignado.</p>
                 @endif
+            </div>
+        </section>
+    @endisset
+
+    {{-- Combustible (valor actual de sensores fuel_tank) --}}
+    @isset($fuel)
+        <section class="tp-card tp-card--flat">
+            <h4 class="tp-h6 tp-dw__card-head">
+                <span class="tp-dw__card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 22h12V4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v18Z" />
+                        <path d="M15 8h2a2 2 0 0 1 2 2v6a2 2 0 0 0 2 2 2 2 0 0 0 2-2V8l-3-3" />
+                        <path d="M7 7h4" />
+                    </svg>
+                    <span>{{ trans('front.fuel') }}</span>
+                </span>
+            </h4>
+            <div class="tp-dw__card-body">
+                @if (count($fuel))
+                    <dl class="tp-defs">
+                        @foreach ($fuel as $f)
+                            <dt>{{ $f['name'] }}</dt><dd>{{ $f['value'] }}</dd>
+                        @endforeach
+                    </dl>
+                @else
+                    <p class="tp-text-xs tp-text-muted tp-mb-0">Sin sensores de combustible.</p>
+                @endif
+            </div>
+        </section>
+    @endisset
+
+    {{-- Comando GPRS (abre el modal de envío para este vehículo) --}}
+    @isset($gprs_command)
+        <section class="tp-card tp-card--flat">
+            <h4 class="tp-h6 tp-dw__card-head">
+                <span class="tp-dw__card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m22 2-7 20-4-9-9-4Z" />
+                        <path d="M22 2 11 13" />
+                    </svg>
+                    <span>{{ trans('front.gprs_command') }}</span>
+                </span>
+            </h4>
+            <div class="tp-dw__card-body">
+                <button type="button" class="tp-btn tp-btn--sm tp-full tp-dw__add" data-tp-commands
+                    data-device-id="{{ $device->id }}">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m22 2-7 20-4-9-9-4Z" />
+                    </svg>
+                    {{ trans('front.send_command') }}
+                </button>
             </div>
         </section>
     @endisset
