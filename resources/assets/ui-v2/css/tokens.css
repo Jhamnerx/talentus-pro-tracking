@@ -281,6 +281,12 @@
 
   /* Map */
   --map-bg: #0a0e18;
+
+  /* Estados: los grises (detenido/desconectado) definidos en :root son muy
+     oscuros para el fondo dark; se aclaran para que el nombre/velocidad/hora
+     de los vehículos offline sean legibles en la lista de flota. */
+  --status-stopped: #9ca3af;
+  --status-offline: #94a3b8;
 }
 
 /* ============================================================
