@@ -266,6 +266,35 @@
     $$("#tp-dash-range [data-range], #tp-dash-apply").forEach(function (b) { b.disabled = !!on; });
   }
 
+  // Refleja en los inputs De/A las fechas calculadas por el preset (usa la
+  // API de tp-datepicker si el input ya fue realzado; si no, el value nativo).
+  function setDateInput(id, iso) {
+    var el = document.getElementById(id);
+    if (!el || !iso) return;
+    if (el._tpdp && el._tpdp.set) el._tpdp.set(iso);
+    else el.value = iso;
+  }
+
+  function isoDate(d) {
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
+  // Calcula from/to del preset EN EL FRONTEND (misma lógica que resolveRange
+  // del backend) para reflejarlo al instante en los inputs De/A.
+  function computeRange(preset) {
+    var now = new Date();
+    var from = new Date(now), to = new Date(now);
+    if (preset === "today") {
+      // from = to = hoy
+    } else if (preset === "yesterday") {
+      from.setDate(now.getDate() - 1); to.setDate(now.getDate() - 1);
+    } else if (preset === "month") {
+      from.setDate(now.getDate() - 29);
+    } else { // week
+      from.setDate(now.getDate() - 6);
+    }
+    return { from: isoDate(from), to: isoDate(to) };
+  }
+
   // scope: "all" (boot) · "period" (cambio de rango, rápido) · "live" (polling)
   function load(scope) {
     scope = scope || "all";
@@ -309,6 +338,12 @@
           var te = $("[data-total-events]");
           if (te) te.textContent = fmt(p.totalEvents || 0) + " eventos";
         }
+        if (p.from) {
+          // Los accesos rápidos (Hoy/Ayer/Semana/Mes) reflejan sus fechas en
+          // los selectores De/A, como Wialon.
+          setDateInput("tp-dash-from", p.from);
+          setDateInput("tp-dash-to", p.to);
+        }
         var fetched = $("#tp-dash-fetched");
         if (fetched && p.from) {
           fetched.textContent = "Rango " + p.from + " → " + p.to + " · actualizado " + new Date(p.fetchedAt).toLocaleTimeString();
@@ -324,6 +359,10 @@
       $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });
       btn.classList.add("is-active");
       state.range = btn.getAttribute("data-range");
+      // Reflejar las fechas del preset al instante (sin esperar la respuesta)
+      var r = computeRange(state.range);
+      setDateInput("tp-dash-from", r.from);
+      setDateInput("tp-dash-to", r.to);
       load("period");
     });
   });
@@ -347,6 +386,13 @@
   window.addEventListener("resize", function () {
     Object.keys(charts).forEach(function (k) { if (charts[k]) charts[k].resize(); });
   });
+
+  // Pre-rellena las fechas del rango por defecto (Semana) al instante
+  (function () {
+    var r = computeRange(state.range);
+    setDateInput("tp-dash-from", r.from);
+    setDateInput("tp-dash-to", r.to);
+  })();
 
   load("all");
   // Polling: solo refresca la data EN VIVO (donuts/KPIs), el rango se mantiene.

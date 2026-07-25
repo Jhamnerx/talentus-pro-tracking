@@ -219,5 +219,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=4" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=5" defer></script>
 @endpush
