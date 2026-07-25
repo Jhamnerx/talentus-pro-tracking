@@ -151,6 +151,10 @@
         : Object.keys(state.baseLayers)[0];
     if (firstId) setBaseLayer(firstId);
     state.deviceLayer = L.layerGroup().addTo(state.map);
+    // Preferencias de marcador (Ajustes de cuenta → Mapa)
+    var mt = MAP_CFG.toggles || {};
+    state.map.getContainer().classList.toggle("tp-show-speed", !!mt.showSpeed);
+    state.map.getContainer().classList.toggle("tp-status-color", !!mt.statusColor);
     buildBaseMenu();
   }
   function setBaseLayer(id) {
@@ -244,8 +248,13 @@
     // rotating/icon usan icon.width/height SIN escalar.
     var rot = rotate ? "transform:rotate(" + (parseFloat(d.course) || 0) + "deg);" : "";
     var selected = state.selectedId === d.id;
+    // Preferencias de marcador (Ajustes de cuenta → Mapa): la etiqueta lleva
+    // clase de estado (color condicionado por .tp-status-color en el contenedor)
+    // y un badge de velocidad (visible con .tp-show-speed).
+    var grp = classify(d);
+    var spd = d.speed_text || (Math.round(parseFloat(d.speed) || 0) + " km/h");
     var html =
-      '<span class="tp-lmarker__name">' +
+      '<span class="tp-lmarker__name tp-lmarker__name--' + grp + '">' +
       esc(d.name || "") +
       "</span>" +
       '<img src="' +
@@ -256,7 +265,8 @@
       h +
       '" style="display:block;' +
       rot +
-      '" draggable="false">';
+      '" draggable="false">' +
+      '<span class="tp-lmarker__speed">' + esc(spd) + "</span>";
     return L.divIcon({
       html: html,
       className: "tp-lmarker" + (selected ? " tp-lmarker--selected" : ""),
