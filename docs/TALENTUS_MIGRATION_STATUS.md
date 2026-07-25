@@ -319,7 +319,20 @@ Añadido tamaño `xl` (980 px) en [modal.js](public/assets/talentus/js/modal.js)
 
 Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 
-> **Tabla actualizada · 1 jul 2026** (auditoría completa legacy ↔ v2)
+> **Tabla actualizada · 25 jul 2026** (auditoría completa de los 68 módulos de `Tobuli/Views/Frontend`)
+>
+> **Pendientes reales user-facing** (prioridad sugerida):
+> 1. **Cámara / Medios** (`DeviceMedia`·`DeviceVideo`·`Video`·`MediaCategories`) — página galería + live/playback (hoy solo widget de lectura).
+> 2. **DeviceAlerts** — asignación de alertas por dispositivo.
+> 3. **Chat** · **CallAction** (Acciones de llamada) — hoy stubs en el rail.
+> 4. **DeviceConfig** · **LockStatus** — configuración remota / bloqueo del dispositivo.
+> 5. **Import** masivo de dispositivos (CSV/XLS) — hoy solo import de geocercas/POIs.
+> 6. **Checklist** · **ChecklistTemplates** — prestart/servicio + QR (addon `checklists`).
+> 7. **CustomFields** — panel de campos personalizados en los forms de device/tarea/usuario (addon).
+> 8. Menores: **DeviceRoutesType**, icon-picker por sensor (`IconsModal`), **Beacons**, **Forwards**, **SecondaryCredentials** (hoy deeplink a legacy).
+> 9. **Comercial** (`DevicePlans`·`DeviceSubscription`·`Subscriptions`) — evaluar si entra en el alcance del tema.
+>
+> Auth (`Login`/`Registration`/…) y admin (`Emails`/`Docs`/`Lookup`/`LoginAs`/`Schedules`/`SmsGateway` admin) quedan **fuera** del shell v2 de usuario.
 
 | Dominio legacy | UI v2 | Estado |
 |---|---|---|
@@ -337,13 +350,14 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `Reports/` (~130 tipos) | ✅ página tabs guardados/logs + modal Generar/Guardar (campos por tipo vía `reports/types/{type}`, schedules daily/weekly/monthly, range picker propio) | ✅ (22-jul) |
 | `SendCommand/` · `CommandSchedules/` · `UserGprsTemplates/` · `UserSmsTemplates/` | ✅ modal `tp-commands.js` + hub `/ui/v2/commands` (Horario/Registros/Plantillas GPRS/SMS con CRUD) | ⚠️ logs por schedule y columna usuario (admin) |
 | `Sharing/` (crear + lista + página pública) | ✅ `/ui/v2/sharing` + `tp-sharing.js` (modal referencia + kebab Live); página pública = legacy reutilizada | ✅ (22-jul; falta solo campo SMS) |
-| `Services/` · `Maintenance/` · `DeviceExpenses/` | ✅ `tp-services.js` (modales compartidos form/lista/eliminar) + página `/ui/v2/maintenance` + widget Live cableado | ⚠️ Gastos (`DeviceExpenses`) y Checklists sin migrar |
+| `Services/` · `Maintenance/` · `DeviceExpenses/` | ✅ `tp-services.js` (modales compartidos form/lista/eliminar) + página `/ui/v2/maintenance` + widget Live; **Gastos** ✅ migrado como tab del modal device (CRUD `DeviceExpense` + tipos) | ✅ (23-jul; Checklists es módulo aparte) |
 | `Tasks/` · `TaskSets/` · `Checklist/` · `ChecklistTemplates/` | ✅ Tasks: `/ui/v2/tasks` + `tp-tasks.js` (tabla con chip de estado + filtros vehículo/estado + selección con checkbox para **asignación masiva** a un device + kebab Editar/Firma/Eliminar; modal referencia con secciones Recogida/Entrega, picker "Dirección" con mapa Leaflet + `address/search`/`address/reverse`, bloque AC si plugin activo; **import CSV/XLS** con mapeo de columnas opcional vía `TaskImportManager`; tab **Conjuntos** con CRUD de TaskSets sobre `TaskSetUserService`) | ⚠️ (23-jul) Checklists/ChecklistTemplates sin migrar (módulo aparte: prestart/servicio + QR) |
 | `UserDrivers/` (conductores) | ✅ `/ui/v2/drivers` + `tp-drivers.js` (CRUD + pivot devices + vehículo actual) | ✅ (22-jul; falta activity log + RFID inline) |
 | `Chat/` | stub | ❌ |
 | `CallAction/` | stub | ❌ |
 | `DeviceMedia/` · `DeviceVideo/` · `Video/` · `MediaCategories/` | widget Cámara (lectura) + links video legacy | ❌ galería/live/playback nativos |
-| `DeviceConfig/` · `LockStatus/` · `Sensors/` (modal) | stub | ❌ |
+| `Sensors/` (modal) | ✅ migrado como tab **Sensores** del modal device (CRUD vía `SensorModalHelper`, buscador + grupo + preview) | ✅ |
+| `DeviceConfig/` · `LockStatus/` | stub | ❌ config remota del device / estado de bloqueo |
 | `DevicePlans/` · `DeviceSubscription/` · `Subscriptions/` | stub | ❌ |
 | `MyAccount/` · `MyAccountSettings/` · `Languages/` | ✅ **modal Ajustes de cuenta** (`tp-account.js`, engranaje/menú de usuario del topbar) con **paridad total de tabs** (títulos exactos legacy): Principal (unidades, formatos, inicio de semana, TZ, horario de verano) · Grupos de vehículos · Conductores · Tipos de vehículo · Eventos · SMS gateway · Plantillas de SMS · Plantillas de GPRS · Widgets · Tablero · Cliente · **Mapa** (2 toggles: velocidad en marcador + color de etiqueta por estado, per-usuario en map_controls, aplicados en Live). Tabs de formulario guardan contra `AccountController`; tabs CRUD reutilizan/crean endpoints (device-groups, drivers, vehicle-types, custom-events, commands/templates). **Contraseña** salió del modal → item "Cambiar contraseña" del menú de usuario (modal dedicado). Reutiliza validadores/servicios legacy | ✅ (23-jul; opciones avanzadas de bloques del Tablero y Membresía/Planes fuera de alcance) |
 | `VehicleTypes/` (tipos/estados p/ límites por geocerca) | matriz VSL en modal de geocerca ✅ + **CRUD de tipos/estados** en el tab "Tipos de vehículo" del modal de cuenta (`VehicleTypesController` ui/v2, estados anidados) ✅ | ✅ (23-jul) |
@@ -353,6 +367,10 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `Import/` (masivo devices) | solo geofences/pois import links | ❌ |
 | `Forwards/` · `SecondaryCredentials/` · `SmsGateway/` · `Beacons/` · `Lookup/` · `Addresses/` · `Docs` · `LoginAs/` · `Schedules/` | `admin` (deeplinks) | ⚠️ Solo enlace |
 | `Login/` · `Registration/` · `PasswordReminder/` · `EmailConfirmation/` · `CustomRegistration/` · `Captcha/` | — | ❌ Solo legacy (fuera del shell) |
+| `CustomFields/` (campos personalizados device/task/user — addon) | — | ❌ panel `CustomFields.panel` embebido en forms; falta en modal device/tareas v2 (gated por addon `custom_fields`/`custom_fields_task`) |
+| `DeviceRoutesType/` (tipo de ruta por device) | — | ❌ CRUD por device (`device/{id}/route_type`) sin migrar |
+| `IconsModal/` (selector de iconos del device) | ⚠️ galería de iconos en el tab **Iconos** del modal device | ⚠️ falta icon-picker por mapping de sensor |
+| `Emails/` (`template.blade`) · `EmailSettings` | `admin` (deeplink) | ⚠️ admin/sistema — no user |
 
 ---
 
