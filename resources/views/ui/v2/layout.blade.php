@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=2" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=24" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=25" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=1" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}

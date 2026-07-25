@@ -54,10 +54,33 @@
 [data-theme="dark"] .tp-scope textarea::placeholder {
   color: #94a3b8;
 }
-/* El botón del tp-select (select mejorado) también es <button> → el reset
-   color:inherit lo dejaba heredando negro dentro del dialog. Se fija al token
-   (flipea con el tema); mayor especificidad que el reset. */
+/* tp-select (select mejorado): sus clases Tailwind `dark:` dependen de
+   [data-theme] pero el reset color:inherit las pisaba y, además, el modal
+   toma sus superficies de los TOKENS. Para garantizar consistencia con el
+   modal en cualquier tema, se pilota el botón y el panel desde los tokens
+   (mayor especificidad que las utilidades y el reset). */
 .tp-scope .tp-dd__btn {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border-color: var(--border-default);
+}
+.tp-scope .tp-dd__btn:hover {
+  border-color: var(--border-strong);
+}
+.tp-scope .tp-dd__panel {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border-color: var(--border-default);
+}
+.tp-scope .tp-dd__panel [data-dd-val],
+.tp-scope .tp-dd__panel [data-dd-search] {
+  color: var(--fg-primary);
+}
+.tp-scope .tp-dd__panel [data-dd-search] {
+  background: var(--surface-sunken);
+  border-color: var(--border-default);
+}
+.tp-scope .tp-dd__panel [data-dd-val].is-selected {
   color: var(--fg-primary);
 }
 
