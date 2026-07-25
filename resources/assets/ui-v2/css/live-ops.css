@@ -1459,6 +1459,40 @@
   }
 }
 
+/* ── Widget de combustible: gráfico de 24 h ─────────────────── */
+.tp-fuel-w {
+  margin-bottom: 10px;
+}
+.tp-fuel-w:last-child {
+  margin-bottom: 0;
+}
+.tp-fuel-w__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.tp-fuel-w__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-secondary, #475569);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-fuel-w__val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-600, #1d4ed8);
+  white-space: nowrap;
+}
+.tp-fuel-chart {
+  display: block;
+  width: 100%;
+  height: 80px;
+}
+
 /* ── Device widget cards (Live drawer) ───────────────────────── */
 .tp-dw-wrap {
   margin-top: 4px;

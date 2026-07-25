@@ -992,20 +992,36 @@ class DevicesController extends BaseController
             ];
         }
 
-        // Combustible: valor actual de los sensores de tipo fuel_tank
+        // Combustible: serie temporal (últimas 24 h) de los sensores fuel_tank.
+        // Reutiliza el MISMO pipeline que el legacy (DeviceWidgetsController::
+        // fuelGraph → DeviceHistory + SensorsValues): setSensors + get() y
+        // getSensorsData() devuelve [id => {id,name,unit,values:{ts:{t,v}}}].
         if ($has('fuel_graph')) {
             $fuel = [];
-            $traccar = $device->traccar;
-            foreach ($device->getSensorsByType('fuel_tank') as $sensor) {
-                $val = '-';
-                try {
-                    if ($traccar) {
-                        $val = $sensor->getValueCurrent($traccar)->getFormatted();
+            try {
+                $fuelSensors = $device->sensors->filter(function ($s) {
+                    return $s->type === 'fuel_tank';
+                });
+                if ($fuelSensors->isNotEmpty()) {
+                    $history = new \Tobuli\History\DeviceHistory($device);
+                    $history->setSensors($fuelSensors);
+                    $history->setRange(\Carbon\Carbon::now()->subDay(1), \Carbon\Carbon::now());
+                    $history->registerActions([]);
+                    $history->get();
+
+                    foreach ((array) $history->getSensorsData() as $s) {
+                        $values = array_values($s['values'] ?? []);
+                        $last = ! empty($values) ? end($values) : null;
+                        $fuel[] = [
+                            'name'   => $s['name'] ?? '',
+                            'unit'   => $s['unit'] ?? '',
+                            'values' => $values,                       // [{t,v}]
+                            'last'   => $last ? $last['v'] : null,
+                        ];
                     }
-                } catch (\Throwable $e) {
-                    $val = '-';
                 }
-                $fuel[] = ['name' => $sensor->formatName(), 'value' => $val];
+            } catch (\Throwable $e) {
+                $fuel = [];
             }
             $data['fuel'] = $fuel;
         }

@@ -268,11 +268,22 @@
             </h4>
             <div class="tp-dw__card-body">
                 @if (count($fuel))
-                    <dl class="tp-defs">
-                        @foreach ($fuel as $f)
-                            <dt>{{ $f['name'] }}</dt><dd>{{ $f['value'] }}</dd>
-                        @endforeach
-                    </dl>
+                    @foreach ($fuel as $f)
+                        <div class="tp-fuel-w">
+                            <div class="tp-fuel-w__head">
+                                <span class="tp-fuel-w__name">{{ $f['name'] }}</span>
+                                @if (!is_null($f['last']))
+                                    <span class="tp-fuel-w__val">{{ round($f['last'], 1) }}{{ $f['unit'] }}</span>
+                                @endif
+                            </div>
+                            @if (!empty($f['values']))
+                                <canvas class="tp-fuel-chart" data-fuel-chart height="80"></canvas>
+                                <script type="application/json" data-fuel-data>{!! json_encode(['values' => $f['values'], 'unit' => $f['unit']]) !!}</script>
+                            @else
+                                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin datos en las últimas 24 h.</p>
+                            @endif
+                        </div>
+                    @endforeach
                 @else
                     <p class="tp-text-xs tp-text-muted tp-mb-0">Sin sensores de combustible.</p>
                 @endif

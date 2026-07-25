@@ -763,8 +763,85 @@
         } else {
           root.removeAttribute("data-bottombar-open");
         }
+        // El HTML inyectado por innerHTML no ejecuta <script>: dibujamos los
+        // gráficos de combustible leyendo el JSON embebido en cada card.
+        renderFuelCharts(bottom);
       })
       .catch(function () {});
+  }
+
+  // Gráfico de combustible: canvas propio (sin flot), serie {t,v} de 24 h.
+  function renderFuelCharts(scope) {
+    if (!scope) return;
+    Array.prototype.forEach.call(scope.querySelectorAll("[data-fuel-chart]"), function (canvas) {
+      var dataEl = canvas.parentNode && canvas.parentNode.querySelector("[data-fuel-data]");
+      if (!dataEl) return;
+      var payload;
+      try {
+        payload = JSON.parse(dataEl.textContent || "{}");
+      } catch (e) {
+        return;
+      }
+      drawFuelChart(canvas, payload.values || [], payload.unit || "");
+    });
+  }
+
+  function drawFuelChart(canvas, values, unit) {
+    var pts = (values || [])
+      .map(function (p) {
+        return { t: parseInt(p.t, 10), v: parseFloat(p.v) };
+      })
+      .filter(function (p) {
+        return isFinite(p.t) && isFinite(p.v);
+      });
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth || canvas.parentNode.clientWidth || 260;
+    var h = canvas.clientHeight || 80;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (pts.length < 2) return;
+
+    var minX = pts[0].t, maxX = pts[pts.length - 1].t;
+    var minY = Infinity, maxY = -Infinity;
+    pts.forEach(function (p) {
+      if (p.v < minY) minY = p.v;
+      if (p.v > maxY) maxY = p.v;
+    });
+    if (maxY === minY) maxY = minY + 1;
+    var padT = 8, padB = 6, padL = 4, padR = 4;
+    function X(t) {
+      return padL + (maxX === minX ? 0 : (t - minX) / (maxX - minX)) * (w - padL - padR);
+    }
+    function Y(v) {
+      return padT + (1 - (v - minY) / (maxY - minY)) * (h - padT - padB);
+    }
+
+    var accent = "#2e63d9";
+    // Relleno bajo la curva
+    ctx.beginPath();
+    ctx.moveTo(X(pts[0].t), h - padB);
+    pts.forEach(function (p) {
+      ctx.lineTo(X(p.t), Y(p.v));
+    });
+    ctx.lineTo(X(pts[pts.length - 1].t), h - padB);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(46,99,217,0.12)";
+    ctx.fill();
+    // Línea
+    ctx.beginPath();
+    pts.forEach(function (p, i) {
+      var x = X(p.t), y = Y(p.v);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.lineJoin = "round";
+    ctx.stroke();
   }
 
   // -----------------------------------------------------------
