@@ -4,7 +4,7 @@
 @section('rail-active', 'dashboard')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=3">
 @endpush
 
 @section('workspace-class', 'tp-workspace--scroll')
@@ -14,8 +14,8 @@
 
         <header class="tp-dash__head">
             <div>
-                <h1 class="tp-h4 tp-mb-0">Command Center</h1>
-                <p class="tp-text-muted tp-mb-0">Flota, conducción y alertas · fusión operativa.</p>
+                <h1 class="tp-h4 tp-mb-0">Panel de control</h1>
+                <p class="tp-text-muted tp-mb-0">Flota, conducción y alertas.</p>
             </div>
             {{-- Toolbar de rango (estilo Wialon: Hoy / Ayer / Semana / Mes) --}}
             <div class="tp-dash__range" id="tp-dash-range">
@@ -65,29 +65,44 @@
         {{-- WIDGETS GRID --}}
         <section class="tp-dash__grid">
 
-            {{-- Fila 1 · donuts de estado (Wialon) --}}
+            {{-- Fila 1 · donuts de estado (Wialon): donut izquierda + leyenda con conteos --}}
             <article class="tp-widget tp-widget--span-4" data-widget="health">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">Estado de dispositivos</h3>
-                    <span class="tp-widget__hint">En vivo</span>
+                    <span class="tp-widget__tag">En vivo</span>
                 </header>
-                <div class="tp-widget__body"><div class="tp-chart tp-chart--donut" id="tp-chart-health"></div></div>
+                <div class="tp-widget__body">
+                    <div class="tp-donut">
+                        <div class="tp-donut__chart" id="tp-chart-health"></div>
+                        <ul class="tp-legend" id="tp-legend-health"></ul>
+                    </div>
+                </div>
             </article>
 
             <article class="tp-widget tp-widget--span-4" data-widget="connection">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">Estado de conexión</h3>
-                    <span class="tp-widget__hint">En vivo</span>
+                    <span class="tp-widget__tag">En vivo</span>
                 </header>
-                <div class="tp-widget__body"><div class="tp-chart tp-chart--donut" id="tp-chart-connection"></div></div>
+                <div class="tp-widget__body">
+                    <div class="tp-donut">
+                        <div class="tp-donut__chart" id="tp-chart-connection"></div>
+                        <ul class="tp-legend" id="tp-legend-connection"></ul>
+                    </div>
+                </div>
             </article>
 
             <article class="tp-widget tp-widget--span-4" data-widget="movement">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">Estado de movimiento</h3>
-                    <span class="tp-widget__hint">En vivo</span>
+                    <span class="tp-widget__tag">En vivo</span>
                 </header>
-                <div class="tp-widget__body"><div class="tp-chart tp-chart--donut" id="tp-chart-movement"></div></div>
+                <div class="tp-widget__body">
+                    <div class="tp-donut">
+                        <div class="tp-donut__chart" id="tp-chart-movement"></div>
+                        <ul class="tp-legend" id="tp-legend-movement"></ul>
+                    </div>
+                </div>
             </article>
 
             {{-- Fila 2 · Conducción (analítica propia) + Notificaciones --}}
@@ -204,5 +219,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=3" defer></script>
 @endpush

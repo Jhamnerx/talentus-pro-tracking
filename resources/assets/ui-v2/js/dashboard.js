@@ -58,37 +58,46 @@
     });
   }
 
-  /* ----- Donut genérico con total al centro ----- */
-  function renderDonut(id, items, total) {
-    var c = chart(id);
-    if (!c) return;
-    c.setOption({
-      tooltip: { trigger: "item", formatter: "{b}: <b>{c}</b> ({d}%)" },
-      legend: {
-        type: "scroll", orient: "vertical", right: 4, top: "center",
-        icon: "circle", itemWidth: 9, itemHeight: 9,
-        textStyle: { color: textColor(), fontSize: 11 },
-        formatter: function (name) {
-          var it = (items || []).filter(function (x) { return x.name === name; })[0];
-          return it ? name + "  " + it.value : name;
-        },
-      },
-      series: [{
-        type: "pie", radius: ["58%", "82%"], center: ["32%", "50%"],
-        avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 3, borderColor: cssVar("--surface-raised", "#fff"), borderWidth: 2 },
-        label: {
-          show: true, position: "center",
-          formatter: String(total || 0), fontSize: 22, fontWeight: 700,
-          color: cssVar("--fg-primary", "#0f172a"),
-        },
-        emphasis: { label: { show: true } },
-        labelLine: { show: false },
-        data: (items || []).map(function (d) {
-          return { name: d.name, value: d.value, itemStyle: { color: d.color } };
-        }),
-      }],
-    });
+  /* ----- Donut + leyenda HTML (estilo Wialon) ----- */
+  function renderDonut(chartId, legendId, items, total) {
+    items = items || [];
+    var c = chart(chartId);
+    if (c) {
+      var hasData = items.some(function (d) { return d.value > 0; });
+      c.setOption({
+        tooltip: { trigger: "item", formatter: "{b}: <b>{c}</b> ({d}%)" },
+        series: [{
+          type: "pie", radius: ["62%", "88%"], center: ["50%", "50%"],
+          avoidLabelOverlap: true, silent: !hasData,
+          itemStyle: { borderRadius: 3, borderColor: cssVar("--surface-raised", "#fff"), borderWidth: 2 },
+          label: {
+            show: true, position: "center",
+            formatter: String(total || 0), fontSize: 24, fontWeight: 700,
+            color: cssVar("--fg-primary", "#0f172a"),
+          },
+          emphasis: { scale: false, label: { show: true } },
+          labelLine: { show: false },
+          data: hasData
+            ? items.map(function (d) { return { name: d.name, value: d.value, itemStyle: { color: d.color } }; })
+            : [{ name: "Sin datos", value: 1, itemStyle: { color: cssVar("--surface-sunken", "#e2e8f0") }, tooltip: { show: false } }],
+        }],
+      });
+    }
+    // Leyenda HTML: cuadro de color + etiqueta + conteo alineado a la derecha
+    var leg = document.getElementById(legendId);
+    if (leg) {
+      leg.innerHTML = items
+        .map(function (d) {
+          return (
+            '<li class="tp-legend__row">' +
+            '<span class="tp-legend__sw" style="background:' + d.color + '"></span>' +
+            '<span class="tp-legend__lbl">' + escapeHtml(d.name) + "</span>" +
+            '<span class="tp-legend__val">' + fmt(d.value) + "</span>" +
+            "</li>"
+          );
+        })
+        .join("");
+    }
   }
 
   /* ----- Conducción ----- */
@@ -241,9 +250,9 @@
       .then(function (p) {
         if (!p || !p.ok) return;
         renderKpis(p.kpis || {});
-        renderDonut("tp-chart-health", (p.health || {}).items, (p.health || {}).total);
-        renderDonut("tp-chart-connection", (p.connection || {}).items, (p.connection || {}).total);
-        renderDonut("tp-chart-movement", p.distribution, (p.kpis || {}).total);
+        renderDonut("tp-chart-health", "tp-legend-health", (p.health || {}).items, (p.health || {}).total);
+        renderDonut("tp-chart-connection", "tp-legend-connection", (p.connection || {}).items, (p.connection || {}).total);
+        renderDonut("tp-chart-movement", "tp-legend-movement", p.distribution, (p.kpis || {}).total);
         renderDriving(p);
         renderBarList("tp-dash-bycategory", p.byCategory, {
           label: function (r) { return r.label; },
