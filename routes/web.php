@@ -1206,6 +1206,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');
 
         // Grupos de dispositivos (pivot user_device_pivot.group_id por usuario)
+        Route::get('device-groups',             ['as' => 'api.device_groups.list',    'uses' => 'Ui\V2\DevicesController@deviceGroupsList']);
         Route::post('device-groups',            ['as' => 'api.device_groups.store',   'uses' => 'Ui\V2\DevicesController@storeDeviceGroup']);
         Route::get('device-groups/{id}/items',  ['as' => 'api.device_groups.items',   'uses' => 'Ui\V2\DevicesController@deviceGroupItems'])->where('id', '[0-9]+');
         Route::put('device-groups/{id}',        ['as' => 'api.device_groups.update',  'uses' => 'Ui\V2\DevicesController@updateDeviceGroup'])->where('id', '[0-9]+');
@@ -1261,7 +1262,21 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('account/password',  ['as' => 'api.account.password', 'uses' => 'Ui\V2\AccountController@changePassword']);
         Route::post('account/sms',       ['as' => 'api.account.sms',      'uses' => 'Ui\V2\AccountController@updateSms']);
         Route::post('account/widgets',   ['as' => 'api.account.widgets',  'uses' => 'Ui\V2\AccountController@updateWidgets']);
+        Route::post('account/dashboard', ['as' => 'api.account.dashboard','uses' => 'Ui\V2\AccountController@updateDashboard']);
         Route::post('account/map',       ['as' => 'api.account.map',      'uses' => 'Ui\V2\AccountController@updateMap']);
+
+        // Tipos de vehículo (tab del modal de cuenta)
+        Route::get('vehicle-types',         ['as' => 'api.vehicle_types',         'uses' => 'Ui\V2\VehicleTypesController@data']);
+        Route::post('vehicle-types',        ['as' => 'api.vehicle_types.store',   'uses' => 'Ui\V2\VehicleTypesController@store']);
+        Route::put('vehicle-types/{id}',    ['as' => 'api.vehicle_types.update',  'uses' => 'Ui\V2\VehicleTypesController@update'])->where('id', '[0-9]+');
+        Route::delete('vehicle-types/{id}', ['as' => 'api.vehicle_types.destroy', 'uses' => 'Ui\V2\VehicleTypesController@destroy'])->where('id', '[0-9]+');
+
+        // Eventos personalizados (tab del modal de cuenta)
+        Route::get('custom-events',         ['as' => 'api.custom_events',         'uses' => 'Ui\V2\CustomEventsController@data']);
+        Route::get('custom-events/meta',    ['as' => 'api.custom_events.meta',    'uses' => 'Ui\V2\CustomEventsController@meta']);
+        Route::post('custom-events',        ['as' => 'api.custom_events.store',   'uses' => 'Ui\V2\CustomEventsController@store']);
+        Route::put('custom-events/{id}',    ['as' => 'api.custom_events.update',  'uses' => 'Ui\V2\CustomEventsController@update'])->where('id', '[0-9]+');
+        Route::delete('custom-events/{id}', ['as' => 'api.custom_events.destroy', 'uses' => 'Ui\V2\CustomEventsController@destroy'])->where('id', '[0-9]+');
 
         // Conductores (CRUD sobre UserDriverModalHelper legacy)
         Route::get('drivers',         ['as' => 'api.drivers',         'uses' => 'Ui\V2\DriversController@data']);

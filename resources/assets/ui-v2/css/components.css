@@ -1586,5 +1586,120 @@ select.tp-input:disabled {
   font-weight: 600;
 }
 .tp-acc__panel {
-  min-height: 220px;
+  min-height: 260px;
+}
+.tp-acc__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.tp-acc__foot:empty {
+  margin-top: 0;
+}
+/* Etiquetas de sección dentro de un tab */
+.tp-acc-legend {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-muted, #94a3b8);
+  margin-bottom: 4px;
+}
+/* Checkbox con etiqueta en línea */
+.tp-scope .tp-acc-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Tile seleccionable (widgets / bloques del tablero) */
+.tp-scope .tp-acc-tile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+/* Toggle grande con descripción (tab Mapa) */
+.tp-scope .tp-acc-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.tp-acc-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tp-acc-toggle b {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+}
+.tp-acc-toggle small {
+  font-size: 12px;
+  color: var(--fg-muted, #94a3b8);
+  line-height: 1.4;
+}
+/* Tabs CRUD dentro del modal */
+.tp-acc-crud__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.tp-acc-crud__wrap {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 10px;
+}
+.tp-acc-crud__wrap .tp-svc-table {
+  margin: 0;
+}
+/* Fila de estado (tipos de vehículo) / condición (eventos) */
+.tp-acc-strow,
+.tp-acc-cond {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.tp-acc-cond {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+}
+.tp-scope .tp-icon-btn {
+  appearance: none;
+  border: 1px solid var(--border-default, #e2e8f0);
+  background: var(--surface-raised, #fff);
+  color: var(--fg-secondary, #475569);
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.tp-scope .tp-icon-btn:hover {
+  border-color: var(--brand-500, #2e63d9);
+  color: var(--brand-500, #2e63d9);
+}
+.tp-scope .tp-icon-btn--danger:hover {
+  border-color: #dc2626;
+  color: #dc2626;
 }

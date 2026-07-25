@@ -79,22 +79,34 @@ class AccountController extends BaseController
             }
         }
 
-        $maps = [];
-        foreach ((function_exists('getAvailableMaps') ? getAvailableMaps() : []) as $id => $name) {
-            $maps[] = ['id' => (int) $id, 'name' => (string) $name];
+        // Tablero (dashboard): habilitado + bloques con su etiqueta/estado
+        $dash = (array) $u->getSettings('dashboard');
+        $dashBlocks = [];
+        foreach ((array) ($dash['blocks'] ?? []) as $key => $cfg) {
+            $dashBlocks[] = [
+                'key'     => $key,
+                'label'   => trans('front.' . $key),
+                'enabled' => ! empty($cfg['enabled']),
+            ];
         }
-        usort($maps, fn ($a, $b) => strcmp($a['name'], $b['name']));
+
+        // Mapa: toggles per-usuario (map_controls). Fallback a settings globales.
+        $mc = (array) $u->map_controls;
 
         return response()->json([
             'ok' => true,
             'caps' => [
-                'demo'           => (bool) isDemoUser(),
-                'view_sms'       => (bool) $u->perm('sms_gateway', 'view'),
-                'edit_sms'       => (bool) $u->perm('sms_gateway', 'edit'),
-                'view_client'    => (bool) $u->perm('user.client_id', 'view'),
-                'edit_client'    => (bool) $u->perm('user.client_id', 'edit'),
-                'main_login'     => (bool) $u->isMainLogin(),
-                'require_current'=> (bool) settings('password.change_required_current'),
+                'demo'                => (bool) isDemoUser(),
+                'view_sms'            => (bool) $u->perm('sms_gateway', 'view'),
+                'edit_sms'            => (bool) $u->perm('sms_gateway', 'edit'),
+                'view_client'         => (bool) $u->perm('user.client_id', 'view'),
+                'edit_client'         => (bool) $u->perm('user.client_id', 'edit'),
+                'view_drivers'        => (bool) $u->perm('drivers', 'view'),
+                'view_custom_events'  => (bool) $u->perm('custom_events', 'view'),
+                'view_sms_templates'  => (bool) $u->perm('user_sms_templates', 'view'),
+                'view_gprs_templates' => (bool) $u->perm('user_gprs_templates', 'view'),
+                'main_login'          => (bool) $u->isMainLogin(),
+                'require_current'     => (bool) settings('password.change_required_current'),
             ],
             'locale' => [
                 'unit_of_distance' => $item['unit_of_distance'] ?? 'km',
@@ -170,9 +182,17 @@ class AccountController extends BaseController
                 'status'  => ! empty($widgets['status']),
                 'items'   => $ordered,
             ],
+            'dashboard' => [
+                'enabled' => ! empty($dash['enabled']),
+                'blocks'  => $dashBlocks,
+            ],
             'map' => [
-                'map_id'    => (int) ($u->map_id ?: settings('main_settings.default_map')),
-                'available' => $maps,
+                // Mostrar velocidad al costado del nombre en el marcador
+                'show_speed' => array_key_exists('m_show_speed', $mc)
+                    ? (bool) $mc['m_show_speed']
+                    : (bool) settings('main_settings.map_show_device_speed'),
+                // Colorear la etiqueta del marcador según el estado del vehículo
+                'status_color' => (bool) ($mc['m_status_color'] ?? false),
             ],
         ]);
     }
@@ -323,22 +343,45 @@ class AccountController extends BaseController
         }
     }
 
-    /* ================= Mapa (capa base por defecto) ================= */
+    /* ================= Tablero (dashboard) ================= */
+
+    public function updateDashboard(Request $request): JsonResponse
+    {
+        try {
+            $this->assertNotDemo();
+
+            $current = (array) $this->user->getSettings('dashboard');
+            $in = (array) $request->get('dashboard', []);
+
+            $current['enabled'] = ! empty($in['enabled']) ? 1 : 0;
+
+            $enabledBlocks = (array) ($in['blocks'] ?? []);
+            foreach ((array) ($current['blocks'] ?? []) as $key => $cfg) {
+                $current['blocks'][$key]['enabled'] = in_array($key, $enabledBlocks, true) ? 1 : 0;
+            }
+
+            $this->user->setSettings('dashboard', $current, true);
+
+            return response()->json(['ok' => true]);
+        } catch (DemoAccountException $e) {
+            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+        }
+    }
+
+    /* ================= Mapa (preferencias del marcador) ================= */
 
     public function updateMap(Request $request): JsonResponse
     {
         try {
             $this->assertNotDemo();
 
-            $maps = array_flip(getAvailableMaps());
-            $selected = (int) $request->get('map_id');
-            $mapId = in_array($selected, $maps, true) || array_key_exists($selected, getAvailableMaps())
-                ? $selected
-                : (int) settings('main_settings.default_map');
+            $mc = (array) $this->user->map_controls;
+            $mc['m_show_speed']   = $request->boolean('show_speed') ? 1 : 0;
+            $mc['m_status_color'] = $request->boolean('status_color') ? 1 : 0;
 
-            UserRepo::update($this->user->id, ['map_id' => $mapId]);
+            UserRepo::update($this->user->id, ['map_controls' => $mc]);
 
-            return response()->json(['ok' => true, 'map_id' => $mapId]);
+            return response()->json(['ok' => true]);
         } catch (DemoAccountException $e) {
             return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
         }

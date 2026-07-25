@@ -78,6 +78,11 @@ abstract class BaseController extends Controller
                 'traffic'   => $tg('m_traffic', 'showTraffic'),
                 'cluster'   => $tg('m_objects_cluster', 'clusterDevice'),
                 'hitos'     => $tg('m_hitos', 'showHitos'),
+                // Preferencias del marcador (Ajustes de cuenta → Mapa)
+                'showSpeed'    => array_key_exists('m_show_speed', $mc)
+                    ? (bool) $mc['m_show_speed']
+                    : (bool) settings('main_settings.map_show_device_speed'),
+                'statusColor'  => (bool) ($mc['m_status_color'] ?? false),
             ],
             // Endpoints legacy de persistencia (estado compartido con la UI clásica)
             'urls'             => [

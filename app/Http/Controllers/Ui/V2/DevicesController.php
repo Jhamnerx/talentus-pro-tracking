@@ -471,6 +471,32 @@ class DevicesController extends BaseController
         return response()->json(['ok' => true, 'title' => (string) $group->title, 'device_ids' => $ids]);
     }
 
+    /** Lista de grupos del usuario con su conteo de vehículos (tab Grupos del modal de cuenta). */
+    public function deviceGroupsList(Request $request): JsonResponse
+    {
+        $counts = \DB::table('user_device_pivot')
+            ->where('user_id', $this->user->id)
+            ->where('group_id', '>', 0)
+            ->selectRaw('group_id, COUNT(*) as c')
+            ->groupBy('group_id')
+            ->pluck('c', 'group_id');
+
+        $groups = \Tobuli\Entities\DeviceGroup::where('user_id', $this->user->id)
+            ->orderBy('title')
+            ->get(['id', 'title']);
+
+        $rows = [];
+        foreach ($groups as $g) {
+            $rows[] = [
+                'id'    => (int) $g->id,
+                'title' => (string) $g->title,
+                'count' => (int) ($counts[$g->id] ?? 0),
+            ];
+        }
+
+        return response()->json(['ok' => true, 'items' => $rows]);
+    }
+
     /** UPDATE del pivote (attach → group_id; detach → 0), solo filas del usuario. */
     private function syncGroupDevices(\Tobuli\Entities\DeviceGroup $group, $deviceIds): void
     {
