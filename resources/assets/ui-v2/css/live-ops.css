@@ -192,31 +192,22 @@
   pointer-events: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
-.tp-show-names .tp-lmarker__name {
+/* La etiqueta del nombre es visible si están activados los nombres o la
+   velocidad (la velocidad va DENTRO de esta etiqueta, tras el nombre). */
+.tp-show-names .tp-lmarker__name,
+.tp-show-speed .tp-lmarker__name {
   display: block;
 }
 /* Preferencias de marcador (Ajustes de cuenta → Mapa) */
-/* Velocidad al pie del marcador (visible con .tp-show-speed) */
+/* Velocidad como sufijo dentro de la etiqueta del nombre (como el legacy) */
 .tp-lmarker__speed {
   display: none;
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  transform: translateX(-50%);
-  margin-top: 3px;
-  white-space: nowrap;
-  background: var(--brand-600, #1d4ed8);
-  color: #fff;
-  border-radius: 4px;
-  padding: 0 5px;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 16px;
-  pointer-events: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  margin-left: 5px;
+  font-weight: 700;
+  opacity: 0.85;
 }
 .tp-show-speed .tp-lmarker__speed {
-  display: block;
+  display: inline;
 }
 /* Color de la etiqueta según el estado (activo con .tp-status-color) */
 .tp-status-color .tp-lmarker__name--moving {

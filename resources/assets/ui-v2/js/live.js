@@ -256,6 +256,7 @@
     var html =
       '<span class="tp-lmarker__name tp-lmarker__name--' + grp + '">' +
       esc(d.name || "") +
+      '<span class="tp-lmarker__speed">' + esc(spd) + "</span>" +
       "</span>" +
       '<img src="' +
       src +
@@ -265,8 +266,7 @@
       h +
       '" style="display:block;' +
       rot +
-      '" draggable="false">' +
-      '<span class="tp-lmarker__speed">' + esc(spd) + "</span>";
+      '" draggable="false">';
     return L.divIcon({
       html: html,
       className: "tp-lmarker" + (selected ? " tp-lmarker--selected" : ""),
