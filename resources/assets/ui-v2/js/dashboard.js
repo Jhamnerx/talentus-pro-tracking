@@ -68,7 +68,8 @@
     if (c) {
       var hasData = items.some(function (d) { return d.value > 0; });
       c.setOption({
-        tooltip: { trigger: "item", formatter: "{b}: <b>{c}</b> ({d}%)" },
+        // appendToBody evita que la card (overflow:hidden) recorte el tooltip
+        tooltip: { trigger: "item", formatter: "{b}: <b>{c}</b> ({d}%)", appendToBody: true, confine: true },
         series: [{
           type: "pie", radius: ["62%", "88%"], center: ["50%", "50%"],
           avoidLabelOverlap: true, silent: !hasData,
@@ -129,7 +130,7 @@
       var pts = p.trend || [];
       c.setOption({
         grid: { left: 30, right: 10, top: 12, bottom: 20 },
-        tooltip: { trigger: "axis" },
+        tooltip: { trigger: "axis", appendToBody: true, confine: true },
         xAxis: {
           type: "category",
           data: pts.map(function (x) { return x.date.slice(5); }),
@@ -233,7 +234,7 @@
     var col = textColor();
     c.setOption({
       grid: { left: 32, right: 16, top: 16, bottom: 28 },
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, appendToBody: true, confine: true },
       xAxis: {
         type: "category", data: (activity || []).map(function (a) { return a.hour; }),
         axisLabel: { color: col, fontSize: 10, interval: 2 },
