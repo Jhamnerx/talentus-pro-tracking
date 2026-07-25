@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=2" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=22" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=23" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=1" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
@@ -102,7 +102,7 @@
     <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=2" defer></script>
     {{-- Ajustes de cuenta (modal con tabs; se abre desde el topbar) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=3" defer></script>
     {{-- Enviar comando (modal compartido; se abre desde rail y kebab de Live) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-commands.js') }}?v=8" defer></script>
     {{-- Hitos kilométricos (capa Leaflet compartida por páginas con mapa) --}}

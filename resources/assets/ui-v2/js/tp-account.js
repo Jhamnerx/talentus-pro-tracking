@@ -218,11 +218,12 @@
                 return (
                   "<tr>" +
                   cfg.row(r) +
-                  '<td class="tp-svc-table__actions">' +
-                  '<button type="button" class="tp-icon-btn" data-acc-edit title="Editar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg></button>' +
-                  '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-acc-del title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>' +
-                  "</td></tr>"
-                ).replace("<tr>", '<tr data-acc-item=\'' + esc(JSON.stringify(r)) + "'>");
+                  '<td class="tp-acc-crud__actions">' +
+                  '<div class="tp-acc-crud__act">' +
+                  '<button type="button" class="tp-icon-btn" data-acc-edit title="Editar" aria-label="Editar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>' +
+                  '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-acc-del title="Eliminar" aria-label="Eliminar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6M14 11v6"/></svg></button>' +
+                  "</div></td></tr>"
+                ).replace("<tr>", '<tr data-acc-item="' + esc(JSON.stringify(r)) + '">');
               })
               .join("")
           : '<tr><td colspan="' + colspan + '" class="tp-svc-table__empty">Sin datos</td></tr>';

@@ -1709,12 +1709,29 @@ select.tp-input:disabled {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition:
+    color var(--dur-fast, 0.12s) var(--ease-out, ease),
+    border-color var(--dur-fast, 0.12s) var(--ease-out, ease),
+    background var(--dur-fast, 0.12s) var(--ease-out, ease);
 }
 .tp-scope .tp-icon-btn:hover {
   border-color: var(--brand-500, #2e63d9);
   color: var(--brand-500, #2e63d9);
+  background: var(--brand-bg-subtle, #eef3fb);
 }
 .tp-scope .tp-icon-btn--danger:hover {
   border-color: #dc2626;
   color: #dc2626;
+  background: #fef2f2;
+}
+/* Celda de acciones de las tablas CRUD del modal (2 botones con aire) */
+.tp-acc-crud__actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+.tp-acc-crud__act {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
 }
