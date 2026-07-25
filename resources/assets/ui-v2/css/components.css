@@ -35,6 +35,31 @@
   color: inherit;
   margin: 0;
 }
+/* Los controles de formulario NO deben heredar el color (inherit): dentro de
+   un <dialog> el color heredado es el default del navegador (negro), que en
+   modo oscuro queda invisible. Se fija al token de tema, que sí flipea con
+   [data-theme]. Mayor especificidad que el reset de arriba (0,1,1). */
+.tp-scope input,
+.tp-scope select,
+.tp-scope textarea {
+  color: var(--fg-primary);
+}
+/* Opciones nativas del desplegable (dropdown del SO) legibles en dark */
+[data-theme="dark"] .tp-scope select option {
+  background: var(--surface-raised, #1e293b);
+  color: var(--fg-primary, #f1f5f9);
+}
+/* Placeholder con contraste suficiente en dark (el muted base es muy oscuro) */
+[data-theme="dark"] .tp-scope input::placeholder,
+[data-theme="dark"] .tp-scope textarea::placeholder {
+  color: #94a3b8;
+}
+/* El botón del tp-select (select mejorado) también es <button> → el reset
+   color:inherit lo dejaba heredando negro dentro del dialog. Se fija al token
+   (flipea con el tema); mayor especificidad que el reset. */
+.tp-scope .tp-dd__btn {
+  color: var(--fg-primary);
+}
 
 /* Variante outline: botón con borde para acciones destacadas no-primarias
    (ej. "Generar" en Reportes = descarga). */
