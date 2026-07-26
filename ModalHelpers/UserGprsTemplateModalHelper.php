@@ -80,7 +80,8 @@ class UserGprsTemplateModalHelper extends ModalHelper
             'title' => Arr::get($this->data, 'title'),
             'adapted' => Arr::get($this->data, 'adapted'),
             'protocol' => Arr::get($this->data, 'protocol'),
-            'message' => Arr::get($this->data, 'message')
+            'message' => Arr::get($this->data, 'message'),
+            'lock_action' => $this->normalizeLockAction(Arr::get($this->data, 'lock_action')),
         ]);
 
         if($this->api) {
@@ -92,6 +93,12 @@ class UserGprsTemplateModalHelper extends ModalHelper
         $item->deviceTypes()->sync(Arr::get($this->data, 'device_types', []));
 
         return ['status' => 1, 'item' => $item];
+    }
+
+    /** Solo acepta 'block' / 'unblock' (uso en el widget de bloqueo); resto = null. */
+    private function normalizeLockAction($value): ?string
+    {
+        return in_array($value, ['block', 'unblock'], true) ? $value : null;
     }
 
     public function editData()
@@ -132,7 +139,8 @@ class UserGprsTemplateModalHelper extends ModalHelper
             'title' => Arr::get($this->data, 'title'),
             'adapted' => Arr::get($this->data, 'adapted'),
             'protocol' => Arr::get($this->data, 'protocol'),
-            'message' => Arr::get($this->data, 'message')
+            'message' => Arr::get($this->data, 'message'),
+            'lock_action' => $this->normalizeLockAction(Arr::get($this->data, 'lock_action')),
         ]);
 
         if($this->api) {

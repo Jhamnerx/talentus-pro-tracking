@@ -49,6 +49,12 @@
             {!!Form::textarea('message', $item->message, ['class' => 'form-control', 'rows' => 3])!!}
         </div>
 
+        <div class="form-group">
+            {!! Form::label('lock_action', 'Uso en bloqueo de motor:') !!}
+            {!! Form::select('lock_action', ['' => 'Ninguno', 'block' => 'Cortar (bloquear)', 'unblock' => 'Restablecer (desbloquear)'], $item->lock_action, ['class' => 'form-control']) !!}
+            <span class="help-block small">Marca esta plantilla como comando de Cortar o Restablecer del widget de bloqueo. El equipo la usará según su tipo de dispositivo.</span>
+        </div>
+
         <div class="alert alert-info small">
             {!! trans('front.raw_command_supports') !!}
             <br><br>

@@ -18,6 +18,7 @@
     messagesUrl: root.getAttribute("data-messages-url"),
     devicesUrl: root.getAttribute("data-devices-url"),
     geoUrl: root.getAttribute("data-geo-url"),
+    addrOn: root.getAttribute("data-addr-on") === "1",
     zonesUrl: root.getAttribute("data-zones-url"),
     poisUrl: root.getAttribute("data-pois-url"),
     routesUrl: root.getAttribute("data-routes-url"),
@@ -342,7 +343,7 @@
       '<div class="tp-hist-pt">' +
       '<div class="tp-hist-pt__bar"><span class="tp-hist-pt__baric"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span></div>' +
       '<dl class="tp-hist-pt__defs">' +
-      ptRow(T("address", "Dirección"), '<span data-addr>…</span>') +
+      (CFG.addrOn ? ptRow(T("address", "Dirección"), '<span data-addr>…</span>') : "") +
       ptRow(T("street_view", "Street view"), '<a href="' + sv + '" target="_blank" rel="noopener">' + T("preview", "Preview") + "</a>") +
       ptRow(T("latitude", "Latitud"), p.lat + "&deg;") +
       ptRow(T("longitude", "Longitud"), p.lng + "&deg;") +
@@ -355,7 +356,7 @@
       "</div>";
     if (state.pointPopup) state.map.closePopup(state.pointPopup);
     state.pointPopup = L.popup({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }).setLatLng(ll).setContent(html).openOn(state.map);
-    fetchAddr(p.lat, p.lng, function (a) {
+    if (CFG.addrOn) fetchAddr(p.lat, p.lng, function (a) {
       var el2 = state.pointPopup && state.pointPopup.getElement();
       var dd = el2 && el2.querySelector("[data-addr]");
       if (dd) dd.textContent = a || "-";

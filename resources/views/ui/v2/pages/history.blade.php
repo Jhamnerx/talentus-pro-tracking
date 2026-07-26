@@ -14,6 +14,8 @@
     <div class="tp-history tp-history--pinned" id="tp-history" data-data-url="{{ route('ui.v2.api.history') }}"
         data-messages-url="{{ route('ui.v2.api.history.messages') }}"
         data-devices-url="{{ route('ui.v2.api.history.devices') }}" data-geo-url="{{ route('address.get') }}"
+        {{-- Dirección del punto gateada por el plugin igual que el legacy (History/index.blade → @if plugins.history_section_address.status) --}}
+        data-addr-on="{{ settings('plugins.history_section_address.status') ? '1' : '' }}"
         data-zones-url="{{ route('ui.v2.api.zones') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
         data-routes-url="{{ route('ui.v2.api.routes') }}" data-export-url="{{ route('history.export') }}"
         data-position-url="{{ route('history.position') }}"
@@ -580,5 +582,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=23"></script>
+    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=24"></script>
 @endpush

@@ -13,7 +13,9 @@
 @section('workspace')
     <div class="tp-events" id="tp-events" data-data-url="{{ route('ui.v2.api.events') }}"
         data-geo-url="{{ route('address.get') }}" data-zones-url="{{ route('ui.v2.api.zones') }}"
-        data-pois-url="{{ route('ui.v2.api.pois') }}" data-routes-url="{{ route('ui.v2.api.routes') }}">
+        data-pois-url="{{ route('ui.v2.api.pois') }}" data-routes-url="{{ route('ui.v2.api.routes') }}"
+        {{-- Direcciones gateadas por el plugin igual que el legacy (Events/index.blade → @if plugins.event_section_address.status) --}}
+        data-addr-on="{{ settings('plugins.event_section_address.status') ? '1' : '' }}">
         {{-- Map config (provider IDs, API keys) inyectado para la capa JS --}}
         <script type="application/json" id="tp-events-map-config">@json($mapConfig)</script>
 
@@ -132,5 +134,5 @@
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=11"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=12"></script>
 @endpush

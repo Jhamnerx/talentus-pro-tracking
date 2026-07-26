@@ -12,6 +12,8 @@
 
   var DATA_URL = root.getAttribute("data-data-url");
   var GEO_URL = root.getAttribute("data-geo-url");
+  // Sección de direcciones gateada por el plugin (paridad Events/index.blade legacy).
+  var ADDR_ON = root.getAttribute("data-addr-on") === "1";
   var ZONES_URL = root.getAttribute("data-zones-url");
   var POIS_URL = root.getAttribute("data-pois-url");
   var ROUTES_URL = root.getAttribute("data-routes-url");
@@ -155,7 +157,7 @@
     return text;
   }
   function geocodeEvent(ev) {
-    if (!GEO_URL || ev.lat == null || ev.lng == null) return;
+    if (!ADDR_ON || !GEO_URL || ev.lat == null || ev.lng == null) return;
     if (geoCache[ev.id] !== undefined) return;
     geoCache[ev.id] = null;
     fetch(
@@ -215,11 +217,11 @@
       esc(ev.device_name || "#" + (ev.device_id || "")) +
       " · " +
       esc(ev.time) +
-      '</span><span class="tp-events__addr" data-id="' +
-      ev.id +
-      '">' +
-      addr +
-      "</span></span></button>"
+      "</span>" +
+      (ADDR_ON
+        ? '<span class="tp-events__addr" data-id="' + ev.id + '">' + addr + "</span>"
+        : "") +
+      "</span></button>"
     );
   }
   function appendRows(events) {
@@ -246,9 +248,8 @@
       esc(ev.message || ev.type) +
       '</div><dl class="tp-ev-popup__defs"><dt>Hora</dt><dd>' +
       esc(ev.time) +
-      "</dd><dt>Ubicación</dt><dd data-ev-addr>" +
-      esc(addr) +
       "</dd>" +
+      (ADDR_ON ? "<dt>Ubicación</dt><dd data-ev-addr>" + esc(addr) + "</dd>" : "") +
       (ev.speed != null ? "<dt>Velocidad</dt><dd>" + Math.round(ev.speed) + " km/h</dd>" : "") +
       "<dt>Coordenadas</dt><dd>" +
       parseFloat(ev.lat).toFixed(5) +

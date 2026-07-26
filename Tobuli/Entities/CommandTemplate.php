@@ -22,6 +22,7 @@ class CommandTemplate extends AbstractEntity
         'message',
         'protocol',
         'adapted',
+        'lock_action',
     ];
 
     protected $searchable = [

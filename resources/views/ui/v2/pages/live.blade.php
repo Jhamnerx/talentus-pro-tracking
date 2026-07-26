@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=43">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=48">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -19,6 +19,8 @@
 @section('workspace')
     <div class="tp-live" id="tp-live" data-devices-url="{{ route('ui.v2.api.devices') }}"
         data-updates-url="{{ route('ui.v2.api.devices.updates') }}"
+        {{-- Dirección completa vs truncada del device: paridad plugin legacy device_widget_full_address --}}
+        data-widget-full-address="{{ settings('plugins.device_widget_full_address.status') ? '1' : '' }}"
         data-zones-url="{{ route('ui.v2.api.zones') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
         data-routes-url="{{ route('ui.v2.api.routes') }}" data-geo-url="{{ route('address.get') }}"
         data-routes-table-url="{{ route('ui.v2.routes_table') }}"
@@ -38,11 +40,56 @@
                 'formUrl' => $tpDevicesBase . '/{id}/form',
                 'storeUrl' => route('ui.v2.api.devices.store'),
                 'updateUrl' => $tpDevicesBase . '/{id}',
+                'destroyUrl' => $tpDevicesBase . '/{id}',
                 'canCreate' => $canCreate ?? false,
                 'canEdit' => $canCreate ?? false,
+                'canRemove' => Auth::user()->perm('devices', 'remove'),
+                // Candado anti-borrado (addon.object_delete_pass): si está seteado y es admin,
+                // el modal de borrado exige la contraseña, igual que Devices/destroy.blade legacy.
+                'objectDeletePass' => (bool) (config('addon.object_delete_pass') && isAdmin()),
             ];
         @endphp
         <script type="application/json" id="tp-device-modal-config">@json($tpDeviceModalConfig)</script>
+
+        {{-- Filtro avanzado (addon.object_filter): opciones de estado + labels (i18n),
+             mismas que Frontend\DevicesSidebarController::showFilters. Solo si el addon está ON. --}}
+        @if (config('addon.object_filter'))
+            @php
+                $tpFilterStatuses = [
+                    \Tobuli\Entities\Device::STATUS_MOVE => trans('front.move'),
+                    \Tobuli\Entities\Device::STATUS_STOP => trans('front.stop'),
+                    \Tobuli\Entities\Device::STATUS_ENGINE_ON => trans('front.engine_on'),
+                    \Tobuli\Entities\Device::STATUS_ENGINE_OFF => trans('front.engine_off'),
+                    \Tobuli\Entities\Device::STATUS_ONLINE => trans('global.online'),
+                    \Tobuli\Entities\Device::STATUS_OFFLINE => trans('global.offline'),
+                    \Tobuli\Entities\Device::STATUS_PARK => trans('front.park'),
+                    \Tobuli\Entities\Device::STATUS_IDLE => trans('front.idle'),
+                    \Tobuli\Entities\Device::STATUS_EXPIRED => trans('front.expired'),
+                    \Tobuli\Entities\Device::STATUS_INACTIVE => trans('front.inactive'),
+                ];
+                if (\Tobuli\Sensors\Types\Blocked::isEnabled()) {
+                    $tpFilterStatuses[\Tobuli\Entities\Device::STATUS_BLOCKED] = trans('front.blocked');
+                }
+                $tpFilterConfig = [
+                    'url' => route('ui.v2.api.devices.filter_ids'),
+                    'statuses' => $tpFilterStatuses,
+                    'labels' => [
+                        'title' => trans('validation.attributes.filter'),
+                        'status' => trans('validation.attributes.status'),
+                        'last_connection' => trans('admin.last_connection'),
+                        'minutes' => trans('front.minutes'),
+                        'from' => trans('global.from'),
+                        'to' => trans('global.to'),
+                        'filter_sidebar' => trans('front.filter_sidebar'),
+                        'filter_map' => trans('front.filter_map'),
+                        'apply' => trans('global.apply'),
+                        'clear' => trans('global.clear'),
+                        'cancel' => trans('global.cancel'),
+                    ],
+                ];
+            @endphp
+            <script type="application/json" id="tp-live-filter-config">@json($tpFilterConfig)</script>
+        @endif
 
         {{-- LEFT FILTER PANEL --}}
         <aside class="tp-live__filters" id="tp-live-filters">
@@ -81,6 +128,9 @@
                                 <circle cx="6" cy="7" r="0.5" fill="currentColor" />
                             </svg>
                         </button>
+                        {{-- Vista de lista: gateada por el plugin igual que el legacy
+                             (Objects/tabs/objects.blade → @if plugins.object_listview.status && perm devices view). --}}
+                        @if (settings('plugins.object_listview.status') && Auth::user()->perm('devices', 'view'))
                         <a class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" href="{{ route('ui.v2.fleet') }}"
                             id="tp-live-listview" title="Ver lista de vehículos" aria-label="Ver lista de vehículos">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -88,6 +138,19 @@
                                 <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
                             </svg>
                         </a>
+                        @endif
+                        {{-- Filtro avanzado: gateado por el addon igual que el legacy
+                             (Objects/tabs/objects.blade → @if config('addon.object_filter')). --}}
+                        @if (config('addon.object_filter'))
+                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button"
+                            id="tp-live-filter" title="{{ trans('validation.attributes.filter') }}"
+                            aria-label="{{ trans('validation.attributes.filter') }}" aria-pressed="false">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z" />
+                            </svg>
+                        </button>
+                        @endif
                     </div>
                 </div>
 
@@ -430,6 +493,9 @@
                         <path d="M19 12h3" />
                     </svg>
                 </button>
+                {{-- Geolocalización del navegador: gateada por el addon igual que el legacy
+                     (Frontend/Layouts/loged.blade.php → @if config('addon.html_geolocation')). --}}
+                @if (config('addon.html_geolocation'))
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-geolocate" title="Mi ubicación"
                     aria-label="Mi ubicación" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -442,6 +508,7 @@
                         <path d="M20 12h3" />
                     </svg>
                 </button>
+                @endif
 
                 <div class="tp-live__map-controls-divider" aria-hidden="true"></div>
 
@@ -690,11 +757,11 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=8"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=11"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=26"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=31"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=7"></script>

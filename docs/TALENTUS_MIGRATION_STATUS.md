@@ -7,6 +7,75 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 26 jul 2026 — Bloqueo: candado en lista + comandos por plantilla GPRS (rama `nuevo-tema`)
+
+- **Candado rojo/verde en la lista de Live**: si el device tiene el sensor `blocked`, cada fila muestra un candado junto al nombre (rojo=bloqueado, verde=libre). `DeviceMapTransformer` expone `blocked` (null/true/false) leyendo el sensor por device.
+- **Acento de color de estado** en el costado de cada fila (barra izquierda) con el `icon_color` real (`getStatusColor`).
+- **Altura uniforme de widgets del bottombar** (paridad legacy): antes se estiraban al más alto (`align-items:stretch` implícito con contenido variable); ahora **altura fija 200px** por card + cuerpo scrolleable.
+- **Comandos Cortar/Restablecer desde Plantillas de GPRS por TIPO de dispositivo** (no protocolo — marcas distintas comparten protocolo):
+  - Migración `command_templates.lock_action` (`block`/`unblock`) + `CommandTemplate::$fillable`.
+  - Selector "Uso en bloqueo de motor" en el form de plantilla GPRS **v2** (`commands-page.js`) y **legacy** (`UserGprsTemplates/create|edit`). Persistido por `UserGprsTemplateModalHelper` (create/edit) y expuesto en el meta v2.
+  - Widget: `lockCommand`/`lockTemplates` (endpoint `ui.v2.api.devices.lock_templates`) devuelve las plantillas **adaptadas al device** (por `isAdaptedFromDevice` → device_type); Cortar auto-elige la marcada `block`, Restablecer la `unblock` (con fallback a todas / texto libre). Se quitaron los campos de comando del plugin `locking_widget`.
+  - El estado del widget/candado se toma del **sensor `blocked`** (fuente única); el `parameter/value_on/off` del plugin queda solo como fallback.
+- Assets: live.js ?v=31, live-ops.css ?v=48, commands-page.js ?v=8. Migración: `php artisan migrate --force`.
+
+---
+
+## 🔄 Actualización · 25 jul 2026 (5) — Widget de bloqueo de motor + bottombar (rama `nuevo-tema`)
+
+- **Traducciones**: `locking_widget` 'Cierre' → **'Bloqueo de motor'**; `blocked` 'Obstruido' → **'Bloqueado'** (confundían al usuario).
+- **Widget de bloqueo/desbloqueo migrado a la v2** (plugin `locking_widget`, antes solo legacy `LockStatus`): card en el bottombar (gateada por el plugin) con **badge de estado** (Bloqueado/Desbloqueado/Desconocido leído del parámetro de la última posición), botones **Cortar motor** / **Restablecer** y **Historial** (modal con periodos por Hoy/Ayer/Semana). Backend nuevo en `DevicesController`: `widgets()` expone `$data['locking']`; `lockCommand()` (POST, envía por GPRS/SMS vía `SendCommandService`) y `lockHistory()` (periodos con las acciones History `AppendLockStatus`/`GroupLockOffStatus`/`Duration`, paridad `LockStatusController` legacy). Rutas `ui.v2.api.devices.lock_command|lock_history`.
+  - **Mejora sobre el legacy**: los comandos ahora se **preconfiguran** en el plugin (`options.command_on`/`command_off`, ej. Teltonika `setdigout 1`/`setdigout 0`) → un clic sin teclear. El modal precarga el comando (editable) + GPRS/SMS. Admin: nuevos campos en `Admin/Plugins/Partials/locking_widget.blade`.
+- **Bottombar**: fix de **scroll horizontal** cuando hay muchos widgets (el contenedor heredaba `pointer-events:none`; ahora `pointer-events:auto` + `flex:0 1 auto` + rueda→scroll horizontal respetando el scroll vertical de cada card).
+- **Widget Conductor** movido del bottombar al **drawer lateral** (`.tp-dw--side`).
+- Assets: live.js ?v=29, live-ops.css ?v=46. `config/tobuli.php` (nuevas options del plugin) → requiere `php artisan config:clear` en prod.
+
+---
+
+## 🔄 Actualización · 25 jul 2026 (4) — Borrado de device + filtro avanzado en v2 (rama `nuevo-tema`)
+
+Dos features legacy portadas a la v2 (implementadas "como el legacy"):
+
+**Borrado de vehículo (paridad `Devices/destroy.blade` + `DevicesController@destroy`):**
+- El modal de device (editar) ahora tiene botón **Eliminar** (danger, izquierda) gateado por `perm('devices','remove')`. Abre confirmación; si `addon.object_delete_pass` está activo (+admin) exige la **contraseña** (campo password), igual que el legacy.
+- `DevicesController@destroy` v2 revalida server-side (error `front.login_failed`). **Divergencia intencional del legacy:** el legacy compara contra la clave FIJA del `.env` (`addon.object_delete_pass`, compartida por todos); la v2 valida la **contraseña de login del propio usuario** (`Hash::check` contra su hash bcrypt) y usa `addon.object_delete_pass` solo como **interruptor on/off** del candado. Config en `$tpDeviceModalConfig`: `destroyUrl`, `canRemove`, `objectDeletePass`. Tras borrar refresca la lista (`onSaved → fetchDevices`). device-modal.js ?v=10.
+
+**Filtro avanzado del sidebar (paridad `addon.object_filter` + `Objects/filters` + `DevicesSidebarController`):**
+- Botón de filtro en el toolbar de Flota (`#tp-live-filter`), **gateado por `config('addon.object_filter')`**. Abre modal con: **estado[]** (mismas opciones i18n que `showFilters`, +Blocked si el sensor está activo), **última conexión** online/offline (min, con swap online≥offline como el legacy), y toggles **filter_sidebar / filter_map**.
+- El filtrado es **server-side fiel**: nuevo endpoint `DevicesController@filterIds` (`ui.v2.api.devices.filter_ids`) resuelve el set de IDs con los MISMOS scopes legacy (`->filter()` → `filterStatus/filterOnline/filterOffline`). El cliente aplica ese set a **lista** (`state.filtered`) y/o **mapa** (`state.mapFiltered`, decoplado de la lista para respetar los toggles independientes). Botón marca estado activo (`.is-active`). live.js ?v=28, live-ops.css ?v=45.
+
+Con esto `addon.object_filter` deja de estar "no migrado": el toggle del rail/objetos y su modal quedan con paridad completa. Actualizada §3 y la nota de la actualización (3).
+
+---
+
+## 🔄 Actualización · 25 jul 2026 (3) — Cierre de gaps de gating en v2 (rama `nuevo-tema`)
+
+Tras la auditoría cruzada legacy↔v2 de gates de addon/plugin, se corrigieron los que faltaban en features **ya migradas**:
+
+- **`addon.object_delete_pass`** (candado anti-borrado): [DevicesController@destroy](../app/Http/Controllers/Ui/V2/DevicesController.php) v2 ahora valida la contraseña cuando el flag está seteado + `isAdmin()`, replicando `Frontend\DevicesController@destroy` (error `front.login_failed`). *Nota:* la v2 aún no tiene UI de borrado de device; el endpoint ya queda blindado y, cuando se cablee la UI, debe enviar `password`.
+- **`plugins.event_section_address`**: Eventos v2 solo geocodifica/renderiza dirección si el plugin está ON (`data-addr-on` en events.blade → `ADDR_ON` en events.js; gatea `geocodeEvent`, la fila y el popup). events.js ?v=12.
+- **`plugins.history_section_address`**: Historial v2 solo muestra la fila "Dirección" del popup de punto y su `fetchAddr` si el plugin está ON (`data-addr-on` → `CFG.addrOn`). history.js ?v=24.
+- **`plugins.device_widget_full_address`**: la dirección del popup de device en Live usa `tp-addr--full` (wrap) u `tp-addr--clip` (elipsis) según el plugin (`data-widget-full-address` → `CFG.fullAddress`). live.js ?v=27, live-ops.css ?v=44.
+- **`plugins.object_listview`**: el botón "Ver lista de vehículos" de Live (`#tp-live-listview`) ahora va gateado por `settings('plugins.object_listview.status') && perm('devices','view')`, igual que `Objects/tabs/objects.blade`.
+
+**`addon.object_filter`**: es el **modal de filtro avanzado** legacy (`device_sidebar_filter`, botón en `Objects/tabs/objects.blade:20`). **✅ Migrado el 25-jul (ver actualización 4)**: botón `#tp-live-filter` gateado por `config('addon.object_filter')` + endpoint `filterIds` que reusa los scopes legacy.
+
+Estado de gates: todos los del legacy en features migradas quedan replicados. Pendientes = solo los de features aún no migradas (external_url, custom_fields(_task), reports_geofleet_in en geocerca, business_private_drive, checklists, beacons, media_categories — ver §3).
+
+---
+
+## 🔄 Actualización · 25 jul 2026 (2) — Auditoría de addons + gating en v2 (rama `nuevo-tema`)
+
+**Revisión de los 48 flags de `config/addon.php`** (qué habilita cada uno y dónde). Dos consecuencias para la migración:
+
+- **Principio confirmado (regla de oro):** *toda validación de addon (`config('addon.*')`) o plugin (`settings('plugins.*.status')`) que exista en el legacy debe replicarse EXACTA en la v2 — no se cambia ni se omite.* Añadido a §1 Convenciones.
+- **Fix aplicado:** el botón **"Mi ubicación"** de Live (`#tp-live-geolocate` en [live.blade.php](../resources/views/ui/v2/pages/live.blade.php)) estaba **siempre visible**; ahora va gateado por `@if (config('addon.html_geolocation'))`, igual que el legacy (`loged.blade.php`). El listener en `live.js` ya tolera la ausencia del botón (`if (geo)`), así que no requiere recompilar JS.
+- **Popups (sistema del admin) — PENDIENTE en v2:** el módulo `Popups/` (banners superiores + modales condicionales por reglas: FirstLogin, DemoUser, SubscriptionEnding, UserCreatedBefore, BillingPlan; posiciones top/esquinas/center; `show_every_days`) **NO está portado** al shell v2. En el legacy se inyecta desde `loged.blade.php` (`Frontend.Popups.index_banners_top` + `Frontend.Popups.index`); el `layout.blade.php` de la v2 no incluye esos partials. **Ojo:** es un sistema distinto de `tp-notify.js` (toasts de eventos en vivo, que sí está ✅). Ver fila `Popups/` en §3 y el ítem en pendientes user-facing.
+
+> Hallazgos de la auditoría (referencia rápida): addons OFF-por-defecto salvo `custom_fields`, `custom_fields_task`, `alert_move_start_filtered`, `engine_hours_current_report`, `beacons`, `fuel_strategy_peaks`, `street_view_frame`. Flags **muertos/vestigiales** en este fork: `distance_point` (declarado, nunca leído — la regla de medición no depende de él) y `time_text` (leído en `Device.php` pero no existe la clave → siempre null). `google_styled` solo añade `region:'MA'` a Google Maps (dejar OFF en Perú). `custom_overlays_map` añade la capa base id 97 (requiere subir tiles a `public/assets/custom/map-overlays/` + habilitar el id en `available_maps`). `call_actions`/`beacons` son **plugins** (`settings('plugins.*.status')`), no addons.
+
+---
+
 ## 🔄 Actualización · 22 jul 2026 (5) — Reportes rediseñado (rama `nuevo-tema`)
 
 **Módulo Reportes reescrito** (deja de ser el "shim" de generación rápida) con el visual de referencia, 100% sobre la lógica legacy:
@@ -228,6 +297,7 @@ Marcador **real del device** según `DeviceIconTransformer` (icono incluido en `
 - Modales/drawers/toasts: `window.tpModal.{open,close,confirm,toast,tabs,fetchJSON,...}`.
 - Permisos: `$this->user->perm('<dominio>', 'view|edit|remove')` (los únicos modos válidos según `config/permissions.php`).
 - Reutilizar `ModalHelpers/`, `Repositories/`, `Validators/` — la UI nueva solo orquesta.
+- **Gates de addon/plugin (regla de oro):** toda condición `config('addon.*')` o `settings('plugins.*.status')` presente en una vista/flujo legacy **debe existir idéntica** en su equivalente v2. Al portar un botón/menú/campo, copiar su `@if (...)` tal cual (ej. geolocalización → `config('addon.html_geolocation')`). No relajar ni asumir "siempre activo".
 
 ---
 
@@ -331,6 +401,7 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 > 7. **CustomFields** — panel de campos personalizados en los forms de device/tarea/usuario (addon).
 > 8. Menores: **DeviceRoutesType**, icon-picker por sensor (`IconsModal`), **Beacons**, **Forwards**, **SecondaryCredentials** (hoy deeplink a legacy).
 > 9. **Comercial** (`DevicePlans`·`DeviceSubscription`·`Subscriptions`) — evaluar si entra en el alcance del tema.
+> 10. **Popups** (`Popups/` — banners/modales condicionales del admin por reglas: FirstLogin/DemoUser/SubscriptionEnding/UserCreatedBefore/BillingPlan, posiciones top/esquinas/center, `show_every_days`, shortcodes). Gated por addon `notification_popops` (`SHOW_POPUPS`). Requiere incluir en `ui.v2.layout` los equivalentes de `Frontend.Popups.index_banners_top` (banners) y `Frontend.Popups.index` (modales auto-abiertos). NO confundir con `tp-notify.js` (toasts de eventos en vivo, ya ✅).
 >
 > Auth (`Login`/`Registration`/…) y admin (`Emails`/`Docs`/`Lookup`/`LoginAs`/`Schedules`/`SmsGateway` admin) quedan **fuera** del shell v2 de usuario.
 
@@ -357,12 +428,13 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `CallAction/` | ✅ `/ui/v2/call-actions` + `tp-call-actions.js` (tabla + filtros vehículo/respuesta + kebab; modal Vehículo→carga eventos recientes→Evento/Respuesta/Fecha/Notas). `CallActionsController` v2 sobre CallAction legacy (alert_id derivado del evento, called_at reverse a tz almacenada, validación CallActionFormValidator) | ✅ (25-jul; requiere permiso `call_actions`) |
 | `DeviceMedia/` · `DeviceVideo/` · `Video/` · `MediaCategories/` | widget Cámara (lectura) + links video legacy | ❌ galería/live/playback nativos |
 | `Sensors/` (modal) | ✅ migrado como tab **Sensores** del modal device (CRUD vía `SensorModalHelper`, buscador + grupo + preview) | ✅ |
-| `DeviceConfig/` · `LockStatus/` | stub | ❌ config remota del device / estado de bloqueo |
+| `DeviceConfig/` · `LockStatus/` | `LockStatus` ✅ (widget de bloqueo v2: estado + Cortar/Restablecer + historial, comandos preconfigurables) · `DeviceConfig` stub | ⚠️ Falta solo **DeviceConfig** (config remota del device) |
 | `DevicePlans/` · `DeviceSubscription/` · `Subscriptions/` | stub | ❌ |
 | `MyAccount/` · `MyAccountSettings/` · `Languages/` | ✅ **modal Ajustes de cuenta** (`tp-account.js`, engranaje/menú de usuario del topbar) con **paridad total de tabs** (títulos exactos legacy): Principal (unidades, formatos, inicio de semana, TZ, horario de verano) · Grupos de vehículos · Conductores · Tipos de vehículo · Eventos · SMS gateway · Plantillas de SMS · Plantillas de GPRS · Widgets · Tablero · Cliente · **Mapa** (2 toggles: velocidad en marcador + color de etiqueta por estado, per-usuario en map_controls, aplicados en Live). Tabs de formulario guardan contra `AccountController`; tabs CRUD reutilizan/crean endpoints (device-groups, drivers, vehicle-types, custom-events, commands/templates). **Contraseña** salió del modal → item "Cambiar contraseña" del menú de usuario (modal dedicado). Reutiliza validadores/servicios legacy | ✅ (23-jul; opciones avanzadas de bloques del Tablero y Membresía/Planes fuera de alcance) |
 | `VehicleTypes/` (tipos/estados p/ límites por geocerca) | matriz VSL en modal de geocerca ✅ + **CRUD de tipos/estados** en el tab "Tipos de vehículo" del modal de cuenta (`VehicleTypesController` ui/v2, estados anidados) ✅ | ✅ (23-jul) |
 | `CustomEvents/` (events_custom) | ✅ tab "Eventos" del modal de cuenta (`CustomEventsController` ui/v2 sobre CustomEventModalHelper; protocolo + mensaje + condiciones tag/tipo/valor) | ✅ (23-jul) |
-| `Popups/` + notifications.js (popup + sonido + desktop Notification) | ✅ `tp-notify.js` global (toast+sonido+Notification API, feed `events/live`) + tray con eventos reales | ✅ (22-jul; `Popups/` banners admin no portados — otro sistema) |
+| notifications.js (popup + sonido + desktop Notification de eventos) | ✅ `tp-notify.js` global (toast+sonido+Notification API, feed `events/live`) + tray con eventos reales | ✅ (22-jul) |
+| `Popups/` (banners/modales condicionales del admin, por reglas) | ❌ no incluido en `layout.blade.php` v2 | ❌ **pendiente** (sistema distinto de `tp-notify`; ver ítem 10 de pendientes) |
 | `ObjectsList/` (listview) | `fleet` | ✅ equivalente |
 | `Import/` (masivo devices) | solo geofences/pois import links | ❌ |
 | `Forwards/` · `SecondaryCredentials/` · `SmsGateway/` · `Beacons/` · `Lookup/` · `Addresses/` · `Docs` · `LoginAs/` · `Schedules/` | `admin` (deeplinks) | ⚠️ Solo enlace |

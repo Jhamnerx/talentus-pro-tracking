@@ -43,6 +43,16 @@ class DeviceMapTransformer extends DeviceTransformer
 
         $status = $entity->getStatus();
 
+        // Estado del sensor blocked (por device): null = no tiene sensor, true =
+        // bloqueado, false = desbloqueado. Alimenta el candado rojo/verde de la lista.
+        $blockedState = null;
+        if (Blocked::isEnabled()) {
+            $blockedSensor = $entity->getSensorByType('blocked');
+            if ($blockedSensor) {
+                $blockedState = (bool) $blockedSensor->getValueCurrent($entity)->getValue();
+            }
+        }
+
         if ($entity->speed > 90) {
             $tailColor = '#FF0000'; // Rojo
         } elseif ($entity->speed > 60) {
@@ -68,6 +78,7 @@ class DeviceMapTransformer extends DeviceTransformer
             'active' => $entity->pivot ? (bool)$entity->pivot->active : null,
             'group_id' => $entity->pivot ? (int)$entity->pivot->group_id : 0,
             'online' => $status,
+            'blocked' => $blockedState,
             'lat' => $entity->lat,
             'lng' => $entity->lng,
             'speed' => $entity->speed,

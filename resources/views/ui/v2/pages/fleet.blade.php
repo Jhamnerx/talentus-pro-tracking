@@ -22,8 +22,12 @@
                 'formUrl' => $tpDevicesBase . '/{id}/form',
                 'storeUrl' => route('ui.v2.api.devices.store'),
                 'updateUrl' => $tpDevicesBase . '/{id}',
+                'destroyUrl' => $tpDevicesBase . '/{id}',
                 'canCreate' => $canCreate ?? false,
                 'canEdit' => $canCreate ?? false,
+                'canRemove' => Auth::user()->perm('devices', 'remove'),
+                // Candado anti-borrado (addon.object_delete_pass): paridad Devices/destroy.blade legacy.
+                'objectDeletePass' => (bool) (config('addon.object_delete_pass') && isAdmin()),
             ];
         @endphp
         <script type="application/json" id="tp-device-modal-config">@json($tpDeviceModalConfig)</script>
@@ -127,7 +131,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=8"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=11"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=1" defer></script>
     <script>

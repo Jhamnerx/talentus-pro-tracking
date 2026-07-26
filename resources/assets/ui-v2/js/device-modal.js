@@ -43,8 +43,11 @@
     formUrl: "/ui/v2/api/devices/{id}/form",
     storeUrl: "/ui/v2/api/devices",
     updateUrl: "/ui/v2/api/devices/{id}",
+    destroyUrl: "/ui/v2/api/devices/{id}",
     canCreate: true,
     canEdit: true,
+    canRemove: false,
+    objectDeletePass: false,
   };
 
   // --------------------------------------------------------------------------
@@ -1439,6 +1442,100 @@
   }
 
   // --------------------------------------------------------------------------
+  // Borrado del vehículo (paridad Devices/destroy.blade + DevicesController@destroy
+  // legacy): confirma y, si addon.object_delete_pass está activo (+admin), exige la
+  // contraseña antes de hacer DELETE. El backend v2 revalida la contraseña.
+  // --------------------------------------------------------------------------
+  function confirmDelete(editDialog, id, onDeleted) {
+    var needPass = !!CFG.objectDeletePass;
+    var body =
+      '<p style="margin:0;">¿Eliminar este vehículo? Esta acción no se puede deshacer.</p>' +
+      (needPass
+        ? '<div class="tp-field" style="margin-top:12px;">' +
+          '<label class="tp-field__label">Confirma con tu contraseña de acceso *</label>' +
+          '<input type="password" class="tp-input" data-del-pass autocomplete="off" style="width:100%;">' +
+          '<span class="tp-field__hint" style="display:block;margin-top:4px;font-size:12px;opacity:.7;">La contraseña con la que inicias sesión.</span></div>'
+        : "") +
+      // Error inline (el toast queda detrás del modal apilado, no se ve).
+      '<div data-del-error role="alert" style="display:none;margin-top:10px;padding:8px 10px;border-radius:8px;font-size:13px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.35);"></div>';
+
+    function showErr(dlg2, msg) {
+      var e = dlg2.querySelector("[data-del-error]");
+      if (e) {
+        e.textContent = msg;
+        e.style.display = "block";
+      }
+    }
+    function clearErr(dlg2) {
+      var e = dlg2.querySelector("[data-del-error]");
+      if (e) e.style.display = "none";
+    }
+    function focusPass(dlg2) {
+      var i = dlg2.querySelector("[data-del-pass]");
+      if (i) {
+        i.focus();
+        i.select();
+      }
+    }
+
+    tpModal.open({
+      title: "Eliminar vehículo",
+      size: "sm",
+      body: body,
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Eliminar",
+          variant: "danger",
+          close: false,
+          onClick: function (dlg2) {
+            clearErr(dlg2);
+            var pass = needPass
+              ? ((dlg2.querySelector("[data-del-pass]") || {}).value || "").trim()
+              : "";
+            if (needPass && !pass) {
+              showErr(dlg2, "Ingresa tu contraseña de acceso.");
+              focusPass(dlg2);
+              return false;
+            }
+            tpModal.setBusy(dlg2, true);
+            tpModal
+              .fetchJSON(CFG.destroyUrl.replace("{id}", encodeURIComponent(id)), {
+                method: "DELETE",
+                json: needPass ? { password: pass } : {},
+              })
+              .then(function (res) {
+                tpModal.setBusy(dlg2, false);
+                if (res.status === 422) {
+                  showErr(dlg2, (res.data && res.data.message) || "Contraseña incorrecta.");
+                  focusPass(dlg2);
+                  return;
+                }
+                if (!res.ok || !res.data || !res.data.ok) {
+                  showErr(dlg2, (res.data && res.data.message) || "No se pudo eliminar el vehículo.");
+                  return;
+                }
+                tpModal.toast("Vehículo eliminado.", "success");
+                tpModal.close(dlg2);
+                if (editDialog) tpModal.close(editDialog);
+                if (typeof onDeleted === "function") {
+                  try {
+                    onDeleted();
+                  } catch (_) {}
+                }
+              })
+              .catch(function () {
+                tpModal.setBusy(dlg2, false);
+                showErr(dlg2, "Error de red. Inténtalo de nuevo.");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+
+  // --------------------------------------------------------------------------
   // API pública
   // --------------------------------------------------------------------------
   function open(opts) {
@@ -1454,12 +1551,23 @@
       return;
     }
 
+    // Botón Eliminar (izquierda) solo al editar y con permiso devices.remove.
+    var deleteBtn = {
+      label: "Eliminar",
+      variant: "danger",
+      close: false,
+      onClick: function (dialog) {
+        confirmDelete(dialog, opts.id, opts.onSaved);
+        return false;
+      },
+    };
+
     var dlg = tpModal.open({
       title: isEdit ? "Editar vehículo" : "Nuevo vehículo",
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
-      buttons: [
+      buttons: (isEdit && CFG.canRemove ? [deleteBtn] : []).concat([
         { label: "Cancelar", variant: "ghost", close: true },
         {
           label: "Guardar",
@@ -1514,7 +1622,7 @@
             return false;
           },
         },
-      ],
+      ]),
     });
 
     fetchFormHtml(opts.id)

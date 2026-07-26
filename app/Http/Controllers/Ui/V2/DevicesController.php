@@ -361,6 +361,15 @@ class DevicesController extends BaseController
             return response()->json(['ok' => false, 'message' => 'Sin permiso para eliminar vehículos.'], 403);
         }
 
+        // Candado anti-borrado. DIVERGE del legacy a propósito: el legacy compara contra la
+        // clave FIJA del .env (addon.object_delete_pass) compartida por todos; la v2 valida la
+        // CONTRASEÑA DE LOGIN del propio usuario (Hash::check contra su hash bcrypt). Aquí
+        // addon.object_delete_pass funciona solo como interruptor on/off del candado.
+        if (config('addon.object_delete_pass') && isAdmin()
+            && ! \Hash::check((string) $request->input('password'), (string) $this->user->password)) {
+            return response()->json(['ok' => false, 'message' => trans('front.login_failed')], 422);
+        }
+
         try {
             $helper = app(DeviceModalHelper::class);
             $helper->setUser($this->user);
@@ -376,6 +385,47 @@ class DevicesController extends BaseController
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Filtro avanzado del sidebar (paridad addon.object_filter + Objects/filters
+     * legacy). Resuelve el CONJUNTO de IDs que pasan el filtro usando los MISMOS
+     * scopes legacy (filterStatus/filterOnline/filterOffline vía ->filter(), igual
+     * que DevicesSidebarController). El front lo aplica a la lista y/o al mapa
+     * según filter_sidebar/filter_map — sin re-fetch de toda la lista.
+     */
+    public function filterIds(Request $request): JsonResponse
+    {
+        $filters = [];
+
+        $status = array_values(array_filter(
+            (array) $request->input('status', []),
+            function ($s) { return $s !== '' && $s !== null; }
+        ));
+        if ($status) {
+            $filters['status'] = $status;
+        }
+        if ($request->filled('online')) {
+            $filters['online'] = (int) $request->input('online');
+        }
+        if ($request->filled('offline')) {
+            $filters['offline'] = (int) $request->input('offline');
+        }
+
+        $ids = [];
+        if ($filters) {
+            $ids = $this->user->devices()
+                ->filter($filters)
+                ->pluck('devices.id')
+                ->map(function ($id) { return (int) $id; })
+                ->all();
+        }
+
+        return response()->json([
+            'ok'       => true,
+            'filtered' => (bool) $filters,
+            'ids'      => $ids,
+        ]);
     }
 
     /* =================================================================
@@ -1110,6 +1160,45 @@ class DevicesController extends BaseController
             $data['video_playback_url'] = url('/device_video/' . $device->id . '/playback/modal');
         }
 
+        // Widget de bloqueo de motor (plugin locking_widget). Gateado por el plugin
+        // (no por la config de widgets): al activarlo aparece por device. Lee el
+        // estado del parámetro de la última posición (igual que LockStatusController
+        // legacy) y expone los comandos preconfigurados para Cortar/Restablecer.
+        if (settings('plugins.locking_widget.status')) {
+            $lockStatus = null; // null = desconocido
+            // 1) Fuente preferida: el sensor "blocked" del device (misma que el candado
+            //    de la lista). Así se configura UNA vez en el sensor y sirve para todo.
+            if (\Tobuli\Sensors\Types\Blocked::isEnabled() && ($bs = $device->getSensorByType('blocked'))) {
+                $lockStatus = (bool) $bs->getValueCurrent($device)->getValue();
+            } else {
+                // 2) Fallback: parámetro crudo configurado en el plugin (parameter/value_on/off).
+                try {
+                    $lastPos = $device->positionTraccar();
+                    $params  = $lastPos ? $lastPos->parameters : [];
+                    $p    = settings('plugins.locking_widget.options.parameter');
+                    $vOn  = settings('plugins.locking_widget.options.value_on');
+                    $vOff = settings('plugins.locking_widget.options.value_off');
+                    if (isset($params[$p]) && (string) $params[$p] === (string) $vOn) {
+                        $lockStatus = true;
+                    } elseif (isset($params[$p]) && (string) $params[$p] === (string) $vOff) {
+                        $lockStatus = false;
+                    }
+                } catch (\Throwable $e) {
+                    $lockStatus = null;
+                }
+            }
+
+            $data['locking'] = [
+                'status'        => $lockStatus, // true=bloqueado, false=libre, null=desconocido
+                'can_sms'       => $this->user->canSendSMS() && ! empty($device->sim_number),
+                'command_url'   => route('ui.v2.api.devices.lock_command', $device->id),
+                'history_url'   => route('ui.v2.api.devices.lock_history', $device->id),
+                // Comandos desde las Plantillas de GPRS adaptadas al equipo (por
+                // protocolo/tipo): diferentes modelos → distinto mensaje.
+                'templates_url' => route('ui.v2.api.devices.lock_templates', $device->id),
+            ];
+        }
+
         $html = View::make('ui.v2.partials.device-widgets', $data)->render();
 
         return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
@@ -1143,5 +1232,114 @@ class DevicesController extends BaseController
         ]);
 
         return response()->json($helper->itemsJson());
+    }
+
+    /**
+     * Widget de bloqueo (v2): envía el comando Cortar/Restablecer por GPRS o SMS,
+     * reutilizando SendCommandService (misma tubería que el LockStatus legacy).
+     */
+    public function lockCommand(Request $request, $id): JsonResponse
+    {
+        if (! settings('plugins.locking_widget.status')) {
+            return response()->json(['ok' => false, 'message' => 'Función no habilitada.'], 403);
+        }
+        $device = DeviceRepo::find((int) $id);
+        if (! $device) {
+            return response()->json(['ok' => false, 'message' => 'Vehículo no encontrado.'], 404);
+        }
+        $this->checkException('devices', 'show', $device);
+
+        $type    = $request->input('type', 'gprs');
+        $message = trim((string) $request->input('message', ''));
+        if ($message === '') {
+            return response()->json(['ok' => false, 'message' => 'El comando está vacío.'], 422);
+        }
+
+        $svc = app(\Tobuli\Services\Commands\SendCommandService::class);
+        try {
+            if ($type === 'sms') {
+                if (! $this->user->canSendSMS() || empty($device->sim_number)) {
+                    return response()->json(['ok' => false, 'message' => 'SMS no disponible para este vehículo.'], 422);
+                }
+                $result = $svc->sms($device, ['type' => 'custom', 'message' => $message], $this->user);
+            } else {
+                $result = $svc->gprs($device, ['type' => 'custom', 'data' => $message], $this->user);
+            }
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+        }
+
+        $resp = is_array($result) ? ($result[0] ?? []) : [];
+        if (! empty($resp['error'])) {
+            return response()->json(['ok' => false, 'message' => $resp['error']], 422);
+        }
+
+        return response()->json(['ok' => true, 'message' => trans('front.command_sent')]);
+    }
+
+    /**
+     * Plantillas de GPRS del usuario ADAPTADAS a este device (por protocolo /
+     * tipo / dispositivo, vía isAdaptedFromDevice). El widget de bloqueo las
+     * ofrece para Cortar/Restablecer — así cada modelo usa su propio comando.
+     */
+    public function lockTemplates(Request $request, $id): JsonResponse
+    {
+        $device = DeviceRepo::find((int) $id);
+        if (! $device) {
+            return response()->json(['ok' => false], 404);
+        }
+        $this->checkException('devices', 'show', $device);
+
+        $items = \Tobuli\Entities\UserGprsTemplate::where('user_id', $this->user->id)
+            ->get()
+            ->filter(function ($t) use ($device) {
+                return $t->isAdaptedFromDevice($device);
+            })
+            ->map(function ($t) {
+                return [
+                    'id'          => (int) $t->id,
+                    'title'       => (string) $t->title,
+                    'message'     => (string) $t->message,
+                    'lock_action' => (string) ($t->lock_action ?? ''),
+                ];
+            })
+            ->values()
+            ->all();
+
+        return response()->json(['ok' => true, 'items' => $items]);
+    }
+
+    /** Historial de bloqueo del device (periodos), paridad LockStatusController legacy. */
+    public function lockHistory(Request $request, $id): JsonResponse
+    {
+        $device = DeviceRepo::find((int) $id);
+        if (! $device) {
+            return response()->json(['ok' => false], 404);
+        }
+        $this->checkException('devices', 'show', $device);
+
+        $period = getPeriodByPhrase($request->get('period', 'today'));
+
+        $history = new \Tobuli\History\DeviceHistory($device);
+        $history->registerActions([
+            \Tobuli\History\Actions\AppendLockStatus::class,
+            \Tobuli\History\Actions\Duration::class,
+            \Tobuli\History\Actions\GroupLockOffStatus::class,
+        ]);
+        $history->setRange($period['start'], $period['end']);
+
+        $result = $history->get();
+        $groups = isset($result['groups']) ? ($result['groups']->all() ?? []) : [];
+
+        $rows = array_map(function ($g) {
+            return [
+                'time'     => $g->getStartAt(),
+                'duration' => $g->stats()->human('duration'),
+                'lat'      => $g->getStartPosition()->latitude,
+                'lng'      => $g->getStartPosition()->longitude,
+            ];
+        }, $groups);
+
+        return response()->json(['ok' => true, 'items' => $rows]);
     }
 }

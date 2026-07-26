@@ -19,6 +19,7 @@
     zonesUrl: root.getAttribute("data-zones-url"),
     poisUrl: root.getAttribute("data-pois-url"),
     geoUrl: root.getAttribute("data-geo-url") || "",
+    fullAddress: root.getAttribute("data-widget-full-address") === "1",
     pollInterval: parseInt(root.getAttribute("data-poll-interval"), 10) || 15000,
   };
 
@@ -65,7 +66,10 @@
     index: {},
     markers: {}, // id → L.marker
     deviceLayer: null, // L.layerGroup
-    filtered: [],
+    filtered: [], // lista (search + estado + filtro avanzado si sidebar)
+    mapFiltered: [], // marcadores (search + estado + filtro avanzado si map)
+    // Filtro avanzado (addon.object_filter): ids resueltos por backend + toggles.
+    advFilter: { ids: null, sidebar: true, map: true, statuses: [], online: null, offline: null },
     visual: [],
     groups: [],
     grouped: true,
@@ -278,7 +282,7 @@
   function renderMarkers() {
     if (!state.map) return;
     var seen = {};
-    state.filtered.forEach(function (d) {
+    state.mapFiltered.forEach(function (d) {
       if (d.lat == null || d.lng == null) return;
       if (d.active === false) return;
       seen[d.id] = true;
@@ -363,7 +367,7 @@
   }
 
   function fitToFleet() {
-    var pts = state.filtered
+    var pts = state.mapFiltered
       .filter(function (d) {
         return d.lat != null && d.lng != null && d.active !== false;
       })
@@ -448,7 +452,7 @@
     }
     if (!m.hasLayer(state.tailLayer)) state.tailLayer.addTo(m);
     state.tailLayer.clearLayers();
-    state.filtered.forEach(function (d) {
+    state.mapFiltered.forEach(function (d) {
       if (d.active === false) return;
       var tail = d.tail;
       if (typeof tail === "string") {
@@ -633,7 +637,9 @@
       esc(speed) +
       "</dd><dt>Hora</dt><dd>" +
       esc(d.time || "—") +
-      '</dd><dt>Ubicación</dt><dd data-pop-addr>Cargando…</dd></dl>' +
+      '</dd><dt>Ubicación</dt><dd data-pop-addr class="' +
+      (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
+      '">Cargando…</dd></dl>' +
       '<div class="tp-hito-ref" data-pop-hito hidden></div>' +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>Ver detalles</button></div>';
     if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
@@ -847,11 +853,16 @@
   // -----------------------------------------------------------
   // Lista (búsqueda + estado + grupos, con cabeceras colapsables)
   // -----------------------------------------------------------
+  // Filtro avanzado: true si el device pasa el set de IDs (o no hay filtro).
+  function advPass(d) {
+    return !state.advFilter.ids || state.advFilter.ids.has(Number(d.id));
+  }
   function recompute() {
     var q = state.searchQuery.trim().toLowerCase();
     var sf = state.statusFilter;
     var counts = { all: state.devices.length, moving: 0, idle: 0, offline: 0 };
-    state.filtered = state.devices.filter(function (d) {
+    // Base: búsqueda + filtro de estado segmentado (siempre aplican a lista y mapa).
+    var base = state.devices.filter(function (d) {
       var c = classify(d);
       if (c === "moving") counts.moving++;
       else if (c === "idle") counts.idle++;
@@ -863,13 +874,20 @@
       }
       return true;
     });
-    state.filtered.sort(function (a, b) {
+    // Filtro avanzado (addon.object_filter): set de IDs del backend, aplicado a
+    // lista y/o mapa según filter_sidebar / filter_map (paridad legacy).
+    var af = state.advFilter;
+    state.filtered = af.ids && af.sidebar ? base.filter(advPass) : base.slice();
+    state.mapFiltered = af.ids && af.map ? base.filter(advPass) : base.slice();
+    var sorter = function (a, b) {
       var r = { moving: 0, idle: 1, offline: 2 };
       var ra = r[classify(a)],
         rb = r[classify(b)];
       if (ra !== rb) return ra - rb;
       return (a.name || "").localeCompare(b.name || "");
-    });
+    };
+    state.filtered.sort(sorter);
+    state.mapFiltered.sort(sorter);
     ["all", "moving", "idle", "offline"].forEach(function (k) {
       var n = root.querySelector('[data-count="' + k + '"]');
       if (n) n.textContent = counts[k];
@@ -884,6 +902,353 @@
       window.tpUpdateLiveStatus({ moving: counts.moving, idle: counts.idle, offline: counts.offline });
   }
 
+  // -----------------------------------------------------------
+  // Filtro avanzado del sidebar (addon.object_filter). Paridad con el legacy
+  // Objects/filters: estado[] + última conexión (online/offline min) + toggles
+  // filter_sidebar / filter_map. El backend resuelve el set de IDs con los MISMOS
+  // scopes (->filter()); aquí se aplica a lista y/o mapa.
+  // -----------------------------------------------------------
+  var FILTER_CFG = (function () {
+    var el = document.getElementById("tp-live-filter-config");
+    if (!el) return null;
+    try {
+      return JSON.parse(el.textContent || "null");
+    } catch (e) {
+      return null;
+    }
+  })();
+
+  function setFilterBtnActive(on) {
+    var btn = document.getElementById("tp-live-filter");
+    if (!btn) return;
+    btn.classList.toggle("is-active", !!on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+
+  function openAdvancedFilter() {
+    if (!FILTER_CFG || !window.tpModal) return;
+    var L2 = FILTER_CFG.labels || {};
+    var af = state.advFilter;
+    var statusRows = Object.keys(FILTER_CFG.statuses || {})
+      .map(function (val) {
+        var on = af.statuses && af.statuses.indexOf(val) >= 0 ? " checked" : "";
+        return (
+          '<label style="display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px;cursor:pointer;">' +
+          '<input type="checkbox" data-f-status value="' + esc(val) + '"' + on + "> " +
+          "<span>" + esc(FILTER_CFG.statuses[val]) + "</span></label>"
+        );
+      })
+      .join("");
+    var body =
+      '<div class="tp-scope">' +
+      '<div style="display:flex;gap:16px;margin-bottom:12px;font-size:13px;">' +
+      '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" data-f-sidebar' +
+      (af.sidebar ? " checked" : "") +
+      "> " + esc(L2.filter_sidebar || "Lista") + "</label>" +
+      '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" data-f-map' +
+      (af.map ? " checked" : "") +
+      "> " + esc(L2.filter_map || "Mapa") + "</label></div>" +
+      '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">' + esc(L2.status || "Estado") + "</div>" +
+      '<div style="max-height:190px;overflow:auto;border:1px solid var(--border-default);border-radius:8px;padding:6px 10px;">' +
+      statusRows + "</div>" +
+      '<div style="font-size:12px;font-weight:600;margin:12px 0 4px;">' +
+      esc(L2.last_connection || "Última conexión") + " (" + esc(L2.minutes || "min") + ")</div>" +
+      '<div style="display:flex;gap:8px;">' +
+      '<input type="number" min="0" class="tp-input" data-f-online placeholder="' + esc(L2.from || "Desde") +
+      '" value="' + (af.online != null ? af.online : "") + '" style="width:50%;">' +
+      '<input type="number" min="0" class="tp-input" data-f-offline placeholder="' + esc(L2.to || "Hasta") +
+      '" value="' + (af.offline != null ? af.offline : "") + '" style="width:50%;"></div></div>';
+    tpModal.open({
+      title: L2.title || "Filtro",
+      size: "sm",
+      body: body,
+      buttons: [
+        {
+          label: L2.clear || "Limpiar",
+          variant: "ghost",
+          close: false,
+          onClick: function (dlg) {
+            clearAdvancedFilter();
+            tpModal.close(dlg);
+            return false;
+          },
+        },
+        { label: L2.cancel || "Cancelar", variant: "ghost", close: true },
+        {
+          label: L2.apply || "Aplicar",
+          variant: "primary",
+          close: false,
+          onClick: function (dlg) {
+            applyAdvancedFilter(dlg);
+            return false;
+          },
+        },
+      ],
+    });
+  }
+
+  function applyAdvancedFilter(dlg) {
+    var statuses = Array.prototype.map.call(
+      dlg.querySelectorAll("[data-f-status]:checked"),
+      function (c) { return c.value; }
+    );
+    var online = ((dlg.querySelector("[data-f-online]") || {}).value || "").trim();
+    var offline = ((dlg.querySelector("[data-f-offline]") || {}).value || "").trim();
+    var sidebar = !!(dlg.querySelector("[data-f-sidebar]") || {}).checked;
+    var map = !!(dlg.querySelector("[data-f-map]") || {}).checked;
+    // online >= offline (paridad applySidebarFilters legacy)
+    if (online !== "" && offline !== "" && parseInt(online, 10) < parseInt(offline, 10)) {
+      var t = online;
+      online = offline;
+      offline = t;
+    }
+    var af = state.advFilter;
+    af.statuses = statuses;
+    af.online = online === "" ? null : parseInt(online, 10);
+    af.offline = offline === "" ? null : parseInt(offline, 10);
+    af.sidebar = sidebar;
+    af.map = map;
+    var hasFilter = statuses.length || online !== "" || offline !== "";
+    if (!hasFilter || (!sidebar && !map)) {
+      af.ids = null;
+      setFilterBtnActive(false);
+      recompute();
+      renderList();
+      renderMarkers();
+      tpModal.close(dlg);
+      return;
+    }
+    var params = [];
+    statuses.forEach(function (s) { params.push("status[]=" + encodeURIComponent(s)); });
+    if (online !== "") params.push("online=" + encodeURIComponent(online));
+    if (offline !== "") params.push("offline=" + encodeURIComponent(offline));
+    tpModal.setBusy(dlg, true);
+    fetch(FILTER_CFG.url + "?" + params.join("&"), {
+      credentials: "same-origin",
+      headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        tpModal.setBusy(dlg, false);
+        if (!res || !res.ok) {
+          tpModal.toast && tpModal.toast("No se pudo aplicar el filtro.", "error");
+          return;
+        }
+        state.advFilter.ids = res.filtered ? new Set((res.ids || []).map(Number)) : null;
+        setFilterBtnActive(!!state.advFilter.ids);
+        recompute();
+        renderList();
+        renderMarkers();
+        tpModal.close(dlg);
+      })
+      .catch(function () {
+        tpModal.setBusy(dlg, false);
+        tpModal.toast && tpModal.toast("Error de red.", "error");
+      });
+  }
+
+  function clearAdvancedFilter() {
+    state.advFilter = { ids: null, sidebar: true, map: true, statuses: [], online: null, offline: null };
+    setFilterBtnActive(false);
+    recompute();
+    renderList();
+    renderMarkers();
+  }
+
+  // -----------------------------------------------------------
+  // Widget de bloqueo de motor (plugin locking_widget). Botones Cortar/
+  // Restablecer → modal con el comando preconfigurado (editable) + GPRS/SMS →
+  // POST a lock-command. Historial → modal con los periodos (lock-history).
+  // -----------------------------------------------------------
+  function openLockCommand(btn) {
+    var card = btn.closest("[data-tp-locking]");
+    if (!card || !window.tpModal) return;
+    var isOn = btn.getAttribute("data-lock-action") === "on";
+    var canSms = card.getAttribute("data-can-sms") === "1";
+    var url = card.getAttribute("data-command-url");
+    var tplUrl = card.getAttribute("data-templates-url");
+    var body =
+      '<p style="margin:0 0 10px;">' +
+      (isOn
+        ? "Se enviará el comando para <b>cortar</b> el motor del vehículo."
+        : "Se enviará el comando para <b>restablecer</b> el motor del vehículo.") +
+      "</p>" +
+      '<label class="tp-field__label">Envío</label>' +
+      '<select class="tp-input" data-lock-type style="width:100%;margin:4px 0 10px;"><option value="gprs">GPRS</option>' +
+      (canSms ? '<option value="sms">SMS</option>' : "") +
+      "</select>" +
+      '<label class="tp-field__label">Plantilla GPRS</label>' +
+      '<select class="tp-input" data-lock-tpl style="width:100%;margin:4px 0 10px;"><option value="">Cargando…</option></select>' +
+      '<label class="tp-field__label">Comando</label>' +
+      '<input type="text" class="tp-input" data-lock-cmd value="" placeholder="' +
+      (isOn ? "setdigout 1" : "setdigout 0") +
+      '" style="width:100%;margin-top:4px;">' +
+      '<div data-lock-err role="alert" style="display:none;margin-top:10px;padding:8px 10px;border-radius:8px;font-size:13px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.35);"></div>';
+    var dlg = tpModal.open({
+      title: isOn ? "Cortar motor" : "Restablecer motor",
+      size: "sm",
+      body: body,
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: isOn ? "Cortar" : "Restablecer",
+          variant: isOn ? "danger" : "primary",
+          close: false,
+          onClick: function (dlg) {
+            var cmd = ((dlg.querySelector("[data-lock-cmd]") || {}).value || "").trim();
+            var type = (dlg.querySelector("[data-lock-type]") || {}).value || "gprs";
+            var err = dlg.querySelector("[data-lock-err]");
+            function showErr(m) {
+              if (err) {
+                err.textContent = m;
+                err.style.display = "block";
+              }
+            }
+            if (!cmd) {
+              showErr("Elige una plantilla o escribe el comando a enviar.");
+              return false;
+            }
+            if (err) err.style.display = "none";
+            tpModal.setBusy(dlg, true);
+            tpModal
+              .fetchJSON(url, { method: "POST", json: { type: type, message: cmd } })
+              .then(function (res) {
+                tpModal.setBusy(dlg, false);
+                if (!res.ok || !res.data || !res.data.ok) {
+                  showErr((res.data && res.data.message) || "No se pudo enviar el comando.");
+                  return;
+                }
+                tpModal.toast((res.data && res.data.message) || "Comando enviado.", "success");
+                tpModal.close(dlg);
+              })
+              .catch(function () {
+                tpModal.setBusy(dlg, false);
+                showErr("Error de red. Inténtalo de nuevo.");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+    // Carga las plantillas GPRS adaptadas al equipo; al elegir una, precarga su
+    // comando. Si solo hay una, la selecciona automáticamente.
+    var tplSel = dlg.querySelector("[data-lock-tpl]");
+    var cmdInput = dlg.querySelector("[data-lock-cmd]");
+    function fallbackOption() {
+      tplSel.innerHTML = '<option value="">— Escribir comando manualmente —</option>';
+    }
+    if (tplUrl) {
+      fetch(tplUrl, {
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          var all = (res && res.ok && res.items) || [];
+          // Preferir plantillas marcadas para esta acción (block=Cortar / unblock=
+          // Restablecer). Si no hay marcadas, ofrecer todas las adaptadas al equipo.
+          var want = isOn ? "block" : "unblock";
+          var flagged = all.filter(function (t) { return t.lock_action === want; });
+          var items = flagged.length ? flagged : all;
+          tplSel._items = items;
+          var opts = '<option value="">— Escribir comando manualmente —</option>';
+          items.forEach(function (t, i) {
+            opts +=
+              '<option value="' + i + '">' +
+              tpModal.escapeHtml(t.title) +
+              (t.lock_action === want ? " ✓" : "") +
+              "</option>";
+          });
+          tplSel.innerHTML = opts;
+          // Auto-seleccionar cuando hay exactamente una candidata.
+          if (items.length === 1) {
+            tplSel.value = "0";
+            cmdInput.value = items[0].message || "";
+          }
+        })
+        .catch(fallbackOption);
+    } else {
+      fallbackOption();
+    }
+    tplSel.addEventListener("change", function () {
+      var items = tplSel._items || [];
+      var idx = tplSel.value;
+      if (idx !== "" && items[idx]) cmdInput.value = items[idx].message || "";
+    });
+  }
+
+  function openLockHistory(btn) {
+    var card = btn.closest("[data-tp-locking]");
+    if (!card || !window.tpModal) return;
+    var url = card.getAttribute("data-history-url");
+    var dlg = tpModal.open({
+      title: "Historial de bloqueo",
+      size: "md",
+      body:
+        '<div style="margin-bottom:10px;"><select class="tp-input" data-lock-period style="width:auto;">' +
+        '<option value="today">Hoy</option><option value="yesterday">Ayer</option>' +
+        '<option value="this_week">Esta semana</option><option value="last_week">Semana pasada</option></select></div>' +
+        '<div data-lock-hist><div class="tp-text-muted" style="padding:12px;">Cargando…</div></div>',
+      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+    });
+    function load(period) {
+      var box = dlg.querySelector("[data-lock-hist]");
+      box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Cargando…</div>';
+      fetch(url + "?period=" + encodeURIComponent(period), {
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+      })
+        .then(function (r) {
+          return r.json();
+        })
+        .then(function (res) {
+          if (!res || !res.ok) {
+            box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">No se pudo cargar.</div>';
+            return;
+          }
+          var items = res.items || [];
+          if (!items.length) {
+            box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Sin registros en el periodo.</div>';
+            return;
+          }
+          box.innerHTML =
+            '<table class="tp-lock-hist"><thead><tr><th>Inicio</th><th>Duración</th><th>Ubicación</th></tr></thead><tbody>' +
+            items
+              .map(function (it) {
+                var loc =
+                  it.lat != null
+                    ? '<a href="https://maps.google.com/?q=' +
+                      it.lat +
+                      "," +
+                      it.lng +
+                      '" target="_blank" rel="noopener">' +
+                      Number(it.lat).toFixed(5) +
+                      ", " +
+                      Number(it.lng).toFixed(5) +
+                      "</a>"
+                    : "—";
+                return (
+                  "<tr><td>" +
+                  tpModal.escapeHtml(it.time || "") +
+                  "</td><td>" +
+                  tpModal.escapeHtml(it.duration || "") +
+                  "</td><td>" +
+                  loc +
+                  "</td></tr>"
+                );
+              })
+              .join("") +
+            "</tbody></table>";
+        })
+        .catch(function () {
+          box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Error de red.</div>';
+        });
+    }
+    var sel = dlg.querySelector("[data-lock-period]");
+    if (sel) sel.addEventListener("change", function () { load(sel.value); });
+    load("today");
+  }
+
   function groupTitle(gid) {
     if (!gid) return "Sin grupo";
     for (var i = 0; i < state.groups.length; i++)
@@ -896,24 +1261,41 @@
     var speedTxt = d.speed_text || speedNum + " km/h";
     var meta = d.plate_number || d.imei || "";
     var active = d.active !== false;
+    // Acento lateral con el color de estado real del device (getStatusColor).
+    var accent = d.icon_color || "";
+    // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
+    var lockIcon = "";
+    if (d.blocked === true || d.blocked === false) {
+      lockIcon =
+        '<span class="tp-lock-ico ' +
+        (d.blocked ? "tp-lock-ico--on" : "tp-lock-ico--off") +
+        '" title="' +
+        (d.blocked ? "Motor bloqueado" : "Motor desbloqueado") +
+        '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>';
+    }
     return (
       '<div class="tp-live__row" data-id="' +
       d.id +
       '" data-status="' +
       status +
-      '" role="option">' +
+      '"' +
+      (accent ? ' style="--tp-accent:' + accent + '"' : "") +
+      ' role="option">' +
       '<label class="tp-live__row-active" title="Mostrar en el mapa"><input type="checkbox" data-id="' +
       d.id +
       '"' +
       (active ? " checked" : "") +
       "></label>" +
       '<span class="tp-live__row-dot"></span>' +
-      '<div class="tp-live__row-main"><div class="tp-live__row-name">' +
+      '<div class="tp-live__row-main"><div class="tp-live__row-name"><span class="tp-live__row-nametext">' +
       esc(d.name || "#" + d.id) +
+      "</span>" +
+      lockIcon +
       '</div><div class="tp-live__row-meta">' +
       esc(meta) +
       "</div></div>" +
-      '<div class="tp-live__row-end"><span class="tp-live__row-speed' +
+      '<div class="tp-live__row-end">' +
+      '<span class="tp-live__row-speed' +
       (speedNum === 0 ? " tp-live__row-speed--zero" : "") +
       '">' +
       esc(speedTxt) +
@@ -1633,6 +2015,10 @@
       if (menu) menu.hidden = true;
     });
 
+    // Filtro avanzado (addon.object_filter): abre el modal de filtro.
+    var filterBtn = document.getElementById("tp-live-filter");
+    if (filterBtn && FILTER_CFG) filterBtn.addEventListener("click", openAdvancedFilter);
+
     // Geolocalización
     var geo = document.getElementById("tp-live-geolocate");
     if (geo)
@@ -1708,6 +2094,43 @@
     }, 0);
 
     // Bottombar (widgets inferiores)
+    // Scroll horizontal con la rueda del mouse cuando hay muchos widgets: si el
+    // cursor está sobre el cuerpo scrolleable de una card que aún puede scrollear
+    // en vertical, se respeta; en caso contrario la rueda desplaza la fila.
+    var bbCards = document.getElementById("tp-live-bottombar-cards");
+    if (bbCards)
+      bbCards.addEventListener(
+        "wheel",
+        function (e) {
+          if (bbCards.scrollWidth <= bbCards.clientWidth) return; // sin overflow
+          var body = e.target.closest && e.target.closest(".tp-dw__card-body");
+          if (body) {
+            var down = e.deltaY > 0 && body.scrollTop + body.clientHeight < body.scrollHeight - 1;
+            var up = e.deltaY < 0 && body.scrollTop > 0;
+            if (down || up) return; // dejar que la card scrollee en vertical
+          }
+          var delta = e.deltaY || e.deltaX;
+          if (delta) {
+            bbCards.scrollLeft += delta;
+            e.preventDefault();
+          }
+        },
+        { passive: false },
+      );
+
+    // Widget de bloqueo: los botones se inyectan con los widgets del device, así
+    // que se delega en el contenedor del bottombar.
+    if (bbCards)
+      bbCards.addEventListener("click", function (e) {
+        var act = e.target.closest("[data-lock-action]");
+        if (act) {
+          openLockCommand(act);
+          return;
+        }
+        var hist = e.target.closest("[data-lock-history]");
+        if (hist) openLockHistory(hist);
+      });
+
     var bbCollapse = document.getElementById("tp-bottombar-collapse");
     if (bbCollapse)
       bbCollapse.addEventListener("click", function () {

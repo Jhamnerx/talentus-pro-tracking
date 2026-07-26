@@ -572,6 +572,7 @@ class CommandsController extends BaseController
                     'adapted'       => (string) ($t->adapted ?? ''),
                     'adapted_title' => (string) $t->adapted_title,
                     'protocol'      => (string) ($t->protocol ?? ''),
+                    'lock_action'   => (string) ($t->lock_action ?? ''),
                     'devices'       => $t->devices->pluck('id')->all(),
                 ];
             }

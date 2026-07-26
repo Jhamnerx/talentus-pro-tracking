@@ -1203,9 +1203,13 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('devices/{id}/form',   ['as' => 'api.devices.form',    'uses' => 'Ui\V2\DevicesController@form'])->where('id', '[0-9]+');
         Route::get('devices/{id}/widgets', ['as' => 'api.devices.widgets', 'uses' => 'Ui\V2\DevicesController@widgets'])->where('id', '[0-9]+');
         Route::get('devices/updates',     ['as' => 'api.devices.updates', 'uses' => 'Ui\V2\DevicesController@updates']);
+        Route::get('devices/filter-ids',  ['as' => 'api.devices.filter_ids', 'uses' => 'Ui\V2\DevicesController@filterIds']);
         Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Ui\V2\DevicesController@store']);
         Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Ui\V2\DevicesController@update'])->where('id', '[0-9]+');
         Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/lock-command',   ['as' => 'api.devices.lock_command',   'uses' => 'Ui\V2\DevicesController@lockCommand'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/lock-history',     ['as' => 'api.devices.lock_history',   'uses' => 'Ui\V2\DevicesController@lockHistory'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/lock-templates',   ['as' => 'api.devices.lock_templates', 'uses' => 'Ui\V2\DevicesController@lockTemplates'])->where('id', '[0-9]+');
 
         // Grupos de dispositivos (pivot user_device_pivot.group_id por usuario)
         Route::get('device-groups',             ['as' => 'api.device_groups.list',    'uses' => 'Ui\V2\DevicesController@deviceGroupsList']);

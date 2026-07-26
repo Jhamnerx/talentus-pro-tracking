@@ -439,6 +439,16 @@
       '</label><select name="device_types" class="tp-input" multiple size="5" data-no-ts="1">' + dtypeOpts + "</select></div>" +
       '<div class="tp-field"><label class="tp-label">' + esc(T("message")) +
       '</label><textarea name="message" class="tp-textarea" rows="3">' + esc(item ? item.message : "") + "</textarea></div>" +
+      // Uso en el widget de bloqueo de motor (solo GPRS). El equipo elige la
+      // plantilla adaptada a su TIPO de dispositivo.
+      (type === "gprs"
+        ? '<div class="tp-field"><label class="tp-label">Uso en bloqueo de motor</label>' +
+          '<select name="lock_action" class="tp-input" data-no-ts="1">' +
+          '<option value="">Ninguno</option>' +
+          '<option value="block"' + (item && item.lock_action === "block" ? " selected" : "") + ">Cortar (bloquear)</option>" +
+          '<option value="unblock"' + (item && item.lock_action === "unblock" ? " selected" : "") + ">Restablecer (desbloquear)</option>" +
+          "</select></div>"
+        : "") +
       '<div class="rounded-lg bg-sky-50 text-sky-800 dark:bg-sky-900/30 dark:text-sky-200 px-3 py-2.5 text-[12.5px] leading-relaxed">' +
       esc(T("raw_hint")) + "<br>" + esc(T("variables_hint")) + "</div></div>";
 
@@ -468,6 +478,7 @@
                   return o.value;
                 },
               ),
+              lock_action: (dlg.querySelector('[name="lock_action"]') || {}).value || "",
             };
             btn.disabled = true;
             var url = CFG.urls.templates + (item ? "/" + item.id : "");

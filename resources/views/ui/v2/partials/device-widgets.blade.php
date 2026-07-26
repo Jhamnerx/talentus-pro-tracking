@@ -30,6 +30,23 @@
         </section>
     @endisset
 
+    {{-- Conductor (va en el drawer lateral, no en el bottombar) --}}
+    @isset($driver)
+        <section class="tp-card tp-card--flat tp-mb-4">
+            <h4 class="tp-h6 tp-mb-3">Conductor</h4>
+            @if ($driver)
+                <dl class="tp-defs">
+                    <dt>Nombre</dt><dd>{{ $driver->name ?? '—' }}</dd>
+                    <dt>RFID</dt><dd>{{ $driver->rfid ?? '—' }}</dd>
+                    <dt>Teléfono</dt><dd>{{ $driver->phone ?? '—' }}</dd>
+                    <dt>Email</dt><dd>{{ $driver->email ?? '—' }}</dd>
+                </dl>
+            @else
+                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin conductor asignado.</p>
+            @endif
+        </section>
+    @endisset
+
     {{-- Ubicación --}}
     @isset($location)
         <section class="tp-card tp-card--flat tp-mb-4">
@@ -224,34 +241,6 @@
         @endif
     @endisset
 
-    {{-- Conductor --}}
-    @isset($driver)
-        <section class="tp-card tp-card--flat">
-            <h4 class="tp-h6 tp-dw__card-head">
-                <span class="tp-dw__card-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    <span>Conductor</span>
-                </span>
-            </h4>
-            <div class="tp-dw__card-body">
-                @if ($driver)
-                    <dl class="tp-defs">
-                        <dt>Nombre</dt><dd>{{ $driver->name ?? '—' }}</dd>
-                        <dt>RFID</dt><dd>{{ $driver->rfid ?? '—' }}</dd>
-                        <dt>Teléfono</dt><dd>{{ $driver->phone ?? '—' }}</dd>
-                        <dt>Email</dt><dd>{{ $driver->email ?? '—' }}</dd>
-                    </dl>
-                @else
-                    <p class="tp-text-xs tp-text-muted tp-mb-0">Sin conductor asignado.</p>
-                @endif
-            </div>
-        </section>
-    @endisset
-
     {{-- Combustible (valor actual de sensores fuel_tank) --}}
     @isset($fuel)
         <section class="tp-card tp-card--flat">
@@ -312,6 +301,43 @@
                         <path d="m22 2-7 20-4-9-9-4Z" />
                     </svg>
                     {{ trans('front.send_command') }}
+                </button>
+            </div>
+        </section>
+    @endisset
+
+    {{-- Bloqueo de motor (plugin locking_widget) --}}
+    @isset($locking)
+        @php
+            $lockSt = $locking['status'];
+            $lockLabel = is_null($lockSt) ? trans('front.unknown') : ($lockSt ? trans('front.locked') : trans('front.unlocked'));
+            $lockTone = is_null($lockSt) ? 'unknown' : ($lockSt ? 'on' : 'off');
+        @endphp
+        <section class="tp-card tp-card--flat" data-tp-locking data-device-id="{{ $device->id }}"
+            data-command-url="{{ $locking['command_url'] }}" data-history-url="{{ $locking['history_url'] }}"
+            data-templates-url="{{ $locking['templates_url'] }}" data-can-sms="{{ $locking['can_sms'] ? '1' : '' }}">
+            <h4 class="tp-h6 tp-dw__card-head">
+                <span class="tp-dw__card-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    <span>{{ trans('front.locking_widget') }}</span>
+                </span>
+                <span class="tp-lock-badge" data-lock-badge data-tone="{{ $lockTone }}">{{ $lockLabel }}</span>
+            </h4>
+            <div class="tp-dw__card-body">
+                <div style="display:flex;gap:8px;">
+                    <button type="button" class="tp-btn tp-btn--sm tp-btn--danger" style="flex:1;" data-lock-action="on">
+                        Cortar
+                    </button>
+                    <button type="button" class="tp-btn tp-btn--sm tp-btn--secondary" style="flex:1;" data-lock-action="off">
+                        Restablecer
+                    </button>
+                </div>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full tp-mt-2" data-lock-history>
+                    {{ trans('front.history') }}
                 </button>
             </div>
         </section>
