@@ -61,14 +61,23 @@
         </div>
 
         <div data-sensor-input="tag_name">
+            @php
+                $params = array_values((array) ($parameters ?? []));
+                $curTag = $item->tag_name ?? '';
+            @endphp
             <label class="tp-form__field">
                 <span class="tp-form__label">{{ trans('validation.attributes.tag_name') }}</span>
-                <input type="text" name="tag_name" list="tp-sensor-params" value="{{ $item->tag_name ?? '' }}" data-tp-field>
-                <datalist id="tp-sensor-params">
-                    @foreach ($parameters ?? [] as $param)
-                        <option value="{{ $param }}"></option>
+                {{-- Select personalizado (tp-select) con búsqueda + valor libre
+                     (data-ts-create): paridad con el data-custom-input legacy. --}}
+                <select name="tag_name" class="tp-input" style="width: 100%" data-ts-create="1" data-tp-field>
+                    <option value=""></option>
+                    @foreach ($params as $param)
+                        <option value="{{ $param }}" {{ $curTag == $param ? 'selected' : '' }}>{{ $param }}</option>
                     @endforeach
-                </datalist>
+                    @if ($curTag !== '' && !in_array($curTag, $params))
+                        <option value="{{ $curTag }}" selected>{{ $curTag }}</option>
+                    @endif
+                </select>
             </label>
         </div>
 

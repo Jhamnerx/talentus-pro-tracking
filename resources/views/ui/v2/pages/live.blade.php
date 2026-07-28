@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=48">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=53">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -31,6 +31,17 @@
 
         {{-- Map config (provider IDs, API keys) injected for the JS layer --}}
         <script type="application/json" id="tp-live-map-config">@json($mapConfig)</script>
+
+        {{-- Reenvíos disponibles para el modal de grupos (paridad legacy
+             DevicesGroups: select forwards[] gated por perm forwards.view). --}}
+        @php
+            $tpCanFwd = config('addon.forwards') && Auth::user()->perm('forwards', 'view');
+            $tpFwdOpts = $tpCanFwd
+                ? \Tobuli\Entities\Forward::userAccessible(Auth::user())->orderBy('title')->get(['id', 'title'])
+                    ->map(function ($f) { return ['id' => (int) $f->id, 'title' => (string) $f->title]; })->values()
+                : [];
+        @endphp
+        <script type="application/json" id="tp-live-forwards">@json(['can' => (bool) $tpCanFwd, 'items' => $tpFwdOpts])</script>
 
         {{-- Device CRUD modal config (shared with fleet / admin → fleet) --}}
         @php
@@ -690,26 +701,8 @@
                     </div>
                 </div>
 
-                {{-- Telemetry list --}}
-                <div class="tp-card tp-card--flat tp-mb-4">
-                    <h4 class="tp-h6 tp-mb-3">Telemetría</h4>
-                    <dl class="tp-defs">
-                        <dt>última señal</dt>
-                        <dd id="tp-drawer-lastseen">—</dd>
-                        <dt>Coordenadas</dt>
-                        <dd class="tp-text-mono" id="tp-drawer-coords">—</dd>
-                        <dt>Altitud</dt>
-                        <dd id="tp-drawer-altitude">—</dd>
-                        <dt>Motor</dt>
-                        <dd id="tp-drawer-engine">—</dd>
-                        <dt>IMEI</dt>
-                        <dd class="tp-text-mono" id="tp-drawer-imei">—</dd>
-                        <dt>Modelo</dt>
-                        <dd id="tp-drawer-model">—</dd>
-                        <dt>SIM</dt>
-                        <dd class="tp-text-mono" id="tp-drawer-sim">—</dd>
-                    </dl>
-                </div>
+                {{-- La telemetría/ficha se muestra unificada en el widget "Objeto"
+                     (device-widgets.blade → device_info), no en un bloque fijo aparte. --}}
 
                 {{-- Device widgets (cards) — rellenado por live-ops.js al abrir el drawer --}}
                 <div id="tp-drawer-widgets" class="tp-dw-wrap"></div>
@@ -757,11 +750,12 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=11"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=12"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=31"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=39"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=7"></script>

@@ -43,12 +43,25 @@
     });
   }
 
+  // Iconos SVG por variante (antes emoji → inconsistentes entre plataformas).
+  // Usan currentColor; el color por variante lo pone shell.css.
+  var SVG = function (inner) {
+    return (
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      inner +
+      "</svg>"
+    );
+  };
   var iconByVariant = {
-    critical: "🚨",
-    warning: "⚠",
-    success: "✓",
-    info: "ℹ",
-    danger: "✕",
+    critical: SVG(
+      '<polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    ),
+    warning: SVG(
+      '<path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    ),
+    success: SVG('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
+    info: SVG('<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'),
+    danger: SVG('<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'),
   };
 
   function fmtTime(iso) {

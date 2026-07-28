@@ -75,7 +75,7 @@ class ShellController extends BaseController
                         'label'    => $d->name ?: ($plate ?: $imei),
                         'subtitle' => trim(implode(' · ', array_filter([$plate, $imei]))),
                         'meta'     => 'Vehículo',
-                        'url'      => url('/ui/v2/preview') . '#device-' . $d->id,
+                        'url'      => url('/ui/v2/live') . '?device=' . $d->id,
                     ];
                 }
             }
@@ -95,7 +95,7 @@ class ShellController extends BaseController
                         'id'    => $g->id,
                         'label' => $g->name,
                         'meta'  => 'Geocerca',
-                        'url'   => url('/ui/v2/preview') . '#geofence-' . $g->id,
+                        'url'   => url('/ui/v2/live') . '?panel=zones',
                     ];
                 }
             }
@@ -115,7 +115,7 @@ class ShellController extends BaseController
                         'id'    => $p->id,
                         'label' => $p->name,
                         'meta'  => 'POI',
-                        'url'   => url('/ui/v2/preview') . '#poi-' . $p->id,
+                        'url'   => url('/ui/v2/live') . '?panel=pois',
                     ];
                 }
             }
@@ -141,34 +141,56 @@ class ShellController extends BaseController
         }
 
         if (! $user->perm('events', 'view')) {
-            return response()->json(['notifications' => []]);
+            return response()->json(['notifications' => [], 'has_more' => false]);
         }
 
-        $items = \Tobuli\Entities\Event::userAccessible($user)
+        $perPage  = 30;
+        $beforeId = (int) $request->get('before_id', 0);
+
+        $query = \Tobuli\Entities\Event::userAccessible($user)
             ->with(['device', 'geofence'])
-            ->orderBy('events.id', 'desc')
-            ->take(30)
-            ->get()
-            ->map(function ($event) {
-                $desc = trim(implode(' · ', array_filter([
-                    $event->device->name ?? null,
-                    $event->geofence->name ?? null,
-                ])));
+            ->orderBy('events.id', 'desc');
 
-                return [
-                    'id'          => (int) $event->id,
-                    'title'       => (string) $event->title,
-                    'description' => $desc,
-                    'variant'     => $this->eventSeverity((string) $event->type),
-                    'category'    => 'alerts',
-                    'read'        => false, // lo resuelve el cliente (last-seen)
-                    'created_at'  => optional($event->created_at)->toIso8601String(),
-                    'url'         => url('/ui/v2/events'),
-                ];
-            })
-            ->all();
+        // Cursor para scroll infinito: al bajar, se piden eventos MÁS VIEJOS
+        // que el último ya cargado (id < before_id).
+        if ($beforeId > 0) {
+            $query->where('events.id', '<', $beforeId);
+        }
 
-        return response()->json(['notifications' => $items]);
+        $events = $query->take($perPage)->get();
+
+        $items = $events->map(function ($event) {
+            $deviceName = $event->device->name ?? null;
+            $desc = trim(implode(' · ', array_filter([
+                $deviceName,
+                $event->geofence->name ?? null,
+            ])));
+
+            return [
+                'id'          => (int) $event->id,
+                'title'       => (string) $event->title,
+                'description' => $desc,
+                'variant'     => $this->eventSeverity((string) $event->type),
+                'category'    => 'alerts',
+                'read'        => false, // lo resuelve el cliente (last-seen)
+                'created_at'  => optional($event->created_at)->toIso8601String(),
+                // Datos para el popup en el mapa (DÓNDE ocurrió el evento).
+                'time'        => $event->time ? \Formatter::time()->format($event->time) : null,
+                'device_id'   => $event->device_id ? (int) $event->device_id : null,
+                'device_name' => $deviceName,
+                'lat'         => $event->latitude !== null ? (float) $event->latitude : null,
+                'lng'         => $event->longitude !== null ? (float) $event->longitude : null,
+                // Fallback de navegación (sin coords o fuera de Live).
+                'url'         => $event->device_id
+                    ? url('/ui/v2/live') . '?device=' . (int) $event->device_id
+                    : url('/ui/v2/events'),
+            ];
+        })->all();
+
+        return response()->json([
+            'notifications' => $items,
+            'has_more'      => count($items) === $perPage,
+        ]);
     }
 
     public function preferences(Request $request): JsonResponse

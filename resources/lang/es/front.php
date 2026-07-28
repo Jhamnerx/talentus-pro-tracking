@@ -640,7 +640,7 @@ return [
     'lock_zone_description' => 'Reciba notificaciones cuando su automóvil se mueva fuera de la zona bloqueada.',
     'locked' => 'Bloqueado',
     'locking_unlock' => '¿Realmente quieres desbloquear este dispositivo?',
-    'locking_widget' => 'Bloqueo de motor',
+    'locking_widget' => 'Widget de bloqueo/desbloqueo de motor',
     'logical' => 'Lógico',
     'login' => 'Acceso',
     'login_as' => 'Inicie la sesión como',

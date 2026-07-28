@@ -61,6 +61,21 @@ class EventsController extends BaseController
         return View::make('ui.v2.pages.events', [
             'pageTitle' => 'Eventos',
             'mapConfig' => $this->buildMapConfig(),
+            // Vehículos del usuario para el filtro (tp-select con búsqueda).
+            'devices'   => $this->user->devices()->orderBy('devices.name')
+                ->get(['devices.id', 'devices.name'])
+                ->map(function ($d) {
+                    return ['id' => (int) $d->id, 'name' => (string) $d->name];
+                })->all(),
+            // Tipos de respuesta REALES (mismas etiquetas que la tabla de
+            // Acciones de llamada) para el modal "Atender".
+            'responseTypes' => \Tobuli\Entities\CallAction::getResponseTypes(),
+            // Catálogo COMPLETO de tipos de evento/alerta (mismas etiquetas y
+            // gating por permiso que el dropdown legacy) para el filtro Tipo.
+            'eventTypes' => collect(\ModalHelpers\AlertModalHelper::getTypes())
+                ->map(function ($t) {
+                    return ['type' => $t['type'], 'title' => $t['title']];
+                })->values()->all(),
         ]);
     }
 
@@ -74,10 +89,11 @@ class EventsController extends BaseController
         // paginado por scroll). Cualquier otro valor se acota a [1, 168].
         $hoursRaw = (int) $request->get('hours', 0);
         $hours    = $hoursRaw <= 0 ? 0 : min(168, max(1, $hoursRaw));
-        $offset  = max(0, (int) $request->get('offset', 0));
-        $perPage = min(100, max(20, (int) $request->get('per_page', 50)));
-        $type    = trim((string) $request->get('type', ''));
-        $q       = trim((string) $request->get('q', ''));
+        $offset   = max(0, (int) $request->get('offset', 0));
+        $perPage  = min(100, max(20, (int) $request->get('per_page', 50)));
+        $type     = trim((string) $request->get('type', ''));
+        $q        = trim((string) $request->get('q', ''));
+        $deviceId = (int) $request->get('device_id', 0);
 
         // Cargamos el device con su icono + traccar para reconstruir el MARCADOR
         // real (arrow/rotating/icon) igual que el mapa Live.
@@ -93,6 +109,9 @@ class EventsController extends BaseController
 
         if ($type !== '') {
             $query->where('type', $type);
+        }
+        if ($deviceId > 0) {
+            $query->where('device_id', $deviceId);
         }
         if ($q !== '') {
             $query->where(function ($w) use ($q) {
@@ -139,6 +158,9 @@ class EventsController extends BaseController
                 'type'        => $t,
                 'severity'    => $this->eventSeverity($t),
                 'message'     => (string) $e->message,
+                // Solo eventos con alerta pueden registrarse como acción de
+                // llamada ("Atender"): gatea el botón en el popup.
+                'alert_id'    => $e->alert_id ? (int) $e->alert_id : null,
                 'device_id'   => $e->device_id ? (int) $e->device_id : null,
                 'device_name' => $e->device->name ?? null,
                 'plate'       => $e->device->plate_number ?? null,
@@ -152,6 +174,20 @@ class EventsController extends BaseController
             ];
         }
 
+        // Marca los eventos que YA tienen una acción de llamada registrada
+        // (indicador "Atendido" en la lista). Un solo query por página.
+        $ids = array_column($events, 'id');
+        if ($ids) {
+            $attended = \Tobuli\Entities\CallAction::whereIn('event_id', $ids)
+                ->pluck('event_id')
+                ->map(function ($v) { return (int) $v; })
+                ->flip();
+            foreach ($events as &$evRow) {
+                $evRow['attended'] = $attended->has($evRow['id']);
+            }
+            unset($evRow);
+        }
+
         return response()->json([
             'ok'       => true,
             'hours'    => $hours,
@@ -160,5 +196,63 @@ class EventsController extends BaseController
             'offset'   => $offset + count($events),
             'has_more' => $hasMore,
         ]);
+    }
+
+    /**
+     * Puntos para el "mapa de riesgo" de la flota: TODOS los eventos del filtro
+     * actual con coordenadas (capado), coloreados por severidad. Alimenta la
+     * capa de marcadores + leyenda flotante de la página de Eventos.
+     */
+    public function mapData(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('events', 'view')) {
+            return response()->json(['ok' => false, 'points' => []], 403);
+        }
+
+        $hoursRaw = (int) $request->get('hours', 0);
+        $hours    = $hoursRaw <= 0 ? 0 : min(168, max(1, $hoursRaw));
+        $type     = trim((string) $request->get('type', ''));
+        $q        = trim((string) $request->get('q', ''));
+        $deviceId = (int) $request->get('device_id', 0);
+        $cap      = 1500;
+
+        $query = $this->user->events()
+            ->with(['device' => function ($qq) { $qq->select('id', 'name'); }])
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->orderBy('time', 'desc');
+
+        if ($hours > 0) {
+            $query->where('time', '>=', date('Y-m-d H:i:s', strtotime("-{$hours} hours")));
+        }
+        if ($type !== '') {
+            $query->where('type', $type);
+        }
+        if ($deviceId > 0) {
+            $query->where('device_id', $deviceId);
+        }
+        if ($q !== '') {
+            $query->where('message', 'like', '%' . $q . '%');
+        }
+
+        $rows   = $query->limit($cap + 1)->get(['id', 'type', 'message', 'device_id', 'latitude', 'longitude', 'time']);
+        $capped = $rows->count() > $cap;
+        if ($capped) {
+            $rows = $rows->slice(0, $cap);
+        }
+
+        $points = $rows->map(function ($e) {
+            return [
+                'id'          => (int) $e->id,
+                'lat'         => (float) $e->latitude,
+                'lng'         => (float) $e->longitude,
+                'severity'    => $this->eventSeverity((string) $e->type),
+                'message'     => (string) $e->message,
+                'device_name' => $e->device->name ?? null,
+                'time'        => (string) $e->time,
+            ];
+        })->values()->all();
+
+        return response()->json(['ok' => true, 'points' => $points, 'capped' => $capped, 'cap' => $cap]);
     }
 }

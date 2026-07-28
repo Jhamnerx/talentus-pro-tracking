@@ -211,7 +211,11 @@
   };
 
   Dd.prototype.build = function () {
-    this.searchable = this.opts().length > 8;
+    // Modo "creatable" (opt-in data-ts-create="1"): permite escribir un valor
+    // libre que no está en la lista (paridad legacy data-custom-input). Fuerza
+    // el buscador para poder teclear el valor.
+    this.creatable = this.sel.getAttribute("data-ts-create") === "1";
+    this.searchable = this.creatable || this.opts().length > 8;
     this.panel.innerHTML =
       (this.searchable
         ? '<div class="' + C.searchWrap + '"><input type="text" class="' + C.search + '" data-dd-search autocomplete="off"></div>'
@@ -246,8 +250,10 @@
     var cur = this.sel.value;
     var html = "";
     var lastGroup = null;
+    var exact = false;
     this.opts().forEach(function (o) {
       if (q && o.label.toLowerCase().indexOf(q) === -1) return;
+      if (q && o.label.toLowerCase() === q) exact = true;
       if (o.group && o.group !== lastGroup) {
         html += '<div class="' + C.optGroup + '">' + esc(o.group) + "</div>";
         lastGroup = o.group;
@@ -259,6 +265,13 @@
         (isSel ? CHECK : CHECK_PAD) +
         '<span class="truncate">' + esc(o.label) + "</span></div>";
     });
+    // Creatable: fila para usar el texto tecleado como valor libre (si no existe).
+    if (this.creatable && q && !exact) {
+      var raw = this.searchEl ? this.searchEl.value.trim() : q;
+      html =
+        '<div class="' + C.opt + '" role="option" data-dd-val="' + esc(raw) + '">' +
+        CHECK_PAD + '<span class="truncate">+ ' + esc('Usar "' + raw + '"') + "</span></div>" + html;
+    }
     list.innerHTML = html || '<div class="' + C.empty + '">—</div>';
     this.activeIdx = -1;
   };
@@ -294,8 +307,21 @@
     if (row) this.choose(row.getAttribute("data-dd-val"));
   };
 
+  Dd.prototype.hasOption = function (value) {
+    return this.opts().some(function (o) {
+      return String(o.value) === String(value);
+    });
+  };
+
   Dd.prototype.choose = function (value) {
     var sel = this.sel;
+    // Creatable: si el valor tecleado no existe como opción, se añade (valor libre).
+    if (this.creatable && value !== "" && !this.hasOption(value)) {
+      var opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = value;
+      sel.appendChild(opt);
+    }
     if (String(sel.value) !== String(value)) {
       sel.value = value;
       sel.dispatchEvent(new Event("change", { bubbles: true }));

@@ -24,7 +24,7 @@
                 <button class="tp-segmented__item" aria-selected="true" data-notif-filter="all">Todas</button>
                 <button class="tp-segmented__item" data-notif-filter="critical">Críticas</button>
                 <button class="tp-segmented__item" data-notif-filter="alerts">Alertas</button>
-                <button class="tp-segmented__item" data-notif-filter="system">Sistema</button>
+                <button class="tp-segmented__item" data-notif-filter="system">Informativos</button>
             </div>
         </div>
 
@@ -35,8 +35,9 @@
         </div>
 
         <footer class="tp-tray__foot">
-            <a href="{{ url('/ui/v2/preview#alerts') }}" class="tp-btn tp-btn--ghost tp-btn--block">Ver todas las
-                alertas ?</a>
+            <a href="{{ url('/ui/v2/events') }}" class="tp-btn tp-btn--ghost tp-btn--block">Ver todos los eventos
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </footer>
     </aside>
 </div>

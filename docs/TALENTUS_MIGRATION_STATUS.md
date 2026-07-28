@@ -7,6 +7,63 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 27 jul 2026 (5) — Página de Eventos ampliada (rama `nuevo-tema`)
+
+- **Eventos al rail** (encima de Alertas, icono de pulso, gate `perm('events','view')`). Icono `events` nuevo en `icons.blade`.
+- **Popup del evento**: al **cerrar** se quita el marcador y se deselecciona la fila (antes quedaba el icono suelto). Botones **"Historial"** (→ `/ui/v2/history?device=N&range=<derivado por antigüedad>`) y **"Atender"** (registra acción de llamada; solo si `perm(call_actions+events)` y el evento tiene `alert_id`; POST a `api.call_actions.store`).
+- **Indicador "Atendido"**: badge verde en filas de eventos que ya tienen `CallAction` (cruce por `event_id`, 1 query/página).
+- **Filtros**: por **tipo** (dropdown poblado desde `by_type` acumulado, labels ES en `TYPE_LABELS`) y por **vehículo** (tp-select). El backend `data()` acepta `type` + `device_id`.
+- **Tiempo real**: `pollLive()` cada 30 s inserta eventos nuevos arriba (si estás al tope), **beep WebAudio** en críticos + toast.
+- **Exportar CSV** de los eventos cargados.
+- **Mapa de riesgo** (#7): toggle que pinta TODOS los eventos del filtro como circle markers por severidad (`EventsController@mapData`, ruta `api.events.map`, capado a 1500) + **leyenda flotante** (Crítico/Advertencia/Informativo + conteo).
+- Assets: events.js ?v=15, events.css ?v=9.
+
+---
+
+## 🔄 Actualización · 27 jul 2026 (4) — Topbar finalizado (rama `nuevo-tema`)
+
+- **Estado de flota removido del topbar**: era redundante en Live (el mapa ya lo muestra) y en el resto de páginas mostraba "0·0·0" fijo (solo `live.js` alimenta los conteos reales vía `tpUpdateLiveStatus`). `shell.js`/`live.js` siguen llamando al updater — no-op sin errores.
+- **Brand → marca blanca**: el topbar dejaba "TalentusPro" hardcodeado; ahora usa `Appearance::getSetting('server_name') ?: 'TalentusPro'` (mismo ajuste que el `<title>`). Logo = inicial del nombre. Link → `/ui/v2/live`.
+- **Switcher "Mi Empresa" (WORKSPACES) removido**: era un stub estático (`$workspaces` nunca lo pasa ningún controlador). El dominio no tiene multi-workspace por usuario (un user = una `Company`, ver abajo).
+- **Buscador (command palette) corregido**: `ShellController@search` enlazaba a `/ui/v2/preview#...` (mockup viejo). Ahora: device → `/ui/v2/live?device=N` (live.js `focusInitialDevice()` lo selecciona+centra tras el 1er load), geocerca → `?panel=zones`, POI → `?panel=pois`. Placeholder ajustado a lo que realmente busca (vehículo/geocerca/POI; **no** conductor/comando). Assets: live.js ?v=38.
+
+> **Nota dominio (usuario/cliente/compañía)**: `User` tiene `client_id` (belongsTo `Client`: persona — nombre/apellido/DNI/dirección) y `company_id` (belongsTo `Company`: organización — RUC/`registration_code`/vat/dirección, con `owner` = reseller). Se edita en el form legacy de usuarios (Admin/Clients, tab "Cliente"): sección Cliente = datos `client[...]`; sección Compañía = asignar `company_id` (`Company::userAccessible`) **o** crear una nueva inline (`company[...]`). CRUD de compañías: rutas `companies.*` → `CompaniesController`. Un usuario pertenece a **una** compañía (no es un switcher). **Aún sin migrar a v2.**
+
+---
+
+## 🔄 Actualización · 27 jul 2026 (3) — Asignar Reenvíos a Grupos de objetos (rama `nuevo-tema`)
+
+- **Gap cerrado**: el modal **Grupos de objetos** v2 (`live.js` `openDeviceGroupModal`) ahora tiene el campo **Reenvíos** (paridad legacy `DevicesGroups/edit.blade` select `forwards[]`). Asigna qué conexiones de reenvío aplican a los vehículos del grupo (pivote `device_group_forward`).
+  - **UI**: lista de checkboxes de los `Forward` accesibles (tp-select no soporta `<select multiple>`), gated por `config('addon.forwards') && perm('forwards','view')`. Opciones inyectadas en `#tp-live-forwards` (blade) → `FWD_CFG` en live.js. Estado vacío enlaza a Herramientas → Reenvíos.
+  - **Backend** (`DevicesController`): `deviceGroupItems` devuelve `forward_ids` (preselección en editar); `storeDeviceGroup`/`updateDeviceGroup` → nuevo `syncGroupForwards()` = `$group->forwards()->sync($ids)` **solo si** `perm('forwards','view')`, restringido a `Forward::userAccessible` (seguridad, no confía en ids del cliente). Paridad exacta con `DevicesGroupsController` legacy.
+- Assets: live.js ?v=34. Sin rutas nuevas (reusa `device-groups` store/update/items).
+
+---
+
+## 🔄 Actualización · 27 jul 2026 (2) — Gastos (rail) + Reenvíos (Herramientas) migrados (rama `nuevo-tema`)
+
+- **Gastos** (fleet-wide, `device_expenses`) → **rail** `/ui/v2/expenses`. `Ui\V2\ExpensesController` (data con filtros búsqueda/vehículo/rango fechas, meta devices+tipos, store/update/destroy sobre `DeviceExpense`, `total=qty*cost`, `scopeUserAccessible`). Página `expenses.blade` (tabla tp-svc + toolbar) + `tp-expenses.js` (modal: vehículo/nombre/fecha/tipo/cantidad/costo/proveedor/comprador/notas). Icono `money`. Gated `perm('device_expenses',...)`.
+- **Reenvíos** (`forwards`) → **Herramientas** (topbar). `Ui\V2\ForwardsController` (data = lista + tipos habilitados con sus campos; store/update/destroy reutilizando `ForwardService`/`Forward`). Modal `tp-forwards.js` (lista + form con **campos dinámicos por tipo**). Gated `config('addon.forwards') && perm('forwards',...)`.
+  - **Tipos** (Custom/Pegasus/MacroPoint) filtrados por addon `forward_custom`/`forward_pegasus`/`forward_macropoint` — por eso el `<select> Tipo` sale **vacío** si ninguno está activo. Campos: Custom(ip,port) · Pegasus(domain,token) · MacroPoint(username,password,mpid).
+- Rutas `ui.v2.expenses`, `ui.v2.api.expenses(.meta/.store/.update/.destroy)`, `ui.v2.api.forwards(.store/.update/.destroy)`. Assets: tp-expenses.js ?v=1, tp-forwards.js ?v=1 (cargado en Live). Doc §3: `Forwards` y `DeviceExpenses` dejan de ser deeplink legacy.
+
+---
+
+## 🔄 Actualización · 27 jul 2026 — Menú Herramientas de mapa en la v2 (rama `nuevo-tema`)
+
+Portadas las **utilidades de mapa** del menú "Herramientas" legacy que faltaban en la v2 (las demás ya están en el rail):
+- **Menú "Herramientas"** en el topbar (icono llave), visible solo en la página Live (`rail-active` live/zones/pois). Lo gestiona `live.js`.
+- **Regla** (`app.ruler` legacy): medición por clics en el mapa con chips de km (regla custom, misma que Historial). Toggle desde el menú.
+- **Mostrar punto** (`app.showPoint`): modal lat/lng → coloca marker + centra.
+- **Buscar dirección** (`app.showAddress`): modal → `address.search` (geocoding) → marker + centra.
+- `window.tpLiveTools = { ruler, showPoint, searchAddress }`. Assets: live.js ?v=33, live-ops.css ?v=50.
+- **Fix widget Vista de calle**: usaba la Static API (proxy `streetview.jpg`) que devuelve "no imagery" en puntos sin panorámica exacta (zonas rurales). Ahora, si `addon.street_view_frame` + `streetview_api` configurado, usa el **embed interactivo** (`maps/embed?pb=…`, paridad `convertStreetViewUrl` legacy) que encuentra la panorámica más cercana; la imagen estática queda como fallback. (`DevicesController@widgets` + `device-widgets.blade`, server-rendered.)
+- **Pendiente en Herramientas**: `Gastos` (device_expenses) y `Reenvíos` (forwards) — son módulos CRUD legacy (no utilidades de mapa); requieren migración v2 propia (controller + modal + JS), como el resto de módulos.
+
+Con esto el "botón de herramientas superior" queda con paridad para las 3 utilidades de mapa (el resto de entradas del menú legacy —Alertas, Geocercas, Rutas, Reportes, POI, Enviar comando, Cámara, Tareas, Mantenimiento, Compartir, Acciones de llamada, Tablero— ya viven en el rail).
+
+---
+
 ## 🔄 Actualización · 26 jul 2026 — Bloqueo: candado en lista + comandos por plantilla GPRS (rama `nuevo-tema`)
 
 - **Candado rojo/verde en la lista de Live**: si el device tiene el sensor `blocked`, cada fila muestra un candado junto al nombre (rojo=bloqueado, verde=libre). `DeviceMapTransformer` expone `blocked` (null/true/false) leyendo el sensor por device.

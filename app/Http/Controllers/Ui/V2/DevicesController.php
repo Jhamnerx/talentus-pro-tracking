@@ -456,6 +456,7 @@ class DevicesController extends BaseController
         ]);
 
         $this->syncGroupDevices($group, $request->get('devices'));
+        $this->syncGroupForwards($group, $request->get('forwards'));
 
         return response()->json(['ok' => true, 'id' => (int) $group->id]);
     }
@@ -479,6 +480,7 @@ class DevicesController extends BaseController
         $group->update(['title' => $title]);
 
         $this->syncGroupDevices($group, $request->get('devices'));
+        $this->syncGroupForwards($group, $request->get('forwards'));
 
         return response()->json(['ok' => true]);
     }
@@ -518,7 +520,21 @@ class DevicesController extends BaseController
             })
             ->all();
 
-        return response()->json(['ok' => true, 'title' => (string) $group->title, 'device_ids' => $ids]);
+        // Reenvíos asignados al grupo (pivote device_group_forward). Paridad
+        // legacy: solo si el usuario tiene permiso 'forwards' view.
+        $forwardIds = [];
+        if ($this->user->perm('forwards', 'view')) {
+            $forwardIds = $group->forwards()->pluck('forwards.id')
+                ->map(function ($v) { return (int) $v; })
+                ->all();
+        }
+
+        return response()->json([
+            'ok'          => true,
+            'title'       => (string) $group->title,
+            'device_ids'  => $ids,
+            'forward_ids' => $forwardIds,
+        ]);
     }
 
     /** Lista de grupos del usuario con su conteo de vehículos (tab Grupos del modal de cuenta). */
@@ -570,6 +586,31 @@ class DevicesController extends BaseController
                 ->whereIn('device_id', $ids)
                 ->update(['group_id' => $group->id]);
         }
+    }
+
+    /**
+     * Sincroniza los reenvíos del grupo (pivote device_group_forward).
+     * Paridad legacy DevicesGroupsController: solo si el usuario tiene
+     * permiso 'forwards' view; restringe a los Forward accesibles por el
+     * usuario (seguridad — el sync no confía en los ids del cliente).
+     */
+    private function syncGroupForwards(\Tobuli\Entities\DeviceGroup $group, $forwardIds): void
+    {
+        if (! $this->user->perm('forwards', 'view')) {
+            return;
+        }
+
+        $ids = array_values(array_filter(array_map('intval', (array) $forwardIds)));
+
+        if ($ids) {
+            $allowed = \Tobuli\Entities\Forward::userAccessible($this->user)
+                ->pluck('id')
+                ->map(function ($v) { return (int) $v; })
+                ->all();
+            $ids = array_values(array_intersect($ids, $allowed));
+        }
+
+        $group->forwards()->sync($ids);
     }
 
     /* =================================================================
@@ -1027,14 +1068,27 @@ class DevicesController extends BaseController
             $data['location'] = $address;
         }
 
-        // Objeto: ficha con datos básicos del vehículo (paridad Widgets/device)
+        // Objeto: ficha UNIFICADA del vehículo (fusiona la antigua "Telemetría" del
+        // drawer con "Objeto"). La duración de parada vive en la KPI "Detenido".
         if ($has('device')) {
+            $engineStatus = $device->getEngineStatus();
+            $engineText = ($engineStatus === true || $engineStatus === 'on')
+                ? 'Encendido'
+                : ($engineStatus !== null ? 'Apagado' : null);
+
             $data['device_info'] = [
                 'status'      => $device->getStatus(),
                 'status_text' => trans('front.' . $device->getStatus()),
                 'address'     => $address['address'] ?? null,
                 'time'        => $device->time ? \Formatter::time()->format($device->time) : null,
-                'stop'        => $device->stop_duration, // accessor ya formatea (human)
+                'coords'      => ($device->lat && $device->lng)
+                    ? number_format((float) $device->lat, 5) . ', ' . number_format((float) $device->lng, 5)
+                    : null,
+                'altitude'    => ($device->altitude !== null && $device->altitude !== '')
+                    ? round((float) $device->altitude) . ' m'
+                    : null,
+                'engine'      => $engineText,
+                'model'       => $device->device_model,
                 'imei'        => $device->imei,
                 'sim'         => $device->sim_number,
                 'is_admin'    => (bool) $this->user->isAdmin(),
@@ -1127,11 +1181,33 @@ class DevicesController extends BaseController
         }
 
         if ($has('streetview') && $device->lat && $device->lng) {
-            $key = settings('main_settings.streetview_key') ?: settings('main_settings.google_maps_key');
-            $data['streetview'] = $key
-                ? 'https://maps.googleapis.com/maps/api/streetview?size=600x240&fov=90&location='
-                    . $device->lat . ',' . $device->lng . '&key=' . $key
-                : null;
+            $svApi     = settings('main_settings.streetview_api');
+            $svLat     = $device->lat;
+            $svLng     = $device->lng;
+            $svHeading = (int) round($device->course ?? 0);
+
+            if ($svApi) {
+                // Imagen estática (proxy streetview.jpg → StreetviewService): fallback si
+                // no aplica el embed. Aplica la key server-side y devuelve un placeholder.
+                $data['streetview'] = route('streetview', [
+                    'location' => $svLat . ',' . $svLng,
+                    'size'     => '600x240',
+                    'heading'  => $svHeading,
+                ]);
+
+                // Embed INTERACTIVO (paridad legacy street_view_frame): a diferencia de la
+                // Static API (que exige panorámica en el punto EXACTO y devuelve "no imagery"
+                // en zonas rurales), el embed encuentra la panorámica más cercana. Es el que
+                // el legacy carga en el iframe (convertStreetViewUrl → maps/embed?pb=...).
+                if (config('addon.street_view_frame')) {
+                    $data['streetview_frame'] = 'https://www.google.com/maps/embed?pb=!4v' . time()
+                        . '!6m8!1m7!!2m2!1d' . $svLat . '!2d' . $svLng
+                        . '!3f' . $svHeading . '!4f0!5f0';
+                }
+            } else {
+                // Sin proveedor configurado (Ajustes del servidor → Street View API).
+                $data['streetview'] = null;
+            }
         }
 
         if ($has('camera')) {
@@ -1290,7 +1366,8 @@ class DevicesController extends BaseController
         }
         $this->checkException('devices', 'show', $device);
 
-        $items = \Tobuli\Entities\UserGprsTemplate::where('user_id', $this->user->id)
+        // Plantillas GPRS del usuario + las comunes (admin), adaptadas al equipo.
+        $items = \Tobuli\Entities\UserGprsTemplate::userAccessible($this->user)
             ->get()
             ->filter(function ($t) use ($device) {
                 return $t->isAdaptedFromDevice($device);

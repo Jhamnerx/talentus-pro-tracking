@@ -18,6 +18,7 @@
     $items = [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'stats', 'url' => url('/ui/v2/dashboard')],
         ['key' => 'live', 'label' => 'Objetos', 'icon' => 'navigation', 'url' => url('/ui/v2/live')],
+        ['key' => 'events', 'label' => 'Eventos', 'icon' => 'events', 'url' => url('/ui/v2/events'), 'can' => $u->perm('events', 'view')],
         ['key' => 'alerts', 'label' => 'Alertas', 'icon' => 'alerts', 'url' => url('/ui/v2/alerts'), 'can' => $u->perm('alerts', 'view')],
         ['key' => 'history', 'label' => 'Historial', 'icon' => 'history', 'url' => url('/ui/v2/history')],
         // Reportes: entra con el modal de generar abierto (?create=1)
@@ -26,6 +27,7 @@
         ['key' => 'media', 'label' => 'Cámara / Medios', 'icon' => 'camera', 'pending' => true, 'can' => $u->perm('camera', 'view')],
         ['key' => 'sharing', 'label' => 'Compartir', 'icon' => 'share', 'url' => url('/ui/v2/sharing'), 'can' => $u->perm('sharing', 'view')],
         ['key' => 'maintenance', 'label' => 'Mantenimiento', 'icon' => 'wrench', 'url' => url('/ui/v2/maintenance'), 'can' => $u->perm('maintenance', 'view')],
+        ['key' => 'expenses', 'label' => 'Gastos', 'icon' => 'money', 'url' => url('/ui/v2/expenses'), 'can' => $u->perm('device_expenses', 'view')],
         ['key' => 'tasks', 'label' => 'Tareas', 'icon' => 'tasks', 'url' => url('/ui/v2/tasks'), 'can' => $u->perm('tasks', 'view')],
         ['key' => 'drivers', 'label' => 'Conductores', 'icon' => 'users', 'url' => url('/ui/v2/drivers'), 'can' => $u->perm('drivers', 'view')],
         ['key' => 'chat', 'label' => 'Chat', 'icon' => 'chat', 'url' => url('/ui/v2/chat'), 'can' => $u->perm('chat', 'view')],

@@ -9,7 +9,7 @@
                 <path d="m21 21-4.35-4.35" />
             </svg>
             <input type="text" id="tp-cmdk-input" class="tp-cmdk__input"
-                placeholder="Buscar vehículo, conductor, geocerca, comando…" autocomplete="off" spellcheck="false" />
+                placeholder="Buscar vehículo, geocerca, POI…" autocomplete="off" spellcheck="false" />
             <kbd class="tp-kbd">ESC</kbd>
         </div>
 
@@ -22,28 +22,28 @@
             <div class="tp-cmdk__group" data-group="actions">
                 <div class="tp-cmdk__group-title">Acciones rápidas</div>
 
-                <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/preview">
-                    <span class="tp-cmdk__item-icon">??</span>
-                    <span class="tp-cmdk__item-label">Ir a Live Ops</span>
+                <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/live">
+                    <span class="tp-cmdk__item-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+                    <span class="tp-cmdk__item-label">Ir al mapa (Live)</span>
                     <span class="tp-cmdk__item-meta">Navegación</span>
                 </button>
-                <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/preview#dash">
-                    <span class="tp-cmdk__item-icon">??</span>
-                    <span class="tp-cmdk__item-label">Abrir Command Center</span>
+                <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/dashboard">
+                    <span class="tp-cmdk__item-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
+                    <span class="tp-cmdk__item-label">Ir al Dashboard</span>
                     <span class="tp-cmdk__item-meta">Navegación</span>
                 </button>
                 <button class="tp-cmdk__item" data-action="theme-toggle">
-                    <span class="tp-cmdk__item-icon">??</span>
-                    <span class="tp-cmdk__item-label">Cambiar tema (light/dark)</span>
+                    <span class="tp-cmdk__item-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+                    <span class="tp-cmdk__item-label">Cambiar tema (claro/oscuro)</span>
                     <span class="tp-cmdk__item-meta">Preferencias</span>
                 </button>
                 <button class="tp-cmdk__item" data-action="density-toggle">
-                    <span class="tp-cmdk__item-icon">??</span>
-                    <span class="tp-cmdk__item-label">Cambiar densidad (compact/comfortable)</span>
+                    <span class="tp-cmdk__item-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></span>
+                    <span class="tp-cmdk__item-label">Cambiar densidad (compacta/cómoda)</span>
                     <span class="tp-cmdk__item-meta">Preferencias</span>
                 </button>
                 <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/legacy">
-                    <span class="tp-cmdk__item-icon">?</span>
+                    <span class="tp-cmdk__item-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></span>
                     <span class="tp-cmdk__item-label">Volver a UI clásica</span>
                     <span class="tp-cmdk__item-meta">Sistema</span>
                 </button>
@@ -56,8 +56,8 @@
         </div>
 
         <div class="tp-cmdk__foot">
-            <span class="tp-cmdk__hint"><kbd class="tp-kbd">??</kbd> navegar</span>
-            <span class="tp-cmdk__hint"><kbd class="tp-kbd">?</kbd> seleccionar</span>
+            <span class="tp-cmdk__hint"><kbd class="tp-kbd"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><path d="m8 9 4-4 4 4"/><path d="m8 15 4 4 4-4"/></svg></kbd> navegar</span>
+            <span class="tp-cmdk__hint"><kbd class="tp-kbd"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg></kbd> seleccionar</span>
             <span class="tp-cmdk__hint"><kbd class="tp-kbd">ESC</kbd> cerrar</span>
             <span class="tp-cmdk__spacer"></span>
             <span class="tp-cmdk__hint" id="tp-cmdk-status">—</span>

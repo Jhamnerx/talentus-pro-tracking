@@ -600,6 +600,7 @@ return [
         'device_type_id' => 'Tipo de dispositivo',
         'geofence_device' => 'Dispositivo',
         'sensor_template' => 'Plantilla del sensor',
+        'shown_value_by' => 'Mostrar valor por',
         'plate_number' => 'Numero de placa',
         'sms_template_id' => 'Plantilla SMS',
         'gprs_template_id' => 'Plantilla GPRS',

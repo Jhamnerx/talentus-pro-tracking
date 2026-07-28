@@ -1148,6 +1148,13 @@
         el.style.display = on ? "" : "none";
         Array.prototype.forEach.call(el.querySelectorAll("input, select, textarea"), function (i) {
           i.disabled = !on;
+          // tp-select NO re-sincroniza su botón al togglear el disabled del
+          // <select> nativo. Al habilitar un bloque, re-enhancemos para que el
+          // dropdown vuelva a ser interactivo (bug: shown_value_by / on_type /
+          // odómetro quedaban bloqueados al cambiar de plantilla de sensor).
+          if (on && i.tagName === "SELECT" && i._tpdd && window.tpSelect && tpSelect.refresh) {
+            try { tpSelect.refresh(i); } catch (e) {}
+          }
         });
       });
     }

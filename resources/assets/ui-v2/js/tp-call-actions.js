@@ -37,6 +37,26 @@
     function p(n) { return ("0" + n).slice(-2); }
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + "T" + p(d.getHours()) + ":" + p(d.getMinutes());
   }
+  // Componente fecha+hora: date custom (tp-datepicker) + 2 tp-select (HH:MM).
+  function pad2(n) { return ("0" + n).slice(-2); }
+  function hourOptions(sel) {
+    var o = "";
+    for (var i = 0; i < 24; i++) { var v = pad2(i); o += '<option value="' + v + '"' + (v === sel ? " selected" : "") + ">" + v + "</option>"; }
+    return o;
+  }
+  function minOptions(sel) {
+    var o = "";
+    for (var i = 0; i < 60; i++) { var v = pad2(i); o += '<option value="' + v + '"' + (v === sel ? " selected" : "") + ">" + v + "</option>"; }
+    return o;
+  }
+  // Parte una fecha "YYYY-MM-DD HH:MM(:SS)" en {date,h,m}; si viene vacía, ahora.
+  function splitDT(s) {
+    var d = new Date();
+    var def = { date: d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), h: pad2(d.getHours()), m: pad2(d.getMinutes()) };
+    if (!s) return def;
+    var mt = String(s).match(/(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})/);
+    return mt ? { date: mt[1], h: mt[2], m: mt[3] } : def;
+  }
 
   /* ================= Modal ================= */
 
@@ -57,6 +77,7 @@
       var body = dlg.querySelector(".tp-modal__body");
       if (!res.ok || !res.data || !res.data.ok) { body.innerHTML = '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar.</div>'; return; }
       var m = res.data, item = m.item || {};
+      var dt = splitDT(item.called_at);
       body.innerHTML =
         '<form class="tp-form tp-ca-form"><div class="tp-form__grid">' +
         '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Vehículo</span>' +
@@ -66,8 +87,13 @@
         '<small class="tp-form__hint">Solo eventos con alerta pueden registrarse.</small></div>' +
         '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Tipo de respuesta</span>' +
         '<select class="tp-input" name="response_type">' + options(m.responseTypes, item.response_type) + "</select></div>" +
-        '<label class="tp-form__field tp-form__field--required"><span class="tp-form__label">Fecha de llamada</span>' +
-        '<input type="datetime-local" name="called_at" value="' + esc(toLocal(item.called_at) || nowLocalInput()) + '"></label>' +
+        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Fecha de llamada</span>' +
+        '<div style="display:flex;gap:8px;align-items:center;">' +
+        '<input type="date" class="tp-input" name="called_at_date" value="' + esc(dt.date) + '" style="flex:1;min-width:0;">' +
+        '<select class="tp-input" name="called_at_h" style="width:74px;">' + hourOptions(dt.h) + "</select>" +
+        '<span style="font-weight:600;">:</span>' +
+        '<select class="tp-input" name="called_at_m" style="width:74px;">' + minOptions(dt.m) + "</select>" +
+        "</div></div>" +
         '<label class="tp-form__field tp-form__field--required"><span class="tp-form__label">Notas</span>' +
         '<textarea name="remarks" rows="2" data-tp-field>' + esc(item.remarks || "") + "</textarea></label>" +
         "</div></form>";
@@ -96,14 +122,18 @@
 
   function submit(dlg, id, onSaved) {
     var form = dlg.querySelector("form.tp-ca-form");
+    var dv = (form.querySelector('[name="called_at_date"]').value || "").trim();
+    var hv = form.querySelector('[name="called_at_h"]').value || "00";
+    var mv = form.querySelector('[name="called_at_m"]').value || "00";
     var payload = {
       device_id: form.querySelector('[name="device_id"]').value,
       event_id: form.querySelector('[name="event_id"]').value,
       response_type: form.querySelector('[name="response_type"]').value,
-      called_at: (form.querySelector('[name="called_at"]').value || "").replace("T", " "),
+      called_at: dv ? dv + " " + hv + ":" + mv : "",
       remarks: form.querySelector('[name="remarks"]').value.trim(),
     };
     if (!payload.event_id) { tpModal.toast("Selecciona un evento.", "warning"); return; }
+    if (!dv) { tpModal.toast("La fecha de llamada es obligatoria.", "warning"); return; }
     if (!payload.remarks) { tpModal.toast("Las notas son obligatorias.", "warning"); return; }
 
     var url = id ? URLS.item.replace("{id}", id) : URLS.store;

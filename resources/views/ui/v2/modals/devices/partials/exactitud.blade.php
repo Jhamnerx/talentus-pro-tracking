@@ -28,7 +28,8 @@
         <span class="tp-form__label">{{ trans('validation.attributes.ignition_detection') }}</span>
         <select class="tp-input" style="width: 100%" name="engine_hours" data-tp-field>
             @foreach ($eh as $k => $v)
-                <option value="{{ $k }}" {{ ($item->engine_hours ?? 'off') == $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}" {{ ($item->engine_hours ?? 'off') == $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>
@@ -37,7 +38,8 @@
         <span class="tp-form__label">{{ trans('validation.attributes.detect_engine') }}</span>
         <select class="tp-input" style="width: 100%" name="detect_engine" data-tp-field>
             @foreach ($de as $k => $v)
-                <option value="{{ $k }}" {{ ($item->detect_engine ?? 'off') == $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}" {{ ($item->detect_engine ?? 'off') == $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>
@@ -46,7 +48,8 @@
         <span class="tp-form__label">{{ trans('validation.attributes.detect_speed') }}</span>
         <select class="tp-input" style="width: 100%" name="detect_speed" data-tp-field>
             @foreach ($ds as $k => $v)
-                <option value="{{ $k }}" {{ ($item->detect_speed ?? 'off') == $k ? 'selected' : '' }}>{{ $v }}</option>
+                <option value="{{ $k }}" {{ ($item->detect_speed ?? 'off') == $k ? 'selected' : '' }}>
+                    {{ $v }}</option>
             @endforeach
         </select>
     </label>
@@ -55,7 +58,8 @@
         <span class="tp-form__label">{{ trans('validation.attributes.max_speed') }}</span>
         <div style="display: flex; gap: 9px; align-items: center;">
             <input type="hidden" name="max_speed" value="">
-            <input type="checkbox" name="enable_max_speed" value="1" id="tp-dev-maxspeed" {{ $hasMaxSpeed ? 'checked' : '' }}>
+            <input type="checkbox" name="enable_max_speed" value="1" id="tp-dev-maxspeed"
+                {{ $hasMaxSpeed ? 'checked' : '' }}>
             <input type="number" min="0" step="1" name="max_speed" value="{{ $item->max_speed ?? '' }}"
                 data-enable="tp-dev-maxspeed" {{ $hasMaxSpeed ? '' : 'disabled' }} style="flex: 1;" data-tp-field>
         </div>
@@ -64,22 +68,22 @@
     <label class="tp-form__field">
         <span class="tp-form__label">{{ trans('validation.attributes.min_moving_speed') }}
             ({{ trans('front.affects_stops_track', ['default' => 6]) }})</span>
-        <input type="number" min="0" step="1" name="min_moving_speed" value="{{ $item->min_moving_speed ?? 6 }}"
-            data-tp-field>
+        <input type="number" min="0" step="1" name="min_moving_speed"
+            value="{{ $item->min_moving_speed ?? 6 }}" data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">{{ trans('validation.attributes.min_fuel_fillings') }}
             ({{ trans('front.default_value', ['default' => 10]) }})</span>
-        <input type="number" min="0" step="0.1" name="min_fuel_fillings" value="{{ $item->min_fuel_fillings ?? 10 }}"
-            data-tp-field>
+        <input type="number" min="0" step="0.1" name="min_fuel_fillings"
+            value="{{ $item->min_fuel_fillings ?? 10 }}" data-tp-field>
     </label>
 
     <label class="tp-form__field">
         <span class="tp-form__label">{{ trans('validation.attributes.min_fuel_thefts') }}
             ({{ trans('front.default_value', ['default' => 10]) }})</span>
-        <input type="number" min="0" step="0.1" name="min_fuel_thefts" value="{{ $item->min_fuel_thefts ?? 10 }}"
-            data-tp-field>
+        <input type="number" min="0" step="0.1" name="min_fuel_thefts"
+            value="{{ $item->min_fuel_thefts ?? 10 }}" data-tp-field>
     </label>
 
     <div class="tp-form__field">

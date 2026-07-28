@@ -297,9 +297,14 @@
     var type = el.getAttribute("data-type");
     var url = el.getAttribute("data-url") || el.getAttribute("data-target");
     var id = el.getAttribute("data-id");
+    // Los ítems de acción tienen el label como texto directo (sin <div> interno);
+    // los resultados lo llevan en un <div>. Buscar ambos y no explotar si falta.
+    var labelEl =
+      el.querySelector(".tp-cmdk__item-label div") ||
+      el.querySelector(".tp-cmdk__item-label");
     var label =
       el.getAttribute("data-label") ||
-      el.querySelector(".tp-cmdk__item-label div").textContent.trim();
+      (labelEl ? labelEl.textContent.trim() : "");
 
     if (action === "theme-toggle") {
       var cur = document.documentElement.getAttribute("data-theme") || "dark";
@@ -333,13 +338,27 @@
       window.location.href = url;
       return;
     }
+    if (action === "result" && type === "device") {
+      pushRecent({ type: type, id: id, label: label, url: url, subtitle: "" });
+      // Si ya estamos en la página Live, seleccionar el vehículo EN EL SITIO
+      // (abre drawer + centra el mapa) sin recargar la página.
+      if (window.tpLive && typeof window.tpLive.selectDevice === "function") {
+        window.tpLive.selectDevice(parseInt(id, 10));
+        close();
+        return;
+      }
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+    }
     if (action === "result" && url) {
       pushRecent({ type: type, id: id, label: label, url: url, subtitle: "" });
       window.location.href = url;
       return;
     }
     if (action === "result" && type === "device" && !url) {
-      // Fallback for now: just dispatch a custom event
+      // Fallback: sin tpLive ni url → evento custom.
       document.dispatchEvent(
         new CustomEvent("tp:cmdk:select", {
           detail: { type: type, id: id, label: label },

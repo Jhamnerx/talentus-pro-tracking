@@ -1783,3 +1783,30 @@ select.tp-input:disabled {
   gap: 6px;
   justify-content: flex-end;
 }
+
+/* ============================================================
+   DENSIDAD · modo compacto (data-density="compact")
+   ------------------------------------------------------------
+   Aprieta las superficies con MÁS datos (lista de vehículos y
+   tablas CRUD) para caber más filas por pantalla. El modo
+   "cómoda" (default) no se toca. La especificidad (0,2,x) gana
+   a la base (0,1,x) sin !important ni depender del orden de
+   carga. Lo activa el toggle "Cambiar densidad" (shell.js →
+   data-density en <html>, persistido en localStorage).
+   ============================================================ */
+/* Lista de vehículos (Live) */
+[data-density="compact"] .tp-live__row {
+  padding: 5px var(--sp-2);
+}
+[data-density="compact"] .tp-live__group-items {
+  padding: 5px;
+  gap: 4px;
+}
+[data-density="compact"] .tp-live__group {
+  padding: 6px 10px;
+}
+/* Tablas CRUD (servicios, gastos, conductores, rutas, sharing, reportes…) */
+[data-density="compact"] .tp-svc-table th,
+[data-density="compact"] .tp-svc-table td {
+  padding: 5px 12px;
+}

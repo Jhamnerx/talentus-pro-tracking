@@ -4,7 +4,7 @@
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=8">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=10">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
@@ -12,18 +12,26 @@
 
 @section('workspace')
     <div class="tp-events" id="tp-events" data-data-url="{{ route('ui.v2.api.events') }}"
+        data-map-url="{{ route('ui.v2.api.events.map') }}"
         data-geo-url="{{ route('address.get') }}" data-zones-url="{{ route('ui.v2.api.zones') }}"
         data-pois-url="{{ route('ui.v2.api.pois') }}" data-routes-url="{{ route('ui.v2.api.routes') }}"
         {{-- Direcciones gateadas por el plugin igual que el legacy (Events/index.blade → @if plugins.event_section_address.status) --}}
-        data-addr-on="{{ settings('plugins.event_section_address.status') ? '1' : '' }}">
+        data-addr-on="{{ settings('plugins.event_section_address.status') ? '1' : '' }}"
+        {{-- "Atender" evento = registrar acción de llamada (mismo gate que el legacy: call_actions + events) --}}
+        data-ca-on="{{ Auth::user()->perm('call_actions', 'view') && Auth::user()->perm('events', 'view') ? '1' : '' }}"
+        data-ca-store-url="{{ route('ui.v2.api.call_actions.store') }}">
         {{-- Map config (provider IDs, API keys) inyectado para la capa JS --}}
         <script type="application/json" id="tp-events-map-config">@json($mapConfig)</script>
+        {{-- Tipos de respuesta reales para el modal "Atender" (mismas etiquetas que la tabla) --}}
+        <script type="application/json" id="tp-events-resp-types">@json($responseTypes ?? [])</script>
+        {{-- Catálogo completo de tipos de evento (mismas etiquetas que el legacy) para el filtro --}}
+        <script type="application/json" id="tp-events-types">@json($eventTypes ?? [])</script>
 
         {{-- LIST PANEL --}}
         <aside class="tp-events__list-panel">
             <header class="tp-events__head">
-                <h3 class="tp-h6 tp-mb-2">Eventos</h3>
-                <select class="tp-input tp-input--sm" id="tp-events-hours">
+                <h3 class="tp-h6" style="margin:0;">Eventos</h3>
+                <select class="tp-input" style="width:100%" id="tp-events-hours">
                     <option value="0" selected>Todos</option>
                     <option value="1">Última hora</option>
                     <option value="6">Últimas 6 horas</option>
@@ -31,7 +39,16 @@
                     <option value="72">Últimos 3 días</option>
                     <option value="168">Últimos 7 días</option>
                 </select>
-                <div class="tp-input-wrap tp-mt-2">
+                <select class="tp-input" style="width:100%" id="tp-events-type">
+                    <option value="">Todos los tipos</option>
+                </select>
+                <select class="tp-input" style="width:100%" id="tp-events-device">
+                    <option value="">Todos los vehículos</option>
+                    @foreach ($devices ?? [] as $d)
+                        <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
+                    @endforeach
+                </select>
+                <div class="tp-input-wrap">
                     <input type="text" class="tp-input tp-input--with-icon" id="tp-events-search"
                         placeholder="Buscar evento…" autocomplete="off">
                 </div>
@@ -43,7 +60,10 @@
 
             <footer class="tp-events__foot">
                 <span class="tp-text-xs tp-text-muted" id="tp-events-status">—</span>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-refresh" type="button">Refrescar</button>
+                <div class="tp-row" style="gap:6px;">
+                    <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-export" type="button">Exportar</button>
+                    <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-refresh" type="button">Refrescar</button>
+                </div>
             </footer>
         </aside>
 
@@ -123,6 +143,28 @@
                         <path d="M9 6.5h6" />
                     </svg>
                 </button>
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
+                    id="tp-ev-toggle-risk" title="Mapa de riesgo (todos los eventos)"
+                    aria-label="Mapa de riesgo" aria-pressed="false">
+                    {{-- Mapa de riesgo: capas/calor --}}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" />
+                        <circle cx="12" cy="9" r="2.5" />
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Leyenda flotante del mapa de riesgo (severidad) --}}
+            <div class="tp-events__legend" id="tp-ev-legend" hidden>
+                <div class="tp-events__legend-title">Mapa de riesgo</div>
+                <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
+                        style="background:#ef4444"></span> Crítico</div>
+                <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
+                        style="background:#f59e0b"></span> Advertencia</div>
+                <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
+                        style="background:#3b82f6"></span> Informativo</div>
+                <div class="tp-events__legend-note" id="tp-ev-legend-note"></div>
             </div>
 
             {{-- Menú de tipos de mapa (selector; persiste en user->map_id, compartido con Live) --}}
@@ -134,5 +176,5 @@
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=12"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=18"></script>
 @endpush

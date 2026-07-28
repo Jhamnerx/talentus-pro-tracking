@@ -23,6 +23,16 @@
     pollInterval: parseInt(root.getAttribute("data-poll-interval"), 10) || 15000,
   };
 
+  // Reenvíos disponibles para el modal de grupos (inyectados por el blade;
+  // gated por addon.forwards + perm forwards.view en el servidor).
+  var FWD_CFG = (function () {
+    try {
+      return JSON.parse(document.getElementById("tp-live-forwards").textContent);
+    } catch (e) {
+      return { can: false, items: [] };
+    }
+  })();
+
   var MAP_CFG = (function () {
     try {
       return JSON.parse(
@@ -640,7 +650,6 @@
       '</dd><dt>Ubicación</dt><dd data-pop-addr class="' +
       (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
       '">Cargando…</dd></dl>' +
-      '<div class="tp-hito-ref" data-pop-hito hidden></div>' +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>Ver detalles</button></div>';
     if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
     state.popup.setLatLng([parseFloat(d.lat), parseFloat(d.lng)]).setContent(html).openOn(state.map);
@@ -650,17 +659,6 @@
       var slot = el && el.querySelector("[data-pop-addr]");
       if (slot) slot.textContent = a || "—";
     });
-    // Referencia vial "PE-1N · km 557" (solo con el toggle de hitos activo)
-    if (state.toggles.hitos && window.tpHitos) {
-      tpHitos.nearest(d.lat, d.lng).then(function (h) {
-        if (!h || !state.popup || !state.popup.isOpen()) return;
-        var slot = el && el.querySelector("[data-pop-hito]");
-        if (slot) {
-          slot.textContent = tpHitos.refText(h);
-          slot.hidden = false;
-        }
-      });
-    }
     var btn = el && el.querySelector("[data-pop-details]");
     if (btn)
       btn.addEventListener("click", function () {
@@ -702,6 +700,15 @@
     var el = document.getElementById(elId);
     if (el) el.textContent = val == null || val === "" ? "—" : val;
   }
+  // Duración (segundos) → H:MM:SS. Alimenta la KPI "Detenido".
+  function fmtDuration(sec) {
+    if (sec == null || sec === "") return "—";
+    sec = Math.max(0, Math.round(Number(sec) || 0));
+    var h = Math.floor(sec / 3600),
+      m = Math.floor((sec % 3600) / 60),
+      s = sec % 60;
+    return h + ":" + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
+  }
   function fillDrawer(d) {
     setText("tp-drawer-name", d.name || "#" + d.id);
     setText("tp-drawer-plate", d.plate_number || d.imei || "—");
@@ -712,24 +719,26 @@
     }
     setText("tp-drawer-speed", d.speed_text ? d.speed_text.replace(/[^\d.,]/g, "") : Math.round(parseFloat(d.speed) || 0));
     setText("tp-drawer-course", d.course != null ? Math.round(d.course) : "—");
-    setText("tp-drawer-stop", d.stop_duration_text || "—");
+    setText("tp-drawer-stop", fmtDuration(d.stop_duration_sec));
     setText("tp-drawer-distance", d.total_distance != null ? d.total_distance : "—");
-    setText("tp-drawer-lastseen", d.time || "—");
-    setText("tp-drawer-coords", d.lat != null ? parseFloat(d.lat).toFixed(5) + ", " + parseFloat(d.lng).toFixed(5) : "—");
-    setText("tp-drawer-altitude", d.altitude != null ? d.altitude + " m" : "—");
-    setText(
-      "tp-drawer-engine",
-      d.engine_status === true || d.engine_status === "on" ? "Encendido" : d.engine_status != null ? "Apagado" : "—",
-    );
-    setText("tp-drawer-imei", d.imei || "—");
-    setText("tp-drawer-model", d.device_model || "—");
-    setText("tp-drawer-sim", d.sim_number || "—");
+    // El resto de la ficha (última señal, coordenadas, altitud, motor, imei,
+    // modelo, sim) se muestra unificada en el widget "Objeto" (device-widgets.blade).
     var sr = document.getElementById("tp-drawer-status-row");
     if (sr) {
       var lbl = STATUS_LABELS[d.online] || d.online || "—";
       sr.innerHTML = '<span class="tp-chip" data-status="' + classify(d) + '">' + esc(lbl) + "</span>";
     }
   }
+  // El handle "Widgets" (botón para reabrir la barra inferior) solo debe verse
+  // cuando el bottombar está ABIERTO pero COLAPSADO. Deriva su visibilidad del
+  // estado del root en cada transición (colapsar / expandir / cambiar device),
+  // manejando el atributo `hidden` (el CSS lo oculta con display:none!important).
+  function syncBottombarHandle() {
+    var h = document.getElementById("tp-bottombar-expand");
+    if (!h) return;
+    h.hidden = !(root.hasAttribute("data-bottombar-open") && root.hasAttribute("data-bottombar-collapsed"));
+  }
+
   // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
   function loadDrawerWidgets(id) {
     var box = document.getElementById("tp-drawer-widgets");
@@ -769,6 +778,7 @@
         } else {
           root.removeAttribute("data-bottombar-open");
         }
+        syncBottombarHandle();
         // El HTML inyectado por innerHTML no ejecuta <script>: dibujamos los
         // gráficos de combustible leyendo el JSON embebido en cada card.
         renderFuelCharts(bottom);
@@ -1249,6 +1259,151 @@
     load("today");
   }
 
+  // -----------------------------------------------------------
+  // Herramientas de mapa (menú "Herramientas" del topbar): Regla, Mostrar punto,
+  // Buscar dirección — equivalentes a app.ruler/showPoint/showAddress del legacy.
+  // -----------------------------------------------------------
+  var rulerState = { on: false, pts: [], layer: null };
+  var rulerClickBound = false;
+  var toolMarker = null;
+
+  function rulerRedraw() {
+    if (rulerState.layer) {
+      state.map.removeLayer(rulerState.layer);
+      rulerState.layer = null;
+    }
+    if (!rulerState.pts.length) return;
+    var g = L.layerGroup();
+    if (rulerState.pts.length > 1)
+      g.addLayer(L.polyline(rulerState.pts, { color: "#0f172a", weight: 2, dashArray: "5 6", opacity: 0.85 }));
+    var acc = 0;
+    rulerState.pts.forEach(function (pt, i) {
+      if (i > 0) acc += rulerState.pts[i - 1].distanceTo(pt);
+      g.addLayer(
+        L.marker(pt, {
+          icon: L.divIcon({
+            className: "tp-ruler-ldiv",
+            html: '<span class="tp-ruler-chip">' + (acc / 1000).toFixed(2) + " km</span>",
+            iconSize: [0, 0],
+            iconAnchor: [-10, 10],
+          }),
+        }),
+      );
+    });
+    rulerState.layer = g.addTo(state.map);
+  }
+  function rulerToggle() {
+    if (!state.map) return;
+    if (!rulerClickBound) {
+      state.map.on("click", function (e) {
+        if (!rulerState.on) return;
+        rulerState.pts.push(e.latlng);
+        rulerRedraw();
+      });
+      rulerClickBound = true;
+    }
+    rulerState.on = !rulerState.on;
+    state.map.getContainer().style.cursor = rulerState.on ? "crosshair" : "";
+    rulerState.pts = [];
+    rulerRedraw();
+    if (rulerState.on && window.tpModal)
+      tpModal.toast("Haz clic en el mapa para medir. Vuelve a Herramientas → Regla para salir.", "info");
+  }
+  function placeToolMarker(ll) {
+    if (!state.map) return;
+    if (toolMarker) state.map.removeLayer(toolMarker);
+    toolMarker = L.marker(ll).addTo(state.map);
+    state.map.setView(ll, 16);
+  }
+  function toolShowPoint() {
+    if (!window.tpModal) return;
+    tpModal.open({
+      title: "Mostrar punto",
+      size: "sm",
+      body:
+        '<div class="tp-scope"><label class="tp-field__label">Latitud</label>' +
+        '<input type="text" class="tp-input" data-pt-lat placeholder="-8.10610" style="width:100%;margin:4px 0 10px;">' +
+        '<label class="tp-field__label">Longitud</label>' +
+        '<input type="text" class="tp-input" data-pt-lng placeholder="-79.02080" style="width:100%;margin-top:4px;">' +
+        '<div data-pt-err style="display:none;margin-top:10px;color:#ef4444;font-size:13px;"></div></div>',
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Mostrar",
+          variant: "primary",
+          close: false,
+          onClick: function (dlg) {
+            var lat = parseFloat((dlg.querySelector("[data-pt-lat]") || {}).value);
+            var lng = parseFloat((dlg.querySelector("[data-pt-lng]") || {}).value);
+            var err = dlg.querySelector("[data-pt-err]");
+            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+              if (err) {
+                err.textContent = "Coordenadas inválidas.";
+                err.style.display = "block";
+              }
+              return false;
+            }
+            placeToolMarker([lat, lng]);
+            tpModal.close(dlg);
+            return false;
+          },
+        },
+      ],
+    });
+  }
+  function toolSearchAddress(url) {
+    if (!window.tpModal || !url) return;
+    var dlg = tpModal.open({
+      title: "Buscar dirección",
+      size: "sm",
+      body:
+        '<div class="tp-scope"><label class="tp-field__label">Dirección</label>' +
+        '<input type="text" class="tp-input" data-adr-q placeholder="Av. España 123, Trujillo" style="width:100%;margin-top:4px;">' +
+        '<div data-adr-err style="display:none;margin-top:10px;color:#ef4444;font-size:13px;"></div></div>',
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Buscar",
+          variant: "primary",
+          close: false,
+          onClick: function (d) {
+            var q = ((d.querySelector("[data-adr-q]") || {}).value || "").trim();
+            var err = d.querySelector("[data-adr-err]");
+            if (!q) return false;
+            if (err) err.style.display = "none";
+            tpModal.setBusy(d, true);
+            tpModal
+              .fetchJSON(url + "?q=" + encodeURIComponent(q), { method: "GET" })
+              .then(function (res) {
+                tpModal.setBusy(d, false);
+                var loc = res.data && res.data.status == 1 ? res.data.location : null;
+                if (!loc || loc.lat == null) {
+                  if (err) {
+                    err.textContent = (res.data && res.data.error) || "No se encontró la dirección.";
+                    err.style.display = "block";
+                  }
+                  return;
+                }
+                placeToolMarker([parseFloat(loc.lat), parseFloat(loc.lng)]);
+                tpModal.close(d);
+              })
+              .catch(function () {
+                tpModal.setBusy(d, false);
+                if (err) {
+                  err.textContent = "Error de red.";
+                  err.style.display = "block";
+                }
+              });
+            return false;
+          },
+        },
+      ],
+    });
+    var input = dlg.querySelector("[data-adr-q]");
+    if (input) input.focus();
+  }
+  window.tpLiveTools = { ruler: rulerToggle, showPoint: toolShowPoint, searchAddress: toolSearchAddress };
+
   function groupTitle(gid) {
     if (!gid) return "Sin grupo";
     for (var i = 0; i < state.groups.length; i++)
@@ -1259,8 +1414,13 @@
     var status = classify(d);
     var speedNum = Math.round(parseFloat(d.speed) || 0);
     var speedTxt = d.speed_text || speedNum + " km/h";
-    var meta = d.plate_number || d.imei || "";
     var active = d.active !== false;
+    // 2ª línea = fecha de transmisión / estado (paridad legacy Device::time):
+    // el backend ya resuelve "Desactivado" / "No conectado" / SIM|plan vencido /
+    // fecha formateada. Solo falta pintarlo (antes mostrábamos la placa).
+    var ts = Math.max(parseInt(d.timestamp, 10) || 0, parseInt(d.acktimestamp, 10) || 0);
+    var metaTxt = d.time || d.plate_number || d.imei || "";
+    var metaIsStatus = active === false || ts === 0; // muestra estado, no fecha
     // Acento lateral con el color de estado real del device (getStatusColor).
     var accent = d.icon_color || "";
     // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
@@ -1272,6 +1432,18 @@
         '" title="' +
         (d.blocked ? "Motor bloqueado" : "Motor desbloqueado") +
         '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>';
+    }
+    // Motor (paridad legacy detect_engine): solo si hay detección de ignición
+    // por SENSOR → engine_status es bool; con GPS es null y no se muestra.
+    // Verde = encendido, gris = apagado.
+    var engineIcon = "";
+    if (d.engine_status === true || d.engine_status === false) {
+      engineIcon =
+        '<span class="tp-eng-ico ' +
+        (d.engine_status ? "tp-eng-ico--on" : "tp-eng-ico--off") +
+        '" title="' +
+        (d.engine_status ? "Motor encendido" : "Motor apagado") +
+        '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></span>';
     }
     return (
       '<div class="tp-live__row" data-id="' +
@@ -1291,8 +1463,11 @@
       esc(d.name || "#" + d.id) +
       "</span>" +
       lockIcon +
-      '</div><div class="tp-live__row-meta">' +
-      esc(meta) +
+      engineIcon +
+      '</div><div class="tp-live__row-meta' +
+      (metaIsStatus ? " tp-live__row-meta--status" : "") +
+      '">' +
+      esc(metaTxt) +
       "</div></div>" +
       '<div class="tp-live__row-end">' +
       '<span class="tp-live__row-speed' +
@@ -1492,6 +1667,34 @@
   var CAN_GROUPS = !!document.getElementById("tp-live-create-device"); // perm devices edit
   var GROUPS_BASE = (CFG.devicesUrl || "/ui/v2/api/devices").replace(/\/devices(\?.*)?$/, "/device-groups");
 
+  // Campo "Reenvíos" del modal de grupos: lista de checkboxes de los Forward
+  // accesibles (paridad legacy DevicesGroups select forwards[]). Solo se
+  // renderiza si el addon/permiso lo habilitan (FWD_CFG.can).
+  function forwardsFieldHtml(info) {
+    if (!FWD_CFG.can) return "";
+    var sel = {};
+    ((info && info.forward_ids) || []).forEach(function (id) {
+      sel[id] = true;
+    });
+    var rows = FWD_CFG.items.length
+      ? FWD_CFG.items
+          .map(function (f) {
+            return (
+              '<label style="display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:13px;font-weight:600;color:var(--fg-primary,#0f172a);cursor:pointer;">' +
+              '<input type="checkbox" class="tp-choice-input" data-dgm-fwd="' + f.id + '"' + (sel[f.id] ? " checked" : "") + ">" +
+              '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(f.title) + "</span></label>"
+            );
+          })
+          .join("")
+      : '<span class="tp-text-muted" style="font-size:12.5px;">No tienes reenvíos creados. Créalos en Herramientas → Reenvíos.</span>';
+    return (
+      '<div class="tp-form__field" style="margin-bottom:12px;"><span class="tp-form__label">Reenvíos</span>' +
+      '<div style="border:1px solid var(--border-default,#e2e8f0);border-radius:10px;padding:6px 12px;background:var(--surface-raised,#fff);">' +
+      rows +
+      "</div></div>"
+    );
+  }
+
   function openDeviceGroupModal(groupId) {
     if (!window.tpModal) return;
     var isEdit = !!groupId;
@@ -1538,6 +1741,7 @@
           '<span class="tp-form__label">Título</span>' +
           '<input type="text" data-dgm-title maxlength="100" value="' + esc((info && info.title) || "") + '" data-tp-field>' +
           "</label>" +
+          forwardsFieldHtml(info) +
           '<div class="tp-form__field"><span class="tp-form__label">Vehículos</span>' +
           '<div class="tp-group-box" data-dgm-box>' +
           '<div class="tp-group-box__head" style="margin-bottom:0;">' +
@@ -1566,10 +1770,18 @@
                 return false;
               }
               var ids = Object.keys(selected).map(Number);
+              var payload = { title: title, devices: ids };
+              if (FWD_CFG.can) {
+                var fwd = [];
+                Array.prototype.forEach.call(dialog.querySelectorAll("[data-dgm-fwd]:checked"), function (c) {
+                  fwd.push(parseInt(c.getAttribute("data-dgm-fwd"), 10));
+                });
+                payload.forwards = fwd;
+              }
               var url = isEdit ? GROUPS_BASE + "/" + groupId : GROUPS_BASE;
               tpModal.setBusy(dialog, true);
               tpModal
-                .fetchJSON(url, { method: isEdit ? "PUT" : "POST", json: { title: title, devices: ids } })
+                .fetchJSON(url, { method: isEdit ? "PUT" : "POST", json: payload })
                 .then(function (res) {
                   tpModal.setBusy(dialog, false);
                   if (!res.ok || !res.data || !res.data.ok) {
@@ -1851,6 +2063,22 @@
       state.bootstrapped = true;
     }
   }
+  // Enfoca un vehículo al abrir /ui/v2/live?device=N (resultado del buscador
+  // global). Se ejecuta una sola vez, tras el primer load COMPLETO de la lista
+  // (el finally de fetchDevices ya trae todas las páginas en state.index).
+  var initialDeviceDone = false;
+  function focusInitialDevice() {
+    if (initialDeviceDone) return;
+    initialDeviceDone = true;
+    var id;
+    try {
+      id = parseInt(new URLSearchParams(location.search).get("device"), 10);
+    } catch (e) {
+      id = NaN;
+    }
+    if (id && !isNaN(id) && state.index && state.index[id]) selectDevice(id);
+  }
+
   function fetchDevices(manual) {
     if (inFlight) inFlight.abort();
     var ctrl = new AbortController();
@@ -1891,6 +2119,8 @@
         // Overlays del mapa: se cargan tras el 1er load completo de devices
         // (mapa ya asentado con su fitBounds) — patrón del legacy.
         seedOverlays();
+        // Enfoca el device pedido por ?device=N (buscador global).
+        focusInitialDevice();
       });
   }
   // Carga inicial de geocercas/POIs/rutas activas UNA sola vez, cuando el mapa
@@ -2019,6 +2249,33 @@
     var filterBtn = document.getElementById("tp-live-filter");
     if (filterBtn && FILTER_CFG) filterBtn.addEventListener("click", openAdvancedFilter);
 
+    // Menú "Herramientas" del topbar (Regla / Mostrar punto / Buscar dirección).
+    var toolsBtn = document.getElementById("tp-tools-btn");
+    var toolsMenu = document.getElementById("tp-tools-menu");
+    if (toolsBtn && toolsMenu) {
+      toolsBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toolsMenu.hidden = !toolsMenu.hidden;
+        toolsBtn.setAttribute("aria-expanded", toolsMenu.hidden ? "false" : "true");
+      });
+      document.addEventListener("click", function () {
+        toolsMenu.hidden = true;
+        toolsBtn.setAttribute("aria-expanded", "false");
+      });
+      toolsMenu.addEventListener("click", function (e) {
+        var it = e.target.closest("[data-tp-tool]");
+        if (!it) return;
+        toolsMenu.hidden = true;
+        var tool = it.getAttribute("data-tp-tool");
+        if (tool === "ruler") rulerToggle();
+        else if (tool === "point") toolShowPoint();
+        else if (tool === "address") toolSearchAddress(toolsMenu.getAttribute("data-address-search-url"));
+        else if (tool === "forwards") {
+          if (window.tpForwards) window.tpForwards.open(it.getAttribute("data-forwards-url"));
+        }
+      });
+    }
+
     // Geolocalización
     var geo = document.getElementById("tp-live-geolocate");
     if (geo)
@@ -2135,12 +2392,14 @@
     if (bbCollapse)
       bbCollapse.addEventListener("click", function () {
         root.toggleAttribute("data-bottombar-collapsed");
+        syncBottombarHandle();
       });
     var bbExpand = document.getElementById("tp-bottombar-expand");
     if (bbExpand)
       bbExpand.addEventListener("click", function () {
         root.setAttribute("data-bottombar-open", "true");
         root.removeAttribute("data-bottombar-collapsed");
+        syncBottombarHandle();
       });
     var bbConfig = document.getElementById("tp-bottombar-config");
     if (bbConfig)

@@ -3,55 +3,18 @@
     $user = auth()->user();
     $userName = $user ? trim($user->name ?? ($user->email ?? 'User')) : 'Guest';
     $userInit = $user ? strtoupper(mb_substr(preg_replace('/\s+/', '', $userName), 0, 2)) : 'G';
-    $workspaces = $workspaces ?? [['id' => 'primary', 'name' => 'Mi Empresa', 'role' => 'Operations']];
-    $currentWorkspace = $workspaces[0] ?? null;
+    // Marca (white-label): mismo ajuste que el <title> del layout maestro.
+    $brandName = Appearance::getSetting('server_name') ?: 'TalentusPro';
+    $brandInit = strtoupper(mb_substr(preg_replace('/\s+/', '', $brandName), 0, 1)) ?: 'T';
 @endphp
 
 <header class="tp-topbar">
 
     <div class="tp-topbar__brand">
-        <a href="{{ url('/ui/v2/preview') }}" class="tp-row" style="text-decoration:none; color:inherit; gap:8px;">
-            <span class="tp-rail__logo" style="width:26px; height:26px; font-size:12px;">T</span>
-            <span style="font-weight:600;">TalentusPro</span>
+        <a href="{{ url('/ui/v2/live') }}" class="tp-row" style="text-decoration:none; color:inherit; gap:8px;">
+            <span class="tp-rail__logo" style="width:26px; height:26px; font-size:12px;">{{ $brandInit }}</span>
+            <span style="font-weight:600;">{{ $brandName }}</span>
         </a>
-
-        {{-- Workspace switcher --}}
-        @if (count($workspaces) >= 1)
-            <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-workspace-btn" aria-haspopup="menu"
-                aria-expanded="false" style="margin-left:8px;">
-                <span style="opacity:.55; margin-right:4px;">/</span>
-                <span>{{ $currentWorkspace['name'] ?? 'Workspace' }}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
-            </button>
-
-            <div class="tp-menu" id="tp-workspace-menu" role="menu" hidden>
-                <div class="tp-menu__head">
-                    <div class="tp-text-overline">Workspaces</div>
-                </div>
-                @foreach ($workspaces as $w)
-                    <button class="tp-menu__item" role="menuitem" data-workspace-id="{{ $w['id'] }}">
-                        <div class="tp-avatar tp-avatar--sm">{{ strtoupper(mb_substr($w['name'], 0, 2)) }}</div>
-                        <div class="tp-menu__item-main">
-                            <div>{{ $w['name'] }}</div>
-                            <div class="tp-text-xs tp-text-muted">{{ $w['role'] ?? '' }}</div>
-                        </div>
-                        @if (($currentWorkspace['id'] ?? null) === $w['id'])
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        @endif
-                    </button>
-                @endforeach
-                <hr class="tp-divider" />
-                <button class="tp-menu__item tp-menu__item--muted" role="menuitem">
-                    + Agregar empresa
-                </button>
-            </div>
-        @endif
     </div>
 
     {{-- Global search (opens Command Palette) --}}
@@ -61,18 +24,54 @@
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
         </svg>
-        <span class="tp-topbar__search-placeholder">Buscar vehículo, conductor, geocerca, comando…</span>
-        <span class="tp-topbar__kbd"><kbd>?</kbd><kbd>K</kbd></span>
+        <span class="tp-topbar__search-placeholder">Buscar vehículo, geocerca, POI…</span>
+        <span class="tp-topbar__kbd"><kbd>Ctrl</kbd><kbd>K</kbd></span>
     </button>
 
     <div class="tp-topbar__spacer"></div>
 
-    {{-- Live status pill --}}
-    <a href="{{ url('/ui/v2/preview') }}" class="tp-topbar__status" id="tp-live-status" title="Estado de la flota">
-        <span class="tp-dot tp-dot--moving"></span>
-        <span><span data-live-count="moving">—</span> en mov. · <span data-live-count="idle">—</span> ralentí · <span
-                data-live-count="offline">—</span> desc.</span>
-    </a>
+    {{-- Herramientas de mapa (solo en Live y sus paneles): Regla, Mostrar punto,
+         Buscar dirección. Las gestiona live.js (que solo carga en la página Live). --}}
+    @if (in_array($rail ?? '', ['live', 'zones', 'pois'], true))
+        <div class="tp-topbar__tools" style="position:relative;">
+            <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" id="tp-tools-btn" data-tooltip="Herramientas"
+                aria-label="Herramientas" aria-haspopup="menu" aria-expanded="false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2.7-.7-.7-2.7z" />
+                </svg>
+            </button>
+            <div class="tp-menu tp-menu--right" id="tp-tools-menu" role="menu" hidden
+                data-address-search-url="{{ route('address.search') }}"
+                style="position:absolute; top:calc(100% + 6px); right:0;">
+                <div class="tp-menu__head"><div class="tp-text-overline">Herramientas</div></div>
+                <button class="tp-menu__item" role="menuitem" data-tp-tool="ruler">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M11.5 15.5l2-2"/></svg>
+                    Regla
+                </button>
+                <button class="tp-menu__item" role="menuitem" data-tp-tool="point">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                    Mostrar punto
+                </button>
+                <button class="tp-menu__item" role="menuitem" data-tp-tool="address">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                    Buscar dirección
+                </button>
+                @if (config('addon.forwards') && auth()->user()->perm('forwards', 'view'))
+                    <hr class="tp-divider" style="margin:4px 0;">
+                    <button class="tp-menu__item" role="menuitem" data-tp-tool="forwards"
+                        data-forwards-url="{{ route('ui.v2.api.forwards') }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+                        Reenvíos
+                    </button>
+                @endif
+            </div>
+        </div>
+    @endif
 
     {{-- Theme toggle --}}
     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" id="tp-theme-toggle" data-tooltip="Cambiar tema"

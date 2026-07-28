@@ -1130,6 +1130,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('tasks',        ['as' => 'tasks',        'uses' => 'Ui\V2\TasksController@page']);
     Route::get('call-actions', ['as' => 'call_actions', 'uses' => 'Ui\V2\CallActionsController@page']);
     Route::get('chat',         ['as' => 'chat',         'uses' => 'Ui\V2\ChatController@page']);
+    Route::get('expenses',     ['as' => 'expenses',     'uses' => 'Ui\V2\ExpensesController@page']);
     Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
@@ -1147,7 +1148,19 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('dashboard',      ['as' => 'api.dashboard',     'uses' => 'Ui\V2\DashboardController@data']);
         Route::get('zones',          ['as' => 'api.zones',         'uses' => 'Ui\V2\ZonesController@data']);
         Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
+
+        // Gastos (fleet-wide) + Reenvíos
+        Route::get('expenses',        ['as' => 'api.expenses',        'uses' => 'Ui\V2\ExpensesController@data']);
+        Route::get('expenses/meta',   ['as' => 'api.expenses.meta',   'uses' => 'Ui\V2\ExpensesController@meta']);
+        Route::post('expenses',       ['as' => 'api.expenses.store',  'uses' => 'Ui\V2\ExpensesController@store']);
+        Route::put('expenses/{id}',   ['as' => 'api.expenses.update', 'uses' => 'Ui\V2\ExpensesController@update'])->where('id', '[0-9]+');
+        Route::delete('expenses/{id}',['as' => 'api.expenses.destroy','uses' => 'Ui\V2\ExpensesController@destroy'])->where('id', '[0-9]+');
+        Route::get('forwards',        ['as' => 'api.forwards',        'uses' => 'Ui\V2\ForwardsController@data']);
+        Route::post('forwards',       ['as' => 'api.forwards.store',  'uses' => 'Ui\V2\ForwardsController@store']);
+        Route::put('forwards/{id}',   ['as' => 'api.forwards.update', 'uses' => 'Ui\V2\ForwardsController@update'])->where('id', '[0-9]+');
+        Route::delete('forwards/{id}',['as' => 'api.forwards.destroy','uses' => 'Ui\V2\ForwardsController@destroy'])->where('id', '[0-9]+');
         Route::get('events',         ['as' => 'api.events',        'uses' => 'Ui\V2\EventsController@data']);
+        Route::get('events/map',     ['as' => 'api.events.map',    'uses' => 'Ui\V2\EventsController@mapData']);
         Route::get('events/live',    ['as' => 'api.events.live',   'uses' => 'Ui\V2\EventsController@live']);
         Route::get('pois',           ['as' => 'api.pois',          'uses' => 'Ui\V2\MapLayersController@pois']);
         Route::get('pois/form',      ['as' => 'api.pois.form',     'uses' => 'Ui\V2\MapLayersController@poiForm']);

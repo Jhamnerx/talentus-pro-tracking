@@ -468,6 +468,21 @@ body.tp-app-body {
   background: var(--danger-bg);
   color: var(--danger-500);
 }
+.tp-notif-item--warning .tp-notif-item__icon {
+  background: var(--warning-bg);
+  color: var(--warning-500);
+}
+.tp-notif-item--info .tp-notif-item__icon {
+  background: var(--info-bg);
+  color: var(--info-500);
+}
+.tp-notif-item--success .tp-notif-item__icon {
+  color: var(--success-500);
+}
+.tp-notif-item--danger .tp-notif-item__icon {
+  background: var(--danger-bg);
+  color: var(--danger-500);
+}
 .tp-notif-item__main {
   flex: 1;
   min-width: 0;

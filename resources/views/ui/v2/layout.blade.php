@@ -38,8 +38,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=3" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=25" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=1" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=26" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=2" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10" />
@@ -98,7 +98,7 @@
 
     {{-- tp-select: componente de select propio (100% Tailwind, sin dependencias).
          Auto-enhancea todo select.tp-input / select.tp-select, incl. AJAX. --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=7" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=8" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=2" defer></script>
     {{-- Ajustes de cuenta (modal con tabs; se abre desde el topbar) --}}
@@ -108,8 +108,8 @@
     {{-- Hitos kilométricos (capa Leaflet compartida por páginas con mapa) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-hitos.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/shell.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/command-palette.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/notifications.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/command-palette.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/notifications.js') }}?v=3" defer></script>
     {{-- Eventos en vivo: popup + sonido + Notification API (paridad legacy) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-notify.js') }}?v=1" defer></script>
 

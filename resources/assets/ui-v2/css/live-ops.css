@@ -235,6 +235,102 @@
 .tp-dev-popup-wrap .leaflet-popup-content {
   margin: 10px 12px;
 }
+/* Modal de Reenvíos (lista tipo tarjeta) */
+.tp-fwd__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.tp-fwd__hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--fg-muted);
+  max-width: 62ch;
+}
+.tp-fwd__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tp-fwd__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--surface-raised);
+}
+.tp-fwd__main {
+  flex: 1;
+  min-width: 0;
+}
+.tp-fwd__title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--fg-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-fwd__meta {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-fwd-type {
+  text-transform: capitalize;
+  font-weight: 600;
+  color: var(--fg-secondary, var(--fg-primary));
+}
+.tp-fwd-badge {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.tp-fwd-badge--on {
+  background: rgba(34, 197, 94, 0.15);
+  color: #16a34a;
+}
+.tp-fwd-badge--off {
+  background: rgba(148, 163, 184, 0.2);
+  color: #64748b;
+}
+.tp-fwd__actions {
+  display: flex;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.tp-fwd__empty {
+  padding: 26px 16px;
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: 13px;
+  border: 1px dashed var(--border-default);
+  border-radius: 10px;
+}
+
+/* Chip de distancia de la Regla (herramienta de medición en el mapa) */
+.tp-ruler-chip {
+  display: inline-block;
+  background: #0f172a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 /* Botón de filtro avanzado activo (addon.object_filter) */
 #tp-live-filter.is-active {
   color: var(--brand-600, #2e63d9);
@@ -630,23 +726,27 @@ table.tp-lock-hist th {
 .tp-live__group-box[data-collapsed="1"] .tp-live__group {
   border-bottom: 0;
 }
-/* Devices dentro de la caja (sin borde propio: la caja los agrupa) */
+/* Devices dentro de la caja: bandeja sunken + cada device como tarjeta blanca
+ * con borde para que la separación se note (antes eran borderless y "pegados"). */
 .tp-live__group-items {
-  padding: 6px;
+  padding: 7px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-.tp-live__group-items .tp-live__row {
-  border: 0;
-  margin: 0;
-  border-radius: 8px;
-  background: transparent;
-}
-.tp-live__group-items .tp-live__row:hover {
+  gap: 6px;
   background: var(--surface-sunken, #f4f5f8);
 }
+.tp-live__group-items .tp-live__row {
+  border: 1px solid var(--border-default, #e3e7ee);
+  margin: 0;
+  border-radius: 9px;
+  background: var(--surface-raised, #fff);
+}
+.tp-live__group-items .tp-live__row:hover {
+  border-color: var(--brand-500, #2563eb);
+  background: var(--surface-raised, #fff);
+}
 .tp-live__group-items .tp-live__row[aria-selected="true"] {
+  border-color: var(--brand-500, #2563eb);
   background: var(--brand-bg-subtle);
 }
 .tp-live__group-chevron {
@@ -828,6 +928,19 @@ table.tp-lock-hist th {
 .tp-lock-ico--off {
   color: #16a34a;
 }
+/* Icono de motor en la fila (detección de ignición por sensor). */
+.tp-eng-ico {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+.tp-eng-ico--on {
+  color: #16a34a;
+}
+.tp-eng-ico--off {
+  color: var(--fg-tertiary, #94a3b8);
+}
 .tp-live__row-meta {
   font-size: 11px;
   color: var(--fg-tertiary);
@@ -835,6 +948,12 @@ table.tp-lock-hist th {
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-top: 1px;
+}
+/* La 2ª línea muestra un ESTADO (Desactivado / No conectado / vencido) en vez
+ * de una fecha: se resalta un poco para leerse como aviso, no como dato. */
+.tp-live__row-meta--status {
+  color: var(--fg-secondary, #64748b);
+  font-weight: 600;
 }
 
 .tp-live__row-end {
@@ -1693,6 +1812,13 @@ table.tp-lock-hist th {
   min-height: 0;
   overflow-y: auto;
   padding: 12px;
+}
+/* Widgets de acción (Comando GPRS, Bloqueo de motor, Video): centran su
+   contenido verticalmente en la altura fija de la card. */
+.tp-dw__card-body--center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 /* Título con icono */
 .tp-dw__card-title {

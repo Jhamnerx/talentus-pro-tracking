@@ -12,20 +12,24 @@
 {{-- ════════ GRUPO LATERAL (drawer) ════════ --}}
 <div class="tp-dw tp-dw--side">
 
-    {{-- Objeto (ficha básica del vehículo) --}}
+    {{-- Objeto (ficha unificada: fusiona la antigua Telemetría). Velocidad/Rumbo/
+         Detenido/Distancia están arriba en las KPI del drawer (no se repiten aquí). --}}
     @isset($device_info)
         <section class="tp-card tp-card--flat tp-mb-4">
             <h4 class="tp-h6 tp-mb-3">Objeto</h4>
             <dl class="tp-defs">
                 <dt>Estado</dt><dd>{{ $device_info['status_text'] ?? '—' }}</dd>
                 <dt>Dirección</dt><dd>{{ $device_info['address'] ?? '—' }}</dd>
-                <dt>Hora</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
-                <dt>Duración de parada</dt><dd>{{ $device_info['stop'] ?? '—' }}</dd>
-                @if (!empty($device_info['is_admin']))
-                    <dt>IMEI</dt><dd>{{ $device_info['imei'] ?? '—' }}</dd>
-                    <dt>SIM</dt><dd>{{ $device_info['sim'] ?? '—' }}</dd>
-                @endif
+                <dt>Última señal</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
+                <dt>Coordenadas</dt><dd class="tp-text-mono">{{ $device_info['coords'] ?? '—' }}</dd>
+                <dt>Altitud</dt><dd>{{ $device_info['altitude'] ?? '—' }}</dd>
+                <dt>Motor</dt><dd>{{ $device_info['engine'] ?? '—' }}</dd>
                 <dt>Conductor</dt><dd>{{ $device_info['driver'] ?? '—' }}</dd>
+                @if (!empty($device_info['is_admin']))
+                    <dt>IMEI</dt><dd class="tp-text-mono">{{ $device_info['imei'] ?? '—' }}</dd>
+                    <dt>Modelo</dt><dd>{{ $device_info['model'] ?? '—' }}</dd>
+                    <dt>SIM</dt><dd class="tp-text-mono">{{ $device_info['sim'] ?? '—' }}</dd>
+                @endif
             </dl>
         </section>
     @endisset
@@ -195,12 +199,17 @@
                 </span>
             </h4>
             <div class="tp-dw__card-body">
-                @if ($streetview)
+                @if (!empty($streetview_frame))
+                    {{-- Embed interactivo (encuentra la panorámica más cercana, igual que el legacy). --}}
+                    <iframe src="{{ $streetview_frame }}" title="Street View" loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade" allowfullscreen
+                        style="width:100%;height:130px;border:0;border-radius:8px;display:block;"></iframe>
+                @elseif ($streetview)
                     <div class="tp-dw__streetview">
                         <img src="{{ $streetview }}" alt="Street View" loading="lazy">
                     </div>
                 @else
-                    <p class="tp-text-xs tp-text-muted tp-mb-0">Street View no disponible (falta API key).</p>
+                    <p class="tp-text-xs tp-text-muted tp-mb-0">Street View no disponible (configura la API en Ajustes del servidor).</p>
                 @endif
             </div>
         </section>
@@ -293,7 +302,7 @@
                     <span>{{ trans('front.gprs_command') }}</span>
                 </span>
             </h4>
-            <div class="tp-dw__card-body">
+            <div class="tp-dw__card-body tp-dw__card-body--center">
                 <button type="button" class="tp-btn tp-btn--sm tp-full tp-dw__add" data-tp-commands
                     data-device-id="{{ $device->id }}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -323,11 +332,11 @@
                         <rect x="3" y="11" width="18" height="11" rx="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
-                    <span>{{ trans('front.locking_widget') }}</span>
+                    <span>Bloqueo de motor</span>
                 </span>
                 <span class="tp-lock-badge" data-lock-badge data-tone="{{ $lockTone }}">{{ $lockLabel }}</span>
             </h4>
-            <div class="tp-dw__card-body">
+            <div class="tp-dw__card-body tp-dw__card-body--center">
                 <div style="display:flex;gap:8px;">
                     <button type="button" class="tp-btn tp-btn--sm tp-btn--danger" style="flex:1;" data-lock-action="on">
                         Cortar
@@ -356,7 +365,7 @@
                     <span>Video en vivo</span>
                 </span>
             </h4>
-            <div class="tp-dw__card-body">
+            <div class="tp-dw__card-body tp-dw__card-body--center">
                 <div class="tp-stack" style="gap:8px;">
                     <a class="tp-btn tp-btn--secondary tp-btn--block" href="{{ $video_live_url }}" target="_blank" rel="noopener">En vivo</a>
                     <a class="tp-btn tp-btn--ghost tp-btn--block" href="{{ $video_playback_url }}" target="_blank" rel="noopener">Reproducción</a>

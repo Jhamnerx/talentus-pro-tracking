@@ -11,18 +11,44 @@
   if (!root || !window.L) return;
 
   var DATA_URL = root.getAttribute("data-data-url");
+  var MAP_URL = root.getAttribute("data-map-url");
   var GEO_URL = root.getAttribute("data-geo-url");
   // Sección de direcciones gateada por el plugin (paridad Events/index.blade legacy).
   var ADDR_ON = root.getAttribute("data-addr-on") === "1";
   var ZONES_URL = root.getAttribute("data-zones-url");
   var POIS_URL = root.getAttribute("data-pois-url");
   var ROUTES_URL = root.getAttribute("data-routes-url");
+  // "Atender" = registrar acción de llamada sobre el evento (perm call_actions+events).
+  var CA_ON = root.getAttribute("data-ca-on") === "1";
+  var CA_STORE_URL = root.getAttribute("data-ca-store-url");
+  // Tipos de respuesta REALES (mismas etiquetas que la tabla de call actions).
+  var RESP_TYPES = (function () {
+    try {
+      return JSON.parse(document.getElementById("tp-events-resp-types").textContent) || [];
+    } catch (e) {
+      return [];
+    }
+  })();
+  // Catálogo COMPLETO de tipos de evento (etiquetas legacy) para el filtro Tipo.
+  var EVENT_TYPES = (function () {
+    try {
+      return JSON.parse(document.getElementById("tp-events-types").textContent) || [];
+    } catch (e) {
+      return [];
+    }
+  })();
   var listEl = document.getElementById("tp-events-list");
   var statusEl = document.getElementById("tp-events-status");
   var hoursSel = document.getElementById("tp-events-hours");
   var searchEl = document.getElementById("tp-events-search");
   var refreshBtn = document.getElementById("tp-events-refresh");
   var hintEl = document.getElementById("tp-events-hint");
+  var typeSel = document.getElementById("tp-events-type");
+  var deviceSel = document.getElementById("tp-events-device");
+  var exportBtn = document.getElementById("tp-events-export");
+  var riskBtn = document.getElementById("tp-ev-toggle-risk");
+  var legendEl = document.getElementById("tp-ev-legend");
+  var legendNote = document.getElementById("tp-ev-legend-note");
 
   var MAP_CFG = (function () {
     try {
@@ -52,6 +78,10 @@
     selectedId: null,
     overlays: { geofences: null, routes: null, poi: null },
     toggles: (MAP_CFG && MAP_CFG.toggles) || {},
+    riskLayer: null, // capa del mapa de riesgo (todos los eventos)
+    riskOn: false,
+    knownTypes: {}, // acumulado de tipos vistos → filtro por tipo
+    maxId: 0, // mayor id cargado → detectar eventos nuevos (tiempo real)
   };
   var geoCache = {};
 
@@ -211,8 +241,12 @@
       (state.selectedId === ev.id ? ' aria-selected="true"' : "") +
       '><span class="tp-events__dot tp-events__dot--' +
       sevClass(ev.severity) +
-      '"></span><span class="tp-events__row-main"><span class="tp-events__row-title">' +
+      '"></span><span class="tp-events__row-main"><span class="tp-events__row-titleline"><span class="tp-events__row-title">' +
       esc(ev.message || ev.type) +
+      "</span>" +
+      (ev.attended
+        ? '<span class="tp-events__attended"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Atendido</span>'
+        : "") +
       '</span><span class="tp-events__row-sub">' +
       esc(ev.device_name || "#" + (ev.device_id || "")) +
       " · " +
@@ -255,8 +289,106 @@
       parseFloat(ev.lat).toFixed(5) +
       ", " +
       parseFloat(ev.lng).toFixed(5) +
-      "</dd></dl></div>"
+      "</dd></dl>" +
+      '<div style="display:flex;gap:6px;margin-top:8px;">' +
+      // "Historial": abre la reproducción del vehículo alrededor del evento.
+      (ev.device_id
+        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ev-history="' + ev.id + '" style="flex:1;">Historial</button>'
+        : "") +
+      // "Atender": solo con permiso y si el evento tiene alerta (el backend
+      // exige alert_id para registrar la acción de llamada).
+      (CA_ON && ev.alert_id
+        ? '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-ca-attend="' + ev.id + '" style="flex:1;">Atender</button>'
+        : "") +
+      "</div></div>"
     );
+  }
+
+  // Componente fecha+hora: date custom (tp-datepicker) + 2 tp-select (HH:MM).
+  function pad2(n) { return ("0" + n).slice(-2); }
+  function nowParts() {
+    var d = new Date();
+    return { date: d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()), h: pad2(d.getHours()), m: pad2(d.getMinutes()) };
+  }
+  function hourOptions(sel) {
+    var o = "";
+    for (var i = 0; i < 24; i++) { var v = pad2(i); o += '<option value="' + v + '"' + (v === sel ? " selected" : "") + ">" + v + "</option>"; }
+    return o;
+  }
+  function minOptions(sel) {
+    var o = "";
+    for (var i = 0; i < 60; i++) { var v = pad2(i); o += '<option value="' + v + '"' + (v === sel ? " selected" : "") + ">" + v + "</option>"; }
+    return o;
+  }
+
+  // Modal "Atender evento" → POST a call-actions/store (deriva alert_id/device_id).
+  function openAttendModal(ev) {
+    if (!window.tpModal) return;
+    var np = nowParts();
+    var body =
+      '<div class="tp-scope tp-form"><div class="tp-form__grid">' +
+      '<div class="tp-form__field"><span class="tp-form__label">Evento</span>' +
+      '<input class="tp-input" value="' + esc((ev.message || ev.type) + " · " + (ev.device_name || "")) + '" readonly></div>' +
+      '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Tipo de respuesta</span>' +
+      '<select class="tp-input" data-ca-resp>' +
+      RESP_TYPES.map(function (t) { return '<option value="' + esc(t.type) + '">' + esc(t.title) + "</option>"; }).join("") +
+      "</select></div>" +
+      '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Fecha de llamada</span>' +
+      '<div style="display:flex;gap:8px;align-items:center;">' +
+      '<input type="date" class="tp-input" data-ca-date value="' + np.date + '" style="flex:1;min-width:0;">' +
+      '<select class="tp-input" data-ca-h style="width:74px;">' + hourOptions(np.h) + "</select>" +
+      '<span style="font-weight:600;">:</span>' +
+      '<select class="tp-input" data-ca-m style="width:74px;">' + minOptions(np.m) + "</select>" +
+      "</div></div>" +
+      '<label class="tp-form__field tp-form__field--required"><span class="tp-form__label">Notas</span>' +
+      '<textarea data-ca-notes rows="2" data-tp-field></textarea></label>' +
+      '</div><div data-ca-err style="display:none;color:#ef4444;font-size:13px;margin-top:8px;"></div></div>';
+    tpModal.open({
+      title: "Atender evento",
+      size: "md",
+      body: body,
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        { label: "Registrar", variant: "primary", close: false, onClick: function (d) { submitAttend(d, ev); return false; } },
+      ],
+    });
+  }
+
+  function submitAttend(d, ev) {
+    var err = d.querySelector("[data-ca-err]");
+    function showErr(m) { if (err) { err.textContent = m; err.style.display = "block"; } }
+    if (err) err.style.display = "none";
+    var dateV = (d.querySelector("[data-ca-date]").value || "").trim();
+    var hV = d.querySelector("[data-ca-h]").value || "00";
+    var mV = d.querySelector("[data-ca-m]").value || "00";
+    var payload = {
+      event_id: ev.id,
+      response_type: d.querySelector("[data-ca-resp]").value,
+      called_at: dateV ? dateV + " " + hV + ":" + mV : "",
+      remarks: d.querySelector("[data-ca-notes]").value.trim(),
+    };
+    if (!dateV) return showErr("La fecha de llamada es obligatoria.");
+    if (!payload.remarks) return showErr("Las notas son obligatorias.");
+    tpModal.setBusy(d, true);
+    tpModal
+      .fetchJSON(CA_STORE_URL, { method: "POST", json: payload })
+      .then(function (res) {
+        tpModal.setBusy(d, false);
+        if (res.status === 422) {
+          var errors = (res.data && res.data.errors) || {};
+          var first = Object.keys(errors)[0];
+          return showErr(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.");
+        }
+        if (!res.ok || !res.data || !res.data.ok) return showErr("No se pudo registrar.");
+        // Update optimista: marca el evento como atendido y re-pinta su fila,
+        // así el badge "Atendido" aparece al instante (sin recargar).
+        ev.attended = true;
+        var rowEl = listEl.querySelector('.tp-events__row[data-id="' + ev.id + '"]');
+        if (rowEl) rowEl.outerHTML = rowHtml(ev);
+        tpModal.close(d);
+        tpModal.toast("Evento atendido.", "success");
+      })
+      .catch(function () { tpModal.setBusy(d, false); showErr("Error de red."); });
   }
   function selectEvent(id) {
     var ev = state.byId[id];
@@ -274,11 +406,26 @@
     geocodeEvent(ev);
     var ll = [parseFloat(ev.lat), parseFloat(ev.lng)];
     if (state.marker) {
+      // .off antes de remover para que el cambio de evento NO dispare el
+      // limpiado de abajo (evita la carrera al alternar entre eventos).
+      state.marker.off("popupclose");
       state.map.removeLayer(state.marker);
       state.marker = null;
     }
-    state.marker = L.marker(ll, { icon: eventIcon(ev) }).addTo(state.map);
-    state.marker.bindPopup(popupHtml(ev), { offset: [0, -10] }).openPopup();
+    var m = L.marker(ll, { icon: eventIcon(ev) }).addTo(state.map);
+    state.marker = m;
+    m.bindPopup(popupHtml(ev), { offset: [0, -10] }).openPopup();
+    // Al CERRAR el popup, quitar también el marcador (mapa limpio) y
+    // deseleccionar la fila. Solo si sigue siendo el marcador activo.
+    m.on("popupclose", function () {
+      if (state.marker !== m) return;
+      state.map.removeLayer(m);
+      state.marker = null;
+      state.selectedId = null;
+      var sel = listEl.querySelector('[aria-selected="true"]');
+      if (sel) sel.removeAttribute("aria-selected");
+      if (hintEl) hintEl.hidden = false;
+    });
     state.map.flyTo(ll, Math.max(state.map.getZoom(), 15), { duration: 0.6 });
   }
 
@@ -296,10 +443,12 @@
       listEl.innerHTML = "";
     }
     if (statusEl) statusEl.textContent = reset ? "Cargando…" : "Cargando más…";
-    var hours = hoursSel ? hoursSel.value : 24;
+    var hours = hoursSel ? hoursSel.value : 0;
+    var type = typeSel ? typeSel.value : "";
+    var deviceId = deviceSel ? deviceSel.value : "";
     var q = searchEl ? searchEl.value.trim() : "";
     fetch(
-      DATA_URL + "?hours=" + encodeURIComponent(hours) + "&q=" + encodeURIComponent(q) + "&offset=" + state.offset + "&_=" + Date.now(),
+      DATA_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + "&offset=" + state.offset + "&_=" + Date.now(),
       { credentials: "same-origin", headers: { Accept: "application/json" } },
     )
       .then(function (r) {
@@ -311,6 +460,7 @@
         rows.forEach(function (ev) {
           state.events.push(ev);
           state.byId[ev.id] = ev;
+          if (ev.id > state.maxId) state.maxId = ev.id;
         });
         state.offset = res && res.offset != null ? res.offset : state.offset + rows.length;
         state.hasMore = !!(res && res.has_more);
@@ -320,6 +470,8 @@
           appendRows(rows);
         }
         if (statusEl) statusEl.textContent = state.events.length + " eventos" + (state.hasMore ? " (+)" : "");
+        // Si el mapa de riesgo está activo, refréscalo con el mismo filtro.
+        if (reset && state.riskOn) loadRisk();
       })
       .catch(function () {
         state.loading = false;
@@ -327,11 +479,145 @@
       });
   }
 
+  /* ── Filtro por tipo: poblado UNA vez desde el catálogo completo (legacy) ── */
+  function populateTypeOptions() {
+    if (!typeSel || !EVENT_TYPES.length) return;
+    var cur = typeSel.value;
+    typeSel.innerHTML =
+      '<option value="">Todos los tipos</option>' +
+      EVENT_TYPES.map(function (t) {
+        return '<option value="' + esc(t.type) + '"' + (t.type === cur ? " selected" : "") + ">" + esc(t.title) + "</option>";
+      }).join("");
+    if (window.tpSelect && tpSelect.refresh) try { tpSelect.refresh(typeSel); } catch (e) {}
+  }
+
+  /* ── #5 "Ver en historial": rango derivado de la antigüedad del evento ── */
+  function historyRange(timeStr) {
+    var t = Date.parse(String(timeStr || "").replace(" ", "T"));
+    if (isNaN(t)) return "today";
+    var days = (Date.now() - t) / 86400000;
+    if (days < 1) return "today";
+    if (days < 2) return "yesterday";
+    if (days < 7) return "week";
+    return "month";
+  }
+
+  /* ── #4 Tiempo real: beep (WebAudio, sin assets) para eventos críticos ── */
+  function beep() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = beep._ctx || (beep._ctx = new Ctx());
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = 880; o.connect(g); g.connect(ctx.destination);
+      g.gain.value = 0.05; o.start(); o.stop(ctx.currentTime + 0.15);
+    } catch (e) {}
+  }
+  function pollLive() {
+    if (state.loading) return;
+    var hours = hoursSel ? hoursSel.value : 0;
+    var type = typeSel ? typeSel.value : "";
+    var deviceId = deviceSel ? deviceSel.value : "";
+    var q = searchEl ? searchEl.value.trim() : "";
+    fetch(
+      DATA_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + "&offset=0&_=" + Date.now(),
+      { credentials: "same-origin", headers: { Accept: "application/json" } },
+    )
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var rows = (res && res.events) || [];
+        var fresh = rows.filter(function (ev) { return ev.id > state.maxId; });
+        if (!fresh.length) return;
+        fresh.forEach(function (ev) {
+          if (!state.byId[ev.id]) { state.byId[ev.id] = ev; state.events.unshift(ev); }
+          if (ev.id > state.maxId) state.maxId = ev.id;
+        });
+        var crit = fresh.some(function (ev) { return ev.severity === "critical"; });
+        if (crit) beep();
+        // Solo insertar en la lista si el usuario está arriba (no molestar lectura).
+        if (listEl.scrollTop < 40) {
+          var frag = document.createElement("div");
+          frag.innerHTML = fresh.map(rowHtml).join("");
+          var ref = listEl.firstChild;
+          while (frag.firstChild) { var n = frag.firstChild; listEl.insertBefore(n, ref); if (io && n.getAttribute) io.observe(n); }
+        }
+        if (statusEl) statusEl.textContent = state.events.length + " eventos" + (state.hasMore ? " (+)" : "");
+        if (state.riskOn) loadRisk();
+        if (window.tpModal && window.tpModal.toast) window.tpModal.toast(fresh.length + " evento(s) nuevo(s)", crit ? "warning" : "info");
+      })
+      .catch(function () {});
+  }
+
+  /* ── #6 Exportar CSV (eventos cargados) ── */
+  function csvCell(v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function exportCsv() {
+    if (!state.events.length) { if (window.tpModal) tpModal.toast("No hay eventos para exportar.", "warning"); return; }
+    var head = ["Evento", "Vehiculo", "Fecha", "Latitud", "Longitud", "Atendido"];
+    var lines = [head.join(",")];
+    state.events.forEach(function (ev) {
+      lines.push([ev.message || ev.type, ev.device_name || "", ev.time || "", ev.lat != null ? ev.lat : "", ev.lng != null ? ev.lng : "", ev.attended ? "Si" : "No"].map(csvCell).join(","));
+    });
+    var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "eventos.csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  /* ── #7 Mapa de riesgo: todos los eventos por severidad + leyenda ── */
+  function loadRisk() {
+    if (!MAP_URL || !state.map) return;
+    var hours = hoursSel ? hoursSel.value : 0;
+    var type = typeSel ? typeSel.value : "";
+    var deviceId = deviceSel ? deviceSel.value : "";
+    var q = searchEl ? searchEl.value.trim() : "";
+    if (legendNote) legendNote.textContent = "Cargando…";
+    fetch(
+      MAP_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + "&_=" + Date.now(),
+      { credentials: "same-origin", headers: { Accept: "application/json" } },
+    )
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (state.riskLayer) { state.map.removeLayer(state.riskLayer); state.riskLayer = null; }
+        var pts = (res && res.points) || [];
+        var g = L.layerGroup();
+        pts.forEach(function (p) {
+          L.circleMarker([p.lat, p.lng], { radius: 5, color: "#fff", weight: 1, fillColor: sevColor(p.severity), fillOpacity: 0.9 })
+            .bindTooltip(esc((p.message || "") + " · " + (p.device_name || "")))
+            .bindPopup(
+              '<div class="tp-ev-popup"><div class="tp-ev-popup__title">' + esc(p.device_name || "") + "</div>" +
+              '<div class="tp-ev-popup__type tp-ev-popup__type--' + sevClass(p.severity) + '">' + esc(p.message || "") + "</div>" +
+              '<dl class="tp-ev-popup__defs"><dt>Hora</dt><dd>' + esc(p.time) + "</dd><dt>Coordenadas</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
+            )
+            .addTo(g);
+        });
+        state.riskLayer = g;
+        if (state.riskOn) g.addTo(state.map);
+        if (legendNote) legendNote.textContent = pts.length + " eventos" + (res && res.capped ? " (máx " + res.cap + ")" : "");
+      })
+      .catch(function () { if (legendNote) legendNote.textContent = "Error al cargar"; });
+  }
+  function toggleRisk() {
+    state.riskOn = !state.riskOn;
+    if (riskBtn) riskBtn.setAttribute("aria-pressed", state.riskOn ? "true" : "false");
+    if (legendEl) legendEl.hidden = !state.riskOn;
+    if (state.riskOn) loadRisk();
+    else if (state.riskLayer) state.map.removeLayer(state.riskLayer);
+  }
+
   // ── UI ─────────────────────────────────────────────────────
   listEl.addEventListener("click", function (e) {
     var row = e.target.closest(".tp-events__row[data-id]");
     if (!row) return;
     selectEvent(parseInt(row.getAttribute("data-id"), 10));
+  });
+  // Botón "Atender" dentro del popup del mapa (delegado: el popup se inyecta al DOM).
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest && e.target.closest("[data-ca-attend]");
+    if (!btn) return;
+    var ev = state.byId[btn.getAttribute("data-ca-attend")];
+    if (ev) openAttendModal(ev);
   });
   listEl.addEventListener("scroll", function () {
     if (state.hasMore && !state.loading && listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 120) load(false);
@@ -345,6 +631,19 @@
       t = setTimeout(function () { load(true); }, 350);
     });
   }
+  if (typeSel) typeSel.addEventListener("change", function () { load(true); });
+  if (deviceSel) deviceSel.addEventListener("change", function () { load(true); });
+  if (exportBtn) exportBtn.addEventListener("click", exportCsv);
+  if (riskBtn) riskBtn.addEventListener("click", toggleRisk);
+  // #5 "Ver en historial" desde el popup del evento (delegado en document).
+  document.addEventListener("click", function (e) {
+    var hb = e.target.closest && e.target.closest("[data-ev-history]");
+    if (!hb) return;
+    var ev = state.byId[hb.getAttribute("data-ev-history")];
+    if (ev && ev.device_id) window.location.href = "/ui/v2/history?device=" + ev.device_id + "&range=" + historyRange(ev.time);
+  });
+  // #4 Tiempo real: sondeo de eventos nuevos cada 30 s.
+  setInterval(pollLive, 30000);
 
   // Controles de mapa
   var fsBtn = document.getElementById("tp-ev-fullscreen");
@@ -517,6 +816,7 @@
     });
   });
 
+  populateTypeOptions();
   initMap();
   load(true);
 })();

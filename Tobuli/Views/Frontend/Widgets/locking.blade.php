@@ -1,7 +1,7 @@
 <div class="widget widget-locking" id="widget-locking">
     <div class="widget-heading">
         <div class="widget-title">
-            <i class="icon lock"></i> {{ trans('front.locking_widget') }}
+            <i class="icon lock"></i> Bloqueo de motor
         </div>
     </div>
     <div class="widget-body">
