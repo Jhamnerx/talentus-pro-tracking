@@ -1,8 +1,9 @@
 /* =====================================================
-   TalentusPro · Alerts Center
-   - Rules list (left) + events feed (right)
-   - Full 6-tab rule modal (parity with legacy Alerts):
-       Vehículos · Tipo · Geocercas · Horario · Notificaciones · Comando
+   TalentusPro · Alertas · tabla índice de reglas
+   - Tabla de reglas (estado, nombre, tipo, alcance, canales, horario)
+   - Toggle de estado + kebab ⋮ (Editar / Activar-Desactivar / Eliminar)
+   - Modal CRUD de 6 tabs (Vehículos·Tipo·Geocercas·Horario·Notificaciones·Comando)
+   El feed de eventos vive en su propio módulo (/ui/v2/events).
    ===================================================== */
 (function () {
   "use strict";
@@ -17,20 +18,13 @@
   var BASE = root.getAttribute("data-toggle-url") || "/ui/v2/api/alerts";
   var CAN_EDIT = root.getAttribute("data-can-edit") === "1";
   var CAN_CREATE = root.getAttribute("data-can-create") === "1";
+  var CAN_REMOVE = root.getAttribute("data-can-remove") === "1";
   var META_CACHE = null;
 
   var WORKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
   var WEEKEND = ["saturday", "sunday"];
 
-  var state = {
-    hours: 24,
-    sev: "",
-    q: "",
-    rulesQ: "",
-    rules: [],
-    events: [],
-    loading: false,
-  };
+  var state = { q: "", rules: [], loading: false };
 
   /* ----- helpers ----- */
   function $(s, c) {
@@ -48,6 +42,15 @@
     });
   }
   var escapeHtml = esc;
+
+  var ICON_DOTS =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>';
+  var ICON_EDIT =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+  var ICON_POWER =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 11-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>';
+  var ICON_TRASH =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>';
 
   var TYPE_LABELS = {
     sos: "SOS",
@@ -85,7 +88,7 @@
     time_duration: "Duración temporal",
   };
 
-  // Localized, human labels for notification channels (rules list badges).
+  // Localized, human labels for notification channels (badges de la tabla).
   var CHAN_LABEL = {
     color: "Color",
     silent: "Anti-repetición",
@@ -101,43 +104,51 @@
     command: "Comando",
   };
 
-  var TYPE_ICONS = {
-    critical:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
-    warning:
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-    info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
-  };
-
   function typeLabel(t) {
     return TYPE_LABELS[t] || String(t || "").replace(/_/g, " ");
   }
 
-  function relTime(iso) {
-    if (!iso) return "";
-    var d = new Date(String(iso).replace(" ", "T"));
-    if (isNaN(d.getTime())) return "";
-    var diff = (Date.now() - d.getTime()) / 1000;
-    if (diff < 60) return Math.round(diff) + " s";
-    if (diff < 3600) return Math.round(diff / 60) + " min";
-    if (diff < 86400) return Math.round(diff / 3600) + " h";
-    return Math.round(diff / 86400) + " d";
+  /* ----- Kebab de fila ----- */
+  function kebabHtml(r) {
+    var items = "";
+    if (CAN_EDIT)
+      items +=
+        '<button type="button" role="menuitem" data-act="edit" data-id="' +
+        r.id +
+        '">' +
+        ICON_EDIT +
+        " Editar</button>";
+    if (CAN_EDIT)
+      items +=
+        '<button type="button" role="menuitem" data-act="toggle" data-id="' +
+        r.id +
+        '">' +
+        ICON_POWER +
+        " " +
+        (r.active ? "Desactivar" : "Activar") +
+        "</button>";
+    if (CAN_REMOVE)
+      items +=
+        '<button type="button" role="menuitem" class="is-danger" data-act="delete" data-id="' +
+        r.id +
+        '">' +
+        ICON_TRASH +
+        " Eliminar</button>";
+    if (!items) return "";
+    return (
+      '<div class="tp-svc-kebab"><button type="button" class="tp-svc-kebab__btn" data-alert-kebab aria-haspopup="menu" aria-label="Opciones">' +
+      ICON_DOTS +
+      '</button><div class="tp-svc-kebab__menu" role="menu" hidden>' +
+      items +
+      "</div></div>"
+    );
   }
 
-  function fmtTime(iso) {
-    if (!iso) return "—";
-    try {
-      return new Date(String(iso).replace(" ", "T")).toLocaleString();
-    } catch (e) {
-      return iso;
-    }
-  }
-
-  /* ----- Render rules (redesigned: type chip + scope + only-active channels) ----- */
-  function renderRules() {
-    var list = $("#tp-alerts-rules-list");
-    var count = $("#tp-alerts-rules-count");
-    var q = state.rulesQ.toLowerCase();
+  /* ----- Render table ----- */
+  function renderTable() {
+    var tbody = $("#tp-alerts-rows");
+    var count = $("#tp-alerts-count");
+    var q = state.q.toLowerCase();
     var rules = state.rules.filter(function (r) {
       return (
         !q ||
@@ -145,185 +156,91 @@
         typeLabel(r.type).toLowerCase().indexOf(q) !== -1
       );
     });
-    count.textContent = rules.length + " de " + state.rules.length;
+    if (count)
+      count.textContent = rules.length + (rules.length === 1 ? " regla" : " reglas");
 
     if (!rules.length) {
-      list.innerHTML =
-        '<div class="tp-text-muted tp-text-center" style="padding:20px;">Sin reglas.</div>';
+      tbody.innerHTML =
+        '<tr><td colspan="7" class="tp-svc-table__empty">' +
+        (state.rules.length ? "Sin coincidencias." : "Aún no hay reglas de alerta.") +
+        "</td></tr>";
       return;
     }
 
     var html = "";
-    for (var i = 0; i < rules.length; i++) {
-      var r = rules[i];
-      var cls = "tp-alerts__rule" + (r.active ? " is-on" : " is-inactive");
-
+    rules.forEach(function (r) {
       var scope = r.all
-        ? "Todos los vehículos"
+        ? "Todos"
         : (r.devices_count || 0) +
           " " +
           ((r.devices_count || 0) === 1 ? "vehículo" : "vehículos");
 
       var chans = (r.channels || []).filter(function (c) {
-        return c !== "auto_hide"; // detalle interno de popup, no un canal en sí
+        return c !== "auto_hide";
       });
       var shown = chans.slice(0, 4);
       var extra = chans.length - shown.length;
-      var chanHtml = shown
+      var chHtml = shown
         .map(function (c) {
-          return (
-            '<span class="tp-alerts__chan">' +
-            esc(CHAN_LABEL[c] || c) +
-            "</span>"
-          );
+          return '<span class="tp-alerts__chan">' + esc(CHAN_LABEL[c] || c) + "</span>";
         })
         .join("");
       if (extra > 0)
-        chanHtml +=
-          '<span class="tp-alerts__chan tp-alerts__chan--more">+' +
-          extra +
-          "</span>";
+        chHtml +=
+          '<span class="tp-alerts__chan tp-alerts__chan--more">+' + extra + "</span>";
+      if (!chHtml) chHtml = '<span class="tp-text-muted tp-text-sm">—</span>';
+
+      var sched = r.schedule
+        ? '<span class="tp-alerts__rule-type">Restringido</span>'
+        : '<span class="tp-text-muted tp-text-sm">Siempre</span>';
+
+      var toggle = CAN_EDIT
+        ? '<button type="button" class="tp-alert-toggle' +
+          (r.active ? " is-on" : "") +
+          '" data-toggle-rule="' +
+          r.id +
+          '" title="' +
+          (r.active ? "Desactivar" : "Activar") +
+          '"></button>'
+        : '<span class="tp-alert-toggle' + (r.active ? " is-on" : "") + '"></span>';
 
       html +=
-        '<div class="' +
-        cls +
-        '" data-rule-id="' +
+        '<tr class="tp-alerts__trow' +
+        (r.active ? "" : " is-off") +
+        '" data-id="' +
         r.id +
-        '" role="listitem">' +
-        '<div class="tp-alerts__rule-row">' +
-        '<div class="tp-alerts__rule-name" title="' +
-        esc(r.name) +
         '">' +
+        "<td>" +
+        toggle +
+        "</td>" +
+        '<td><span class="tp-alerts__tname">' +
         esc(r.name) +
-        "</div>" +
-        '<div class="tp-alerts__rule-actions">' +
-        (CAN_EDIT
-          ? '<button type="button" class="tp-alerts__rule-toggle" data-rule-action="toggle" data-rule-id="' +
-            r.id +
-            '" title="' +
-            (r.active ? "Desactivar" : "Activar") +
-            '"></button>'
-          : '<span class="tp-alerts__rule-toggle"></span>') +
-        (CAN_EDIT
-          ? '<button type="button" class="tp-alerts__rule-edit" data-rule-action="edit" data-rule-id="' +
-            r.id +
-            '" title="Editar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
-            '<button type="button" class="tp-alerts__rule-del" data-rule-action="delete" data-rule-id="' +
-            r.id +
-            '" title="Eliminar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button>'
-          : "") +
-        "</div>" +
-        "</div>" +
-        '<div class="tp-alerts__rule-meta">' +
-        '<span class="tp-alerts__rule-type">' +
+        "</span></td>" +
+        '<td><span class="tp-alerts__rule-type">' +
         esc(typeLabel(r.type)) +
-        "</span>" +
-        '<span class="tp-alerts__rule-scope">' +
+        "</span></td>" +
+        "<td>" +
         esc(scope) +
-        "</span>" +
-        "</div>" +
-        (chanHtml
-          ? '<div class="tp-alerts__rule-chans">' + chanHtml + "</div>"
-          : "") +
-        "</div>";
-    }
-    list.innerHTML = html;
-  }
-
-  /* ----- Render events feed ----- */
-  function renderEvents() {
-    var list = $("#tp-alerts-feed-list");
-    var count = $("#tp-alerts-feed-count");
-    var events = state.events.filter(function (e) {
-      return !state.sev || e.severity === state.sev;
+        "</td>" +
+        '<td><div class="tp-alerts__rule-chans" style="margin:0;">' +
+        chHtml +
+        "</div></td>" +
+        "<td>" +
+        sched +
+        "</td>" +
+        '<td class="tp-svc-table__actions">' +
+        kebabHtml(r) +
+        "</td>" +
+        "</tr>";
     });
-    count.textContent =
-      events.length + " eventos · últimas " + state.hours + "h";
-
-    if (!events.length) {
-      list.innerHTML =
-        '<div class="tp-alerts__empty">' +
-        '<svg class="tp-alerts__empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>' +
-        "<div>Sin eventos en este rango.</div>" +
-        "</div>";
-      return;
-    }
-
-    var html = "";
-    for (var i = 0; i < events.length; i++) {
-      var e = events[i];
-      var sev = e.severity || "info";
-      var hasCoord = e.lat != null && e.lng != null;
-      html +=
-        '<article class="tp-alerts__event tp-alerts__event--' +
-        sev +
-        '" data-event-id="' +
-        e.id +
-        '" role="listitem">' +
-        '<div class="tp-alerts__event-stripe"></div>' +
-        '<div class="tp-alerts__event-icon">' +
-        TYPE_ICONS[sev] +
-        "</div>" +
-        '<div class="tp-alerts__event-body">' +
-        '<div class="tp-alerts__event-title">' +
-        esc(typeLabel(e.type)) +
-        "</div>" +
-        '<div class="tp-alerts__event-meta">' +
-        (e.message ? esc(e.message) : "") +
-        (e.address
-          ? (e.message ? " · " : "") + "<b>" + esc(e.address) + "</b>"
-          : "") +
-        (e.speed != null && e.speed > 0
-          ? " · " + Number(e.speed).toFixed(1) + " km/h"
-          : "") +
-        "</div>" +
-        '<div class="tp-alerts__event-tags">' +
-        '<span class="tp-alerts__event-tag">' +
-        esc(e.type) +
-        "</span>" +
-        (e.device_id
-          ? '<span class="tp-alerts__event-tag">#' + e.device_id + "</span>"
-          : "") +
-        "</div>" +
-        "</div>" +
-        '<div class="tp-alerts__event-side">' +
-        '<div class="tp-alerts__event-time" title="' +
-        esc(fmtTime(e.time)) +
-        '">' +
-        relTime(e.time) +
-        "</div>" +
-        '<div class="tp-alerts__event-actions">' +
-        (hasCoord
-          ? '<button class="tp-alerts__event-action" data-action="map" data-lat="' +
-            e.lat +
-            '" data-lng="' +
-            e.lng +
-            '" data-device="' +
-            (e.device_id || "") +
-            '">Mapa</button>'
-          : "") +
-        (e.device_id
-          ? '<button class="tp-alerts__event-action" data-action="device" data-device="' +
-            e.device_id +
-            '">Vehículo</button>'
-          : "") +
-        "</div>" +
-        "</div>" +
-        "</article>";
-    }
-    list.innerHTML = html;
+    tbody.innerHTML = html;
   }
 
   /* ----- Load ----- */
   function load() {
     if (state.loading) return Promise.resolve();
     state.loading = true;
-    var url =
-      DATA_URL +
-      "?" +
-      new URLSearchParams({ hours: state.hours, q: state.q }).toString();
-
-    return fetch(url, {
+    return fetch(DATA_URL, {
       credentials: "same-origin",
       headers: { Accept: "application/json" },
     })
@@ -334,9 +251,7 @@
         state.loading = false;
         if (!p || !p.ok) return;
         state.rules = p.rules || [];
-        state.events = p.events || [];
-        renderRules();
-        renderEvents();
+        renderTable();
       })
       .catch(function (err) {
         state.loading = false;
@@ -344,154 +259,97 @@
       });
   }
 
-  /* ----- Feed wiring ----- */
+  /* ----- Kebab open/close (portal fixed; no lo recorta el overflow de la tabla) ----- */
+  function closeKebabs(except) {
+    document
+      .querySelectorAll(".tp-svc-kebab__menu:not([hidden])")
+      .forEach(function (m) {
+        if (m !== except) m.setAttribute("hidden", "");
+      });
+  }
+  function positionKebab(btn, menu) {
+    var r = btn.getBoundingClientRect();
+    menu.style.position = "fixed";
+    menu.style.right = "auto";
+    var w = menu.offsetWidth,
+      h = menu.offsetHeight;
+    menu.style.left =
+      Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + "px";
+    if (r.bottom + 4 + h > window.innerHeight - 8 && r.top - h - 4 > 8)
+      menu.style.top = r.top - h - 4 + "px";
+    else menu.style.top = r.bottom + 4 + "px";
+  }
+  document.addEventListener("click", function (e) {
+    var kb = e.target.closest("[data-alert-kebab]");
+    if (kb) {
+      var menu = kb.parentNode.querySelector(".tp-svc-kebab__menu");
+      var was = menu && !menu.hasAttribute("hidden");
+      closeKebabs();
+      if (menu && !was) {
+        menu.removeAttribute("hidden");
+        positionKebab(kb, menu);
+      }
+      e.stopPropagation();
+      return;
+    }
+    var act = e.target.closest(".tp-svc-kebab__menu [data-act]");
+    if (act) {
+      e.stopPropagation();
+      var id = act.getAttribute("data-id");
+      var a = act.getAttribute("data-act");
+      closeKebabs();
+      if (a === "edit") openAlertModal(id);
+      else if (a === "toggle") toggleRule(id);
+      else if (a === "delete") deleteRule(id);
+      return;
+    }
+    closeKebabs();
+  });
+  window.addEventListener(
+    "scroll",
+    function (e) {
+      if (e.target && e.target.closest && e.target.closest(".tp-svc-kebab__menu"))
+        return;
+      closeKebabs();
+    },
+    true,
+  );
+
+  /* ----- Wiring ----- */
   var sTimer;
-  $("#tp-alerts-feed-search").addEventListener("input", function (e) {
-    clearTimeout(sTimer);
-    sTimer = setTimeout(function () {
-      state.q = e.target.value.trim();
-      load();
-    }, 250);
-  });
-
-  var rTimer;
-  $("#tp-alerts-rules-search").addEventListener("input", function (e) {
-    clearTimeout(rTimer);
-    rTimer = setTimeout(function () {
-      state.rulesQ = e.target.value.trim();
-      renderRules();
-    }, 150);
-  });
-
-  root
-    .querySelectorAll(
-      '.tp-alerts__seg[aria-label="Ventana de tiempo"] .tp-seg__btn',
-    )
-    .forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        root
-          .querySelectorAll(
-            '.tp-alerts__seg[aria-label="Ventana de tiempo"] .tp-seg__btn',
-          )
-          .forEach(function (b) {
-            b.classList.remove("is-active");
-          });
-        btn.classList.add("is-active");
-        state.hours = parseInt(btn.getAttribute("data-hours"), 10) || 24;
-        load();
-      });
+  var searchEl = $("#tp-alerts-search");
+  if (searchEl)
+    searchEl.addEventListener("input", function (e) {
+      clearTimeout(sTimer);
+      sTimer = setTimeout(function () {
+        state.q = e.target.value.trim();
+        renderTable();
+      }, 150);
     });
 
-  root
-    .querySelectorAll('.tp-alerts__seg[aria-label="Severidad"] .tp-seg__btn')
-    .forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        root
-          .querySelectorAll(
-            '.tp-alerts__seg[aria-label="Severidad"] .tp-seg__btn',
-          )
-          .forEach(function (b) {
-            b.classList.remove("is-active");
-          });
-        btn.classList.add("is-active");
-        state.sev = btn.getAttribute("data-sev") || "";
-        renderEvents();
-      });
-    });
+  var refreshEl = $("#tp-alerts-refresh");
+  if (refreshEl) refreshEl.addEventListener("click", load);
 
-  $("#tp-alerts-refresh").addEventListener("click", load);
-
-  var newBtn = document.getElementById("tp-alerts-new");
+  var newBtn = $("#tp-alerts-new");
   if (newBtn)
     newBtn.addEventListener("click", function () {
       openAlertModal();
     });
 
-  $("#tp-alerts-rules-list").addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-rule-action]");
-    if (!btn) return;
-    e.stopPropagation();
-    var id = btn.getAttribute("data-rule-id");
-    var action = btn.getAttribute("data-rule-action");
-    if (action === "toggle") return toggleRule(id, btn);
-    if (action === "edit") return openAlertModal(id);
-    if (action === "delete") return deleteRule(id);
-  });
-
-  $("#tp-alerts-feed-list").addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-action]");
-    if (!btn) return;
-    e.stopPropagation();
-    var act = btn.getAttribute("data-action");
-    if (act === "map") {
-      var lat = btn.getAttribute("data-lat");
-      var lng = btn.getAttribute("data-lng");
-      var dev = btn.getAttribute("data-device");
-      var url = "/ui/v2/live?";
-      if (dev) url += "device=" + encodeURIComponent(dev) + "&";
-      url +=
-        "lat=" + encodeURIComponent(lat) + "&lng=" + encodeURIComponent(lng);
-      window.location.href = url;
-    } else if (act === "device") {
-      window.location.href =
-        "/ui/v2/live?device=" +
-        encodeURIComponent(btn.getAttribute("data-device"));
+  $("#tp-alerts-rows").addEventListener("click", function (e) {
+    var sw = e.target.closest("[data-toggle-rule]");
+    if (sw) {
+      e.stopPropagation();
+      toggleRule(sw.getAttribute("data-toggle-rule"), sw);
+      return;
     }
+    if (e.target.closest(".tp-svc-kebab")) return; // el kebab lo maneja el listener global
+    var tr = e.target.closest("tr[data-id]");
+    if (tr && CAN_EDIT) openAlertModal(tr.getAttribute("data-id"));
   });
 
-  $("#tp-alerts-export").addEventListener("click", function () {
-    var events = state.events.filter(function (e) {
-      return !state.sev || e.severity === state.sev;
-    });
-    var headers = [
-      "ID",
-      "Tipo",
-      "Severidad",
-      "Mensaje",
-      "Dirección",
-      "Dispositivo",
-      "Velocidad",
-      "Latitud",
-      "Longitud",
-      "Hora",
-    ];
-    var lines = [headers.join(",")];
-    events.forEach(function (ev) {
-      var row = [
-        ev.id,
-        typeLabel(ev.type),
-        ev.severity,
-        ev.message || "",
-        ev.address || "",
-        ev.device_id || "",
-        ev.speed != null ? ev.speed.toFixed(1) : "",
-        ev.lat != null ? ev.lat : "",
-        ev.lng != null ? ev.lng : "",
-        ev.time || "",
-      ].map(function (v) {
-        var s = String(v == null ? "" : v).replace(/"/g, '""');
-        return /[",\n]/.test(s) ? '"' + s + '"' : s;
-      });
-      lines.push(row.join(","));
-    });
-    var blob = new Blob(["﻿" + lines.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url;
-    a.download = "alerts-" + Date.now() + ".csv";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () {
-      URL.revokeObjectURL(url);
-    }, 100);
-  });
-
-  /* ----- Boot + poll ----- */
+  /* ----- Boot ----- */
   load();
-  setInterval(load, 60000);
 
   /* =====================================================
    * Rule modal (full 6-tab CRUD, parity with legacy)
@@ -1371,13 +1229,13 @@
 
   function toggleRule(id, btn) {
     if (!CAN_EDIT) return;
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
     window.tpModal
       .fetchJSON(BASE + "/" + encodeURIComponent(id) + "/toggle", {
         method: "POST",
       })
       .then(function (res) {
-        btn.disabled = false;
+        if (btn) btn.disabled = false;
         if (!res.ok || !res.data || !res.data.ok) {
           window.tpModal.toast("No se pudo cambiar el estado.", "error");
           return;
@@ -1389,13 +1247,13 @@
         load();
       })
       .catch(function () {
-        btn.disabled = false;
+        if (btn) btn.disabled = false;
         window.tpModal.toast("Error de red.", "error");
       });
   }
 
   function deleteRule(id) {
-    if (!CAN_EDIT) return;
+    if (!CAN_REMOVE) return;
     window.tpModal
       .confirm({
         title: "Eliminar regla",

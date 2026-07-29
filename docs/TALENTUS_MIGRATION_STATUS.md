@@ -27,7 +27,11 @@ legacy (`Frontend/Alerts/create`):
 - **Diseño de la lista de reglas**: chip de tipo + alcance ("Todos" / "N vehículos") + canales
   activos localizados (cap 4 + "+N"), en vez del volcado de claves en mayúscula/inglés.
 - Guardado/edición reutilizan `AlertModalHelper::create()/edit()` (schedules en formato franja-plana,
-  `notifications[name][active|input]`, `command.active`). Assets: alerts.js ?v=2, alerts.css ?v=2.
+  `notifications[name][active|input]`, `command.active`).
+- **Página = tabla índice de reglas** (estilo `.tp-svc-table`, como call-actions/maintenance): columnas
+  Estado (toggle) · Nombre · Tipo · Alcance · Notificaciones · Horario + **kebab ⋮** por fila
+  (Editar / Activar-Desactivar / Eliminar). Se **quitó el feed de eventos** (ya vive en `/ui/v2/events`);
+  `data()` ahora solo devuelve reglas (+`schedule`/`devices_count`). Assets: alerts.js ?v=3, alerts.css ?v=3.
 
 ---
 

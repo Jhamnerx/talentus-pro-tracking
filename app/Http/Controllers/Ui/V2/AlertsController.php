@@ -24,9 +24,10 @@ class AlertsController extends BaseController
         }
 
         return View::make('ui.v2.pages.alerts', [
-            'pageTitle' => 'Alerts Center',
+            'pageTitle' => 'Alertas',
             'canEdit'   => $this->user->perm('alerts', 'edit'),
             'canCreate' => $this->user->perm('alerts', 'edit'),
+            'canRemove' => $this->user->perm('alerts', 'remove'),
         ]);
     }
 
@@ -36,12 +37,9 @@ class AlertsController extends BaseController
             return response()->json(['ok' => false], 403);
         }
 
-        $hours = min(168, max(1, (int) $request->get('hours', 24)));
-        $limit = min(500, max(50, (int) $request->get('limit', 200)));
-        $type  = trim((string) $request->get('type', ''));
-        $q     = trim((string) $request->get('q', ''));
-        $since = date('Y-m-d H:i:s', strtotime("-{$hours} hours"));
-
+        // La página de Alertas ahora es una tabla índice de REGLAS. El feed de
+        // eventos vive en su propio módulo (/ui/v2/events), así que aquí solo
+        // devolvemos las reglas + totales.
         $rules = [];
         try {
             $rawRules = $this->user->alerts()->withCount('devices')->orderBy('name', 'asc')->get();
@@ -53,61 +51,23 @@ class AlertsController extends BaseController
                     'active'        => (bool) $r->active,
                     'all'           => (bool) $r->for_all_user_devices,
                     'devices_count' => (int) ($r->devices_count ?? 0),
+                    'schedule'      => (bool) $r->schedule,
                     // Solo canales realmente activos (antes se listaban todos los
-                    // presentes en el JSON → "muro de badges" en la lista de reglas).
+                    // presentes en el JSON → "muro de badges").
                     'channels'      => $this->activeChannels($r->notifications),
                 ];
             }
         } catch (\Throwable $e) {
         }
 
-        $eventsQuery = $this->user->events()
-            ->where('time', '>=', $since)
-            ->orderBy('time', 'desc');
-
-        if ($type !== '') $eventsQuery->where('type', $type);
-        if ($q !== '') {
-            $eventsQuery->where(function ($w) use ($q) {
-                $w->where('message', 'like', '%' . $q . '%')
-                    ->orWhere('address', 'like', '%' . $q . '%');
-            });
-        }
-
-        $rows = $eventsQuery->limit($limit)->get();
-
-        $events = [];
-        $byType = [];
-        foreach ($rows as $e) {
-            $t = (string) $e->type;
-            $byType[$t] = ($byType[$t] ?? 0) + 1;
-
-            $events[] = [
-                'id'        => (int) $e->id,
-                'type'      => $t,
-                'severity'  => $this->eventSeverity($t),
-                'message'   => (string) $e->message,
-                'address'   => (string) $e->address,
-                'device_id' => $e->device_id ? (int) $e->device_id : null,
-                'time'      => (string) $e->time,
-                'lat'       => $e->latitude !== null ? (float) $e->latitude : null,
-                'lng'       => $e->longitude !== null ? (float) $e->longitude : null,
-                'speed'     => $e->speed !== null ? (float) $e->speed : null,
-            ];
-        }
-
         return response()->json([
             'ok'     => true,
-            'hours'  => $hours,
-            'since'  => $since,
             'rules'  => $rules,
-            'events' => $events,
             'totals' => [
-                'rules'   => count($rules),
-                'events'  => count($events),
-                'active'  => count(array_filter($rules, function ($r) {
+                'rules'  => count($rules),
+                'active' => count(array_filter($rules, function ($r) {
                     return $r['active'];
                 })),
-                'by_type' => $byType,
             ],
         ]);
     }
