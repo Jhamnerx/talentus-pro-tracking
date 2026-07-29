@@ -4,7 +4,7 @@
 @section('rail-active', 'alerts')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=2">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -13,6 +13,7 @@
     <div class="tp-alerts" id="tp-alerts" data-data-url="{{ route('ui.v2.api.alerts') }}"
         data-meta-url="{{ route('ui.v2.api.alerts.meta') }}"
         data-store-url="{{ route('ui.v2.api.alerts.store') }}"
+        data-commands-url="{{ route('ui.v2.api.alerts.commands') }}"
         data-toggle-url="{{ url('/ui/v2/api/alerts') }}"
         data-can-edit="{{ $canEdit ? 1 : 0 }}"
         data-can-create="{{ $canCreate ? 1 : 0 }}">
@@ -98,5 +99,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=2" defer></script>
 @endpush

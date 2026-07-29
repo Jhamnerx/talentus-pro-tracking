@@ -1196,6 +1196,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
 
         // Alerts CRUD
         Route::get('alerts/meta',         ['as' => 'api.alerts.meta',    'uses' => 'Ui\V2\AlertsController@meta']);
+        Route::post('alerts/commands',    ['as' => 'api.alerts.commands', 'uses' => 'Ui\V2\AlertsController@commands']);
         Route::post('alerts',             ['as' => 'api.alerts.store',   'uses' => 'Ui\V2\AlertsController@store']);
         Route::get('alerts/{id}/edit',    ['as' => 'api.alerts.edit',    'uses' => 'Ui\V2\AlertsController@editData'])->where('id', '[0-9]+');
         Route::put('alerts/{id}',         ['as' => 'api.alerts.update',  'uses' => 'Ui\V2\AlertsController@update'])->where('id', '[0-9]+');

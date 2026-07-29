@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\View;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\InputFields\AbstractField;
 use Tobuli\InputFields\SelectField;
+use Tobuli\Services\Commands\CommandService;
 
 /**
  * TalentusPro · AlertsController
@@ -43,15 +44,18 @@ class AlertsController extends BaseController
 
         $rules = [];
         try {
-            $rawRules = $this->user->alerts()->orderBy('name', 'asc')->get();
+            $rawRules = $this->user->alerts()->withCount('devices')->orderBy('name', 'asc')->get();
             foreach ($rawRules as $r) {
                 $rules[] = [
-                    'id'       => (int) $r->id,
-                    'name'     => (string) $r->name,
-                    'type'     => (string) $r->type,
-                    'active'   => (bool) $r->active,
-                    'all'      => (bool) $r->for_all_user_devices,
-                    'channels' => is_array($r->notifications) ? array_keys(array_filter($r->notifications)) : [],
+                    'id'            => (int) $r->id,
+                    'name'          => (string) $r->name,
+                    'type'          => (string) $r->type,
+                    'active'        => (bool) $r->active,
+                    'all'           => (bool) $r->for_all_user_devices,
+                    'devices_count' => (int) ($r->devices_count ?? 0),
+                    // Solo canales realmente activos (antes se listaban todos los
+                    // presentes en el JSON → "muro de badges" en la lista de reglas).
+                    'channels'      => $this->activeChannels($r->notifications),
                 ];
             }
         } catch (\Throwable $e) {
@@ -157,6 +161,7 @@ class AlertsController extends BaseController
             'alert_zones'   => $data['alert_zones']   ?? [],
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
             'schedules'     => $data['schedules']     ?? [],
+            'can_command'   => (bool) $user->perm('send_command', 'view'),
         ]);
     }
 
@@ -271,6 +276,8 @@ class AlertsController extends BaseController
             'active'               => (bool) $alert->active,
             'for_all_user_devices' => (bool) $alert->for_all_user_devices,
             'zone'                 => (int) ($alert->zone ?? 0),
+            'schedule'             => (bool) $alert->schedule,
+            'command'              => (array) ($alert->command ?? []),
             'devices'              => array_map('intval', $devicesSelected),
             'geofences'            => array_map('intval', $geofencesSelected),
             'notifications'        => (array) ($alert->notifications ?? []),
@@ -286,6 +293,7 @@ class AlertsController extends BaseController
             'alert_zones'   => $data['alert_zones'] ?? [],
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
             'schedules'     => $data['schedules']   ?? [],
+            'can_command'   => (bool) $user->perm('send_command', 'view'),
         ]);
     }
 
@@ -357,6 +365,88 @@ class AlertsController extends BaseController
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * GPRS commands available for the given devices (Command tab).
+     * Requires the `send_command` permission. Reshapes each command +
+     * its attributes into a JSON-friendly structure for the JS modal.
+     */
+    public function commands(Request $request): JsonResponse
+    {
+        $user = $this->user;
+        if (! $user || ! $user->perm('send_command', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $ids = array_values(array_filter(array_map('intval', (array) $request->get('devices', []))));
+
+        try {
+            $devices  = $ids ? $user->devices()->whereIn('id', $ids)->get() : collect();
+            $commands = (new CommandService($user))->getGprsCommands($devices);
+            $out      = $this->reshapeCommands($commands);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'      => false,
+                'error'   => 'commands_failed',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+
+        return response()->json(['ok' => true, 'commands' => $out]);
+    }
+
+    /**
+     * Reshape a GPRS-commands collection (each {type,title,attributes?}) into
+     * a JSON structure: [{type,title,fields:[{name,type,title,value,required,
+     * description,options?}]}].
+     */
+    private function reshapeCommands($commands): array
+    {
+        $out = [];
+        foreach ($commands as $c) {
+            $fields = [];
+            $attrs  = $c['attributes'] ?? null;
+            if ($attrs) {
+                foreach ($attrs as $attr) {
+                    if (! $attr instanceof AbstractField) continue;
+                    $f = [
+                        'name'        => $attr->getName(),
+                        'type'        => $attr->getType(),
+                        'title'       => (string) $attr->getTitle(),
+                        'value'       => $attr->getDefault(),
+                        'required'    => $attr->isRequired(),
+                        'description' => (string) $attr->getDescription(),
+                    ];
+                    if ($attr instanceof SelectField) {
+                        $f['options'] = $attr->getOptions();
+                    }
+                    $fields[] = $f;
+                }
+            }
+            $out[] = [
+                'type'   => $c['type'],
+                'title'  => (string) ($c['title'] ?? $c['type']),
+                'fields' => $fields,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Keys of the notification channels that are actually enabled on a rule
+     * (notifications JSON stores {name:{active,input}} — array_filter alone
+     * keeps every present key, active or not).
+     */
+    private function activeChannels($notifications): array
+    {
+        if (! is_array($notifications)) return [];
+        $out = [];
+        foreach ($notifications as $key => $val) {
+            $active = is_array($val) ? ($val['active'] ?? false) : $val;
+            if ($active) $out[] = $key;
+        }
+        return $out;
     }
 
     /**

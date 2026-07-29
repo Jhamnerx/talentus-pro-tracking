@@ -7,6 +7,30 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 29 jul 2026 — Módulo Alertas: modal completo de 6 tabs (paridad legacy)
+
+El modal de reglas de alerta en v2 estaba incompleto y mal diseñado. Reconstruido con paridad
+legacy (`Frontend/Alerts/create`):
+
+- **6 tabs** (`alerts.js`): **Vehículos** (todos + picklist con buscador/todos-ninguno), **Tipo**
+  (disparador + campos por tipo de `AlertModalHelper::getTypesWithAttributes`), **Geocercas**
+  (sentido entrada/salida + picklist de geocercas → `zones`/`geofences`), **Horario** (grilla
+  arrastrable 7 días × 96 franjas de 15 min con días-hábiles/fin-de-semana/siempre/limpiar),
+  **Notificaciones** (canales reales con su input: color/select/entero/texto + descripción, desde
+  `NotificationProvider::getInputMeta`), **Comando** (perm `send_command`: activo + tipo + atributos
+  dinámicos por comando GPRS).
+- **Backend** (`Ui\V2\AlertsController`): nuevo endpoint `POST alerts/commands` (comandos GPRS de los
+  vehículos seleccionados, reshape con `reshapeCommands`); `meta`/`editData` exponen `can_command`;
+  el item de edición incluye `schedule` y `command`. **Fix**: la lista de reglas solo muestra
+  canales **activos** (`activeChannels` — antes listaba todos → "muro de badges") y ahora trae
+  `devices_count`.
+- **Diseño de la lista de reglas**: chip de tipo + alcance ("Todos" / "N vehículos") + canales
+  activos localizados (cap 4 + "+N"), en vez del volcado de claves en mayúscula/inglés.
+- Guardado/edición reutilizan `AlertModalHelper::create()/edit()` (schedules en formato franja-plana,
+  `notifications[name][active|input]`, `command.active`). Assets: alerts.js ?v=2, alerts.css ?v=2.
+
+---
+
 ## 🔄 Actualización · 29 jul 2026 — Estados de vehículo con label + color + cambiador (rama `nuevo-tema`)
 
 - **Schema**: migración `2026_07_29_000001` agrega `label` (24) + `color` (9) a `vehicle_states`. `VehicleState::$fillable` += label, color.

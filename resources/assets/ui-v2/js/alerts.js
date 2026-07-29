@@ -1,8 +1,8 @@
 /* =====================================================
-   TalentusPro · Alerts Center · Phase 6
+   TalentusPro · Alerts Center
    - Rules list (left) + events feed (right)
-   - Hours window, severity filter, search, CSV export
-   - Auto-refresh every 60s
+   - Full 6-tab rule modal (parity with legacy Alerts):
+       Vehículos · Tipo · Geocercas · Horario · Notificaciones · Comando
    ===================================================== */
 (function () {
   "use strict";
@@ -13,11 +13,14 @@
   var DATA_URL = root.getAttribute("data-data-url");
   var META_URL = root.getAttribute("data-meta-url");
   var STORE_URL = root.getAttribute("data-store-url");
-  var TOGGLE_BASE =
-    root.getAttribute("data-toggle-url") || "/ui/v2/api/alerts";
+  var COMMANDS_URL = root.getAttribute("data-commands-url");
+  var BASE = root.getAttribute("data-toggle-url") || "/ui/v2/api/alerts";
   var CAN_EDIT = root.getAttribute("data-can-edit") === "1";
   var CAN_CREATE = root.getAttribute("data-can-create") === "1";
   var META_CACHE = null;
+
+  var WORKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+  var WEEKEND = ["saturday", "sunday"];
 
   var state = {
     hours: 24,
@@ -33,7 +36,7 @@
   function $(s, c) {
     return (c || document).querySelector(s);
   }
-  function escapeHtml(s) {
+  function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
       return {
         "&": "&amp;",
@@ -44,6 +47,7 @@
       }[c];
     });
   }
+  var escapeHtml = esc;
 
   var TYPE_LABELS = {
     sos: "SOS",
@@ -81,6 +85,22 @@
     time_duration: "Duración temporal",
   };
 
+  // Localized, human labels for notification channels (rules list badges).
+  var CHAN_LABEL = {
+    color: "Color",
+    silent: "Anti-repetición",
+    sound: "Sonido",
+    popup: "Popup",
+    auto_hide: "Auto-ocultar",
+    push: "Push",
+    email: "Email",
+    sms: "SMS",
+    webhook: "Webhook",
+    sharing_email: "Email comp.",
+    sharing_sms: "SMS comp.",
+    command: "Comando",
+  };
+
   var TYPE_ICONS = {
     critical:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
@@ -90,7 +110,7 @@
   };
 
   function typeLabel(t) {
-    return TYPE_LABELS[t] || t.replace(/_/g, " ");
+    return TYPE_LABELS[t] || String(t || "").replace(/_/g, " ");
   }
 
   function relTime(iso) {
@@ -113,7 +133,7 @@
     }
   }
 
-  /* ----- Render rules ----- */
+  /* ----- Render rules (redesigned: type chip + scope + only-active channels) ----- */
   function renderRules() {
     var list = $("#tp-alerts-rules-list");
     var count = $("#tp-alerts-rules-count");
@@ -122,7 +142,7 @@
       return (
         !q ||
         (r.name || "").toLowerCase().indexOf(q) !== -1 ||
-        (r.type || "").toLowerCase().indexOf(q) !== -1
+        typeLabel(r.type).toLowerCase().indexOf(q) !== -1
       );
     });
     count.textContent = rules.length + " de " + state.rules.length;
@@ -132,10 +152,38 @@
         '<div class="tp-text-muted tp-text-center" style="padding:20px;">Sin reglas.</div>';
       return;
     }
+
     var html = "";
     for (var i = 0; i < rules.length; i++) {
       var r = rules[i];
       var cls = "tp-alerts__rule" + (r.active ? " is-on" : " is-inactive");
+
+      var scope = r.all
+        ? "Todos los vehículos"
+        : (r.devices_count || 0) +
+          " " +
+          ((r.devices_count || 0) === 1 ? "vehículo" : "vehículos");
+
+      var chans = (r.channels || []).filter(function (c) {
+        return c !== "auto_hide"; // detalle interno de popup, no un canal en sí
+      });
+      var shown = chans.slice(0, 4);
+      var extra = chans.length - shown.length;
+      var chanHtml = shown
+        .map(function (c) {
+          return (
+            '<span class="tp-alerts__chan">' +
+            esc(CHAN_LABEL[c] || c) +
+            "</span>"
+          );
+        })
+        .join("");
+      if (extra > 0)
+        chanHtml +=
+          '<span class="tp-alerts__chan tp-alerts__chan--more">+' +
+          extra +
+          "</span>";
+
       html +=
         '<div class="' +
         cls +
@@ -144,53 +192,45 @@
         '" role="listitem">' +
         '<div class="tp-alerts__rule-row">' +
         '<div class="tp-alerts__rule-name" title="' +
-        escapeHtml(r.name) +
+        esc(r.name) +
         '">' +
-        escapeHtml(r.name) +
+        esc(r.name) +
         "</div>" +
         '<div class="tp-alerts__rule-actions">' +
         (CAN_EDIT
           ? '<button type="button" class="tp-alerts__rule-toggle" data-rule-action="toggle" data-rule-id="' +
             r.id +
-            '" aria-label="' +
-            (r.active ? "Desactivar" : "Activar") +
             '" title="' +
             (r.active ? "Desactivar" : "Activar") +
             '"></button>'
-          : '<span class="tp-alerts__rule-toggle" aria-label="' +
-            (r.active ? "Activa" : "Inactiva") +
-            '"></span>') +
+          : '<span class="tp-alerts__rule-toggle"></span>') +
         (CAN_EDIT
           ? '<button type="button" class="tp-alerts__rule-edit" data-rule-action="edit" data-rule-id="' +
             r.id +
-            '" aria-label="Editar" title="Editar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
-          : "") +
-        (CAN_EDIT
-          ? '<button type="button" class="tp-alerts__rule-del" data-rule-action="delete" data-rule-id="' +
+            '" title="Editar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>' +
+            '<button type="button" class="tp-alerts__rule-del" data-rule-action="delete" data-rule-id="' +
             r.id +
-            '" aria-label="Eliminar" title="Eliminar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button>'
+            '" title="Eliminar"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg></button>'
           : "") +
         "</div>" +
         "</div>" +
         '<div class="tp-alerts__rule-meta">' +
-        '<span class="tp-alerts__rule-chip">' +
-        escapeHtml(typeLabel(r.type)) +
+        '<span class="tp-alerts__rule-type">' +
+        esc(typeLabel(r.type)) +
         "</span>" +
-        (r.all ? '<span class="tp-alerts__rule-chip">Todos</span>' : "") +
-        (r.channels || [])
-          .map(function (c) {
-            return (
-              '<span class="tp-alerts__rule-chip">' + escapeHtml(c) + "</span>"
-            );
-          })
-          .join("") +
+        '<span class="tp-alerts__rule-scope">' +
+        esc(scope) +
+        "</span>" +
         "</div>" +
+        (chanHtml
+          ? '<div class="tp-alerts__rule-chans">' + chanHtml + "</div>"
+          : "") +
         "</div>";
     }
     list.innerHTML = html;
   }
 
-  /* ----- Render events ----- */
+  /* ----- Render events feed ----- */
   function renderEvents() {
     var list = $("#tp-alerts-feed-list");
     var count = $("#tp-alerts-feed-count");
@@ -226,12 +266,12 @@
         "</div>" +
         '<div class="tp-alerts__event-body">' +
         '<div class="tp-alerts__event-title">' +
-        escapeHtml(typeLabel(e.type)) +
+        esc(typeLabel(e.type)) +
         "</div>" +
         '<div class="tp-alerts__event-meta">' +
-        (e.message ? escapeHtml(e.message) : "") +
+        (e.message ? esc(e.message) : "") +
         (e.address
-          ? (e.message ? " · " : "") + "<b>" + escapeHtml(e.address) + "</b>"
+          ? (e.message ? " · " : "") + "<b>" + esc(e.address) + "</b>"
           : "") +
         (e.speed != null && e.speed > 0
           ? " · " + Number(e.speed).toFixed(1) + " km/h"
@@ -239,7 +279,7 @@
         "</div>" +
         '<div class="tp-alerts__event-tags">' +
         '<span class="tp-alerts__event-tag">' +
-        escapeHtml(e.type) +
+        esc(e.type) +
         "</span>" +
         (e.device_id
           ? '<span class="tp-alerts__event-tag">#' + e.device_id + "</span>"
@@ -248,7 +288,7 @@
         "</div>" +
         '<div class="tp-alerts__event-side">' +
         '<div class="tp-alerts__event-time" title="' +
-        escapeHtml(fmtTime(e.time)) +
+        esc(fmtTime(e.time)) +
         '">' +
         relTime(e.time) +
         "</div>" +
@@ -281,10 +321,7 @@
     var url =
       DATA_URL +
       "?" +
-      new URLSearchParams({
-        hours: state.hours,
-        q: state.q,
-      }).toString();
+      new URLSearchParams({ hours: state.hours, q: state.q }).toString();
 
     return fetch(url, {
       credentials: "same-origin",
@@ -307,7 +344,7 @@
       });
   }
 
-  /* ----- Events wiring ----- */
+  /* ----- Feed wiring ----- */
   var sTimer;
   $("#tp-alerts-feed-search").addEventListener("input", function (e) {
     clearTimeout(sTimer);
@@ -364,14 +401,12 @@
 
   $("#tp-alerts-refresh").addEventListener("click", load);
 
-  // "+ Nueva" → tp-modal create
   var newBtn = document.getElementById("tp-alerts-new");
   if (newBtn)
     newBtn.addEventListener("click", function () {
       openAlertModal();
     });
 
-  // Rule actions (toggle / delete)
   $("#tp-alerts-rules-list").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-rule-action]");
     if (!btn) return;
@@ -383,7 +418,6 @@
     if (action === "delete") return deleteRule(id);
   });
 
-  // Event actions
   $("#tp-alerts-feed-list").addEventListener("click", function (e) {
     var btn = e.target.closest("[data-action]");
     if (!btn) return;
@@ -405,7 +439,6 @@
     }
   });
 
-  // CSV export (visible severity-filtered subset)
   $("#tp-alerts-export").addEventListener("click", function () {
     var events = state.events.filter(function (e) {
       return !state.sev || e.severity === state.sev;
@@ -441,7 +474,7 @@
       });
       lines.push(row.join(","));
     });
-    var blob = new Blob(["\uFEFF" + lines.join("\n")], {
+    var blob = new Blob(["﻿" + lines.join("\n")], {
       type: "text/csv;charset=utf-8;",
     });
     var url = URL.createObjectURL(blob);
@@ -461,340 +494,780 @@
   setInterval(load, 60000);
 
   /* =====================================================
-   * PHASE 11 · Native modal CRUD (replaces legacy /alerts/create)
+   * Rule modal (full 6-tab CRUD, parity with legacy)
    * ===================================================== */
 
   function loadMeta() {
     if (META_CACHE) return Promise.resolve(META_CACHE);
     return window.tpModal.fetchJSON(META_URL).then(function (res) {
-      if (!res.ok || !res.data || !res.data.ok) {
-        throw new Error("meta_failed");
-      }
+      if (!res.ok || !res.data || !res.data.ok) throw new Error("meta_failed");
       META_CACHE = res.data;
       return META_CACHE;
     });
   }
 
-  function buildTypeOptions(types, selectedKey) {
-    var out = "";
-    types.forEach(function (t) {
-      var sel = t.key === selectedKey ? " selected" : "";
-      out +=
-        '<option value="' +
-        tpModal.escapeHtml(t.key) +
-        '"' +
-        sel +
-        ">" +
-        tpModal.escapeHtml(t.label) +
-        "</option>";
-    });
-    return out;
-  }
-
-  /**
-   * Render the per-type attribute fields (from AlertModalHelper).
-   * Each `field` shape: { name, type, title, value, options? }
-   */
-  function renderTypeFields(typeObj) {
-    if (!typeObj || !typeObj.fields || !typeObj.fields.length) {
-      return '<div class="tp-text-muted tp-text-sm">Esta alerta no requiere configuración adicional.</div>';
-    }
-    var html = '<div class="tp-grid-2">';
-    typeObj.fields.forEach(function (f) {
-      var val = f.value == null ? "" : f.value;
-      html +=
-        '<div class="tp-field"><label class="tp-field__label">' +
-        tpModal.escapeHtml(f.title || f.name) +
-        "</label>";
-      if (f.type === "select" || (f.options && f.options.length)) {
-        html += '<select class="tp-select" name="' + f.name + '">';
-        (f.options || []).forEach(function (o) {
-          var k = o.id != null ? o.id : o.value;
-          var label = o.title != null ? o.title : o.value != null ? o.value : k;
-          var sel = String(k) === String(val) ? " selected" : "";
-          html +=
-            '<option value="' +
-            tpModal.escapeHtml(k) +
-            '"' +
-            sel +
-            ">" +
-            tpModal.escapeHtml(label) +
-            "</option>";
-        });
-        html += "</select>";
-      } else {
-        var inputType = f.type === "number" ? "number" : "text";
-        html +=
-          '<input class="tp-input" type="' +
-          inputType +
-          '" name="' +
-          f.name +
-          '" value="' +
-          tpModal.escapeHtml(val) +
-          '">';
-      }
-      html += "</div>";
-    });
-    html += "</div>";
-    return html;
-  }
-
   function pickName(opt) {
-    // meta arrays may come as {id, name} or apiArray {id, value, title}
     return opt.name || opt.title || opt.value || "#" + (opt.id || "");
   }
 
-  function chipsHtml(items, multi, emptyMsg) {
-    if (!items || !items.length) {
-      return (
-        '<span class="tp-text-muted tp-text-sm">' +
-        tpModal.escapeHtml(emptyMsg || "Sin elementos.") +
-        "</span>"
-      );
-    }
-    return items
-      .map(function (it) {
-        var id = it.id != null ? it.id : it.value;
-        var label = pickName(it) + (it.plate ? " · " + it.plate : "");
+  function buildTypeOptions(types, selectedKey) {
+    return (types || [])
+      .map(function (t) {
         return (
-          '<button type="button" class="tp-chips__chip" data-val="' +
-          id +
-          '">' +
-          tpModal.escapeHtml(label) +
-          "</button>"
+          '<option value="' +
+          esc(t.key) +
+          '"' +
+          (t.key === selectedKey ? " selected" : "") +
+          ">" +
+          esc(t.label) +
+          "</option>"
         );
       })
       .join("");
   }
 
-  /* ---------- Tab panels ---------- */
+  // Per-type attribute fields (from AlertModalHelper). { name,type,title,value,options? }
+  function renderTypeFields(typeObj) {
+    if (!typeObj || !typeObj.fields || !typeObj.fields.length) {
+      return '<div class="tp-text-muted tp-text-sm">Este tipo no requiere configuración adicional.</div>';
+    }
+    var html = '<div class="tp-grid-2">';
+    typeObj.fields.forEach(function (f) {
+      html += fieldHtml(f, null, f.name);
+    });
+    html += "</div>";
+    return html;
+  }
 
-  function panelGeneral(meta) {
+  // Generic field renderer used by type + command attributes.
+  function fieldHtml(f, val, nameAttr, cmd) {
+    val = val == null ? (f.value == null ? "" : f.value) : val;
+    var attr = cmd
+      ? 'data-cmd-field="' + esc(f.name) + '"'
+      : 'name="' + esc(nameAttr || f.name) + '"';
+    var h =
+      '<div class="tp-field"><label class="tp-field__label">' +
+      esc(f.title || f.name) +
+      (f.required ? " *" : "") +
+      "</label>";
+    if (f.type === "select" || (f.options && f.options.length)) {
+      var opts = (f.options || [])
+        .map(function (o) {
+          var k = o.id != null ? o.id : o.value;
+          var lbl = o.title != null ? o.title : o.value != null ? o.value : k;
+          return (
+            '<option value="' +
+            esc(k) +
+            '"' +
+            (String(k) === String(val) ? " selected" : "") +
+            ">" +
+            esc(lbl) +
+            "</option>"
+          );
+        })
+        .join("");
+      h +=
+        '<select class="tp-input" data-no-ts="1" ' + attr + ">" + opts + "</select>";
+    } else {
+      var it = f.type === "number" || f.type === "integer" ? "number" : "text";
+      h +=
+        '<input class="tp-input" type="' +
+        it +
+        '" ' +
+        attr +
+        ' value="' +
+        esc(val) +
+        '">';
+    }
+    if (f.description) h += '<div class="tp-field__hint">' + f.description + "</div>";
+    return h + "</div>";
+  }
+
+  /* ---------- pick lists (devices / geofences) ---------- */
+  function picklistHtml(id, items, opts) {
+    opts = opts || {};
+    var searchable = items.length > 8;
+    var body;
+    if (!items.length) {
+      body =
+        '<div class="tp-text-muted tp-text-sm" style="padding:10px;">' +
+        esc(opts.empty || "Sin elementos.") +
+        "</div>";
+    } else {
+      body = items
+        .map(function (it) {
+          var v = it.id != null ? it.id : it.value;
+          var label = pickName(it) + (it.plate ? " · " + it.plate : "");
+          return (
+            '<label class="tp-picklist__item"><input type="checkbox" value="' +
+            esc(v) +
+            '"><span>' +
+            esc(label) +
+            "</span></label>"
+          );
+        })
+        .join("");
+    }
     return (
-      "" +
-      '<div class="tp-field">' +
-      '<label class="tp-field__label">Nombre *</label>' +
-      '<input class="tp-input" type="text" name="name" maxlength="80" required placeholder="Ej. SOS flota norte">' +
+      '<div class="tp-picklist" id="' +
+      id +
+      '">' +
+      '<div class="tp-picklist__bar">' +
+      (searchable
+        ? '<input type="search" class="tp-input tp-input--sm tp-picklist__search" placeholder="Buscar…">'
+        : "<span></span>") +
+      '<button type="button" class="tp-picklist__act" data-pick="all">Todos</button>' +
+      '<button type="button" class="tp-picklist__act" data-pick="none">Ninguno</button>' +
+      '<span class="tp-picklist__count">0</span>' +
       "</div>" +
-      '<div class="tp-grid-2">' +
-      '<div class="tp-field">' +
-      '<label class="tp-field__label">Tipo *</label>' +
-      '<select class="tp-select" name="type" id="tp-alert-type">' +
-      buildTypeOptions(meta.types, meta.types[0] && meta.types[0].key) +
-      "</select>" +
-      '<div class="tp-field__hint">Define el disparador. Los campos extra aparecen en la pestaña "Tipo".</div>' +
-      "</div>" +
-      '<div class="tp-field">' +
-      '<label class="tp-field__label">Estado</label>' +
-      '<label class="tp-checkbox"><input type="checkbox" name="active" checked> <span>Activa al guardar</span></label>' +
+      '<div class="tp-picklist__list">' +
+      body +
       "</div>" +
       "</div>"
     );
   }
 
-  function panelDevices(meta) {
-    return (
-      "" +
-      '<label class="tp-checkbox" style="margin-bottom:10px;"><input type="checkbox" name="for_all_user_devices" id="tp-alert-all"> <span>Aplicar a <strong>todos mis vehículos</strong></span></label>' +
-      '<div class="tp-field__hint" style="margin-bottom:8px;">O selecciona específicos:</div>' +
-      '<div class="tp-chips" data-multi="devices" id="tp-alert-devices">' +
-      chipsHtml(meta.devices, true, "No hay vehículos.") +
-      "</div>"
-    );
+  function picklistValues(dlg, sel) {
+    var wrap = dlg.querySelector(sel);
+    if (!wrap) return [];
+    return Array.from(
+      wrap.querySelectorAll(".tp-picklist__item input[type=checkbox]:checked"),
+    ).map(function (cb) {
+      return parseInt(cb.value, 10);
+    });
   }
 
-  function panelType(meta) {
-    var first = meta.types[0];
-    return (
-      '<div id="tp-alert-type-fields">' + renderTypeFields(first) + "</div>"
-    );
+  function checkPicklist(dlg, sel, ids) {
+    var set = {};
+    (ids || []).forEach(function (i) {
+      set[String(i)] = 1;
+    });
+    var wrap = dlg.querySelector(sel);
+    if (!wrap) return;
+    wrap
+      .querySelectorAll(".tp-picklist__item input[type=checkbox]")
+      .forEach(function (cb) {
+        cb.checked = !!set[cb.value];
+      });
+    updatePickCount(wrap);
   }
 
-  function panelGeofences(meta) {
-    var zones =
-      meta.alert_zones && meta.alert_zones.length
-        ? meta.alert_zones
-            .map(function (z) {
-              var id = z.id != null ? z.id : z.value;
-              return (
-                '<label class="tp-checkbox"><input type="checkbox" name="zone_' +
-                id +
-                '" value="' +
-                id +
-                '"> <span>' +
-                tpModal.escapeHtml(pickName(z)) +
-                "</span></label>"
-              );
-            })
-            .join("")
-        : '<label class="tp-checkbox"><input type="checkbox" name="zone_1" value="1"> <span>Entrada</span></label>' +
-          '<label class="tp-checkbox"><input type="checkbox" name="zone_2" value="2"> <span>Salida</span></label>';
+  function updatePickCount(wrap) {
+    var count = wrap.querySelector(".tp-picklist__count");
+    if (!count) return;
+    count.textContent = wrap.querySelectorAll(
+      ".tp-picklist__item input[type=checkbox]:checked",
+    ).length;
+  }
 
+  function wirePicklist(dlg, id) {
+    var wrap = dlg.querySelector("#" + id);
+    if (!wrap) return;
+    wrap.addEventListener("change", function (e) {
+      if (e.target.matches('input[type="checkbox"]')) updatePickCount(wrap);
+    });
+    wrap.addEventListener("click", function (e) {
+      var a = e.target.closest("[data-pick]");
+      if (!a) return;
+      e.preventDefault();
+      var boxes = wrap.querySelectorAll(
+        ".tp-picklist__item input[type=checkbox]",
+      );
+      if (a.getAttribute("data-pick") === "all") {
+        boxes.forEach(function (b) {
+          if (!b.closest(".tp-picklist__item").hidden) b.checked = true;
+        });
+      } else {
+        boxes.forEach(function (b) {
+          b.checked = false;
+        });
+      }
+      updatePickCount(wrap);
+    });
+    var search = wrap.querySelector(".tp-picklist__search");
+    if (search)
+      search.addEventListener("input", function () {
+        var q = this.value.toLowerCase();
+        wrap.querySelectorAll(".tp-picklist__item").forEach(function (it) {
+          it.hidden = q && it.textContent.toLowerCase().indexOf(q) === -1;
+        });
+      });
+    updatePickCount(wrap);
+  }
+
+  /* ---------- schedule grid ---------- */
+  function scheduleGridHtml(schedules) {
+    if (!schedules || !schedules.length)
+      return '<div class="tp-text-muted tp-text-sm">Sin datos de horario.</div>';
+
+    var items = schedules[0].items || [];
+    var hours =
+      '<div class="tp-sched__row tp-sched__hours"><span class="tp-sched__daylabel tp-sched__corner"></span><div class="tp-sched__cells">';
+    items.forEach(function (it) {
+      var h = parseInt(String(it.id).slice(0, 2), 10);
+      var isHour = /:00$/.test(it.id);
+      var label = isHour && h % 3 === 0 ? String(it.id).slice(0, 2) : "";
+      hours +=
+        '<span class="tp-sched__hour' +
+        (isHour ? " is-hour" : "") +
+        '">' +
+        label +
+        "</span>";
+    });
+    hours += "</div></div>";
+
+    var rows = schedules
+      .map(function (day) {
+        var cells = (day.items || [])
+          .map(function (it) {
+            var cls =
+              "tp-sched__cell" +
+              (it.active ? " is-on" : "") +
+              (/:00$/.test(it.id) ? " is-hour" : "");
+            return (
+              '<span class="' +
+              cls +
+              '" data-day="' +
+              esc(day.id) +
+              '" data-time="' +
+              esc(it.id) +
+              '" title="' +
+              esc(day.title + " " + it.id) +
+              '"></span>'
+            );
+          })
+          .join("");
+        return (
+          '<div class="tp-sched__row">' +
+          '<button type="button" class="tp-sched__daylabel" data-day-toggle="' +
+          esc(day.id) +
+          '" title="' +
+          esc(day.title) +
+          '">' +
+          esc(String(day.title).charAt(0).toUpperCase()) +
+          "</button>" +
+          '<div class="tp-sched__cells">' +
+          cells +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    var quick =
+      '<div class="tp-sched__quick">' +
+      '<button type="button" data-sched-set="workdays">Días hábiles</button>' +
+      '<button type="button" data-sched-set="weekend">Fin de semana</button>' +
+      '<button type="button" data-sched-set="always">Siempre</button>' +
+      '<button type="button" data-sched-set="clear">Limpiar</button>' +
+      "</div>";
+
+    return '<div class="tp-sched__scroll">' + hours + rows + "</div>" + quick;
+  }
+
+  function collectSchedules(dlg) {
+    var out = {};
+    dlg
+      .querySelectorAll("#tp-alert-sched .tp-sched__cell.is-on")
+      .forEach(function (c) {
+        var d = c.getAttribute("data-day");
+        var t = c.getAttribute("data-time");
+        (out[d] = out[d] || []).push(t);
+      });
+    Object.keys(out).forEach(function (d) {
+      out[d].sort();
+    });
+    return out;
+  }
+
+  function wireSchedule(dlg) {
+    var toggle = dlg.querySelector("#tp-alert-sched-toggle");
+    var grid = dlg.querySelector("#tp-alert-sched");
+    if (toggle && grid) {
+      var sync = function () {
+        grid.hidden = !toggle.checked;
+      };
+      toggle.addEventListener("change", sync);
+      sync();
+    }
+    if (!grid) return;
+
+    var painting = false,
+      paintOn = true;
+    grid.addEventListener("mousedown", function (e) {
+      var c = e.target.closest(".tp-sched__cell");
+      if (!c) return;
+      e.preventDefault();
+      painting = true;
+      paintOn = !c.classList.contains("is-on");
+      c.classList.toggle("is-on", paintOn);
+    });
+    grid.addEventListener("mouseover", function (e) {
+      if (!painting) return;
+      var c = e.target.closest(".tp-sched__cell");
+      if (c) c.classList.toggle("is-on", paintOn);
+    });
+    document.addEventListener("mouseup", function () {
+      painting = false;
+    });
+
+    grid.addEventListener("click", function (e) {
+      var d = e.target.closest("[data-day-toggle]");
+      if (d) {
+        var day = d.getAttribute("data-day-toggle");
+        var cells = grid.querySelectorAll(
+          '.tp-sched__cell[data-day="' + day + '"]',
+        );
+        var allOn = Array.prototype.every.call(cells, function (c) {
+          return c.classList.contains("is-on");
+        });
+        cells.forEach(function (c) {
+          c.classList.toggle("is-on", !allOn);
+        });
+        return;
+      }
+      var b = e.target.closest("[data-sched-set]");
+      if (!b) return;
+      var mode = b.getAttribute("data-sched-set");
+      var all = grid.querySelectorAll(".tp-sched__cell");
+      if (mode === "clear") {
+        all.forEach(function (c) {
+          c.classList.remove("is-on");
+        });
+      } else if (mode === "always") {
+        all.forEach(function (c) {
+          c.classList.add("is-on");
+        });
+      } else {
+        var days = mode === "workdays" ? WORKDAYS : WEEKEND;
+        all.forEach(function (c) {
+          c.classList.toggle(
+            "is-on",
+            days.indexOf(c.getAttribute("data-day")) !== -1,
+          );
+        });
+      }
+    });
+  }
+
+  /* ---------- notifications ---------- */
+  function notifInput(n) {
+    var val = n.input == null ? "" : n.input;
+    var t = n.input_type;
+    if (!t) return "";
+    if (t === "select") {
+      var opts = (n.options || [])
+        .map(function (o) {
+          var k = o.id != null ? o.id : o.value;
+          var lbl = o.title != null ? o.title : o.value != null ? o.value : k;
+          return (
+            '<option value="' +
+            esc(k) +
+            '"' +
+            (String(k) === String(val) ? " selected" : "") +
+            ">" +
+            esc(lbl) +
+            "</option>"
+          );
+        })
+        .join("");
+      return (
+        '<select class="tp-input tp-input--sm" data-no-ts="1" data-notif-input>' +
+        opts +
+        "</select>"
+      );
+    }
+    if (t === "color") {
+      var hex = /^#[0-9a-fA-F]{6}/.test(val) ? val : "#2563eb";
+      return (
+        '<input type="color" class="tp-notif__color" data-notif-input value="' +
+        esc(hex) +
+        '">'
+      );
+    }
+    if (t === "integer") {
+      return (
+        '<input type="number" min="0" class="tp-input tp-input--sm" data-notif-input value="' +
+        esc(val) +
+        '" placeholder="min">'
+      );
+    }
     return (
-      "" +
-      '<div class="tp-field">' +
-      '<label class="tp-field__label">Direcciones</label>' +
-      '<div class="tp-row" style="gap:14px; flex-wrap:wrap;">' +
-      zones +
-      "</div>" +
-      '<div class="tp-field__hint">Aplica solo a tipos de alerta basados en geocercas.</div>' +
-      "</div>" +
-      '<div class="tp-field">' +
-      '<label class="tp-field__label">Geocercas</label>' +
-      '<div class="tp-chips" data-multi="zones" id="tp-alert-zones">' +
-      chipsHtml(meta.geofences, true, "No tienes geocercas creadas.") +
-      "</div>" +
-      "</div>"
+      '<input type="text" class="tp-input tp-input--sm" data-notif-input value="' +
+      esc(val) +
+      '">'
     );
   }
 
   function panelNotifications(meta) {
     var list = meta.notifications || [];
-    if (!list.length) {
-      // Fallback minimal channel set if helper returned nothing.
-      list = [
-        { name: "web", title: "Mostrar en feed", active: true },
-        { name: "email", title: "Correo electrónico" },
-        { name: "sms", title: "SMS" },
-        { name: "push", title: "Notificación push" },
-      ];
-    }
+    if (!list.length)
+      return '<div class="tp-text-muted tp-text-sm">No hay canales de notificación disponibles.</div>';
     return list
       .map(function (n) {
-        var checked = n.active ? " checked" : "";
-        var hint = n.description
-          ? '<div class="tp-field__hint">' +
-            tpModal.escapeHtml(n.description) +
-            "</div>"
-          : "";
         return (
-          "" +
-          '<div class="tp-field" style="margin-bottom:10px;">' +
-          '<label class="tp-checkbox"><input type="checkbox" name="notif_' +
-          n.name +
-          '"' +
-          checked +
-          "> <span><strong>" +
-          tpModal.escapeHtml(n.title || n.name) +
-          "</strong></span></label>" +
-          hint +
+          '<div class="tp-notif" data-notif="' +
+          esc(n.name) +
+          '">' +
+          '<label class="tp-checkbox tp-notif__head"><input type="checkbox" data-notif-active' +
+          (n.active ? " checked" : "") +
+          "> <span>" +
+          esc(n.title || n.name) +
+          "</span></label>" +
+          (n.input_type
+            ? '<div class="tp-notif__input">' + notifInput(n) + "</div>"
+            : "") +
+          (n.description
+            ? '<small class="tp-notif__hint">' + n.description + "</small>"
+            : "") +
           "</div>"
         );
       })
       .join("");
   }
 
-  function buildAlertFormHtml(meta) {
-    return '<form id="tp-alert-form" autocomplete="off"><div id="tp-alert-tabs"></div></form>';
+  function wireNotifications(dlg) {
+    dlg.querySelectorAll(".tp-notif").forEach(function (row) {
+      var cb = row.querySelector("[data-notif-active]");
+      var inp = row.querySelector("[data-notif-input]");
+      if (!cb) return;
+      var sync = function () {
+        row.classList.toggle("is-off", !cb.checked);
+        if (inp) inp.disabled = !cb.checked;
+      };
+      cb.addEventListener("change", sync);
+      sync();
+      if (row.getAttribute("data-notif") === "sound" && inp) {
+        inp.addEventListener("change", function () {
+          try {
+            if (this.value)
+              new Audio("/" + this.value.replace(/^\/+/, "")).play();
+          } catch (e) {}
+        });
+      }
+    });
+  }
+
+  /* ---------- command ---------- */
+  function wireCommand(dlg) {
+    var active = dlg.querySelector("#tp-alert-cmd-active");
+    var body = dlg.querySelector("#tp-alert-cmd-body");
+    if (!active || !body) return;
+    var typeSel = dlg.querySelector("#tp-alert-cmd-type");
+    var fieldsWrap = dlg.querySelector("#tp-alert-cmd-fields");
+    var loaded = false;
+
+    function renderCmdFields(type, vals) {
+      var cmds = dlg._alertCmds || [];
+      var c = cmds.filter(function (x) {
+        return x.type === type;
+      })[0];
+      if (!c || !c.fields || !c.fields.length) {
+        fieldsWrap.innerHTML = "";
+        return;
+      }
+      fieldsWrap.innerHTML =
+        '<div class="tp-grid-2">' +
+        c.fields
+          .map(function (f) {
+            return fieldHtml(f, vals ? vals[f.name] : null, f.name, true);
+          })
+          .join("") +
+        "</div>";
+    }
+
+    function loadCmds(preType, preVals) {
+      var ids = picklistValues(dlg, "#tp-alert-devices");
+      typeSel.innerHTML = '<option value="">Cargando…</option>';
+      window.tpModal
+        .fetchJSON(COMMANDS_URL, { method: "POST", json: { devices: ids } })
+        .then(function (res) {
+          var cmds = (res.data && res.data.commands) || [];
+          dlg._alertCmds = cmds;
+          if (!cmds.length) {
+            typeSel.innerHTML =
+              '<option value="">Sin comandos disponibles para los vehículos elegidos</option>';
+            fieldsWrap.innerHTML = "";
+            return;
+          }
+          typeSel.innerHTML = cmds
+            .map(function (c) {
+              return (
+                '<option value="' +
+                esc(c.type) +
+                '"' +
+                (c.type === preType ? " selected" : "") +
+                ">" +
+                esc(c.title) +
+                "</option>"
+              );
+            })
+            .join("");
+          renderCmdFields(preType || cmds[0].type, preVals);
+        })
+        .catch(function () {
+          typeSel.innerHTML =
+            '<option value="">No se pudieron cargar los comandos</option>';
+        });
+    }
+
+    var sync = function () {
+      body.hidden = !active.checked;
+      if (active.checked && !loaded) {
+        loaded = true;
+        loadCmds();
+      }
+    };
+    active.addEventListener("change", sync);
+    typeSel.addEventListener("change", function () {
+      renderCmdFields(typeSel.value);
+    });
+
+    var devWrap = dlg.querySelector("#tp-alert-devices");
+    if (devWrap)
+      devWrap.addEventListener("change", function (e) {
+        if (active.checked && e.target.matches('input[type="checkbox"]')) {
+          loaded = true;
+          loadCmds(typeSel.value);
+        }
+      });
+
+    dlg._alertLoadCmds = loadCmds;
+    sync();
+  }
+
+  /* ---------- panels ---------- */
+  function panelDevices(meta) {
+    return (
+      '<label class="tp-checkbox" style="margin-bottom:10px;"><input type="checkbox" id="tp-alert-all"> <span>Aplicar a <strong>todos mis vehículos</strong></span></label>' +
+      picklistHtml("tp-alert-devices", meta.devices || [], {
+        empty: "No tienes vehículos.",
+      })
+    );
+  }
+
+  function panelType(meta) {
+    var first = meta.types && meta.types[0];
+    return (
+      '<div class="tp-field"><label class="tp-field__label">Disparador *</label>' +
+      '<select class="tp-input" name="type" id="tp-alert-type">' +
+      buildTypeOptions(meta.types, first && first.key) +
+      "</select>" +
+      '<div class="tp-field__hint">Define el evento que dispara la alerta.</div></div>' +
+      '<div id="tp-alert-type-fields">' +
+      renderTypeFields(first) +
+      "</div>"
+    );
+  }
+
+  function panelGeofences(meta) {
+    var gf = meta.geofences || [];
+    var zones =
+      '<label class="tp-checkbox"><input type="checkbox" data-zone="1"> <span>Entrada a la zona</span></label>' +
+      '<label class="tp-checkbox"><input type="checkbox" data-zone="2"> <span>Salida de la zona</span></label>';
+    return (
+      '<div class="tp-field"><label class="tp-field__label">Sentido</label>' +
+      '<div class="tp-row" style="gap:18px;flex-wrap:wrap;">' +
+      zones +
+      "</div>" +
+      '<div class="tp-field__hint">Aplica a las alertas basadas en geocercas (entrada / salida).</div></div>' +
+      '<div class="tp-field"><label class="tp-field__label">Geocercas</label>' +
+      picklistHtml("tp-alert-zones", gf, {
+        empty: "No tienes geocercas creadas.",
+      }) +
+      "</div>"
+    );
+  }
+
+  function panelSchedule(meta) {
+    return (
+      '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-sched-toggle"> <span>Restringir por horario</span></label>' +
+      '<div class="tp-field__hint" style="margin-bottom:10px;">Si se activa, la alerta solo se dispara dentro de las franjas marcadas. Arrastra para pintar; toca la inicial del día para todo el día.</div>' +
+      '<div id="tp-alert-sched" hidden>' +
+      scheduleGridHtml(meta.schedules) +
+      "</div>"
+    );
+  }
+
+  function panelCommand() {
+    return (
+      '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-cmd-active"> <span>Enviar comando al dispararse</span></label>' +
+      '<div class="tp-field__hint" style="margin-bottom:10px;">Se enviará a los vehículos de la alerta cuando se cumpla la condición.</div>' +
+      '<div id="tp-alert-cmd-body" hidden>' +
+      '<div class="tp-field"><label class="tp-field__label">Comando</label>' +
+      '<select class="tp-input" data-no-ts="1" id="tp-alert-cmd-type"><option value="">Selecciona vehículos primero…</option></select></div>' +
+      '<div id="tp-alert-cmd-fields"></div>' +
+      "</div>"
+    );
+  }
+
+  function buildAlertFormHtml() {
+    return (
+      '<form id="tp-alert-form" autocomplete="off">' +
+      '<div class="tp-alert-head">' +
+      '<div class="tp-field tp-alert-head__name"><label class="tp-field__label">Nombre *</label>' +
+      '<input class="tp-input" type="text" name="name" maxlength="80" required placeholder="Ej. Exceso de velocidad — flota norte"></div>' +
+      '<label class="tp-checkbox tp-alert-head__active"><input type="checkbox" name="active" checked> <span>Activa</span></label>' +
+      "</div>" +
+      '<div id="tp-alert-tabs"></div>' +
+      "</form>"
+    );
   }
 
   function mountAlertTabs(modal, meta) {
     var holder = modal.querySelector("#tp-alert-tabs");
-    tpModal.tabs(
-      holder,
-      [
-        { key: "general", label: "General", html: panelGeneral(meta) },
-        { key: "devices", label: "Vehículos", html: panelDevices(meta) },
-        { key: "type", label: "Tipo", html: panelType(meta) },
-        { key: "geofences", label: "Geocercas", html: panelGeofences(meta) },
-        {
-          key: "notifs",
-          label: "Notificaciones",
-          html: panelNotifications(meta),
-        },
-      ],
-      { active: "general" },
-    );
+    var tabs = [
+      { key: "devices", label: "Vehículos", html: panelDevices(meta) },
+      { key: "type", label: "Tipo", html: panelType(meta) },
+      { key: "geofences", label: "Geocercas", html: panelGeofences(meta) },
+      { key: "schedule", label: "Horario", html: panelSchedule(meta) },
+      { key: "notifs", label: "Notificaciones", html: panelNotifications(meta) },
+    ];
+    if (meta.can_command)
+      tabs.push({ key: "command", label: "Comando", html: panelCommand() });
+    window.tpModal.tabs(holder, tabs, { active: "devices" });
   }
 
-  function collectChips(scope, selector) {
-    return Array.from(
-      scope.querySelectorAll(selector + " .tp-chips__chip.is-on"),
-    ).map(function (el) {
-      return parseInt(el.getAttribute("data-val"), 10);
-    });
+  function wireFormBehaviour(dlg, meta) {
+    var sel = dlg.querySelector("#tp-alert-type");
+    if (sel)
+      sel.addEventListener("change", function () {
+        var t = (meta.types || []).filter(function (x) {
+          return x.key === sel.value;
+        })[0];
+        var holder = dlg.querySelector("#tp-alert-type-fields");
+        if (holder) holder.innerHTML = renderTypeFields(t);
+      });
+
+    var allCb = dlg.querySelector("#tp-alert-all"),
+      devWrap = dlg.querySelector("#tp-alert-devices");
+    if (allCb && devWrap) {
+      var s = function () {
+        devWrap.classList.toggle("is-disabled", allCb.checked);
+      };
+      allCb.addEventListener("change", s);
+      s();
+    }
+
+    wirePicklist(dlg, "tp-alert-devices");
+    wirePicklist(dlg, "tp-alert-zones");
+    wireSchedule(dlg);
+    wireNotifications(dlg);
+    if (meta.can_command) wireCommand(dlg);
   }
 
   function readForm(dlg, meta) {
     var form = dlg.querySelector("#tp-alert-form");
-    // Build notifications payload in the shape AlertModalHelper expects:
-    //   notifications: { web: { active: 1 }, email: { active: 0 }, ... }
-    var notifications = {};
-    (meta.notifications || []).forEach(function (n) {
-      var cb = form.querySelector('[name="notif_' + n.name + '"]');
-      notifications[n.name] = { active: cb && cb.checked ? 1 : 0 };
-    });
-    // Always ensure web channel present
-    if (!notifications.web) {
-      var web = form.querySelector('[name="notif_web"]');
-      notifications.web = { active: web ? (web.checked ? 1 : 0) : 1 };
-    }
+    var data = {};
 
-    // Zones direction bitmap (1=in, 2=out) — legacy uses single int field
+    data.name = (form.querySelector('[name="name"]').value || "").trim();
+    var actEl = dlg.querySelector('[name="active"]');
+    data.active = actEl && actEl.checked ? 1 : 0;
+
+    var typeSel = dlg.querySelector("#tp-alert-type");
+    data.type = typeSel ? typeSel.value : "";
+
+    var allCb = dlg.querySelector("#tp-alert-all");
+    data.for_all_user_devices = allCb && allCb.checked ? 1 : 0;
+    data.devices = picklistValues(dlg, "#tp-alert-devices");
+
+    var zoneIds = picklistValues(dlg, "#tp-alert-zones");
+    data.zones = zoneIds;
+    data.geofences = zoneIds;
     var zone = 0;
-    (meta.alert_zones || [{ id: 1 }, { id: 2 }]).forEach(function (z) {
-      var id = z.id != null ? z.id : z.value;
-      var cb = form.querySelector('[name="zone_' + id + '"]');
-      if (cb && cb.checked) zone = zone | parseInt(id, 10);
+    dlg.querySelectorAll("[data-zone]").forEach(function (cb) {
+      if (cb.checked) zone |= parseInt(cb.getAttribute("data-zone"), 10);
+    });
+    data.zone = zone;
+
+    var schedToggle = dlg.querySelector("#tp-alert-sched-toggle");
+    data.schedule = schedToggle && schedToggle.checked ? 1 : 0;
+    data.schedules = data.schedule ? collectSchedules(dlg) : [];
+
+    data.notifications = {};
+    dlg.querySelectorAll(".tp-notif").forEach(function (row) {
+      var key = row.getAttribute("data-notif");
+      var act = row.querySelector("[data-notif-active]");
+      var inp = row.querySelector("[data-notif-input]");
+      var o = { active: act && act.checked ? 1 : 0 };
+      if (inp) o.input = inp.value;
+      data.notifications[key] = o;
     });
 
-    var data = {
-      name: (form.name.value || "").trim(),
-      type: form.type.value,
-      active: form.active.checked ? 1 : 0,
-      for_all_user_devices: form.querySelector("#tp-alert-all").checked ? 1 : 0,
-      devices: collectChips(dlg, '[data-multi="devices"]'),
-      zones: collectChips(dlg, '[data-multi="zones"]'),
-      geofences: collectChips(dlg, '[data-multi="zones"]'), // legacy alias
-      zone: zone,
-      notifications: notifications,
-      schedule: 0,
-      schedules: [],
-    };
-
-    // Per-type fields → top-level keys.
-    var typeObj = (meta.types || []).find(function (t) {
+    var typeObj = (meta.types || []).filter(function (t) {
       return t.key === data.type;
-    });
-    if (typeObj) {
+    })[0];
+    if (typeObj)
       (typeObj.fields || []).forEach(function (f) {
-        var el = form[f.name];
-        if (el && typeof el.value !== "undefined") {
-          var v = el.value;
-          if (v !== "") data[f.name] = f.type === "number" ? parseFloat(v) : v;
-        }
+        var el = form.querySelector('[name="' + f.name + '"]');
+        if (el && el.value !== "")
+          data[f.name] = f.type === "number" ? parseFloat(el.value) : el.value;
       });
+
+    var cmdActive = dlg.querySelector("#tp-alert-cmd-active");
+    if (cmdActive && cmdActive.checked) {
+      var cmdType = dlg.querySelector("#tp-alert-cmd-type");
+      data.command = { active: 1, type: cmdType ? cmdType.value : "" };
+      dlg
+        .querySelectorAll("#tp-alert-cmd-fields [data-cmd-field]")
+        .forEach(function (el) {
+          if (el.value !== "") data[el.getAttribute("data-cmd-field")] = el.value;
+        });
+    } else {
+      data.command = { active: 0 };
     }
+
     return data;
   }
 
-  function wireFormBehaviour(dlg, meta) {
-    // Chips toggle
-    dlg.addEventListener("click", function (e) {
-      var chip = e.target.closest(".tp-chips__chip");
-      if (!chip) return;
-      e.preventDefault();
-      chip.classList.toggle("is-on");
-    });
-    // "Todos" disables device chips
-    var allCb = dlg.querySelector("#tp-alert-all");
-    var devsWrap = dlg.querySelector("#tp-alert-devices");
-    if (allCb && devsWrap) {
-      allCb.addEventListener("change", function () {
-        devsWrap.style.opacity = allCb.checked ? "0.4" : "1";
-        devsWrap.style.pointerEvents = allCb.checked ? "none" : "";
-      });
+  function prefillForm(dlg, meta, item) {
+    if (!item) return;
+    var form = dlg.querySelector("#tp-alert-form");
+
+    var nameEl = form.querySelector('[name="name"]');
+    if (nameEl) nameEl.value = item.name || "";
+    var actEl = dlg.querySelector('[name="active"]');
+    if (actEl) actEl.checked = !!item.active;
+
+    var typeSel = dlg.querySelector("#tp-alert-type");
+    if (typeSel) {
+      typeSel.value = item.type || "";
+      if (window.tpSelect && typeSel._tpdd) tpSelect.refresh(typeSel);
+      typeSel.dispatchEvent(new Event("change", { bubbles: true }));
     }
-    // Type change → re-render fields
-    var sel = dlg.querySelector("#tp-alert-type");
-    if (sel) {
-      sel.addEventListener("change", function () {
-        var t = (meta.types || []).find(function (x) {
-          return x.key === sel.value;
-        });
-        var holder = dlg.querySelector("#tp-alert-type-fields");
-        if (holder) holder.innerHTML = renderTypeFields(t);
-      });
+    var fields = item.fields || {};
+    Object.keys(fields).forEach(function (n) {
+      var el = form.querySelector('[name="' + n + '"]');
+      if (el && fields[n] != null) el.value = fields[n];
+    });
+
+    var allCb = dlg.querySelector("#tp-alert-all");
+    if (allCb) {
+      allCb.checked = !!item.for_all_user_devices;
+      allCb.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    checkPicklist(dlg, "#tp-alert-devices", item.devices || []);
+    checkPicklist(dlg, "#tp-alert-zones", item.geofences || []);
+
+    var zone = parseInt(item.zone || 0, 10);
+    dlg.querySelectorAll("[data-zone]").forEach(function (cb) {
+      cb.checked = !!(zone & parseInt(cb.getAttribute("data-zone"), 10));
+    });
+
+    var st = dlg.querySelector("#tp-alert-sched-toggle");
+    if (st) {
+      st.checked = !!item.schedule;
+      st.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    // notifications & schedule grid already reflect the alert (editData meta).
+
+    var cmd = item.command || {};
+    var cmdActive = dlg.querySelector("#tp-alert-cmd-active");
+    if (cmdActive && cmd && cmd.active) {
+      cmdActive.checked = true;
+      var body = dlg.querySelector("#tp-alert-cmd-body");
+      if (body) body.hidden = false;
+      if (dlg._alertLoadCmds) dlg._alertLoadCmds(cmd.type, cmd);
     }
   }
 
@@ -804,9 +1277,10 @@
     var metaRef = null;
     var itemRef = null;
     var isEdit = !!id;
-    var modal = tpModal.open({
+
+    var modal = window.tpModal.open({
       title: isEdit ? "Editar regla de alerta" : "Nueva regla de alerta",
-      sub: "Configura disparadores, vehículos, geocercas y notificaciones.",
+      sub: "Vehículos, disparador, geocercas, horario, notificaciones y comando.",
       size: "lg",
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
@@ -816,27 +1290,31 @@
           variant: "primary",
           close: false,
           onClick: function (dlg) {
-            if (!metaRef) return;
+            if (!metaRef) return false;
             var data = readForm(dlg, metaRef);
-            var url = isEdit
-              ? TOGGLE_BASE + "/" + encodeURIComponent(id)
-              : STORE_URL;
+            if (!data.name) {
+              window.tpModal.toast("Ponle un nombre a la regla.", "warning");
+              return false;
+            }
+            var url = isEdit ? BASE + "/" + encodeURIComponent(id) : STORE_URL;
             var method = isEdit ? "PUT" : "POST";
-            tpModal.setBusy(dlg, true);
-            tpModal
+            window.tpModal.setBusy(dlg, true);
+            window.tpModal
               .fetchJSON(url, { method: method, json: data })
               .then(function (res) {
-                tpModal.setBusy(dlg, false);
+                window.tpModal.setBusy(dlg, false);
                 if (res.status === 422) {
-                  tpModal.showFieldErrors(
-                    dlg,
-                    (res.data && res.data.errors) || {},
-                  );
-                  tpModal.toast("Revisa los campos marcados.", "warning");
+                  var errs = (res.data && res.data.errors) || {};
+                  window.tpModal.showFieldErrors(dlg, errs);
+                  var first = Object.keys(errs)[0];
+                  var msg = first
+                    ? [].concat(errs[first])[0]
+                    : "Revisa los campos marcados.";
+                  window.tpModal.toast(msg, "warning");
                   return;
                 }
                 if (!res.ok || !res.data || !res.data.ok) {
-                  tpModal.toast(
+                  window.tpModal.toast(
                     (res.data && res.data.message) ||
                       (isEdit
                         ? "No se pudo guardar."
@@ -845,16 +1323,16 @@
                   );
                   return;
                 }
-                tpModal.toast(
+                window.tpModal.toast(
                   isEdit ? "Cambios guardados." : "Alerta creada.",
                   "success",
                 );
-                tpModal.close(dlg);
+                window.tpModal.close(dlg);
                 load();
               })
               .catch(function () {
-                tpModal.setBusy(dlg, false);
-                tpModal.toast("Error de red.", "error");
+                window.tpModal.setBusy(dlg, false);
+                window.tpModal.toast("Error de red.", "error");
               });
             return false;
           },
@@ -863,17 +1341,14 @@
     });
 
     var loader = isEdit
-      ? tpModal
-          .fetchJSON(TOGGLE_BASE + "/" + encodeURIComponent(id) + "/edit", {
+      ? window.tpModal
+          .fetchJSON(BASE + "/" + encodeURIComponent(id) + "/edit", {
             method: "GET",
           })
           .then(function (res) {
-            if (!res.ok || !res.data || !res.data.ok) {
+            if (!res.ok || !res.data || !res.data.ok)
               throw new Error("edit_meta_failed");
-            }
             itemRef = res.data.item;
-            // Edit endpoint returns the same shape as meta + item.
-            META_CACHE = null; // refresh so create after edit pulls fresh defaults
             return res.data;
           })
       : loadMeta();
@@ -882,7 +1357,7 @@
       .then(function (meta) {
         metaRef = meta;
         var body = modal.querySelector("[data-tp-body]");
-        body.innerHTML = buildAlertFormHtml(meta);
+        body.innerHTML = buildAlertFormHtml();
         mountAlertTabs(modal, meta);
         wireFormBehaviour(modal, meta);
         if (itemRef) prefillForm(modal, meta, itemRef);
@@ -890,92 +1365,24 @@
       .catch(function () {
         var body = modal.querySelector("[data-tp-body]");
         body.innerHTML =
-          '<div class="tp-text-center" style="padding:24px; color:var(--status-alert,#ef4444);">No se pudo cargar el catálogo.</div>';
+          '<div class="tp-text-center" style="padding:24px; color:var(--status-alert,#ef4444);">No se pudo cargar el catálogo de la alerta.</div>';
       });
-  }
-
-  /**
-   * Pre-fill the form for edit. `item` shape from /alerts/{id}/edit:
-   *   { id, name, type, active, for_all_user_devices,
-   *     zone, devices:[ids], geofences:[ids],
-   *     notifications:{name:{active}}, fields:{name:value} }
-   */
-  function prefillForm(dlg, meta, item) {
-    var form = dlg.querySelector("#tp-alert-form");
-    if (!form) return;
-
-    if (form.name) form.name.value = item.name || "";
-    if (form.type) {
-      form.type.value = item.type || "";
-      // Trigger change so type-specific fields render.
-      var ev = new Event("change", { bubbles: true });
-      form.type.dispatchEvent(ev);
-    }
-    if (form.active) form.active.checked = !!item.active;
-
-    var allCb = dlg.querySelector("#tp-alert-all");
-    if (allCb) {
-      allCb.checked = !!item.for_all_user_devices;
-      allCb.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-
-    var devSet = {};
-    (item.devices || []).forEach(function (id) {
-      devSet[String(id)] = 1;
-    });
-    var zoneSet = {};
-    (item.geofences || []).forEach(function (id) {
-      zoneSet[String(id)] = 1;
-    });
-    Array.from(
-      dlg.querySelectorAll('[data-multi="devices"] .tp-chips__chip'),
-    ).forEach(function (chip) {
-      if (devSet[chip.getAttribute("data-val")]) chip.classList.add("is-on");
-    });
-    Array.from(
-      dlg.querySelectorAll('[data-multi="zones"] .tp-chips__chip'),
-    ).forEach(function (chip) {
-      if (zoneSet[chip.getAttribute("data-val")]) chip.classList.add("is-on");
-    });
-
-    // Zone direction bitmap
-    var zone = parseInt(item.zone || 0, 10);
-    Array.from(dlg.querySelectorAll('[name^="zone_"]')).forEach(function (cb) {
-      var id = parseInt(cb.value, 10);
-      if (zone & id) cb.checked = true;
-    });
-
-    // Notifications
-    var notifs = item.notifications || {};
-    Object.keys(notifs).forEach(function (key) {
-      var cb = form.querySelector('[name="notif_' + key + '"]');
-      var n = notifs[key];
-      var active = n && typeof n === "object" ? n.active : n;
-      if (cb) cb.checked = !!active;
-    });
-
-    // Type-specific fields (re-applied after the change event populated them)
-    var fields = item.fields || {};
-    Object.keys(fields).forEach(function (name) {
-      var el = form.querySelector('[name="' + name + '"]');
-      if (el != null && fields[name] != null) el.value = fields[name];
-    });
   }
 
   function toggleRule(id, btn) {
     if (!CAN_EDIT) return;
     btn.disabled = true;
-    tpModal
-      .fetchJSON(TOGGLE_BASE + "/" + encodeURIComponent(id) + "/toggle", {
+    window.tpModal
+      .fetchJSON(BASE + "/" + encodeURIComponent(id) + "/toggle", {
         method: "POST",
       })
       .then(function (res) {
         btn.disabled = false;
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast("No se pudo cambiar el estado.", "error");
+          window.tpModal.toast("No se pudo cambiar el estado.", "error");
           return;
         }
-        tpModal.toast(
+        window.tpModal.toast(
           res.data.active ? "Regla activada." : "Regla pausada.",
           "success",
         );
@@ -983,13 +1390,13 @@
       })
       .catch(function () {
         btn.disabled = false;
-        tpModal.toast("Error de red.", "error");
+        window.tpModal.toast("Error de red.", "error");
       });
   }
 
   function deleteRule(id) {
     if (!CAN_EDIT) return;
-    tpModal
+    window.tpModal
       .confirm({
         title: "Eliminar regla",
         message: "Esta acción no se puede deshacer. ¿Eliminar la regla?",
@@ -998,20 +1405,18 @@
       })
       .then(function (ok) {
         if (!ok) return;
-        tpModal
-          .fetchJSON(TOGGLE_BASE + "/" + encodeURIComponent(id), {
-            method: "DELETE",
-          })
+        window.tpModal
+          .fetchJSON(BASE + "/" + encodeURIComponent(id), { method: "DELETE" })
           .then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              tpModal.toast("No se pudo eliminar.", "error");
+              window.tpModal.toast("No se pudo eliminar.", "error");
               return;
             }
-            tpModal.toast("Regla eliminada.", "success");
+            window.tpModal.toast("Regla eliminada.", "success");
             load();
           })
           .catch(function () {
-            tpModal.toast("Error de red.", "error");
+            window.tpModal.toast("Error de red.", "error");
           });
       });
   }
