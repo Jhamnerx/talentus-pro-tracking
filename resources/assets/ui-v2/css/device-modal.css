@@ -56,6 +56,9 @@
 /* Inputs sin clase .tp-input (partials del device): misma receta que
    components.css → un solo look en toda la v2. */
 .tp-form input[type="text"],
+.tp-form input[type="password"],
+.tp-form input[type="email"],
+.tp-form input[type="tel"],
 .tp-form input[type="search"],
 .tp-form input[type="date"],
 .tp-form input[type="time"],

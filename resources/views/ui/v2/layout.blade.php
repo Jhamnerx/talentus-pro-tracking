@@ -42,7 +42,7 @@
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=2" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=11" />
     {{-- Tailwind (utilidades) — al final para ganar sobre la capa .tp-* --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tailwind.css') }}?v=11" />
 
@@ -100,9 +100,9 @@
          Auto-enhancea todo select.tp-input / select.tp-select, incl. AJAX. --}}
     <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=8" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=3" defer></script>
     {{-- Ajustes de cuenta (modal con tabs; se abre desde el topbar) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=4" defer></script>
     {{-- Enviar comando (modal compartido; se abre desde rail y kebab de Live) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-commands.js') }}?v=8" defer></script>
     {{-- Hitos kilométricos (capa Leaflet compartida por páginas con mapa) --}}

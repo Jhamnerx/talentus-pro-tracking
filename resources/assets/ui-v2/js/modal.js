@@ -127,6 +127,8 @@
       var btn = dlg.querySelector('[data-tp-btn="' + idx + '"]');
       if (!btn) return;
       btn.addEventListener("click", function () {
+        // Recordar el botón que disparó la acción → setBusy gira SOLO este.
+        dlg._tpActiveBtn = btn;
         if (typeof b.onClick === "function") {
           var ret = b.onClick(dlg, btn);
           if (ret === false) return;
@@ -248,8 +250,14 @@
   /* ---------- Form helpers ---------- */
   function setBusy(dlg, busy) {
     var btns = dlg.querySelectorAll("[data-tp-btn]");
+    // El spinner va SOLO en el botón que disparó la acción (el que se clickeó);
+    // los demás (Cancelar/Eliminar) solo se deshabilitan. Fallback: primary/accent.
+    var active =
+      dlg._tpActiveBtn ||
+      dlg.querySelector("[data-tp-btn].tp-btn--primary, [data-tp-btn].tp-btn--accent");
     btns.forEach(function (b) {
       b.disabled = !!busy;
+      if (b !== active) return;
       if (busy) b.dataset._txt = b.dataset._txt || b.innerHTML;
       b.innerHTML = busy
         ? '<span class="tp-modal__busy"></span>' +

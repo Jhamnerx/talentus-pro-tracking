@@ -87,13 +87,32 @@
   }
 
   function wireExpiration(scope) {
-    // Paridad legacy: el checkbox enable_expiration_date habilita el input.
+    // Paridad legacy: expiración = FECHA + HORA. El checkbox habilita date+HH+MM
+    // y se combinan en el hidden name="expiration_date" (YYYY-MM-DD HH:MM).
     var toggle = scope.querySelector("[data-tp-expiration-toggle]");
-    var dateInput = scope.querySelector("[data-tp-expiration-date]");
-    if (!toggle || !dateInput) return;
-    toggle.addEventListener("change", function () {
-      dateInput.disabled = !toggle.checked;
-    });
+    var dateInput = scope.querySelector("[data-tp-exp-date]");
+    var hSel = scope.querySelector("[data-tp-exp-h]");
+    var mSel = scope.querySelector("[data-tp-exp-m]");
+    var hidden = scope.querySelector("[data-tp-exp-value]");
+    if (!toggle || !dateInput || !hidden) return;
+
+    function setEnabled(on) {
+      dateInput.disabled = !on;
+      if (hSel) hSel.disabled = !on;
+      if (mSel) mSel.disabled = !on;
+    }
+    function combine() {
+      var dv = (dateInput.value || "").trim();
+      hidden.value =
+        toggle.checked && dv ? dv + " " + (hSel ? hSel.value : "00") + ":" + (mSel ? mSel.value : "00") : "";
+    }
+
+    toggle.addEventListener("change", function () { setEnabled(toggle.checked); combine(); });
+    dateInput.addEventListener("change", combine);
+    if (hSel) hSel.addEventListener("change", combine);
+    if (mSel) mSel.addEventListener("change", combine);
+    setEnabled(toggle.checked);
+    combine();
   }
 
   // Habilitadores genéricos: [data-enable="<idCheckbox>"] → el input se
@@ -104,12 +123,35 @@
         var chk = scope.querySelector("#" + el.getAttribute("data-enable"));
         if (!chk) return;
         el.disabled = !(chk.checked && !chk.disabled);
+        // tp-select no re-sincroniza su botón al togglear el disabled del
+        // <select> nativo → re-enhancear para que el dropdown se habilite/
+        // deshabilite de verdad (bug: "Detectar cambio de combustible…"
+        // quedaba bloqueado al marcar el checkbox).
+        if (el.tagName === "SELECT" && el._tpdd && window.tpSelect && tpSelect.refresh) {
+          try { tpSelect.refresh(el); } catch (e) {}
+        }
       });
     }
     scope.addEventListener("change", function (e) {
       if (e.target.type === "checkbox") refresh();
     });
     refresh();
+  }
+
+  // "Detección de motor ON/OFF por" (detect_engine) solo aplica cuando
+  // "Detección de ignición" = sensor engine_hours; se muestra/oculta según el
+  // valor de engine_hours (paridad legacy .ignition_detection_engine en app.js).
+  function wireIgnitionEngine(scope) {
+    var box = scope.querySelector("[data-ignition-engine]");
+    var sel = scope.querySelector('select[name="engine_hours"]');
+    if (!box || !sel) return;
+    function apply() {
+      box.style.display = sel.value === "engine_hours" ? "" : "none";
+    }
+    scope.addEventListener("change", function (e) {
+      if (e.target && e.target.name === "engine_hours") apply();
+    });
+    apply();
   }
 
   // Labels dinámicos de combustible (paridad legacy: fuel_title /
@@ -1642,6 +1684,7 @@
         wireIconsTab(bodyEl);
         wireExpiration(bodyEl);
         wireEnablers(bodyEl);
+        wireIgnitionEngine(bodyEl);
         wireFuelLabels(bodyEl);
         wireRouteColors(bodyEl);
         wireUsersTab(bodyEl);

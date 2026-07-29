@@ -787,6 +787,7 @@ return [
         'speed_limit' => 'Limite de velocidad',
         'min_moving_speed' => 'Velocidad mínima de movimiento en km/h',
         'detect_speed' => 'Detección de velocidad por',
+        'detect_engine' => 'Detección de motor ON/OFF por',
         'stops' => 'Paradas',
         'daily' => 'Diario',
         'weekly' => 'Semanal',

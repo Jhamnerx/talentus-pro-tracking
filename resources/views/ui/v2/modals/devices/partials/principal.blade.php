@@ -8,33 +8,50 @@
     $isActive = $item->active ?? true;
     $expirationDate = $item->expiration_date ?? null;
     $hasExpire = !empty($expirationDate) && substr((string) $expirationDate, 0, 4) !== '0000';
-    $expValue = $hasExpire ? \Illuminate\Support\Str::of((string) $expirationDate)->substr(0, 10) : '';
+    // Fecha + hora de expiración (paridad legacy: datetime, no solo fecha).
+    $expDate = $hasExpire ? substr((string) $expirationDate, 0, 10) : '';
+    $expTime = [];
+    if ($hasExpire) {
+        preg_match('/\b(\d{2}):(\d{2})/', (string) $expirationDate, $expTime);
+    }
+    $expH = $expTime[1] ?? '00';
+    $expM = $expTime[2] ?? '00';
+    $expCombined = $hasExpire ? ($expDate . ' ' . $expH . ':' . $expM) : '';
     $isAdminCap = !empty($caps['is_admin']);
 @endphp
 
 {{-- Una sola columna: campos apilados a todo el ancho (como la referencia) --}}
 <div class="tp-form__grid">
-    <label class="tp-form__field tp-form__field--checkbox">
-        <input type="hidden" name="active" value="0">
-        <input type="checkbox" name="active" value="1" {{ $isActive ? 'checked' : '' }}>
-        <span class="tp-form__label">{{ trans('validation.attributes.active') }}</span>
-    </label>
+    {{-- Gates de permiso por propiedad (paridad legacy main.blade): active y
+         imei solo visibles con can('view', ...); bloqueados si no can('edit'). --}}
+    @if (Auth::user()->can('view', $item, 'active'))
+        <label class="tp-form__field tp-form__field--checkbox">
+            <input type="hidden" name="active" value="0">
+            <input type="checkbox" name="active" value="1" {{ $isActive ? 'checked' : '' }}
+                {{ Auth::user()->can('edit', $item, 'active') ? '' : 'disabled' }}>
+            <span class="tp-form__label">{{ trans('validation.attributes.active') }}</span>
+        </label>
+    @endif
 
     <label class="tp-form__field tp-form__field--required">
         <span class="tp-form__label">{{ trans('validation.attributes.name') }}</span>
         <input type="text" name="name" required maxlength="80" value="{{ $item->name ?? '' }}" data-tp-field>
     </label>
 
-    <label class="tp-form__field tp-form__field--required">
-        <span class="tp-form__label">{{ trans('front.device_imei') }} / {{ trans('front.tracker_id') }}</span>
-        <input type="text" name="imei" required maxlength="32" placeholder="{{ trans('front.imei_placeholder') }}"
-            value="{{ $item->imei ?? '' }}" data-tp-field>
-    </label>
+    @if (Auth::user()->can('view', $item, 'imei'))
+        <label class="tp-form__field tp-form__field--required">
+            <span class="tp-form__label">{{ trans('front.device_imei') }} / {{ trans('front.tracker_id') }}</span>
+            <input type="text" name="imei" required maxlength="32" placeholder="{{ trans('front.imei_placeholder') }}"
+                value="{{ $item->imei ?? '' }}" data-tp-field
+                {{ Auth::user()->can('edit', $item, 'imei') ? '' : 'disabled' }}>
+        </label>
+    @endif
 
-    @if (!empty($models))
+    @if (Auth::user()->can('view', $item, 'model_id') && !empty($models))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.model_id') }}</span>
-            <select class="tp-input" style="width: 100%" name="model_id" data-tp-field>
+            <select class="tp-input" style="width: 100%" name="model_id" data-tp-field
+                {{ Auth::user()->can('edit', $item, 'model_id') ? '' : 'disabled' }}>
                 @foreach ($models as $mid => $mtitle)
                     <option value="{{ $mid }}" {{ (string) ($item->model_id ?? '') === (string) $mid ? 'selected' : '' }}>
                         {{ $mtitle }}</option>
@@ -50,8 +67,23 @@
                 <input type="hidden" name="enable_expiration_date" value="0">
                 <input type="checkbox" name="enable_expiration_date" value="1" data-tp-expiration-toggle
                     {{ $hasExpire ? 'checked' : '' }}>
-                <input type="date" name="expiration_date" value="{{ $expValue }}" data-tp-expiration-date
-                    {{ $hasExpire ? '' : 'disabled' }} style="flex: 1;" data-tp-field>
+                {{-- Valor combinado (YYYY-MM-DD HH:MM) que se envía; lo arma device-modal.js. --}}
+                <input type="hidden" name="expiration_date" value="{{ $expCombined }}" data-tp-exp-value data-tp-field>
+                <input type="date" data-tp-exp-date value="{{ $expDate }}" {{ $hasExpire ? '' : 'disabled' }}
+                    style="flex: 1; min-width: 0;">
+                <select data-tp-exp-h data-no-ts="1" {{ $hasExpire ? '' : 'disabled' }} style="width: 70px; flex: 0 0 auto;">
+                    @for ($h = 0; $h < 24; $h++)
+                        @php $hh = str_pad((string) $h, 2, '0', STR_PAD_LEFT); @endphp
+                        <option value="{{ $hh }}" {{ $expH === $hh ? 'selected' : '' }}>{{ $hh }}</option>
+                    @endfor
+                </select>
+                <span style="font-weight: 600;">:</span>
+                <select data-tp-exp-m data-no-ts="1" {{ $hasExpire ? '' : 'disabled' }} style="width: 70px; flex: 0 0 auto;">
+                    @for ($m = 0; $m < 60; $m++)
+                        @php $mm = str_pad((string) $m, 2, '0', STR_PAD_LEFT); @endphp
+                        <option value="{{ $mm }}" {{ $expM === $mm ? 'selected' : '' }}>{{ $mm }}</option>
+                    @endfor
+                </select>
             </div>
         </div>
     @endif

@@ -15,6 +15,10 @@
     $lbs = (bool) ($item->lbs ?? false);
     $hasMaxSpeed = (bool) ($item->max_speed ?? false);
     $hasFuelStop = (bool) ($item->fuel_detect_sec_after_stop ?? false);
+    // Paridad legacy: los 3 selects de detección (engine_hours/detect_engine/
+    // detect_speed) solo se muestran al EDITAR (accuracy.blade → detectionFields
+    // que edit.blade pasa como true; en crear el device aún no tiene sensores).
+    $isEdit = !empty($item->id);
 @endphp
 
 <div class="tp-form__grid tp-form__grid--2">
@@ -24,46 +28,57 @@
         <span class="tp-form__label">{{ trans('front.valid_by_avg_speed') }}</span>
     </label>
 
-    <label class="tp-form__field">
-        <span class="tp-form__label">{{ trans('validation.attributes.ignition_detection') }}</span>
-        <select class="tp-input" style="width: 100%" name="engine_hours" data-tp-field>
-            @foreach ($eh as $k => $v)
-                <option value="{{ $k }}" {{ ($item->engine_hours ?? 'off') == $k ? 'selected' : '' }}>
-                    {{ $v }}</option>
-            @endforeach
-        </select>
-    </label>
+    @if ($isEdit)
+        <label class="tp-form__field">
+            <span class="tp-form__label">{{ trans('validation.attributes.ignition_detection') }}</span>
+            <select class="tp-input" style="width: 100%" name="engine_hours" data-tp-field>
+                @foreach ($eh as $k => $v)
+                    <option value="{{ $k }}" {{ ($item->engine_hours ?? 'off') == $k ? 'selected' : '' }}>
+                        {{ $v }}</option>
+                @endforeach
+            </select>
+        </label>
 
-    <label class="tp-form__field">
-        <span class="tp-form__label">{{ trans('validation.attributes.detect_engine') }}</span>
-        <select class="tp-input" style="width: 100%" name="detect_engine" data-tp-field>
-            @foreach ($de as $k => $v)
-                <option value="{{ $k }}" {{ ($item->detect_engine ?? 'off') == $k ? 'selected' : '' }}>
-                    {{ $v }}</option>
-            @endforeach
-        </select>
-    </label>
+        {{-- detect_engine solo aplica si "ignición" = sensor engine_hours;
+             device-modal.js (wireIgnitionEngine) lo muestra/oculta según
+             engine_hours — paridad legacy .ignition_detection_engine. --}}
+        <label class="tp-form__field" data-ignition-engine>
+            <span class="tp-form__label">{{ trans('validation.attributes.detect_engine') }}</span>
+            <select class="tp-input" style="width: 100%" name="detect_engine" data-tp-field>
+                @foreach ($de as $k => $v)
+                    <option value="{{ $k }}" {{ ($item->detect_engine ?? 'off') == $k ? 'selected' : '' }}>
+                        {{ $v }}</option>
+                @endforeach
+            </select>
+        </label>
 
-    <label class="tp-form__field">
-        <span class="tp-form__label">{{ trans('validation.attributes.detect_speed') }}</span>
-        <select class="tp-input" style="width: 100%" name="detect_speed" data-tp-field>
-            @foreach ($ds as $k => $v)
-                <option value="{{ $k }}" {{ ($item->detect_speed ?? 'off') == $k ? 'selected' : '' }}>
-                    {{ $v }}</option>
-            @endforeach
-        </select>
-    </label>
+        <label class="tp-form__field">
+            <span class="tp-form__label">{{ trans('validation.attributes.detect_speed') }}</span>
+            <select class="tp-input" style="width: 100%" name="detect_speed" data-tp-field>
+                @foreach ($ds as $k => $v)
+                    <option value="{{ $k }}" {{ ($item->detect_speed ?? 'off') == $k ? 'selected' : '' }}>
+                        {{ $v }}</option>
+                @endforeach
+            </select>
+        </label>
+    @endif
 
-    <div class="tp-form__field">
-        <span class="tp-form__label">{{ trans('validation.attributes.max_speed') }}</span>
-        <div style="display: flex; gap: 9px; align-items: center;">
-            <input type="hidden" name="max_speed" value="">
-            <input type="checkbox" name="enable_max_speed" value="1" id="tp-dev-maxspeed"
-                {{ $hasMaxSpeed ? 'checked' : '' }}>
-            <input type="number" min="0" step="1" name="max_speed" value="{{ $item->max_speed ?? '' }}"
-                data-enable="tp-dev-maxspeed" {{ $hasMaxSpeed ? '' : 'disabled' }} style="flex: 1;" data-tp-field>
+    {{-- Gate de permiso (paridad legacy accuracy.blade): visible solo con
+         can('view', ..., 'max_speed'); bloqueado si no puede editar. --}}
+    @if (Auth::user()->can('view', $item, 'max_speed'))
+        @php $canEditMax = Auth::user()->can('edit', $item, 'max_speed'); @endphp
+        <div class="tp-form__field">
+            <span class="tp-form__label">{{ trans('validation.attributes.max_speed') }}</span>
+            <div style="display: flex; gap: 9px; align-items: center;">
+                <input type="hidden" name="max_speed" value="">
+                <input type="checkbox" name="enable_max_speed" value="1" id="tp-dev-maxspeed"
+                    {{ $hasMaxSpeed ? 'checked' : '' }} {{ $canEditMax ? '' : 'disabled' }}>
+                <input type="number" min="0" step="1" name="max_speed" value="{{ $item->max_speed ?? '' }}"
+                    data-enable="tp-dev-maxspeed" {{ $hasMaxSpeed && $canEditMax ? '' : 'disabled' }} style="flex: 1;"
+                    data-tp-field>
+            </div>
         </div>
-    </div>
+    @endif
 
     <label class="tp-form__field">
         <span class="tp-form__label">{{ trans('validation.attributes.min_moving_speed') }}
@@ -103,12 +118,20 @@
         </div>
     </div>
 
-    <div class="tp-col-2">
-        <label class="tp-form__field tp-form__field--checkbox">
-            <input type="hidden" name="lbs" value="0">
-            <input type="checkbox" name="lbs" value="1" {{ $lbs ? 'checked' : '' }}>
-            <span class="tp-form__label">{{ trans('validation.attributes.lbs') }}</span>
-        </label>
-        <small class="tp-form__hint">{!! trans('front.lbs_explanation') !!}</small>
-    </div>
+    {{-- Gate de permiso (paridad legacy): LBS visible solo con can('view', ...,
+         'lbs') → config('addon.lbs'); si no puede editar, checkbox deshabilitado. --}}
+    @if (Auth::user()->can('view', $item, 'lbs'))
+        <div class="tp-col-2">
+            <label class="tp-form__field tp-form__field--checkbox">
+                @if (Auth::user()->can('edit', $item, 'lbs'))
+                    <input type="hidden" name="lbs" value="0">
+                    <input type="checkbox" name="lbs" value="1" {{ $lbs ? 'checked' : '' }}>
+                @else
+                    <input type="checkbox" name="lbs" value="1" {{ $lbs ? 'checked' : '' }} disabled>
+                @endif
+                <span class="tp-form__label">{{ trans('validation.attributes.lbs') }}</span>
+            </label>
+            <small class="tp-form__hint">{!! trans('front.lbs_explanation') !!}</small>
+        </div>
+    @endif
 </div>
