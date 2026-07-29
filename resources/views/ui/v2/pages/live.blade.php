@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=53">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=55">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -674,6 +674,27 @@
             </header>
 
             <div class="tp-live__drawer-body">
+                {{-- Estado de vehículo (tipo con estados): badge + cambiador rápido.
+                     Oculto si el device no tiene un tipo con estados (lo decide
+                     live.js tras consultar /vehicle-states). Va ARRIBA, fuera del
+                     widget Objeto. --}}
+                <div class="tp-drawer-vstate" id="tp-drawer-vstate" hidden>
+                    <div class="tp-drawer-vstate__info">
+                        <span class="tp-drawer-vstate__caption">Estado del vehículo</span>
+                        <div class="tp-drawer-vstate__badge" id="tp-drawer-vstate-badge"></div>
+                    </div>
+                    <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm tp-drawer-vstate__btn"
+                        id="tp-drawer-vstate-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                            <path d="M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                            <path d="M3 21v-5h5" />
+                        </svg>
+                        Cambiar
+                    </button>
+                </div>
+
                 {{-- Status chip --}}
                 <div class="tp-mb-4" id="tp-drawer-status-row"></div>
 
@@ -750,12 +771,12 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=12"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=15"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=39"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=40"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=7"></script>

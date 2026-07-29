@@ -38,7 +38,12 @@ class VehicleTypesController extends BaseController
                 'id'     => (int) $t->id,
                 'name'   => (string) $t->name,
                 'states' => $t->states->map(function ($s) {
-                    return ['id' => (int) $s->id, 'name' => (string) $s->name];
+                    return [
+                        'id'    => (int) $s->id,
+                        'name'  => (string) $s->name,
+                        'label' => $s->label,
+                        'color' => $s->color,
+                    ];
                 })->all(),
             ];
         }
@@ -103,25 +108,49 @@ class VehicleTypesController extends BaseController
         return response()->json(['ok' => true]);
     }
 
-    /** edit_state[id]=name actualiza/mantiene; add_state[]=name crea; resto se borra. */
+    /**
+     * edit_state[id] actualiza/mantiene; add_state[] crea; el resto se borra.
+     * Cada estado ahora es un objeto {name, label, color} (retro-compatible con
+     * el string plano = solo name).
+     */
     private function syncStates(VehicleType $type, array $data): void
     {
         $kept = [];
-        foreach ((array) ($data['edit_state'] ?? []) as $stateId => $name) {
-            if (trim((string) $name) === '') {
+        foreach ((array) ($data['edit_state'] ?? []) as $stateId => $st) {
+            $fields = $this->stateFields($st);
+            if ($fields === null) {
                 continue;
             }
-            VehicleState::where('id', $stateId)->where('vehicle_type_id', $type->id)->update(['name' => $name]);
+            VehicleState::where('id', $stateId)->where('vehicle_type_id', $type->id)->update($fields);
             $kept[] = $stateId;
         }
 
         $type->states()->whereNotIn('id', $kept ?: [0])->delete();
 
-        foreach ((array) ($data['add_state'] ?? []) as $name) {
-            if (trim((string) $name) === '') {
+        foreach ((array) ($data['add_state'] ?? []) as $st) {
+            $fields = $this->stateFields($st);
+            if ($fields === null) {
                 continue;
             }
-            $type->states()->create(['name' => $name]);
+            $type->states()->create($fields);
         }
+    }
+
+    /** Normaliza un estado del payload → [name, label, color] o null si vacío. */
+    private function stateFields($st): ?array
+    {
+        $name = is_array($st) ? trim((string) ($st['name'] ?? '')) : trim((string) $st);
+        if ($name === '') {
+            return null;
+        }
+
+        $label = is_array($st) ? trim((string) ($st['label'] ?? '')) : '';
+        $color = is_array($st) ? trim((string) ($st['color'] ?? '')) : '';
+
+        return [
+            'name'  => mb_substr($name, 0, 255),
+            'label' => $label === '' ? null : mb_substr($label, 0, 24),
+            'color' => preg_match('/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/', $color) ? $color : null,
+        ];
     }
 }

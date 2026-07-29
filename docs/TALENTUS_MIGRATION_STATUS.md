@@ -7,6 +7,17 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 29 jul 2026 — Estados de vehículo con label + color + cambiador (rama `nuevo-tema`)
+
+- **Schema**: migración `2026_07_29_000001` agrega `label` (24) + `color` (9) a `vehicle_states`. `VehicleState::$fillable` += label, color.
+- **Tipos de vehículo** (Ajustes de cuenta → tp-account.js): cada estado ahora tiene **nombre + label corto (badge) + color** (input `type=color`). La tabla muestra chips de colores. `Ui\V2\VehicleTypesController::syncStates` procesa `edit_state[id]`/`add_state[]` como objetos `{name,label,color}` (retro-compatible con string plano); `data()` devuelve label/color.
+- **Payload**: `DeviceMapTransformer` expone `vehicle_state` = `{name, label, color}` (fallback label→name, color→gris). requireLoads += `vehicleState`.
+- **Badge del estado** en 3 lugares (live.js `vehicleStateBadge`): **fila del rail** (junto al nombre, como candado/motor), **etiqueta del marcador** en el mapa, y **arriba del drawer** (fuera del widget Objeto).
+- **Cambiador rápido**: botón "Cambiar estado" en el drawer → modal con los estados del tipo → `POST /ui/v2/api/devices/{id}/vehicle-state` (valida que el estado pertenezca al tipo). Al cambiar, se re-pintan badge/fila/marcador al instante. Endpoint auxiliar `GET .../vehicle-states` (estados del tipo + actual). Gate: `perm('devices','edit')`.
+- Asignar tipo/estado en **Información** del device ya existía. Assets: live.js ?v=40, live-ops.css ?v=54, tp-account.js ?v=4.
+
+---
+
 ## 🔄 Actualización · 27 jul 2026 (5) — Página de Eventos ampliada (rama `nuevo-tema`)
 
 - **Eventos al rail** (encima de Alertas, icono de pulso, gate `perm('events','view')`). Icono `events` nuevo en `icons.blade`.

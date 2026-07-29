@@ -941,6 +941,91 @@ table.tp-lock-hist th {
 .tp-eng-ico--off {
   color: var(--fg-tertiary, #94a3b8);
 }
+
+/* ── Estado de vehículo (VACÍO/CARGADO…): badge + cambiador ─────── */
+.tp-vs-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #fff;
+  white-space: nowrap;
+  vertical-align: middle;
+  flex: 0 0 auto;
+}
+/* Drawer: fila (badge + botón) arriba, fuera del widget Objeto */
+.tp-drawer-vstate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 12px;
+  background: var(--surface-sunken, #f4f5f8);
+}
+/* El atributo hidden debe ganar al display:flex (bloque oculto si no hay tipo). */
+.tp-drawer-vstate[hidden] {
+  display: none;
+}
+.tp-drawer-vstate__info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.tp-drawer-vstate__caption {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-tertiary, #94a3b8);
+}
+.tp-drawer-vstate__badge {
+  min-width: 0;
+}
+.tp-drawer-vstate__btn {
+  flex: 0 0 auto;
+}
+/* Modal cambiador: chips de estado */
+.tp-vs-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tp-vs-choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-raised, #fff);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  color: var(--fg-primary, #0f172a);
+}
+.tp-vs-choice:hover {
+  border-color: var(--brand-500, #2563eb);
+}
+.tp-vs-choice.is-active {
+  border-color: var(--brand-500, #2563eb);
+  background: var(--brand-bg-subtle, #eef3fb);
+}
+.tp-vs-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  flex: 0 0 auto;
+}
 .tp-live__row-meta {
   font-size: 11px;
   color: var(--fg-tertiary);

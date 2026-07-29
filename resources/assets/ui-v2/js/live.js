@@ -270,6 +270,7 @@
     var html =
       '<span class="tp-lmarker__name tp-lmarker__name--' + grp + '">' +
       esc(d.name || "") +
+      vehicleStateBadge(d.vehicle_state, "vertical-align:middle;margin-left:4px;") +
       '<span class="tp-lmarker__speed">' + esc(spd) + "</span>" +
       "</span>" +
       '<img src="' +
@@ -688,6 +689,7 @@
     if (drawer) drawer.setAttribute("aria-hidden", "false");
     if (d) fillDrawer(d);
     loadDrawerWidgets(id);
+    loadVehicleState(id);
     var histBtn = document.getElementById("tp-drawer-history");
     if (histBtn) {
       histBtn.disabled = false;
@@ -737,6 +739,80 @@
     var h = document.getElementById("tp-bottombar-expand");
     if (!h) return;
     h.hidden = !(root.hasAttribute("data-bottombar-open") && root.hasAttribute("data-bottombar-collapsed"));
+  }
+
+  /* ── Estado de vehículo (drawer): badge + cambiador rápido ──────────── */
+  var vstateData = { deviceId: null, states: [], current: null };
+  function vsBase(id) {
+    return (CFG.devicesUrl || "/ui/v2/api/devices").replace(/\/devices(\?.*)?$/, "/devices") + "/" + id;
+  }
+  function loadVehicleState(id) {
+    var box = document.getElementById("tp-drawer-vstate");
+    if (!box) return;
+    box.hidden = true;
+    fetch(vsBase(id) + "/vehicle-states", { credentials: "same-origin", headers: { Accept: "application/json" } })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (state.selectedId != id || !res || !res.ok || !res.states || !res.states.length) return;
+        vstateData = { deviceId: id, states: res.states, current: res.current };
+        renderVStateBadge();
+        box.hidden = false;
+      })
+      .catch(function () {});
+  }
+  function renderVStateBadge() {
+    var el = document.getElementById("tp-drawer-vstate-badge");
+    if (!el) return;
+    var cur = vstateData.states.filter(function (s) { return s.id === vstateData.current; })[0];
+    el.innerHTML = cur
+      ? vehicleStateBadge(cur, "font-size:12px;padding:3px 12px;")
+      : '<span class="tp-text-xs tp-text-muted">Sin estado</span>';
+  }
+  function openVStateModal() {
+    if (!window.tpModal || !vstateData.states.length) return;
+    var chips = vstateData.states
+      .map(function (s) {
+        return (
+          '<button type="button" class="tp-vs-choice' + (s.id === vstateData.current ? " is-active" : "") + '" data-vs="' + s.id + '">' +
+          '<span class="tp-vs-dot" style="background:' + (s.color || "#64748b") + ';"></span>' + esc(s.name) + "</button>"
+        );
+      })
+      .join("");
+    var dlg = tpModal.open({
+      title: "Cambiar estado",
+      size: "sm",
+      body:
+        '<div class="tp-scope"><div class="tp-vs-choices">' + chips +
+        '<button type="button" class="tp-vs-choice' + (!vstateData.current ? " is-active" : "") +
+        '" data-vs="0"><span class="tp-vs-dot" style="background:#cbd5e1;"></span>Sin estado</button></div></div>',
+      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+    });
+    dlg.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-vs]");
+      if (b) changeVState(parseInt(b.getAttribute("data-vs"), 10), dlg);
+    });
+  }
+  function changeVState(stateId, dlg) {
+    tpModal.setBusy(dlg, true);
+    tpModal
+      .fetchJSON(vsBase(vstateData.deviceId) + "/vehicle-state", { method: "POST", json: { vehicle_state_id: stateId } })
+      .then(function (res) {
+        tpModal.setBusy(dlg, false);
+        if (!res.ok || !res.data || !res.data.ok) { tpModal.toast("No se pudo cambiar el estado.", "error"); return; }
+        vstateData.current = stateId > 0 ? stateId : null;
+        renderVStateBadge();
+        // Re-pinta la fila y el marcador con el nuevo estado.
+        var d = state.index[vstateData.deviceId];
+        if (d) {
+          d.vehicle_state = res.data.vehicle_state;
+          var rowEl = listEl && listEl.querySelector('.tp-live__row[data-id="' + d.id + '"]');
+          if (rowEl) rowEl.outerHTML = rowTemplate(d);
+          refreshMarkerIcon(d.id);
+        }
+        tpModal.close(dlg);
+        tpModal.toast("Estado actualizado.", "success");
+      })
+      .catch(function () { tpModal.setBusy(dlg, false); tpModal.toast("Error de red.", "error"); });
   }
 
   // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
@@ -1410,6 +1486,16 @@
       if (state.groups[i].id === gid) return state.groups[i].title;
     return "Grupo " + gid;
   }
+  // Badge del estado de vehículo (label corto + color). Compartido por la fila
+  // del rail, la etiqueta del marcador y el drawer. vs = {name,label,color}.
+  function vehicleStateBadge(vs, extraStyle) {
+    if (!vs || !vs.label) return "";
+    return (
+      '<span class="tp-vs-badge" style="background:' + (vs.color || "#64748b") + ";" + (extraStyle || "") + '" title="' +
+      esc(vs.name || vs.label) + '">' + esc(vs.label) + "</span>"
+    );
+  }
+
   function rowTemplate(d) {
     var status = classify(d);
     var speedNum = Math.round(parseFloat(d.speed) || 0);
@@ -1445,6 +1531,8 @@
         (d.engine_status ? "Motor encendido" : "Motor apagado") +
         '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></span>';
     }
+    // Badge de estado de vehículo (tipo con estados: VACÍO/CARGADO…) con su color.
+    var stateBadge = vehicleStateBadge(d.vehicle_state);
     return (
       '<div class="tp-live__row" data-id="' +
       d.id +
@@ -1464,6 +1552,7 @@
       "</span>" +
       lockIcon +
       engineIcon +
+      stateBadge +
       '</div><div class="tp-live__row-meta' +
       (metaIsStatus ? " tp-live__row-meta--status" : "") +
       '">' +
@@ -2431,6 +2520,10 @@
       center.addEventListener("click", function () {
         if (state.selectedId) selectDevice(state.selectedId);
       });
+
+    // Cambiador de estado de vehículo (drawer).
+    var vsBtn = document.getElementById("tp-drawer-vstate-btn");
+    if (vsBtn) vsBtn.addEventListener("click", openVStateModal);
 
     // Drawer close
     // Colapsar / expandir el panel izquierdo (lista de elementos)

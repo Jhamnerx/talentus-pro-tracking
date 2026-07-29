@@ -563,6 +563,79 @@ class DevicesController extends BaseController
         return response()->json(['ok' => true, 'items' => $rows]);
     }
 
+    /* =================================================================
+     * Estado de vehículo (tipo con estados: VACÍO/CARGADO…) — cambiador
+     * rápido desde el drawer del device (botón/selector). El badge del
+     * estado se pinta en la fila/marcador/drawer.
+     * ================================================================= */
+
+    /** Estados del TIPO del device + estado actual (para el selector). */
+    public function vehicleStates(Request $request, $id): JsonResponse
+    {
+        $device = $this->user->devices()->find((int) $id);
+        if (! $device) {
+            abort(404);
+        }
+
+        $states   = [];
+        $typeName = null;
+        if ($device->vehicle_type_id && $device->vehicleType) {
+            $typeName = (string) $device->vehicleType->name;
+            $states = $device->vehicleType->states->map(function ($s) {
+                return [
+                    'id'    => (int) $s->id,
+                    'name'  => (string) $s->name,
+                    'label' => (string) ($s->label ?: $s->name),
+                    'color' => (string) ($s->color ?: '#64748b'),
+                ];
+            })->all();
+        }
+
+        return response()->json([
+            'ok'      => true,
+            'type'    => $typeName,
+            'states'  => $states,
+            'current' => $device->vehicle_state_id ? (int) $device->vehicle_state_id : null,
+        ]);
+    }
+
+    /** Cambia el estado (valida que pertenezca al tipo del device). */
+    public function changeVehicleState(Request $request, $id): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'edit')) {
+            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+        }
+
+        $device = $this->user->devices()->find((int) $id);
+        if (! $device) {
+            abort(404);
+        }
+
+        $stateId = (int) $request->get('vehicle_state_id');
+        $vs      = null;
+
+        if ($stateId > 0) {
+            $vs = \Tobuli\Entities\VehicleState::where('id', $stateId)
+                ->where('vehicle_type_id', $device->vehicle_type_id)
+                ->first();
+            if (! $vs) {
+                return response()->json(['ok' => false, 'message' => 'Estado inválido para el tipo del vehículo.'], 422);
+            }
+        }
+
+        $device->vehicle_state_id = $stateId > 0 ? $stateId : null;
+        $device->save();
+
+        return response()->json([
+            'ok'            => true,
+            'vehicle_state' => $vs ? [
+                'name'  => (string) $vs->name,
+                'label' => (string) ($vs->label ?: $vs->name),
+                'color' => (string) ($vs->color ?: '#64748b'),
+            ] : null,
+        ]);
+    }
+
     /** UPDATE del pivote (attach → group_id; detach → 0), solo filas del usuario. */
     private function syncGroupDevices(\Tobuli\Entities\DeviceGroup $group, $deviceIds): void
     {

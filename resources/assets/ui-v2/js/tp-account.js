@@ -390,13 +390,30 @@
   function tabVehicleTypes() {
     return crudPanel("vtypes", "Añadir tipo", ["Nombre", "Estados"]);
   }
+  // Fila de estado en el form: nombre + label corto (badge) + color.
+  function stateRow(s) {
+    s = s || {};
+    var id = s.id || "";
+    var color = /^#[0-9a-fA-F]{6}/.test(s.color || "") ? s.color : "#3b82f6";
+    return (
+      '<div class="tp-acc-strow" data-state-row' + (id ? ' data-state-id="' + id + '"' : "") + ">" +
+      '<input type="text" class="tp-input" data-st-name value="' + esc(s.name || "") + '" placeholder="Estado (ej. Cargado)" style="flex:1;min-width:0;">' +
+      '<input type="text" class="tp-input" data-st-label value="' + esc(s.label || "") + '" placeholder="Label" maxlength="24" style="width:84px;flex:0 0 auto;">' +
+      '<input type="color" data-st-color value="' + esc(color) + '" title="Color del estado" style="width:40px;height:34px;flex:0 0 auto;padding:2px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;cursor:pointer;">' +
+      '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-state title="Quitar">×</button></div>'
+    );
+  }
+
   function wireVehicleTypes(panel) {
     wireCrud(panel, {
       listUrl: API + "/vehicle-types",
       itemUrl: function (id) { return API + "/vehicle-types/" + id; },
       cols: ["Nombre", "Estados"],
       row: function (r) {
-        var st = (r.states || []).map(function (s) { return esc(s.name); }).join(", ");
+        var st = (r.states || []).map(function (s) {
+          var c = /^#[0-9a-fA-F]{6}/.test(s.color || "") ? s.color : "#64748b";
+          return '<span style="display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#fff;background:' + esc(c) + ';margin:1px 4px 1px 0;" title="' + esc(s.name) + '">' + esc(s.label || s.name) + "</span>";
+        }).join("");
         return "<td>" + esc(r.name) + "</td><td>" + (st || "–") + "</td>";
       },
       delTitle: "Eliminar tipo de vehículo",
@@ -404,20 +421,13 @@
       form: function (row, onSaved) {
         var isEdit = !!(row && row.id);
         var states = (row && row.states) || [];
-        var stateRows = states
-          .map(function (s) {
-            return (
-              '<div class="tp-acc-strow" data-state-id="' + s.id + '">' +
-              '<input type="text" class="tp-input" data-edit-state="' + s.id + '" value="' + esc(s.name) + '">' +
-              '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-state title="Quitar">×</button></div>'
-            );
-          })
-          .join("");
+        var stateRows = states.map(stateRow).join("");
         crudDialog(
           isEdit ? "Editar tipo de vehículo" : "Nuevo tipo de vehículo",
           '<div class="tp-form">' +
             field("Nombre", '<input type="text" name="vt_name" value="' + esc(row ? row.name : "") + '" data-tp-field>', true) +
             '<div class="tp-form__field"><span class="tp-form__label">Estados</span>' +
+            '<small class="tp-form__hint" style="display:block;margin:-2px 0 6px;">Nombre · label corto (badge) · color</small>' +
             '<div data-states-wrap>' + stateRows + "</div>" +
             '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-add-state style="margin-top:6px;">+ Añadir estado</button>' +
             "</div></div>",
@@ -425,11 +435,17 @@
             var name = d.querySelector('[name="vt_name"]').value.trim();
             if (!name) { tpModal.toast("El nombre es obligatorio.", "warning"); return; }
             var payload = { name: name, edit_state: {}, add_state: [] };
-            Array.prototype.forEach.call(d.querySelectorAll("[data-edit-state]"), function (i) {
-              if (i.value.trim()) payload.edit_state[i.getAttribute("data-edit-state")] = i.value.trim();
-            });
-            Array.prototype.forEach.call(d.querySelectorAll("[data-new-state]"), function (i) {
-              if (i.value.trim()) payload.add_state.push(i.value.trim());
+            Array.prototype.forEach.call(d.querySelectorAll("[data-state-row]"), function (rowEl) {
+              var nm = (rowEl.querySelector("[data-st-name]").value || "").trim();
+              if (!nm) return;
+              var st = {
+                name: nm,
+                label: (rowEl.querySelector("[data-st-label]").value || "").trim(),
+                color: rowEl.querySelector("[data-st-color]").value || "",
+              };
+              var sid = rowEl.getAttribute("data-state-id");
+              if (sid) payload.edit_state[sid] = st;
+              else payload.add_state.push(st);
             });
             crudSave(d, isEdit ? API + "/vehicle-types/" + row.id : API + "/vehicle-types", isEdit ? "PUT" : "POST", payload, onSaved);
           },
@@ -437,9 +453,8 @@
             var wrap = d.querySelector("[data-states-wrap]");
             d.querySelector("[data-add-state]").addEventListener("click", function () {
               var div = document.createElement("div");
-              div.className = "tp-acc-strow";
-              div.innerHTML = '<input type="text" class="tp-input" data-new-state placeholder="Nuevo estado"><button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-state title="Quitar">×</button>';
-              wrap.appendChild(div);
+              div.innerHTML = stateRow({});
+              wrap.appendChild(div.firstChild);
             });
             d.addEventListener("click", function (e) {
               if (e.target.closest("[data-rm-state]")) e.target.closest(".tp-acc-strow").remove();

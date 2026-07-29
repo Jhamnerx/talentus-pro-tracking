@@ -19,7 +19,7 @@ class DeviceMapTransformer extends DeviceTransformer
 
     protected static function requireLoads()
     {
-        return ['icon', 'traccar', 'sensors' => function ($query) {
+        return ['icon', 'traccar', 'vehicleState', 'sensors' => function ($query) {
             $types = ['speed', 'anonymizer', 'odometer'];
 
             if (Blocked::isEnabled()) {
@@ -79,6 +79,13 @@ class DeviceMapTransformer extends DeviceTransformer
             'group_id' => $entity->pivot ? (int)$entity->pivot->group_id : 0,
             'online' => $status,
             'blocked' => $blockedState,
+            // Estado de vehículo (tipo con estados: VACÍO/CARGADO…) → badge junto
+            // al nombre. label corto (fallback al name) + color (fallback gris).
+            'vehicle_state' => ($entity->vehicle_state_id && $entity->vehicleState) ? [
+                'name'  => (string) $entity->vehicleState->name,
+                'label' => (string) ($entity->vehicleState->label ?: $entity->vehicleState->name),
+                'color' => (string) ($entity->vehicleState->color ?: '#64748b'),
+            ] : null,
             'lat' => $entity->lat,
             'lng' => $entity->lng,
             'speed' => $entity->speed,
