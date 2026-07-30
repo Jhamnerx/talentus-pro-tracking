@@ -12,7 +12,12 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 El modal de reglas de alerta en v2 estaba incompleto y mal diseñado. Reconstruido con paridad
 legacy (`Frontend/Alerts/create`):
 
-- **6 tabs** (`alerts.js`): **Vehículos** (todos + picklist con buscador/todos-ninguno), **Tipo**
+- **Devices tab** (paridad legacy exacta): lista **agrupada por grupo + paginada** con buscador y
+  **Seleccionar todos / Quitar todos**. "Seleccionar todos" **no marca casillas**: envía
+  `selected_devices=["s;1;"]` y el `UserDevicesGroupLoader` marca `for_all_user_devices=1` (la alerta
+  cubre los vehículos actuales **y los que se agreguen después**). Selección específica →
+  `["s;0;","devices;1;<id>"…]` ⇒ `for_all=0`. `meta` expone `group_id` por device + lista `groups`.
+- **6 tabs** (`alerts.js`): **Vehículos** (ver arriba), **Tipo**
   (disparador + campos por tipo de `AlertModalHelper::getTypesWithAttributes`), **Geocercas**
   (sentido entrada/salida + picklist de geocercas → `zones`/`geofences`), **Horario** (grilla
   arrastrable 7 días × 96 franjas de 15 min con días-hábiles/fin-de-semana/siempre/limpiar),

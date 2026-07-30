@@ -98,18 +98,9 @@ class AlertsController extends BaseController
             ], 500);
         }
 
-        $devices = [];
-        try {
-            $rows = $user->devices()->orderBy('name', 'asc')->get(['id', 'name', 'plate_number']);
-            foreach ($rows as $d) {
-                $devices[] = [
-                    'id'    => (int) $d->id,
-                    'name'  => (string) ($d->name ?: ('#' . $d->id)),
-                    'plate' => trim((string) ($d->plate_number ?? '')),
-                ];
-            }
-        } catch (\Throwable $e) {
-        }
+        $dl      = $this->deviceListPayload();
+        $devices = $dl['devices'];
+        $groups  = $dl['groups'];
 
         $types = $this->reshapeTypes($data['types'] ?? []);
 
@@ -117,6 +108,7 @@ class AlertsController extends BaseController
             'ok'            => true,
             'types'         => $types,
             'devices'       => $devices,
+            'groups'        => $groups,
             'geofences'     => $data['geofences']     ?? [],
             'alert_zones'   => $data['alert_zones']   ?? [],
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
@@ -190,18 +182,9 @@ class AlertsController extends BaseController
 
         $types = $this->reshapeTypes($data['types'] ?? []);
 
-        $devices = [];
-        try {
-            $rows = $user->devices()->orderBy('name', 'asc')->get(['id', 'name', 'plate_number']);
-            foreach ($rows as $d) {
-                $devices[] = [
-                    'id'    => (int) $d->id,
-                    'name'  => (string) ($d->name ?: ('#' . $d->id)),
-                    'plate' => trim((string) ($d->plate_number ?? '')),
-                ];
-            }
-        } catch (\Throwable $e) {
-        }
+        $dl      = $this->deviceListPayload();
+        $devices = $dl['devices'];
+        $groups  = $dl['groups'];
 
         /** @var \Tobuli\Entities\Alert $alert */
         $alert = $data['item'];
@@ -249,6 +232,7 @@ class AlertsController extends BaseController
             'item'          => $item,
             'types'         => $types,
             'devices'       => $devices,
+            'groups'        => $groups,
             'geofences'     => $data['geofences']   ?? [],
             'alert_zones'   => $data['alert_zones'] ?? [],
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
@@ -325,6 +309,56 @@ class AlertsController extends BaseController
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Devices + groups payload for the Devices tab (agrupado + paginado en JS).
+     * Cada device trae su group_id (pivot user_device_pivot.group_id).
+     */
+    private function deviceListPayload(): array
+    {
+        $devices = [];
+        $used    = [];
+        try {
+            $rows = $this->user->devices()
+                ->withPivot('group_id')
+                ->orderBy('devices.name', 'asc')
+                ->get(['devices.id', 'devices.name', 'devices.plate_number']);
+            foreach ($rows as $d) {
+                $gid = (int) (optional($d->pivot)->group_id ?? 0);
+                $used[$gid] = true;
+                $devices[] = [
+                    'id'       => (int) $d->id,
+                    'name'     => (string) ($d->name ?: ('#' . $d->id)),
+                    'plate'    => trim((string) ($d->plate_number ?? '')),
+                    'group_id' => $gid,
+                ];
+            }
+        } catch (\Throwable $e) {
+        }
+
+        $titles = [];
+        try {
+            $rows = \Tobuli\Entities\DeviceGroup::where('user_id', $this->user->id)
+                ->orderBy('title', 'asc')->get(['id', 'title']);
+            foreach ($rows as $g) {
+                $titles[(int) $g->id] = (string) $g->title;
+            }
+        } catch (\Throwable $e) {
+        }
+
+        // Solo grupos que tienen algún device; el bucket 0 = "Sin grupo".
+        $groups = [];
+        if (! empty($used[0])) {
+            $groups[] = ['id' => 0, 'title' => 'Sin grupo'];
+        }
+        foreach ($titles as $gid => $title) {
+            if (! empty($used[$gid])) {
+                $groups[] = ['id' => $gid, 'title' => $title];
+            }
+        }
+
+        return ['devices' => $devices, 'groups' => $groups];
     }
 
     /**

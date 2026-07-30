@@ -553,6 +553,197 @@
     updatePickCount(wrap);
   }
 
+  /* ---------- devices (agrupado + paginado + select-all legacy) ---------- */
+  function selectedDeviceIds(dlg) {
+    if (dlg._devAll) return (dlg._devList || []).map(function (d) { return d.id; });
+    return Object.keys(dlg._devSel || {}).map(Number);
+  }
+
+  var DEV_PAGE = 100;
+
+  function wireDevices(dlg, meta) {
+    var box = dlg.querySelector("#tp-alert-devices");
+    if (!box) return;
+
+    var devices = meta.devices || [];
+    var groupsMap = {};
+    (meta.groups || []).forEach(function (g) {
+      groupsMap[g.id] = g.title;
+    });
+    dlg._devList = devices;
+    dlg._devSel = dlg._devSel || {};
+    if (typeof dlg._devAll !== "boolean") dlg._devAll = false;
+
+    var page = 1;
+    var collapsed = {};
+    var listEl = box.querySelector("[data-dev-list]");
+    var searchEl = box.querySelector("[data-dev-search]");
+    var bannerEl = box.querySelector("[data-dev-banner]");
+    var countEl = box.querySelector("[data-dev-count]");
+    var pagerEl = box.querySelector("[data-dev-pager]");
+
+    function ordered() {
+      var q = (searchEl.value || "").toLowerCase();
+      var list = devices.filter(function (d) {
+        return (
+          !q ||
+          d.name.toLowerCase().indexOf(q) !== -1 ||
+          (d.plate || "").toLowerCase().indexOf(q) !== -1
+        );
+      });
+      list.sort(function (a, b) {
+        if (a.group_id !== b.group_id) {
+          if (a.group_id === 0) return -1;
+          if (b.group_id === 0) return 1;
+          return (groupsMap[a.group_id] || "").localeCompare(groupsMap[b.group_id] || "");
+        }
+        return a.name.localeCompare(b.name);
+      });
+      return list;
+    }
+
+    function groupDeviceIds(gid) {
+      return devices
+        .filter(function (d) { return d.group_id === gid; })
+        .map(function (d) { return d.id; });
+    }
+    function groupState(gid) {
+      var ids = groupDeviceIds(gid);
+      if (!ids.length) return "none";
+      var sel = ids.filter(function (id) { return dlg._devSel[id]; }).length;
+      return sel === 0 ? "none" : sel === ids.length ? "all" : "some";
+    }
+
+    function render() {
+      var list = ordered();
+      var pages = Math.max(1, Math.ceil(list.length / DEV_PAGE));
+      if (page > pages) page = pages;
+      var slice = list.slice((page - 1) * DEV_PAGE, page * DEV_PAGE);
+      var html = "";
+      var lastG = null;
+      slice.forEach(function (d) {
+        if (d.group_id !== lastG) {
+          lastG = d.group_id;
+          var gs = groupState(d.group_id);
+          html +=
+            '<div class="tp-devbox__group">' +
+            '<button type="button" class="tp-devbox__gchev" data-dev-collapse="' +
+            d.group_id +
+            '">' +
+            (collapsed[d.group_id] ? "▸" : "▾") +
+            "</button>" +
+            '<label class="tp-devbox__gcheck"><input type="checkbox" data-dev-group="' +
+            d.group_id +
+            '"' +
+            (gs === "all" ? " checked" : "") +
+            (gs === "some" ? ' data-indet="1"' : "") +
+            "> <span>" +
+            esc(groupsMap[d.group_id] || "Sin grupo") +
+            "</span></label>" +
+            "</div>";
+        }
+        if (collapsed[d.group_id]) return;
+        html +=
+          '<label class="tp-devbox__item"><input type="checkbox" data-dev="' +
+          d.id +
+          '"' +
+          (dlg._devSel[d.id] ? " checked" : "") +
+          "> <span>" +
+          esc(d.name) +
+          (d.plate ? ' <em>· ' + esc(d.plate) + "</em>" : "") +
+          "</span></label>";
+      });
+      if (!slice.length)
+        html =
+          '<div class="tp-text-muted tp-text-sm" style="padding:14px;">Sin vehículos.</div>';
+      listEl.innerHTML = html;
+      listEl.querySelectorAll("[data-dev-group][data-indet]").forEach(function (cb) {
+        cb.indeterminate = true;
+      });
+
+      var selCount = dlg._devAll ? devices.length : Object.keys(dlg._devSel).length;
+      countEl.textContent = selCount + " seleccionados";
+      bannerEl.hidden = !dlg._devAll;
+
+      pagerEl.innerHTML =
+        pages > 1
+          ? '<button type="button" class="tp-devbox__pg" data-dev-prev' +
+            (page <= 1 ? " disabled" : "") +
+            ">‹</button><span>" +
+            page +
+            " / " +
+            pages +
+            '</span><button type="button" class="tp-devbox__pg" data-dev-next' +
+            (page >= pages ? " disabled" : "") +
+            ">›</button>"
+          : "";
+    }
+
+    dlg._devRender = render;
+
+    searchEl.addEventListener("input", function () {
+      page = 1;
+      render();
+    });
+    box.querySelector("[data-dev-all]").addEventListener("click", function () {
+      dlg._devAll = true;
+      dlg._devSel = {};
+      devices.forEach(function (d) { dlg._devSel[d.id] = 1; });
+      render();
+      box.dispatchEvent(new Event("dev-change"));
+    });
+    box.querySelector("[data-dev-none]").addEventListener("click", function () {
+      dlg._devAll = false;
+      dlg._devSel = {};
+      render();
+      box.dispatchEvent(new Event("dev-change"));
+    });
+    listEl.addEventListener("change", function (e) {
+      var dev = e.target.closest("[data-dev]");
+      if (dev) {
+        var id = dev.getAttribute("data-dev");
+        if (dev.checked) dlg._devSel[id] = 1;
+        else {
+          delete dlg._devSel[id];
+          dlg._devAll = false;
+        }
+        render();
+        box.dispatchEvent(new Event("dev-change"));
+        return;
+      }
+      var grp = e.target.closest("[data-dev-group]");
+      if (grp) {
+        var gid = parseInt(grp.getAttribute("data-dev-group"), 10);
+        var ids = groupDeviceIds(gid);
+        if (grp.checked) ids.forEach(function (i) { dlg._devSel[i] = 1; });
+        else {
+          ids.forEach(function (i) { delete dlg._devSel[i]; });
+          dlg._devAll = false;
+        }
+        render();
+        box.dispatchEvent(new Event("dev-change"));
+      }
+    });
+    listEl.addEventListener("click", function (e) {
+      var col = e.target.closest("[data-dev-collapse]");
+      if (col) {
+        var g = col.getAttribute("data-dev-collapse");
+        collapsed[g] = !collapsed[g];
+        render();
+      }
+    });
+    pagerEl.addEventListener("click", function (e) {
+      if (e.target.closest("[data-dev-prev]")) {
+        if (page > 1) { page--; render(); }
+      } else if (e.target.closest("[data-dev-next]")) {
+        page++;
+        render();
+      }
+    });
+
+    render();
+  }
+
   /* ---------- schedule grid ---------- */
   function scheduleGridHtml(schedules) {
     if (!schedules || !schedules.length)
@@ -853,7 +1044,7 @@
     }
 
     function loadCmds(preType, preVals) {
-      var ids = picklistValues(dlg, "#tp-alert-devices");
+      var ids = selectedDeviceIds(dlg);
       typeSel.innerHTML = '<option value="">Cargando…</option>';
       window.tpModal
         .fetchJSON(COMMANDS_URL, { method: "POST", json: { devices: ids } })
@@ -901,8 +1092,8 @@
 
     var devWrap = dlg.querySelector("#tp-alert-devices");
     if (devWrap)
-      devWrap.addEventListener("change", function (e) {
-        if (active.checked && e.target.matches('input[type="checkbox"]')) {
+      devWrap.addEventListener("dev-change", function () {
+        if (active.checked) {
           loaded = true;
           loadCmds(typeSel.value);
         }
@@ -913,12 +1104,24 @@
   }
 
   /* ---------- panels ---------- */
-  function panelDevices(meta) {
+  function panelDevices() {
     return (
-      '<label class="tp-checkbox" style="margin-bottom:10px;"><input type="checkbox" id="tp-alert-all"> <span>Aplicar a <strong>todos mis vehículos</strong></span></label>' +
-      picklistHtml("tp-alert-devices", meta.devices || [], {
-        empty: "No tienes vehículos.",
-      })
+      '<div class="tp-devbox" id="tp-alert-devices">' +
+      '<div class="tp-devbox__bar">' +
+      '<div class="tp-devbox__search">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>' +
+      '<input type="search" class="tp-input tp-input--sm" data-dev-search placeholder="Buscar vehículo…" autocomplete="off">' +
+      "</div>" +
+      '<div class="tp-devbox__acts">' +
+      '<button type="button" class="tp-devbox__link" data-dev-all>Seleccionar todos</button>' +
+      '<span class="tp-devbox__sep">|</span>' +
+      '<button type="button" class="tp-devbox__link" data-dev-none>Quitar todos</button>' +
+      "</div>" +
+      "</div>" +
+      '<div class="tp-devbox__banner" data-dev-banner hidden><b>Todos los vehículos</b> seleccionados — se incluirán también los que agregues después.</div>' +
+      '<div class="tp-devbox__list" data-dev-list></div>' +
+      '<div class="tp-devbox__foot"><span class="tp-devbox__count" data-dev-count>0 seleccionados</span><div class="tp-devbox__pager" data-dev-pager></div></div>' +
+      "</div>"
     );
   }
 
@@ -1015,17 +1218,7 @@
         if (holder) holder.innerHTML = renderTypeFields(t);
       });
 
-    var allCb = dlg.querySelector("#tp-alert-all"),
-      devWrap = dlg.querySelector("#tp-alert-devices");
-    if (allCb && devWrap) {
-      var s = function () {
-        devWrap.classList.toggle("is-disabled", allCb.checked);
-      };
-      allCb.addEventListener("change", s);
-      s();
-    }
-
-    wirePicklist(dlg, "tp-alert-devices");
+    wireDevices(dlg, meta);
     wirePicklist(dlg, "tp-alert-zones");
     wireSchedule(dlg);
     wireNotifications(dlg);
@@ -1043,9 +1236,21 @@
     var typeSel = dlg.querySelector("#tp-alert-type");
     data.type = typeSel ? typeSel.value : "";
 
-    var allCb = dlg.querySelector("#tp-alert-all");
-    data.for_all_user_devices = allCb && allCb.checked ? 1 : 0;
-    data.devices = picklistValues(dlg, "#tp-alert-devices");
+    // Devices — semántica legacy: "Seleccionar todos" ⇒ selected_devices=["s;1;"]
+    // ⇒ el loader marca for_all_user_devices=1 (incluye vehículos futuros).
+    // Selección específica ⇒ ["s;0;", "devices;1;<id>"…] ⇒ for_all=0.
+    if (dlg._devAll) {
+      data.selected_devices = ["s;1;"];
+      data.devices = (dlg._devList || []).map(function (d) { return d.id; });
+      data.for_all_user_devices = 1;
+    } else {
+      var _ids = Object.keys(dlg._devSel || {}).map(Number);
+      data.selected_devices = ["s;0;"].concat(
+        _ids.map(function (id) { return "devices;1;" + id; }),
+      );
+      data.devices = _ids;
+      data.for_all_user_devices = 0;
+    }
 
     var zoneIds = picklistValues(dlg, "#tp-alert-zones");
     data.zones = zoneIds;
@@ -1117,12 +1322,16 @@
       if (el && fields[n] != null) el.value = fields[n];
     });
 
-    var allCb = dlg.querySelector("#tp-alert-all");
-    if (allCb) {
-      allCb.checked = !!item.for_all_user_devices;
-      allCb.dispatchEvent(new Event("change", { bubbles: true }));
+    if (item.for_all_user_devices) {
+      dlg._devAll = true;
+      dlg._devSel = {};
+      (dlg._devList || []).forEach(function (d) { dlg._devSel[d.id] = 1; });
+    } else {
+      dlg._devAll = false;
+      dlg._devSel = {};
+      (item.devices || []).forEach(function (id) { dlg._devSel[id] = 1; });
     }
-    checkPicklist(dlg, "#tp-alert-devices", item.devices || []);
+    if (dlg._devRender) dlg._devRender();
     checkPicklist(dlg, "#tp-alert-zones", item.geofences || []);
 
     var zone = parseInt(item.zone || 0, 10);
