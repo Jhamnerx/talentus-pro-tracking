@@ -6,7 +6,7 @@
 @push('head')
     {{-- Tabla índice + kebab compartidos (mismo estilo que call-actions / maintenance) --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=4">
     {{-- Formularios del modal de la regla (.tp-form* / inputs) --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=11">
 @endpush
@@ -74,5 +74,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=4" defer></script>
 @endpush

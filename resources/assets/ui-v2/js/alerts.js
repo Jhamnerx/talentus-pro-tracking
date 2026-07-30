@@ -564,7 +564,7 @@
     items.forEach(function (it) {
       var h = parseInt(String(it.id).slice(0, 2), 10);
       var isHour = /:00$/.test(it.id);
-      var label = isHour && h % 3 === 0 ? String(it.id).slice(0, 2) : "";
+      var label = isHour && h % 3 === 0 ? it.id : "";
       hours +=
         '<span class="tp-sched__hour' +
         (isHour ? " is-hour" : "") +
@@ -589,8 +589,6 @@
               esc(day.id) +
               '" data-time="' +
               esc(it.id) +
-              '" title="' +
-              esc(day.title + " " + it.id) +
               '"></span>'
             );
           })
@@ -602,7 +600,7 @@
           '" title="' +
           esc(day.title) +
           '">' +
-          esc(String(day.title).charAt(0).toUpperCase()) +
+          esc(String(day.title).slice(0, 3).toUpperCase()) +
           "</button>" +
           '<div class="tp-sched__cells">' +
           cells +
@@ -649,6 +647,26 @@
       sync();
     }
     if (!grid) return;
+
+    // Tooltip de hora (cuelga del dlg → se elimina al cerrar el modal).
+    var tip = document.createElement("div");
+    tip.className = "tp-sched__tip";
+    tip.hidden = true;
+    dlg.appendChild(tip);
+    grid.addEventListener("mousemove", function (e) {
+      var c = e.target.closest(".tp-sched__cell");
+      if (!c) {
+        tip.hidden = true;
+        return;
+      }
+      tip.textContent = c.getAttribute("data-time");
+      tip.hidden = false;
+      tip.style.left = e.clientX + "px";
+      tip.style.top = e.clientY - 30 + "px";
+    });
+    grid.addEventListener("mouseleave", function () {
+      tip.hidden = true;
+    });
 
     var painting = false,
       paintOn = true;
@@ -1139,7 +1157,7 @@
     var modal = window.tpModal.open({
       title: isEdit ? "Editar regla de alerta" : "Nueva regla de alerta",
       sub: "Vehículos, disparador, geocercas, horario, notificaciones y comando.",
-      size: "lg",
+      size: "xl",
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
         { label: "Cancelar", variant: "ghost", close: true },
