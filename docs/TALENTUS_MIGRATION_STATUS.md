@@ -7,6 +7,34 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔍 Actualización · 6 ago 2026 — AUDITORÍA EXHAUSTIVA legacy↔v2 (contratos de datos)
+
+Revisión completa de los ~70 módulos legacy vs la v2 con foco en **cómo cada modal envía datos al
+controlador** (EntityLoaders `selected_*`, flag `api`, `Formatter reverse/convert`, checkboxes,
+permisos, escrituras directas). **El detalle completo y priorizado vive en
+[plan de migracion.md](../plan%20de%20migracion.md)** (reescrito): §1 = Ola 0 de correcciones
+(S=seguridad, D=datos, F=funcionalidad), §2 = los 8 contratos de datos transversales obligatorios.
+
+**Los 10 hallazgos más graves** (fix antes de seguir migrando):
+
+1. **IDOR en Chat v2** — `messages`/`send` sin comprobar pertenencia (`ChatPolicy`); cualquier usuario lee/escribe cualquier chat. (S1)
+2. **Colisión de rutas `expenses/{id}`** — PUT/DELETE registrados dos veces; gana el handler con gate equivocado (`devices:edit` en vez de `device_expenses`). (S2)
+3. **`expiration_date` del device deriva de TZ** — la v2 pinta crudo de BD y el helper hace `reverse()` al guardar → −5h por edición; y en CREAR el checkbox sale marcado → devices nacen con caducidad. (D1)
+4. **`speed_limit` de geocerca se corrompe por unidades** — v2 devuelve el valor base sin `convert()` → ×1.609 por guardado si la unidad ≠ km. Y editar una geocerca desactivada la reactiva (`active:1` forzado). (D2/D7)
+5. **Geocercas sin policy read-only/demo** (GeofenceUserService sin `check()`) + `can('view')` donde va `edit`/`remove`. (S4)
+6. **Alertas modo api**: update sin la clave `devices` ⇒ `sync([])` desasigna TODOS los vehículos. (D5)
+7. **Horarios de comandos: quitar un vehículo nunca lo desasigna** — falta `"s;0;"` en la secuencia del loader. (D6)
+8. **Reportes `send_to_ftp` degradado a checkbox** — editar destruye la URL FTP guardada. (D4)
+9. **Eventos**: alcance `user->events()` en vez de `Event::userAccessible()` (sub-usuarios ven vacío) + horas sin TZ del usuario (el salto a Historial abre el tramo equivocado). (D13/D14)
+10. **Sharing `expiration_date` sin `reverse()`** — links caducan desfasados; canal SMS ausente. (D3/F11)
+
+Otros: `snap_to_road` no-op en Historial, import/export de geocercas/POIs roto desde v2, tab
+CustomFields ausente (device y tareas, addon), `VehicleTypesController` sin gates,
+`called_at` de CallActions se sobrescribe al editar, plantillas GPRS/SMS desasocian devices al
+editar, Popups del admin nunca se muestran, ObjectsList sin migrar. Ver plan §1 completo.
+
+---
+
 ## 🔄 Actualización · 29 jul 2026 — Módulo Alertas: modal completo de 6 tabs (paridad legacy)
 
 El modal de reglas de alerta en v2 estaba incompleto y mal diseñado. Reconstruido con paridad
@@ -511,32 +539,32 @@ Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
 | `Layouts/loged.blade.php` (live shell + mapa) | `live` (Leaflet) | ✅ Falta: **regla de medición** (leaflet.ruler), tools showPoint/showAddress, chat flotante |
 | `Objects/` (sidebar tabs objects/events/history/alerts/geofencing/routes/pois) | live (paneles) + páginas propias | ⚠️ objects/geofencing/pois = paneles ✅; events/history = páginas ✅; **routes tab sin CRUD**; alerts tab → página Alertas |
 | `Dashboard/` (24 widgets) | `dashboard` | ⚠️ KPIs básicos; faltan los widgets configurables del legacy |
-| `Devices/` (CRUD 8 tabs) | `fleet` + modal tabbed | ✅ 8 tabs nativos: Principal/Iconos/Información/Exactitud/Cola + **Sensores/Usuarios/Servicios Web** (22-jul; falta solo icon-picker por mapping de sensor) |
+| `Devices/` (CRUD 8 tabs) | `fleet` + modal tabbed | ⚠️ 8 tabs nativos PERO auditoría 6-ago: expiración deriva TZ + checkbox marcado al crear (D1), falta tab CustomFields (D11) e Historial de mantenimientos (F17), sensores solo-admin (F9), beacons 422 (F10), gate `custom_device_add` (S7) |
 | `DevicesGroups/` | ✅ kebab en cabeceras de grupo de Live (Agregar/Editar/Eliminar) + modal "Grupos de objetos" (título + vehículos agrupados con Seleccionar todo); endpoints `api.device_groups.*` con UPDATE del pivot `user_device_pivot.group_id` por usuario (0 = sin grupo, paridad legacy) | ✅ (23-jul) |
-| `Geofences/` · `GeofencesGroups/` | panel zones (draw + vértices + VSL + import/export) | ✅ (grupos solo lectura) |
-| `Pois/` · `PoisGroups/` | panel pois (CRUD + drag) | ✅ (grupos solo lectura) |
+| `Geofences/` · `GeofencesGroups/` | panel zones (draw + vértices + VSL) | ⚠️ auditoría 6-ago: sin policy read-only/demo + `can('view')` en update/destroy (S4), `speed_limit` se corrompe por unidades (D2), edit reactiva geocercas desactivadas (D7), import/export roto (F2), `device_id`/intervals (F7/D12); grupos solo lectura |
+| `Pois/` · `PoisGroups/` | panel pois (CRUD + drag) | ⚠️ sin toggle `active` (D7), import/export roto (F2); grupos solo lectura |
 | `Routes/` · `RoutesGroups/` | panel routes (draw + CRUD + grupos + lista agrupable) `live-routes.js` + página `/ui/v2/routes/table` + export/import nativos | ✅ |
-| `Alerts/` · `Events/` | `alerts` (reglas CRUD + toggle) · `events` (feed) | ✅ |
+| `Alerts/` · `Events/` | `alerts` (tabla índice + modal 6 tabs) · `events` (página) | ⚠️ alertas: riesgo `sync([])` en modo api (D5) · eventos: alcance sin `userAccessible` + TZ (D13/D14), sin borrado (F6) |
 | `DeviceAlerts/` · `CustomEvents/` | — | ❌ |
-| `History/` (+ historyPlayer/historyGraph) | `history` (rediseño integrado, pipeline legacy) | ✅ Parcial: export solo CSV (GPX/GeoJSON se quitaron en el rediseño), gráfico solo Velocidad/Altitud (faltan **sensores `add_to_graph`** del device), color "Por sensor" no implementado, borrar posiciones (admin) no |
-| `Reports/` (~130 tipos) | ✅ página tabs guardados/logs + modal Generar/Guardar (campos por tipo vía `reports/types/{type}`, schedules daily/weekly/monthly, range picker propio) | ✅ (22-jul) |
-| `SendCommand/` · `CommandSchedules/` · `UserGprsTemplates/` · `UserSmsTemplates/` | ✅ modal `tp-commands.js` + hub `/ui/v2/commands` (Horario/Registros/Plantillas GPRS/SMS con CRUD) | ⚠️ logs por schedule y columna usuario (admin) |
-| `Sharing/` (crear + lista + página pública) | ✅ `/ui/v2/sharing` + `tp-sharing.js` (modal referencia + kebab Live); página pública = legacy reutilizada | ✅ (22-jul; falta solo campo SMS) |
-| `Services/` · `Maintenance/` · `DeviceExpenses/` | ✅ `tp-services.js` (modales compartidos form/lista/eliminar) + página `/ui/v2/maintenance` + widget Live; **Gastos** ✅ migrado como tab del modal device (CRUD `DeviceExpense` + tipos) | ✅ (23-jul; Checklists es módulo aparte) |
-| `Tasks/` · `TaskSets/` · `Checklist/` · `ChecklistTemplates/` | ✅ Tasks: `/ui/v2/tasks` + `tp-tasks.js` (tabla con chip de estado + filtros vehículo/estado + selección con checkbox para **asignación masiva** a un device + kebab Editar/Firma/Eliminar; modal referencia con secciones Recogida/Entrega, picker "Dirección" con mapa Leaflet + `address/search`/`address/reverse`, bloque AC si plugin activo; **import CSV/XLS** con mapeo de columnas opcional vía `TaskImportManager`; tab **Conjuntos** con CRUD de TaskSets sobre `TaskSetUserService`) | ⚠️ (23-jul) Checklists/ChecklistTemplates sin migrar (módulo aparte: prestart/servicio + QR) |
+| `History/` (+ historyPlayer/historyGraph) | `history` (rediseño integrado, pipeline legacy) | ⚠️ auditoría 6-ago: `snap_to_road` no-op (F1), data-log siempre asc + `distance_sum` ≠ legacy + borrar posiciones sin superficie (F5). Export GSR/KML/GPX/CSV sí funciona (endpoint legacy) |
+| `Reports/` (~130 tipos) | página tabs guardados/logs + modal Generar/Guardar (campos por tipo, schedules, range picker propio) | ⚠️ auditoría 6-ago: `send_to_ftp` degradado a checkbox — **destruye la URL FTP al editar** (D4); `period` preset no viaja |
+| `SendCommand/` · `CommandSchedules/` · `UserGprsTemplates/` · `UserSmsTemplates/` | modal `tp-commands.js` + hub `/ui/v2/commands` | ⚠️ auditoría 6-ago: quitar vehículo de un horario nunca desasigna (D6), editar plantilla adaptada desasocia devices (D9), listado de plantillas da 500 a usuarios view-sin-edit (F4) |
+| `Sharing/` (crear + lista + página pública) | `/ui/v2/sharing` + `tp-sharing.js`; página pública = legacy reutilizada | ⚠️ auditoría 6-ago: `expiration_date` sin `reverse()` — caduca desfasado (D3); canal SMS y sharing_device ausentes (F11); escenario validador `send` en update |
+| `Services/` · `Maintenance/` · `DeviceExpenses/` | `tp-services.js` + `/ui/v2/maintenance` + tab Gastos del modal + página `/ui/v2/expenses` | ⚠️ auditoría 6-ago: **colisión de rutas `expenses/{id}`** (S2), gastos sin permiso `device_expenses` ni validator legacy (S6), `ServicesController` convierte PermissionException en 500 (F15) |
+| `Tasks/` · `TaskSets/` · `Checklist/` · `ChecklistTemplates/` | `/ui/v2/tasks` + `tp-tasks.js` (tabla + modal + import CSV/XLS + Conjuntos) | ⚠️ auditoría 6-ago: `custom_fields_task` no se guardan ni muestran (D10); `assign` salta el service (Ola 0). Checklists/ChecklistTemplates sin migrar |
 | `UserDrivers/` (conductores) | ✅ `/ui/v2/drivers` + `tp-drivers.js` (CRUD + pivot devices + vehículo actual) | ✅ (22-jul; falta activity log + RFID inline) |
-| `Chat/` | ✅ `/ui/v2/chat` + `tp-chat.js` (2 paneles: lista de vehículos chateables con no-leídos + hilo con burbujas; polling de mensajes cada 5s + de la lista cada 20s; envío por `chat/{id}/send`). Backend `ChatController` v2 (JSON) reutiliza Chat/ChatMessage/ChatService; gate por `perm('chat',...)` directo (el módulo no tiene modelo mapeado) | ✅ (25-jul) |
-| `CallAction/` | ✅ `/ui/v2/call-actions` + `tp-call-actions.js` (tabla + filtros vehículo/respuesta + kebab; modal Vehículo→carga eventos recientes→Evento/Respuesta/Fecha/Notas). `CallActionsController` v2 sobre CallAction legacy (alert_id derivado del evento, called_at reverse a tz almacenada, validación CallActionFormValidator) | ✅ (25-jul; requiere permiso `call_actions`) |
+| `Chat/` | `/ui/v2/chat` + `tp-chat.js` (lista + hilo con polling) | ⚠️ **auditoría 6-ago: IDOR — messages/send sin comprobar pertenencia (`ChatPolicy`); módulo `chat` vs `chats` legacy (S1)**; sin chat user↔user ni paginación hacia atrás |
+| `CallAction/` | `/ui/v2/call-actions` + `tp-call-actions.js` | ⚠️ auditoría 6-ago: `user_id` falsificable en store (S5); `called_at` se sobrescribe al editar con date_format ≠ ISO (D8); mass-assignment del request crudo |
 | `DeviceMedia/` · `DeviceVideo/` · `Video/` · `MediaCategories/` | widget Cámara (lectura) + links video legacy | ❌ galería/live/playback nativos |
 | `Sensors/` (modal) | ✅ migrado como tab **Sensores** del modal device (CRUD vía `SensorModalHelper`, buscador + grupo + preview) | ✅ |
 | `DeviceConfig/` · `LockStatus/` | `LockStatus` ✅ (widget de bloqueo v2: estado + Cortar/Restablecer + historial, comandos preconfigurables) · `DeviceConfig` stub | ⚠️ Falta solo **DeviceConfig** (config remota del device) |
 | `DevicePlans/` · `DeviceSubscription/` · `Subscriptions/` | stub | ❌ |
 | `MyAccount/` · `MyAccountSettings/` · `Languages/` | ✅ **modal Ajustes de cuenta** (`tp-account.js`, engranaje/menú de usuario del topbar) con **paridad total de tabs** (títulos exactos legacy): Principal (unidades, formatos, inicio de semana, TZ, horario de verano) · Grupos de vehículos · Conductores · Tipos de vehículo · Eventos · SMS gateway · Plantillas de SMS · Plantillas de GPRS · Widgets · Tablero · Cliente · **Mapa** (2 toggles: velocidad en marcador + color de etiqueta por estado, per-usuario en map_controls, aplicados en Live). Tabs de formulario guardan contra `AccountController`; tabs CRUD reutilizan/crean endpoints (device-groups, drivers, vehicle-types, custom-events, commands/templates). **Contraseña** salió del modal → item "Cambiar contraseña" del menú de usuario (modal dedicado). Reutiliza validadores/servicios legacy | ✅ (23-jul; opciones avanzadas de bloques del Tablero y Membresía/Planes fuera de alcance) |
-| `VehicleTypes/` (tipos/estados p/ límites por geocerca) | matriz VSL en modal de geocerca ✅ + **CRUD de tipos/estados** en el tab "Tipos de vehículo" del modal de cuenta (`VehicleTypesController` ui/v2, estados anidados) ✅ | ✅ (23-jul) |
+| `VehicleTypes/` (tipos/estados p/ límites por geocerca) | matriz VSL + CRUD de tipos/estados (tab del modal de cuenta) + label/color/badge/cambiador (29-jul) | ⚠️ auditoría 6-ago: `VehicleTypesController` v2 **sin ningún gate** en data/store/update/destroy (S3) |
 | `CustomEvents/` (events_custom) | ✅ tab "Eventos" del modal de cuenta (`CustomEventsController` ui/v2 sobre CustomEventModalHelper; protocolo + mensaje + condiciones tag/tipo/valor) | ✅ (23-jul) |
 | notifications.js (popup + sonido + desktop Notification de eventos) | ✅ `tp-notify.js` global (toast+sonido+Notification API, feed `events/live`) + tray con eventos reales | ✅ (22-jul) |
 | `Popups/` (banners/modales condicionales del admin, por reglas) | ❌ no incluido en `layout.blade.php` v2 | ❌ **pendiente** (sistema distinto de `tp-notify`; ver ítem 10 de pendientes) |
-| `ObjectsList/` (listview) | `fleet` | ✅ equivalente |
+| `ObjectsList/` (listview) | `fleet` | ⚠️ NO equivalente: faltan columnas configurables por usuario + rangos de color por sensor (`listview_fields`/`numeric_sensors`) (F14) |
 | `Import/` (masivo devices) | solo geofences/pois import links | ❌ |
 | `Forwards/` · `SecondaryCredentials/` · `SmsGateway/` · `Beacons/` · `Lookup/` · `Addresses/` · `Docs` · `LoginAs/` · `Schedules/` | `admin` (deeplinks) | ⚠️ Solo enlace |
 | `Login/` · `Registration/` · `PasswordReminder/` · `EmailConfirmation/` · `CustomRegistration/` · `Captcha/` | — | ❌ Solo legacy (fuera del shell) |
@@ -644,4 +672,4 @@ git log --oneline -5
 
 ---
 
-**Última actualización:** 1 julio 2026 · rama `nuevo-tema`
+**Última actualización:** 6 agosto 2026 (auditoría exhaustiva legacy↔v2) · rama `nuevo-tema`
