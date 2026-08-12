@@ -365,6 +365,45 @@ class ApiController extends Controller
         ];
     }
 
+    public function getPlacas()
+    {
+        if (!$this->user->perm('devices', 'view')) {
+            return response()->json(['status' => 0, 'message' => trans('front.dont_have_permission')], 403);
+        }
+
+        $devices = $this->user->devices()
+            ->select(['devices.id', 'devices.active', 'devices.imei', 'devices.sim_number', 'devices.plate_number', 'devices.device_model'])
+            ->whereNotNull('devices.plate_number')
+            ->where('devices.plate_number', '!=', '')
+            ->orderBy('devices.plate_number')
+            ->get();
+
+        $dispositivos = [];
+
+        foreach ($devices as $device) {
+            // el consumidor compara por placa exacta: normalizar a MAYUSCULAS sin espacios ni nbsp
+            $placa = mb_strtoupper(preg_replace('/[\s\x{00A0}]+/u', '', $device->plate_number));
+
+            if ($placa === '') {
+                continue;
+            }
+
+            $dispositivos[] = [
+                'placa'     => $placa,
+                'gpswox_id' => (int) $device->id,
+                'imei'      => $device->imei !== '' ? $device->imei : null,
+                'sim'       => $device->sim_number !== '' ? $device->sim_number : null,
+                'activo'    => (bool) $device->active,
+                'modelo'    => (string) $device->device_model,
+            ];
+        }
+
+        return [
+            'total'        => count($dispositivos),
+            'dispositivos' => $dispositivos,
+        ];
+    }
+
     public function getDevicesTransmissionStatus()
     {
         if (!$this->user->perm('devices', 'view')) {
