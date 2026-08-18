@@ -120,8 +120,9 @@
     @endif
 
     @if ($u->perm('call_actions', 'view') && $u->perm('events', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="call_action"
-            data-url="{{ route('call_actions.create', ['device_id' => '__ID__']) }}">
+        {{-- Abre el modal nativo tp-call-actions con el device preseleccionado
+             (paridad legacy call_actions.create?device_id) --}}
+        <button type="button" class="tp-row-menu__item" data-act="call_action">
             <span class="tp-row-menu__icon">{!! $ic['call'] !!}</span>
             <span>{{ trans('front.call_action') }}</span>
         </button>

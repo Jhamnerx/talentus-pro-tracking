@@ -11,18 +11,28 @@
 (function () {
   "use strict";
 
+  // Modo dual: página /ui/v2/call-actions (root) O modal global desde otras
+  // páginas (config JSON #tp-ca-config, p. ej. el kebab del device en Live).
   var root = document.getElementById("tp-callactions-page");
-  if (!root) return;
+  var gcfgEl = document.getElementById("tp-ca-config");
+  if (!root && !gcfgEl) return;
+  var gcfg = null;
+  if (!root && gcfgEl) {
+    try { gcfg = JSON.parse(gcfgEl.textContent || "null"); } catch (e) {}
+    if (!gcfg) return;
+  }
 
-  var URLS = {
-    list: root.getAttribute("data-list-url"),
-    meta: root.getAttribute("data-meta-url"),
-    events: root.getAttribute("data-events-url"),
-    store: root.getAttribute("data-store-url"),
-    item: root.getAttribute("data-item-url"),
-  };
-  var canEdit = root.getAttribute("data-can-edit") === "1";
-  var canRemove = root.getAttribute("data-can-remove") === "1";
+  var URLS = root
+    ? {
+        list: root.getAttribute("data-list-url"),
+        meta: root.getAttribute("data-meta-url"),
+        events: root.getAttribute("data-events-url"),
+        store: root.getAttribute("data-store-url"),
+        item: root.getAttribute("data-item-url"),
+      }
+    : { list: "", meta: gcfg.meta, events: gcfg.events, store: gcfg.store, item: "" };
+  var canEdit = root ? root.getAttribute("data-can-edit") === "1" : true;
+  var canRemove = root ? root.getAttribute("data-can-remove") === "1" : false;
   var META = null;
 
   function esc(s) { return tpModal.escapeHtml(s); }
@@ -60,7 +70,7 @@
 
   /* ================= Modal ================= */
 
-  function openForm(id, onSaved) {
+  function openForm(id, onSaved, presetDeviceId) {
     var isEdit = !!id;
     var dlg = tpModal.open({
       title: isEdit ? "Editar acción de llamada" : "Nueva acción de llamada",
@@ -110,8 +120,23 @@
           if (window.tpSelect && tpSelect.refresh) try { tpSelect.refresh(evSel); } catch (e) {}
         });
       });
+
+      // Preselección de vehículo (kebab de Live): fija el device y dispara la
+      // carga de sus eventos, como el modal legacy call_actions.create?device_id.
+      if (!isEdit && presetDeviceId) {
+        devSel.value = String(presetDeviceId);
+        if (window.tpSelect && tpSelect.refresh) try { tpSelect.refresh(devSel); } catch (e) {}
+        if (devSel.value) devSel.dispatchEvent(new Event("change", { bubbles: true }));
+      }
     });
   }
+
+  // API global (el kebab del device en Live la usa)
+  window.tpCallActions = {
+    open: function (deviceId, onSaved) {
+      openForm(null, onSaved || null, deviceId || null);
+    },
+  };
 
   // "YYYY-MM-DD HH:MM..." (humano/convertido) → value de datetime-local
   function toLocal(s) {
@@ -154,6 +179,8 @@
   }
 
   /* ================= Página ================= */
+
+  if (!root) return; // modo global (config JSON): solo el modal, sin tabla
 
   var rowsEl = document.getElementById("tp-ca-rows");
   var searchEl = document.getElementById("tp-ca-search");

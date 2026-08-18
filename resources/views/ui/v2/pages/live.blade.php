@@ -42,6 +42,11 @@
                 : [];
         @endphp
         <script type="application/json" id="tp-live-forwards">@json(['can' => (bool) $tpCanFwd, 'items' => $tpFwdOpts])</script>
+        {{-- Acciones de llamada desde el kebab del device: config global para
+             tp-call-actions.js en modo modal (misma gate que el ítem). --}}
+        @if (Auth::user()->perm('call_actions', 'view') && Auth::user()->perm('events', 'view'))
+            <script type="application/json" id="tp-ca-config">@json(['meta' => route('ui.v2.api.call_actions.meta'), 'events' => route('ui.v2.api.call_actions.events'), 'store' => route('ui.v2.api.call_actions.store')])</script>
+        @endif
 
         {{-- Device CRUD modal config (shared with fleet / admin → fleet) --}}
         @php
@@ -774,9 +779,11 @@
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=15"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
+    {{-- Acciones de llamada (modo modal global; se activa solo si existe #tp-ca-config) --}}
+    <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=3" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=40"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=41"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=9"></script>
