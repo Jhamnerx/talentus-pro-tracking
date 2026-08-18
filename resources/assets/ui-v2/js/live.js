@@ -671,6 +671,122 @@
     var dd = state.index[id];
     if (m && dd) m.setIcon(deviceIcon(dd));
   }
+
+  /* ===========================================================
+   * SEGUIR — ventana flotante con mini-mapa por vehículo
+   * (paridad legacy follow: panel arrastrable que trackea al
+   * device en su propio mapa; se actualiza con cada refresco).
+   * =========================================================== */
+  var follows = {}; // id → { el, map, marker }
+  var followZ = 900;
+  var followOffset = 0;
+
+  function openFollow(id) {
+    id = parseInt(id, 10);
+    if (follows[id]) {
+      follows[id].el.style.zIndex = ++followZ;
+      return;
+    }
+    var d = state.index[id];
+    if (!d) return;
+
+    var el = document.createElement("div");
+    el.className = "tp-follow";
+    var off = (followOffset++ % 5) * 28;
+    el.style.right = 24 + off + "px";
+    el.style.top = 84 + off + "px";
+    el.style.zIndex = ++followZ;
+    el.innerHTML =
+      '<div class="tp-follow__head">' +
+      '<span class="tp-follow__title">Seguir (' + esc(d.name || "#" + id) + ")</span>" +
+      '<button type="button" class="tp-follow__close" aria-label="Cerrar">×</button></div>' +
+      '<div class="tp-follow__map"></div>' +
+      '<div class="tp-follow__foot"><span data-f-speed>—</span><span data-f-time></span></div>';
+    root.appendChild(el);
+
+    // Mini-mapa con SU PROPIA capa base (una TileLayer solo puede vivir en un
+    // mapa; tpBasemaps.build crea instancias frescas).
+    var mm = L.map(el.querySelector(".tp-follow__map"), {
+      zoomControl: false,
+      attributionControl: true,
+    });
+    var lyr = null;
+    try {
+      if (window.tpBasemaps && tpBasemaps.build) {
+        var bms = tpBasemaps.build(MAP_CFG);
+        var bid = tpBasemaps.defaultId ? tpBasemaps.defaultId(bms, MAP_CFG) : null;
+        if (bid && bms[bid]) lyr = bms[bid].layer;
+      }
+    } catch (e) {}
+    if (!lyr)
+      lyr = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 });
+    lyr.addTo(mm);
+
+    follows[id] = { el: el, map: mm, marker: null };
+    setTimeout(function () {
+      mm.invalidateSize();
+      updateFollow(id);
+    }, 60);
+
+    // Arrastre por la cabecera (pointer events)
+    var head = el.querySelector(".tp-follow__head");
+    var drag = null;
+    head.addEventListener("pointerdown", function (e) {
+      if (e.target.closest(".tp-follow__close")) return;
+      el.style.zIndex = ++followZ;
+      el.style.left = el.offsetLeft + "px";
+      el.style.right = "auto";
+      drag = { x: e.clientX, y: e.clientY, left: el.offsetLeft, top: el.offsetTop };
+      head.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    head.addEventListener("pointermove", function (e) {
+      if (!drag) return;
+      el.style.left = Math.max(0, drag.left + e.clientX - drag.x) + "px";
+      el.style.top = Math.max(0, drag.top + e.clientY - drag.y) + "px";
+    });
+    head.addEventListener("pointerup", function () {
+      drag = null;
+    });
+    el.addEventListener("pointerdown", function () {
+      el.style.zIndex = ++followZ;
+    });
+
+    el.querySelector(".tp-follow__close").addEventListener("click", function () {
+      closeFollow(id);
+    });
+  }
+
+  function closeFollow(id) {
+    var f = follows[id];
+    if (!f) return;
+    try { f.map.remove(); } catch (e) {}
+    f.el.remove();
+    delete follows[id];
+  }
+
+  function updateFollow(id) {
+    var f = follows[id];
+    var d = state.index[id];
+    if (!f || !d || d.lat == null || d.lng == null) return;
+    var ll = [parseFloat(d.lat), parseFloat(d.lng)];
+    if (!f.marker) {
+      f.marker = L.marker(ll, { icon: deviceIcon(d) }).addTo(f.map);
+      f.map.setView(ll, 16);
+    } else {
+      f.marker.setLatLng(ll);
+      f.marker.setIcon(deviceIcon(d));
+      f.map.panTo(ll);
+    }
+    var sp = f.el.querySelector("[data-f-speed]");
+    if (sp) sp.textContent = d.speed_text || (d.speed != null ? d.speed + " kph" : "—");
+    var tm = f.el.querySelector("[data-f-time]");
+    if (tm) tm.textContent = d.time || "";
+  }
+
+  function updateFollows() {
+    for (var id in follows) updateFollow(parseInt(id, 10));
+  }
   function selectDevice(id) {
     var prev = state.selectedId;
     state.selectedId = id;
@@ -1711,7 +1827,7 @@
       closeRowMenu();
       if (act === "history")
         location.href = "/ui/v2/history?device=" + id + "&range=" + (it.getAttribute("data-range") || "today");
-      else if (act === "follow") selectDevice(id);
+      else if (act === "follow") openFollow(id);
       else if (act === "edit") {
         if (window.tpDeviceModal) window.tpDeviceModal.openEdit(id, function () { fetchDevices(true); });
       } else if (act === "send_command") {
@@ -2149,6 +2265,7 @@
     recompute();
     renderList();
     renderMarkers();
+    updateFollows();
     if (!state.bootstrapped && state.filtered.length) {
       fitToFleet();
       state.bootstrapped = true;
@@ -2248,6 +2365,7 @@
         recompute();
         renderList();
         renderMarkers();
+        updateFollows();
       })
       .catch(function () {});
   }

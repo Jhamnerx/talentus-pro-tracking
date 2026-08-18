@@ -2279,3 +2279,69 @@ table.tp-lock-hist th {
   height: 15px;
   accent-color: var(--brand-accent, #1b99bd);
 }
+
+/* ===========================================================
+   SEGUIR — ventana flotante con mini-mapa (kebab del device)
+   =========================================================== */
+.tp-follow {
+  position: absolute;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px rgba(6, 11, 52, 0.35);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.tp-follow__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  background: var(--surface-page, #fff);
+  border-bottom: 1px solid var(--border-subtle, #e2e8f0);
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+.tp-follow__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-800, #0e2157);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tp-follow__close {
+  border: 0;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--fg-tertiary, #64748b);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+.tp-follow__close:hover {
+  background: var(--surface-sunken, #f1f5f9);
+  color: var(--fg-primary, #0f172a);
+}
+.tp-follow__map {
+  height: 260px;
+}
+.tp-follow__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--fg-secondary, #334155);
+  border-top: 1px solid var(--border-subtle, #e2e8f0);
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-page, #fff);
+}

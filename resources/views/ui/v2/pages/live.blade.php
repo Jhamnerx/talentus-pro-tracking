@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=55">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=56">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -783,7 +783,7 @@
     <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=3" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=41"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=42"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=9"></script>
