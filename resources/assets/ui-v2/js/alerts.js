@@ -1367,6 +1367,8 @@
       title: isEdit ? "Editar regla de alerta" : "Nueva regla de alerta",
       sub: "Vehículos, disparador, geocercas, horario, notificaciones y comando.",
       size: "xl",
+      // Restyle scopeado (alerts.css .tp-alert-modal) — no afecta otros modales.
+      className: "tp-alert-modal",
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
         { label: "Cancelar", variant: "ghost", close: true },

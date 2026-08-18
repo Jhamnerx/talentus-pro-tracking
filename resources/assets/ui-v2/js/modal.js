@@ -53,7 +53,9 @@
           ? " tp-modal--lg"
           : opts.size === "sm"
             ? " tp-modal--sm"
-            : "");
+            : "") +
+      // Clase extra opcional para restyles scopeados por consumidor.
+      (opts.className ? " " + opts.className : "");
 
     var buttonsHtml = "";
     (opts.buttons || []).forEach(function (b, idx) {
