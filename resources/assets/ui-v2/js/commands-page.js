@@ -96,18 +96,47 @@
       if (m !== except) m.setAttribute("hidden", "");
     });
   }
+  // Menú como "portal" fixed pegado al botón (mismo patrón que tp-services):
+  // sin esto el overflow de la tabla lo recorta cuando hay pocas filas.
+  function positionKebab(btn, menu) {
+    var r = btn.getBoundingClientRect();
+    menu.style.position = "fixed";
+    menu.style.right = "auto";
+    var w = menu.offsetWidth;
+    var h = menu.offsetHeight;
+    menu.style.left =
+      Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8)) + "px";
+    if (r.bottom + 4 + h > window.innerHeight - 8 && r.top - h - 4 > 8) {
+      menu.style.top = r.top - h - 4 + "px";
+    } else {
+      menu.style.top = r.bottom + 4 + "px";
+    }
+  }
   document.addEventListener("click", function (e) {
     var b = e.target.closest("[data-kebab]");
     if (b) {
       var menu = b.parentNode.querySelector(".tp-svc-kebab__menu");
       var open = menu && !menu.hasAttribute("hidden");
       closeKebabs();
-      if (menu && !open) menu.removeAttribute("hidden");
+      if (menu && !open) {
+        menu.removeAttribute("hidden");
+        positionKebab(b, menu);
+      }
       e.stopPropagation();
       return;
     }
     closeKebabs();
   });
+  // El menú es fixed: al scrollear cualquier contenedor se cierra (si no,
+  // quedaría flotando desanclado del botón).
+  window.addEventListener(
+    "scroll",
+    function (e) {
+      if (e.target && e.target.closest && e.target.closest(".tp-svc-kebab__menu")) return;
+      closeKebabs();
+    },
+    true,
+  );
 
   /* ============================ Render ============================ */
 
