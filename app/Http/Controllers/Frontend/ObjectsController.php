@@ -27,6 +27,15 @@ class ObjectsController extends Controller {
 
     public function index()
     {
+        // Preferencia de UI persistida (users.settings.ui_version, la escribe
+        // el shell v2): si el usuario eligió la v2, entra SIEMPRE a la v2 —
+        // login, "/" y marcadores a /objects aterrizan aquí, así que este es
+        // el punto único de aplicación. "Versión anterior" pone 'legacy'
+        // ANTES de redirigir acá, por lo que no hay bucle.
+        if ($this->user && $this->user->getSettings('ui_version') === 'v2') {
+            return redirect()->route('ui.v2.live');
+        }
+
         $version = Config::get('tobuli.version');
         $devices = [];
 

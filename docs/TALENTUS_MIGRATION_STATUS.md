@@ -7,6 +7,17 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 7 ago 2026 — Preferencia de UI persistida (ui_version)
+
+- **`users.settings.ui_version`** (`'v2'`/`'legacy'`): cualquier request al shell v2 la marca `v2`
+  (middleware en `Ui\V2\BaseController::__construct`, escribe solo si cambia; excluye `ui.v2.legacy`).
+  El botón **"Versión anterior"** la pone `legacy` (`ShellController@legacy`) ANTES de redirigir.
+- **Punto único de aplicación**: `Frontend\ObjectsController@index` — si la preferencia es `v2`,
+  redirige a `ui.v2.live`. Como login, `/` y los marcadores a `/objects` aterrizan ahí, **el usuario
+  que eligió la v2 siempre entra a la v2**; sin bucles (el switch a legacy escribe antes de llegar).
+
+---
+
 ## 🔍 Actualización · 6 ago 2026 — AUDITORÍA EXHAUSTIVA legacy↔v2 (contratos de datos)
 
 Revisión completa de los ~70 módulos legacy vs la v2 con foco en **cómo cada modal envía datos al

@@ -38,6 +38,12 @@ class ShellController extends BaseController
 
     public function legacy()
     {
+        // Preferencia explícita del usuario: volver a la UI anterior. Sin esto,
+        // ObjectsController@index lo rebotaría de vuelta a la v2 (ui_version).
+        if ($this->user) {
+            $this->user->setSettings(self::PREF_UI_VERSION, 'legacy');
+        }
+
         return redirect()->route('objects.index')
             ->withCookie(Cookie::forget('talentus_enabled'));
     }
