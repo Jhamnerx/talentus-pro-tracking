@@ -748,7 +748,7 @@
         return [c[1], c[0]];
       });
       if (pts.length < 2) return;
-      L.polyline(pts, { color: r.color || "#7c3aed", weight: 3, opacity: 0.85 }).bindTooltip(r.name || "Ruta").addTo(g);
+      L.polyline(pts, { color: r.color || "#7c3aed", weight: 5, opacity: 0.85, dashArray: "6 6" }).bindTooltip(r.name || "Ruta").addTo(g);
     });
     return g;
   }

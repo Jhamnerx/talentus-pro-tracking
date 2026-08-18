@@ -176,5 +176,5 @@
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=18"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=19"></script>
 @endpush

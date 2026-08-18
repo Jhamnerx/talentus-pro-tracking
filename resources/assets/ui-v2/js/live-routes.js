@@ -82,9 +82,11 @@
     if (pts.length < 2) return null;
     return L.polyline(pts, {
       color: r.color || "#7c3aed",
-      weight: r.id === S.activeId ? 6 : 4,
+      weight: r.id === S.activeId ? 7 : 5,
       opacity: r.active ? 0.9 : 0.35,
-      dashArray: r.active ? null : "6 6",
+      // Punteado siempre (mismo look que Historial); las inactivas se
+      // distinguen por la opacidad.
+      dashArray: "6 6",
     });
   }
 

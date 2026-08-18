@@ -307,9 +307,9 @@
                             aria-pressed="{{ !empty($mapConfig['toggles']['routes']) ? 'true' : 'false' }}">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 19c4-6 12-4 16-14" stroke-dasharray="4 3" />
-                                <circle cx="4" cy="19" r="2" />
-                                <circle cx="20" cy="5" r="2" />
+                                <circle cx="6" cy="19" r="2" />
+                                <circle cx="18" cy="5" r="2" />
+                                <path d="M8 19h6a4 4 0 0 0 0-8H10a4 4 0 0 1 0-8h6" />
                             </svg>
                         </button>
                         <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-hist__toggle"
@@ -318,8 +318,8 @@
                             aria-pressed="{{ !empty($mapConfig['toggles']['poi']) ? 'true' : 'false' }}">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
-                                <circle cx="12" cy="10" r="3" />
+                                <path d="M12 22s7-7.58 7-13a7 7 0 0 0-14 0c0 5.42 7 13 7 13z" />
+                                <circle cx="12" cy="9" r="2.5" />
                             </svg>
                         </button>
                     </div>
@@ -615,5 +615,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=25"></script>
+    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=26"></script>
 @endpush

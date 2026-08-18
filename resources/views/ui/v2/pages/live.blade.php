@@ -779,7 +779,7 @@
     <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=40"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=7"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=8"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {
