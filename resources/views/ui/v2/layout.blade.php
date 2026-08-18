@@ -40,7 +40,7 @@
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=3" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=26" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=2" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=1" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=2" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=11" />
     {{-- Tailwind (utilidades) — al final para ganar sobre la capa .tp-* --}}
