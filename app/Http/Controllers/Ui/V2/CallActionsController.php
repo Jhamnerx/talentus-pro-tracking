@@ -119,7 +119,11 @@ class CallActionsController extends BaseController
                 'device_id'     => (int) $ca->device_id,
                 'event_id'      => (int) $ca->event_id,
                 'response_type' => (string) $ca->response_type,
-                'called_at'     => (string) ($ca->converted_called_at ?? ''),
+                // convert() = 'Y-m-d H:i:s' en TZ del usuario (round-trip con el
+                // reverse() de prepare). El converted_called_at humano (formato
+                // del usuario, ej. d/m/Y) no lo parseaba el JS → al editar caía
+                // a "ahora" y sobrescribía la fecha silenciosamente.
+                'called_at'     => $ca->called_at ? \Formatter::time()->convert($ca->called_at) : '',
                 'remarks'       => (string) ($ca->remarks ?? ''),
                 'events'        => $this->deviceEvents($ca->device_id),
             ];
@@ -201,12 +205,19 @@ class CallActionsController extends BaseController
 
         $data['device_id'] = $event->device_id;
         $data['alert_id']  = $event->alert_id;
-        $data['user_id']   = $data['user_id'] ?? $this->user->id;
+        // SIEMPRE el usuario autenticado (paridad legacy CallActionsController:120,
+        // que lo fuerza) — antes se aceptaba user_id del cliente (suplantación).
+        $data['user_id']   = $this->user->id;
         $data['called_at'] = empty($data['called_at'])
-            ? $data['called_at'] ?? null
+            ? null
             : \Formatter::time()->reverse($data['called_at']);
 
-        return $data;
+        // Whitelist: el payload iba crudo a create()/update() (mass-assignment
+        // de cualquier atributo fillable). Solo las claves del formulario.
+        return \Illuminate\Support\Arr::only($data, [
+            'device_id', 'event_id', 'alert_id', 'user_id',
+            'response_type', 'called_at', 'remarks',
+        ]);
     }
 
     private function deviceEvents(int $deviceId): array

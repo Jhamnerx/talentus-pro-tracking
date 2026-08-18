@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\View;
  */
 class DashboardController extends BaseController
 {
+    /** Cache por request de las alertas compartidas (ver sharedAlertIds). */
+    private ?array $sharedAlertIds = null;
+
     /** Categorías canónicas → etiqueta + color + si cuenta como riesgo de conducción. */
     private const CATEGORIES = [
         'harsh_braking'      => ['label' => 'Frenado brusco',        'color' => '#ef4444', 'risk' => true],
@@ -271,8 +274,8 @@ class DashboardController extends BaseController
     {
         $rows = DB::table('events')
             ->join('devices', 'devices.id', '=', 'events.device_id')
-            ->where('events.user_id', $this->user->id)
             ->where('events.time', '>=', $from)
+            ->tap(function ($q) { $this->scopeEvents($q, 'events.'); })
             ->orderByDesc('events.time')
             ->limit(12)
             ->get(['events.type', 'events.message', 'events.time', 'devices.name']);
@@ -283,7 +286,8 @@ class DashboardController extends BaseController
             $out[] = [
                 'device'  => (string) $r->name,
                 'message' => $r->message ?: (self::CATEGORIES[$cat]['label'] ?? $r->type),
-                'time'    => (string) $r->time,
+                // UTC → TZ del usuario (la lista mostraba hora de servidor)
+                'time'    => $r->time ? \Formatter::time()->convert($r->time) : '',
                 'color'   => self::CATEGORIES[$cat]['color'] ?? '#cbd5e1',
             ];
         }
@@ -293,14 +297,49 @@ class DashboardController extends BaseController
 
     /* ================= Analítica de conducción (eventos) ================= */
 
+    /**
+     * Ids de alertas COMPARTIDAS con el usuario (pivote alert_user). Paridad
+     * con Event::userAccessible: los eventos de esas alertas también son suyos
+     * — sin esto, los sub-usuarios veían el dashboard vacío.
+     */
+    private function sharedAlertIds(): array
+    {
+        if ($this->sharedAlertIds === null) {
+            try {
+                $this->sharedAlertIds = DB::table('alert_user')
+                    ->where('user_id', $this->user->id)
+                    ->pluck('alert_id')->all();
+            } catch (\Throwable $e) {
+                $this->sharedAlertIds = [];
+            }
+        }
+
+        return $this->sharedAlertIds;
+    }
+
+    /** Aplica el alcance de eventos accesibles (propios + alertas compartidas). */
+    private function scopeEvents($query, string $prefix = '')
+    {
+        $col    = $prefix ? $prefix . 'user_id' : 'user_id';
+        $alerts = $this->sharedAlertIds();
+        $alertC = $prefix ? $prefix . 'alert_id' : 'alert_id';
+
+        return $query->where(function ($q) use ($col, $alerts, $alertC) {
+            $q->where($col, $this->user->id);
+            if ($alerts) {
+                $q->orWhereIn($alertC, $alerts);
+            }
+        });
+    }
+
     private function drivingAnalytics(string $from, int $days): array
     {
         // 1) Eventos nativos por tipo + 2) custom por mensaje → clasificar
         $catCounts = array_fill_keys(array_keys(self::CATEGORIES), 0);
 
         $byType = DB::table('events')
-            ->where('user_id', $this->user->id)
             ->where('time', '>=', $from)
+            ->tap(function ($q) { $this->scopeEvents($q); })
             ->where('type', '!=', 'custom')
             ->select('type', DB::raw('COUNT(*) c'))
             ->groupBy('type')->get();
@@ -309,8 +348,8 @@ class DashboardController extends BaseController
         }
 
         $byMsg = DB::table('events')
-            ->where('user_id', $this->user->id)
             ->where('time', '>=', $from)
+            ->tap(function ($q) { $this->scopeEvents($q); })
             ->where('type', 'custom')
             ->select('message', DB::raw('COUNT(*) c'))
             ->groupBy('message')->get();
@@ -350,8 +389,8 @@ class DashboardController extends BaseController
             + $driving['harsh_turning'] + $driving['overspeed'] + $catCounts['sos'];
 
         $vehiclesWithData = (int) DB::table('events')
-            ->where('user_id', $this->user->id)
             ->where('time', '>=', $from)
+            ->tap(function ($q) { $this->scopeEvents($q); })
             ->distinct()->count('device_id');
 
         $riskPerVehicle = $vehiclesWithData ? $riskEvents / $vehiclesWithData : 0;
@@ -383,8 +422,8 @@ class DashboardController extends BaseController
         // group by (device_id, type, message) acotado al período.
         $rows = DB::table('events')
             ->join('devices', 'devices.id', '=', 'events.device_id')
-            ->where('events.user_id', $this->user->id)
             ->where('events.time', '>=', $from)
+            ->tap(function ($q) { $this->scopeEvents($q, 'events.'); })
             ->select('events.device_id', 'devices.name', 'events.type', 'events.message', DB::raw('COUNT(*) c'))
             ->groupBy('events.device_id', 'devices.name', 'events.type', 'events.message')
             ->get();
@@ -412,8 +451,8 @@ class DashboardController extends BaseController
     private function riskTrend(string $from, int $days): array
     {
         $rows = DB::table('events')
-            ->where('user_id', $this->user->id)
             ->where('time', '>=', $from)
+            ->tap(function ($q) { $this->scopeEvents($q); })
             ->select(DB::raw('DATE(time) d'), 'type', 'message', DB::raw('COUNT(*) c'))
             ->groupBy(DB::raw('DATE(time)'), 'type', 'message')
             ->get();

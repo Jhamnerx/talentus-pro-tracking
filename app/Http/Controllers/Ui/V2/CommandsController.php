@@ -557,13 +557,23 @@ class CommandsController extends BaseController
     {
         $type = $request->get('type') === 'sms' ? 'sms' : 'gprs';
 
+        $module = $type === 'sms' ? 'user_sms_templates' : 'user_gprs_templates';
+        if (! $this->user->perm($module, 'view')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
         try {
             $helper = $this->templateHelper($type);
             $helper->setUser($this->user);
             $helper->setApi(true);
             $helper->setData([]);
 
-            $meta = $helper->createData();
+            // createData() exige perm 'create': un usuario con view pero sin edit
+            // recibía 500 al abrir el tab. El listado no necesita el catálogo.
+            $meta = [];
+            if ($this->user->perm($module, 'edit')) {
+                $meta = $helper->createData();
+            }
 
             $entity = $type === 'sms' ? \Tobuli\Entities\UserSmsTemplate::class : \Tobuli\Entities\UserGprsTemplate::class;
             $rows = [];
@@ -614,6 +624,20 @@ class CommandsController extends BaseController
             if ($id) {
                 $payload['id'] = $id;
             }
+
+            // En modo api el helper hace devices()->sync(Arr::get(data,'devices',[])):
+            // con la plantilla adaptada por protocolo/tipo el form manda [] y
+            // DESASOCIABA los devices guardados. El path web (syncLoader) no los
+            // tocaría, así que al editar preservamos la asignación actual salvo
+            // que el usuario esté editando explícitamente la lista de devices.
+            if ($id && ($payload['adapted'] ?? '') !== 'devices') {
+                $entity  = $type === 'sms' ? \Tobuli\Entities\UserSmsTemplate::class : \Tobuli\Entities\UserGprsTemplate::class;
+                $current = $entity::userOwned($this->user)->find($id);
+                if ($current) {
+                    $payload['devices'] = $current->devices()->pluck('devices.id')->all();
+                }
+            }
+
             $helper->setData($payload);
             $res = $id ? $helper->edit() : $helper->create();
         } catch (ValidationException $e) {
