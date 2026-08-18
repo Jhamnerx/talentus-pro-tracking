@@ -1247,8 +1247,11 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::delete('cameras/{id}',        ['as' => 'api.cameras.destroy',        'uses' => 'Ui\V2\DevicesController@cameraDestroy'])->where('id', '[0-9]+');
         Route::get('devices/{id}/expenses',  ['as' => 'api.devices.expenses',       'uses' => 'Ui\V2\DevicesController@expensesList'])->where('id', '[0-9]+');
         Route::post('devices/{id}/expenses', ['as' => 'api.devices.expenses.store', 'uses' => 'Ui\V2\DevicesController@expenseStore'])->where('id', '[0-9]+');
-        Route::put('expenses/{id}',          ['as' => 'api.expenses.update',        'uses' => 'Ui\V2\DevicesController@expenseUpdate'])->where('id', '[0-9]+');
-        Route::delete('expenses/{id}',       ['as' => 'api.expenses.destroy',       'uses' => 'Ui\V2\DevicesController@expenseDestroy'])->where('id', '[0-9]+');
+        // URI propia (devices/expenses/{id}): antes era expenses/{id} y COLISIONABA
+        // con las rutas de la página Gastos (ExpensesController) — la última ganaba
+        // y la página acababa en el handler con gate de otro módulo.
+        Route::put('devices/expenses/{id}',    ['as' => 'api.devices.expenses.update',  'uses' => 'Ui\V2\DevicesController@expenseUpdate'])->where('id', '[0-9]+');
+        Route::delete('devices/expenses/{id}', ['as' => 'api.devices.expenses.destroy', 'uses' => 'Ui\V2\DevicesController@expenseDestroy'])->where('id', '[0-9]+');
         Route::get('sensors/{id}/form',          ['as' => 'api.sensors.form',          'uses' => 'Ui\V2\DevicesController@sensorFormEdit'])->where('id', '[0-9]+');
         Route::put('sensors/{id}',               ['as' => 'api.sensors.update',        'uses' => 'Ui\V2\DevicesController@sensorUpdate'])->where('id', '[0-9]+');
         Route::delete('sensors/{id}',            ['as' => 'api.sensors.destroy',       'uses' => 'Ui\V2\DevicesController@sensorDestroy'])->where('id', '[0-9]+');

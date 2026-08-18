@@ -56,7 +56,10 @@ class ZonesController extends BaseController
                 'radius'        => $g->radius !== null ? (float) $g->radius : null,
                 'center'        => $g->center,
                 'coordinates'   => is_array($coords) ? $coords : [],
-                'speed_limit'   => $g->speed_limit,
+                // convert() (base → unidad usuario), como el legacy edit():
+                // el service hace reverse() al guardar; devolver el crudo
+                // multiplicaba el límite en cada edición si la unidad ≠ km.
+                'speed_limit'   => $g->speed_limit !== null ? round(\Formatter::speed()->convert($g->speed_limit)) : null,
                 'vehicle_speed_limits' => $this->vslMap($g),
             ];
         }
@@ -301,7 +304,8 @@ class ZonesController extends BaseController
             'radius'        => $g->radius !== null ? (float) $g->radius : null,
             'center'        => $g->center,
             'coordinates'   => is_array($coords) ? $coords : [],
-            'speed_limit'   => $g->speed_limit,
+            // Misma conversión base→usuario que en data() (ver comentario allá).
+            'speed_limit'   => $g->speed_limit !== null ? round(\Formatter::speed()->convert($g->speed_limit)) : null,
             'vehicle_speed_limits' => $this->vslMap($g),
         ];
     }

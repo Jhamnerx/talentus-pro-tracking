@@ -616,7 +616,9 @@
       "</div>" +
       '<div data-rep-emails style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>' +
       (meta.showFtp
-        ? '<label class="tp-choice" style="margin-top:8px;"><input type="checkbox" class="tp-choice-input" name="send_to_ftp" value="1"' + (item.ftp ? " checked" : "") + "><span>Enviar a FTP</span></label>"
+        ? '<div class="tp-form__field" style="margin-top:8px;"><span class="tp-form__label">Enviar a FTP</span>' +
+          '<input type="text" name="send_to_ftp" value="' + esc(item.ftp || "") + '" placeholder="ftp://usuario:contraseña@host:puerto">' +
+          '<small class="tp-form__hint">URL del servidor FTP (paridad legacy). Vacío = no enviar.</small></div>'
         : "") +
       "</div>" +
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
@@ -1056,8 +1058,11 @@
       }
     }
 
+    // send_to_ftp es la URL ftp://user:pass@host:puerto (string, como el
+    // legacy: el helper copia data['send_to_ftp'] → report.ftp tal cual).
+    // Antes era un checkbox 1/0 y editar DESTRUÍA la URL guardada.
     var ftpEl = form.querySelector('input[name="send_to_ftp"]');
-    if (ftpEl) payload.send_to_ftp = ftpEl.checked ? 1 : 0;
+    if (ftpEl) payload.send_to_ftp = (ftpEl.value || "").trim();
 
     // Día concreto del schedule (solo si su checkbox está activo)
     var wdEl = form.querySelector('select[name="weekly_day"]');

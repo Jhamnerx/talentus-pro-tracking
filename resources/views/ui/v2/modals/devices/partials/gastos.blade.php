@@ -19,8 +19,9 @@
         $expensesCfg = [
             'list'    => route('ui.v2.api.devices.expenses', $item->id),
             'store'   => route('ui.v2.api.devices.expenses.store', $item->id),
-            'update'  => url('/ui/v2/api/expenses') . '/{id}',
-            'destroy' => url('/ui/v2/api/expenses') . '/{id}',
+            {{-- URI propia devices/expenses/{id}: no colisiona con la página Gastos --}}
+            'update'  => url('/ui/v2/api/devices/expenses') . '/{id}',
+            'destroy' => url('/ui/v2/api/devices/expenses') . '/{id}',
             'types'   => $expTypes,
         ];
     @endphp

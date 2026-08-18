@@ -345,10 +345,13 @@ class CommandsController extends BaseController
     protected function mergeSelectedDevices(Request $request): void
     {
         $ids = array_values(array_filter(array_map('intval', (array) $request->get('devices', []))));
+        // "s;0;" primero = deselect-all → la selección es EXACTA. Sin él la
+        // secuencia son solo attaches y syncLoader nunca entra en la rama
+        // detach: quitar un vehículo de un horario no lo desasignaba jamás.
         $request->merge([
-            'selected_devices' => array_map(function ($id) {
+            'selected_devices' => array_merge(['s;0;'], array_map(function ($id) {
                 return 'id;1;' . $id;
-            }, $ids),
+            }, $ids)),
         ]);
     }
 

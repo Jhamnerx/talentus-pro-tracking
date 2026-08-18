@@ -18,6 +18,12 @@ defectos de paridad que afectan el funcionamiento** — corrupción de datos por
 huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons activos. **La Ola 0
 (correcciones) va ANTES que cualquier módulo nuevo.**
 
+> **Estado 6-ago (tarde):** aplicados los 10 fixes priorizados por el usuario — S1 (IDOR chat),
+> S2 (colisión expenses), S3 (gates vehicle types), S6 (gates gastos), D1 (expiración device),
+> D2 (speed_limit geocerca), D4 (FTP reportes), D5 (salvaguarda alertas), D6 (detach horarios),
+> D13/D14 (eventos TZ+alcance). S4 resultó **falso positivo** (la policy de geocercas SÍ corre vía
+> `ModelUserServiceTrait`). Quedan abiertos: S5, D3, D7–D12, D15–D16 y toda la lista F.
+
 ---
 
 ## 1 · OLA 0 — Correcciones de paridad (obligatorias, salen de la auditoría)
@@ -26,12 +32,12 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 
 | # | Defecto | Dónde | Sev |
 |---|---------|-------|-----|
-| S1 | **IDOR en Chat**: `messages`/`send` hacen `Chat::find($id)` sin comprobar pertenencia (legacy usa `checkException('chats','show',$chat)` → `ChatPolicy`). Cualquier usuario lee/escribe cualquier chat | `Ui/V2/ChatController.php:108,133` | CRÍTICO |
-| S2 | **Colisión de rutas `expenses/{id}`**: PUT/DELETE registrados 2 veces (`ExpensesController` y `DevicesController`); gana el último → la página Gastos golpea el handler con gate `devices:edit` en vez de `device_expenses:*` | `routes/web.php:1156-1157` vs `:1250-1251` | CRÍTICO |
-| S3 | `VehicleTypesController` v2 **sin ningún gate** en data/store/update/destroy | `Ui/V2/VehicleTypesController.php:24-116` | CRÍTICO |
-| S4 | Geocercas v2 sin policy: `GeofenceUserService` no tiene `check()` (a diferencia de Poi/Route) → **read-only/demo pueden crear/editar/borrar**; además update/destroy validan `can('view')` en vez de `edit`/`remove` | `Ui/V2/ZonesController.php:130-216` | CRÍTICO |
+| S1 | ✅ **CORREGIDO 6-ago** — IDOR en Chat: `messages`/`send` ahora hacen `checkException('chats','show'/'update',$chat)` → `ChatPolicy::ownership` (paridad legacy) | `Ui/V2/ChatController.php` | CRÍTICO |
+| S2 | ✅ **CORREGIDO 6-ago** — Colisión de rutas `expenses/{id}`: el modal device pasó a URI propia `devices/expenses/{id}` (`api.devices.expenses.update/destroy`); la página Gastos vuelve a `ExpensesController`. Verificado con `route:getByName` | `routes/web.php`, `gastos.blade.php` | CRÍTICO |
+| S3 | ✅ **CORREGIDO 6-ago** — `VehicleTypesController` gateado con el módulo `devices` (view para data, edit para store/update/destroy). NO se creó un módulo `vehicle_types` nuevo: `User::perm()` devuelve `false` para módulos no sembrados en `user_permissions` → habría apagado la feature para todos los usuarios existentes | `Ui/V2/VehicleTypesController.php` | CRÍTICO |
+| S4 | ❎ **FALSO POSITIVO** (verificado 6-ago): `GeofenceUserService` usa `ModelUserServiceTrait`, cuyos `create/edit/remove` SÍ aplican `Manager::check('geofences',…,$model)` (los métodos de trait tienen precedencia sobre los heredados) → la policy read-only/demo se aplica en legacy Y v2 (mismo service). El `can('view')` del controller es solo un pre-check redundante. **Sin cambios** (decisión: paridad legacy) | — | — |
 | S5 | CallActions: `store` acepta `user_id` del cliente (`$data['user_id'] ?? ...`) → suplantación de propietario; legacy lo fuerza | `Ui/V2/CallActionsController.php:204` | MEDIO |
-| S6 | Gastos del modal device sin permiso `device_expenses` (usa `devices:edit`) y sin `DeviceExpensesFormValidator` | `Ui/V2/DevicesController.php:997-1069` | MEDIO |
+| S6 | ✅ **CORREGIDO 6-ago (gates)** — gastos del modal device ahora exigen `perm('device_expenses', edit/remove/view)` además del acceso al device. Pendiente MENOR: unificar con `DeviceExpensesFormValidator` | `Ui/V2/DevicesController.php` | MEDIO |
 | S7 | Alta de device sin el gate `custom_device_add` (legacy PROHÍBE el alta estándar a esos usuarios) | `Ui/V2/DevicesController.php:284-296` | MEDIO |
 | S8 | `AdminController@data` expone `api_hash`/webhooks sin validar admin; `ShellController` preferences sin `isDemoUser()` | `Ui/V2/AdminController.php:19-28`, `ShellController.php:196-284` | MENOR |
 | S9 | Grupos de vehículos: gate `devices:edit` en vez del flujo legacy + sin `DeviceGroupFormValidator` | `Ui/V2/DevicesController.php:442-512` | MEDIO |
@@ -40,20 +46,20 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 
 | # | Defecto | Dónde | Sev |
 |---|---------|-------|-----|
-| D1 | **`expiration_date` del device deriva de TZ**: el helper hace `reverse()` al guardar pero la v2 pinta el valor crudo de BD (legacy pinta `convert()`) → **cada edición resta el offset (−5h en Perú)**. Además en CREAR el checkbox sale marcado (createData precarga fecha) → los vehículos nacen con caducidad y se desactivan solos | `modals/devices/partials/principal.blade.php:9-19`, `device-modal.js` | CRÍTICO |
-| D2 | **`speed_limit` de geocerca se multiplica en cada guardado** si la unidad del usuario ≠ km: v2 devuelve el valor crudo (base) y el service vuelve a hacer `reverse()`. `vslMap` sí convierte — incoherencia en el mismo payload | `Ui/V2/ZonesController.php:59,304` vs `:319` | CRÍTICO |
+| D1 | ✅ **CORREGIDO 6-ago** — expiración del device: el blade ahora pinta `Formatter::time()->convert()` (la BD guarda **UTC**, verificado `app.timezone='UTC'`; el helper hace `reverse()` TZ usuario→UTC al guardar — regla espejo). Y al CREAR el checkbox va **desmarcado** (la fecha precargada queda como sugerencia), paridad legacy `main.blade`. El bug venía del fix "expiración con hora" del 29-jul (commit 08dc9dc) | `principal.blade.php` | CRÍTICO |
+| D2 | ✅ **CORREGIDO 6-ago** — `speed_limit` de geocerca: `data()` y `presentZone()` ahora devuelven `round(Formatter::speed()->convert(...))` (base→unidad usuario), igual que `vslMap` y el legacy `edit()`. El guardado ya hacía `reverse()` — con el espejo completo deja de multiplicarse | `Ui/V2/ZonesController.php` | CRÍTICO |
 | D3 | **Sharing `expiration_date` sin `Formatter::time()->reverse()`** → links caducan desfasados el offset del usuario; el meta tampoco hace `convert` | `Ui/V2/SharingController.php:242-256` | CRÍTICO |
-| D4 | **Reportes `send_to_ftp` degradado a checkbox**: legacy es una URL `ftp://user:pass@host` → editar un reporte con FTP desde v2 **destruye la URL** y guarda `"1"` | `reports.js:619,1059` | CRÍTICO |
-| D5 | **Alertas (modo api)**: si un update no incluye la clave `devices`, `sync([])` **desasigna todos los vehículos** (el path web dejaría todo intacto). Garantizar la clave siempre | `AlertModalHelper.php:171` + `Ui/V2/AlertsController.php` update | CRÍTICO |
-| D6 | **Horarios de comandos: quitar un vehículo nunca lo desasigna** — `mergeSelectedDevices` genera solo attaches sin `"s;0;"` inicial, y `syncLoader` sin detach no toca nada | `Ui/V2/CommandsController.php:344-352` | CRÍTICO |
+| D4 | ✅ **CORREGIDO 6-ago** — `send_to_ftp` vuelve a ser un **input de URL** (`ftp://usuario:contraseña@host:puerto`, prefill desde `report.ftp`); el payload envía el string y `ReportsController` expone `ftp` como string (no bool). reports.js ?v=10 | `reports.js`, `ReportsController.php` | CRÍTICO |
+| D5 | ✅ **SALVAGUARDA 6-ago** — `AlertsController@update`: si el request no trae la clave `devices`, se inyecta la asignación actual antes de `AlertModalHelper::edit()` (evita el `sync([])` destructivo del modo api). En legacy web no ocurría (loader = no-op sin secuencia); la rama api es de la API móvil | `Ui/V2/AlertsController.php` | CRÍTICO |
+| D6 | ✅ **CORREGIDO 6-ago** — `mergeSelectedDevices` antepone `"s;0;"` (deselect-all) → la selección es exacta y `syncLoader` ya desasigna los vehículos quitados de un horario | `Ui/V2/CommandsController.php` | CRÍTICO |
 | D7 | Editar una geocerca **desactivada la reactiva** (`active: 1` forzado en cada guardado); no existe toggle de `active` para geocercas/POIs | `live-zones.js:350` | CRÍTICO |
 | D8 | CallActions `called_at`: el JS parsea `converted_called_at` (formato humano del usuario); con `date_format` ≠ ISO cae al default "ahora" → **editar sobrescribe la fecha silenciosamente** | `tp-call-actions.js:53-59` | MEDIO |
 | D9 | Plantillas GPRS/SMS: editar con `adapted ≠ devices` envía `devices: []` → **desasocia** los devices de una plantilla antes adaptada | `commands-page.js:472` | MEDIO |
 | D10 | Tareas: `custom_fields_task` no se guardan ni se muestran (falta `CustomValuesService::saveCustomValues` + panel) | `Ui/V2/TasksController.php:166-191` | CRÍTICO (con addon) |
 | D11 | Device: tab **Custom Fields ausente** → campos personalizados no editables desde v2 | `modals/devices/form.blade.php` | CRÍTICO (con addon) |
 | D12 | Geocercas con addon `reports_geofleet_in`: falta `additional[intervals]` (required) → **todo guardado devuelve 422** | `live-zones.js` | CRÍTICO (con addon) |
-| D13 | Eventos sin TZ del usuario: `time` crudo de BD en lista/popup/notificaciones y el **salto a Historial usa hora de servidor** → abre el tramo equivocado | `Ui/V2/EventsController.php:167,252`, `events.js:643` | CRÍTICO |
-| D14 | Eventos con alcance reducido: `user->events()` en vez de `Event::userAccessible()` → **sub-usuarios con alertas compartidas ven vacío** (también Dashboard y widget recent_events) | `EventsController.php:100`, `DashboardController`, `DevicesController:~1247` | CRÍTICO |
+| D13 | ✅ **CORREGIDO 6-ago (página Eventos)** — `data()`/`mapData()` devuelven `time` con `Formatter::time()->convert()` (UTC→TZ usuario): lista, popup y el salto a Historial quedan en la hora del usuario. **Pendiente**: mismas conversiones en `DashboardController` (buckets/series) | `Ui/V2/EventsController.php` | CRÍTICO |
+| D14 | ✅ **CORREGIDO 6-ago (página Eventos)** — `data()`/`mapData()` usan `Event::userAccessible($user)` (propios + alertas compartidas vía `alert_user`), como el legacy; `index()` ya lo usaba. **Pendiente**: `DashboardController` (queries crudas por `user_id`) | `Ui/V2/EventsController.php` | CRÍTICO |
 | D15 | Cuenta: toggles de blocks del Tablero se **descartan** para usuarios sin settings previos; `options` por block no editables | `Ui/V2/AccountController.php:355-361` | MEDIO |
 | D16 | SMS gateway: el password del gateway viaja vacío en cada guardado y sobrevive solo por el merge-fallback | `tp-account.js:91` | MEDIO |
 
@@ -127,26 +133,26 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 | Dominio | Estado | Notas |
 |---|---|---|
 | Live shell + mapa + widgets + kebab | ✅/⚠️ | F8, F12 |
-| Fleet + modal device (8 tabs) | ⚠️ | D1, D11, F9, F10, F17, S6, S7 |
-| Geocercas | ⚠️ | S4, D2, D7, D12, F2, F7 (grupos solo lectura) |
+| Fleet + modal device (8 tabs) | ⚠️ | ~~D1~~✅, D11, F9, F10, F17, ~~S6~~✅, S7 |
+| Geocercas | ⚠️ | ~~S4~~ falso positivo, ~~D2~~✅, D7, D12, F2, F7 (grupos solo lectura) |
 | POIs | ⚠️ | D7 (active), F2; grupos solo lectura |
 | Rutas | ⚠️ | F3; CRUD+grupos+tabla ✅ |
-| Alertas (reglas + modal 6 tabs) | ⚠️ | D5 |
-| Eventos (página) | ⚠️ | D13, D14, F6 |
+| Alertas (reglas + modal 6 tabs) | ✅/⚠️ | ~~D5~~✅ salvaguarda |
+| Eventos (página) | ✅/⚠️ | ~~D13, D14~~✅, F6 |
 | Historial | ⚠️ | F1, F5 |
-| Reportes | ⚠️ | D4; schedules ✅ |
-| Comandos (modal + hub) | ⚠️ | D6, D9, F4 |
+| Reportes | ✅/⚠️ | ~~D4~~✅; schedules ✅ |
+| Comandos (modal + hub) | ⚠️ | ~~D6~~✅, D9, F4 |
 | Sharing | ⚠️ | D3, F11 |
 | Conductores | ✅ | falta activity log (menor) |
 | Tareas + conjuntos | ⚠️ | D10; filtros de fecha (menor) |
-| Chat | ⚠️ | S1; user↔user y paginación (menor) |
+| Chat | ✅/⚠️ | ~~S1~~✅; user↔user y paginación (menor) |
 | CallActions | ⚠️ | S5, D8 |
 | Mantenimiento/Servicios | ✅/⚠️ | F15 (500s) |
-| Gastos | ⚠️ | S2, S6 |
+| Gastos | ✅/⚠️ | ~~S2, S6~~✅; validator legacy pendiente (menor) |
 | Reenvíos | ✅/⚠️ | TYPE_FIELDS hardcodeado (deriva futura) |
 | Cuenta (modal ajustes) | ⚠️ | D15, D16, F16 |
-| Dashboard | ⚠️ | D14, F13 |
-| Tipos/estados de vehículo | ⚠️ | S3 |
+| Dashboard | ⚠️ | D14 (pendiente aquí), F13 |
+| Tipos/estados de vehículo | ✅/⚠️ | ~~S3~~✅ (gate módulo `devices`) |
 | LockStatus (widget bloqueo) | ✅/⚠️ | F18 |
 | **Sin migrar** | ❌ | DeviceConfig · DeviceMedia/Video/MediaCategories · Checklist/Templates · DeviceAlerts · Popups (F19) · ObjectsList (F14) · CustomFields (D11) · Import masivo devices · Beacons · Subscriptions/DevicePlans/DeviceSubscription · SecondaryCredentials · SmsGateway (test/cola) · DeviceRoutesType · Lookup · Docs · LoginAs · Addresses (vista) · Auth público (Login/Registro/…) |
 

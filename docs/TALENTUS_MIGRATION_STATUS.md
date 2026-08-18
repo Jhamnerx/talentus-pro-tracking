@@ -15,6 +15,16 @@ permisos, escrituras directas). **El detalle completo y priorizado vive en
 [plan de migracion.md](../plan%20de%20migracion.md)** (reescrito): §1 = Ola 0 de correcciones
 (S=seguridad, D=datos, F=funcionalidad), §2 = los 8 contratos de datos transversales obligatorios.
 
+> **Fixes aplicados el mismo 6-ago** (por decisión del usuario, punto por punto): S1 IDOR chat ✅ ·
+> S2 colisión expenses ✅ (URI propia `devices/expenses/{id}`) · S3 gates vehicle-types ✅ (módulo
+> `devices`; no se creó módulo nuevo porque `User::perm` devuelve false para módulos no sembrados) ·
+> S6 gates gastos ✅ · D1 expiración device ✅ (convert() + checkbox desmarcado al crear; la BD guarda
+> UTC — `app.timezone='UTC'` — y el helper hace reverse() al guardar) · D2 speed_limit geocerca ✅ ·
+> D4 FTP reportes ✅ (input URL, reports.js ?v=10) · D5 salvaguarda alertas ✅ · D6 detach horarios ✅
+> (`"s;0;"`) · D13/D14 eventos TZ+alcance ✅ (userAccessible + convert; Dashboard pendiente).
+> **S4 = falso positivo**: la policy de geocercas SÍ corre vía `ModelUserServiceTrait` (paridad legacy).
+> Quedan abiertos: S5, D3, D7–D12, D15–D16 y la lista F.
+
 **Los 10 hallazgos más graves** (fix antes de seguir migrando):
 
 1. **IDOR en Chat v2** — `messages`/`send` sin comprobar pertenencia (`ChatPolicy`); cualquier usuario lee/escribe cualquier chat. (S1)

@@ -280,7 +280,9 @@ class ReportsController extends BaseController
                 'metas'              => (array) ($report->metas ?? []),
                 'parameters'         => (array) ($report->parameters ?? []),
                 'email'              => (string) ($report->email ?? ''),
-                'ftp'                => (bool) ($report->ftp ?? false),
+                // URL FTP tal cual (string) — castearlo a bool rompía el
+                // round-trip: el modal reenviaba "1" y pisaba la URL guardada.
+                'ftp'                => (string) ($report->ftp ?? ''),
                 'daily'              => (bool) $report->daily,
                 'daily_time'         => (string) ($report->daily_time ?? '00:00'),
                 'weekly'             => (bool) $report->weekly,

@@ -30,8 +30,9 @@ class ChatController extends BaseController
         $this->chatService = app(ChatService::class);
     }
 
-    /** El módulo 'chat' no tiene modelo mapeado en el Manager (checkException
-     *  intentaría resolver uno y explota), así que se valida con perm() directo. */
+    /** Gate de módulo (perm 'chat'). La PERTENENCIA al room se valida aparte
+     *  con checkException('chats', …, $chat) → ChatPolicy::ownership, igual
+     *  que el legacy ('chats' SÍ está mapeado a Chat::class en el Manager). */
     private function gate(string $action = 'view'): void
     {
         if (! $this->user->perm('chat', $action)) {
@@ -112,6 +113,10 @@ class ChatController extends BaseController
         if (! $chat) {
             abort(404);
         }
+        // Paridad legacy ChatController@57-68: solo participantes del room
+        // (ChatPolicy::ownership). Sin esto cualquier usuario leería cualquier
+        // chat por id (IDOR).
+        $this->checkException('chats', 'show', $chat);
 
         $time = (int) $request->get('time');
         $q = $chat->messages();
@@ -137,6 +142,8 @@ class ChatController extends BaseController
         if (! $chat) {
             abort(404);
         }
+        // Paridad legacy ChatController@156: escribir exige ser participante.
+        $this->checkException('chats', 'update', $chat);
 
         $text = trim((string) $request->get('message'));
         if ($text === '') {

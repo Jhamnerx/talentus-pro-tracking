@@ -21,8 +21,24 @@ use Tobuli\Exceptions\ValidationException;
  */
 class VehicleTypesController extends BaseController
 {
+    /**
+     * Gate del módulo. No existe un módulo de permisos `vehicle_types` en
+     * `user_permissions` (User::perm devuelve false para módulos no sembrados
+     * en el usuario — crear uno nuevo apagaría la feature para todos los
+     * usuarios existentes), así que se gatea con `devices`: los tipos/estados
+     * gobiernan la asignación en el device y los límites por geocerca.
+     */
+    private function gate(string $action): void
+    {
+        if (! $this->user->perm('devices', $action)) {
+            abort(403);
+        }
+    }
+
     public function data(Request $request): JsonResponse
     {
+        $this->gate('view');
+
         $perPage = min(100, max(10, (int) $request->get('per_page', 15)));
 
         $query = VehicleType::with('states')->where('user_id', $this->user->id);
@@ -59,6 +75,8 @@ class VehicleTypesController extends BaseController
 
     public function store(Request $request): JsonResponse
     {
+        $this->gate('edit');
+
         try {
             $data = $request->all();
             VehicleTypeFormValidator::validate('create', $data);
@@ -78,6 +96,8 @@ class VehicleTypesController extends BaseController
 
     public function update(Request $request, $id): JsonResponse
     {
+        $this->gate('edit');
+
         $type = VehicleType::where('user_id', $this->user->id)->find($id);
         if (! $type) {
             abort(404);
@@ -98,6 +118,8 @@ class VehicleTypesController extends BaseController
 
     public function destroy(Request $request, $id): JsonResponse
     {
+        $this->gate('edit');
+
         $type = VehicleType::where('user_id', $this->user->id)->find($id);
         if (! $type) {
             abort(404);

@@ -250,6 +250,18 @@ class AlertsController extends BaseController
 
         try {
             $payload = array_merge($request->all(), ['id' => (int) $id]);
+
+            // Salvaguarda del modo api: AlertModalHelper::edit() hace
+            // devices()->sync(Arr::get(data,'devices',[])) — si la clave falta,
+            // sync([]) DESASIGNA todos los vehículos (el path web con loader no
+            // tocaría nada). Si el cliente no la envía, preservamos la actual.
+            if (! $request->has('devices')) {
+                $current = $user->alerts()->find((int) $id);
+                if ($current) {
+                    $payload['devices'] = $current->devices()->pluck('devices.id')->all();
+                }
+            }
+
             AlertModalHelper::setUser($user);
             AlertModalHelper::setApi(true);
             AlertModalHelper::setData($payload);

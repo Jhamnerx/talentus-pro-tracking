@@ -6,6 +6,7 @@ use App\Transformers\Device\DeviceIconTransformer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
+use Tobuli\Entities\Event;
 
 /**
  * UI v2 · Eventos — página dedicada con mapa.
@@ -97,7 +98,10 @@ class EventsController extends BaseController
 
         // Cargamos el device con su icono + traccar para reconstruir el MARCADOR
         // real (arrow/rotating/icon) igual que el mapa Live.
-        $query = $this->user->events()
+        // userAccessible (no user->events()): incluye eventos de alertas
+        // COMPARTIDAS vía alert_user, como el legacy — con user->events() los
+        // sub-usuarios con alertas compartidas veían la lista vacía.
+        $query = Event::userAccessible($this->user)
             ->with(['device' => function ($q) {
                 $q->with(['icon', 'traccar']);
             }])
@@ -164,7 +168,10 @@ class EventsController extends BaseController
                 'device_id'   => $e->device_id ? (int) $e->device_id : null,
                 'device_name' => $e->device->name ?? null,
                 'plate'       => $e->device->plate_number ?? null,
-                'time'        => (string) $e->time,
+                // convert() = UTC → TZ del usuario ('Y-m-d H:i:s'): el crudo de
+                // BD mostraba hora de servidor y el salto a Historial abría el
+                // tramo equivocado.
+                'time'        => \Formatter::time()->convert($e->time),
                 'lat'         => $e->latitude !== null ? (float) $e->latitude : null,
                 'lng'         => $e->longitude !== null ? (float) $e->longitude : null,
                 'speed'       => $e->speed !== null ? (float) $e->speed : null,
@@ -216,7 +223,8 @@ class EventsController extends BaseController
         $deviceId = (int) $request->get('device_id', 0);
         $cap      = 1500;
 
-        $query = $this->user->events()
+        // Mismo alcance que data(): eventos propios + de alertas compartidas.
+        $query = Event::userAccessible($this->user)
             ->with(['device' => function ($qq) { $qq->select('id', 'name'); }])
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
@@ -249,7 +257,7 @@ class EventsController extends BaseController
                 'severity'    => $this->eventSeverity((string) $e->type),
                 'message'     => (string) $e->message,
                 'device_name' => $e->device->name ?? null,
-                'time'        => (string) $e->time,
+                'time'        => \Formatter::time()->convert($e->time),
             ];
         })->values()->all();
 

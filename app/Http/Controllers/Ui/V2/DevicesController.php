@@ -989,9 +989,19 @@ class DevicesController extends BaseController
     /** Lista de gastos del device. GET devices/{id}/expenses */
     public function expensesList(Request $request, $id): JsonResponse
     {
+        $this->expensesGate('view');
         $this->sensorDevice((int) $id);
 
         return response()->json(['ok' => true, 'items' => $this->presentDeviceExpenses((int) $id)]);
+    }
+
+    /** Gate del módulo de gastos (paridad legacy DeviceExpensesController:
+     *  checkException('device_expenses', …) además del acceso al device). */
+    private function expensesGate(string $action): void
+    {
+        if (! $this->user->perm('device_expenses', $action)) {
+            abort(403);
+        }
     }
 
     private function expenseInput(Request $request): array
@@ -1019,6 +1029,7 @@ class DevicesController extends BaseController
     /** Crear gasto. POST devices/{id}/expenses */
     public function expenseStore(Request $request, $id): JsonResponse
     {
+        $this->expensesGate('edit');
         $this->sensorDevice((int) $id);
 
         try {
@@ -1034,9 +1045,11 @@ class DevicesController extends BaseController
         }
     }
 
-    /** Actualizar gasto. PUT expenses/{id} */
+    /** Actualizar gasto. PUT devices/expenses/{id} */
     public function expenseUpdate(Request $request, $id): JsonResponse
     {
+        $this->expensesGate('edit');
+
         $expense = \Tobuli\Entities\DeviceExpense::find((int) $id);
         if (! $expense) {
             abort(404);
@@ -1053,9 +1066,11 @@ class DevicesController extends BaseController
         }
     }
 
-    /** Eliminar gasto. DELETE expenses/{id} */
+    /** Eliminar gasto. DELETE devices/expenses/{id} */
     public function expenseDestroy(Request $request, $id): JsonResponse
     {
+        $this->expensesGate('remove');
+
         $expense = \Tobuli\Entities\DeviceExpense::find((int) $id);
         if (! $expense) {
             abort(404);

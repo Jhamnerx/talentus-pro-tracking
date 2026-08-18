@@ -7,12 +7,22 @@
 @php
     $isActive = $item->active ?? true;
     $expirationDate = $item->expiration_date ?? null;
-    $hasExpire = !empty($expirationDate) && substr((string) $expirationDate, 0, 4) !== '0000';
-    // Fecha + hora de expiración (paridad legacy: datetime, no solo fecha).
-    $expDate = $hasExpire ? substr((string) $expirationDate, 0, 10) : '';
+    $isEditDev = !empty($item->exists);
+    $hasExpValue = !empty($expirationDate) && substr((string) $expirationDate, 0, 4) !== '0000';
+    // Paridad legacy main.blade: la BD guarda UTC y el helper hace reverse()
+    // (TZ usuario → UTC) al guardar, así que aquí se PINTA convert() (UTC →
+    // TZ usuario) — pintar el crudo corría la fecha −offset en cada edición.
+    // Al CREAR el checkbox va SIEMPRE desmarcado (la fecha precargada por
+    // createData es solo sugerencia; marcado forzaba caducidad al alta).
+    $hasExpire = $isEditDev && $hasExpValue;
+    $expDisplay = '';
+    if ($hasExpValue) {
+        $expDisplay = $isEditDev ? Formatter::time()->convert($expirationDate) : (string) $expirationDate;
+    }
+    $expDate = $expDisplay !== '' ? substr($expDisplay, 0, 10) : '';
     $expTime = [];
-    if ($hasExpire) {
-        preg_match('/\b(\d{2}):(\d{2})/', (string) $expirationDate, $expTime);
+    if ($expDisplay !== '') {
+        preg_match('/\b(\d{2}):(\d{2})/', $expDisplay, $expTime);
     }
     $expH = $expTime[1] ?? '00';
     $expM = $expTime[2] ?? '00';
