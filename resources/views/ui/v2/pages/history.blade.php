@@ -289,6 +289,39 @@
                                 <path d="M9 6.5h6" />
                             </svg>
                         </button>
+                        {{-- Overlays de mapa (geocercas / rutas / POIs) — estado sembrado de
+                             user->map_controls (mismo store que Live); history.js ya sabe
+                             cargarlos (setOverlay) y los pinta al iniciar si vienen en true. --}}
+                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-hist__toggle"
+                            data-display="geofences" id="tp-hist-toggle-geofences" type="button"
+                            title="{{ trans('front.geofences') }}"
+                            aria-pressed="{{ !empty($mapConfig['toggles']['geofences']) ? 'true' : 'false' }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="4 7 12 3 20 7 20 17 12 21 4 17 4 7" />
+                            </svg>
+                        </button>
+                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-hist__toggle"
+                            data-display="routes" id="tp-hist-toggle-routes" type="button"
+                            title="{{ trans('front.routes') }}"
+                            aria-pressed="{{ !empty($mapConfig['toggles']['routes']) ? 'true' : 'false' }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19c4-6 12-4 16-14" stroke-dasharray="4 3" />
+                                <circle cx="4" cy="19" r="2" />
+                                <circle cx="20" cy="5" r="2" />
+                            </svg>
+                        </button>
+                        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-hist__toggle"
+                            data-display="poi" id="tp-hist-toggle-poi" type="button"
+                            title="{{ trans('front.poi') }}"
+                            aria-pressed="{{ !empty($mapConfig['toggles']['poi']) ? 'true' : 'false' }}">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                            </svg>
+                        </button>
                     </div>
                     {{-- 8-9 · Zoom --}}
                     <div class="tp-hist-mcg tp-hist-mcg--zoom">
@@ -582,5 +615,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=24"></script>
+    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=25"></script>
 @endpush

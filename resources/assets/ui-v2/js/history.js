@@ -1293,6 +1293,11 @@
     // Hitos persistidos (m_hitos, seed del blade vía aria-pressed): aplicar al
     // cargar (diferido: tp-hitos.js es defer y el mapa debe existir).
     if (state.display.hitos) setTimeout(function () { applyDisplay("hitos"); }, 300);
+    // Overlays persistidos (m_geofences/m_routes/m_poi, seed del blade): pintar
+    // al abrir la página como en Live — no solo tras "Mostrar historial".
+    setTimeout(function () {
+      ["geofences", "routes", "poi"].forEach(function (k) { if (state.display[k]) setOverlay(k, true); });
+    }, 300);
 
     new MutationObserver(drawGraph).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
