@@ -5,6 +5,13 @@
 
     <script src="{{ asset_resource('assets/js/core.js') }}"></script>
 
+    {{-- Restyle moderno de TODAS las páginas de auth (login, recordar/restablecer
+         contraseña, registro): solo CSS, el white-label (inline styles de abajo)
+         sigue ganando. Fuente Inter = la misma de la ui/v2. --}}
+    <link rel="preconnect" href="https://rsms.me/" crossorigin>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/auth.css') }}?v=2">
+
     @yield('styles')
 
     <style>
