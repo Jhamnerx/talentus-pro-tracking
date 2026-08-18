@@ -816,3 +816,102 @@
 
   window.tpAccount = { open: open, openPassword: openPassword };
 })();
+
+/* =====================================================
+   Confirmar email (código único) — paridad EmailConfirmation legacy.
+   Ítem del menú de usuario [data-tp-email-confirm] (solo si email_active=0).
+   Modal: código de 5 dígitos + "Reenviar código" (rate limit 60 s server-side).
+   ===================================================== */
+(function () {
+  "use strict";
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-tp-email-confirm]");
+    if (!btn) return;
+    e.preventDefault();
+    openEmailConfirm(btn);
+  });
+
+  function openEmailConfirm(btn) {
+    var confirmUrl = btn.getAttribute("data-confirm-url");
+    var resendUrl = btn.getAttribute("data-resend-url");
+    var email =
+      (window.Talentus && Talentus.user && Talentus.user.email) || "";
+
+    var dlg = tpModal.open({
+      title: "Confirmar email",
+      sub: email
+        ? "Ingresa el código que enviamos a " + email
+        : "Ingresa el código que enviamos a tu correo",
+      size: "sm",
+      body:
+        '<div class="tp-field"><label class="tp-field__label">Código</label>' +
+        '<input class="tp-input" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="•••••" style="text-align:center;font-size:22px;letter-spacing:.35em;font-weight:700;">' +
+        "</div>" +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ec-resend style="width:100%;">Reenviar código</button>',
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Confirmar",
+          variant: "primary",
+          close: false,
+          onClick: function (d) {
+            var code = (d.querySelector('[name="code"]').value || "").trim();
+            if (!code) {
+              tpModal.toast("Ingresa el código.", "warning");
+              return false;
+            }
+            tpModal.setBusy(d, true);
+            tpModal
+              .fetchJSON(confirmUrl, { method: "POST", json: { code: code } })
+              .then(function (res) {
+                tpModal.setBusy(d, false);
+                if (!res.ok || !res.data || !res.data.ok) {
+                  var errs = (res.data && res.data.errors) || {};
+                  tpModal.showFieldErrors(d, errs);
+                  tpModal.toast(
+                    errs.code || errs.id || "No se pudo confirmar.",
+                    "error",
+                  );
+                  return;
+                }
+                tpModal.toast("Email confirmado.", "success");
+                tpModal.close(d);
+                btn.remove(); // quita el ítem (y su indicador) del menú
+              })
+              .catch(function () {
+                tpModal.setBusy(d, false);
+                tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+
+    var resend = dlg.querySelector("[data-ec-resend]");
+    if (resend)
+      resend.addEventListener("click", function () {
+        resend.disabled = true;
+        tpModal
+          .fetchJSON(resendUrl, { method: "POST", json: {} })
+          .then(function (res) {
+            if (!res.ok || !res.data || !res.data.ok) {
+              var errs = (res.data && res.data.errors) || {};
+              tpModal.toast(errs.id || "No se pudo reenviar.", "warning");
+              resend.disabled = false;
+              return;
+            }
+            tpModal.toast("Código enviado a tu correo.", "success");
+            // rate limit legacy: 60 s entre reenvíos
+            setTimeout(function () {
+              resend.disabled = false;
+            }, 60000);
+          })
+          .catch(function () {
+            resend.disabled = false;
+            tpModal.toast("Error de red.", "error");
+          });
+      });
+  }
+})();

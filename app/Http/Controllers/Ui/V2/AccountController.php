@@ -283,6 +283,73 @@ class AccountController extends BaseController
 
     /* ================= SMS gateway ================= */
 
+    /**
+     * Confirmar email con el código único. Paridad exacta con el legacy
+     * EmailConfirmationController@update: compara contra users.email_activation
+     * y activa el email. POST account/email-confirmation {code}.
+     */
+    public function confirmEmail(Request $request): JsonResponse
+    {
+        $item = UserRepo::find($this->user->id);
+
+        if (! empty($item->email_active)) {
+            return response()->json(['ok' => true]); // ya confirmado: idempotente
+        }
+
+        $code = trim((string) $request->get('code'));
+
+        if ($code === '' || $code != $item->email_activation) {
+            return response()->json(['ok' => false, 'errors' => ['code' => trans('front.wrong_code')]], 422);
+        }
+
+        UserRepo::update($item->id, [
+            'email_active'     => 1,
+            'email_activation' => '',
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Reenviar el código de activación. Paridad exacta con el legacy
+     * resendActivationCodeSubmit: rate limit de 60s, código de 5 dígitos y
+     * envío con la plantilla 'email_activation'. POST .../resend.
+     */
+    public function resendEmailCode(Request $request): JsonResponse
+    {
+        $item = UserRepo::find($this->user->id);
+
+        if (strtotime((string) $item->email_activation_sent) > (time() - 60)) {
+            return response()->json(['ok' => false, 'errors' => ['id' => trans('front.cant_resend_please_wait')]], 422);
+        }
+
+        $input = [
+            'email_activation'      => rand(10000, 99999),
+            'email_activation_sent' => date('Y-m-d H:i:s'),
+        ];
+
+        // OJO paridad: el legacy llamaba sendTemplateEmail($template, $email, ...)
+        // con los args INVERTIDOS (la firma es ($to, EmailTemplate, $data)) y con
+        // la clave '[code]' en vez de 'code' → el reenvío legacy siempre fatales.
+        // Aquí va corregido; el builder EmailActivationTemplate lee $data['code'].
+        $template = app(\Tobuli\Repositories\EmailTemplate\EmailTemplateRepositoryInterface::class)
+            ->whereName('email_activation');
+
+        if (! $template) {
+            return response()->json(['ok' => false, 'errors' => ['id' => 'Plantilla de email no configurada.']], 422);
+        }
+
+        try {
+            sendTemplateEmail($item->email, $template, ['code' => $input['email_activation']]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'errors' => ['id' => 'No se pudo enviar el correo.']], 422);
+        }
+
+        UserRepo::update($item->id, $input);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function updateSms(Request $request): JsonResponse
     {
         if (! $this->user->perm('sms_gateway', 'edit')) {

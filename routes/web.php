@@ -1289,6 +1289,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('account/widgets',   ['as' => 'api.account.widgets',  'uses' => 'Ui\V2\AccountController@updateWidgets']);
         Route::post('account/dashboard', ['as' => 'api.account.dashboard','uses' => 'Ui\V2\AccountController@updateDashboard']);
         Route::post('account/map',       ['as' => 'api.account.map',      'uses' => 'Ui\V2\AccountController@updateMap']);
+        // Confirmación de email (código único, paridad EmailConfirmation legacy)
+        Route::post('account/email-confirmation',        ['as' => 'api.account.email_confirm', 'uses' => 'Ui\V2\AccountController@confirmEmail']);
+        Route::post('account/email-confirmation/resend', ['as' => 'api.account.email_resend',  'uses' => 'Ui\V2\AccountController@resendEmailCode']);
 
         // Chat con dispositivos (JSON sobre Chat/ChatService legacy)
         Route::get('chat/conversations', ['as' => 'api.chat.conversations', 'uses' => 'Ui\V2\ChatController@conversations']);

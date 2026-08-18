@@ -142,6 +142,22 @@
             </svg>
             Cambiar contraseña
         </button>
+        @if (empty($user->email_active))
+            {{-- Email sin confirmar → modal de código único (tp-account.js).
+                 Paridad del flujo EmailConfirmation legacy (código + reenviar). --}}
+            <button class="tp-menu__item" role="menuitem" data-tp-email-confirm
+                data-confirm-url="{{ route('ui.v2.api.account.email_confirm') }}"
+                data-resend-url="{{ route('ui.v2.api.account.email_resend') }}">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                    <polyline points="22,6 12,13 2,6" />
+                </svg>
+                Confirmar email
+                <span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#f59e0b;flex:0 0 auto;"
+                    aria-hidden="true"></span>
+            </button>
+        @endif
         <button class="tp-menu__item" role="menuitem" data-density-toggle>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

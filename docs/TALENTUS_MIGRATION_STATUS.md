@@ -7,6 +7,25 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 7 ago 2026 (2) — Confirmación de email (código único) portada a v2
+
+- **Ítem "Confirmar email"** en el menú de usuario del topbar (solo si `email_active=0`, con punto
+  ámbar) → modal tpModal (código 5 dígitos + "Reenviar código" con rate-limit 60s client+server).
+- **Endpoints** `POST account/email-confirmation{,/resend}` en `Ui\V2\AccountController`
+  (`confirmEmail`/`resendEmailCode`), paridad con `EmailConfirmationController` legacy.
+- **El flujo legacy estaba TRIPLEMENTE roto en este fork** (hallado al portar): (1) llamaba
+  `sendTemplateEmail($template, $email, …)` con los args invertidos (la firma es `($to, $template,
+  $data)`) → TypeError; (2) la fila `email_activation` no existía en `email_templates`; (3) el builder
+  `EmailActivationTemplate` no existía (`TemplateManager` fatales). Además el disparador visible
+  (`#email_confirmation` del header) fue removido del fork → flujo huérfano. La v2 lo repara completo:
+  builder nuevo + vista `emails/email_activation.blade.php` + **migración `2026_08_18_000001`**
+  (inserta la plantilla si no existe — correr `php artisan migrate --force` en prod).
+- Nota ops: la migración `2026_07_02` (route colors) estaba "fantasma" en local (columnas aplicadas
+  pero sin registro en `migrations`) y bloqueaba el batch — se registró manualmente. Verificar en
+  prod si pasa lo mismo antes de migrar.
+
+---
+
 ## 🔄 Actualización · 7 ago 2026 — Preferencia de UI persistida (ui_version)
 
 - **`users.settings.ui_version`** (`'v2'`/`'legacy'`): cualquier request al shell v2 la marca `v2`
