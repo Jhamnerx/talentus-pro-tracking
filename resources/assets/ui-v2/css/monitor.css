@@ -3,8 +3,10 @@
    ===================================================== */
 
 .tp-mon {
-  position: absolute;
-  inset: 0;
+  /* Dentro del workspace (como .tp-live): NUNCA absolute/inset:0 — eso
+     ancla al viewport y tapa el rail y el topbar. */
+  position: relative;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
