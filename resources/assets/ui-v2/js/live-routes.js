@@ -80,12 +80,12 @@
   function buildLayerFor(r) {
     var pts = toLatLngs(r.coordinates);
     if (pts.length < 2) return null;
+    // Solo llegan rutas ACTIVAS (renderLayers filtra las inactivas, que no se
+    // dibujan — paridad legacy: route.js isLayerVisible() las quita del mapa).
     return L.polyline(pts, {
       color: r.color || "#7c3aed",
       weight: r.id === S.activeId ? 7 : 5,
-      opacity: r.active ? 0.9 : 0.35,
-      // Punteado siempre (mismo look que Historial); las inactivas se
-      // distinguen por la opacidad.
+      opacity: 0.9,
       dashArray: "6 6",
     });
   }
