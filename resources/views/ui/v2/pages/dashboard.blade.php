@@ -4,7 +4,7 @@
 @section('rail-active', 'dashboard')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=4">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=5">
 @endpush
 
 @section('workspace-class', 'tp-workspace--scroll')

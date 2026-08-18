@@ -1,17 +1,25 @@
 /* =====================================================
-   TalentusPro · Dashboard (Command Center) · Phase 3
+   TalentusPro · Dashboard (Command Center)
+   Rediseño: fondo con degradado sutil, KPIs con acento de
+   color, cards con profundidad, tag EN VIVO con pulso.
+   Mismos hooks/ids — dashboard.js no cambia.
    ===================================================== */
 
 .tp-dash {
-  padding: 24px;
+  padding: 24px 28px 40px;
   max-width: 1600px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+  /* Degradado sutil de marca arriba → aire, no bloque plano */
+  background:
+    radial-gradient(900px 220px at 18% -40px, rgba(46, 99, 217, 0.07), transparent 70%),
+    radial-gradient(700px 200px at 85% -60px, rgba(27, 153, 189, 0.05), transparent 70%);
+  min-height: 100%;
 }
 
-/* Header */
+/* ---------- Header ---------- */
 .tp-dash__head {
   display: flex;
   align-items: flex-end;
@@ -19,45 +27,138 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+.tp-dash__head h1 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--brand-800, var(--fg-primary));
+}
+.tp-dash__head p {
+  margin-top: 2px;
+}
 
-/* KPIs row */
+/* Toolbar de rango: segmentado sobre chip claro */
+.tp-dash__range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tp-scope .tp-dash__range-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--fg-secondary);
+  border-radius: 9px;
+  padding: 6px 13px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s, box-shadow 0.12s;
+}
+/* Contenedor segmentado: los 4 primeros botones van "dentro" de una píldora */
+.tp-dash__range {
+  --seg-bg: var(--brand-50, #f2f5fd);
+}
+.tp-scope .tp-dash__range-btn:nth-child(-n + 4) {
+  background: var(--seg-bg);
+}
+.tp-scope .tp-dash__range-btn:first-child {
+  border-radius: 11px 4px 4px 11px;
+}
+.tp-scope .tp-dash__range-btn:nth-child(4) {
+  border-radius: 4px 11px 11px 4px;
+}
+.tp-scope .tp-dash__range-btn:hover {
+  color: var(--brand-600);
+}
+.tp-scope .tp-dash__range-btn.is-active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand-600), var(--brand-500));
+  box-shadow: 0 2px 8px rgba(46, 99, 217, 0.35);
+}
+.tp-dash__range-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--border-default);
+  margin: 0 2px;
+}
+.tp-scope .tp-dash__range .tp-input--sm {
+  height: 34px;
+  width: 140px;
+  font-size: 12.5px;
+  background: var(--surface-page);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+}
+.tp-scope .tp-dash__range #tp-dash-apply {
+  background: linear-gradient(135deg, var(--brand-600), var(--brand-500));
+  border: 0;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(46, 99, 217, 0.3);
+}
+.tp-dash__meta {
+  font-size: 12px;
+  color: var(--fg-muted);
+  margin: -8px 0 0;
+}
+
+/* ---------- KPI row ---------- */
 .tp-dash__kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
   gap: 12px;
 }
 
 .tp-kpi {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 13px;
+  padding: 16px;
   background: var(--surface-raised);
-  border: 1px solid var(--border-default);
-  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(6, 11, 52, 0.04);
+  overflow: hidden;
   transition:
-    border-color var(--dur-fast) var(--ease-in-out),
-    box-shadow var(--dur-fast) var(--ease-in-out);
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
 }
 .tp-kpi:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  border-color: var(--border-default);
+  box-shadow: 0 8px 20px rgba(6, 11, 52, 0.08);
+}
+/* Acento de color a la izquierda (por tono) */
+.tp-kpi::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--kpi-tone, var(--brand-500));
+  opacity: 0.9;
 }
 
 .tp-kpi__icon {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--r-sm);
-  background: var(--surface-sunken);
-  color: var(--fg-secondary);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--kpi-tone, var(--brand-500)) 12%, transparent);
+  color: var(--kpi-tone, var(--brand-500));
   flex-shrink: 0;
 }
 .tp-kpi__icon svg {
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
 }
 
 .tp-kpi__body {
@@ -70,58 +171,38 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
-  margin-bottom: 2px;
+  margin-bottom: 3px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .tp-kpi__value {
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 25px;
+  font-weight: 800;
   color: var(--fg-primary);
-  line-height: 1.1;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
-.tp-kpi--success .tp-kpi__icon {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-}
-.tp-kpi--warning .tp-kpi__icon {
-  background: rgba(245, 158, 11, 0.12);
-  color: #f59e0b;
-}
-.tp-kpi--info .tp-kpi__icon {
-  background: rgba(59, 130, 246, 0.12);
-  color: #3b82f6;
-}
-.tp-kpi--muted .tp-kpi__icon {
-  background: rgba(148, 163, 184, 0.15);
-  color: #94a3b8;
-}
-.tp-kpi--brand .tp-kpi__icon {
-  background: var(--brand-bg-subtle);
-  color: var(--brand-500);
-}
+/* Tonos por KPI (variable --kpi-tone alimenta acento + chip del icono) */
+.tp-kpi--default { --kpi-tone: var(--brand-500); }
+.tp-kpi--brand   { --kpi-tone: var(--brand-500); }
+.tp-kpi--success { --kpi-tone: #10b981; }
+.tp-kpi--warning { --kpi-tone: #f59e0b; }
+.tp-kpi--info    { --kpi-tone: #3b82f6; }
+.tp-kpi--muted   { --kpi-tone: #94a3b8; }
 
-/* Widgets grid */
+/* ---------- Widgets grid ---------- */
 .tp-dash__grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
   gap: 16px;
 }
-.tp-widget--span-6 {
-  grid-column: span 6;
-}
-.tp-widget--span-4 {
-  grid-column: span 4;
-}
-.tp-widget--span-12 {
-  grid-column: span 12;
-}
-.tp-widget--span-8 {
-  grid-column: span 8;
-}
+.tp-widget--span-6 { grid-column: span 6; }
+.tp-widget--span-4 { grid-column: span 4; }
+.tp-widget--span-8 { grid-column: span 8; }
+.tp-widget--span-12 { grid-column: span 12; }
 
 @media (max-width: 1100px) {
   .tp-widget--span-6,
@@ -130,17 +211,20 @@
     grid-column: span 12;
   }
 }
-.tp-chart--donut {
-  height: 200px;
-}
 
 .tp-widget {
   background: var(--surface-raised);
-  border: 1px solid var(--border-default);
-  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 1px 2px rgba(6, 11, 52, 0.04);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.tp-widget:hover {
+  box-shadow: 0 6px 18px rgba(6, 11, 52, 0.07);
+  border-color: var(--border-default);
 }
 
 .tp-widget__head {
@@ -148,8 +232,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-default);
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tp-widget__head h3 {
+  font-weight: 700;
+  color: var(--fg-primary);
+  letter-spacing: -0.01em;
 }
 .tp-widget__hint {
   font-size: 11px;
@@ -157,11 +246,37 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-
 .tp-widget__body {
-  padding: 12px 16px;
+  padding: 16px 18px;
   flex: 1;
   min-height: 0;
+}
+
+/* Tag EN VIVO: pill con punto pulsante */
+.tp-widget__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.tp-widget__tag::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  animation: tp-live-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tp-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.45); }
+  50% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
 }
 
 /* Chart wrappers */
@@ -169,162 +284,69 @@
   width: 100%;
 }
 
-/* Compact table */
-.tp-table--sm {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+/* ---------- Donuts de estado ---------- */
+.tp-donut {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  align-items: center;
+  gap: 16px;
+  min-height: 180px;
 }
-.tp-table--sm th,
-.tp-table--sm td {
-  padding: 8px 6px;
-  border-bottom: 1px solid var(--border-default);
-  text-align: left;
+.tp-donut__chart {
+  width: 150px;
+  height: 150px;
 }
-.tp-table--sm th {
-  font-size: 11px;
-  color: var(--fg-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.tp-table--sm tbody tr:last-child td {
-  border-bottom: 0;
-}
-.tp-table--sm .tp-text-right {
-  text-align: right;
-}
-.tp-table--sm .tp-text-center {
-  text-align: center;
-}
-
-/* Status pill inside table */
-.tp-pill {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--surface-sunken);
-  color: var(--fg-secondary);
-}
-.tp-pill--moving {
-  background: rgba(16, 185, 129, 0.15);
-  color: #10b981;
-}
-.tp-pill--idle {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-}
-.tp-pill--stopped {
-  background: rgba(59, 130, 246, 0.15);
-  color: #3b82f6;
-}
-.tp-pill--offline {
-  background: rgba(148, 163, 184, 0.18);
-  color: #94a3b8;
-}
-
-/* Health bars */
-.tp-health {
+.tp-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding-top: 8px;
+  gap: 4px;
 }
-.tp-health__row {
+.tp-legend__row {
   display: grid;
-  grid-template-columns: 130px 1fr 50px;
-  gap: 12px;
+  grid-template-columns: 12px 1fr auto;
   align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  transition: background 0.12s;
 }
-.tp-health__label {
-  font-size: 12px;
+.tp-legend__row:hover {
+  background: var(--brand-50, #f2f5fd);
+}
+.tp-legend__sw {
+  width: 11px;
+  height: 11px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+.tp-legend__lbl {
   color: var(--fg-secondary);
-}
-.tp-health__bar {
-  height: 8px;
-  background: var(--surface-sunken);
-  border-radius: 999px;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.tp-health__fill {
-  display: block;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--brand-500),
-    var(--brand-400, var(--brand-500))
-  );
-  border-radius: 999px;
-  transition: width var(--dur-base) var(--ease-out);
-}
-.tp-health__val {
-  text-align: right;
-  font-size: 12px;
-  font-weight: 600;
+.tp-legend__val {
+  font-weight: 700;
   color: var(--fg-primary);
   font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
-/* ============================================================
-   Dashboard fusionado · toolbar de rango, conducción, bar-lists
-   ============================================================ */
-
-/* Toolbar de rango (Hoy/Ayer/Semana/Mes + custom) */
-.tp-dash__range {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-.tp-scope .tp-dash__range-btn {
-  appearance: none;
-  border: 1px solid var(--border-default);
-  background: var(--surface-raised);
-  color: var(--fg-secondary);
-  border-radius: var(--r-pill, 999px);
-  padding: 5px 12px;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color .12s, background .12s, border-color .12s;
-}
-.tp-scope .tp-dash__range-btn:hover {
-  color: var(--fg-primary);
-  border-color: var(--border-strong);
-}
-.tp-scope .tp-dash__range-btn.is-active {
-  color: #fff;
-  background: var(--brand-500, #2e63d9);
-  border-color: var(--brand-500, #2e63d9);
-}
-.tp-dash__range-sep {
-  width: 1px;
-  height: 22px;
-  background: var(--border-default);
-  margin: 0 2px;
-}
-.tp-scope .tp-input--sm {
-  height: 32px;
-  width: 140px;
-  font-size: 12.5px;
-}
-.tp-dash__meta {
-  font-size: 12px;
-  color: var(--fg-muted);
-  margin: -4px 0 4px;
+@media (max-width: 520px) {
+  .tp-donut { grid-template-columns: 1fr; justify-items: center; }
+  .tp-donut .tp-legend { width: 100%; }
 }
 
-/* Card de conducción */
+/* ---------- Conducción ---------- */
 .tp-driving {
   display: grid;
-  grid-template-columns: 200px 1fr;
+  grid-template-columns: 210px 1fr;
   grid-template-areas: "score tiles" "trend trend";
-  gap: 16px;
+  gap: 18px;
 }
 .tp-driving__score {
   grid-area: score;
@@ -332,36 +354,40 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  border-right: 1px solid var(--border-default);
-  padding-right: 12px;
+  gap: 12px;
+  border-right: 1px solid var(--border-subtle);
+  padding-right: 14px;
 }
 .tp-eco {
-  width: 118px;
-  height: 118px;
+  width: 124px;
+  height: 124px;
   border-radius: 50%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 6px solid var(--status-moving, #10b981);
+  border: 7px solid var(--status-moving, #10b981);
   background: color-mix(in srgb, var(--status-moving, #10b981) 8%, transparent);
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--status-moving, #10b981) 6%, transparent);
 }
 .tp-eco[data-tone="warn"] {
   border-color: #f59e0b;
   background: color-mix(in srgb, #f59e0b 8%, transparent);
+  box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.08);
 }
 .tp-eco[data-tone="bad"] {
   border-color: #ef4444;
   background: color-mix(in srgb, #ef4444 8%, transparent);
+  box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.08);
 }
 .tp-eco__value {
-  font-size: 34px;
+  font-size: 36px;
   font-weight: 800;
   line-height: 1;
   color: var(--fg-primary);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 .tp-eco__label {
   font-size: 10.5px;
@@ -377,7 +403,7 @@
 .tp-driving__risk-val {
   display: block;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 800;
   color: #ef4444;
   font-variant-numeric: tabular-nums;
 }
@@ -389,28 +415,39 @@
   grid-area: tiles;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
   align-content: start;
 }
+/* Tile de comportamiento: acento a la izquierda del color del evento */
 .tp-behav {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 12px 14px;
-  border: 1px solid var(--border-default);
-  border-radius: var(--r-md, 10px);
+  padding: 13px 15px;
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--behav-tone, var(--border-default));
+  border-radius: 12px;
   position: relative;
+  background: var(--surface-raised);
+  transition: background 0.12s, border-color 0.12s;
 }
+.tp-behav:hover {
+  background: color-mix(in srgb, var(--behav-tone, #94a3b8) 5%, var(--surface-raised));
+}
+.tp-behav[data-behav="harsh_braking"]      { --behav-tone: #ef4444; }
+.tp-behav[data-behav="harsh_acceleration"] { --behav-tone: #f97316; }
+.tp-behav[data-behav="harsh_turning"]      { --behav-tone: #eab308; }
+.tp-behav[data-behav="overspeed"]          { --behav-tone: #dc2626; }
 .tp-behav__dot {
   width: 9px;
   height: 9px;
   border-radius: 50%;
   position: absolute;
-  top: 13px;
-  right: 13px;
+  top: 14px;
+  right: 14px;
 }
 .tp-behav__val {
-  font-size: 24px;
+  font-size: 25px;
   font-weight: 800;
   color: var(--fg-primary);
   line-height: 1.1;
@@ -438,24 +475,30 @@
   }
   .tp-driving__score {
     border-right: 0;
-    border-bottom: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-subtle);
     padding: 0 0 12px;
     flex-direction: row;
     justify-content: space-around;
   }
 }
 
-/* Bar-list (categorías, top-risk, kilometraje) */
+/* ---------- Bar-lists ---------- */
 .tp-barlist {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 4px;
 }
 .tp-barlist__row {
   display: grid;
-  grid-template-columns: 140px 1fr auto;
+  grid-template-columns: 150px 1fr auto;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+.tp-barlist__row:hover {
+  background: var(--brand-50, #f2f5fd);
 }
 .tp-barlist__label {
   font-size: 12.5px;
@@ -465,7 +508,7 @@
   white-space: nowrap;
 }
 .tp-barlist__track {
-  height: 8px;
+  height: 9px;
   border-radius: 999px;
   background: var(--surface-sunken);
   overflow: hidden;
@@ -475,17 +518,18 @@
   height: 100%;
   border-radius: 999px;
   min-width: 3px;
+  transition: width var(--dur-base, 0.25s) var(--ease-out, ease-out);
 }
 .tp-barlist__val {
   font-size: 12.5px;
   font-weight: 700;
   color: var(--fg-primary);
   font-variant-numeric: tabular-nums;
-  min-width: 44px;
+  min-width: 48px;
   text-align: right;
 }
 
-/* Notificaciones */
+/* ---------- Notificaciones ---------- */
 .tp-notes {
   list-style: none;
   margin: 0;
@@ -498,18 +542,23 @@
 .tp-note {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 2px;
-  border-bottom: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.15));
+  gap: 11px;
+  padding: 9px 8px;
+  border-radius: 9px;
+  transition: background 0.12s;
 }
-.tp-note:last-child {
-  border-bottom: 0;
+.tp-note:hover {
+  background: var(--brand-50, #f2f5fd);
+}
+.tp-note + .tp-note {
+  border-top: 1px solid var(--border-subtle, rgba(148, 163, 184, 0.15));
 }
 .tp-note__dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex: 0 0 auto;
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, transparent);
 }
 .tp-note__body {
   flex: 1;
@@ -539,92 +588,116 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ============================================================
-   Cards de estado estilo Wialon · donut + leyenda con conteos
-   ============================================================ */
-.tp-widget__tag {
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+/* ---------- Tabla compacta (Top 5) ---------- */
+.tp-table--sm {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.tp-table--sm th,
+.tp-table--sm td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  text-align: left;
+}
+.tp-table--sm th {
+  font-size: 11px;
+  color: var(--fg-tertiary);
   text-transform: uppercase;
-  color: var(--status-moving, #10b981);
+  letter-spacing: 0.04em;
+  font-weight: 600;
 }
-.tp-donut {
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  align-items: center;
-  gap: 14px;
-  min-height: 190px;
+.tp-table--sm tbody tr {
+  transition: background 0.12s;
 }
-.tp-donut__chart {
-  width: 150px;
-  height: 150px;
+.tp-table--sm tbody tr:hover {
+  background: var(--brand-50, #f2f5fd);
 }
-.tp-legend {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.tp-table--sm tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tp-table--sm .tp-text-right { text-align: right; }
+.tp-table--sm .tp-text-center { text-align: center; }
+
+/* Pills de estado */
+.tp-pill {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-sunken);
+  color: var(--fg-secondary);
+}
+.tp-pill--moving  { background: rgba(16, 185, 129, 0.14); color: #059669; }
+.tp-pill--idle    { background: rgba(245, 158, 11, 0.14); color: #d97706; }
+.tp-pill--stopped { background: rgba(59, 130, 246, 0.14); color: #2563eb; }
+.tp-pill--offline { background: rgba(148, 163, 184, 0.18); color: #64748b; }
+
+/* ---------- Health bars (si el widget se usa) ---------- */
+.tp-health {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
+  padding-top: 8px;
 }
-.tp-legend__row {
+.tp-health__row {
   display: grid;
-  grid-template-columns: 12px 1fr auto;
+  grid-template-columns: 130px 1fr 50px;
+  gap: 12px;
   align-items: center;
-  gap: 9px;
-  font-size: 12.5px;
 }
-.tp-legend__sw {
-  width: 11px;
-  height: 11px;
-  border-radius: 3px;
-  flex: 0 0 auto;
-}
-.tp-legend__lbl {
-  color: var(--fg-secondary);
+.tp-health__label { font-size: 12px; color: var(--fg-secondary); }
+.tp-health__bar {
+  height: 8px;
+  background: var(--surface-sunken);
+  border-radius: 999px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
-.tp-legend__val {
-  font-weight: 700;
+.tp-health__fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand-500), var(--brand-400, var(--brand-500)));
+  border-radius: 999px;
+  transition: width var(--dur-base) var(--ease-out);
+}
+.tp-health__val {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--fg-primary);
   font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-.tp-widget__head { padding: 14px 18px; }
-.tp-widget__body { padding: 16px 18px; }
-@media (max-width: 520px) {
-  .tp-donut { grid-template-columns: 1fr; justify-items: center; }
-  .tp-donut .tp-legend { width: 100%; }
 }
 
-/* Estado vacío de cards (bar-lists, etc.) */
+/* ---------- Estado vacío ---------- */
 .tp-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 26px 12px;
+  gap: 10px;
+  padding: 28px 12px;
   color: var(--fg-muted);
   text-align: center;
-  min-height: 120px;
+  min-height: 130px;
+  border: 1.5px dashed var(--border-subtle);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-sunken) 40%, transparent);
 }
-.tp-empty svg { opacity: 0.5; }
+.tp-empty svg {
+  opacity: 0.55;
+  background: var(--brand-50, #f2f5fd);
+  border-radius: 50%;
+  padding: 9px;
+  width: 40px;
+  height: 40px;
+  color: var(--brand-400, #5c87e8);
+}
 .tp-empty span { font-size: 12.5px; }
 
-/* Pulido general de widgets (look Wialon: borde sutil + sombra suave) */
-.tp-widget {
-  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.04));
-  transition: box-shadow .15s ease, border-color .15s ease;
-}
-.tp-widget:hover {
-  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06));
-}
-
-/* Estado de carga al cambiar de rango (feedback inmediato) */
+/* ---------- Loading feedback ---------- */
 .tp-scope .tp-dash__range-btn:disabled,
 .tp-scope #tp-dash-apply:disabled {
   opacity: 0.55;
@@ -636,7 +709,6 @@
 @keyframes tp-dash-spin {
   to { transform: rotate(360deg); }
 }
-/* Atenúa suavemente los cards de período mientras carga el nuevo rango */
 .tp-dash.is-loading [data-widget="driving"],
 .tp-dash.is-loading [data-widget="bycategory"],
 .tp-dash.is-loading [data-widget="toprisk"],
