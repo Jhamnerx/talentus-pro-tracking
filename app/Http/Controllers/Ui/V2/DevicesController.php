@@ -99,6 +99,22 @@ class DevicesController extends BaseController
     }
 
     /**
+     * Monitoreo de grupo: grilla 3×3 de mini-mapas, cada celda sigue a un
+     * vehículo elegido (selector agrupado). Reusa el feed de Live.
+     */
+    public function monitor(Request $request)
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            abort(403);
+        }
+
+        return \Illuminate\Support\Facades\View::make('ui.v2.pages.monitor', [
+            'pageTitle' => 'Monitoreo de grupo',
+            'mapConfig' => $this->buildMapConfig(),
+        ]);
+    }
+
+    /**
      * Fleet page (virtualized table).
      */
     public function fleet(Request $request)

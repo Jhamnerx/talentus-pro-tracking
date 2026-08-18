@@ -7,6 +7,21 @@ Documento vivo que resume **qué está implementado** en el shell nuevo y **qué
 
 ---
 
+## 🔄 Actualización · 7 ago 2026 (3) — Módulo NUEVO "Monitoreo de grupo" (grilla 3×3)
+
+- **Página `/ui/v2/monitor`** (rail, bajo Objetos, gate `perm('devices','view')`): grilla **3×3 de
+  mini-mapas**; cada celda sigue EN VIVO a un vehículo (marcador real `deviceIcon`, panTo en cada
+  refresco, estado + velocidad + hora en cabecera/pie) con botón **×** para limpiar la celda.
+- **Selector de vehículo**: modal agrupado por grupo de objetos con buscador, punto de estado,
+  icono en miniatura y "En uso" para los ya asignados a otra celda.
+- La selección **persiste en localStorage** (`tp_monitor_slots`). Reusa el feed de Live
+  (`api.devices` paginado + `api.devices.updates` cada 15s) — sin endpoints nuevos.
+- También esta sesión: **"Seguir" del kebab** = ventana flotante arrastrable con mini-mapa que
+  trackea al device (paridad legacy; antes solo preseleccionaba), y **"Acción llamada"** del kebab
+  abre el modal nativo con el vehículo preseleccionado y sus eventos (tp-call-actions en modo dual).
+
+---
+
 ## 🔄 Actualización · 7 ago 2026 (2) — Confirmación de email (código único) portada a v2
 
 - **Ítem "Confirmar email"** en el menú de usuario del topbar (solo si `email_active=0`, con punto

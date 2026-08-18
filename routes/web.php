@@ -1116,6 +1116,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     // Per-domain controllers under App\Http\Controllers\Ui\V2\*
     Route::get('live',      ['as' => 'live',      'uses' => 'Ui\V2\DevicesController@live']);
     Route::get('fleet',     ['as' => 'fleet',     'uses' => 'Ui\V2\DevicesController@fleet']);
+    Route::get('monitor',   ['as' => 'monitor',   'uses' => 'Ui\V2\DevicesController@monitor']);
     Route::get('dashboard', ['as' => 'dashboard', 'uses' => 'Ui\V2\DashboardController@index']);
     Route::get('zones',     ['as' => 'zones',     'uses' => 'Ui\V2\ZonesController@index']);
     Route::get('alerts',    ['as' => 'alerts',    'uses' => 'Ui\V2\AlertsController@index']);

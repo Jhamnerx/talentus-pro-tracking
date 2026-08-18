@@ -18,6 +18,7 @@
     $items = [
         ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'stats', 'url' => url('/ui/v2/dashboard')],
         ['key' => 'live', 'label' => 'Objetos', 'icon' => 'navigation', 'url' => url('/ui/v2/live')],
+        ['key' => 'monitor', 'label' => 'Monitoreo de grupo', 'icon' => 'grid', 'url' => url('/ui/v2/monitor')],
         ['key' => 'events', 'label' => 'Eventos', 'icon' => 'events', 'url' => url('/ui/v2/events'), 'can' => $u->perm('events', 'view')],
         ['key' => 'alerts', 'label' => 'Alertas', 'icon' => 'alerts', 'url' => url('/ui/v2/alerts'), 'can' => $u->perm('alerts', 'view')],
         ['key' => 'history', 'label' => 'Historial', 'icon' => 'history', 'url' => url('/ui/v2/history')],
