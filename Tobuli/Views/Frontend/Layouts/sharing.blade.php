@@ -2,6 +2,11 @@
 <html lang="{{ Language::iso() }}">
 <head>
     @include('Frontend.Layouts.partials.head')
+    {{-- Identidad v2 sobre el mapa público compartido: solo repinta los
+         controles del legacy, sin tocar su marcado ni sus hooks. --}}
+    <link rel="preconnect" href="https://rsms.me/" crossorigin>
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/sharing-public.css') }}?v=1">
     @yield('styles')
 </head>
 

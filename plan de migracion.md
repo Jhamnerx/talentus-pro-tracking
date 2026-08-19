@@ -233,9 +233,18 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 5.1 Subscriptions/DeviceSubscription/DevicePlans — **NO APLICA en esta instalación** (evaluado 19-ago): no hay ninguna pasarela de pago habilitada (`config('payments')` sin entradas activas), 0 suscripciones, 0 `device_plans` y el plugin `subscriptions` sin activar. Los 4 planes de facturación existentes se asignan desde el panel de administración (601 usuarios), flujo que no pasa por la UI de usuario. Construir la superficie de compra sin pasarela ni datos no sería verificable.
 5.2 ~~Lookup/Docs/LoginAs/Addresses~~ ✅ 19-ago — las tablas Lookup de estado (inactivo, nunca conectado, expirado) se resuelven como filtros de **Flota** en SQL, y el widget del tablero enlaza a cada una (igual que el legacy enlazaba a su Lookup). LoginAs y la documentación de la API quedan como accesos directos del hub Admin. El buscador de direcciones ya estaba en Herramientas.
 
-### Ola 6 — Público (fuera del shell)
-Login/Registro/CustomRegistration/PasswordReminder/EmailConfirmation + página pública de sharing
-(hoy reutiliza la legacy, funciona).
+### Ola 6 — Público (fuera del shell) ✅ (19-ago)
+Login, Registro, CustomRegistration, PasswordReminder (solicitar y restablecer) y LoginAs ya salen
+con la identidad v2: todas extienden `Frontend.Layouts.frontend`, que carga `auth.css`.
+EmailConfirmation vive como modal dentro de la app (flujo de código único, ✅ F16).
+
+**Página pública de sharing** (el enlace que se envía a un tercero): repintada con la identidad v2
+mediante `sharing-public.css` — tipografía Inter, superficies, radios y sombras sobre los controles
+del mapa, **sin tocar su marcado ni sus hooks** (`app.mapFull()`, `app.zoomIn()`, `.icon …`).
+Verificado con un enlace vigente real (HTTP 200).
+
+> **Fuera de alcance**: reescribir el mapa público con el stack v2 (marcadores en vivo, polling y
+> capas propias). Es un módulo completo, no un restyle, y hoy el mapa legacy cumple.
 
 ---
 
