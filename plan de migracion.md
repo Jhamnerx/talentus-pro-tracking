@@ -31,7 +31,11 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 > **Tercer lote (7-ago):** D7 (visibilidad de geocercas/POIs + no reactivar al editar) y F2
 > (import/export nativos de geocercas y POIs).
 >
-> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · lista F (F1/F3/F5/F6/F7…).
+> **Cuarto lote (7-ago):** F1 (snap_to_road real + gate por API key) y F5 (orden del data-log +
+> km por odómetro). D10/D11 quedan aplazados a propósito: `custom_fields_task` está OFF y
+> `custom_fields` no tiene ningún campo definido (0 filas) → sin impacto hoy.
+>
+> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · F3/F6/F7 y resto de la lista F.
 
 ---
 
@@ -76,11 +80,11 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 
 | # | Defecto | Sev |
 |---|---------|-----|
-| F1 | `snap_to_road` es **no-op** en Historial v2 (`getApi()` no lee la clave; solo `get()` la implementa) → mapa y export divergen | CRÍTICO |
+| F1 | ✅ **CORREGIDO 7-ago** — `getApi()` aplica `snapToRoad()` a las posiciones de cada tramo (igual que `get()`), y el checkbox se oculta si no hay `services.snaptoroad.key` (paridad legacy) | — |
 | F2 | ✅ **CORREGIDO 7-ago** — modales v2 nativos: export por form-POST a los endpoints legacy de descarga (`geofences.export_create` / `pois.export.store`) con tipo + selección; import por FormData (`api.zones.import` y el nuevo `api.pois.import`, que exige `map_icon_id` como el legacy). Botones de importar gateados por `perm(...,'edit')` | — |
 | F3 | Rutas: `export_groups` → **500** (tipo no mapeado); `export_active/inactive` exportan TODO (no viajan ids) | MEDIO |
 | F4 | ✅ **CORREGIDO 6-ago (2)** — `templates()` gatea por `perm(modulo,'view')` y solo llama `createData()` con `edit` | — |
-| F5 | Historial: data-log **siempre ascendente** (formato de `sorting` que el helper no reconoce); `distance_sum` ≠ legacy (no usa el recálculo por odómetro); borrar posiciones (`history.remove`) sin superficie | MEDIO |
+| F5 | ⚠️ **PARCIAL 7-ago** — ✅ orden del data-log (`sorting` con la forma que el helper entiende + botón asc/desc) y ✅ km por odómetro (clave aditiva `distance_sum_odometer`). **Pendiente**: borrar posiciones (`history.remove`) sin superficie | MEDIO |
 | F6 | Eventos: borrado individual/masivo (`events.clean`) sin superficie; sin filtro por rango de fechas absoluto; columna título (plugin `event_section_alert`) y gate `event_section_address` ignorados | MEDIO |
 | F7 | Geocercas: `device_id` (plugin `moving_geofence`) no configurable desde v2 (meta muerto); confirmación con contraseña (`confirmed_action`) ausente en DELETEs | MEDIO |
 | F8 | Iconos del device: los selects de color no viajan si el tipo ≠ arrow (v2 los `disabled`; legacy solo los oculta) | MEDIO |
@@ -148,7 +152,7 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 | Rutas | ⚠️ | F3; CRUD+grupos+tabla ✅ |
 | Alertas (reglas + modal 6 tabs) | ✅/⚠️ | ~~D5~~✅ salvaguarda |
 | Eventos (página) | ✅/⚠️ | ~~D13, D14~~✅, F6 |
-| Historial | ⚠️ | F1, F5 |
+| Historial | ✅/⚠️ | ~~F1~~✅; F5 parcial (falta borrar posiciones) |
 | Reportes | ✅/⚠️ | ~~D4~~✅; schedules ✅ |
 | Comandos (modal + hub) | ✅ | ~~D6, D9, F4~~✅ |
 | Sharing | ⚠️ | ~~D3~~✅; F11 (canal SMS) |
