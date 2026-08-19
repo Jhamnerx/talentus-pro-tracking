@@ -69,6 +69,9 @@ class DashboardController extends BaseController
 
         if ($scope === 'all' || $scope === 'live') {
             $out = array_merge($out, $this->fleetKpis());
+            // Reparto por estado con los 6 grupos del legacy (incluye inactivo
+            // y nunca conectado) y los colores que el usuario haya elegido.
+            $out['overview'] = $this->deviceOverview();
         }
 
         if ($scope === 'all' || $scope === 'period') {
@@ -77,13 +80,97 @@ class DashboardController extends BaseController
                 $out,
                 ['range' => $range, 'from' => substr($from, 0, 10), 'to' => substr($to, 0, 10)],
                 $this->drivingAnalytics($from, $days),
-                ['mileage' => $this->mileageTop($from, $to), 'notifications' => $this->latestNotifications($from)],
+                [
+                    'mileage'         => $this->mileageTop($from, $to),
+                    'mileage_sampled' => $this->mileageSampled,
+                    'notifications'   => $this->latestNotifications($from),
+                    'latest_tasks'    => $this->latestTasks(),
+                ],
             );
         }
 
         $out['fetchedAt'] = date('c');
 
         return response()->json($out);
+    }
+
+    /**
+     * Últimas tareas (bloque latest_tasks del legacy). Vacío si el usuario no
+     * tiene el permiso, para no filtrar nada.
+     */
+    private function latestTasks(): array
+    {
+        if (! $this->user->perm('tasks', 'view')) {
+            return [];
+        }
+
+        try {
+            $rows = \Tobuli\Entities\Task::whereIn('device_id', $this->user->devices()->pluck('devices.id'))
+                ->with('device')
+                ->orderBy('id', 'desc')
+                ->limit(7)
+                ->get();
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $statuses = \Tobuli\Entities\TaskStatus::getList();
+
+        return $rows->map(function ($t) use ($statuses) {
+            return [
+                'id'           => (int) $t->id,
+                'title'        => (string) $t->title,
+                'device'       => $t->device->name ?? null,
+                'status'       => (int) $t->status,
+                'status_label' => (string) ($statuses[$t->status] ?? ''),
+                'priority'     => (int) $t->priority,
+                // Ventana de entrega, ya en la zona del usuario.
+                'delivery_to'  => $t->delivery_time_to ? \Formatter::time()->convert($t->delivery_time_to) : null,
+            ];
+        })->all();
+    }
+
+    /**
+     * Reparto de la flota por estado para el donut, con los MISMOS seis grupos
+     * y colores que el bloque device_overview del legacy (incluye "inactivo" y
+     * "nunca conectado", que faltaban) — los colores salen de las opciones del
+     * usuario y caen a los del catálogo si no los ha tocado.
+     */
+    private function deviceOverview(): array
+    {
+        $colors = (array) ($this->blockOptions('device_overview')['colors'] ?? []);
+        $defaults = [
+            'move' => '#52BE80', 'idle' => '#5DADE2', 'stop' => '#F7DC6F',
+            'offline' => '#EC7063', 'inactive' => '#D7DBDD', 'never_connected' => '#AF7AC5',
+        ];
+
+        $devices = $this->user->devices();
+
+        $rows = [
+            ['key' => 'move',            'label' => trans('front.move'),            'count' => (clone $devices)->move()->count()],
+            ['key' => 'idle',            'label' => trans('front.idle'),            'count' => (clone $devices)->idle()->count()],
+            ['key' => 'stop',            'label' => trans('front.stop'),            'count' => (clone $devices)->park()->count()],
+            ['key' => 'offline',         'label' => trans('front.offline'),         'count' => (clone $devices)->offline()->count()],
+            ['key' => 'inactive',        'label' => trans('front.inactive'),        'count' => (clone $devices)->inactive()->count()],
+            ['key' => 'never_connected', 'label' => trans('front.never_connected'), 'count' => (clone $devices)->neverConnected()->count()],
+        ];
+
+        foreach ($rows as $i => $r) {
+            $rows[$i]['color'] = (string) ($colors[$r['key']] ?? $defaults[$r['key']]);
+        }
+
+        return $rows;
+    }
+
+    /** true cuando el top de kilometraje sale de una muestra, no de la flota entera. */
+    private bool $mileageSampled = true;
+
+    /** Opciones que el usuario guardó para un bloque del tablero. */
+    private function blockOptions(string $block): array
+    {
+        $settings = (array) $this->user->getSettings('dashboard');
+
+        return (array) ($settings['blocks'][$block]['options'] ?? []);
     }
 
     /** Presets tipo Wialon (hoy/ayer/semana/mes) o rango custom from/to. */
@@ -248,11 +335,26 @@ class DashboardController extends BaseController
      *  que el bloque legacy device_distance para no recorrer toda la flota). */
     private function mileageTop(string $from, string $to): array
     {
-        $devices = $this->user->devices()
-            ->clearOrdersBy()
-            ->orderBy('updated_at', 'desc')
-            ->limit(15)
-            ->get();
+        // El bloque device_distance del legacy deja elegir vehículos
+        // (options.devices) pero su Block los ignora y muestrea 10 por
+        // updated_at. Aquí se respeta la elección: si hay vehículos elegidos el
+        // cálculo es exacto sobre ESOS; si no, se muestrea y se avisa (sampled).
+        $chosen = array_values(array_filter(array_map(
+            'intval',
+            (array) ($this->blockOptions('device_distance')['devices'] ?? [])
+        )));
+
+        $query = $this->user->devices()->clearOrdersBy();
+
+        if ($chosen) {
+            $query->whereIn('devices.id', $chosen);
+            $this->mileageSampled = false;
+        } else {
+            $query->orderBy('updated_at', 'desc')->limit(15);
+            $this->mileageSampled = true;
+        }
+
+        $devices = $query->get();
 
         $rows = [];
         foreach ($devices as $device) {

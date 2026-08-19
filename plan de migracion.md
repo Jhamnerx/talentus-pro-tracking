@@ -118,7 +118,7 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | F10 | Beacons: el modal v2 abre el form estándar y el guardado revienta con 422 "Device is kind of beacon" | MEDIO |
 | F11 | Sharing: canal **SMS** ausente; submódulo sharing_device (por-vehículo del link) ausente | MEDIO |
 | F12 | Widget drawer: `template_webhook` (addon `widget_template`) sin implementar; `listsTranslations()` no corre en `widgets()` (riesgo de drawer vacío) | MEDIO |
-| F13 | Dashboard: block `latest_tasks` ausente; `device_overview` pierde "inactivo"/"nunca conectado" y colores de usuario; `device_distance` muestrea top-15 por `updated_at` (falso en flotas grandes) | MEDIO |
+| ~~F13~~ ✅ | Dashboard: `latest_tasks` ausente; `device_overview` sin "inactivo"/"nunca conectado" ni colores de usuario; `device_distance` muestreado | ~~MEDIO~~ **Corregido 19-ago**. Sobre el muestreo: el bloque legacy hace lo mismo (`limit(10)` por `updated_at`), así que no era una divergencia; la v2 ahora **respeta los vehículos elegidos** en las opciones del bloque (cálculo exacto) y marca `mileage_sampled` cuando no los hay. Coste medido: overview 16 ms, tareas 19 ms |
 | F14 | ObjectsList (listview con columnas configurables + rangos de color por sensor) sin equivalente — `fleet` tiene columnas fijas | MEDIO |
 | F15 | Respuestas de error inconsistentes: dos formas de 403 conviven; varios destroy/store devuelven 500 donde el legacy da 422/403 (`ServicesController` convierte PermissionException en 500) | MEDIO |
 | ~~F16~~ ✅ | Cuenta: tabs **Credenciales secundarias** y **Categorías de medios** ausentes; SMS de prueba / vaciar cola ausentes | ~~MEDIO~~ **Corregido 19-ago**: CRUD completo de ambas + botones SMS test/vaciar cola. Los tabs se ocultan si el gate está apagado (`addon.media_categories`, `auth.secondary_credentials` + `isMainLogin()`), exactamente como el legacy. Pendiente menor: asignación de devices/forwards dentro del tab Grupos |
@@ -223,11 +223,11 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 3.2 DeviceVideo/Video (live + playback Howen/JT808). L — **BLOQUEADO**: no hay ningún equipo con protocolo `jt808`/`howen` en esta instalación (0 de 1.530; la flota es teltonika/tk103/gt06…), así que no es verificable. El flag `video` ya viaja por device en el feed de flota para cuando exista hardware.
 3.3 ~~Checklist + ChecklistTemplates~~ ✅ 19-ago — plantillas con actividades y ejecución por servicio (marcar, resultado pass/fail, fotos, notas y firma). Reglas del legacy respetadas: sin resultado + foto no se marca, y no se firma con actividades pendientes.
 
-### Ola 4 — Cuenta/plataforma restante
+### Ola 4 — Cuenta/plataforma restante ✅ COMPLETA (19-ago)
 4.1 ~~Tabs Credenciales secundarias + Categorías de medios + SMS test/cola (F16)~~ ✅ 19-ago.
-4.2 Opciones por block del Tablero + blocks faltantes (D15, F13). M
-4.3 Selector de idioma completo. S
-4.4 SmsGateway helpers. S
+4.2 ~~Opciones por block del Tablero + blocks faltantes (D15, F13)~~ ✅ 19-ago — widget **Estado de la flota** con los 6 grupos del legacy (incluye *inactivo* y *nunca conectado*) y los colores del usuario, widget **Últimas tareas**, y el top de kilometraje respeta ahora los vehículos elegidos en las opciones del bloque (y avisa cuando el cálculo sale de una muestra).
+4.3 ~~Selector de idioma completo~~ ✅ 19-ago — 46 idiomas activos con bandera en el menú de usuario; en cuenta demo cambia la sesión pero no el perfil, como el legacy.
+4.4 ~~SmsGateway helpers~~ ✅ 19-ago — ya cubiertos con F16 (`send_test_sms` y `clear_queue`); `test_sms` del legacy es solo la vista del formulario, que en v2 es el modal.
 
 ### Ola 5 — Comercial y utilidades
 5.1 Subscriptions/DeviceSubscription/DevicePlans (evaluar alcance). L

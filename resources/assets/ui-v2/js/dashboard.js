@@ -186,6 +186,30 @@
   }
 
   /* ----- Notificaciones ----- */
+  function renderTasks(items) {
+    var host = $("#tp-dash-tasks");
+    if (!host) return;
+    if (!items || !items.length) {
+      host.innerHTML = '<li class="tp-text-muted tp-text-sm">Sin tareas.</li>';
+      return;
+    }
+    host.innerHTML = items
+      .map(function (t) {
+        // Mismo marcado que las notificaciones (clases .tp-note__* ya estilizadas)
+        var PRIORITY_COLORS = ["#94a3b8", "#3b82f6", "#f59e0b", "#ef4444"];
+        return (
+          '<li class="tp-note">' +
+          '<span class="tp-note__dot" style="background:' + (PRIORITY_COLORS[t.priority] || "#94a3b8") + '"></span>' +
+          '<span class="tp-note__body"><span class="tp-note__dev">' + escapeHtml(t.title || "#" + t.id) + "</span>" +
+          '<span class="tp-note__msg">' + escapeHtml(t.device || "") +
+          (t.status_label ? " · " + escapeHtml(t.status_label) : "") + "</span></span>" +
+          '<span class="tp-note__time">' + escapeHtml(t.delivery_to ? String(t.delivery_to).slice(5, 16) : "") + "</span>" +
+          "</li>"
+        );
+      })
+      .join("");
+  }
+
   function renderNotes(rows) {
     var el = document.getElementById("tp-dash-notes");
     if (!el) return;
@@ -348,6 +372,31 @@
           });
         });
         if ("notifications" in p) safe("notes", function () { renderNotes(p.notifications); });
+
+        // Estado de la flota: 6 grupos con los colores del usuario (device_overview)
+        if (p.overview) safe("overview", function () {
+          renderBarList("tp-dash-overview", p.overview, {
+            label: function (r) { return r.label; },
+            value: function (r) { return r.count; },
+            display: function (r) { return fmt(r.count); },
+            color: function (r) { return r.color || "#94a3b8"; },
+          });
+        });
+
+        // Últimas tareas
+        if ("latest_tasks" in p) safe("tasks", function () { renderTasks(p.latest_tasks); });
+
+        // El top de kilometraje se calcula sobre una muestra salvo que el
+        // usuario haya elegido vehículos en las opciones del bloque.
+        if ("mileage_sampled" in p) {
+          var hint = $("#tp-dash-mileage-hint");
+          if (hint) {
+            hint.textContent = p.mileage_sampled ? "En el período · muestra" : "En el período";
+            hint.title = p.mileage_sampled
+              ? "Se calcula sobre los vehículos con actividad más reciente. Elige vehículos en Ajustes → Tablero para un cálculo exacto."
+              : "";
+          }
+        }
 
         if ("totalEvents" in p) {
           var te = $("[data-total-events]");

@@ -211,6 +211,58 @@ class AccountController extends BaseController
 
     /* ================= Locale ================= */
 
+    /**
+     * Catálogo de idiomas activos + el del usuario (paridad LanguageController).
+     */
+    public function languages(Request $request): JsonResponse
+    {
+        $languages = array_filter((array) settings('languages'), function ($l) {
+            return ! empty($l['active']);
+        });
+
+        uasort($languages, function ($a, $b) {
+            return strcmp($a['title'] ?? '', $b['title'] ?? '');
+        });
+
+        $items = [];
+        foreach ($languages as $key => $l) {
+            $items[] = [
+                'key'   => (string) $key,
+                'title' => (string) ($l['title'] ?? $key),
+                'flag'  => ! empty($l['flag']) ? asset('assets/images/flags/' . $l['flag']) : null,
+                'dir'   => (string) ($l['dir'] ?? 'ltr'),
+            ];
+        }
+
+        return response()->json([
+            'ok'      => true,
+            'current' => (string) app()->getLocale(),
+            'items'   => $items,
+        ]);
+    }
+
+    /**
+     * Cambia el idioma. Espeja MyAccountSettingsController::changeLang: se
+     * guarda en sesión siempre y en el perfil salvo cuenta demo.
+     */
+    public function updateLanguage(Request $request): JsonResponse
+    {
+        $lang = (string) $request->input('lang', '');
+
+        $languages = (array) settings('languages');
+        if (! isset($languages[$lang]) || empty($languages[$lang]['active'])) {
+            return response()->json(['ok' => false, 'error' => 'invalid_language'], 422);
+        }
+
+        \Illuminate\Support\Facades\Session::put('language', $lang);
+
+        if (! isDemoUser()) {
+            UserRepo::update($this->user->id, ['lang' => $lang]);
+        }
+
+        return response()->json(['ok' => true, 'lang' => $lang]);
+    }
+
     public function updateLocale(Request $request): JsonResponse
     {
         try {

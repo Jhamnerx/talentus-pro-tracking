@@ -18,6 +18,7 @@
   if (!window.tpModal) return;
 
   var BASE = "/ui/v2/api/account";
+  var LANG_URL = "/ui/v2/api/languages";
   var API = "/ui/v2/api";
   var META = null;
 
@@ -1097,6 +1098,59 @@
 
   /* ================= Triggers globales ================= */
 
+  /* ===== Selector de idioma (paridad LanguageController) ===== */
+  function openLanguage() {
+    if (!window.tpModal) return;
+
+    tpModal.open({
+      title: "Idioma",
+      size: "sm",
+      body: '<div data-lang-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
+      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      onMount: function (dialog) {
+        var host = dialog.querySelector("[data-lang-list]");
+
+        tpModal.fetchJSON(LANG_URL).then(function (res) {
+          if (!res.ok || !res.data || !res.data.ok) {
+            host.innerHTML = '<div class="tp-text-muted tp-text-sm">No se pudo cargar.</div>';
+            return;
+          }
+          var cur = res.data.current;
+          host.innerHTML =
+            '<div class="tp-lang-grid">' +
+            (res.data.items || [])
+              .map(function (l) {
+                return (
+                  '<button type="button" class="tp-lang-item' + (l.key === cur ? " is-active" : "") +
+                  '" data-lang="' + esc(l.key) + '">' +
+                  (l.flag ? '<img src="' + esc(l.flag) + '" alt="" loading="lazy">' : "") +
+                  "<span>" + esc(l.title) + "</span></button>"
+                );
+              })
+              .join("") +
+            "</div>";
+        });
+
+        host.addEventListener("click", function (e) {
+          var b = e.target.closest("[data-lang]");
+          if (!b) return;
+          tpModal.setBusy(dialog, true);
+          tpModal
+            .fetchJSON(LANG_URL, { method: "POST", json: { lang: b.getAttribute("data-lang") } })
+            .then(function (res) {
+              if (res.ok && res.data && res.data.ok) {
+                // El idioma se aplica al renderizar: se recarga la página.
+                location.reload();
+                return;
+              }
+              tpModal.setBusy(dialog, false);
+              tpModal.toast("No se pudo cambiar el idioma.", "error");
+            });
+        });
+      },
+    });
+  }
+
   document.addEventListener("click", function (e) {
     var acc = e.target.closest("[data-tp-account]");
     if (acc) {
@@ -1112,10 +1166,18 @@
       var m = document.getElementById("tp-user-menu");
       if (m) m.hidden = true;
       openPassword();
+      return;
+    }
+    var lang = e.target.closest("[data-tp-language]");
+    if (lang) {
+      e.preventDefault();
+      var ml = document.getElementById("tp-user-menu");
+      if (ml) ml.hidden = true;
+      openLanguage();
     }
   });
 
-  window.tpAccount = { open: open, openPassword: openPassword };
+  window.tpAccount = { open: open, openPassword: openPassword, openLanguage: openLanguage };
 })();
 
 /* =====================================================

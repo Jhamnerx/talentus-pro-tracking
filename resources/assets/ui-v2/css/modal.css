@@ -357,3 +357,39 @@
     transform: rotate(360deg);
   }
 }
+
+/* Selector de idioma (menú de usuario) */
+.tp-lang-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.tp-lang-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 9px;
+  background: var(--surface-page, #fff);
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+.tp-lang-item:hover {
+  border-color: var(--brand-500, #2563eb);
+  background: var(--brand-50, #f2f5fd);
+}
+.tp-lang-item.is-active {
+  border-color: var(--brand-500, #2563eb);
+  box-shadow: 0 0 0 2px var(--brand-100, #dbeafe);
+  font-weight: 600;
+}
+.tp-lang-item img {
+  width: 18px;
+  height: 12px;
+  object-fit: cover;
+  flex: 0 0 auto;
+}

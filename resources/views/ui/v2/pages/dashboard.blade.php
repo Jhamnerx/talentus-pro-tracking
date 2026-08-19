@@ -181,11 +181,35 @@
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-toprisk"></div></div>
             </article>
 
+            {{-- Reparto de la flota por estado: los mismos 6 grupos y colores del
+                 bloque device_overview del legacy --}}
+            <article class="tp-widget tp-widget--span-6" data-widget="overview">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">Estado de la flota</h3>
+                    <a href="{{ url('/ui/v2/fleet') }}" class="tp-link tp-text-sm">Ver flota →</a>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-overview"></div></div>
+            </article>
+
+            @if (Auth::user()->perm('tasks', 'view'))
+                <article class="tp-widget tp-widget--span-6" data-widget="tasks">
+                    <header class="tp-widget__head">
+                        <h3 class="tp-h6 tp-mb-0">Últimas tareas</h3>
+                        <a href="{{ url('/ui/v2/tasks') }}" class="tp-link tp-text-sm">Ver tareas →</a>
+                    </header>
+                    <div class="tp-widget__body">
+                        <ul class="tp-notes" id="tp-dash-tasks">
+                            <li class="tp-text-muted tp-text-sm">Cargando…</li>
+                        </ul>
+                    </div>
+                </article>
+            @endif
+
             {{-- Fila 4 · Kilometraje + Top velocidad --}}
             <article class="tp-widget tp-widget--span-6" data-widget="mileage">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">Unidades con mayor kilometraje</h3>
-                    <span class="tp-widget__hint">En el período</span>
+                    <span class="tp-widget__hint" id="tp-dash-mileage-hint">En el período</span>
                 </header>
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-mileage"></div></div>
             </article>
@@ -220,5 +244,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=7" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=8" defer></script>
 @endpush

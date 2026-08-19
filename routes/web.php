@@ -1257,6 +1257,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
         // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        // Selector de idioma (catálogo activo + cambio)
+        Route::get('languages',  ['as' => 'api.languages',        'uses' => 'Ui\V2\AccountController@languages']);
+        Route::post('languages', ['as' => 'api.languages.update', 'uses' => 'Ui\V2\AccountController@updateLanguage']);
         // Checklists y sus plantillas (addon checklists)
         Route::get('checklist-templates',        ['as' => 'api.checklist_templates',        'uses' => 'Ui\V2\ChecklistsController@templates']);
         Route::post('checklist-templates',       ['as' => 'api.checklist_templates.store',  'uses' => 'Ui\V2\ChecklistsController@storeTemplate']);
