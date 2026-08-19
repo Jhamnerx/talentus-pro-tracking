@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=56">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=57">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -26,6 +26,8 @@
         data-routes-table-url="{{ route('ui.v2.routes_table') }}"
         data-routes-export-url="{{ route('routes.export.store') }}"
         data-routes-import-url="{{ route('routes.import') }}"
+        data-zones-export-url="{{ route('geofences.export_create') }}"
+        data-pois-export-url="{{ route('pois.export.store') }}"
         data-socket-port="{{ $socketPort }}"
         data-socket-ssl-port="{{ $socketSslPort }}" data-poll-interval="15000">
 
@@ -286,10 +288,14 @@
                     </div>
                 </div>
                 <footer class="tp-live__filters-foot" style="gap:6px;">
-                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ route('pois.export') }}"
-                        target="_blank">Exportar</a>
-                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ route('pois.import') }}"
-                        target="_blank">Importar</a>
+                    {{-- Nativos: los <a> al legacy devolvían fragmentos de modal
+                         sin layout (botones muertos). Ahora abren modales v2. --}}
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
+                        onclick="window.tpLivePoisIO && tpLivePoisIO.exportModal()">Exportar</button>
+                    @if (Auth::user()->perm('poi', 'edit'))
+                        <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
+                            onclick="window.tpLivePoisIO && tpLivePoisIO.importModal()">Importar</button>
+                    @endif
                 </footer>
             </div>{{-- /#tp-panel-pois --}}
 
@@ -339,10 +345,12 @@
                     </div>
                 </div>
                 <footer class="tp-live__filters-foot" style="gap:6px;">
-                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ url('/geofences/export') }}"
-                        target="_blank">Exportar</a>
-                    <a class="tp-btn tp-btn--ghost tp-btn--sm tp-full" href="{{ url('/geofences/import_modal') }}"
-                        target="_blank">Importar</a>
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
+                        onclick="window.tpLiveZonesIO && tpLiveZonesIO.exportModal()">Exportar</button>
+                    @if (Auth::user()->perm('geofences', 'edit'))
+                        <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
+                            onclick="window.tpLiveZonesIO && tpLiveZonesIO.importModal()">Importar</button>
+                    @endif
                 </footer>
             </div>{{-- /#tp-panel-zones --}}
 
@@ -784,8 +792,8 @@
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=42"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=5"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=3"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=9"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=9"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=9"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.

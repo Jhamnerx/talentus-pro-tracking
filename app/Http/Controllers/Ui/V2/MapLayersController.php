@@ -51,13 +51,17 @@ class MapLayersController extends BaseController
                 ];
             }
             $items[] = [
-                'id'       => (int) $poi->id,
-                'name'     => (string) $poi->name,
-                'lat'      => (float) $lat,
-                'lng'      => (float) $lng,
-                'group_id' => (int) ($poi->group_id ?? 0),
-                'group'    => $poi->group_id ? ($gmap[$poi->group_id] ?? null) : null,
-                'icon'     => $icon,
+                'id'          => (int) $poi->id,
+                'name'        => (string) $poi->name,
+                'lat'         => (float) $lat,
+                'lng'         => (float) $lng,
+                'group_id'    => (int) ($poi->group_id ?? 0),
+                'group'       => $poi->group_id ? ($gmap[$poi->group_id] ?? null) : null,
+                'icon'        => $icon,
+                // active/description faltaban: el mapa pintaba los POIs
+                // desactivados como activos y el modal no traía la descripción.
+                'active'      => (bool) $poi->active,
+                'description' => (string) ($poi->description ?? ''),
             ];
         }
 
@@ -66,6 +70,15 @@ class MapLayersController extends BaseController
             'groups' => $groups->map(function ($g) {
                 return ['id' => (int) $g->id, 'title' => $g->title];
             })->all(),
+            // Catálogo de iconos: lo necesita el import (map_icon_id es
+            // obligatorio en el importador legacy).
+            'map_icons' => MapIcon::orderBy('id')->get(['id', 'path'])->map(function ($i) {
+                return [
+                    'id'   => (int) $i->id,
+                    'name' => basename((string) $i->path),
+                    'path' => asset($i->path),
+                ];
+            })->all(),
         ]);
     }
 
@@ -73,6 +86,58 @@ class MapLayersController extends BaseController
      * POIs · CRUD (modal nativo v2, reutiliza PoiUserService)
      * =================================================================
      */
+
+    /**
+     * Visibilidad del POI (paridad legacy PoisController@changeActive →
+     * GroupModelService::changeActive). Usa el service para que aplique la
+     * policy (read-only/demo) igual que el resto del CRUD.
+     */
+    public function togglePoi(Request $request, $id): JsonResponse
+    {
+        if (! $this->user->perm('poi', 'edit')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        $poi = Poi::find((int) $id);
+        if (! $poi) {
+            return response()->json(['ok' => false, 'error' => 'not_found'], 404);
+        }
+
+        try {
+            (new PoiUserService($this->user))->active($poi, $request->boolean('active') ? 1 : 0);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 403);
+        }
+
+        return response()->json(['ok' => true, 'active' => (bool) $poi->fresh()->active]);
+    }
+
+    /**
+     * Importar POIs (csv/gexp/kml). Paridad PoisImportController@store: exige
+     * map_icon_id además del fichero.
+     */
+    public function importPois(Request $request, \Tobuli\Importers\POI\POIImportManager $importManager): JsonResponse
+    {
+        if (! $this->user->perm('poi', 'edit')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'map_icon_id' => 'required',
+            'file'        => 'required|file',
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'errors' => $validator->errors()->toArray()], 422);
+        }
+
+        try {
+            $importManager->import($request->file('file'), $request->only(['map_icon_id']));
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+        }
+
+        return response()->json(['ok' => true, 'message' => trans('front.successfully_updated_marker')]);
+    }
 
     /**
      * Form HTML (create + edit) del POI: catálogo de iconos y grupos.

@@ -150,7 +150,9 @@
         return (
           '<div class="tp-poi-row" data-id="' +
           g.id +
-          '" role="option"><span class="tp-zone-row__swatch" style="background:' +
+          '" role="option"><input type="checkbox" class="tp-zone-row__vis" data-z-vis title="Mostrar en el mapa"' +
+          (g.active ? " checked" : "") +
+          '><span class="tp-zone-row__swatch" style="background:' +
           (g.polygon_color || "#1e88e5") +
           '"></span><div class="tp-poi-row__main"><div class="tp-poi-row__name">' +
           esc(g.name || "#" + g.id) +
@@ -347,8 +349,10 @@
       name: name,
       polygon_color: f.querySelector('[name="polygon_color"]').value,
       group_id: parseInt(f.querySelector('[name="group_id"]').value, 10) || 0,
-      active: 1,
     };
+    // OJO: 'active' NO se incluye aquí. Antes iba fijo a 1 y cada edición
+    // REACTIVABA las geocercas desactivadas. Solo el create lo fija (abajo)
+    // y la visibilidad se cambia con el toggle de la lista.
     var sl = f.querySelector('[name="speed_limit"]').value;
     if (sl !== "") payload.speed_limit = parseFloat(sl);
     var rad = f.querySelector('[name="radius"]');
@@ -374,6 +378,7 @@
             var payload = readMeta(dialog);
             if (!payload) return false;
             Object.assign(payload, geometry);
+            payload.active = 1; // las nuevas nacen visibles
             btn.disabled = true;
             tpModal
               .fetchJSON(BASE, { method: "POST", json: payload })
@@ -697,6 +702,144 @@
   }
 
   // ----- Wiring del panel -----
+  /** Visibilidad de la geocerca (paridad legacy geofences.change_active). */
+  function toggleActive(g, on) {
+    tpModal
+      .fetchJSON(BASE + "/" + g.id + "/toggle", { method: "POST", json: { active: on ? 1 : 0 } })
+      .then(function (res) {
+        if (!res.ok || !res.data || !res.data.ok) {
+          tpModal.toast("No se pudo cambiar la visibilidad.", "error");
+          renderList();
+          return;
+        }
+        g.active = !!res.data.active;
+        renderLayers();
+      })
+      .catch(function () {
+        tpModal.toast("Error de red.", "error");
+        renderList();
+      });
+  }
+
+  /* ---------- Export / Import nativos (endpoints legacy) ----------
+     Antes eran <a> a /geofences/export|import_modal, que devuelven FRAGMENTOS
+     del modal legacy (sin layout ni su JS) → botones muertos. Ahora: modal v2
+     + form-POST de descarga (export) y FormData (import). */
+  function exportUrls() {
+    return {
+      create: (root.getAttribute("data-zones-export-url") || "/geofences/export_create"),
+      import: (root.getAttribute("data-zones-import-url") || "/geofences/import"),
+    };
+  }
+  function openExport() {
+    var types = {
+      export_single: "Exportar seleccionadas",
+      export_active: "Exportar activas",
+      export_inactive: "Exportar inactivas",
+      export_groups: "Exportar por grupos",
+    };
+    var opts = Object.keys(types)
+      .map(function (k) { return '<option value="' + k + '">' + esc(types[k]) + "</option>"; })
+      .join("");
+    var checks = S.items
+      .map(function (g) {
+        return '<label class="tp-zexp-item"><input type="checkbox" data-exp-id value="' + g.id + '"><span class="tp-zone-row__swatch" style="background:' + (g.polygon_color || "#1e88e5") + '"></span><span>' + esc(g.name) + "</span></label>";
+      })
+      .join("");
+    tpModal.open({
+      title: "Exportar geocercas",
+      size: "md",
+      body:
+        '<div class="tp-field"><label class="tp-field__label">Tipo de exportación</label>' +
+        '<select class="tp-input" data-exp-type>' + opts + "</select></div>" +
+        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">Geocercas</label>' +
+        '<div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin geocercas.</div>') + "</div></div>" +
+        '<div class="tp-field__hint">Formato GEXP (el del legacy).</div>',
+      buttons: [
+        { label: "Cancelar", variant: "ghost" },
+        {
+          label: "Exportar",
+          variant: "primary",
+          close: false,
+          onClick: function (dlg) {
+            var type = dlg.querySelector("[data-exp-type]").value;
+            var ids = [];
+            dlg.querySelectorAll("[data-exp-id]:checked").forEach(function (c) { ids.push(c.value); });
+            submitExport(type, ids);
+            tpModal.close(dlg);
+            return false;
+          },
+        },
+      ],
+      onMount: function (dlg) {
+        var sel = dlg.querySelector("[data-exp-type]");
+        var wrap = dlg.querySelector("[data-exp-wrap]");
+        var sync = function () { wrap.hidden = sel.value !== "export_single"; };
+        sel.addEventListener("change", sync);
+        sync();
+      },
+    });
+  }
+  function submitExport(type, ids) {
+    var form = document.createElement("form");
+    form.method = "POST";
+    form.action = exportUrls().create;
+    form.style.display = "none";
+    var add = function (n, v) {
+      var i = document.createElement("input");
+      i.type = "hidden"; i.name = n; i.value = v;
+      form.appendChild(i);
+    };
+    var tok = document.querySelector('meta[name="csrf-token"]');
+    if (tok) add("_token", tok.getAttribute("content"));
+    add("export_type", type);
+    // El ExportManager filtra por 'geofences' (ids) en el tipo "single".
+    ids.forEach(function (id) { add("geofences[]", id); });
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(function () { form.remove(); }, 1000);
+  }
+  function openImport() {
+    tpModal.open({
+      title: "Importar geocercas",
+      size: "sm",
+      body:
+        '<div class="tp-field"><label class="tp-field__label">Archivo</label>' +
+        '<input type="file" class="tp-input" data-imp-file accept=".csv,.gexp,.kml,.json,.geojson"></div>' +
+        '<div class="tp-field__hint">Formatos: KML, GeoJSON, JSON o GEXP.</div>',
+      buttons: [
+        { label: "Cancelar", variant: "ghost" },
+        {
+          label: "Importar",
+          variant: "primary",
+          close: false,
+          onClick: function (dlg, btn) {
+            var f = dlg.querySelector("[data-imp-file]").files[0];
+            if (!f) { tpModal.toast("Elige un archivo.", "warning"); return false; }
+            var fd = new FormData();
+            fd.append("file", f);
+            btn.disabled = true;
+            tpModal
+              .fetchJSON(BASE + "/import", { method: "POST", body: fd })
+              .then(function (r) {
+                btn.disabled = false;
+                if (r && r.ok && r.data && r.data.ok) {
+                  tpModal.toast((r.data.message) || "Geocercas importadas.", "success");
+                  tpModal.close(dlg);
+                  load(true);
+                } else {
+                  tpModal.toast((r.data && (r.data.message || r.data.error)) || "No se pudo importar.", "error");
+                }
+              })
+              .catch(function () { btn.disabled = false; tpModal.toast("Error de red.", "error"); });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+  window.tpLiveZonesIO = { exportModal: openExport, importModal: openImport };
+
   var wired = false;
   function wire() {
     if (wired) return;
@@ -708,6 +851,7 @@
         if (!row) return;
         var g = S.byId[parseInt(row.getAttribute("data-id"), 10)];
         if (!g) return;
+        if (e.target.closest("[data-z-vis]")) return toggleActive(g, e.target.checked);
         if (e.target.closest("[data-z-edit]")) return openMetaModal(g);
         if (e.target.closest("[data-z-del]")) return del(g.id);
         S.activeId = g.id;

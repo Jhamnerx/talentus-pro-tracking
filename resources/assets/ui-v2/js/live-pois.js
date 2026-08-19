@@ -74,6 +74,7 @@
     S.markersById = {};
     filtered().forEach(function (p) {
       if (p.lat == null || p.lng == null) return;
+      if (p.active === false) return; // POIs desactivados no se pintan (paridad legacy)
       var mk = L.marker([p.lat, p.lng], { icon: poiIcon(p), draggable: S.canEdit });
       mk.on("click", function () {
         openPopup(p);
@@ -273,7 +274,11 @@
     return (
       '<div class="tp-poi-row" data-id="' +
       p.id +
-      '" role="option"><div class="tp-poi-row__main"><div class="tp-poi-row__name">' +
+      '" role="option">' +
+      (S.canEdit
+        ? '<input type="checkbox" class="tp-zone-row__vis" data-p-vis title="Mostrar en el mapa"' + (p.active === false ? "" : " checked") + ">"
+        : "") +
+      '<div class="tp-poi-row__main"><div class="tp-poi-row__name">' +
       esc(p.name || "#" + p.id) +
       "</div></div><div class=\"tp-poi-row__actions\">" +
       '<button type="button" class="tp-poi-row__btn" data-p-go title="Centrar">' + GO + "</button>" +
@@ -284,6 +289,144 @@
       "</div></div>"
     );
   }
+  /** Visibilidad del POI (paridad legacy pois.change_active). */
+  function toggleActive(p, on) {
+    tpModal
+      .fetchJSON(BASE + "/" + p.id + "/toggle", { method: "POST", json: { active: on ? 1 : 0 } })
+      .then(function (res) {
+        if (!res.ok || !res.data || !res.data.ok) {
+          tpModal.toast("No se pudo cambiar la visibilidad.", "error");
+          renderList();
+          return;
+        }
+        p.active = !!res.data.active;
+        renderMarkers();
+      })
+      .catch(function () {
+        tpModal.toast("Error de red.", "error");
+        renderList();
+      });
+  }
+
+  /* ---------- Export / Import nativos (endpoints legacy) ---------- */
+  function poiIoUrls() {
+    return {
+      create: root.getAttribute("data-pois-export-url") || "/pois/export",
+    };
+  }
+  function openExport() {
+    var formats = { csv: "CSV", gexp: "GEXP", kml: "KML" };
+    var types = {
+      export_single: "Exportar seleccionados",
+      export_active: "Exportar activos",
+      export_inactive: "Exportar inactivos",
+      export_groups: "Exportar por grupos",
+    };
+    var opt = function (obj) {
+      return Object.keys(obj).map(function (k) { return '<option value="' + k + '">' + esc(obj[k]) + "</option>"; }).join("");
+    };
+    var checks = S.items
+      .map(function (p) { return '<label class="tp-zexp-item"><input type="checkbox" data-exp-id value="' + p.id + '"><span>' + esc(p.name) + "</span></label>"; })
+      .join("");
+    tpModal.open({
+      title: "Exportar POIs",
+      size: "md",
+      body:
+        '<div class="tp-field"><label class="tp-field__label">Formato</label><select class="tp-input" data-exp-format>' + opt(formats) + "</select></div>" +
+        '<div class="tp-field"><label class="tp-field__label">Tipo de exportación</label><select class="tp-input" data-exp-type>' + opt(types) + "</select></div>" +
+        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">POIs</label><div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin POIs.</div>') + "</div></div>",
+      buttons: [
+        { label: "Cancelar", variant: "ghost" },
+        {
+          label: "Exportar",
+          variant: "primary",
+          close: false,
+          onClick: function (dlg) {
+            var fmt = dlg.querySelector("[data-exp-format]").value;
+            var type = dlg.querySelector("[data-exp-type]").value;
+            var ids = [];
+            dlg.querySelectorAll("[data-exp-id]:checked").forEach(function (c) { ids.push(c.value); });
+            var form = document.createElement("form");
+            form.method = "POST";
+            form.action = poiIoUrls().create;
+            form.style.display = "none";
+            var add = function (n, v) {
+              var i = document.createElement("input");
+              i.type = "hidden"; i.name = n; i.value = v;
+              form.appendChild(i);
+            };
+            var tok = document.querySelector('meta[name="csrf-token"]');
+            if (tok) add("_token", tok.getAttribute("content"));
+            add("export_type", type);
+            add("export_format", fmt);
+            ids.forEach(function (id) { add("pois[]", id); });
+            document.body.appendChild(form);
+            form.submit();
+            setTimeout(function () { form.remove(); }, 1000);
+            tpModal.close(dlg);
+            return false;
+          },
+        },
+      ],
+      onMount: function (dlg) {
+        var sel = dlg.querySelector("[data-exp-type]");
+        var wrap = dlg.querySelector("[data-exp-wrap]");
+        var sync = function () { wrap.hidden = sel.value !== "export_single"; };
+        sel.addEventListener("change", sync);
+        sync();
+      },
+    });
+  }
+  function openImport() {
+    // El importador legacy exige map_icon_id (icono por defecto de los POIs).
+    var icons = (S.icons || []).map(function (ic) {
+      return '<option value="' + ic.id + '">' + esc(ic.name || ("Icono " + ic.id)) + "</option>";
+    }).join("");
+    tpModal.open({
+      title: "Importar POIs",
+      size: "sm",
+      body:
+        '<div class="tp-field"><label class="tp-field__label">Archivo</label>' +
+        '<input type="file" class="tp-input" data-imp-file accept=".csv,.gexp,.kml"></div>' +
+        '<div class="tp-field"><label class="tp-field__label">Icono por defecto</label>' +
+        '<select class="tp-input" data-imp-icon>' + icons + "</select></div>" +
+        '<div class="tp-field__hint">Formatos: CSV, GEXP o KML.</div>',
+      buttons: [
+        { label: "Cancelar", variant: "ghost" },
+        {
+          label: "Importar",
+          variant: "primary",
+          close: false,
+          onClick: function (dlg, btn) {
+            var f = dlg.querySelector("[data-imp-file]").files[0];
+            var iconSel = dlg.querySelector("[data-imp-icon]");
+            if (!f) { tpModal.toast("Elige un archivo.", "warning"); return false; }
+            if (!iconSel || !iconSel.value) { tpModal.toast("Elige un icono por defecto.", "warning"); return false; }
+            var fd = new FormData();
+            fd.append("file", f);
+            fd.append("map_icon_id", iconSel.value);
+            btn.disabled = true;
+            tpModal
+              .fetchJSON(BASE + "/import", { method: "POST", body: fd })
+              .then(function (r) {
+                btn.disabled = false;
+                if (r && r.ok && r.data && r.data.ok) {
+                  tpModal.toast((r.data.message) || "POIs importados.", "success");
+                  tpModal.close(dlg);
+                  load(true);
+                } else {
+                  tpModal.toast((r.data && (r.data.message || r.data.error)) || "No se pudo importar.", "error");
+                }
+              })
+              .catch(function () { btn.disabled = false; tpModal.toast("Error de red.", "error"); });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+  window.tpLivePoisIO = { exportModal: openExport, importModal: openImport };
+
   function renderList() {
     var list = document.getElementById("tp-pois-list");
     if (!list) return;
@@ -341,6 +484,7 @@
       .then(function (j) {
         S.items = (j && j.items) || [];
         S.groups = (j && j.groups) || [];
+        S.icons = (j && j.map_icons) || [];
         S.byId = {};
         S.items.forEach(function (p) {
           S.byId[p.id] = p;
@@ -389,6 +533,7 @@
         if (!row) return;
         var p = S.byId[parseInt(row.getAttribute("data-id"), 10)];
         if (!p) return;
+        if (e.target.closest("[data-p-vis]")) return toggleActive(p, e.target.checked);
         if (e.target.closest("[data-p-edit]")) return openModal({ lat: p.lat, lng: p.lng }, p.id);
         if (e.target.closest("[data-p-del]")) return del(p.id);
         setVisible(true);

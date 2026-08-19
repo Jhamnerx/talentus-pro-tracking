@@ -1169,6 +1169,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('pois',          ['as' => 'api.pois.store',    'uses' => 'Ui\V2\MapLayersController@storePoi']);
         Route::put('pois/{id}',      ['as' => 'api.pois.update',   'uses' => 'Ui\V2\MapLayersController@updatePoi'])->where('id', '[0-9]+');
         Route::delete('pois/{id}',   ['as' => 'api.pois.destroy',  'uses' => 'Ui\V2\MapLayersController@destroyPoi'])->where('id', '[0-9]+');
+        Route::post('pois/{id}/toggle', ['as' => 'api.pois.toggle', 'uses' => 'Ui\V2\MapLayersController@togglePoi'])->where('id', '[0-9]+');
+        Route::post('pois/import',      ['as' => 'api.pois.import', 'uses' => 'Ui\V2\MapLayersController@importPois']);
         Route::get('hitos',          ['as' => 'api.hitos',         'uses' => 'Ui\V2\MapLayersController@hitos']);
         Route::get('hitos/nearest',  ['as' => 'api.hitos.nearest', 'uses' => 'Ui\V2\MapLayersController@hitoNearest']);
         Route::get('routes',         ['as' => 'api.routes',        'uses' => 'Ui\V2\MapLayersController@routes']);
@@ -1210,6 +1212,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('zones/{id}/edit',     ['as' => 'api.zones.edit',     'uses' => 'Ui\V2\ZonesController@editData'])->where('id', '[0-9]+');
         Route::put('zones/{id}',          ['as' => 'api.zones.update',   'uses' => 'Ui\V2\ZonesController@update'])->where('id', '[0-9]+');
         Route::delete('zones/{id}',       ['as' => 'api.zones.destroy',  'uses' => 'Ui\V2\ZonesController@destroy'])->where('id', '[0-9]+');
+        Route::post('zones/{id}/toggle',   ['as' => 'api.zones.toggle',   'uses' => 'Ui\V2\ZonesController@toggle'])->where('id', '[0-9]+');
         Route::post('zones/import',       ['as' => 'api.zones.import',   'uses' => 'Ui\V2\ZonesController@import']);
         Route::get('zones/export-items',  ['as' => 'api.zones.export_items', 'uses' => 'Ui\V2\ZonesController@exportItems']);
 

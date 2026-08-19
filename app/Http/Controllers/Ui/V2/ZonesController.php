@@ -208,6 +208,28 @@ class ZonesController extends BaseController
         ]);
     }
 
+    /**
+     * Visibilidad de la geocerca (paridad legacy GeofencesController@changeActive
+     * → GroupModelService::changeActive). No pasa por el service porque
+     * GeofenceUserService no expone active(); se replica el update acotado.
+     */
+    public function toggle(Request $request, $id): JsonResponse
+    {
+        $user = $this->user;
+        if (! $user || ! $user->perm('geofences', 'edit')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        $geofence = Geofence::find((int) $id);
+        if (! $geofence || ! $user->can('edit', $geofence)) {
+            return response()->json(['ok' => false, 'error' => 'not_found'], 404);
+        }
+
+        $geofence->update(['active' => $request->boolean('active') ? 1 : 0]);
+
+        return response()->json(['ok' => true, 'active' => (bool) $geofence->active]);
+    }
+
     public function destroy(Request $request, $id): JsonResponse
     {
         $user = $this->user;
