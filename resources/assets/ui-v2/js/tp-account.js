@@ -98,7 +98,14 @@
       "</div>" +
       '<div class="tp-col-2" style="margin-top:10px;padding:10px 12px;background:var(--brand-bg-subtle,#eef3fb);border-radius:8px;font-size:12px;color:var(--fg-secondary,#475569);">' +
       "Variables: %NUMBER%, %MESSAGE%. Ejemplo: http://SMS_GATEWAY/sendsms.php?username=USER&password=PASS&number=%NUMBER%&message=%MESSAGE%" +
-      '<div data-acc-sms="app" style="margin-top:6px;">SMS en cola: <b>' + S.queue_count + "</b></div></div></form>"
+      '<div data-acc-sms="app" style="margin-top:6px;">SMS en cola: <b>' + S.queue_count + "</b></div></div>" +
+      // Acciones del gateway (paridad legacy: "Enviar SMS de prueba" y "Vaciar cola")
+      (META.caps.edit_sms
+        ? '<div class="tp-row" style="gap:8px;margin-top:12px;flex-wrap:wrap;">' +
+          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-test>Enviar SMS de prueba</button>' +
+          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-clear>Vaciar cola</button></div>'
+        : "") +
+      "</form>"
     );
   }
 
@@ -582,6 +589,221 @@
 
   /* ================= Definición de tabs ================= */
 
+  /* ========= Tab: Categorías de medios (addon media_categories) ========= */
+
+  function tabMediaCats() {
+    return (
+      '<div class="tp-acc-crud" data-acc-mcats>' +
+      '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
+      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-mc-add>＋ Nueva categoría</button></div>' +
+      '<div data-mc-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div></div>'
+    );
+  }
+  function wireMediaCats(panel) {
+    var listEl = panel.querySelector("[data-mc-list]");
+    function load() {
+      tpModal.fetchJSON(BASE + "/media-categories").then(function (res) {
+        var items = (res.data && res.data.items) || [];
+        listEl.innerHTML = items.length
+          ? items
+              .map(function (i) {
+                return (
+                  '<div class="tp-acc-row"><span>' + esc(i.title) + "</span>" +
+                  '<span class="tp-row" style="gap:6px;">' +
+                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-mc-edit="' + i.id + '" data-title="' + esc(i.title) + '">Editar</button>' +
+                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-mc-del="' + i.id + '" style="color:#ef4444;">Eliminar</button>' +
+                  "</span></div>"
+                );
+              })
+              .join("")
+          : '<div class="tp-text-muted tp-text-sm">Sin categorías.</div>';
+      });
+    }
+    function form(id, title) {
+      tpModal.open({
+        title: id ? "Editar categoría" : "Nueva categoría",
+        size: "sm",
+        body:
+          '<div class="tp-form"><div class="tp-form__field"><span class="tp-form__label">Título</span>' +
+          '<input type="text" data-mc-title value="' + esc(title || "") + '" data-tp-field></div></div>',
+        buttons: [
+          { label: "Cancelar", variant: "ghost", close: true },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (d) {
+              var v = d.querySelector("[data-mc-title]").value.trim();
+              if (!v) {
+                tpModal.toast("El título es obligatorio.", "warning");
+                return false;
+              }
+              tpModal
+                .fetchJSON(BASE + "/media-categories" + (id ? "/" + id : ""), {
+                  method: id ? "PUT" : "POST",
+                  json: { title: v },
+                })
+                .then(function (res) {
+                  if (res.ok && res.data && res.data.ok) {
+                    tpModal.toast("Guardado.", "success");
+                    tpModal.close(d);
+                    load();
+                  } else {
+                    var errs = (res.data && res.data.errors) || {};
+                    var first = Object.keys(errs)[0];
+                    tpModal.toast(first ? [].concat(errs[first])[0] : "No se pudo guardar.", "error");
+                  }
+                });
+              return false;
+            },
+          },
+        ],
+      });
+    }
+    panel.querySelector("[data-mc-add]").addEventListener("click", function () {
+      form(null, "");
+    });
+    listEl.addEventListener("click", function (e) {
+      var ed = e.target.closest("[data-mc-edit]");
+      if (ed) return form(ed.getAttribute("data-mc-edit"), ed.getAttribute("data-title"));
+      var del = e.target.closest("[data-mc-del]");
+      if (del)
+        tpModal
+          .confirm({ title: "Eliminar categoría", message: "¿Eliminar esta categoría?", danger: true, confirmLabel: "Eliminar" })
+          .then(function (ok) {
+            if (!ok) return;
+            tpModal
+              .fetchJSON(BASE + "/media-categories/" + del.getAttribute("data-mc-del"), { method: "DELETE" })
+              .then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  tpModal.toast("Eliminada.", "success");
+                  load();
+                } else tpModal.toast("No se pudo eliminar.", "error");
+              });
+          });
+    });
+    load();
+  }
+
+  /* ====== Tab: Credenciales secundarias (auth.secondary_credentials) ====== */
+
+  function tabSecondary() {
+    return (
+      '<div class="tp-acc-crud" data-acc-sec>' +
+      '<div class="tp-text-muted tp-text-sm" style="margin-bottom:8px;">Logins adicionales para tu cuenta (opcionalmente de solo lectura).</div>' +
+      '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
+      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sec-add>＋ Nueva credencial</button></div>' +
+      '<div data-sec-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div></div>'
+    );
+  }
+  function wireSecondary(panel) {
+    var listEl = panel.querySelector("[data-sec-list]");
+    function load() {
+      tpModal.fetchJSON(BASE + "/secondary").then(function (res) {
+        var items = (res.data && res.data.items) || [];
+        listEl.innerHTML = items.length
+          ? items
+              .map(function (i) {
+                return (
+                  '<div class="tp-acc-row"><span>' + esc(i.email) +
+                  (i.readonly ? ' <span class="tp-text-xs tp-text-muted">(solo lectura)</span>' : "") + "</span>" +
+                  '<span class="tp-row" style="gap:6px;">' +
+                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sec-edit="' + i.id + '" data-email="' + esc(i.email) + '" data-ro="' + (i.readonly ? 1 : 0) + '">Editar</button>' +
+                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sec-del="' + i.id + '" style="color:#ef4444;">Eliminar</button>' +
+                  "</span></div>"
+                );
+              })
+              .join("")
+          : '<div class="tp-text-muted tp-text-sm">Sin credenciales secundarias.</div>';
+      });
+    }
+    function form(id, email, ro) {
+      var isEdit = !!id;
+      tpModal.open({
+        title: isEdit ? "Editar credencial" : "Nueva credencial",
+        size: "sm",
+        body:
+          '<div class="tp-form">' +
+          '<div class="tp-form__field"><span class="tp-form__label">Email</span>' +
+          '<input type="email" data-sec-email value="' + esc(email || "") + '" data-tp-field></div>' +
+          '<label class="tp-checkbox" style="margin:6px 0;"><input type="checkbox" data-sec-ro' + (ro ? " checked" : "") + "> <span>Solo lectura</span></label>" +
+          '<label class="tp-checkbox" style="margin:6px 0;"><input type="checkbox" data-sec-gen' + (isEdit ? "" : " checked") + "> <span>Generar contraseña y enviarla por email</span></label>" +
+          '<div class="tp-form__field" data-sec-pwrap hidden><span class="tp-form__label">Contraseña</span>' +
+          '<input type="password" data-sec-pass autocomplete="new-password" data-tp-field></div>' +
+          (isEdit ? "" : '<label class="tp-checkbox"><input type="checkbox" data-sec-notify checked> <span>Avisar por email de la cuenta creada</span></label>') +
+          "</div>",
+        buttons: [
+          { label: "Cancelar", variant: "ghost", close: true },
+          {
+            label: "Guardar",
+            variant: "primary",
+            close: false,
+            onClick: function (d) {
+              var payload = {
+                email: d.querySelector("[data-sec-email]").value.trim(),
+                readonly: d.querySelector("[data-sec-ro]").checked ? 1 : 0,
+                password_generate: d.querySelector("[data-sec-gen]").checked ? 1 : 0,
+              };
+              var pass = d.querySelector("[data-sec-pass]");
+              if (pass && pass.value) {
+                payload.password = pass.value;
+                payload.password_confirmation = pass.value;
+              }
+              var nt = d.querySelector("[data-sec-notify]");
+              if (nt) payload.account_created = nt.checked ? 1 : 0;
+              tpModal
+                .fetchJSON(BASE + "/secondary" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", json: payload })
+                .then(function (res) {
+                  if (res.ok && res.data && res.data.ok) {
+                    tpModal.toast("Guardado.", "success");
+                    tpModal.close(d);
+                    load();
+                    return;
+                  }
+                  var errs = (res.data && res.data.errors) || {};
+                  var first = Object.keys(errs)[0];
+                  tpModal.toast(first ? [].concat(errs[first])[0] : "No se pudo guardar.", "error");
+                });
+              return false;
+            },
+          },
+        ],
+        onMount: function (d) {
+          var gen = d.querySelector("[data-sec-gen]");
+          var wrap = d.querySelector("[data-sec-pwrap]");
+          var sync = function () {
+            wrap.hidden = gen.checked;
+          };
+          gen.addEventListener("change", sync);
+          sync();
+        },
+      });
+    }
+    panel.querySelector("[data-sec-add]").addEventListener("click", function () {
+      form(null, "", false);
+    });
+    listEl.addEventListener("click", function (e) {
+      var ed = e.target.closest("[data-sec-edit]");
+      if (ed) return form(ed.getAttribute("data-sec-edit"), ed.getAttribute("data-email"), ed.getAttribute("data-ro") === "1");
+      var del = e.target.closest("[data-sec-del]");
+      if (del)
+        tpModal
+          .confirm({ title: "Eliminar credencial", message: "¿Eliminar esta credencial secundaria?", danger: true, confirmLabel: "Eliminar" })
+          .then(function (ok) {
+            if (!ok) return;
+            tpModal
+              .fetchJSON(BASE + "/secondary/" + del.getAttribute("data-sec-del"), { method: "DELETE" })
+              .then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  tpModal.toast("Eliminada.", "success");
+                  load();
+                } else tpModal.toast("No se pudo eliminar.", "error");
+              });
+          });
+    });
+    load();
+  }
+
   var TABS = [
     { key: "locale", label: "Principal", build: tabLocale, save: "locale" },
     { key: "groups", label: "Grupos de vehículos", build: tabGroups, wire: wireGroups },
@@ -594,6 +816,8 @@
     { key: "widgets", label: "Widgets", build: tabWidgets, save: "widgets" },
     { key: "dashboard", label: "Tablero", build: tabDashboard, save: "dashboard" },
     { key: "client", label: "Cliente", build: tabClient, save: "client", cap: "view_client" },
+    { key: "media_cats", label: "Categorías de medios", build: tabMediaCats, wire: wireMediaCats, cap: "view_media_cats" },
+    { key: "secondary", label: "Credenciales secundarias", build: tabSecondary, wire: wireSecondary, cap: "view_secondary" },
     { key: "map", label: "Mapa", build: tabMap, save: "map" },
   ];
 
@@ -684,6 +908,69 @@
     sync();
   }
   function wireSmsTab(panel) {
+    // --- Enviar SMS de prueba / Vaciar cola (paridad legacy) ---
+    var testBtn = panel.querySelector("[data-acc-sms-test]");
+    if (testBtn)
+      testBtn.addEventListener("click", function () {
+        var form = panel.querySelector(".tp-acc-form");
+        var cur = {};
+        Array.prototype.forEach.call(form.querySelectorAll("input,select,textarea"), function (el) {
+          if (el.name) cur[el.name] = el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value;
+        });
+        tpModal.open({
+          title: "Enviar SMS de prueba",
+          size: "sm",
+          body:
+            '<div class="tp-form"><div class="tp-form__field"><span class="tp-form__label">Teléfono</span>' +
+            '<input type="text" data-tst-phone placeholder="+51..." data-tp-field></div>' +
+            '<div class="tp-form__field"><span class="tp-form__label">Mensaje</span>' +
+            '<textarea data-tst-msg rows="2" data-tp-field>Test</textarea></div></div>',
+          buttons: [
+            { label: "Cancelar", variant: "ghost", close: true },
+            {
+              label: "Enviar",
+              variant: "primary",
+              close: false,
+              onClick: function (d) {
+                var payload = Object.assign({}, cur, {
+                  mobile_phone: d.querySelector("[data-tst-phone]").value.trim(),
+                  message: d.querySelector("[data-tst-msg]").value,
+                });
+                tpModal.setBusy(d, true);
+                tpModal.fetchJSON(BASE + "/sms/test", { method: "POST", json: payload }).then(function (res) {
+                  tpModal.setBusy(d, false);
+                  if (res.ok && res.data && res.data.ok) {
+                    tpModal.toast("SMS de prueba enviado.", "success");
+                    tpModal.close(d);
+                    return;
+                  }
+                  var errs = (res.data && res.data.errors) || {};
+                  var warn = (res.data && res.data.warnings) || [];
+                  var first = Object.keys(errs)[0];
+                  tpModal.toast(
+                    warn.length ? String(warn[0]) : first ? [].concat(errs[first])[0] : "No se pudo enviar.",
+                    "error",
+                  );
+                }).catch(function () { tpModal.setBusy(d, false); tpModal.toast("Error de red.", "error"); });
+                return false;
+              },
+            },
+          ],
+        });
+      });
+    var clearBtn = panel.querySelector("[data-acc-sms-clear]");
+    if (clearBtn)
+      clearBtn.addEventListener("click", function () {
+        tpModal.confirm({ title: "Vaciar cola", message: "¿Eliminar los SMS pendientes en cola?", danger: true, confirmLabel: "Vaciar" })
+          .then(function (ok) {
+            if (!ok) return;
+            tpModal.fetchJSON(BASE + "/sms/queue", { method: "POST", json: {} }).then(function (res) {
+              if (res.ok && res.data && res.data.ok) tpModal.toast("Cola vaciada.", "success");
+              else tpModal.toast("No se pudo vaciar.", "error");
+            });
+          });
+      });
+
     var method = panel.querySelector("[data-acc-sms-method]");
     var auth = panel.querySelector("[data-acc-sms-auth]");
     function sync() {

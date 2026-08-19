@@ -617,3 +617,22 @@
   min-width: 14px;
   text-align: center;
 }
+
+/* Filas de los CRUD simples del modal de cuenta (categorías de medios,
+   credenciales secundarias) */
+.tp-acc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.tp-acc-row + .tp-acc-row {
+  margin-top: 6px;
+}
+.tp-acc-row:hover {
+  background: var(--brand-50, #f2f5fd);
+}

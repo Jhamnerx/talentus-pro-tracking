@@ -115,6 +115,9 @@ class AccountController extends BaseController
                 'view_sms_templates'  => (bool) $u->perm('user_sms_templates', 'view'),
                 'view_gprs_templates' => (bool) $u->perm('user_gprs_templates', 'view'),
                 'main_login'          => (bool) $u->isMainLogin(),
+                // Gates EXACTOS del legacy para los tabs opcionales
+                'view_media_cats'     => (bool) (config('addon.media_categories') && $u->perm('media_categories', 'view')),
+                'view_secondary'      => (bool) (config('auth.secondary_credentials') && $u->isMainLogin()),
                 'require_current'     => (bool) settings('password.change_required_current'),
             ],
             'locale' => [
@@ -355,6 +358,216 @@ class AccountController extends BaseController
         }
 
         UserRepo::update($item->id, $input);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /* =================================================================
+     * Categorías de medios (addon media_categories + perm) — paridad
+     * Frontend\MediaCategoriesController (MediaCategoryValidator).
+     * ================================================================= */
+
+    public function mediaCategories(Request $request): JsonResponse
+    {
+        $this->checkException('media_categories', 'view');
+
+        $rows = \Tobuli\Entities\MediaCategory::where('user_id', $this->user->id)
+            ->orderBy('title')->get(['id', 'title']);
+
+        return response()->json([
+            'ok'    => true,
+            'items' => $rows->map(function ($r) {
+                return ['id' => (int) $r->id, 'title' => (string) $r->title];
+            })->all(),
+        ]);
+    }
+
+    public function storeMediaCategory(Request $request): JsonResponse
+    {
+        $this->checkException('media_categories', 'store');
+
+        try {
+            $data = ['title' => trim((string) $request->get('title')), 'user_id' => $this->user->id];
+            \CustomFacades\Validators\MediaCategoryValidator::validate('create', $data);
+            $item = \Tobuli\Entities\MediaCategory::create($data);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+
+        return response()->json(['ok' => true, 'id' => (int) $item->id]);
+    }
+
+    public function updateMediaCategory(Request $request, $id): JsonResponse
+    {
+        $item = \Tobuli\Entities\MediaCategory::find((int) $id);
+        if (! $item) {
+            abort(404);
+        }
+        $this->checkException('media_categories', 'edit', $item);
+
+        try {
+            $data = ['title' => trim((string) $request->get('title')), 'user_id' => $this->user->id];
+            \CustomFacades\Validators\MediaCategoryValidator::validate('update', $data, $item->id);
+            $item->update(['title' => $data['title']]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function destroyMediaCategory(Request $request, $id): JsonResponse
+    {
+        $item = \Tobuli\Entities\MediaCategory::find((int) $id);
+        if (! $item) {
+            abort(404);
+        }
+        $this->checkException('media_categories', 'destroy', $item);
+        $item->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /* =================================================================
+     * Credenciales secundarias (config auth.secondary_credentials +
+     * isMainLogin) — paridad Frontend\SecondaryCredentialsController.
+     * ================================================================= */
+
+    private function assertSecondaryAllowed(): void
+    {
+        if (! config('auth.secondary_credentials') || ! $this->user->isMainLogin()) {
+            abort(403);
+        }
+    }
+
+    public function secondaryCredentials(Request $request): JsonResponse
+    {
+        $this->assertSecondaryAllowed();
+
+        $rows = $this->user->secondaryCredentials()->orderBy('email')->get();
+
+        return response()->json([
+            'ok'    => true,
+            'items' => $rows->map(function ($r) {
+                return [
+                    'id'       => (int) $r->id,
+                    'email'    => (string) $r->email,
+                    'readonly' => (bool) $r->readonly,
+                ];
+            })->all(),
+        ]);
+    }
+
+    public function storeSecondaryCredential(Request $request): JsonResponse
+    {
+        $this->assertSecondaryAllowed();
+
+        try {
+            $data = $request->all();
+            $data['user_id'] = $this->user->id;
+            $notify = ! empty($data['account_created']);
+            $item = (new \Tobuli\Services\UserSecondaryCredentialsService())
+                ->setNotifyUser($notify)->store($data);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+
+        return response()->json(['ok' => true, 'id' => (int) $item->id]);
+    }
+
+    public function updateSecondaryCredential(Request $request, $id): JsonResponse
+    {
+        $this->assertSecondaryAllowed();
+
+        $item = $this->user->secondaryCredentials()->find((int) $id);
+        if (! $item) {
+            abort(404);
+        }
+
+        try {
+            $data = $request->except('user_id');
+            $notify = ! empty($data['password_generate']);
+            (new \Tobuli\Services\UserSecondaryCredentialsService())
+                ->setNotifyUser($notify)->update($data, $item);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    public function destroySecondaryCredential(Request $request, $id): JsonResponse
+    {
+        $this->assertSecondaryAllowed();
+
+        $item = $this->user->secondaryCredentials()->find((int) $id);
+        if (! $item) {
+            abort(404);
+        }
+        $item->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * Enviar SMS de prueba por el gateway configurado (paridad legacy
+     * SmsGatewayModalHelper::sendTestSms → SMSGatewayFormValidator +
+     * SendTestSmsFormValidator + SMSGatewayManager).
+     */
+    public function testSms(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('sms_gateway', 'edit')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        try {
+            $this->assertNotDemo();
+
+            $data = $request->all();
+            // El gateway guardado completa lo que el modal no reenvía
+            // (contraseña incluida: nunca vuelve al cliente).
+            $data = array_merge((array) ($this->user->sms_gateway_params ?? []), array_filter(
+                $data,
+                function ($v) { return $v !== null && $v !== ''; }
+            ));
+            $data['sms_gateway_url'] = $request->get('sms_gateway_url', $this->user->sms_gateway_url);
+
+            $helper = \CustomFacades\ModalHelpers\SmsGatewayModalHelper::getFacadeRoot();
+            $helper->setUser($this->user);
+            $helper->setData($data);
+            $res = $helper->sendTestSms();
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        } catch (DemoAccountException $e) {
+            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+        }
+
+        // status 0 = el gateway respondió con un aviso/error de envío
+        if (empty($res['status'])) {
+            return response()->json([
+                'ok'       => false,
+                'warnings' => array_map('strval', (array) ($res['warnings'] ?? [])),
+            ], 422);
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Vaciar la cola de SMS pendientes (paridad SmsGatewayModalHelper::clearQueue). */
+    public function clearSmsQueue(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('sms_gateway', 'edit')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        try {
+            $this->assertNotDemo();
+            SmsEventQueueRepo::deletewhere(['user_id' => $this->user->id]);
+        } catch (DemoAccountException $e) {
+            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+        }
 
         return response()->json(['ok' => true]);
     }

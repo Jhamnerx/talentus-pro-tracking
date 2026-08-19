@@ -45,8 +45,12 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 > **Octavo lote (7-ago):** F7 (geocerca móvil), S7 (gate `custom_device_add`) y S9 (grupos por
 > `DeviceGroupPolicy`, bloquea demo). S8 = falso positivo documentado.
 >
+> **Noveno lote (19-ago):** F16 — tabs **Categorías de medios** y **Credenciales secundarias**
+> en el modal de cuenta (CRUD completo, ocultos por gate igual que el legacy) + **SMS de prueba**
+> y **vaciar cola** en el tab SMS gateway.
+>
 > **Quedan abiertos:** D10–D12 (custom fields, sin impacto hoy) · F5 (borrar posiciones) ·
-> F6 (plugins título/dirección) · F16 (tabs de cuenta) · `confirmed_action` en DELETEs · resto de F.
+> F6 (plugins título/dirección) · `confirmed_action` en DELETEs · resto de F.
 
 ---
 
@@ -106,7 +110,7 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | F13 | Dashboard: block `latest_tasks` ausente; `device_overview` pierde "inactivo"/"nunca conectado" y colores de usuario; `device_distance` muestrea top-15 por `updated_at` (falso en flotas grandes) | MEDIO |
 | F14 | ObjectsList (listview con columnas configurables + rangos de color por sensor) sin equivalente — `fleet` tiene columnas fijas | MEDIO |
 | F15 | Respuestas de error inconsistentes: dos formas de 403 conviven; varios destroy/store devuelven 500 donde el legacy da 422/403 (`ServicesController` convierte PermissionException en 500) | MEDIO |
-| F16 | Cuenta: tabs **Credenciales secundarias** y **Categorías de medios** ausentes; SMS de prueba / vaciar cola ausentes; grupos sin asignación de devices/forwards en el tab | MEDIO |
+| ~~F16~~ ✅ | Cuenta: tabs **Credenciales secundarias** y **Categorías de medios** ausentes; SMS de prueba / vaciar cola ausentes | ~~MEDIO~~ **Corregido 19-ago**: CRUD completo de ambas + botones SMS test/vaciar cola. Los tabs se ocultan si el gate está apagado (`addon.media_categories`, `auth.secondary_credentials` + `isMainLogin()`), exactamente como el legacy. Pendiente menor: asignación de devices/forwards dentro del tab Grupos |
 | F17 | Device modal: tab Historial de mantenimientos/suspensiones ausente; `configure_device`+APN en el alta ausente | MEDIO |
 | F18 | LockStatus v2: sin validadores legacy (`LockStatusTableValidator`/`UnlockValidator`), historial sin paginar | MENOR |
 | F19 | Popups del admin (addon `notification_popops`) nunca se muestran en v2 (layout no incluye los partials) | MEDIO |
@@ -174,7 +178,7 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 | Mantenimiento/Servicios | ✅/⚠️ | F15 (500s) |
 | Gastos | ✅/⚠️ | ~~S2, S6~~✅; validator legacy pendiente (menor) |
 | Reenvíos | ✅/⚠️ | TYPE_FIELDS hardcodeado (deriva futura) |
-| Cuenta (modal ajustes) | ✅/⚠️ | ~~D15, D16~~✅; F16 (tabs credenciales/categorías, SMS test) |
+| Cuenta (modal ajustes) | ✅ | ~~D15, D16, F16~~✅ |
 | Dashboard | ⚠️ | ~~D14~~✅; F13 (blocks faltantes) |
 | Tipos/estados de vehículo | ✅/⚠️ | ~~S3~~✅ (gate módulo `devices`) |
 | LockStatus (widget bloqueo) | ✅/⚠️ | F18 |
@@ -209,7 +213,7 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 3.3 Checklist + ChecklistTemplates (addon; QR ya enlazado). L
 
 ### Ola 4 — Cuenta/plataforma restante
-4.1 Tabs Credenciales secundarias + Categorías de medios + SMS test/cola (F16). S/M
+4.1 ~~Tabs Credenciales secundarias + Categorías de medios + SMS test/cola (F16)~~ ✅ 19-ago.
 4.2 Opciones por block del Tablero + blocks faltantes (D15, F13). M
 4.3 Selector de idioma completo. S
 4.4 SmsGateway helpers. S

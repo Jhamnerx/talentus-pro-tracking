@@ -1292,6 +1292,17 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('account/client',    ['as' => 'api.account.client',   'uses' => 'Ui\V2\AccountController@updateClient']);
         Route::post('account/password',  ['as' => 'api.account.password', 'uses' => 'Ui\V2\AccountController@changePassword']);
         Route::post('account/sms',       ['as' => 'api.account.sms',      'uses' => 'Ui\V2\AccountController@updateSms']);
+        Route::post('account/sms/test',  ['as' => 'api.account.sms_test',  'uses' => 'Ui\V2\AccountController@testSms']);
+        Route::post('account/sms/queue', ['as' => 'api.account.sms_queue', 'uses' => 'Ui\V2\AccountController@clearSmsQueue']);
+        // Categorías de medios (addon media_categories) y credenciales secundarias
+        Route::get('account/media-categories',         ['as' => 'api.account.media_categories',        'uses' => 'Ui\V2\AccountController@mediaCategories']);
+        Route::post('account/media-categories',        ['as' => 'api.account.media_categories.store',  'uses' => 'Ui\V2\AccountController@storeMediaCategory']);
+        Route::put('account/media-categories/{id}',    ['as' => 'api.account.media_categories.update', 'uses' => 'Ui\V2\AccountController@updateMediaCategory'])->where('id', '[0-9]+');
+        Route::delete('account/media-categories/{id}', ['as' => 'api.account.media_categories.destroy','uses' => 'Ui\V2\AccountController@destroyMediaCategory'])->where('id', '[0-9]+');
+        Route::get('account/secondary',         ['as' => 'api.account.secondary',        'uses' => 'Ui\V2\AccountController@secondaryCredentials']);
+        Route::post('account/secondary',        ['as' => 'api.account.secondary.store',  'uses' => 'Ui\V2\AccountController@storeSecondaryCredential']);
+        Route::put('account/secondary/{id}',    ['as' => 'api.account.secondary.update', 'uses' => 'Ui\V2\AccountController@updateSecondaryCredential'])->where('id', '[0-9]+');
+        Route::delete('account/secondary/{id}', ['as' => 'api.account.secondary.destroy','uses' => 'Ui\V2\AccountController@destroySecondaryCredential'])->where('id', '[0-9]+');
         Route::post('account/widgets',   ['as' => 'api.account.widgets',  'uses' => 'Ui\V2\AccountController@updateWidgets']);
         Route::post('account/dashboard', ['as' => 'api.account.dashboard','uses' => 'Ui\V2\AccountController@updateDashboard']);
         Route::post('account/map',       ['as' => 'api.account.map',      'uses' => 'Ui\V2\AccountController@updateMap']);
