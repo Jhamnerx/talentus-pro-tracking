@@ -81,12 +81,21 @@ class AccountController extends BaseController
 
         // Tablero (dashboard): habilitado + bloques con su etiqueta/estado
         $dash = (array) $u->getSettings('dashboard');
-        $dashBlocks = [];
-        foreach ((array) ($dash['blocks'] ?? []) as $key => $cfg) {
+        // Sin ajustes previos el usuario no tiene 'blocks': hay que partir del
+        // catálogo (si no, el tab salía vacío y los toggles no persistían).
+        $dashCatalog = (array) config('tobuli.dashboard.blocks', []);
+        $dashSaved   = (array) ($dash['blocks'] ?? []);
+        $dashBlocks  = [];
+        foreach (($dashSaved ?: $dashCatalog) as $key => $cfg) {
+            $cfg  = (array) $cfg;
+            $opts = (array) ($cfg['options'] ?? []);
             $dashBlocks[] = [
                 'key'     => $key,
                 'label'   => trans('front.' . $key),
                 'enabled' => ! empty($cfg['enabled']),
+                // 'period' es la única opción editable hoy (trait HasPeriodOption);
+                // null = el bloque no la soporta.
+                'period'  => array_key_exists('period', $opts) ? (string) $opts['period'] : null,
             ];
         }
 
@@ -372,10 +381,20 @@ class AccountController extends BaseController
             if (isset($data['request_method'])) {
                 $fields = ['request_method', 'authentication', 'username', 'password',
                     'encoding', 'auth_id', 'auth_token', 'senders_phone', 'custom_headers'];
+                $current = (array) ($this->user->sms_gateway_params ?? []);
                 $update['sms_gateway_params'] = [];
                 foreach ($fields as $field) {
-                    $update['sms_gateway_params'][$field] = $data[$field]
-                        ?? ($this->user->sms_gateway_params[$field] ?? '');
+                    $value = $data[$field] ?? null;
+
+                    // El input de contraseña se renderiza SIN valor (no se
+                    // devuelve al cliente), así que siempre llega ''. Con
+                    // `?? current` no bastaba: '' no es null y BORRABA la
+                    // contraseña del gateway en cada guardado. Vacío = conservar.
+                    if ($field === 'password' && ($value === null || $value === '')) {
+                        $value = $current[$field] ?? '';
+                    }
+
+                    $update['sms_gateway_params'][$field] = $value ?? ($current[$field] ?? '');
                 }
             }
 
@@ -422,9 +441,35 @@ class AccountController extends BaseController
 
             $current['enabled'] = ! empty($in['enabled']) ? 1 : 0;
 
+            // Semilla del catálogo cuando el usuario NO tiene ajustes previos:
+            // antes se iteraba sobre $current['blocks'] (vacío) y los toggles se
+            // DESCARTABAN silenciosamente (solo persistía 'enabled').
+            if (empty($current['blocks'])) {
+                $current['blocks'] = (array) config('tobuli.dashboard.blocks', []);
+            }
+
             $enabledBlocks = (array) ($in['blocks'] ?? []);
-            foreach ((array) ($current['blocks'] ?? []) as $key => $cfg) {
-                $current['blocks'][$key]['enabled'] = in_array($key, $enabledBlocks, true) ? 1 : 0;
+            $inOptions     = (array) ($in['options'] ?? []);
+
+            foreach ((array) $current['blocks'] as $key => $cfg) {
+                $cfg = (array) $cfg;
+                $cfg['enabled'] = in_array($key, $enabledBlocks, true) ? 1 : 0;
+
+                // Opciones por bloque (hoy: 'period' de latest_events /
+                // latest_tasks). Se MEZCLAN para no perder las que la UI no
+                // edita (colores de device_overview, devices de distance…).
+                if (isset($inOptions[$key]) && is_array($inOptions[$key])) {
+                    $opts = (array) ($cfg['options'] ?? []);
+                    foreach ($inOptions[$key] as $ok => $ov) {
+                        if ($ok === 'period' && ! in_array($ov, ['day', 'week', 'month'], true)) {
+                            continue; // whitelist del trait HasPeriodOption
+                        }
+                        $opts[$ok] = $ov;
+                    }
+                    $cfg['options'] = $opts;
+                }
+
+                $current['blocks'][$key] = $cfg;
             }
 
             $this->user->setSettings('dashboard', $current, true);

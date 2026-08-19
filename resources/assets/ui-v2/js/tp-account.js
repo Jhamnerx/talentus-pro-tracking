@@ -132,7 +132,15 @@
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       D.blocks
         .map(function (b) {
-          return '<label class="tp-acc-tile"><input type="checkbox" class="tp-choice-input" name="dashboard_blocks" value="' + esc(b.key) + '"' + (b.enabled ? " checked" : "") + "> " + esc(b.label) + "</label>";
+          // 'period' solo lo soportan algunos bloques (latest_events/tasks):
+          // si viene null no se pinta el selector.
+          var per = b.period == null ? "" :
+            '<select class="tp-input tp-input--sm" data-no-ts="1" data-dash-period="' + esc(b.key) + '" style="margin-left:auto;width:104px;" onclick="event.preventDefault();event.stopPropagation();">' +
+            ["day", "week", "month"].map(function (v) {
+              var lbl = v === "day" ? "Día" : v === "week" ? "Semana" : "Mes";
+              return '<option value="' + v + '"' + (b.period === v ? " selected" : "") + ">" + lbl + "</option>";
+            }).join("") + "</select>";
+          return '<label class="tp-acc-tile" style="display:flex;align-items:center;gap:8px;"><input type="checkbox" class="tp-choice-input" name="dashboard_blocks" value="' + esc(b.key) + '"' + (b.enabled ? " checked" : "") + "> <span>" + esc(b.label) + "</span>" + per + "</label>";
         })
         .join("") +
       "</div></form>"
@@ -730,7 +738,13 @@
     var payload;
     if (tab.key === "client") payload = toNested(flat);
     else if (tab.key === "widgets") payload = { widgets: { default: flat.widgets_default, status: flat.widgets_status, list: flat.widgets_list || [] } };
-    else if (tab.key === "dashboard") payload = { dashboard: { enabled: flat.dashboard_enabled, blocks: flat.dashboard_blocks || [] } };
+    else if (tab.key === "dashboard") {
+      var opts = {};
+      Array.prototype.forEach.call(document.querySelectorAll("[data-dash-period]"), function (sel) {
+        opts[sel.getAttribute("data-dash-period")] = { period: sel.value };
+      });
+      payload = { dashboard: { enabled: flat.dashboard_enabled, blocks: flat.dashboard_blocks || [], options: opts } };
+    }
     else payload = flat;
 
     tpModal.setBusy(dlg, true);
