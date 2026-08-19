@@ -2400,3 +2400,69 @@ table.tp-lock-hist th {
   object-fit: contain;
   opacity: 0.85;
 }
+
+/* ── Galería de medios del vehículo ─────────────────────────────────── */
+.tp-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.tp-media-card {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-raised, #fff);
+}
+.tp-media-card__sel {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 6px;
+  padding: 2px 4px;
+  line-height: 1;
+}
+.tp-media-card__thumb {
+  display: block;
+  aspect-ratio: 4 / 3;
+  background: var(--surface-sunken, #f1f5f9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.tp-media-card__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tp-media-card__video {
+  font-size: 26px;
+  color: var(--fg-tertiary, #94a3b8);
+}
+.tp-media-card__meta {
+  padding: 7px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11.5px;
+}
+.tp-media-card__name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-media-card__sub {
+  color: var(--fg-tertiary, #94a3b8);
+}
+.tp-media-card__dl {
+  color: var(--brand-600, #2563eb);
+  text-decoration: none;
+}
+.tp-media-card__dl:hover {
+  text-decoration: underline;
+}

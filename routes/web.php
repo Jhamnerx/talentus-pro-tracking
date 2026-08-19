@@ -1257,6 +1257,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
         // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        // Galería de medios del vehículo (fotos de cámara en disco)
+        Route::get('devices/{id}/media',    ['as' => 'api.devices.media',         'uses' => 'Ui\V2\DevicesController@deviceMedia'])->where('id', '[0-9]+');
+        Route::delete('devices/{id}/media', ['as' => 'api.devices.media.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceMedia'])->where('id', '[0-9]+');
         // Columnas configurables de la lista de flota (ajuste compartido con el legacy)
         Route::get('fleet/columns',  ['as' => 'api.fleet.columns',        'uses' => 'Ui\V2\DevicesController@fleetColumns']);
         Route::put('fleet/columns',  ['as' => 'api.fleet.columns.update', 'uses' => 'Ui\V2\DevicesController@updateFleetColumns']);

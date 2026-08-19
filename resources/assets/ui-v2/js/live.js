@@ -1828,6 +1828,13 @@
       if (act === "history")
         location.href = "/ui/v2/history?device=" + id + "&range=" + (it.getAttribute("data-range") || "today");
       else if (act === "follow") openFollow(id);
+      else if (act === "device_media") {
+        var dMe = null;
+        for (var iMe = 0; iMe < state.devices.length; iMe++) {
+          if (state.devices[iMe].id === id) { dMe = state.devices[iMe]; break; }
+        }
+        if (window.tpDeviceMedia) tpDeviceMedia.open(id, dMe && dMe.name);
+      }
       else if (act === "device_config") {
         if (window.tpDeviceConfig) tpDeviceConfig.open(id);
       }

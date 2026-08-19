@@ -326,6 +326,139 @@ class DevicesController extends BaseController
         return response()->json(['ok' => true]);
     }
 
+    /* =================================================================
+     * Galería de medios del vehículo (fotos subidas por las cámaras)
+     * -----------------------------------------------------------------
+     * Paridad DeviceMediaController: los archivos no están en base de
+     * datos, viven en disco (cameras_media_path) y los enumera la entidad
+     * DeviceCameraMedia. Aquí solo se expone en JSON; servir, descargar y
+     * borrar sigue en las rutas legacy, que ya resuelven rutas y permisos.
+     * ================================================================= */
+
+    public function deviceMedia(Request $request, $id): JsonResponse
+    {
+        $this->checkException('camera', 'view');
+
+        $device = DeviceRepo::find((int) $id);
+        $this->checkException('devices', 'show', $device);
+
+        $limit  = min(60, max(6, (int) $request->get('limit', 24)));
+        $page   = max(1, (int) $request->get('page', 1));
+        $sortBy = $request->get('sort_by', 'date_modified');
+        $sort   = $request->get('sort') === 'asc' ? 'asc' : 'desc';
+
+        $categoriesEnabled = (bool) $this->user->perm('media_categories', 'view');
+
+        $items = [];
+        $total = 0;
+
+        try {
+            \Tobuli\Entities\File\DeviceCameraMedia::setCategoriesEnabled($categoriesEnabled);
+            $query = \Tobuli\Entities\File\DeviceCameraMedia::setEntity($device);
+
+            $sorter = $query->getEntityFileSorter()->sortBy($sortBy, $sort);
+
+            if ($from = $request->get('date_from')) {
+                $sorter->from(\Formatter::time()->reverse($from));
+            }
+            if ($to = $request->get('date_to')) {
+                $sorter->to(\Formatter::time()->reverse($to));
+            }
+            if ($categoriesEnabled && ($cat = $request->get('media_category'))) {
+                $sorter->nameStartsWith($cat . '.');
+            }
+
+            $paginator = $query->paginate($limit, $sorter);
+            $total = $paginator->total();
+
+            foreach ($paginator as $file) {
+                // `name` es el identificador cifrado (Crypt::encrypt del path
+                // relativo) que esperan las rutas legacy; `basename` es el
+                // nombre legible que se muestra.
+                $ref = (string) $file->name;
+                $items[] = [
+                    'ref'        => $ref,
+                    'name'       => basename((string) $file->path),
+                    'size'       => $file->size,
+                    'created_at' => $file->created_at ? \Formatter::time()->convert($file->created_at) : null,
+                    'is_video'   => (bool) $file->isVideo(),
+                    'camera'     => (string) ($file->camera_name ?? ''),
+                    'category'   => (string) ($file->category ?? ''),
+                    // Rutas legacy: sirven el binario con los mismos permisos.
+                    'url'        => url('/device_media/file/' . $device->id . '/' . $ref),
+                    'download'   => url('/device_media/download/' . $device->id . '/' . $ref),
+                ];
+            }
+        } catch (\Throwable $e) {
+            // Sin directorio de medios (equipo sin cámara o almacén no montado)
+            // el legacy también devuelve una lista vacía.
+            $items = [];
+            $total = 0;
+        }
+
+        $categories = [];
+        if ($categoriesEnabled) {
+            foreach (\Tobuli\Entities\MediaCategory::userAccessible($this->user)->get() as $c) {
+                $categories[] = ['id' => (int) $c->id, 'title' => (string) $c->title];
+            }
+        }
+
+        return response()->json([
+            'ok'         => true,
+            'page'       => $page,
+            'limit'      => $limit,
+            'total'      => $total,
+            'pages'      => (int) ceil($total / $limit),
+            'items'      => $items,
+            'categories' => $categories,
+            'can_remove' => (bool) $this->user->perm('camera', 'remove'),
+        ]);
+    }
+
+    public function destroyDeviceMedia(Request $request, $id): JsonResponse
+    {
+        $this->checkException('camera', 'remove');
+
+        $device = DeviceRepo::find((int) $id);
+        $this->checkException('devices', 'show', $device);
+
+        // Llegan los `ref` cifrados que devuelve la galería (find() los descifra).
+        $refs = array_filter((array) $request->input('files', []));
+        if (! $refs) {
+            return response()->json(['ok' => false, 'error' => 'no_files'], 422);
+        }
+
+        $deleted = 0;
+        foreach ($refs as $ref) {
+            try {
+                $file = \Tobuli\Entities\File\DeviceCameraMedia::setEntity($device)->find((string) $ref);
+                if ($file && $file->delete()) {
+                    $deleted++;
+                    continue;
+                }
+
+                // find() resuelve el ref como ruta RELATIVA al directorio del
+                // equipo. Cuando el ref ya trae la ruta absoluta (pasa si los
+                // separadores del sistema no coinciden con los del path), se
+                // borra directamente, pero solo si el archivo está realmente
+                // dentro del directorio de medios de ESTE equipo.
+                $decoded = \Illuminate\Support\Facades\Crypt::decrypt(urldecode((string) $ref));
+                $real    = realpath($decoded);
+                $base    = realpath(rtrim(cameras_media_path(), '/\\') . DIRECTORY_SEPARATOR . $device->imei);
+
+                if ($real && $base && strncmp($real, $base, strlen($base)) === 0 && is_file($real)) {
+                    if (@unlink($real)) {
+                        $deleted++;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // se ignora el archivo que ya no exista o un ref manipulado
+            }
+        }
+
+        return response()->json(['ok' => true, 'deleted' => $deleted]);
+    }
+
     /** '0000-00-00' (placeholder legacy) se trata como vacío. */
     private function cleanDate($value): ?string
     {
