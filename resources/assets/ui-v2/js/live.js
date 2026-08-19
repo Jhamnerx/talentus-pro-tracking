@@ -1828,6 +1828,13 @@
       if (act === "history")
         location.href = "/ui/v2/history?device=" + id + "&range=" + (it.getAttribute("data-range") || "today");
       else if (act === "follow") openFollow(id);
+      else if (act === "device_alerts") {
+        var dDa = null;
+        for (var iDa = 0; iDa < state.devices.length; iDa++) {
+          if (state.devices[iDa].id === id) { dDa = state.devices[iDa]; break; }
+        }
+        if (window.tpDeviceAlerts) tpDeviceAlerts.open(id, dDa && dDa.name);
+      }
       else if (act === "route_types") {
         var dRt = null;
         for (var iRt = 0; iRt < state.devices.length; iRt++) {

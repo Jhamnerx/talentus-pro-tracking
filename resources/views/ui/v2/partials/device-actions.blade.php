@@ -24,6 +24,7 @@
         'vehicle_state' => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2v-3.34a4 4 0 0 0-.8-2.4L18 8h-2"/><path d="M5 17H3v-6l2-5h9l3 5v6h-2"/><circle cx="7.5" cy="17.5" r="1.5"/><circle cx="16.5" cy="17.5" r="1.5"/></svg>',
         'follow'    => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 17 20 12 15 7"/><path d="M4 18v-2a4 4 0 0 1 4-4h12"/></svg>',
         'route_type' => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h4a3 3 0 0 0 3-3V8a3 3 0 0 1 3-3h6"/><circle cx="4" cy="19" r="2"/><circle cx="20" cy="5" r="2"/></svg>',
+        'dev_alerts' => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
         'share'     => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>',
         'sharing'   => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51 8.59 10.49"/></svg>',
         'chat'      => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
@@ -84,6 +85,14 @@
         <span class="tp-row-menu__icon">{!! $ic['follow'] !!}</span>
         <span>{{ trans('front.follow') }}</span>
     </button>
+
+    {{-- Alertas del vehículo con vigencia (paridad Objects/item.blade) --}}
+    @if ($u->perm('alerts', 'view'))
+        <button type="button" class="tp-row-menu__item" data-act="device_alerts">
+            <span class="tp-row-menu__icon">{!! $ic['dev_alerts'] !!}</span>
+            <span>{{ trans('front.alerts') }}</span>
+        </button>
+    @endif
 
     {{-- Tipos de trayecto (privado/negocio) — paridad Objects/item.blade --}}
     @if ($u->perm('device_route_types', 'view'))

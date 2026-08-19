@@ -579,6 +579,66 @@ class DevicesController extends BaseController
         return response()->json(['ok' => true]);
     }
 
+    /* =================================================================
+     * Alertas del vehículo con periodo de vigencia (pivote alert_device)
+     * Paridad DeviceAlertsController: lista y edición de active_from /
+     * active_to por alerta+vehículo (fechas en la TZ del usuario).
+     * ================================================================= */
+
+    public function deviceAlerts(Request $request, $id): JsonResponse
+    {
+        $this->checkException('alerts', 'view');
+
+        $device = DeviceRepo::find((int) $id);
+        $this->checkException('devices', 'show', $device);
+
+        $alerts = $device->alerts()
+            ->where('alerts.user_id', $this->user->id)
+            ->get();
+
+        return response()->json([
+            'ok'    => true,
+            'items' => $alerts->map(function ($a) {
+                return [
+                    'id'          => (int) $a->id,
+                    'name'        => (string) $a->name,
+                    'type'        => (string) $a->type,
+                    'active'      => (bool) $a->active,
+                    'active_from' => $a->pivot->active_from ? \Formatter::time()->convert($a->pivot->active_from) : null,
+                    'active_to'   => $a->pivot->active_to ? \Formatter::time()->convert($a->pivot->active_to) : null,
+                ];
+            })->all(),
+        ]);
+    }
+
+    public function updateDeviceAlertPeriod(Request $request, $id, $alertId): JsonResponse
+    {
+        $device = DeviceRepo::find((int) $id);
+        $this->checkException('devices', 'show', $device);
+
+        $alert = $device->alerts()->find((int) $alertId);
+        $this->checkException('alerts', 'show', $alert);
+
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'errors' => $validator->errors()->toArray()], 422);
+        }
+
+        $from = $request->get('date_from');
+        $to   = $request->get('date_to');
+
+        $device->alerts()->updateExistingPivot($alert->id, [
+            'active_from' => $from ? \Formatter::time()->reverse($from) : null,
+            'active_to'   => $to ? \Formatter::time()->reverse($to) : null,
+        ]);
+
+        return response()->json(['ok' => true]);
+    }
+
     /**
      * Delete a device.
      */
