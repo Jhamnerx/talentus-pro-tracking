@@ -299,6 +299,13 @@ class DevicesController extends BaseController
      */
     public function store(Request $request): JsonResponse
     {
+        // Paridad legacy DevicesController@store: a los usuarios con el módulo
+        // 'custom_device_add' se les PROHÍBE el alta estándar (deben pasar por
+        // el flujo custom/pagos).
+        if ($this->user->perm('custom_device_add', 'view')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
         if (! $this->user->perm('devices', 'edit')) {
             return response()->json(['ok' => false, 'message' => 'Sin permiso para crear vehículos.'], 403);
         }
@@ -456,9 +463,10 @@ class DevicesController extends BaseController
 
     public function storeDeviceGroup(Request $request): JsonResponse
     {
-        if (! $this->user->perm('devices', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
-        }
+        // Gate legacy: 'devices_groups' está mapeado a DeviceGroup en el
+        // Manager, así que resuelve por DeviceGroupPolicy (bloquea demo), no
+        // por perm(). Antes se usaba perm('devices','edit') = gate distinto.
+        $this->checkException('devices_groups', 'store');
 
         $title = trim((string) $request->get('title'));
         if ($title === '') {
@@ -484,9 +492,7 @@ class DevicesController extends BaseController
             abort(404);
         }
 
-        if (! $this->user->perm('devices', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
-        }
+        $this->checkException('devices_groups', 'edit', $group);
 
         $title = trim((string) $request->get('title'));
         if ($title === '') {
@@ -508,9 +514,7 @@ class DevicesController extends BaseController
             abort(404);
         }
 
-        if (! $this->user->perm('devices', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
-        }
+        $this->checkException('devices_groups', 'remove', $group);
 
         // Paridad legacy: los devices vuelven a "Sin grupo" (0, no NULL)
         \DB::table('user_device_pivot')->where('group_id', $group->id)->update(['group_id' => 0]);

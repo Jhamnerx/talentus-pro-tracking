@@ -792,7 +792,7 @@
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=42"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=10"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=11"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=10"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=10"></script>
     <script>

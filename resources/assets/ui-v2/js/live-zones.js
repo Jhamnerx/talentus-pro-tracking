@@ -326,6 +326,15 @@
       '<div class="tp-field"><label class="tp-field__label">Grupo</label><select name="group_id" class="tp-input">' +
       groupOpts +
       "</select></div>" +
+      // Geocerca móvil: sigue al vehículo elegido (plugin moving_geofence).
+      (S.movingPlugin
+        ? '<div class="tp-field"><label class="tp-field__label">Vehículo (geocerca móvil)</label>' +
+          '<select name="device_id" class="tp-input"><option value="">Sin vehículo</option>' +
+          S.devices.map(function (d) {
+            return '<option value="' + d.id + '"' + (g && String(g.device_id || "") === String(d.id) ? " selected" : "") + ">" + esc(d.name) + "</option>";
+          }).join("") +
+          "</select></div>"
+        : "") +
       (isCircle
         ? '<div class="tp-field"><label class="tp-field__label">Radio (m)</label><input type="number" name="radius" class="tp-input" value="' +
           (geometry ? geometry.radius : g ? Math.round(g.radius) : "") +
@@ -350,6 +359,10 @@
       polygon_color: f.querySelector('[name="polygon_color"]').value,
       group_id: parseInt(f.querySelector('[name="group_id"]').value, 10) || 0,
     };
+    var devSel = f.querySelector('[name="device_id"]');
+    // Solo viaja si el plugin pinta el selector: GeofenceUserService::checkDevice
+    // solo toca device_id cuando la clave existe (así no se pisa lo guardado).
+    if (devSel) payload.device_id = devSel.value ? parseInt(devSel.value, 10) : null;
     // OJO: 'active' NO se incluye aquí. Antes iba fijo a 1 y cada edición
     // REACTIVABA las geocercas desactivadas. Solo el create lo fija (abajo)
     // y la visibilidad se cambia con el toggle de la lista.
@@ -670,6 +683,8 @@
         S.groups = (j && j.groups) || [];
         S.vehicleTypes = (j && j.vehicle_types) || [];
         S.speedPlugin = !!(j && j.speed_limit_plugin);
+        S.movingPlugin = !!(j && j.moving_plugin);
+        S.devices = (j && j.devices) || [];
         S.byId = {};
         S.items.forEach(function (g) {
           S.byId[g.id] = g;

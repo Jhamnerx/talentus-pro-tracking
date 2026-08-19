@@ -59,6 +59,7 @@ class ZonesController extends BaseController
                 // convert() (base → unidad usuario), como el legacy edit():
                 // el service hace reverse() al guardar; devolver el crudo
                 // multiplicaba el límite en cada edición si la unidad ≠ km.
+                'device_id'     => $g->device_id ? (int) $g->device_id : null,
                 'speed_limit'   => $g->speed_limit !== null ? round(\Formatter::speed()->convert($g->speed_limit)) : null,
                 'vehicle_speed_limits' => $this->vslMap($g),
             ];
@@ -81,6 +82,16 @@ class ZonesController extends BaseController
             'groups'             => $groups,
             'vehicle_types'      => $this->vehicleTypesPayload(),
             'speed_limit_plugin' => (bool) settings('plugins.geofences_speed_limit.status'),
+            // Geocerca móvil (plugin moving_geofence): catálogo de vehículos
+            // para el selector del modal. El feed lo consume live-zones.js
+            // (meta() existía pero nadie lo llamaba).
+            'moving_plugin'      => (bool) settings('plugins.moving_geofence.status'),
+            'devices'            => settings('plugins.moving_geofence.status')
+                ? $this->user->devices()->orderBy('devices.name')->get(['devices.id', 'devices.name'])
+                    ->map(function ($d) {
+                        return ['id' => (int) $d->id, 'name' => (string) ($d->name ?: ('#' . $d->id))];
+                    })->all()
+                : [],
         ]);
     }
 
