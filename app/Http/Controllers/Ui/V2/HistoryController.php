@@ -236,7 +236,11 @@ class HistoryController extends BaseController
             'timeline'  => $timeline,
             'sensors'   => $res['sensors'] ?? [],
             'summary'   => [
-                'distance'      => $res['distance_sum'] ?? null,
+                // Km recorrido por ODÓMETRO como el panel legacy (fallback al
+                // stat 'distance' si el device no reporta odómetro).
+                'distance'      => isset($res['distance_sum_odometer']) && $res['distance_sum_odometer']
+                    ? round((float) $res['distance_sum_odometer'], 1) . ' ' . \Formatter::distance()->unit()
+                    : ($res['distance_sum'] ?? null),
                 'top_speed'     => $res['top_speed'] ?? null,
                 'move_duration' => $res['move_duration'] ?? null,
                 'stop_duration' => $res['stop_duration'] ?? null,
@@ -270,7 +274,9 @@ class HistoryController extends BaseController
             'to_time'   => $toTime,
             'limit'     => (int) $request->get('limit', 50),
             'page'      => (int) $request->get('page', 1),
-            'sorting'   => $request->get('sorting', 'asc'),
+            // El helper solo entiende sorting=='true' o sorting['sort']=='desc';
+            // mandar la cadena 'desc' NO ordenaba (data-log siempre ascendente).
+            'sorting'   => ['sort' => $request->get('sorting') === 'desc' ? 'desc' : 'asc'],
         ];
 
         try {

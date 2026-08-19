@@ -96,7 +96,9 @@
                                 <option value="1800">&gt; 30 min</option>
                             </select>
                         </div>
-                        <label class="tp-check">
+                        {{-- Paridad legacy (Objects/tabs/history.blade): el ajuste
+                             solo existe si hay API key de snap-to-road. --}}
+                        <label class="tp-check" @if (!config('services.snaptoroad.key')) hidden @endif>
                             <input type="checkbox" id="tp-hist-snap">
                             <span class="tp-check__box" aria-hidden="true">
                                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -513,6 +515,9 @@
                 <div class="tp-history__datalog-foot">
                     <span class="tp-text-xs tp-text-muted" id="tp-hist-datalog-info">—</span>
                     <div class="tp-history__datalog-pager">
+                        {{-- Orden del registro: el backend ya lo soporta (sorting) --}}
+                        <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-hist-datalog-sort" type="button"
+                            title="{{ trans('front.date') }}" data-sort="asc">↑ {{ trans('front.date') }}</button>
                         <label class="tp-text-xs tp-text-muted" style="display:flex;align-items:center;gap:6px;">
                             {{ trans('front.rows_per_page') }}
                             <select class="tp-input tp-input--sm" id="tp-hist-datalog-limit" style="width:76px;">
@@ -615,5 +620,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=26"></script>
+    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=27"></script>
 @endpush

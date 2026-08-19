@@ -53,7 +53,7 @@
     overlays: { geofences: null, routes: null, poi: null },
     focusIdx: null, focusRange: null, focusLayer: null, focusPopup: null,
     display: { route: true, arrows: true, stops: true, events: false, geofences: false, poi: false, routes: false },
-    dl: { page: 1, last: 1 },
+    dl: { page: 1, last: 1, sort: "asc" },
   };
   var geoCache = {};
 
@@ -1036,7 +1036,7 @@
     state.dl.page = page || 1;
     var limitSel = $("#tp-hist-datalog-limit");
     var limit = limitSel ? parseInt(limitSel.value, 10) || 50 : 50;
-    var qs = new URLSearchParams({ device: state.deviceId, from: apiFrom(), to: apiTo(), page: state.dl.page, limit: limit });
+    var qs = new URLSearchParams({ device: state.deviceId, from: apiFrom(), to: apiTo(), page: state.dl.page, limit: limit, sorting: state.dl.sort || "asc" });
     fetch(CFG.messagesUrl + "?" + qs.toString(), { credentials: "same-origin", headers: { Accept: "application/json" } })
       .then(function (r) { return r.json(); })
       .then(function (j) {
@@ -1253,6 +1253,14 @@
     $("#tp-hist-datalog-next").addEventListener("click", function () { if (state.dl.page < state.dl.last) loadDataLog(state.dl.page + 1); });
     var dlLimit = $("#tp-hist-datalog-limit");
     if (dlLimit) dlLimit.addEventListener("change", function () { loadDataLog(1); });
+    var dlSort = $("#tp-hist-datalog-sort");
+    if (dlSort)
+      dlSort.addEventListener("click", function () {
+        state.dl.sort = state.dl.sort === "desc" ? "asc" : "desc";
+        dlSort.setAttribute("data-sort", state.dl.sort);
+        dlSort.textContent = (state.dl.sort === "desc" ? "↓ " : "↑ ") + T("date", "Fecha");
+        loadDataLog(1);
+      });
 
     // map controls
     $("#tp-hist-zoom-in").addEventListener("click", function () { state.map && state.map.zoomIn(); });

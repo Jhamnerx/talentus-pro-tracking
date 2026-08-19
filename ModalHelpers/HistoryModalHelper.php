@@ -180,6 +180,11 @@ class HistoryModalHelper extends ModalHelper
                 ]),
             ];
 
+            // snap_to_road: get() lo aplica sobre las posiciones de cada tramo;
+            // getApi() lo ignoraba (el checkbox de la v2 no hacía nada).
+            $snapToRoad = isset($this->data['snap_to_road'])
+                && ($this->data['snap_to_road'] === 'true' || $this->data['snap_to_road'] == 1);
+
             foreach ($data['groups']->all() as $group) {
 
                 if ($group->getKey() == 'event') {
@@ -464,7 +469,9 @@ class HistoryModalHelper extends ModalHelper
                         function ($position) {
                             return $this->positionToItem($position);
                         },
-                        $group->getStat('positions')->value()
+                        $snapToRoad
+                            ? snapToRoad($group->getStat('positions')->value())
+                            : $group->getStat('positions')->value()
                     ),
                 ];
             }
@@ -504,11 +511,42 @@ class HistoryModalHelper extends ModalHelper
         })->values()->all());
 
 
+        // Distancia total por ODÓMETRO (misma fórmula que get(): suma de
+        // odómetro_fin - odómetro_inicio por tramo, con fallback al stat
+        // 'distance'). Clave ADITIVA: 'distance_sum' se deja intacta para no
+        // alterar el contrato de la API móvil; la usa la UI v2 para mostrar el
+        // mismo "Km recorrido" que el panel legacy.
+        $odometerSum = 0;
+        if (!empty($data['groups'])) {
+            foreach ($data['groups']->all() as $group) {
+                if ($group->getKey() === 'event' || $group->getKey() === 'stop') {
+                    continue;
+                }
+                $segment  = null;
+                $odometer = $group->stats()->has('odometer') ? $group->stats()->get('odometer') : null;
+                if ($odometer) {
+                    $sp = $group->getStartPosition();
+                    $ep = $group->getEndPosition();
+                    if ($sp && isset($sp->odometer) && $ep && isset($ep->odometer)) {
+                        $odometer->set($sp->odometer);
+                        $oStart = round($odometer->format(), 1);
+                        $odometer->set($ep->odometer);
+                        $oEnd = round($odometer->format(), 1);
+                        if (is_numeric($oStart) && is_numeric($oEnd)) {
+                            $segment = $oEnd - $oStart;
+                        }
+                    }
+                }
+                $odometerSum += $segment ?? $group->getStat('distance')->format();
+            }
+        }
+
         return [
             'items' => $items,
             'device' => FractalTransformer::setSerializer(WithoutDataArraySerializer::class)
                 ->item($device, DeviceHistoryTransformer::class)->toArray(),
             'distance_sum' => $data['root']->getStat('distance')->human(),
+            'distance_sum_odometer' => $odometerSum ?: null,
             'top_speed' => $data['root']->getStat('speed_max')->human(),
             'move_duration' => $data['root']->getStat('drive_duration')->human(),
             'stop_duration' => $data['root']->getStat('stop_duration')->human(),
