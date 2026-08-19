@@ -264,6 +264,26 @@ El fallo estaba en la suma por tramos del Historial: solo acumula los tramos de
 conducción, y el punto inicial del rango cae en la parada previa, así que perdía
 el primer kilómetro.
 
+**Segundo fallo, encontrado con datos reales (device 219, mayo 2026):** la ventana
+temporal. El Historial y el Tablero consultaban el rango **sin convertirlo** a la
+zona de almacenamiento, mientras el pipeline y los reportes sí lo hacen
+(`Formatter::time()->reverse()`, también en `ReportManager` antes de `setRange()`).
+El resultado era una ventana desplazada 5 h que llegaba a **duplicar** el dato: el
+6 de mayo el Historial mostraba **293 km** cuando lo real son **152**.
+
+Contraste final con datos reales (device 219, 50.239 posiciones en mayo):
+
+| Día | Servicio | Historial | Reporte 78 | GPS (informativo) |
+| --- | --- | --- | --- | --- |
+| 29-may | 188,4 | 188,4 | 188 | 185,38 |
+| 26-may | 152,4 | 152,4 | 153 | 150,56 |
+| 06-may | 152,0 | 152,0 | 152 | 149,80 |
+
+Servicio e Historial son idénticos. El reporte 78 difiere ≤ 0,6 km **solo por
+redondeo de presentación** (el legacy hace `round()` a entero); es el mismo
+cálculo. La distancia GPS queda 1,5–3 km por debajo, como se espera de un
+haversine punto a punto frente al cuentakilómetros.
+
 **Canónico:** `Tobuli\Services\DeviceMileageService` — última lectura del
 cuentakilómetros menos la primera del rango (con caída a `totaldistance` si el
 equipo no reporta odómetro). Es el criterio que ya usaba el reporte de odómetro

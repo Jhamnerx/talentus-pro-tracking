@@ -240,8 +240,15 @@ class HistoryController extends BaseController
                 // Km recorrido: fuente ÚNICA (DeviceMileageService) para que
                 // coincida con el Tablero. La suma por tramos que se usaba antes
                 // perdía el primer kilómetro del rango (ver el servicio).
-                'distance'      => (new \Tobuli\Services\DeviceMileageService())
-                    ->formatted($device, $fromDate . ' ' . $fromTime . ':00', $toDate . ' ' . $toTime . ':59'),
+                // Mismo rango EXACTO que el pipeline: el helper convierte las
+                // fechas de la zona del usuario a la de almacenamiento antes de
+                // consultar, así que aquí se hace el mismo reverse() — si no,
+                // el total salía de una ventana desplazada y no cuadraba.
+                'distance'      => (new \Tobuli\Services\DeviceMileageService())->formatted(
+                    $device,
+                    \Formatter::time()->reverse($fromDate . ' ' . $fromTime),
+                    \Formatter::time()->reverse($toDate . ' ' . $toTime)
+                ),
                 // Distancia GPS del pipeline, informativa (haversine punto a punto).
                 'distance_gps'  => $res['distance_sum'] ?? null,
                 'top_speed'     => $res['top_speed'] ?? null,

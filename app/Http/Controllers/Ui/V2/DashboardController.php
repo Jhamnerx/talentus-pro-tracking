@@ -367,9 +367,14 @@ class DashboardController extends BaseController
         $mileage = new \Tobuli\Services\DeviceMileageService();
         $rows = [];
         foreach ($devices as $device) {
-            // Misma fuente que el Historial (DeviceMileageService), para que el
-            // kilometraje no baile entre pantallas.
-            $km = $mileage->forRange($device, substr($from, 0, 10), $to);
+            // Misma fuente y MISMA ventana que el Historial: las fechas del
+            // rango vienen en la zona del usuario y las posiciones se guardan en
+            // la de almacenamiento, así que se convierten antes de consultar.
+            $km = $mileage->forRange(
+                $device,
+                \Formatter::time()->reverse(substr($from, 0, 10) . ' 00:00'),
+                \Formatter::time()->reverse($to)
+            );
             $rows[] = ['id' => (int) $device->id, 'name' => (string) $device->name, 'km' => round($km, 2)];
         }
 
