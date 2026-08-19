@@ -143,7 +143,24 @@ class DevicesController extends BaseController
         $q      = trim((string) $request->get('q', ''));
         $status = (string) $request->get('status', '');
 
-        $query = $this->user->devices()->wasConnected()->clearOrdersBy();
+        $query = $this->user->devices()->clearOrdersBy();
+
+        // La lista excluye por defecto los equipos que nunca conectaron… salvo
+        // cuando son justo lo que se pide (tabla Lookup NeverConnected).
+        if ($status !== 'never_connected') {
+            $query->wasConnected();
+        }
+
+        // Estados que el legacy resuelve con tablas Lookup dedicadas
+        // (DevicesInactive/NeverConnected/Expired). Se aplican en SQL, no
+        // filtrando en PHP como los cuatro grupos básicos.
+        if ($status === 'inactive') {
+            $query->inactive();
+        } elseif ($status === 'never_connected') {
+            $query->neverConnected();
+        } elseif ($status === 'expired') {
+            $query->expired();
+        }
 
         if ($q !== '') {
             $query->where(function ($w) use ($q) {
@@ -166,7 +183,9 @@ class DevicesController extends BaseController
         $items = [];
         foreach ($rows as $device) {
             $st = $device->getStatus();
-            if ($status !== '' && $this->groupStatus($st) !== $status) {
+            // Los tres de arriba ya vienen filtrados por SQL.
+            $sqlFiltered = in_array($status, ['inactive', 'never_connected', 'expired'], true);
+            if ($status !== '' && ! $sqlFiltered && $this->groupStatus($st) !== $status) {
                 continue;
             }
 

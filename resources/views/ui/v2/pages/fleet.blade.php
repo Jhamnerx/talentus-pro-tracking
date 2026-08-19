@@ -55,6 +55,10 @@
                 <button class="tp-seg__btn" role="tab" data-status="idle">Inactivo</button>
                 <button class="tp-seg__btn" role="tab" data-status="stopped">Detenido</button>
                 <button class="tp-seg__btn" role="tab" data-status="offline">Offline</button>
+                {{-- Estados que el legacy resolvía con tablas Lookup dedicadas --}}
+                <button class="tp-seg__btn" role="tab" data-status="inactive">{{ trans('front.inactive') }}</button>
+                <button class="tp-seg__btn" role="tab" data-status="never_connected">{{ trans('front.never_connected') }}</button>
+                <button class="tp-seg__btn" role="tab" data-status="expired">{{ trans('front.expired') }}</button>
             </div>
 
             <div class="tp-fleet__actions">
@@ -141,7 +145,7 @@
 @push('scripts')
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=18"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=3" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.
         (function() {

@@ -109,6 +109,8 @@ class AdminController extends BaseController
             $quick[] = ['key' => 'email',    'label' => 'Email',            'desc' => 'SMTP y plantillas',                  'url' => $r('admin.email_settings.index',       'admin/email_settings/index'),       'group' => 'admin'];
             $quick[] = ['key' => 'events',   'label' => 'Catálogo eventos', 'desc' => 'Tipos y traducciones',               'url' => $r('admin.events.index',               'admin/events/index'),               'group' => 'admin'];
             $quick[] = ['key' => 'logs',     'label' => 'Logs',             'desc' => 'Auditoría y descargas',              'url' => $r('admin.logs.index',                 'admin/logs/index'),                 'group' => 'admin'];
+            // Soporte: entrar como un cliente (ClientsController@loginAs)
+            $quick[] = ['key' => 'clients',  'label' => 'Clientes',         'desc' => 'Gestión y acceso como cliente',     'url' => $r('clients.index',                    'clients'),                          'group' => 'admin'];
         }
         if ($isManager || $isAdmin) {
             $quick[] = ['key' => 'clients',  'label' => 'Clientes',         'desc' => 'Sub-cuentas y dispositivos',        'url' => $r('admin.clients.index',              'users/clients'),                    'group' => 'manager'];

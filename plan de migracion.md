@@ -229,9 +229,9 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 4.3 ~~Selector de idioma completo~~ ✅ 19-ago — 46 idiomas activos con bandera en el menú de usuario; en cuenta demo cambia la sesión pero no el perfil, como el legacy.
 4.4 ~~SmsGateway helpers~~ ✅ 19-ago — ya cubiertos con F16 (`send_test_sms` y `clear_queue`); `test_sms` del legacy es solo la vista del formulario, que en v2 es el modal.
 
-### Ola 5 — Comercial y utilidades
-5.1 Subscriptions/DeviceSubscription/DevicePlans (evaluar alcance). L
-5.2 Lookup/Docs/LoginAs/Addresses-vista. S c/u
+### Ola 5 — Comercial y utilidades ✅ (5.1 no aplica)
+5.1 Subscriptions/DeviceSubscription/DevicePlans — **NO APLICA en esta instalación** (evaluado 19-ago): no hay ninguna pasarela de pago habilitada (`config('payments')` sin entradas activas), 0 suscripciones, 0 `device_plans` y el plugin `subscriptions` sin activar. Los 4 planes de facturación existentes se asignan desde el panel de administración (601 usuarios), flujo que no pasa por la UI de usuario. Construir la superficie de compra sin pasarela ni datos no sería verificable.
+5.2 ~~Lookup/Docs/LoginAs/Addresses~~ ✅ 19-ago — las tablas Lookup de estado (inactivo, nunca conectado, expirado) se resuelven como filtros de **Flota** en SQL, y el widget del tablero enlaza a cada una (igual que el legacy enlazaba a su Lookup). LoginAs y la documentación de la API quedan como accesos directos del hub Admin. El buscador de direcciones ya estaba en Herramientas.
 
 ### Ola 6 — Público (fuera del shell)
 Login/Registro/CustomRegistration/PasswordReminder/EmailConfirmation + página pública de sharing

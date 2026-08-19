@@ -155,8 +155,16 @@ class DashboardController extends BaseController
             ['key' => 'never_connected', 'label' => trans('front.never_connected'), 'count' => (clone $devices)->neverConnected()->count()],
         ];
 
+        // Cada grupo enlaza a la Flota filtrada, igual que el legacy enlazaba a
+        // su tabla Lookup correspondiente.
+        $filters = [
+            'move' => 'moving', 'idle' => 'idle', 'stop' => 'stopped',
+            'offline' => 'offline', 'inactive' => 'inactive', 'never_connected' => 'never_connected',
+        ];
+
         foreach ($rows as $i => $r) {
             $rows[$i]['color'] = (string) ($colors[$r['key']] ?? $defaults[$r['key']]);
+            $rows[$i]['url']   = url('/ui/v2/fleet') . '?status=' . $filters[$r['key']];
         }
 
         return $rows;

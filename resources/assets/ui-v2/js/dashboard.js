@@ -381,6 +381,17 @@
             display: function (r) { return fmt(r.count); },
             color: function (r) { return r.color || "#94a3b8"; },
           });
+          // Cada barra lleva a la Flota filtrada por ese estado.
+          var host = $("#tp-dash-overview");
+          if (host) {
+            host.querySelectorAll(".tp-barlist__row").forEach(function (row, i) {
+              var item = p.overview[i];
+              if (!item || !item.url) return;
+              row.style.cursor = "pointer";
+              row.title = "Ver en Flota";
+              row.addEventListener("click", function () { location.href = item.url; });
+            });
+          }
         });
 
         // Últimas tareas

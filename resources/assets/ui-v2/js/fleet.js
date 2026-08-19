@@ -19,7 +19,15 @@
     total: 0,
     pages: 1,
     q: "",
-    status: "",
+    // El dashboard enlaza aquí con ?status=… (equivalente a las tablas Lookup
+    // del legacy), así que el filtro puede venir dado en la URL.
+    status: (function () {
+      try {
+        return new URLSearchParams(location.search).get("status") || "";
+      } catch (e) {
+        return "";
+      }
+    })(),
     sort: "name",
     dir: "asc",
     items: [],
@@ -494,6 +502,13 @@
       URL.revokeObjectURL(url);
     }, 100);
   });
+
+  /* Si el estado vino en la URL, refleja el botón activo del segmentado */
+  if (state.status) {
+    document.querySelectorAll("[data-status]").forEach(function (b) {
+      b.classList.toggle("is-active", b.getAttribute("data-status") === state.status);
+    });
+  }
 
   /* Botón de configuración de columnas (toolbar) */
   var colsBtn = document.getElementById("tp-fleet-columns");
