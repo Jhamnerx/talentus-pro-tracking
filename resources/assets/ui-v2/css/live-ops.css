@@ -2374,3 +2374,29 @@ table.tp-lock-hist th {
 .tp-zexp-item:hover {
   background: var(--brand-50, #f2f5fd);
 }
+
+/* Sensores con icono (paridad legacy: icono personalizado del mapeo de valores
+   o SVG del tipo de sensor). La columna del nombre crece un poco para que
+   quepan icono + etiqueta sin partir la línea. */
+.tp-defs--sensors {
+  grid-template-columns: 124px 1fr;
+  align-items: center;
+}
+.tp-defs--sensors dt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.tp-defs--sensors dt span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-sensor-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  object-fit: contain;
+  opacity: 0.85;
+}

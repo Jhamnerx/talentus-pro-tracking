@@ -1350,6 +1350,29 @@
         delMap.closest("tr").remove();
         return;
       }
+      // Icono de una fila ya existente
+      var rowIcon = e.target.closest("[data-map-row-icon]");
+      if (rowIcon) {
+        var hid = rowIcon.querySelector("[data-map-row-icon-id]");
+        openIconPicker(hid ? hid.value : "").then(function (pick) {
+          if (hid) hid.value = pick.id;
+          paintIconButton(rowIcon, pick.url);
+        });
+        return;
+      }
+      // Icono de la fila que se va a crear
+      var newIcon = e.target.closest("[data-map-new-icon]");
+      if (newIcon) {
+        var nhid = newIcon.querySelector("[data-map-new-icon-id]");
+        openIconPicker(nhid ? nhid.value : "").then(function (pick) {
+          if (nhid) {
+            nhid.value = pick.id;
+            nhid.setAttribute("data-url", pick.url || "");
+          }
+          paintIconButton(newIcon, pick.url);
+        });
+        return;
+      }
 
       // ── Vista previa ──
       var prev = e.target.closest("[data-sensor-preview]");
@@ -1389,6 +1412,68 @@
     if (mapMt) mapMt.addEventListener("change", syncMapControls);
     syncMapControls();
 
+    // ── Picker de icono por fila de mapeo (paridad legacy: icons-modal) ──
+    // El icono se guarda como mappings[i][icon] = id de sensor_icons.
+    var ICONS_CACHE = null;
+
+    function loadSensorIcons() {
+      if (ICONS_CACHE) return Promise.resolve(ICONS_CACHE);
+      return tpModal.fetchJSON(cfg.sensorIcons).then(function (res) {
+        ICONS_CACHE = (res.data && res.data.items) || [];
+        return ICONS_CACHE;
+      });
+    }
+
+    // Pinta la miniatura (o el "+" vacío) dentro de un botón del picker.
+    function paintIconButton(btn, url) {
+      var img = btn.querySelector("[data-map-row-icon-img], [data-map-new-icon-img]");
+      if (!img) return;
+      var attr = img.hasAttribute("data-map-new-icon-img") ? "data-map-new-icon-img" : "data-map-row-icon-img";
+      img.outerHTML = url
+        ? '<img src="' + esc(url) + '" alt="" ' + attr + ">"
+        : '<span ' + attr + ' class="tp-map-icon__empty">+</span>';
+    }
+
+    function openIconPicker(currentId) {
+      return new Promise(function (resolve) {
+        loadSensorIcons().then(function (items) {
+          var grid = items.length
+            ? '<div class="tp-icon-grid">' +
+              items
+                .map(function (i) {
+                  return (
+                    '<button type="button" class="tp-icon-grid__cell' +
+                    (String(i.id) === String(currentId) ? " is-active" : "") +
+                    '" data-icon-id="' + i.id + '" data-icon-url="' + esc(i.url) + '">' +
+                    '<img src="' + esc(i.url) + '" alt="" loading="lazy"></button>'
+                  );
+                })
+                .join("") +
+              "</div>"
+            : '<p class="tp-text-muted tp-text-sm" style="margin:0;">No hay iconos de sensor cargados. ' +
+              "El administrador puede subirlos en el panel de administración.</p>";
+
+          tpModal.open({
+            title: "Icono del valor mapeado",
+            size: "sm",
+            body: grid,
+            buttons: [
+              { label: "Quitar icono", variant: "ghost", close: true, onClick: function () { resolve({ id: "", url: "" }); } },
+              { label: "Cancelar", variant: "ghost", close: true },
+            ],
+            onMount: function (d) {
+              d.addEventListener("click", function (e) {
+                var cell = e.target.closest("[data-icon-id]");
+                if (!cell) return;
+                resolve({ id: cell.getAttribute("data-icon-id"), url: cell.getAttribute("data-icon-url") });
+                tpModal.close(d);
+              });
+            },
+          });
+        });
+      });
+    }
+
     function addMappingRow() {
       var mapRows = form.querySelector("[data-map-rows]");
       var vt = mapVt.value;
@@ -1422,18 +1507,36 @@
       var hidMt = '<input type="hidden" name="mappings[' + i + '][mt]" value="' + esc(mt) + '">';
       if (mt !== "3") hidMt += '<input type="hidden" name="mappings[' + i + '][mv]" value="' + esc(mv) + '">';
 
+      // Icono elegido para esta fila (si lo hay)
+      var newIconEl = form.querySelector("[data-map-new-icon]");
+      var newIconHid = newIconEl ? newIconEl.querySelector("[data-map-new-icon-id]") : null;
+      var iconId = newIconHid ? newIconHid.value : "";
+      var iconUrl = newIconHid ? newIconHid.getAttribute("data-url") || "" : "";
+      var iconCell =
+        '<button type="button" class="tp-map-icon" data-map-row-icon>' +
+        '<input type="hidden" name="mappings[' + i + '][icon]" value="' + esc(iconId) + '" data-map-row-icon-id>' +
+        (iconUrl
+          ? '<img src="' + esc(iconUrl) + '" alt="" data-map-row-icon-img>'
+          : '<span data-map-row-icon-img class="tp-map-icon__empty">+</span>') +
+        "</button>";
+
       mapRows.insertAdjacentHTML(
         "beforeend",
         "<tr>" +
           "<td>" + esc(vt === "2" ? v + " .. " + t : v) + hid + "</td>" +
           "<td>" + esc(mt === "3" ? "[value]" : mv) + hidMt + "</td>" +
-          "<td></td>" +
+          '<td style="text-align:center;">' + iconCell + "</td>" +
           '<td style="text-align:center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-map-del>×</button></td>' +
           "</tr>",
       );
       mapV.value = "";
       mapT.value = "";
       mapMv.value = "";
+      if (newIconHid) {
+        newIconHid.value = "";
+        newIconHid.setAttribute("data-url", "");
+        paintIconButton(newIconEl, "");
+      }
     }
 
     // Estado inicial según el tipo seleccionado (create: primero del catálogo)

@@ -636,3 +636,61 @@
 .tp-acc-row:hover {
   background: var(--brand-50, #f2f5fd);
 }
+
+/* Picker de icono por fila de mapeo del sensor (paridad legacy icons-modal) */
+.tp-map-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-default, #cbd5e1);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.tp-map-icon:hover {
+  border-color: var(--brand-500, #2563eb);
+  background: var(--brand-50, #f2f5fd);
+}
+.tp-map-icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.tp-map-icon__empty {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--fg-tertiary, #94a3b8);
+}
+.tp-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.tp-icon-grid__cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-page, #fff);
+  cursor: pointer;
+  padding: 6px;
+}
+.tp-icon-grid__cell:hover {
+  border-color: var(--brand-500, #2563eb);
+}
+.tp-icon-grid__cell.is-active {
+  border-color: var(--brand-500, #2563eb);
+  box-shadow: 0 0 0 2px var(--brand-100, #dbeafe);
+}
+.tp-icon-grid__cell img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}

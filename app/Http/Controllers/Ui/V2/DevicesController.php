@@ -744,6 +744,44 @@ class DevicesController extends BaseController
     /**
      * Lista de sensores del device (re-hidrata la tabla del tab).
      */
+    /**
+     * Catálogo de iconos de sensor para el picker del mapeo de valores.
+     * GET sensors/icons  — espeja SensorIconController::getBaseQuery():
+     * los del sistema (user_id null) + los del propio usuario.
+     */
+    public function sensorIcons(Request $request): JsonResponse
+    {
+        $rows = \Tobuli\Entities\SensorIcon::where(function ($q) {
+                $q->whereNull('user_id')->orWhere('user_id', $this->user->id);
+            })
+            ->orderBy('order', 'DESC')
+            ->orderBy('id', 'ASC')
+            ->get();
+
+        return response()->json([
+            'ok'    => true,
+            'items' => $rows->map(function ($i) {
+                return ['id' => (int) $i->id, 'url' => asset($i->path)];
+            })->all(),
+        ]);
+    }
+
+    /**
+     * URL del SVG del tipo de sensor, o null si el tema no trae ese icono.
+     * Espeja DeviceSensor::getIconAsset() pero sin devolver rutas rotas.
+     */
+    private function sensorTypeIcon(\Tobuli\Entities\DeviceSensor $sensor, $value): ?string
+    {
+        try {
+            $url  = $sensor->getIconAsset($value);
+            $file = public_path('assets/icons/' . basename((string) parse_url($url, PHP_URL_PATH)));
+
+            return is_file($file) ? $url : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function sensorsList(Request $request, $id): JsonResponse
     {
         $this->sensorDevice((int) $id);
@@ -1251,9 +1289,17 @@ class DevicesController extends BaseController
             $traccar = $device->traccar;
             foreach ($device->sensors as $sensor) {
                 $formatted = '-';
+                $icon = null;
                 try {
                     if ($traccar) {
-                        $formatted = $sensor->getValueCurrent($traccar)->getFormatted();
+                        $value = $sensor->getValueCurrent($traccar);
+                        $formatted = $value->getFormatted();
+                        // Paridad legacy (DeviceMapFullTransformer::formatSensors +
+                        // device.js dataSensorsDOM): 1) icono personalizado del mapeo
+                        // de valores (admin → sensor_icons), 2) si no hay, el SVG del
+                        // tipo de sensor (con escalón para battery/gsm).
+                        $custom = $value->getIcon();
+                        $icon = $custom ? asset($custom->path) : $this->sensorTypeIcon($sensor, $value->getValue());
                     }
                 } catch (\Throwable $e) {
                     $formatted = '-';
@@ -1261,6 +1307,8 @@ class DevicesController extends BaseController
                 $rows[] = [
                     'name'     => $sensor->formatName(),
                     'formated' => $formatted,
+                    'type'     => (string) $sensor->type,
+                    'icon'     => $icon,
                 ];
             }
             $data['sensors'] = $rows;

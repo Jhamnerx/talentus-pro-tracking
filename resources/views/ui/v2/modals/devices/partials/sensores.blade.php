@@ -23,6 +23,7 @@
             'update'  => url('/ui/v2/api/sensors') . '/{id}',
             'destroy' => url('/ui/v2/api/sensors') . '/{id}',
             'preview' => route('ui.v2.api.sensors.preview'),
+            'sensorIcons' => route('ui.v2.api.sensors.icons'),
         ];
     @endphp
 

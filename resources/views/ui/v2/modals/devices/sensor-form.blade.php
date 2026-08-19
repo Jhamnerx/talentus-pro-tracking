@@ -13,8 +13,9 @@
     con innerHTML no ejecuta <script>, por eso $types viaja en un
     <script type="application/json"> que el JS lee con textContent.
 
-    Nota: el selector de iconos por mapping (legacy icons-modal) no se
-    portó; las filas existentes conservan su icono vía hidden input.
+    El selector de iconos por fila de mapeo (legacy icons-modal) está portado:
+    botón "Icono" junto a "Añadir" + clic en la miniatura de una fila para
+    cambiarlo/quitarlo. El contrato es el mismo: mappings[i][icon] = id.
 --}}
 @php
     $item = $item ?? null;
@@ -387,12 +388,16 @@
                                         @endif
                                     </td>
                                     <td style="text-align: center;">
-                                        @if (!empty($mapping['icon']))
-                                            <input type="hidden" name="mappings[{{ $mi }}][icon]" value="{{ $mapping['icon'] }}">
-                                            @if (!empty($mapping['url']))
-                                                <img src="{{ $mapping['url'] }}" alt="" style="width: 18px; height: 18px;">
+                                        <button type="button" class="tp-map-icon" data-map-row-icon
+                                            title="{{ trans('front.icon') }}">
+                                            <input type="hidden" name="mappings[{{ $mi }}][icon]"
+                                                value="{{ $mapping['icon'] ?? '' }}" data-map-row-icon-id>
+                                            @if (!empty($mapping['icon']) && !empty($mapping['url']))
+                                                <img src="{{ $mapping['url'] }}" alt="" data-map-row-icon-img>
+                                            @else
+                                                <span data-map-row-icon-img class="tp-map-icon__empty">+</span>
                                             @endif
-                                        @endif
+                                        </button>
                                     </td>
                                     <td style="text-align: center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-map-del>×</button></td>
                                 </tr>
@@ -428,6 +433,12 @@
                         <span class="tp-form__label">&nbsp;</span>
                         <div style="display: flex; gap: 8px;">
                             <input type="text" class="tp-input" data-map-mv style="flex: 1;">
+                            {{-- Icono de la fila a crear (legacy: hidden icon_id + miniatura) --}}
+                            <button type="button" class="tp-map-icon" data-map-new-icon
+                                title="{{ trans('front.icon') }}">
+                                <input type="hidden" value="" data-map-new-icon-id>
+                                <span data-map-new-icon-img class="tp-map-icon__empty">+</span>
+                            </button>
                             <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-map-add>+ {{ trans('global.add') }}</button>
                         </div>
                     </div>

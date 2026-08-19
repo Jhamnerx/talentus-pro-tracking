@@ -73,9 +73,17 @@
         <section class="tp-card tp-card--flat tp-mb-4">
             <h4 class="tp-h6 tp-mb-3">Sensores</h4>
             @if (count($sensors))
-                <dl class="tp-defs">
+                <dl class="tp-defs tp-defs--sensors">
                     @foreach ($sensors as $sensor)
-                        <dt>{{ $sensor['name'] }}</dt>
+                        {{-- Icono: personalizado del mapeo de valores (admin/sensor_icons)
+                             o el SVG del tipo, igual que el legacy --}}
+                        <dt>
+                            @if (!empty($sensor['icon']))
+                                <img class="tp-sensor-icon" src="{{ $sensor['icon'] }}"
+                                    alt="" loading="lazy" aria-hidden="true">
+                            @endif
+                            <span>{{ $sensor['name'] }}</span>
+                        </dt>
                         <dd>{{ $sensor['formated'] }}</dd>
                     @endforeach
                 </dl>
