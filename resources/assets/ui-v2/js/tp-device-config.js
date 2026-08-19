@@ -1,0 +1,149 @@
+/* =====================================================================
+ * tp-device-config.js · Configuración remota del GPS por SMS
+ * ---------------------------------------------------------------------
+ * Paridad DeviceConfig/index: elige vehículo (solo los que tienen SIM),
+ * marca de GPS y APN, y envía los comandos por SMS al equipo.
+ * Gate: able('configure_device') — el backend responde 403 si no.
+ * ===================================================================== */
+(function () {
+  "use strict";
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  var BASE = "/ui/v2/api/device-config";
+  var META = null;
+
+  function opts(list, sel) {
+    return list
+      .map(function (o) {
+        return '<option value="' + o.id + '"' + (String(sel) === String(o.id) ? " selected" : "") + ">" + esc(o.name) + "</option>";
+      })
+      .join("");
+  }
+
+  function render(deviceId) {
+    var devs = META.devices || [];
+    var cfgs = META.configs || [];
+    var apns = META.apns || [];
+
+    if (!devs.length) {
+      return '<div class="tp-text-muted tp-text-sm">Ningún vehículo tiene número de SIM registrado, que es lo que se necesita para enviarle comandos.</div>';
+    }
+    if (!cfgs.length) {
+      return '<div class="tp-text-muted tp-text-sm">El administrador todavía no ha dado de alta marcas de GPS configurables.</div>';
+    }
+
+    return (
+      '<div class="tp-form">' +
+      '<label class="tp-form__field"><span class="tp-form__label">Vehículo</span>' +
+      '<select class="tp-input" data-dc-device>' + opts(devs, deviceId) + "</select></label>" +
+      '<label class="tp-form__field"><span class="tp-form__label">Marca del GPS</span>' +
+      '<select class="tp-input" data-dc-config>' + opts(cfgs, null) + "</select></label>" +
+      '<label class="tp-form__field"><span class="tp-form__label">Configuración APN</span>' +
+      '<select class="tp-input" data-dc-apn>' + opts(apns, null) + "</select></label>" +
+      '<label class="tp-form__field"><span class="tp-form__label">APN</span>' +
+      '<input type="text" class="tp-input" data-dc-apn-name></label>' +
+      '<div class="tp-form__grid tp-form__grid--2">' +
+      '<label class="tp-form__field"><span class="tp-form__label">Usuario</span>' +
+      '<input type="text" class="tp-input" data-dc-apn-user></label>' +
+      '<label class="tp-form__field"><span class="tp-form__label">Contraseña</span>' +
+      '<input type="text" class="tp-input" data-dc-apn-pass></label>' +
+      "</div>" +
+      '<small class="tp-form__hint">Se enviarán SMS al equipo con los comandos de la marca elegida. Puede tardar unos minutos en aplicarse.</small>' +
+      "</div>"
+    );
+  }
+
+  function open(deviceId) {
+    if (!window.tpModal) return;
+
+    var dlg = tpModal.open({
+      title: "Configurar GPS",
+      size: "md",
+      body: '<div class="tp-text-muted tp-text-sm">Cargando…</div>',
+      buttons: [
+        { label: "Cerrar", variant: "ghost", close: true },
+        {
+          label: "Enviar configuración",
+          variant: "primary",
+          close: false,
+          onClick: function (d) {
+            var dev = d.querySelector("[data-dc-device]");
+            var cfg = d.querySelector("[data-dc-config]");
+            if (!dev || !cfg) return false;
+
+            tpModal.setBusy(d, true);
+            tpModal
+              .fetchJSON(BASE, {
+                method: "POST",
+                json: {
+                  device_id: dev.value,
+                  config_id: cfg.value,
+                  apn_name: (d.querySelector("[data-dc-apn-name]") || {}).value || "",
+                  apn_username: (d.querySelector("[data-dc-apn-user]") || {}).value || "",
+                  apn_password: (d.querySelector("[data-dc-apn-pass]") || {}).value || "",
+                },
+              })
+              .then(function (res) {
+                tpModal.setBusy(d, false);
+                if (res.ok && res.data && res.data.ok) {
+                  tpModal.toast("Comandos enviados al equipo.", "success");
+                  tpModal.close(d);
+                  return;
+                }
+                var errs = (res.data && res.data.errors) || {};
+                var first = Object.keys(errs)[0];
+                tpModal.toast(
+                  first ? [].concat(errs[first])[0] : (res.data && res.data.message) || "No se pudo enviar.",
+                  "error",
+                );
+              })
+              .catch(function () {
+                tpModal.setBusy(d, false);
+                tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+      onMount: function (d) {
+        var body = d.querySelector(".tp-modal__body") || d;
+
+        var paint = function () {
+          body.innerHTML = render(deviceId);
+          var apnSel = d.querySelector("[data-dc-apn]");
+          if (!apnSel) return;
+
+          var fill = function () {
+            var a = (META.apns || []).filter(function (x) { return String(x.id) === String(apnSel.value); })[0];
+            if (!a) return;
+            d.querySelector("[data-dc-apn-name]").value = a.apn_name || "";
+            d.querySelector("[data-dc-apn-user]").value = a.apn_username || "";
+            d.querySelector("[data-dc-apn-pass]").value = a.apn_password || "";
+          };
+          apnSel.addEventListener("change", fill);
+          fill();
+        };
+
+        if (META) return paint();
+
+        tpModal.fetchJSON(BASE + "/meta").then(function (res) {
+          if (!res.ok || !res.data || !res.data.ok) {
+            body.innerHTML = '<div class="tp-text-muted tp-text-sm">No tienes permiso para configurar equipos.</div>';
+            return;
+          }
+          META = res.data;
+          paint();
+        });
+      },
+    });
+
+    return dlg;
+  }
+
+  window.tpDeviceConfig = { open: open };
+})();

@@ -639,6 +639,85 @@ class DevicesController extends BaseController
         return response()->json(['ok' => true]);
     }
 
+    /* =================================================================
+     * Configuración remota del GPS por SMS (DeviceConfigController)
+     * Envía los comandos de la marca + APN al SIM del vehículo.
+     * ================================================================= */
+
+    public function deviceConfigMeta(Request $request): JsonResponse
+    {
+        if (! $this->user->able('configure_device')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        return response()->json([
+            'ok'      => true,
+            // devices_sms: solo los que tienen SIM (el legacy usa esa relación)
+            'devices' => $this->user->devices_sms
+                ->map(function ($d) {
+                    return ['id' => (int) $d->id, 'name' => (string) $d->nameWithSimNumber];
+                })->values()->all(),
+            'configs' => \Tobuli\Entities\DeviceConfig::active()->get()
+                ->map(function ($c) {
+                    return ['id' => (int) $c->id, 'name' => (string) $c->fullName];
+                })->values()->all(),
+            'apns'    => \Tobuli\Entities\ApnConfig::active()->get()
+                ->map(function ($a) {
+                    return [
+                        'id'           => (int) $a->id,
+                        'name'         => (string) $a->name,
+                        'apn_name'     => (string) $a->apn_name,
+                        'apn_username' => (string) $a->apn_username,
+                        'apn_password' => (string) $a->apn_password,
+                    ];
+                })->values()->all(),
+        ]);
+    }
+
+    public function deviceConfigure(Request $request): JsonResponse
+    {
+        if (! $this->user->able('configure_device')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        try {
+            $data = $request->all();
+            \CustomFacades\Validators\DeviceConfiguratorFormValidator::validate('configure', $data);
+
+            $device = DeviceRepo::find((int) ($data['device_id'] ?? 0));
+            $this->checkException('devices', 'show', $device);
+
+            $config = \Tobuli\Entities\DeviceConfig::find($data['config_id']);
+            if (! $config) {
+                return response()->json(['ok' => false, 'errors' => ['config_id' => ['Configuración no encontrada.']]], 422);
+            }
+
+            $manager = new \Tobuli\Helpers\SMS\SMSGatewayManager();
+            $gatewayArgs = settings('sms_gateway.use_as_system_gateway') ? ['request_method' => 'system'] : null;
+            $sender = $manager->loadSender($this->user, $gatewayArgs);
+
+            $apnData = [
+                'apn_name'     => $data['apn_name'] ?? null,
+                'apn_username' => $data['apn_username'] ?? null,
+                'apn_password' => $data['apn_password'] ?? null,
+            ];
+
+            $sent = app(\Tobuli\Services\DeviceConfigService::class)
+                ->setSmsManager($sender)
+                ->configureDevice($device->sim_number, $apnData, $config->commands);
+
+            if (! $sent) {
+                return response()->json(['ok' => false, 'message' => trans('validation.cant_configure_device')], 500);
+            }
+
+            return response()->json(['ok' => true]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Delete a device.
      */

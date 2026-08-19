@@ -807,7 +807,9 @@
     <script src="{{ asset('assets/ui/v2/js/tp-route-types.js') }}?v=1"></script>
     {{-- Alertas del vehículo con vigencia (kebab) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-device-alerts.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=44"></script>
+    {{-- Configuración remota del GPS por SMS (kebab) --}}
+    <script src="{{ asset('assets/ui/v2/js/tp-device-config.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=45"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=13"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>

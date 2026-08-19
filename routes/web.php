@@ -1257,6 +1257,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
         // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        // Configuración remota del GPS por SMS (DeviceConfig)
+        Route::get('device-config/meta',   ['as' => 'api.device_config.meta',      'uses' => 'Ui\V2\DevicesController@deviceConfigMeta']);
+        Route::post('device-config',       ['as' => 'api.device_config.configure', 'uses' => 'Ui\V2\DevicesController@deviceConfigure']);
         // Alertas del vehículo con vigencia por pivote (DeviceAlerts)
         Route::get('devices/{id}/alerts',  ['as' => 'api.devices.alerts',        'uses' => 'Ui\V2\DevicesController@deviceAlerts'])->where('id', '[0-9]+');
         Route::put('devices/{id}/alerts/{alert}/period', ['as' => 'api.devices.alerts.period', 'uses' => 'Ui\V2\DevicesController@updateDeviceAlertPeriod'])->where(['id' => '[0-9]+', 'alert' => '[0-9]+']);
