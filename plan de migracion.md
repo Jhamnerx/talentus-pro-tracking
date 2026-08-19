@@ -35,7 +35,10 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 > km por odómetro). D10/D11 quedan aplazados a propósito: `custom_fields_task` está OFF y
 > `custom_fields` no tiene ningún campo definido (0 filas) → sin impacto hoy.
 >
-> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · F3/F6/F7 y resto de la lista F.
+> **Quinto lote (7-ago):** F6 parcial (borrado de eventos + rango de fechas absoluto).
+>
+> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · F3 · F5 (borrar posiciones) · F6 (plugins
+> título/dirección) · F7 y resto de la lista F.
 
 ---
 
@@ -85,7 +88,7 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | F3 | Rutas: `export_groups` → **500** (tipo no mapeado); `export_active/inactive` exportan TODO (no viajan ids) | MEDIO |
 | F4 | ✅ **CORREGIDO 6-ago (2)** — `templates()` gatea por `perm(modulo,'view')` y solo llama `createData()` con `edit` | — |
 | F5 | ⚠️ **PARCIAL 7-ago** — ✅ orden del data-log (`sorting` con la forma que el helper entiende + botón asc/desc) y ✅ km por odómetro (clave aditiva `distance_sum_odometer`). **Pendiente**: borrar posiciones (`history.remove`) sin superficie | MEDIO |
-| F6 | Eventos: borrado individual/masivo (`events.clean`) sin superficie; sin filtro por rango de fechas absoluto; columna título (plugin `event_section_alert`) y gate `event_section_address` ignorados | MEDIO |
+| F6 | ⚠️ **PARCIAL 7-ago** — ✅ borrado individual (popup) y masivo (pie de lista) con `perm('events','remove')` + alcance `userControllable`; ✅ filtro por **rango de fechas absoluto** (`date_from`/`date_to` con `reverse()`). **Pendiente**: columna título (plugin `event_section_alert`) y gate `event_section_address` | MEDIO |
 | F7 | Geocercas: `device_id` (plugin `moving_geofence`) no configurable desde v2 (meta muerto); confirmación con contraseña (`confirmed_action`) ausente en DELETEs | MEDIO |
 | F8 | Iconos del device: los selects de color no viajan si el tipo ≠ arrow (v2 los `disabled`; legacy solo los oculta) | MEDIO |
 | F9 | Sensores: tab **solo admin** en v2 (legacy lo muestra a todos); icono por fila de mapping no seleccionable; import de calibraciones ausente | MEDIO |
@@ -151,7 +154,7 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 | POIs | ✅/⚠️ | ~~D7, F2~~✅; grupos solo lectura |
 | Rutas | ⚠️ | F3; CRUD+grupos+tabla ✅ |
 | Alertas (reglas + modal 6 tabs) | ✅/⚠️ | ~~D5~~✅ salvaguarda |
-| Eventos (página) | ✅/⚠️ | ~~D13, D14~~✅, F6 |
+| Eventos (página) | ✅/⚠️ | ~~D13, D14~~✅; F6 parcial (falta plugin título/dirección) |
 | Historial | ✅/⚠️ | ~~F1~~✅; F5 parcial (falta borrar posiciones) |
 | Reportes | ✅/⚠️ | ~~D4~~✅; schedules ✅ |
 | Comandos (modal + hub) | ✅ | ~~D6, D9, F4~~✅ |
