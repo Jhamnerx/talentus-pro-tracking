@@ -37,7 +37,9 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 >
 > **Quinto lote (7-ago):** F6 parcial (borrado de eventos + rango de fechas absoluto).
 >
-> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · F3 · F5 (borrar posiciones) · F6 (plugins
+> **Sexto lote (7-ago):** F3 (export: 500 de grupos en rutas + filtro por ids en activas/inactivas).
+>
+> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · F5 (borrar posiciones) · F6 (plugins
 > título/dirección) · F7 y resto de la lista F.
 
 ---
@@ -85,7 +87,7 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 |---|---------|-----|
 | F1 | ✅ **CORREGIDO 7-ago** — `getApi()` aplica `snapToRoad()` a las posiciones de cada tramo (igual que `get()`), y el checkbox se oculta si no hay `services.snaptoroad.key` (paridad legacy) | — |
 | F2 | ✅ **CORREGIDO 7-ago** — modales v2 nativos: export por form-POST a los endpoints legacy de descarga (`geofences.export_create` / `pois.export.store`) con tipo + selección; import por FormData (`api.zones.import` y el nuevo `api.pois.import`, que exige `map_icon_id` como el legacy). Botones de importar gateados por `perm(...,'edit')` | — |
-| F3 | Rutas: `export_groups` → **500** (tipo no mapeado); `export_active/inactive` exportan TODO (no viajan ids) | MEDIO |
+| F3 | ✅ **CORREGIDO 7-ago** — `export_groups` fuera del selector de rutas (el `ExportManager` no lo mapea → `LogicException`; el legacy tampoco lo ofrece) y los tipos activas/inactivas ya envían los **ids** que exige el filtro `Singles*` (verificado: con ids 1 fila vs 4 sin ids). Geocercas/POIs, que sí soportan grupos, ganan selector de grupos | — |
 | F4 | ✅ **CORREGIDO 6-ago (2)** — `templates()` gatea por `perm(modulo,'view')` y solo llama `createData()` con `edit` | — |
 | F5 | ⚠️ **PARCIAL 7-ago** — ✅ orden del data-log (`sorting` con la forma que el helper entiende + botón asc/desc) y ✅ km por odómetro (clave aditiva `distance_sum_odometer`). **Pendiente**: borrar posiciones (`history.remove`) sin superficie | MEDIO |
 | F6 | ⚠️ **PARCIAL 7-ago** — ✅ borrado individual (popup) y masivo (pie de lista) con `perm('events','remove')` + alcance `userControllable`; ✅ filtro por **rango de fechas absoluto** (`date_from`/`date_to` con `reverse()`). **Pendiente**: columna título (plugin `event_section_alert`) y gate `event_section_address` | MEDIO |
@@ -152,7 +154,7 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 | Fleet + modal device (8 tabs) | ⚠️ | ~~D1~~✅, D11, F9, F10, F17, ~~S6~~✅, S7 |
 | Geocercas | ⚠️ | ~~S4~~ falso positivo, ~~D2, D7, F2~~✅; D12, F7 (grupos solo lectura) |
 | POIs | ✅/⚠️ | ~~D7, F2~~✅; grupos solo lectura |
-| Rutas | ⚠️ | F3; CRUD+grupos+tabla ✅ |
+| Rutas | ✅ | ~~F3~~✅; CRUD+grupos+tabla ✅ |
 | Alertas (reglas + modal 6 tabs) | ✅/⚠️ | ~~D5~~✅ salvaguarda |
 | Eventos (página) | ✅/⚠️ | ~~D13, D14~~✅; F6 parcial (falta plugin título/dirección) |
 | Historial | ✅/⚠️ | ~~F1~~✅; F5 parcial (falta borrar posiciones) |
