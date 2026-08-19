@@ -1181,6 +1181,15 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('routes/{id}/toggle', ['as' => 'api.routes.toggle', 'uses' => 'Ui\V2\MapLayersController@toggleRoute'])->where('id', '[0-9]+');
         Route::delete('routes/{id}', ['as' => 'api.routes.destroy', 'uses' => 'Ui\V2\MapLayersController@destroyRoute'])->where('id', '[0-9]+');
         // Grupos de rutas
+        // Grupos de geocercas y de POIs (paridad GeofencesGroups/PoisGroups legacy)
+        Route::post('zone-groups',         ['as' => 'api.zone_groups.store',    'uses' => 'Ui\V2\ZonesController@storeGroup']);
+        Route::put('zone-groups/{id}',     ['as' => 'api.zone_groups.update',   'uses' => 'Ui\V2\ZonesController@updateGroup'])->where('id', '[0-9]+');
+        Route::delete('zone-groups/{id}',  ['as' => 'api.zone_groups.destroy',  'uses' => 'Ui\V2\ZonesController@destroyGroup'])->where('id', '[0-9]+');
+        Route::post('zone-groups/toggle',  ['as' => 'api.zone_groups.toggle',   'uses' => 'Ui\V2\ZonesController@toggleGroup']);
+        Route::post('poi-groups',          ['as' => 'api.poi_groups.store',     'uses' => 'Ui\V2\MapLayersController@storePoiGroup']);
+        Route::put('poi-groups/{id}',      ['as' => 'api.poi_groups.update',    'uses' => 'Ui\V2\MapLayersController@updatePoiGroup'])->where('id', '[0-9]+');
+        Route::delete('poi-groups/{id}',   ['as' => 'api.poi_groups.destroy',   'uses' => 'Ui\V2\MapLayersController@destroyPoiGroup'])->where('id', '[0-9]+');
+        Route::post('poi-groups/toggle',   ['as' => 'api.poi_groups.toggle',    'uses' => 'Ui\V2\MapLayersController@togglePoiGroup']);
         Route::post('route-groups',        ['as' => 'api.route_groups.store',   'uses' => 'Ui\V2\MapLayersController@storeRouteGroup']);
         Route::put('route-groups/{id}',    ['as' => 'api.route_groups.update',  'uses' => 'Ui\V2\MapLayersController@updateRouteGroup'])->where('id', '[0-9]+');
         Route::delete('route-groups/{id}', ['as' => 'api.route_groups.destroy', 'uses' => 'Ui\V2\MapLayersController@destroyRouteGroup'])->where('id', '[0-9]+');

@@ -575,6 +575,27 @@
         renderList();
         renderMarkers();
       });
+    // Gestor de grupos (crear/editar/eliminar) — tp-groups.js
+    var grpManage = document.getElementById("tp-pois-groups-manage");
+    if (grpManage)
+      grpManage.addEventListener("click", function () {
+        if (!window.tpGroups) return;
+        tpGroups.open({
+          title: "Grupos de POIs",
+          base: root.getAttribute("data-poi-groups-url") || "/ui/v2/api/poi-groups",
+          itemsKey: "pois",
+          itemsLabel: "POIs",
+          groups: S.groups || [],
+          items: (S.items || []).map(function (p) {
+            return { id: p.id, name: p.name };
+          }),
+          groupOf: function (it) {
+            var p = (S.items || []).filter(function (x) { return x.id === it.id; })[0];
+            return p ? p.group_id || 0 : 0;
+          },
+          onSaved: function () { load(true); },
+        });
+      });
     var nw = document.getElementById("tp-pois-new");
     if (nw) nw.addEventListener("click", startPlace);
     var add = document.getElementById("tp-live-add-poi");

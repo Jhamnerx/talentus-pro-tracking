@@ -961,6 +961,27 @@
         renderList();
         renderLayers();
       });
+    // Gestor de grupos (crear/editar/eliminar) — tp-groups.js
+    var grpManage = document.getElementById("tp-zones-groups-manage");
+    if (grpManage)
+      grpManage.addEventListener("click", function () {
+        if (!window.tpGroups) return;
+        tpGroups.open({
+          title: "Grupos de geocercas",
+          base: root.getAttribute("data-zone-groups-url") || "/ui/v2/api/zone-groups",
+          itemsKey: "geofences",
+          itemsLabel: "Geocercas",
+          groups: S.groups || [],
+          items: (S.items || []).map(function (z) {
+            return { id: z.id, name: z.name, color: z.polygon_color };
+          }),
+          groupOf: function (it) {
+            var z = (S.items || []).filter(function (x) { return x.id === it.id; })[0];
+            return z ? z.group_id || 0 : 0;
+          },
+          onSaved: function () { load(true); },
+        });
+      });
     var tf = document.getElementById("tp-zones-type-filter");
     if (tf)
       tf.addEventListener("click", function (e) {

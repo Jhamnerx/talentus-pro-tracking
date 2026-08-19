@@ -12,9 +12,11 @@ use Tobuli\Entities\PoiGroup;
 use Tobuli\Entities\Route;
 use Tobuli\Entities\RouteGroup;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Services\PoiGroupService;
 use Tobuli\Services\PoiUserService;
 use Tobuli\Services\RouteGroupService;
 use Tobuli\Services\RouteUserService;
+use Tobuli\Services\UserOpenGroupService;
 
 /**
  * UI v2 · Capas de mapa (POIs y Rutas) para los mapas compartidos
@@ -422,6 +424,102 @@ class MapLayersController extends BaseController
      * Grupos de rutas · CRUD (reutiliza RouteGroupService legacy)
      * =================================================================
      */
+
+    /* =================================================================
+     * Grupos de POIs (paridad PoisGroupsController)
+     * ================================================================= */
+
+    /** Ids de POIs del usuario (PoiGroupService::syncItems hace whereIn crudo). */
+    protected function groupPoiIds(Request $request): array
+    {
+        $ids = array_values(array_filter(array_map('intval', (array) $request->input('pois', []))));
+
+        if (! $ids) {
+            return [];
+        }
+
+        return Poi::where('user_id', $this->user->id)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(function ($id) {
+                return (int) $id;
+            })
+            ->all();
+    }
+
+    public function storePoiGroup(Request $request): JsonResponse
+    {
+        $this->checkException('pois_groups', 'store');
+
+        try {
+            $service = new PoiGroupService();
+            $group = $service->create([
+                'title'   => $request->get('title'),
+                'user_id' => $this->user->id,
+            ]);
+
+            $service->syncItems($group, $this->groupPoiIds($request));
+
+            return response()->json(['ok' => true, 'id' => (int) $group->id]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    public function updatePoiGroup(Request $request, $id): JsonResponse
+    {
+        $group = PoiGroup::find((int) $id);
+        if (! $group) {
+            return response()->json(['ok' => false], 404);
+        }
+
+        $this->checkException('pois_groups', 'edit', $group);
+
+        try {
+            $service = new PoiGroupService();
+            $service->edit($group, ['title' => $request->get('title')]);
+            $service->syncItems($group, $this->groupPoiIds($request));
+
+            return response()->json(['ok' => true, 'id' => (int) $group->id]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    /**
+     * El legacy excluye destroy del resource, pero PoiGroupService::delete()
+     * existe. Los POIs del grupo quedan sin grupo (no se borran).
+     */
+    public function destroyPoiGroup(Request $request, $id): JsonResponse
+    {
+        $group = PoiGroup::find((int) $id);
+        if (! $group) {
+            return response()->json(['ok' => false], 404);
+        }
+
+        $this->checkException('pois_groups', 'remove', $group);
+
+        $group->items()->update(['group_id' => null]);
+        (new PoiGroupService())->delete($group);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Abrir/cerrar el grupo en el árbol (UserOpenGroupService, como el legacy). */
+    public function togglePoiGroup(Request $request): JsonResponse
+    {
+        $id = (int) $request->input('id', 0);
+
+        if ($id) {
+            $group = PoiGroup::find($id);
+            $this->checkException('pois_groups', 'active', $group);
+        }
+
+        (new UserOpenGroupService($this->user->poiGroups()))
+            ->changeStatus($id ?: null);
+
+        return response()->json(['ok' => true]);
+    }
 
     public function storeRouteGroup(Request $request): JsonResponse
     {

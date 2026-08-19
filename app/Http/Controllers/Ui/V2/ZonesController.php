@@ -7,11 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
 use Tobuli\Entities\Geofence;
+use Tobuli\Entities\GeofenceGroup;
 use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Exporters\Util\ExportTypesUtil;
 use Tobuli\Importers\Geofence\GeofenceImportManager;
+use Tobuli\Services\GeofenceGroupService;
 use Tobuli\Services\GeofenceUserService;
+use Tobuli\Services\UserOpenGroupService;
 
 /**
  * TalentusPro · ZonesController
@@ -324,6 +327,105 @@ class ZonesController extends BaseController
             'items'    => $items,
             'selected' => array_values(array_map('strval', array_keys($data['selected'] ?? []))),
         ]);
+    }
+
+    /* =================================================================
+     * Grupos de geocercas (paridad GeofencesGroupsController)
+     * ================================================================= */
+
+    /**
+     * Ids de geocercas del usuario a asignar al grupo. Se filtra por
+     * propiedad: GeofenceGroupService::syncItems() hace un whereIn crudo.
+     */
+    private function groupGeofenceIds(Request $request): array
+    {
+        $ids = array_values(array_filter(array_map('intval', (array) $request->input('geofences', []))));
+
+        if (! $ids) {
+            return [];
+        }
+
+        return Geofence::where('user_id', $this->user->id)
+            ->whereIn('id', $ids)
+            ->pluck('id')
+            ->map(function ($id) {
+                return (int) $id;
+            })
+            ->all();
+    }
+
+    public function storeGroup(Request $request): JsonResponse
+    {
+        $this->checkException('geofences_groups', 'store');
+
+        try {
+            $service = new GeofenceGroupService();
+            $group = $service->create([
+                'title'   => $request->get('title'),
+                'user_id' => $this->user->id,
+            ]);
+
+            $service->syncItems($group, $this->groupGeofenceIds($request));
+
+            return response()->json(['ok' => true, 'id' => (int) $group->id]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    public function updateGroup(Request $request, $id): JsonResponse
+    {
+        $group = GeofenceGroup::find((int) $id);
+        if (! $group) {
+            return response()->json(['ok' => false], 404);
+        }
+
+        $this->checkException('geofences_groups', 'edit', $group);
+
+        try {
+            $service = new GeofenceGroupService();
+            $service->edit($group, ['title' => $request->get('title')]);
+            $service->syncItems($group, $this->groupGeofenceIds($request));
+
+            return response()->json(['ok' => true, 'id' => (int) $group->id]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    /**
+     * El legacy declara la ruta en el resource pero nunca implementó el método;
+     * el servicio sí soporta delete(). Las geocercas del grupo quedan sin grupo.
+     */
+    public function destroyGroup(Request $request, $id): JsonResponse
+    {
+        $group = GeofenceGroup::find((int) $id);
+        if (! $group) {
+            return response()->json(['ok' => false], 404);
+        }
+
+        $this->checkException('geofences_groups', 'remove', $group);
+
+        $group->items()->update(['group_id' => null]);
+        (new GeofenceGroupService())->delete($group);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Abrir/cerrar el grupo en el árbol (UserOpenGroupService, como el legacy). */
+    public function toggleGroup(Request $request): JsonResponse
+    {
+        $id = (int) $request->input('id', 0);
+
+        if ($id) {
+            $group = GeofenceGroup::find($id);
+            $this->checkException('geofences_groups', 'active', $group);
+        }
+
+        (new UserOpenGroupService($this->user->geofenceGroups()))
+            ->changeStatus($id ?: null);
+
+        return response()->json(['ok' => true]);
     }
 
     private function presentZone($g): array

@@ -5,7 +5,7 @@
 
 @push('head')
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=58">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=13">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=1">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -21,7 +21,9 @@
         data-updates-url="{{ route('ui.v2.api.devices.updates') }}"
         {{-- Dirección completa vs truncada del device: paridad plugin legacy device_widget_full_address --}}
         data-widget-full-address="{{ settings('plugins.device_widget_full_address.status') ? '1' : '' }}"
-        data-zones-url="{{ route('ui.v2.api.zones') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
+        data-zones-url="{{ route('ui.v2.api.zones') }}"
+        data-zone-groups-url="{{ url('/ui/v2/api/zone-groups') }}"
+        data-poi-groups-url="{{ url('/ui/v2/api/poi-groups') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
         data-routes-url="{{ route('ui.v2.api.routes') }}" data-geo-url="{{ route('address.get') }}"
         data-routes-table-url="{{ route('ui.v2.routes_table') }}"
         data-routes-export-url="{{ route('routes.export.store') }}"
@@ -275,10 +277,15 @@
                         <input type="text" class="tp-input tp-input--with-icon" id="tp-pois-search"
                             placeholder="Buscar POI…" autocomplete="off">
                     </div>
-                    <div class="tp-mt-3">
-                        <select id="tp-pois-group" class="tp-input tp-input--sm tp-full">
+                    <div class="tp-mt-3 tp-row" style="gap:6px;align-items:center;">
+                        <select id="tp-pois-group" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;">
                             <option value="">Todos los grupos</option>
                         </select>
+                        {{-- Gestion de grupos (paridad PoisGroups legacy) --}}
+                        @if (Auth::user()->can('view', new \Tobuli\Entities\PoiGroup()))
+                            <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-pois-groups-manage"
+                                title="Gestionar grupos" style="flex:0 0 auto;">⚙</button>
+                        @endif
                     </div>
                 </header>
                 <div class="tp-live__list-wrap">
@@ -332,10 +339,15 @@
                         <button class="tp-segmented__item" data-ztype="polygon" type="button">Polígonos</button>
                         <button class="tp-segmented__item" data-ztype="circle" type="button">Círculos</button>
                     </div>
-                    <div class="tp-mt-3">
-                        <select id="tp-zones-group" class="tp-input tp-input--sm tp-full">
+                    <div class="tp-mt-3 tp-row" style="gap:6px;align-items:center;">
+                        <select id="tp-zones-group" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;">
                             <option value="">Todos los grupos</option>
                         </select>
+                        {{-- Gestion de grupos (paridad GeofencesGroups legacy) --}}
+                        @if (Auth::user()->can('view', new \Tobuli\Entities\GeofenceGroup()))
+                            <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-zones-groups-manage"
+                                title="Gestionar grupos" style="flex:0 0 auto;">⚙</button>
+                        @endif
                     </div>
                 </header>
                 <div class="tp-live__list-wrap">
@@ -792,8 +804,9 @@
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=42"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=12"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=10"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=13"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=10"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
