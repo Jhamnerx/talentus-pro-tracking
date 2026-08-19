@@ -1161,6 +1161,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::put('forwards/{id}',   ['as' => 'api.forwards.update', 'uses' => 'Ui\V2\ForwardsController@update'])->where('id', '[0-9]+');
         Route::delete('forwards/{id}',['as' => 'api.forwards.destroy','uses' => 'Ui\V2\ForwardsController@destroy'])->where('id', '[0-9]+');
         Route::get('events',         ['as' => 'api.events',        'uses' => 'Ui\V2\EventsController@data']);
+        Route::delete('events/all',  ['as' => 'api.events.destroy_all', 'uses' => 'Ui\V2\EventsController@destroy']);
+        Route::delete('events/{id}', ['as' => 'api.events.destroy',     'uses' => 'Ui\V2\EventsController@destroy'])->where('id', '[0-9]+');
         Route::get('events/map',     ['as' => 'api.events.map',    'uses' => 'Ui\V2\EventsController@mapData']);
         Route::get('events/live',    ['as' => 'api.events.live',   'uses' => 'Ui\V2\EventsController@live']);
         Route::get('pois',           ['as' => 'api.pois',          'uses' => 'Ui\V2\MapLayersController@pois']);

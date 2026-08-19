@@ -4,7 +4,7 @@
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=10">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=11">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
@@ -12,6 +12,8 @@
 
 @section('workspace')
     <div class="tp-events" id="tp-events" data-data-url="{{ route('ui.v2.api.events') }}"
+        data-can-remove="{{ Auth::user()->perm('events', 'remove') ? 1 : 0 }}"
+        data-destroy-url="{{ url('/ui/v2/api/events') }}"
         data-map-url="{{ route('ui.v2.api.events.map') }}"
         data-geo-url="{{ route('address.get') }}" data-zones-url="{{ route('ui.v2.api.zones') }}"
         data-pois-url="{{ route('ui.v2.api.pois') }}" data-routes-url="{{ route('ui.v2.api.routes') }}"
@@ -39,6 +41,17 @@
                     <option value="72">Últimos 3 días</option>
                     <option value="168">Últimos 7 días</option>
                 </select>
+                {{-- Rango absoluto (paridad EventModalHelper: date_from/date_to).
+                     Si se rellena, tiene prioridad sobre la ventana relativa. --}}
+                <details class="tp-events__range">
+                    <summary class="tp-text-xs tp-text-muted">Rango de fechas</summary>
+                    <div class="tp-row" style="gap:6px;margin-top:6px;">
+                        <input type="date" class="tp-input tp-input--sm" id="tp-events-from" title="Desde">
+                        <input type="date" class="tp-input tp-input--sm" id="tp-events-to" title="Hasta">
+                        <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-range-clear"
+                            title="Limpiar rango">×</button>
+                    </div>
+                </details>
                 <select class="tp-input" style="width:100%" id="tp-events-type">
                     <option value="">Todos los tipos</option>
                 </select>
@@ -63,6 +76,10 @@
                 <div class="tp-row" style="gap:6px;">
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-export" type="button">Exportar</button>
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-refresh" type="button">Refrescar</button>
+                    @if (Auth::user()->perm('events', 'remove'))
+                        <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-clear" type="button"
+                            title="Borrar todos mis eventos">Borrar todo</button>
+                    @endif
                 </div>
             </footer>
         </aside>
@@ -176,5 +193,5 @@
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=19"></script>
+    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=20"></script>
 @endpush

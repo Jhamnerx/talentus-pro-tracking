@@ -107,7 +107,20 @@ class EventsController extends BaseController
             }])
             ->orderBy('time', 'desc');
 
-        if ($hours > 0) {
+        // Rango absoluto (date_from/date_to): tiene prioridad sobre la ventana
+        // relativa 'hours'. Las fechas llegan en la TZ del usuario → reverse()
+        // a la zona almacenada, igual que EventModalHelper::lookup.
+        $dateFrom = trim((string) $request->get('date_from', ''));
+        $dateTo   = trim((string) $request->get('date_to', ''));
+
+        if ($dateFrom !== '' || $dateTo !== '') {
+            if ($dateFrom !== '') {
+                $query->where('time', '>=', \Formatter::time()->reverse($dateFrom));
+            }
+            if ($dateTo !== '') {
+                $query->where('time', '<=', \Formatter::time()->reverse($dateTo));
+            }
+        } elseif ($hours > 0) {
             $query->where('time', '>=', date('Y-m-d H:i:s', strtotime("-{$hours} hours")));
         }
 
@@ -262,5 +275,26 @@ class EventsController extends BaseController
         })->values()->all();
 
         return response()->json(['ok' => true, 'points' => $points, 'capped' => $capped, 'cap' => $cap]);
+    }
+
+    /**
+     * Borrar un evento (o TODOS los del usuario si no se pasa id).
+     * Paridad legacy EventModalHelper::destroy: perm 'events.clean' (→ remove)
+     * y alcance userControllable (SOLO los propios; los de alertas compartidas
+     * se ven pero no se borran).
+     */
+    public function destroy(Request $request, $id = null): JsonResponse
+    {
+        if (! $this->user->perm('events', 'remove')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        $deleted = Event::userControllable($this->user)
+            ->when($id, function ($q) use ($id) {
+                $q->where('id', (int) $id);
+            })
+            ->delete();
+
+        return response()->json(['ok' => true, 'deleted' => (int) $deleted]);
     }
 }

@@ -65,6 +65,9 @@
     );
   }
 
+  var CAN_REMOVE = root.getAttribute("data-can-remove") === "1";
+  var DESTROY_URL = root.getAttribute("data-destroy-url") || "/ui/v2/api/events";
+
   var state = {
     events: [],
     byId: {},
@@ -300,6 +303,10 @@
       (CA_ON && ev.alert_id
         ? '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-ca-attend="' + ev.id + '" style="flex:1;">Atender</button>'
         : "") +
+      // "Eliminar": paridad legacy events.destroy (perm events.clean → remove).
+      (CAN_REMOVE
+        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ev-del="' + ev.id + '" style="flex:0 0 auto;color:#ef4444;">Eliminar</button>'
+        : "") +
       "</div></div>"
     );
   }
@@ -430,6 +437,47 @@
   }
 
   // ── Carga (scroll infinito) ────────────────────────────────
+  /** Rango absoluto del panel (tiene prioridad sobre la ventana relativa). */
+  function rangeQS() {
+    var f = document.getElementById("tp-events-from");
+    var t = document.getElementById("tp-events-to");
+    var qs = "";
+    if (f && f.value) qs += "&date_from=" + encodeURIComponent(f.value + " 00:00:00");
+    if (t && t.value) qs += "&date_to=" + encodeURIComponent(t.value + " 23:59:59");
+    return qs;
+  }
+
+  /** Borra un evento (id) o TODOS los del usuario (id null). */
+  function deleteEvents(id) {
+    if (!CAN_REMOVE) return;
+    tpModal
+      .confirm({
+        title: id ? "Eliminar evento" : "Borrar todos los eventos",
+        message: id
+          ? "¿Eliminar este evento? No se puede deshacer."
+          : "Se borrarán TODOS tus eventos. Esta acción no se puede deshacer.",
+        danger: true,
+        confirmLabel: "Eliminar",
+      })
+      .then(function (ok) {
+        if (!ok) return;
+        tpModal
+          .fetchJSON(DESTROY_URL + "/" + (id || "all"), { method: "DELETE" })
+          .then(function (res) {
+            if (!res.ok || !res.data || !res.data.ok) {
+              tpModal.toast("No se pudo eliminar.", "error");
+              return;
+            }
+            tpModal.toast(id ? "Evento eliminado." : "Eventos eliminados.", "success");
+            if (state.map && state.marker) {
+              try { state.map.closePopup(); } catch (e) {}
+            }
+            load(true);
+          })
+          .catch(function () { tpModal.toast("Error de red.", "error"); });
+      });
+  }
+
   function load(reset) {
     if (state.loading) return;
     if (!reset && !state.hasMore) return;
@@ -448,7 +496,7 @@
     var deviceId = deviceSel ? deviceSel.value : "";
     var q = searchEl ? searchEl.value.trim() : "";
     fetch(
-      DATA_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + "&offset=" + state.offset + "&_=" + Date.now(),
+      DATA_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + rangeQS() + "&offset=" + state.offset + "&_=" + Date.now(),
       { credentials: "same-origin", headers: { Accept: "application/json" } },
     )
       .then(function (r) {
@@ -520,7 +568,7 @@
     var deviceId = deviceSel ? deviceSel.value : "";
     var q = searchEl ? searchEl.value.trim() : "";
     fetch(
-      DATA_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + "&offset=0&_=" + Date.now(),
+      DATA_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + rangeQS() + "&offset=0&_=" + Date.now(),
       { credentials: "same-origin", headers: { Accept: "application/json" } },
     )
       .then(function (r) { return r.json(); })
@@ -574,7 +622,7 @@
     var q = searchEl ? searchEl.value.trim() : "";
     if (legendNote) legendNote.textContent = "Cargando…";
     fetch(
-      MAP_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + "&_=" + Date.now(),
+      MAP_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + rangeQS() + "&_=" + Date.now(),
       { credentials: "same-origin", headers: { Accept: "application/json" } },
     )
       .then(function (r) { return r.json(); })
@@ -619,6 +667,27 @@
     var ev = state.byId[btn.getAttribute("data-ca-attend")];
     if (ev) openAttendModal(ev);
   });
+  // "Eliminar" del popup (delegado: el popup se inyecta al DOM).
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-ev-del]");
+    if (!b) return;
+    deleteEvents(parseInt(b.getAttribute("data-ev-del"), 10));
+  });
+  var clearBtn = document.getElementById("tp-events-clear");
+  if (clearBtn) clearBtn.addEventListener("click", function () { deleteEvents(null); });
+  ["tp-events-from", "tp-events-to"].forEach(function (idc) {
+    var el = document.getElementById(idc);
+    if (el) el.addEventListener("change", function () { load(true); });
+  });
+  var rangeClear = document.getElementById("tp-events-range-clear");
+  if (rangeClear)
+    rangeClear.addEventListener("click", function () {
+      ["tp-events-from", "tp-events-to"].forEach(function (idc) {
+        var el = document.getElementById(idc);
+        if (el) el.value = "";
+      });
+      load(true);
+    });
   listEl.addEventListener("scroll", function () {
     if (state.hasMore && !state.loading && listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 120) load(false);
   });
