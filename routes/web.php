@@ -1257,6 +1257,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
         // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        // Columnas configurables de la lista de flota (ajuste compartido con el legacy)
+        Route::get('fleet/columns',  ['as' => 'api.fleet.columns',        'uses' => 'Ui\V2\DevicesController@fleetColumns']);
+        Route::put('fleet/columns',  ['as' => 'api.fleet.columns.update', 'uses' => 'Ui\V2\DevicesController@updateFleetColumns']);
         // Configuración remota del GPS por SMS (DeviceConfig)
         Route::get('device-config/meta',   ['as' => 'api.device_config.meta',      'uses' => 'Ui\V2\DevicesController@deviceConfigMeta']);
         Route::post('device-config',       ['as' => 'api.device_config.configure', 'uses' => 'Ui\V2\DevicesController@deviceConfigure']);

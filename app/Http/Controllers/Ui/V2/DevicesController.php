@@ -160,6 +160,9 @@ class DevicesController extends BaseController
             ->forPage($page, $limit)
             ->get();
 
+        // Títulos de grupo del usuario (la columna 'group' del listview legacy).
+        $groupTitles = $this->user->deviceGroups()->pluck('title', 'id')->all();
+
         $items = [];
         foreach ($rows as $device) {
             $st = $device->getStatus();
@@ -189,6 +192,28 @@ class DevicesController extends BaseController
                 'app_uuid'        => ! empty($device->app_uuid),
                 'general'         => (bool) $device->isGeneral(),
                 'video'           => in_array($device->protocol, ['jt808', 'howen']) && $device->traccar_device_id,
+
+                // Campos extra para las columnas configurables (catálogo
+                // config('tobuli.listview_fields')). Solo los que salen del
+                // propio device/traccar: los derivados caros (dirección
+                // geocodificada, combustible, duraciones, último evento) no se
+                // incluyen para no penalizar la lista.
+                'protocol'            => (string) ($device->protocol ?? ''),
+                'time'                => $device->time ? (string) $device->time : null,
+                'position'            => ($device->lat && $device->lng)
+                    ? round((float) $device->lat, 6) . ', ' . round((float) $device->lng, 6)
+                    : null,
+                'vin'                 => (string) ($device->vin ?? ''),
+                'registration_number' => (string) ($device->registration_number ?? ''),
+                'object_owner'        => (string) ($device->object_owner ?? ''),
+                'additional_notes'    => (string) ($device->additional_notes ?? ''),
+                'device_type'         => (string) (optional($device->device_type)->title ?? ''),
+                'group'               => (string) (optional($device->pivot)->group_id
+                    ? ($groupTitles[$device->pivot->group_id] ?? '')
+                    : ''),
+                'sim_activation_date'   => $this->cleanDate($device->sim_activation_date),
+                'sim_expiration_date'   => $this->cleanDate($device->sim_expiration_date),
+                'installation_date'     => $this->cleanDate($device->installation_date),
             ];
         }
 
@@ -200,6 +225,113 @@ class DevicesController extends BaseController
             'items' => $items,
             'pages' => (int) ceil($total / $limit),
         ]);
+    }
+
+    /* =================================================================
+     * Columnas configurables de la lista de flota (paridad ObjectsList)
+     * Se guardan en el MISMO ajuste que el legacy — setSettings('listview')
+     * con {columns: [{field, class}]} — así ambas UIs comparten la config.
+     * ================================================================= */
+
+    /** Columnas que la vista de flota sabe pintar (subconjunto del catálogo). */
+    private const FLEET_COLUMNS = [
+        'name', 'status', 'plate_number', 'imei', 'device_model', 'sim_number',
+        'speed', 'time', 'protocol', 'position', 'group', 'device_type_id',
+        'vin', 'registration_number', 'object_owner', 'additional_notes',
+        'active', 'sim_activation_date', 'sim_expiration_date',
+        'installation_date', 'expiration_date',
+    ];
+
+    public function fleetColumns(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        if (function_exists('listviewTrans')) {
+            // Etiquetas traducidas, igual que ObjectsList/edit.blade
+            $settings = ['columns' => []];
+            $fields   = config('tobuli.listview_fields', []);
+            listviewTrans($this->user->id, $settings, $fields);
+        } else {
+            $fields = config('tobuli.listview_fields', []);
+        }
+
+        $available = [];
+        foreach ($fields as $key => $def) {
+            if (! in_array($key, self::FLEET_COLUMNS, true)) {
+                continue;
+            }
+            $available[] = [
+                'field' => (string) ($def['field'] ?? $key),
+                'class' => (string) ($def['class'] ?? 'device'),
+                'label' => (string) ($def['title'] ?? $def['text'] ?? $key),
+            ];
+        }
+
+        $saved = (array) ($this->user->getSettings('listview')['columns'] ?? []);
+        $selected = [];
+        foreach ($saved as $c) {
+            $field = is_array($c) ? ($c['field'] ?? null) : $c;
+            if ($field && in_array($field, self::FLEET_COLUMNS, true)) {
+                $selected[] = (string) $field;
+            }
+        }
+
+        return response()->json([
+            'ok'        => true,
+            'available' => $available,
+            // Sin configuración previa (o toda ella fuera de esta vista): el
+            // set por defecto de la tabla de flota.
+            'selected'  => $selected ?: ['name', 'status', 'plate_number', 'imei', 'device_model', 'sim_number', 'speed', 'time', 'expiration_date'],
+        ]);
+    }
+
+    public function updateFleetColumns(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        if (isDemoUser()) {
+            return response()->json(['ok' => true, 'demo' => true]);
+        }
+
+        $fields = config('tobuli.listview_fields', []);
+        $wanted = (array) $request->input('columns', []);
+
+        $columns = [];
+        foreach ($wanted as $field) {
+            $field = (string) $field;
+            if (! isset($fields[$field]) || ! in_array($field, self::FLEET_COLUMNS, true)) {
+                continue;
+            }
+            $columns[] = [
+                'field' => (string) ($fields[$field]['field'] ?? $field),
+                'class' => (string) ($fields[$field]['class'] ?? 'device'),
+            ];
+        }
+
+        if (! $columns) {
+            return response()->json(['ok' => false, 'errors' => ['columns' => ['Elige al menos una columna.']]], 422);
+        }
+
+        // Se conserva lo que el legacy guarde ahí y no gestione esta vista
+        // (p. ej. groupby), para no pisar su configuración.
+        $current = (array) $this->user->getSettings('listview');
+        $current['columns'] = $columns;
+
+        $this->user->setSettings('listview', $current);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** '0000-00-00' (placeholder legacy) se trata como vacío. */
+    private function cleanDate($value): ?string
+    {
+        $v = (string) $value;
+
+        return ($v === '' || strpos($v, '0000-00-00') === 0) ? null : $v;
     }
 
     /* =================================================================

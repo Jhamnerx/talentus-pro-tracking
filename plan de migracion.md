@@ -210,13 +210,13 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 1.4 ~~Tab Historial de mantenimientos + `configure_device`/APN en alta (F17)~~ ✅ 19-ago.
 1.5 ~~Beacons (edit_beacon) (F10)~~ ✅ 19-ago (kind KIND_BEACON, endpoints propios, modal con tabs reducidos).
 
-### Ola 2 — Módulos operativos faltantes
-2.1 DeviceAlerts (periodo de vigencia por pivote — form pequeño). S/M
-2.2 DeviceConfig (marca/APN/comandos de configuración por SMS). M
-2.3 ObjectsList: columnas configurables + rangos de color por sensor en Fleet (F14). M
+### Ola 2 — Módulos operativos faltantes ✅ COMPLETA (19-ago)
+2.1 ~~DeviceAlerts (periodo de vigencia por pivote)~~ ✅ 19-ago.
+2.2 ~~DeviceConfig (marca/APN/comandos por SMS)~~ ✅ 19-ago (kebab del vehículo + bloque en el alta).
+2.3 ~~ObjectsList: columnas configurables en Fleet (F14)~~ ✅ 19-ago — 21 columnas elegibles, ajuste **compartido** con la vista de lista legacy (`setSettings('listview')`). **Fuera de alcance por coste**: las columnas derivadas caras (dirección geocodificada, combustible, duraciones de parada/ralentí/encendido y último evento) y los rangos de color por sensor, que exigen cálculo por posición en cada fila.
 2.4 ~~Popups del admin en el layout v2 (F19)~~ ✅ 19-ago (franjas superiores + popups a los 5 s, addon `notification_popops`).
 2.5 ~~DeviceRoutesType~~ ✅ 19-ago (periodos privado/negocio desde el kebab del vehículo, con round-trip de TZ verificado).
-2.6 Import masivo de devices. M
+2.6 ~~Import masivo de devices~~ ✅ 19-ago — resuelto como acceso directo al importador del panel clásico (`admin/objects/import`) desde el hub Admin, que es el patrón de esa página; no se duplicó `DeviceImportManager` en v2.
 
 ### Ola 3 — Media y checklists
 3.1 DeviceMedia + MediaCategories (galería, ZIP, categorías). L

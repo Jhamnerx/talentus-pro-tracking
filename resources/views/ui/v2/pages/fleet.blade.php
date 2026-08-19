@@ -72,6 +72,9 @@
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-create-beacon"
                         title="Nuevo beacon">＋ Beacon</button>
                 @endif
+                {{-- Columnas configurables (ajuste compartido con la lista clásica) --}}
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-columns"
+                    title="Configurar columnas">Columnas</button>
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-export" title="Exportar CSV">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
@@ -138,7 +141,7 @@
 @push('scripts')
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=18"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
-    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=2" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.
         (function() {

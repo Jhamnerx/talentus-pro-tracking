@@ -100,6 +100,9 @@ class AdminController extends BaseController
         $quick = [];
         if ($isAdmin) {
             $quick[] = ['key' => 'objects',  'label' => 'Dispositivos',     'desc' => 'Gestión global de equipos',         'url' => $r('admin.objects.index',              'users/objects'),                    'group' => 'admin'];
+            // Alta masiva por CSV: se resuelve con el importador del panel clásico
+            // (DeviceImportManager con opciones de colisión); no se duplica en v2.
+            $quick[] = ['key' => 'import',   'label' => 'Importar equipos', 'desc' => 'Alta masiva por archivo',           'url' => $r('admin.objects.import',             'admin/objects/import'),             'group' => 'admin'];
             $quick[] = ['key' => 'plans',    'label' => 'Planes',           'desc' => 'Facturación y permisos',            'url' => $r('admin.billing.plans',              'admin/billing/plans'),              'group' => 'admin'];
             $quick[] = ['key' => 'billing',  'label' => 'Billing',          'desc' => 'Pasarelas y suscripciones',         'url' => $r('admin.billing.index',              'admin/billing/index'),              'group' => 'admin'];
             $quick[] = ['key' => 'settings', 'label' => 'Server Settings',  'desc' => 'Configuración global del servidor',  'url' => $r('admin.main_server_settings.index', 'users/main_server_settings/index'), 'group' => 'admin'];

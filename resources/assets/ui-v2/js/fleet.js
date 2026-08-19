@@ -95,66 +95,178 @@
     });
   }
 
+  /* ===== Columnas configurables (paridad ObjectsList) =====
+   * El set de columnas se guarda en el mismo ajuste del usuario que la vista
+   * de lista legacy, así que lo que se configure aquí se ve allá y viceversa.
+   */
+  var COLS_URL = "/ui/v2/api/fleet/columns";
+  var columnsState = { available: [], selected: [], labels: {} };
+
+  // Cómo se pinta cada columna: valor + alineación.
+  var COL_RENDER = {
+    name: function (d) {
+      return (
+        '<div class="tp-fleet__row-name">' +
+        '<span class="tp-fleet__row-dot" style="background:' + escapeHtml(d.icon_color || "#94a3b8") + '"></span>' +
+        '<span class="tp-fleet__row-name-text" title="' + escapeHtml(d.name) + '">' + escapeHtml(d.name) + "</span>" +
+        "</div>"
+      );
+    },
+    status: function (d) {
+      return pillFor(d.status_group);
+    },
+    imei: function (d) {
+      return '<code class="tp-text-sm">' + escapeHtml(d.imei || "—") + "</code>";
+    },
+    speed: function (d) {
+      return d.speed != null ? Number(d.speed).toFixed(1) : "—";
+    },
+    time: function (d) {
+      return escapeHtml(d.time || "—");
+    },
+    active: function (d) {
+      return d.active ? "Sí" : "No";
+    },
+    plate_number: function (d) {
+      return escapeHtml(d.plate || "—");
+    },
+    device_model: function (d) {
+      return escapeHtml(d.model || "—");
+    },
+    sim_number: function (d) {
+      return escapeHtml(d.sim || "—");
+    },
+    device_type_id: function (d) {
+      return escapeHtml(d.device_type || "—");
+    },
+    expiration_date: function (d) {
+      return escapeHtml(d.expiration_date || "—");
+    },
+  };
+  var COL_RIGHT = { speed: true };
+
+  function colValue(field, d) {
+    if (COL_RENDER[field]) return COL_RENDER[field](d);
+    var v = d[field];
+    return escapeHtml(v == null || v === "" ? "—" : v);
+  }
+
+  function colLabel(field) {
+    return columnsState.labels[field] || field;
+  }
+
+  function renderHead() {
+    var thead = $table.querySelector("thead tr");
+    if (!thead) return;
+    // El sort del backend solo cubre estas claves.
+    var SORTABLE = { name: "name", status: "status", plate_number: "plate", speed: "speed" };
+
+    thead.innerHTML =
+      '<th class="tp-fleet__th-check"><input type="checkbox" id="tp-fleet-check-all" aria-label="Seleccionar todo"></th>' +
+      columnsState.selected
+        .map(function (f) {
+          var sort = SORTABLE[f] ? ' data-sort="' + SORTABLE[f] + '"' : "";
+          return "<th" + (COL_RIGHT[f] ? ' class="tp-text-right"' : "") + sort + ">" + escapeHtml(colLabel(f)) + "</th>";
+        })
+        .join("") +
+      '<th class="tp-fleet__th-actions"></th>';
+  }
+
+  function loadColumns(done) {
+    fetch(COLS_URL, { credentials: "same-origin", headers: { Accept: "application/json" } })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.ok) {
+          columnsState.available = j.available || [];
+          columnsState.selected = j.selected || [];
+          columnsState.labels = {};
+          columnsState.available.forEach(function (c) {
+            columnsState.labels[c.field] = c.label;
+          });
+          renderHead();
+        }
+        if (typeof done === "function") done();
+      })
+      .catch(function () {
+        if (typeof done === "function") done();
+      });
+  }
+
+  function openColumnsModal() {
+    if (!window.tpModal) return;
+    var chosen = {};
+    columnsState.selected.forEach(function (f) { chosen[f] = true; });
+
+    tpModal.open({
+      title: "Columnas de la lista",
+      size: "md",
+      body:
+        '<div class="tp-text-muted tp-text-sm" style="margin-bottom:10px;">Se comparte con la vista de lista clásica.</div>' +
+        '<div class="tp-rgroup-list">' +
+        columnsState.available
+          .map(function (c) {
+            return (
+              '<label class="tp-rgroup-item"><input type="checkbox" data-col="' + escapeHtml(c.field) + '"' +
+              (chosen[c.field] ? " checked" : "") + "><span>" + escapeHtml(c.label) + "</span></label>"
+            );
+          })
+          .join("") +
+        "</div>",
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Guardar",
+          variant: "primary",
+          close: false,
+          onClick: function (d) {
+            var cols = [];
+            d.querySelectorAll("[data-col]:checked").forEach(function (c) {
+              cols.push(c.getAttribute("data-col"));
+            });
+            if (!cols.length) {
+              tpModal.toast("Elige al menos una columna.", "warning");
+              return false;
+            }
+            tpModal
+              .fetchJSON(COLS_URL, { method: "PUT", json: { columns: cols } })
+              .then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  tpModal.toast("Columnas guardadas.", "success");
+                  tpModal.close(d);
+                  columnsState.selected = cols;
+                  renderHead();
+                  render();
+                } else {
+                  tpModal.toast("No se pudo guardar.", "error");
+                }
+              });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+
   function render() {
     var items = sortItems(state.items);
     if (!items.length) {
       $tbody.innerHTML =
-        '<tr><td colspan="12" class="tp-text-muted tp-text-center" style="padding:32px;">Sin resultados.</td></tr>';
+        '<tr><td colspan="' + (columnsState.selected.length + 2) + '" class="tp-text-muted tp-text-center" style="padding:32px;">Sin resultados.</td></tr>';
     } else {
       var html = "";
       for (var i = 0; i < items.length; i++) {
         var d = items[i];
         var isSel = state.selected.has(d.id);
         html +=
-          '<tr class="' +
-          (isSel ? "is-selected" : "") +
-          '" data-id="' +
-          d.id +
-          '">' +
-          '<td class="tp-fleet__th-check"><input type="checkbox" data-select="' +
-          d.id +
-          '"' +
-          (isSel ? " checked" : "") +
-          "></td>" +
-          '<td><div class="tp-fleet__row-name">' +
-          '<span class="tp-fleet__row-dot" style="background:' +
-          escapeHtml(d.icon_color || "#94a3b8") +
-          '"></span>' +
-          '<span class="tp-fleet__row-name-text" title="' +
-          escapeHtml(d.name) +
-          '">' +
-          escapeHtml(d.name) +
-          "</span>" +
-          "</div></td>" +
-          "<td>" +
-          pillFor(d.status_group) +
-          "</td>" +
-          "<td>" +
-          escapeHtml(d.plate || "—") +
-          "</td>" +
-          '<td><code class="tp-text-sm">' +
-          escapeHtml(d.imei || "—") +
-          "</code></td>" +
-          "<td>" +
-          escapeHtml(d.model || "—") +
-          "</td>" +
-          "<td>" +
-          escapeHtml(d.sim || "—") +
-          "</td>" +
-          '<td class="tp-text-right">' +
-          (d.speed != null ? Number(d.speed).toFixed(1) : "—") +
-          "</td>" +
-          '<td class="tp-text-right">' +
-          (d.engine_hours != null ? Number(d.engine_hours).toFixed(1) : "—") +
-          "</td>" +
-          "<td>" +
-          escapeHtml(fmtDate(d.moved_at)) +
-          "</td>" +
-          "<td>" +
-          escapeHtml(d.expiration_date || "—") +
-          "</td>" +
-          '<td><button class="tp-fleet__row-action" data-view="' +
-          d.id +
+          '<tr class="' + (isSel ? "is-selected" : "") + '" data-id="' + d.id + '">' +
+          '<td class="tp-fleet__th-check"><input type="checkbox" data-select="' + d.id + '"' +
+          (isSel ? " checked" : "") + "></td>" +
+          columnsState.selected
+            .map(function (f) {
+              return "<td" + (COL_RIGHT[f] ? ' class="tp-text-right"' : "") + ">" + colValue(f, d) + "</td>";
+            })
+            .join("") +
+          '<td><button class="tp-fleet__row-action" data-view="' + d.id +
           '" title="Ver en mapa" aria-label="Ver en mapa">' +
           '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
           "</button></td>" +
@@ -383,6 +495,12 @@
     }, 100);
   });
 
-  /* Boot */
-  load();
+  /* Botón de configuración de columnas (toolbar) */
+  var colsBtn = document.getElementById("tp-fleet-columns");
+  if (colsBtn) colsBtn.addEventListener("click", openColumnsModal);
+
+  /* Boot: primero las columnas (definen la cabecera), luego los datos */
+  loadColumns(function () {
+    load();
+  });
 })();
