@@ -282,7 +282,6 @@
       export_single: T("export_single", "Exportar uno solo"),
       export_active: T("export_active", "Exportar activas"),
       export_inactive: T("export_inactive", "Exportar inactivas"),
-      export_groups: T("export_groups", "Exportar grupos"),
     };
     var opt = function (obj, sel) {
       return Object.keys(obj).map(function (k) {
@@ -314,6 +313,15 @@
             var type = dlg.querySelector("[data-exp-type]").value;
             var ids = [];
             dlg.querySelectorAll("[data-exp-route]:checked").forEach(function (c) { ids.push(c.value); });
+            // El filtro del backend (SinglesRouteFilter) SIEMPRE va por ids: en
+            // activas/inactivas hay que mandarlos (el legacy los preselecciona
+            // en getType). Sin ids el filtro queda vacío = exporta TODAS.
+            if (type === "export_active" || type === "export_inactive") {
+              var want = type === "export_active";
+              ids = (state.items || [])
+                .filter(function (r) { return !!r.active === want; })
+                .map(function (r) { return r.id; });
+            }
             submitExport(fmt, type, ids);
             tpModal.close(dlg);
             return false;

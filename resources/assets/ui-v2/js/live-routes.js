@@ -759,7 +759,6 @@
       export_single: T("export_single", "Exportar uno solo"),
       export_active: T("export_active", "Exportar activas"),
       export_inactive: T("export_inactive", "Exportar inactivas"),
-      export_groups: T("export_groups", "Exportar grupos"),
     };
     var opt = function (obj, sel) {
       return Object.keys(obj)
@@ -816,6 +815,14 @@
             dialog.querySelectorAll("[data-exp-route]:checked").forEach(function (c) {
               ids.push(c.value);
             });
+            // SinglesRouteFilter siempre filtra por ids: en activas/inactivas
+            // hay que mandarlos (sin ids el filtro queda vacío = exporta TODAS).
+            if (type === "export_active" || type === "export_inactive") {
+              var want = type === "export_active";
+              ids = (S.items || [])
+                .filter(function (r) { return !!r.active === want; })
+                .map(function (r) { return r.id; });
+            }
             submitExport(fmt, type, ids);
             tpModal.close(dialog);
             return false;

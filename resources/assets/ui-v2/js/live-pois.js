@@ -334,7 +334,11 @@
       body:
         '<div class="tp-field"><label class="tp-field__label">Formato</label><select class="tp-input" data-exp-format>' + opt(formats) + "</select></div>" +
         '<div class="tp-field"><label class="tp-field__label">Tipo de exportación</label><select class="tp-input" data-exp-type>' + opt(types) + "</select></div>" +
-        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">POIs</label><div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin POIs.</div>') + "</div></div>",
+        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">POIs</label><div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin POIs.</div>') + "</div></div>" +
+        '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">Grupos</label><div class="tp-zexp-list">' +
+        ((S.groups || []).map(function (g) {
+          return '<label class="tp-zexp-item"><input type="checkbox" data-exp-group value="' + g.id + '"><span>' + esc(g.title) + "</span></label>";
+        }).join("") || '<div class="tp-text-muted tp-text-sm">Sin grupos.</div>') + "</div></div>",
       buttons: [
         { label: "Cancelar", variant: "ghost" },
         {
@@ -346,6 +350,18 @@
             var type = dlg.querySelector("[data-exp-type]").value;
             var ids = [];
             dlg.querySelectorAll("[data-exp-id]:checked").forEach(function (c) { ids.push(c.value); });
+            // SinglesPoiFilter filtra por 'pois' (ids) también en activos/
+            // inactivos; sin ids exportaría TODOS.
+            if (type === "export_active" || type === "export_inactive") {
+              var want = type === "export_active";
+              ids = (S.items || [])
+                .filter(function (p2) { return (p2.active !== false) === want; })
+                .map(function (p2) { return p2.id; });
+            }
+            var groupIds = [];
+            if (type === "export_groups") {
+              dlg.querySelectorAll("[data-exp-group]:checked").forEach(function (c) { groupIds.push(c.value); });
+            }
             var form = document.createElement("form");
             form.method = "POST";
             form.action = poiIoUrls().create;
@@ -360,6 +376,7 @@
             add("export_type", type);
             add("export_format", fmt);
             ids.forEach(function (id) { add("pois[]", id); });
+            groupIds.forEach(function (id) { add("groups[]", id); });
             document.body.appendChild(form);
             form.submit();
             setTimeout(function () { form.remove(); }, 1000);
@@ -371,7 +388,11 @@
       onMount: function (dlg) {
         var sel = dlg.querySelector("[data-exp-type]");
         var wrap = dlg.querySelector("[data-exp-wrap]");
-        var sync = function () { wrap.hidden = sel.value !== "export_single"; };
+        var gwrap = dlg.querySelector("[data-exp-gwrap]");
+        var sync = function () {
+          wrap.hidden = sel.value !== "export_single";
+          if (gwrap) gwrap.hidden = sel.value !== "export_groups";
+        };
         sel.addEventListener("change", sync);
         sync();
       },

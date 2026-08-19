@@ -96,5 +96,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/routes-table.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/routes-table.js') }}?v=3" defer></script>
 @endpush

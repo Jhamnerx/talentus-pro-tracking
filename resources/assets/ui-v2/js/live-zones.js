@@ -754,6 +754,12 @@
         '<select class="tp-input" data-exp-type>' + opts + "</select></div>" +
         '<div class="tp-field" data-exp-wrap><label class="tp-field__label">Geocercas</label>' +
         '<div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin geocercas.</div>') + "</div></div>" +
+        '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">Grupos</label>' +
+        '<div class="tp-zexp-list">' +
+        ((S.groups || []).map(function (g) {
+          return '<label class="tp-zexp-item"><input type="checkbox" data-exp-group value="' + g.id + '"><span>' + esc(g.title) + "</span></label>";
+        }).join("") || '<div class="tp-text-muted tp-text-sm">Sin grupos.</div>') +
+        "</div></div>" +
         '<div class="tp-field__hint">Formato GEXP (el del legacy).</div>',
       buttons: [
         { label: "Cancelar", variant: "ghost" },
@@ -765,7 +771,7 @@
             var type = dlg.querySelector("[data-exp-type]").value;
             var ids = [];
             dlg.querySelectorAll("[data-exp-id]:checked").forEach(function (c) { ids.push(c.value); });
-            submitExport(type, ids);
+            submitExport(type, ids, dlg);
             tpModal.close(dlg);
             return false;
           },
@@ -774,13 +780,29 @@
       onMount: function (dlg) {
         var sel = dlg.querySelector("[data-exp-type]");
         var wrap = dlg.querySelector("[data-exp-wrap]");
-        var sync = function () { wrap.hidden = sel.value !== "export_single"; };
+        var gwrap = dlg.querySelector("[data-exp-gwrap]");
+        var sync = function () {
+          wrap.hidden = sel.value !== "export_single";
+          if (gwrap) gwrap.hidden = sel.value !== "export_groups";
+        };
         sel.addEventListener("change", sync);
         sync();
       },
     });
   }
-  function submitExport(type, ids) {
+  function submitExport(type, ids, dlg) {
+    // SinglesGeofenceFilter filtra por 'geofences' (ids) también en
+    // activas/inactivas; GroupsGeofenceFilter espera 'groups'.
+    if (type === "export_active" || type === "export_inactive") {
+      var want = type === "export_active";
+      ids = (S.items || [])
+        .filter(function (g) { return !!g.active === want; })
+        .map(function (g) { return g.id; });
+    }
+    var groupIds = [];
+    if (type === "export_groups" && dlg) {
+      dlg.querySelectorAll("[data-exp-group]:checked").forEach(function (c) { groupIds.push(c.value); });
+    }
     var form = document.createElement("form");
     form.method = "POST";
     form.action = exportUrls().create;
@@ -793,8 +815,8 @@
     var tok = document.querySelector('meta[name="csrf-token"]');
     if (tok) add("_token", tok.getAttribute("content"));
     add("export_type", type);
-    // El ExportManager filtra por 'geofences' (ids) en el tipo "single".
     ids.forEach(function (id) { add("geofences[]", id); });
+    groupIds.forEach(function (id) { add("groups[]", id); });
     document.body.appendChild(form);
     form.submit();
     setTimeout(function () { form.remove(); }, 1000);
