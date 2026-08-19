@@ -71,6 +71,10 @@
       '<button type="button" role="menuitem" data-svc-act="edit" data-id="' +
       row.id + '" data-device="' + row.device_id + '">' +
       ICON_EDIT + " " + esc(T("edit")) + "</button>" +
+      (window.TP_CHECKLISTS_ON
+        ? '<button type="button" role="menuitem" data-svc-act="checklists" data-id="' +
+          row.id + '" data-name="' + esc(row.name) + '">☑ ' + esc(T("checklists", "Listas de verificación")) + "</button>"
+        : "") +
       '<button type="button" role="menuitem" class="is-danger" data-svc-act="del" data-id="' +
       row.id + '" data-device="' + row.device_id + '" data-name="' + esc(row.name) + '">' +
       ICON_TRASH + " " + esc(T("delete")) + "</button>" +
@@ -415,8 +419,11 @@
         if (!act) return;
         closeKebabs();
         var id = parseInt(act.getAttribute("data-id"), 10);
-        if (act.getAttribute("data-svc-act") === "edit") {
+        var what = act.getAttribute("data-svc-act");
+        if (what === "edit") {
           openForm(deviceId, id, reload);
+        } else if (what === "checklists") {
+          if (window.tpChecklists) tpChecklists.forService(id, act.getAttribute("data-name"));
         } else {
           remove(id, act.getAttribute("data-name"), reload);
         }

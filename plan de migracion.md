@@ -218,10 +218,10 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 2.5 ~~DeviceRoutesType~~ ✅ 19-ago (periodos privado/negocio desde el kebab del vehículo, con round-trip de TZ verificado).
 2.6 ~~Import masivo de devices~~ ✅ 19-ago — resuelto como acceso directo al importador del panel clásico (`admin/objects/import`) desde el hub Admin, que es el patrón de esa página; no se duplicó `DeviceImportManager` en v2.
 
-### Ola 3 — Media y checklists
-3.1 DeviceMedia + MediaCategories (galería, ZIP, categorías). L
-3.2 DeviceVideo/Video (live + playback Howen/JT808). L
-3.3 Checklist + ChecklistTemplates (addon; QR ya enlazado). L
+### Ola 3 — Media y checklists ✅ (salvo vídeo, bloqueado por hardware)
+3.1 ~~DeviceMedia + MediaCategories (galería)~~ ✅ 19-ago — rejilla con selección múltiple, descarga, filtro por categoría y borrado. **Pendiente menor**: descarga en ZIP de una selección (el legacy la arma con `ZipArchive`); en v2 se descarga archivo a archivo.
+3.2 DeviceVideo/Video (live + playback Howen/JT808). L — **BLOQUEADO**: no hay ningún equipo con protocolo `jt808`/`howen` en esta instalación (0 de 1.530; la flota es teltonika/tk103/gt06…), así que no es verificable. El flag `video` ya viaja por device en el feed de flota para cuando exista hardware.
+3.3 ~~Checklist + ChecklistTemplates~~ ✅ 19-ago — plantillas con actividades y ejecución por servicio (marcar, resultado pass/fail, fotos, notas y firma). Reglas del legacy respetadas: sin resultado + foto no se marca, y no se firma con actividades pendientes.
 
 ### Ola 4 — Cuenta/plataforma restante
 4.1 ~~Tabs Credenciales secundarias + Categorías de medios + SMS test/cola (F16)~~ ✅ 19-ago.

@@ -26,6 +26,11 @@
             <div class="tp-maint__tools">
                 <input type="text" class="tp-input" id="tp-maint-search"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
+                {{-- Plantillas de listas de verificación (addon checklists) --}}
+                @if (config('addon.checklists') && Auth::user()->perm('checklist_template', 'view'))
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-maint-checklist-templates"
+                        onclick="window.tpChecklists && tpChecklists.templates()">Plantillas</button>
+                @endif
             </div>
         </header>
 
@@ -75,6 +80,6 @@
 @push('scripts')
     {{-- defer: modal.js (tpModal) se carga con defer en el layout — estos deben
          ejecutarse DESPUÉS (los defer corren en orden de aparición). --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4" defer></script>
     <script src="{{ asset('assets/ui/v2/js/maintenance.js') }}?v=3" defer></script>
 @endpush

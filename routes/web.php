@@ -1257,6 +1257,18 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
         // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        // Checklists y sus plantillas (addon checklists)
+        Route::get('checklist-templates',        ['as' => 'api.checklist_templates',        'uses' => 'Ui\V2\ChecklistsController@templates']);
+        Route::post('checklist-templates',       ['as' => 'api.checklist_templates.store',  'uses' => 'Ui\V2\ChecklistsController@storeTemplate']);
+        Route::put('checklist-templates/{id}',   ['as' => 'api.checklist_templates.update', 'uses' => 'Ui\V2\ChecklistsController@updateTemplate'])->where('id', '[0-9]+');
+        Route::delete('checklist-templates/{id}',['as' => 'api.checklist_templates.destroy','uses' => 'Ui\V2\ChecklistsController@destroyTemplate'])->where('id', '[0-9]+');
+        Route::get('services/{id}/checklists',   ['as' => 'api.checklists',                 'uses' => 'Ui\V2\ChecklistsController@index'])->where('id', '[0-9]+');
+        Route::post('services/{id}/checklists',  ['as' => 'api.checklists.store',           'uses' => 'Ui\V2\ChecklistsController@store'])->where('id', '[0-9]+');
+        Route::delete('checklists/{id}',         ['as' => 'api.checklists.destroy',         'uses' => 'Ui\V2\ChecklistsController@destroy'])->where('id', '[0-9]+');
+        Route::put('checklist-rows/{id}',        ['as' => 'api.checklist_rows.update',      'uses' => 'Ui\V2\ChecklistsController@updateRow'])->where('id', '[0-9]+');
+        Route::post('checklists/{id}/sign',      ['as' => 'api.checklists.sign',            'uses' => 'Ui\V2\ChecklistsController@sign'])->where('id', '[0-9]+');
+        Route::post('checklist-rows/{id}/image',   ['as' => 'api.checklist_rows.image',        'uses' => 'Ui\V2\ChecklistsController@uploadRowImage'])->where('id', '[0-9]+');
+        Route::delete('checklist-images/{id}',     ['as' => 'api.checklist_images.destroy',    'uses' => 'Ui\V2\ChecklistsController@destroyRowImage'])->where('id', '[0-9]+');
         // Galería de medios del vehículo (fotos de cámara en disco)
         Route::get('devices/{id}/media',    ['as' => 'api.devices.media',         'uses' => 'Ui\V2\DevicesController@deviceMedia'])->where('id', '[0-9]+');
         Route::delete('devices/{id}/media', ['as' => 'api.devices.media.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceMedia'])->where('id', '[0-9]+');

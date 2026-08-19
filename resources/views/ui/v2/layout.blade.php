@@ -117,6 +117,13 @@
     <script src="{{ asset('assets/ui/v2/js/tp-notify.js') }}?v=1" defer></script>
     {{-- Avisos del administrador (popups del legacy) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-admin-popups.js') }}?v=1" defer></script>
+    {{-- Listas de verificación (addon checklists): plantillas + ejecución por servicio --}}
+    @if (config('addon.checklists'))
+        <script>
+            window.TP_CHECKLISTS_ON = true;
+        </script>
+        <script src="{{ asset('assets/ui/v2/js/tp-checklists.js') }}?v=1" defer></script>
+    @endif
 
     @stack('scripts')
 
