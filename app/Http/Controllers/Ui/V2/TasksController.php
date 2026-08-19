@@ -120,6 +120,9 @@ class TasksController extends BaseController
                 : null,
             'ac_enabled' => (bool) ($ac['status'] ?? false),
             'ac_values'  => (array) ($ac['options'] ?? []),
+            // Campos personalizados de tarea (addon custom_fields_task), igual
+            // que Tasks/index.blade + Tasks/edit.blade del legacy.
+            'custom_fields' => $this->customFieldsMeta(),
             'item'       => null,
         ];
 
@@ -157,16 +160,71 @@ class TasksController extends BaseController
                 'delivery_ac_radius'   => $task->delivery_ac_radius,
                 'delivery_ac_duration' => $task->delivery_ac_duration,
                 'delivery_ac_status'   => $task->delivery_ac_status,
+                'custom_fields'        => $this->customFieldsValues($task),
             ];
         }
 
         return response()->json($out);
     }
 
+    /**
+     * Definición de los campos personalizados de tarea para el formulario.
+     * Vacío si el addon está apagado (paridad @if config('addon.custom_fields_task')).
+     */
+    private function customFieldsMeta(): array
+    {
+        if (! config('addon.custom_fields_task')) {
+            return [];
+        }
+
+        return (new Task())->customFields()->get()
+            ->map(function ($f) {
+                return [
+                    'slug'        => (string) $f->slug,
+                    'title'       => (string) $f->title,
+                    'data_type'   => (string) $f->data_type,
+                    'description' => (string) ($f->description ?? ''),
+                    'required'    => (bool) $f->required,
+                    'options'     => (array) ($f->options ?? []),
+                    'default'     => $f->defaultValue,
+                ];
+            })->all();
+    }
+
+    /** Valores actuales de los campos personalizados de una tarea. */
+    private function customFieldsValues(Task $task): array
+    {
+        if (! config('addon.custom_fields_task')) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($task->customFields()->get() as $field) {
+            $out[$field->slug] = $task->getCustomValue($field->slug);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Guarda los valores enviados. Sin la clave `custom_fields` no toca nada,
+     * igual que TasksController legacy (que pasa `?? []`).
+     */
+    private function saveCustomFields(Task $task, Request $request): void
+    {
+        if (! config('addon.custom_fields_task')) {
+            return;
+        }
+
+        (new \Tobuli\Services\CustomValuesService())
+            ->saveCustomValues($task, (array) $request->input('custom_fields', []));
+    }
+
     public function store(Request $request): JsonResponse
     {
         try {
             $task = $this->service->create($request->all());
+            $this->saveCustomFields($task, $request);
 
             return response()->json(['ok' => true, 'id' => (int) $task->id]);
         } catch (ValidationException $e) {
@@ -183,6 +241,7 @@ class TasksController extends BaseController
 
         try {
             $this->service->edit($task, $request->all());
+            $this->saveCustomFields($task, $request);
 
             return response()->json(['ok' => true]);
         } catch (ValidationException $e) {

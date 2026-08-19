@@ -49,8 +49,19 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 > en el modal de cuenta (CRUD completo, ocultos por gate igual que el legacy) + **SMS de prueba**
 > y **vaciar cola** en el tab SMS gateway.
 >
-> **Quedan abiertos:** D10–D12 (custom fields, sin impacto hoy) · F5 (borrar posiciones) ·
-> F6 (plugins título/dirección) · `confirmed_action` en DELETEs · resto de F.
+> **Décimo lote (19-ago):** cierre de Ola 0 — **F5** (borrar posiciones del data-log),
+> **F6** (título del evento por plugin `event_section_alert`), **D10–D12** (campos
+> personalizados de objeto y tarea + intervalos horarios de geocerca), guardas de cuenta
+> demo en `ShellController`, iconos de sensores y su picker de mapeo. También se corrigió un
+> **error de sintaxis en `gastos.blade.php`** (comentario Blade dentro de `@php`) que rompia
+> el modal de objeto completo en cuanto se recompilaban las vistas.
+>
+> **`confirmed_action`:** revisado y **descartado** — no es una confirmación por contraseña,
+> es un prompt server-side (HTTP 418) que existe porque las rutas legacy son `Route::any`
+> y aceptan GET. En v2 los borrados ya son `Route::delete` + CSRF + `tpModal.confirm`,
+> que cubre lo mismo con mejor seguridad de transporte.
+>
+> **Ola 0 cerrada.** Lo que sigue son las olas 1–6 (módulos sin migrar).
 
 ---
 
@@ -83,9 +94,9 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | D7 | ✅ **CORREGIDO 7-ago** — el update ya no manda `active:1` (solo el create) y hay **checkbox de visibilidad** por fila en geocercas y POIs → `POST zones/{id}/toggle` · `POST pois/{id}/toggle` (paridad `change_active`). El feed de POIs expone `active`/`description` y el mapa omite los inactivos | `live-zones.js`, `live-pois.js`, `ZonesController`, `MapLayersController` | CRÍTICO |
 | D8 | ✅ **CORREGIDO 6-ago (2)** — el meta devuelve `called_at` con `convert()` en formato ISO (`Y-m-d H:i:s`), que el JS sí parsea; editar ya no sobrescribe la fecha | `Ui/V2/CallActionsController.php` | MEDIO |
 | D9 | ✅ **CORREGIDO 6-ago (2)** — al editar con `adapted ≠ devices` el controller preserva la asignación actual (el modo api hacía `sync([])`) | `Ui/V2/CommandsController.php` | MEDIO |
-| D10 | Tareas: `custom_fields_task` no se guardan ni se muestran (falta `CustomValuesService::saveCustomValues` + panel) | `Ui/V2/TasksController.php:166-191` | CRÍTICO (con addon) |
-| D11 | Device: tab **Custom Fields ausente** → campos personalizados no editables desde v2 | `modals/devices/form.blade.php` | CRÍTICO (con addon) |
-| D12 | Geocercas con addon `reports_geofleet_in`: falta `additional[intervals]` (required) → **todo guardado devuelve 422** | `live-zones.js` | CRÍTICO (con addon) |
+| ~~D10~~ ✅ | Tareas: `custom_fields_task` no se guardan ni se muestran | `Ui/V2/TasksController.php` | ~~CRÍTICO~~ **Corregido 19-ago**: `meta()` expone la definición + los valores, `store()/update()` persisten con `CustomValuesService`. El bloque solo se pinta con el addon ON (hoy OFF). Verificado guardado real de text y select |
+| ~~D11~~ ✅ | Device: tab **Custom Fields ausente** | `modals/devices/form.blade.php` | ~~CRÍTICO~~ **Corregido 19-ago**: nuevo tab `personalizados` con los 6 tipos (text/boolean/select/multiselect/date/datetime) y mismo gate que el legacy (`can('view',$item,'custom_fields')` + `hasCustomFields()`). `readForm` ganó soporte de `campo[slug][]` para el multiselect. Verificado: guarda, valida (422 en select inválido) y **sin la clave no destruye** los valores |
+| ~~D12~~ ✅ | Geocercas con addon `reports_geofleet_in`: falta `additional[intervals]` (required) → todo guardado daba 422 | `live-zones.js` | ~~CRÍTICO~~ **Corregido 19-ago**: el feed expone `intervals_enabled` + `time_range` (96 slots) y `presentZone` los intervalos ya convertidos; el form pinta los 2 intervalos. Verificado el round-trip de TZ: se envía 06:00–12:00, se guarda 11:00–17:00 (UTC) y se repinta 06:00–12:00 |
 | D13 | ✅ **CORREGIDO 6-ago (página Eventos)** — `data()`/`mapData()` devuelven `time` con `Formatter::time()->convert()` (UTC→TZ usuario): lista, popup y el salto a Historial quedan en la hora del usuario. Dashboard: `convert()` en notificaciones ✅ (6-ago noche) | `EventsController` + `DashboardController` | CRÍTICO |
 | D14 | ✅ **CORREGIDO 6-ago (página Eventos)** — `data()`/`mapData()` usan `Event::userAccessible($user)` (propios + alertas compartidas vía `alert_user`), como el legacy; `index()` ya lo usaba. Dashboard ✅ (6-ago noche): `scopeEvents()` aplica el mismo alcance a sus 6 queries | `EventsController` + `DashboardController` | CRÍTICO |
 | D15 | ⚠️ **REVISADO 7-ago** — la 1ª parte (toggles descartados) es **FALSO POSITIVO**: `getSettings(key, merge=true)` ya mezcla el catálogo de `config('tobuli.dashboard.blocks')`, así que un usuario sin ajustes recibe los 6 bloques (verificado con un user cuyo JSON no tiene la clave). ✅ La 2ª parte sí se corrigió: `options.period` (Día/Semana/Mes) ahora es editable y se mezcla sin pisar colores/devices | `Ui/V2/AccountController.php`, `tp-account.js` | MEDIO |
@@ -99,8 +110,8 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | F2 | ✅ **CORREGIDO 7-ago** — modales v2 nativos: export por form-POST a los endpoints legacy de descarga (`geofences.export_create` / `pois.export.store`) con tipo + selección; import por FormData (`api.zones.import` y el nuevo `api.pois.import`, que exige `map_icon_id` como el legacy). Botones de importar gateados por `perm(...,'edit')` | — |
 | F3 | ✅ **CORREGIDO 7-ago** — `export_groups` fuera del selector de rutas (el `ExportManager` no lo mapea → `LogicException`; el legacy tampoco lo ofrece) y los tipos activas/inactivas ya envían los **ids** que exige el filtro `Singles*` (verificado: con ids 1 fila vs 4 sin ids). Geocercas/POIs, que sí soportan grupos, ganan selector de grupos | — |
 | F4 | ✅ **CORREGIDO 6-ago (2)** — `templates()` gatea por `perm(modulo,'view')` y solo llama `createData()` con `edit` | — |
-| F5 | ⚠️ **PARCIAL 7-ago** — ✅ orden del data-log (`sorting` con la forma que el helper entiende + botón asc/desc) y ✅ km por odómetro (clave aditiva `distance_sum_odometer`). **Pendiente**: borrar posiciones (`history.remove`) sin superficie | MEDIO |
-| F6 | ⚠️ **PARCIAL 7-ago** — ✅ borrado individual (popup) y masivo (pie de lista) con `perm('events','remove')` + alcance `userControllable`; ✅ filtro por **rango de fechas absoluto** (`date_from`/`date_to` con `reverse()`). **Pendiente**: columna título (plugin `event_section_alert`) y gate `event_section_address` | MEDIO |
+| ~~F5~~ ✅ | ✅ orden del data-log · ✅ km por odómetro · ✅ **borrar posiciones 19-ago**: `DELETE ui/v2/api/history/positions` vía `HistoryModalHelper::deletePositions()` (gates `history.remove` + `devices.own` + regenera el tail), con columna de selección y botón en el data-log gateados por el permiso. Verificado end-to-end con tabla `positions_5` temporal; device ajeno → 403 | ~~MEDIO~~ |
+| ~~F6~~ ✅ | ✅ borrado individual y masivo · ✅ rango de fechas absoluto · ✅ **título por plugin 19-ago**: `event_section_alert` está **ON** en esta instalación, así que la v2 mostraba el mensaje crudo donde el legacy muestra el nombre de la alerta; ahora `data()`/`mapData()` exponen `title` (con eager-load de `alert`) y el JS lo prefiere. El gate `event_section_address` ya estaba (`data-addr-on`). De paso, eager-load de `sensors`: la lista pasó de 57 a 9 queries | ~~MEDIO~~ |
 | F7 | ✅ **CORREGIDO 7-ago** — el modal de geocerca gana el selector **Vehículo (geocerca móvil)** gateado por el plugin; el feed expone `moving_plugin`, el catálogo `devices` y `device_id` por geocerca. Verificado round-trip. **Pendiente**: `confirmed_action` (contraseña) en los DELETE | MEDIO |
 | F8 | Iconos del device: los selects de color no viajan si el tipo ≠ arrow (v2 los `disabled`; legacy solo los oculta) | MEDIO |
 | F9 | Sensores: tab **solo admin** en v2 (legacy lo muestra a todos); icono por fila de mapping no seleccionable; import de calibraciones ausente | MEDIO |
@@ -161,18 +172,18 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 | Dominio | Estado | Notas |
 |---|---|---|
 | Live shell + mapa + widgets + kebab | ✅/⚠️ | F8, F12 |
-| Fleet + modal device (8 tabs) | ⚠️ | ~~D1~~✅, D11, F9, F10, F17, ~~S6~~✅, S7 |
-| Geocercas | ⚠️ | ~~S4~~ falso positivo, ~~D2, D7, F2~~✅; D12, F7 (grupos solo lectura) |
+| Fleet + modal device (8 tabs) | ⚠️ | ~~D1, D11, S6, S7~~✅; F9, F10, F17 |
+| Geocercas | ✅/⚠️ | ~~S4~~ falso positivo, ~~D2, D7, F2, D12, F7~~✅; grupos solo lectura (menor) |
 | POIs | ✅/⚠️ | ~~D7, F2~~✅; grupos solo lectura |
 | Rutas | ✅ | ~~F3~~✅; CRUD+grupos+tabla ✅ |
 | Alertas (reglas + modal 6 tabs) | ✅/⚠️ | ~~D5~~✅ salvaguarda |
-| Eventos (página) | ✅/⚠️ | ~~D13, D14~~✅; F6 parcial (falta plugin título/dirección) |
-| Historial | ✅/⚠️ | ~~F1~~✅; F5 parcial (falta borrar posiciones) |
+| Eventos (página) | ✅ | ~~D13, D14, F6~~✅ |
+| Historial | ✅ | ~~F1, F5~~✅ |
 | Reportes | ✅/⚠️ | ~~D4~~✅; schedules ✅ |
 | Comandos (modal + hub) | ✅ | ~~D6, D9, F4~~✅ |
 | Sharing | ⚠️ | ~~D3~~✅; F11 (canal SMS) |
 | Conductores | ✅ | falta activity log (menor) |
-| Tareas + conjuntos | ⚠️ | D10; filtros de fecha (menor) |
+| Tareas + conjuntos | ✅/⚠️ | ~~D10~~✅; filtros de fecha (menor) |
 | Chat | ✅/⚠️ | ~~S1~~✅; user↔user y paginación (menor) |
 | CallActions | ✅ | ~~S5, D8~~✅ |
 | Mantenimiento/Servicios | ✅/⚠️ | F15 (500s) |
@@ -193,7 +204,7 @@ Orden sugerido: **S1→S4** (seguridad) → **D1–D7, D13–D14** (corrupción 
 resto de D/F por severidad. Muchas son fixes de horas, no días.
 
 ### Ola 1 — Cerrar el modal device y capas
-1.1 Tab Custom Fields (D11) + panel en Tareas (D10) — mismo `CustomValuesService`.
+1.1 ~~Tab Custom Fields (D11) + panel en Tareas (D10)~~ ✅ 19-ago.
 1.2 Grupos de geocercas y POIs con CRUD (paridad Rutas) + toggle `active` + tablas dedicadas.
 1.3 Import/Export nativo de geocercas y POIs (F2) + fix export de rutas (F3).
 1.4 Tab Historial de mantenimientos + `configure_device`/APN en alta (F17).

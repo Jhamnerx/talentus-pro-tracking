@@ -86,6 +86,10 @@ class ZonesController extends BaseController
             // para el selector del modal. El feed lo consume live-zones.js
             // (meta() existía pero nadie lo llamaba).
             'moving_plugin'      => (bool) settings('plugins.moving_geofence.status'),
+            // Intervalos horarios por geocerca: el validador los EXIGE cuando el
+            // addon esta activo, asi que el form debe pintarlos (Geofences/edit.blade).
+            'intervals_enabled'  => (bool) config('addon.reports_geofleet_in'),
+            'time_range'         => config('addon.reports_geofleet_in') ? array_values(getSelectTimeRange()) : [],
             'devices'            => settings('plugins.moving_geofence.status')
                 ? $this->user->devices()->orderBy('devices.name')->get(['devices.id', 'devices.name'])
                     ->map(function ($d) {
@@ -340,7 +344,36 @@ class ZonesController extends BaseController
             // Misma conversión base→usuario que en data() (ver comentario allá).
             'speed_limit'   => $g->speed_limit !== null ? round(\Formatter::speed()->convert($g->speed_limit)) : null,
             'vehicle_speed_limits' => $this->vslMap($g),
+            // Intervalos horarios con limite propio (addon reports_geofleet_in).
+            // Se pintan en la TZ del usuario; GeofenceUserService::normalize()
+            // hace el reverse() al guardar (igual que Geofences/edit.blade).
+            'intervals'     => $this->intervalsMap($g),
         ];
+    }
+
+    /**
+     * [ {from, to, speed_limit}, {…} ] para los 2 intervalos del legacy.
+     * Array vacío si el addon está apagado.
+     */
+    private function intervalsMap($g): array
+    {
+        if (! config('addon.reports_geofleet_in')) {
+            return [];
+        }
+
+        $stored = $g && is_array($g->additional ?? null) ? ($g->additional['intervals'] ?? []) : [];
+        $out = [];
+
+        foreach ([0, 1] as $i) {
+            $iv = $stored[$i] ?? null;
+            $out[] = [
+                'from'        => isset($iv['from']) ? \Formatter::dtime()->convert($iv['from'], 'H:i') : '',
+                'to'          => isset($iv['to']) ? \Formatter::dtime()->convert($iv['to'], 'H:i') : '',
+                'speed_limit' => $iv['speed_limit'] ?? '',
+            ];
+        }
+
+        return $out;
     }
 
     /**

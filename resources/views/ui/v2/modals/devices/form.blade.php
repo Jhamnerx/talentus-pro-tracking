@@ -27,6 +27,8 @@
         ['key' => 'webservices', 'label' => 'Servicios Web', 'if' => !empty($caps['can_view_webservices'])],
         ['key' => 'gastos', 'label' => trans('front.expenses'), 'if' => !empty($caps['has_expenses'])],
         ['key' => 'camaras', 'label' => trans('front.cameras'), 'if' => !empty($caps['can_view_cameras'])],
+        // Campos personalizados: mismo gate que el legacy (Devices/edit.blade)
+        ['key' => 'personalizados', 'label' => trans('admin.custom_fields'), 'if' => !empty($caps['has_custom_fields'])],
     ])
         ->filter(function ($t) {
             return !array_key_exists('if', $t) || $t['if'];

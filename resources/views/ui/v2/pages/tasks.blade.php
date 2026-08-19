@@ -166,5 +166,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-tasks.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-tasks.js') }}?v=4" defer></script>
 @endpush

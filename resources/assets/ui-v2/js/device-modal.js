@@ -1549,6 +1549,16 @@
     var fd = new FormData(form);
     var data = {};
     fd.forEach(function (value, key) {
+      // Soporta name="custom_fields[slug][]" (multiselect) → data.custom_fields.slug = [v…]
+      var nestedArr = /^([^\[]+)\[([^\]]+)\]\[\]$/.exec(key);
+      if (nestedArr) {
+        var nk = nestedArr[1];
+        var nsub = nestedArr[2];
+        if (!data[nk] || typeof data[nk] !== "object") data[nk] = {};
+        if (!Array.isArray(data[nk][nsub])) data[nk][nsub] = [];
+        data[nk][nsub].push(value);
+        return;
+      }
       // Soporta name="selected_user_id[]" → data.selected_user_id = [v1, v2…]
       var arr = /^(.+)\[\]$/.exec(key);
       if (arr) {

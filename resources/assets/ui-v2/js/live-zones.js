@@ -297,6 +297,52 @@
     return out;
   }
 
+  // Intervalos horarios con límite propio (addon reports_geofleet_in). El
+  // validador legacy los exige cuando el addon está activo, por eso se pintan
+  // con los mismos nombres: additional[intervals][i][from|to|speed_limit].
+  function intervalsHtml(g) {
+    if (!S.intervalsOn) return "";
+
+    var saved = (g && g.intervals) || [];
+    var opts = function (sel) {
+      return S.timeRange
+        .map(function (t) {
+          return '<option value="' + esc(t) + '"' + (String(sel) === String(t) ? " selected" : "") + ">" + esc(t) + "</option>";
+        })
+        .join("");
+    };
+
+    return [0, 1]
+      .map(function (i) {
+        var iv = saved[i] || {};
+        return (
+          '<div class="tp-field"><label class="tp-field__label">Intervalo ' + (i + 1) + "</label>" +
+          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">' +
+          '<select class="tp-input" data-iv="' + i + '" data-iv-k="from">' + opts(iv.from) + "</select>" +
+          '<select class="tp-input" data-iv="' + i + '" data-iv-k="to">' + opts(iv.to) + "</select>" +
+          '<input type="number" class="tp-input" min="0" placeholder="km/h" data-iv="' + i + '" data-iv-k="speed_limit" value="' +
+          esc(iv.speed_limit == null ? "" : iv.speed_limit) + '">' +
+          "</div></div>"
+        );
+      })
+      .join("");
+  }
+
+  // → payload.additional.intervals = [{from,to,speed_limit}, …]
+  function gatherIntervals(form) {
+    if (!S.intervalsOn) return null;
+
+    var out = [];
+    [0, 1].forEach(function (i) {
+      var row = {};
+      form.querySelectorAll('[data-iv="' + i + '"]').forEach(function (el) {
+        row[el.getAttribute("data-iv-k")] = el.value;
+      });
+      out[i] = row;
+    });
+    return out;
+  }
+
   // ----- Modal de metadatos (crear con geometría dada, o editar) -----
   function metaBody(g, geometry) {
     var groupOpts =
@@ -344,6 +390,7 @@
       (g && g.speed_limit != null ? g.speed_limit : "") +
       '"></div>' +
       vslMatrixHtml(g) +
+      intervalsHtml(g) +
       "</form>"
     );
   }
@@ -372,6 +419,8 @@
     if (rad && rad.value !== "") payload.radius = parseFloat(rad.value);
     var vsl = gatherVsl(dialog);
     if (vsl) payload.vehicle_speed_limits = vsl;
+    var ivs = gatherIntervals(f);
+    if (ivs) payload.additional = { intervals: ivs };
     return payload;
   }
 
@@ -685,6 +734,8 @@
         S.speedPlugin = !!(j && j.speed_limit_plugin);
         S.movingPlugin = !!(j && j.moving_plugin);
         S.devices = (j && j.devices) || [];
+        S.intervalsOn = !!(j && j.intervals_enabled);
+        S.timeRange = (j && j.time_range) || [];
         S.byId = {};
         S.items.forEach(function (g) {
           S.byId[g.id] = g;

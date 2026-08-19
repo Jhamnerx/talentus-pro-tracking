@@ -184,6 +184,89 @@
     );
   }
 
+  /* ===== Campos personalizados de tarea (addon custom_fields_task) ===== */
+  // Paridad Frontend/CustomFields/panel.blade.php: mismos tipos y misma regla
+  // de valor inicial (valor guardado al editar, `default` al crear).
+  function customFieldsHtml(meta, item) {
+    var fields = meta.custom_fields || [];
+    if (!fields.length) return "";
+
+    var values = (item && item.custom_fields) || {};
+
+    return (
+      sectionTitleHtml("Campos personalizados") +
+      fields
+        .map(function (f) {
+          var name = "cf_" + f.slug;
+          var raw = Object.prototype.hasOwnProperty.call(values, f.slug) ? values[f.slug] : null;
+          var v = raw == null || raw === "" ? (item && item.id ? "" : f.default) : raw;
+          var hint = f.description
+            ? '<small class="tp-form__hint">' + esc(f.description) + "</small>"
+            : "";
+
+          if (f.data_type === "boolean") {
+            return (
+              '<div class="tp-form__field"><label class="tp-choice">' +
+              '<input type="checkbox" class="tp-choice-input" data-cf="' + esc(f.slug) + '" name="' + name + '" value="1"' +
+              (v == 1 ? " checked" : "") + "> <span>" + esc(f.title) + "</span></label>" + hint + "</div>"
+            );
+          }
+
+          var input;
+          if (f.data_type === "select" || f.data_type === "multiselect") {
+            var multi = f.data_type === "multiselect";
+            var sel = multi ? (Array.isArray(v) ? v.map(String) : []) : [String(v == null ? "" : v)];
+            var opts = Object.keys(f.options || {})
+              .map(function (k) {
+                return (
+                  '<option value="' + esc(k) + '"' +
+                  (sel.indexOf(String(k)) !== -1 ? " selected" : "") + ">" + esc(f.options[k]) + "</option>"
+                );
+              })
+              .join("");
+            input =
+              "<select data-cf=\"" + esc(f.slug) + '" data-cf-multi="' + (multi ? 1 : 0) + '" name="' + name + '"' +
+              (multi ? ' multiple size="4"' : "") + ">" + opts + "</select>";
+          } else if (f.data_type === "date") {
+            input = '<input type="date" data-cf="' + esc(f.slug) + '" name="' + name + '" value="' + esc(v || "") + '" data-tp-field>';
+          } else if (f.data_type === "datetime") {
+            var dtv = v ? String(v).replace(" ", "T").slice(0, 16) : "";
+            input = '<input type="datetime-local" data-cf="' + esc(f.slug) + '" name="' + name + '" value="' + esc(dtv) + '" data-tp-field>';
+          } else {
+            input = '<input type="text" data-cf="' + esc(f.slug) + '" name="' + name + '" value="' + esc(v || "") + '" data-tp-field>';
+          }
+
+          return (
+            '<label class="tp-form__field"><span class="tp-form__label">' + esc(f.title) + "</span>" +
+            input + hint + "</label>"
+          );
+        })
+        .join("")
+    );
+  }
+
+  // Lee los campos personalizados del form al objeto que espera el backend
+  // (custom_fields[slug] = valor), o null si el addon no aporta campos.
+  function readCustomFields(form) {
+    var els = form.querySelectorAll("[data-cf]");
+    if (!els.length) return null;
+
+    var out = {};
+    Array.prototype.forEach.call(els, function (el) {
+      var slug = el.getAttribute("data-cf");
+      if (el.type === "checkbox") {
+        out[slug] = el.checked ? 1 : 0;
+      } else if (el.getAttribute("data-cf-multi") === "1") {
+        out[slug] = Array.prototype.filter
+          .call(el.options, function (o) { return o.selected; })
+          .map(function (o) { return o.value; });
+      } else {
+        out[slug] = el.value;
+      }
+    });
+    return out;
+  }
+
   function buildFormHtml(meta, isEdit) {
     var item = meta.item || {};
 
@@ -251,6 +334,7 @@
       '<span class="tp-form__label">Comentario</span>' +
       '<textarea name="comment" rows="2" maxlength="1000" data-tp-field>' + esc(item.comment || "") + "</textarea>" +
       "</label>" +
+      customFieldsHtml(meta, item) +
       "</div></form>"
     );
   }
@@ -460,6 +544,9 @@
       delivery_time_from: dt(form, "delivery_from"),
       delivery_time_to: dt(form, "delivery_to"),
     };
+
+    var cf = readCustomFields(form);
+    if (cf) payload.custom_fields = cf;
 
     if (id) payload.status = val(form, "status");
     if (meta.task_sets) payload.task_set_id = val(form, "task_set_id") || "";

@@ -272,6 +272,15 @@ class DevicesController extends BaseController
                     || $this->user->perm('webservice.sidersales', 'view')
                     || $this->user->perm('webservice.epscenter', 'view')
                 ),
+                // Campos personalizados: mismo gate que Devices/edit.blade del
+                // legacy — can('view', $item, 'custom_fields') (que ya considera
+                // el addon vía PermissionService) + que existan campos definidos.
+                'has_custom_fields'    => (bool) (
+                    isset($data['item'])
+                    && $data['item'] instanceof \Tobuli\Entities\Device
+                    && $this->user->can('view', $data['item'], 'custom_fields')
+                    && $data['item']->hasCustomFields()
+                ),
             ];
 
             $html = View::make('ui.v2.modals.devices.form', $data)->render();
