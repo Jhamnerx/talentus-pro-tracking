@@ -39,8 +39,11 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 >
 > **Sexto lote (7-ago):** F3 (export: 500 de grupos en rutas + filtro por ids en activas/inactivas).
 >
-> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · F5 (borrar posiciones) · F6 (plugins
-> título/dirección) · F7 y resto de la lista F.
+> **Séptimo lote (7-ago):** D16 (password del SMS gateway se borraba en cada guardado) y D15 2ª
+> parte (opciones `period` por bloque del Tablero). D15 1ª parte = falso positivo, documentado.
+>
+> **Quedan abiertos:** S7–S9 · D10–D12 · F5 (borrar posiciones) · F6 (plugins título/dirección) ·
+> F7 · F16 y resto de la lista F.
 
 ---
 
@@ -78,8 +81,8 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | D12 | Geocercas con addon `reports_geofleet_in`: falta `additional[intervals]` (required) → **todo guardado devuelve 422** | `live-zones.js` | CRÍTICO (con addon) |
 | D13 | ✅ **CORREGIDO 6-ago (página Eventos)** — `data()`/`mapData()` devuelven `time` con `Formatter::time()->convert()` (UTC→TZ usuario): lista, popup y el salto a Historial quedan en la hora del usuario. Dashboard: `convert()` en notificaciones ✅ (6-ago noche) | `EventsController` + `DashboardController` | CRÍTICO |
 | D14 | ✅ **CORREGIDO 6-ago (página Eventos)** — `data()`/`mapData()` usan `Event::userAccessible($user)` (propios + alertas compartidas vía `alert_user`), como el legacy; `index()` ya lo usaba. Dashboard ✅ (6-ago noche): `scopeEvents()` aplica el mismo alcance a sus 6 queries | `EventsController` + `DashboardController` | CRÍTICO |
-| D15 | Cuenta: toggles de blocks del Tablero se **descartan** para usuarios sin settings previos; `options` por block no editables | `Ui/V2/AccountController.php:355-361` | MEDIO |
-| D16 | SMS gateway: el password del gateway viaja vacío en cada guardado y sobrevive solo por el merge-fallback | `tp-account.js:91` | MEDIO |
+| D15 | ⚠️ **REVISADO 7-ago** — la 1ª parte (toggles descartados) es **FALSO POSITIVO**: `getSettings(key, merge=true)` ya mezcla el catálogo de `config('tobuli.dashboard.blocks')`, así que un usuario sin ajustes recibe los 6 bloques (verificado con un user cuyo JSON no tiene la clave). ✅ La 2ª parte sí se corrigió: `options.period` (Día/Semana/Mes) ahora es editable y se mezcla sin pisar colores/devices | `Ui/V2/AccountController.php`, `tp-account.js` | MEDIO |
+| D16 | ✅ **CORREGIDO 7-ago** — era peor de lo reportado: el `?? actual` NO cubría la cadena vacía, así que **cada guardado del tab SMS borraba la contraseña** del gateway. Ahora vacío = conservar. Verificado sobre BD: sin fix quedaba `""`, con fix se conserva | `Ui/V2/AccountController.php` | MEDIO |
 
 ### 1.3 Funcionalidad rota o inalcanzable
 
@@ -168,7 +171,7 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 | Mantenimiento/Servicios | ✅/⚠️ | F15 (500s) |
 | Gastos | ✅/⚠️ | ~~S2, S6~~✅; validator legacy pendiente (menor) |
 | Reenvíos | ✅/⚠️ | TYPE_FIELDS hardcodeado (deriva futura) |
-| Cuenta (modal ajustes) | ⚠️ | D15, D16, F16 |
+| Cuenta (modal ajustes) | ✅/⚠️ | ~~D15, D16~~✅; F16 (tabs credenciales/categorías, SMS test) |
 | Dashboard | ⚠️ | ~~D14~~✅; F13 (blocks faltantes) |
 | Tipos/estados de vehículo | ✅/⚠️ | ~~S3~~✅ (gate módulo `devices`) |
 | LockStatus (widget bloqueo) | ✅/⚠️ | F18 |
