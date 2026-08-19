@@ -42,8 +42,11 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 > **Séptimo lote (7-ago):** D16 (password del SMS gateway se borraba en cada guardado) y D15 2ª
 > parte (opciones `period` por bloque del Tablero). D15 1ª parte = falso positivo, documentado.
 >
-> **Quedan abiertos:** S7–S9 · D10–D12 · F5 (borrar posiciones) · F6 (plugins título/dirección) ·
-> F7 · F16 y resto de la lista F.
+> **Octavo lote (7-ago):** F7 (geocerca móvil), S7 (gate `custom_device_add`) y S9 (grupos por
+> `DeviceGroupPolicy`, bloquea demo). S8 = falso positivo documentado.
+>
+> **Quedan abiertos:** D10–D12 (custom fields, sin impacto hoy) · F5 (borrar posiciones) ·
+> F6 (plugins título/dirección) · F16 (tabs de cuenta) · `confirmed_action` en DELETEs · resto de F.
 
 ---
 
@@ -59,9 +62,9 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | S4 | ❎ **FALSO POSITIVO** (verificado 6-ago): `GeofenceUserService` usa `ModelUserServiceTrait`, cuyos `create/edit/remove` SÍ aplican `Manager::check('geofences',…,$model)` (los métodos de trait tienen precedencia sobre los heredados) → la policy read-only/demo se aplica en legacy Y v2 (mismo service). El `can('view')` del controller es solo un pre-check redundante. **Sin cambios** (decisión: paridad legacy) | — | — |
 | S5 | ✅ **CORREGIDO 6-ago (2)** — `user_id` forzado al usuario autenticado + whitelist `Arr::only` en `prepare()` (antes el request crudo iba a create/update = mass-assignment) | `Ui/V2/CallActionsController.php` | MEDIO |
 | S6 | ✅ **CORREGIDO 6-ago (gates)** — gastos del modal device ahora exigen `perm('device_expenses', edit/remove/view)` además del acceso al device. Pendiente MENOR: unificar con `DeviceExpensesFormValidator` | `Ui/V2/DevicesController.php` | MEDIO |
-| S7 | Alta de device sin el gate `custom_device_add` (legacy PROHÍBE el alta estándar a esos usuarios) | `Ui/V2/DevicesController.php:284-296` | MEDIO |
-| S8 | `AdminController@data` expone `api_hash`/webhooks sin validar admin; `ShellController` preferences sin `isDemoUser()` | `Ui/V2/AdminController.php:19-28`, `ShellController.php:196-284` | MENOR |
-| S9 | Grupos de vehículos: gate `devices:edit` en vez del flujo legacy + sin `DeviceGroupFormValidator` | `Ui/V2/DevicesController.php:442-512` | MEDIO |
+| S7 | ✅ **CORREGIDO 7-ago** — `store()` rechaza el alta si el usuario tiene `custom_device_add` (debe pasar por el flujo custom/pagos), igual que el legacy | `Ui/V2/DevicesController.php` | MEDIO |
+| S8 | ❎ **FALSO POSITIVO** (verificado 7-ago): `AdminController@data` solo devuelve datos del **propio** usuario — `has_token` es booleano (nunca el `api_hash`) y los forwards van con `where('user_id', $user->id)`. No hay fuga entre cuentas. *(Queda como MENOR real: `ShellController::preferences` sin `isDemoUser()`.)* | — | MENOR |
+| S9 | ✅ **CORREGIDO 7-ago** — store/update/destroy pasan por `checkException('devices_groups', …)`, que en el Manager está mapeado a `DeviceGroup` → resuelve por `DeviceGroupPolicy` (además **bloquea cuentas demo**, cosa que `perm('devices','edit')` no hacía) | `Ui/V2/DevicesController.php` | MEDIO |
 
 ### 1.2 Corrupción / pérdida de datos
 
@@ -94,7 +97,7 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | F4 | ✅ **CORREGIDO 6-ago (2)** — `templates()` gatea por `perm(modulo,'view')` y solo llama `createData()` con `edit` | — |
 | F5 | ⚠️ **PARCIAL 7-ago** — ✅ orden del data-log (`sorting` con la forma que el helper entiende + botón asc/desc) y ✅ km por odómetro (clave aditiva `distance_sum_odometer`). **Pendiente**: borrar posiciones (`history.remove`) sin superficie | MEDIO |
 | F6 | ⚠️ **PARCIAL 7-ago** — ✅ borrado individual (popup) y masivo (pie de lista) con `perm('events','remove')` + alcance `userControllable`; ✅ filtro por **rango de fechas absoluto** (`date_from`/`date_to` con `reverse()`). **Pendiente**: columna título (plugin `event_section_alert`) y gate `event_section_address` | MEDIO |
-| F7 | Geocercas: `device_id` (plugin `moving_geofence`) no configurable desde v2 (meta muerto); confirmación con contraseña (`confirmed_action`) ausente en DELETEs | MEDIO |
+| F7 | ✅ **CORREGIDO 7-ago** — el modal de geocerca gana el selector **Vehículo (geocerca móvil)** gateado por el plugin; el feed expone `moving_plugin`, el catálogo `devices` y `device_id` por geocerca. Verificado round-trip. **Pendiente**: `confirmed_action` (contraseña) en los DELETE | MEDIO |
 | F8 | Iconos del device: los selects de color no viajan si el tipo ≠ arrow (v2 los `disabled`; legacy solo los oculta) | MEDIO |
 | F9 | Sensores: tab **solo admin** en v2 (legacy lo muestra a todos); icono por fila de mapping no seleccionable; import de calibraciones ausente | MEDIO |
 | F10 | Beacons: el modal v2 abre el form estándar y el guardado revienta con 422 "Device is kind of beacon" | MEDIO |
