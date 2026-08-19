@@ -803,7 +803,9 @@
     <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=3" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=42"></script>
+    {{-- Tipos de trayecto por periodo (kebab del vehículo) --}}
+    <script src="{{ asset('assets/ui/v2/js/tp-route-types.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=43"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=13"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>

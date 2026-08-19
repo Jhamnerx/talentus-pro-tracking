@@ -1257,6 +1257,11 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
         // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        // Tipos de trayecto por periodo (privado/negocio) — DeviceRouteType
+        Route::get('devices/{id}/route-types',    ['as' => 'api.devices.route_types',        'uses' => 'Ui\V2\DevicesController@routeTypes'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/route-types',   ['as' => 'api.devices.route_types.store',  'uses' => 'Ui\V2\DevicesController@storeRouteType'])->where('id', '[0-9]+');
+        Route::put('route-types/{id}',            ['as' => 'api.route_types.update',         'uses' => 'Ui\V2\DevicesController@updateRouteType'])->where('id', '[0-9]+');
+        Route::delete('route-types/{id}',         ['as' => 'api.route_types.destroy',        'uses' => 'Ui\V2\DevicesController@destroyRouteType'])->where('id', '[0-9]+');
         Route::post('beacons',      ['as' => 'api.beacons.store',  'uses' => 'Ui\V2\DevicesController@storeBeacon']);
         Route::put('beacons/{id}',  ['as' => 'api.beacons.update', 'uses' => 'Ui\V2\DevicesController@updateBeacon'])->where('id', '[0-9]+');
 

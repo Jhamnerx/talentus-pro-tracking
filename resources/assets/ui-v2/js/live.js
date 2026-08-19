@@ -1828,6 +1828,13 @@
       if (act === "history")
         location.href = "/ui/v2/history?device=" + id + "&range=" + (it.getAttribute("data-range") || "today");
       else if (act === "follow") openFollow(id);
+      else if (act === "route_types") {
+        var dRt = null;
+        for (var iRt = 0; iRt < state.devices.length; iRt++) {
+          if (state.devices[iRt].id === id) { dRt = state.devices[iRt]; break; }
+        }
+        if (window.tpRouteTypes) tpRouteTypes.open(id, dRt && dRt.name);
+      }
       else if (act === "edit") {
         if (window.tpDeviceModal) window.tpDeviceModal.openEdit(id, function () { fetchDevices(true); });
       } else if (act === "send_command") {

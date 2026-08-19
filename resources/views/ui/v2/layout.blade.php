@@ -39,7 +39,7 @@
 
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=3" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=26" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=2" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=3" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=2" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=13" />
@@ -87,6 +87,9 @@
 
     </div>
 
+    {{-- Avisos del administrador (addon notification_popops): franjas + popups --}}
+    @include('ui.v2.partials.admin-popups')
+
     @include('ui.v2.partials.command-palette')
     @include('ui.v2.partials.notifications-tray')
     @include('ui.v2.partials.toast-host')
@@ -112,6 +115,8 @@
     <script src="{{ asset('assets/ui/v2/js/notifications.js') }}?v=3" defer></script>
     {{-- Eventos en vivo: popup + sonido + Notification API (paridad legacy) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-notify.js') }}?v=1" defer></script>
+    {{-- Avisos del administrador (popups del legacy) --}}
+    <script src="{{ asset('assets/ui/v2/js/tp-admin-popups.js') }}?v=1" defer></script>
 
     @stack('scripts')
 

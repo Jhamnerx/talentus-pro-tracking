@@ -483,6 +483,102 @@ class DevicesController extends BaseController
         }
     }
 
+    /* =================================================================
+     * Tipos de trayecto por periodo (DeviceRouteType) — paridad
+     * DeviceRoutesTypeController. Marca tramos como Privado / Negocio.
+     * Las fechas viajan en la TZ del usuario: reverse() al guardar y
+     * convert() al pintar, igual que el legacy.
+     * ================================================================= */
+
+    public function routeTypes(Request $request, $id): JsonResponse
+    {
+        $device = DeviceRepo::find((int) $id);
+        $this->checkException('devices', 'show', $device);
+
+        $rows = \Tobuli\Entities\DeviceRouteType::where('device_id', $device->id)
+            ->orderBy('started_at')
+            ->get();
+
+        return response()->json([
+            'ok'    => true,
+            'types' => collect(\Tobuli\Entities\DeviceRouteType::types())
+                ->map(function ($label, $id) {
+                    return ['id' => (int) $id, 'label' => (string) $label];
+                })->values()->all(),
+            'items' => $rows->map(function ($r) {
+                return [
+                    'id'         => (int) $r->id,
+                    'type'       => (int) $r->type,
+                    'type_label' => \Tobuli\Entities\DeviceRouteType::types()[$r->type] ?? '',
+                    'started_at' => \Formatter::time()->convert($r->started_at),
+                    'ended_at'   => \Formatter::time()->convert($r->ended_at),
+                ];
+            })->all(),
+        ]);
+    }
+
+    public function storeRouteType(Request $request, $id): JsonResponse
+    {
+        $device = DeviceRepo::find((int) $id);
+        $this->checkException('devices', 'show', $device);
+
+        try {
+            $data = $request->all();
+            \Facades\Tobuli\Validation\DeviceRoutesTypeFormValidator::validate('create', $data);
+
+            \Tobuli\Entities\DeviceRouteType::create([
+                'user_id'    => $this->user->id,
+                'device_id'  => $device->id,
+                'type'       => $data['type'],
+                'started_at' => \Formatter::time()->reverse($data['started_at']),
+                'ended_at'   => \Formatter::time()->reverse($data['ended_at']),
+            ]);
+
+            return response()->json(['ok' => true]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    public function updateRouteType(Request $request, $id): JsonResponse
+    {
+        $route = \Tobuli\Entities\DeviceRouteType::find((int) $id);
+        if (! $route) {
+            return response()->json(['ok' => false], 404);
+        }
+
+        $this->checkException('device_route_types', 'update', $route);
+
+        try {
+            $data = $request->all();
+            \Facades\Tobuli\Validation\DeviceRoutesTypeFormValidator::validate('update', $data);
+
+            $route->update([
+                'type'       => $data['type'],
+                'started_at' => \Formatter::time()->reverse($data['started_at']),
+                'ended_at'   => \Formatter::time()->reverse($data['ended_at']),
+            ]);
+
+            return response()->json(['ok' => true]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        }
+    }
+
+    public function destroyRouteType(Request $request, $id): JsonResponse
+    {
+        $route = \Tobuli\Entities\DeviceRouteType::find((int) $id);
+        if (! $route) {
+            return response()->json(['ok' => false], 404);
+        }
+
+        $this->checkException('device_route_types', 'remove', $route);
+
+        $route->delete();
+
+        return response()->json(['ok' => true]);
+    }
+
     /**
      * Delete a device.
      */

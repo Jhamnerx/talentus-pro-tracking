@@ -214,8 +214,8 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 2.1 DeviceAlerts (periodo de vigencia por pivote — form pequeño). S/M
 2.2 DeviceConfig (marca/APN/comandos de configuración por SMS). M
 2.3 ObjectsList: columnas configurables + rangos de color por sensor en Fleet (F14). M
-2.4 Popups del admin en el layout v2 (F19). M
-2.5 DeviceRoutesType. S
+2.4 ~~Popups del admin en el layout v2 (F19)~~ ✅ 19-ago (franjas superiores + popups a los 5 s, addon `notification_popops`).
+2.5 ~~DeviceRoutesType~~ ✅ 19-ago (periodos privado/negocio desde el kebab del vehículo, con round-trip de TZ verificado).
 2.6 Import masivo de devices. M
 
 ### Ola 3 — Media y checklists
