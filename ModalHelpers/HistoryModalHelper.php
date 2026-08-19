@@ -180,11 +180,6 @@ class HistoryModalHelper extends ModalHelper
                 ]),
             ];
 
-            // snap_to_road: get() lo aplica sobre las posiciones de cada tramo;
-            // getApi() lo ignoraba (el checkbox de la v2 no hacía nada).
-            $snapToRoad = isset($this->data['snap_to_road'])
-                && ($this->data['snap_to_road'] === 'true' || $this->data['snap_to_road'] == 1);
-
             foreach ($data['groups']->all() as $group) {
 
                 if ($group->getKey() == 'event') {
@@ -394,6 +389,13 @@ class HistoryModalHelper extends ModalHelper
     {
 
         HistoryFormValidator::validate('create', $this->data);
+
+        // snap_to_road: get() ya lo aplicaba sobre las posiciones de cada tramo;
+        // getApi() lo ignoraba (el checkbox de la v2 no hacía nada). Se define
+        // AQUÍ porque aquí es donde se usa — estaba declarado en get() y en esta
+        // función quedaba indefinido.
+        $snapToRoad = isset($this->data['snap_to_road'])
+            && ($this->data['snap_to_road'] === 'true' || $this->data['snap_to_road'] == 1);
 
         $device = $this->getDevice();
 
