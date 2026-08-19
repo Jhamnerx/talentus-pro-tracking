@@ -364,13 +364,12 @@ class DashboardController extends BaseController
 
         $devices = $query->get();
 
+        $mileage = new \Tobuli\Services\DeviceMileageService();
         $rows = [];
         foreach ($devices as $device) {
-            try {
-                $km = (float) $device->getDistanceBetween(substr($from, 0, 10), $to);
-            } catch (\Throwable $e) {
-                $km = 0.0;
-            }
+            // Misma fuente que el Historial (DeviceMileageService), para que el
+            // kilometraje no baile entre pantallas.
+            $km = $mileage->forRange($device, substr($from, 0, 10), $to);
             $rows[] = ['id' => (int) $device->id, 'name' => (string) $device->name, 'km' => round($km, 2)];
         }
 

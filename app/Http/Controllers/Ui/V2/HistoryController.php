@@ -237,11 +237,13 @@ class HistoryController extends BaseController
             'timeline'  => $timeline,
             'sensors'   => $res['sensors'] ?? [],
             'summary'   => [
-                // Km recorrido por ODÓMETRO como el panel legacy (fallback al
-                // stat 'distance' si el device no reporta odómetro).
-                'distance'      => isset($res['distance_sum_odometer']) && $res['distance_sum_odometer']
-                    ? round((float) $res['distance_sum_odometer'], 1) . ' ' . \Formatter::distance()->unit()
-                    : ($res['distance_sum'] ?? null),
+                // Km recorrido: fuente ÚNICA (DeviceMileageService) para que
+                // coincida con el Tablero. La suma por tramos que se usaba antes
+                // perdía el primer kilómetro del rango (ver el servicio).
+                'distance'      => (new \Tobuli\Services\DeviceMileageService())
+                    ->formatted($device, $fromDate . ' ' . $fromTime . ':00', $toDate . ' ' . $toTime . ':59'),
+                // Distancia GPS del pipeline, informativa (haversine punto a punto).
+                'distance_gps'  => $res['distance_sum'] ?? null,
                 'top_speed'     => $res['top_speed'] ?? null,
                 'move_duration' => $res['move_duration'] ?? null,
                 'stop_duration' => $res['stop_duration'] ?? null,

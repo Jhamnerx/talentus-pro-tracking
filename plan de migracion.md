@@ -220,7 +220,7 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 
 ### Ola 3 — Media y checklists ✅ (salvo vídeo, bloqueado por hardware)
 3.1 ~~DeviceMedia + MediaCategories (galería)~~ ✅ 19-ago — rejilla con selección múltiple, descarga, filtro por categoría y borrado. **Pendiente menor**: descarga en ZIP de una selección (el legacy la arma con `ZipArchive`); en v2 se descarga archivo a archivo.
-3.2 DeviceVideo/Video (live + playback Howen/JT808). L — **BLOQUEADO**: no hay ningún equipo con protocolo `jt808`/`howen` en esta instalación (0 de 1.530; la flota es teltonika/tk103/gt06…), así que no es verificable. El flag `video` ya viaja por device en el feed de flota para cuando exista hardware.
+3.2 DeviceVideo/Video (live + playback Howen/JT808) — **PENDIENTE de la integración del decoder**. La entrada **Vídeo en vivo** ya está **visible** en el kebab del vehículo, gateada por `data-need="video"` (solo aparece en equipos `jt808`/`howen`), y avisa de que la reproducción llega con el decoder. Hoy no hay ningún equipo compatible en la flota (0 de 1.530: teltonika/tk103/gt06…), por eso no es verificable todavía.
 3.3 ~~Checklist + ChecklistTemplates~~ ✅ 19-ago — plantillas con actividades y ejecución por servicio (marcar, resultado pass/fail, fotos, notas y firma). Reglas del legacy respetadas: sin resultado + foto no se marca, y no se firma con actividades pendientes.
 
 ### Ola 4 — Cuenta/plataforma restante ✅ COMPLETA (19-ago)
@@ -230,7 +230,7 @@ resto de D/F por severidad. Muchas son fixes de horas, no días.
 4.4 ~~SmsGateway helpers~~ ✅ 19-ago — ya cubiertos con F16 (`send_test_sms` y `clear_queue`); `test_sms` del legacy es solo la vista del formulario, que en v2 es el modal.
 
 ### Ola 5 — Comercial y utilidades ✅ (5.1 no aplica)
-5.1 Subscriptions/DeviceSubscription/DevicePlans — **NO APLICA en esta instalación** (evaluado 19-ago): no hay ninguna pasarela de pago habilitada (`config('payments')` sin entradas activas), 0 suscripciones, 0 `device_plans` y el plugin `subscriptions` sin activar. Los 4 planes de facturación existentes se asignan desde el panel de administración (601 usuarios), flujo que no pasa por la UI de usuario. Construir la superficie de compra sin pasarela ni datos no sería verificable.
+5.1 Subscriptions/DeviceSubscription/DevicePlans — **PENDIENTE, cambia de sistema**: los pagos pasarán al **ERP de Talentus**, así que no se migra el flujo de compra del legacy. Estado actual comprobado (19-ago): sin pasarelas habilitadas, 0 suscripciones y 0 `device_plans`; los 4 planes de facturación se asignan desde el panel de administración (601 usuarios). Queda a la espera de definir la integración con el ERP.
 5.2 ~~Lookup/Docs/LoginAs/Addresses~~ ✅ 19-ago — las tablas Lookup de estado (inactivo, nunca conectado, expirado) se resuelven como filtros de **Flota** en SQL, y el widget del tablero enlaza a cada una (igual que el legacy enlazaba a su Lookup). LoginAs y la documentación de la API quedan como accesos directos del hub Admin. El buscador de direcciones ya estaba en Herramientas.
 
 ### Ola 6 — Público (fuera del shell) ✅ (19-ago)
@@ -245,6 +245,33 @@ Verificado con un enlace vigente real (HTTP 200).
 
 > **Fuera de alcance**: reescribir el mapa público con el stack v2 (marcadores en vivo, polling y
 > capas propias). Es un módulo completo, no un restyle, y hoy el mapa legacy cumple.
+
+---
+
+## 4 bis · Kilometraje: fuente única (19-ago)
+
+El mismo vehículo y rango daban tres números distintos. Medido con un día
+sintético de 20 posiciones y odómetro 100.000 → 119.000 m (**19 km reales**):
+
+| Origen | Antes | Ahora |
+| --- | --- | --- |
+| Tablero (`getDistanceBetween`) | 19.0 ✔ | 19.0 |
+| Historial (suma de odómetro por tramo) | **18.0 ✘** | 19.0 |
+| Historial · distancia GPS (haversine) | 18.99 | 18.99 *(informativa)* |
+| Reporte 78 · Odómetro diario | 19 ✔ | 19 |
+
+El fallo estaba en la suma por tramos del Historial: solo acumula los tramos de
+conducción, y el punto inicial del rango cae en la parada previa, así que perdía
+el primer kilómetro.
+
+**Canónico:** `Tobuli\Services\DeviceMileageService` — última lectura del
+cuentakilómetros menos la primera del rango (con caída a `totaldistance` si el
+equipo no reporta odómetro). Es el criterio que ya usaba el reporte de odómetro
+diario, el más generado de la instalación. Lo consumen Historial y Tablero.
+
+La distancia GPS del pipeline se conserva como dato informativo
+(`summary.distance_gps`): difiere ~0,05 % por ser haversine punto a punto, y es
+la que siguen usando los reportes que miden recorrido por tramo o por conductor.
 
 ---
 

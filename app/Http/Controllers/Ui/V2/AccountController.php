@@ -229,7 +229,9 @@ class AccountController extends BaseController
             $items[] = [
                 'key'   => (string) $key,
                 'title' => (string) ($l['title'] ?? $key),
-                'flag'  => ! empty($l['flag']) ? asset('assets/images/flags/' . $l['flag']) : null,
+                // Las banderas viven en assets/images/header/ (helper asset_flag),
+                // no en un directorio flags/ — por eso no se veían.
+                'flag'  => asset_flag((string) $key),
                 'dir'   => (string) ($l['dir'] ?? 'ltr'),
             ];
         }

@@ -1828,6 +1828,19 @@
       if (act === "history")
         location.href = "/ui/v2/history?device=" + id + "&range=" + (it.getAttribute("data-range") || "today");
       else if (act === "follow") openFollow(id);
+      else if (act === "device_video") {
+        // Pendiente: reproducción en vivo y grabaciones (decoder JT808/Howen).
+        if (window.tpModal) {
+          tpModal.open({
+            title: "Vídeo a bordo",
+            size: "sm",
+            body:
+              '<p class="tp-text-sm" style="margin:0 0 8px;">Este equipo reporta con un protocolo de vídeo compatible.</p>' +
+              '<p class="tp-text-sm tp-text-muted" style="margin:0;">La reproducción en vivo y las grabaciones se habilitarán con la integración del decoder.</p>',
+            buttons: [{ label: "Entendido", variant: "primary", close: true }],
+          });
+        }
+      }
       else if (act === "device_media") {
         var dMe = null;
         for (var iMe = 0; iMe < state.devices.length; iMe++) {
