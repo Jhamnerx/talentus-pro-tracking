@@ -28,7 +28,10 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 > Dashboard** (`scopeEvents` = propios + alertas compartidas en las 6 queries, + `convert()` en
 > notificaciones).
 >
-> **Quedan abiertos:** S7–S9 · D7 · D10–D12 · D15–D16 · lista F (F1/F2/F3/F5/F6/F7…).
+> **Tercer lote (7-ago):** D7 (visibilidad de geocercas/POIs + no reactivar al editar) y F2
+> (import/export nativos de geocercas y POIs).
+>
+> **Quedan abiertos:** S7–S9 · D10–D12 · D15–D16 · lista F (F1/F3/F5/F6/F7…).
 
 ---
 
@@ -58,7 +61,7 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | D4 | ✅ **CORREGIDO 6-ago** — `send_to_ftp` vuelve a ser un **input de URL** (`ftp://usuario:contraseña@host:puerto`, prefill desde `report.ftp`); el payload envía el string y `ReportsController` expone `ftp` como string (no bool). reports.js ?v=10 | `reports.js`, `ReportsController.php` | CRÍTICO |
 | D5 | ✅ **SALVAGUARDA 6-ago** — `AlertsController@update`: si el request no trae la clave `devices`, se inyecta la asignación actual antes de `AlertModalHelper::edit()` (evita el `sync([])` destructivo del modo api). En legacy web no ocurría (loader = no-op sin secuencia); la rama api es de la API móvil | `Ui/V2/AlertsController.php` | CRÍTICO |
 | D6 | ✅ **CORREGIDO 6-ago** — `mergeSelectedDevices` antepone `"s;0;"` (deselect-all) → la selección es exacta y `syncLoader` ya desasigna los vehículos quitados de un horario | `Ui/V2/CommandsController.php` | CRÍTICO |
-| D7 | Editar una geocerca **desactivada la reactiva** (`active: 1` forzado en cada guardado); no existe toggle de `active` para geocercas/POIs | `live-zones.js:350` | CRÍTICO |
+| D7 | ✅ **CORREGIDO 7-ago** — el update ya no manda `active:1` (solo el create) y hay **checkbox de visibilidad** por fila en geocercas y POIs → `POST zones/{id}/toggle` · `POST pois/{id}/toggle` (paridad `change_active`). El feed de POIs expone `active`/`description` y el mapa omite los inactivos | `live-zones.js`, `live-pois.js`, `ZonesController`, `MapLayersController` | CRÍTICO |
 | D8 | ✅ **CORREGIDO 6-ago (2)** — el meta devuelve `called_at` con `convert()` en formato ISO (`Y-m-d H:i:s`), que el JS sí parsea; editar ya no sobrescribe la fecha | `Ui/V2/CallActionsController.php` | MEDIO |
 | D9 | ✅ **CORREGIDO 6-ago (2)** — al editar con `adapted ≠ devices` el controller preserva la asignación actual (el modo api hacía `sync([])`) | `Ui/V2/CommandsController.php` | MEDIO |
 | D10 | Tareas: `custom_fields_task` no se guardan ni se muestran (falta `CustomValuesService::saveCustomValues` + panel) | `Ui/V2/TasksController.php:166-191` | CRÍTICO (con addon) |
@@ -74,7 +77,7 @@ huecos de seguridad (IDOR, gates ausentes) y features que se rompen con addons a
 | # | Defecto | Sev |
 |---|---------|-----|
 | F1 | `snap_to_road` es **no-op** en Historial v2 (`getApi()` no lee la clave; solo `get()` la implementa) → mapa y export divergen | CRÍTICO |
-| F2 | Import/Export de **geocercas y POIs** desde v2 abren fragmentos legacy sin layout → botones muertos. Export de geocercas nativo inexistente | CRÍTICO |
+| F2 | ✅ **CORREGIDO 7-ago** — modales v2 nativos: export por form-POST a los endpoints legacy de descarga (`geofences.export_create` / `pois.export.store`) con tipo + selección; import por FormData (`api.zones.import` y el nuevo `api.pois.import`, que exige `map_icon_id` como el legacy). Botones de importar gateados por `perm(...,'edit')` | — |
 | F3 | Rutas: `export_groups` → **500** (tipo no mapeado); `export_active/inactive` exportan TODO (no viajan ids) | MEDIO |
 | F4 | ✅ **CORREGIDO 6-ago (2)** — `templates()` gatea por `perm(modulo,'view')` y solo llama `createData()` con `edit` | — |
 | F5 | Historial: data-log **siempre ascendente** (formato de `sorting` que el helper no reconoce); `distance_sum` ≠ legacy (no usa el recálculo por odómetro); borrar posiciones (`history.remove`) sin superficie | MEDIO |
@@ -140,8 +143,8 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 |---|---|---|
 | Live shell + mapa + widgets + kebab | ✅/⚠️ | F8, F12 |
 | Fleet + modal device (8 tabs) | ⚠️ | ~~D1~~✅, D11, F9, F10, F17, ~~S6~~✅, S7 |
-| Geocercas | ⚠️ | ~~S4~~ falso positivo, ~~D2~~✅, D7, D12, F2, F7 (grupos solo lectura) |
-| POIs | ⚠️ | D7 (active), F2; grupos solo lectura |
+| Geocercas | ⚠️ | ~~S4~~ falso positivo, ~~D2, D7, F2~~✅; D12, F7 (grupos solo lectura) |
+| POIs | ✅/⚠️ | ~~D7, F2~~✅; grupos solo lectura |
 | Rutas | ⚠️ | F3; CRUD+grupos+tabla ✅ |
 | Alertas (reglas + modal 6 tabs) | ✅/⚠️ | ~~D5~~✅ salvaguarda |
 | Eventos (página) | ✅/⚠️ | ~~D13, D14~~✅, F6 |
