@@ -209,6 +209,11 @@ class ShellController extends BaseController
                 return response()->json(['ok' => false, 'error' => 'invalid_preference'], 422);
             }
             Cookie::queue($key, $value, 60 * 24 * 365);
+            // Paridad legacy (MyAccountController::changeMap): la cuenta demo
+            // aplica la preferencia en el navegador pero nunca la persiste.
+            if (isDemoUser()) {
+                return response()->json(['ok' => true, 'demo' => true]);
+            }
             $user = $this->user;
             if ($user) {
                 try {
@@ -232,6 +237,11 @@ class ShellController extends BaseController
         }
 
         Cookie::queue($key, $value, 60 * 24 * 365);
+
+        // Idem para tema/densidad: en demo solo cookie (MyAccountSettingsController::changeMapSettings).
+        if (isDemoUser()) {
+            return response()->json(['ok' => true, 'demo' => true]);
+        }
 
         $user = $this->user;
         if ($user && method_exists($user, 'setSetting')) {
@@ -304,6 +314,12 @@ class ShellController extends BaseController
             'status'  => $request->input('status') ? 1 : 0,
             'list'    => $list,
         ];
+
+        // El legacy (MyAccountSettingsModalHelper::edit) rechaza el guardado en
+        // cuentas demo; aquí se responde ok sin persistir para no romper la UI.
+        if (isDemoUser()) {
+            return response()->json(['ok' => true, 'demo' => true]);
+        }
 
         $this->user->setSettings('widgets', $widgets, true);
 

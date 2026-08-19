@@ -24,6 +24,8 @@
     routesUrl: root.getAttribute("data-routes-url"),
     exportUrl: root.getAttribute("data-export-url"),
     positionUrl: root.getAttribute("data-position-url"),
+    positionsDestroyUrl: root.getAttribute("data-positions-destroy-url"),
+    canRemove: root.getAttribute("data-can-remove") === "1",
   };
   var MAP_CFG = (function () {
     try { return JSON.parse(document.getElementById("tp-history-map-config").textContent || "{}"); }
@@ -1030,6 +1032,47 @@
     else setOverlay(key, on);
   }
 
+  /* ===== BORRADO DE POSICIONES (perm history.remove, paridad legacy) ===== */
+  function selectedPositionIds() {
+    return Array.prototype.slice
+      .call(document.querySelectorAll("#tp-hist-datalog-body [data-pos-id]:checked"))
+      .map(function (c) { return parseInt(c.getAttribute("data-pos-id"), 10); })
+      .filter(function (n) { return n > 0; });
+  }
+  function syncDeleteButton() {
+    var btn = $("#tp-hist-datalog-del");
+    if (!btn) return;
+    var n = selectedPositionIds().length;
+    btn.disabled = n === 0;
+    btn.textContent = n ? T("delete", "Eliminar") + " (" + n + ")" : T("delete", "Eliminar");
+  }
+  function deleteSelectedPositions() {
+    var ids = selectedPositionIds();
+    if (!ids.length || !state.deviceId) return;
+    if (!window.confirm(T("do_delete", "¿Eliminar los registros seleccionados?"))) return;
+    fetch(CFG.positionsDestroyUrl, {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": (window.Talentus && window.Talentus.csrf) || "",
+      },
+      body: JSON.stringify({ device: state.deviceId, ids: ids }),
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (j) {
+        if (j && j.ok) {
+          loadDataLog(state.dl.page);
+          // El tail y el recorrido cambian: recargar el tramo mostrado.
+          if (typeof load === "function") load();
+        } else if (window.tpModal) {
+          tpModal.toast(j && j.error === "forbidden" ? "Sin permiso para eliminar." : "No se pudieron eliminar.", "error");
+        }
+      })
+      .catch(function () {});
+  }
+
   /* ===== REGISTRO DE DATOS ===== */
   function loadDataLog(page) {
     if (!state.range || !state.deviceId) return;
@@ -1044,14 +1087,20 @@
         state.dl.last = j.last || 1;
         var cols = j.columns || [];
         // Cabecera dinámica: base + TODOS los parámetros del XML `other`.
-        $("#tp-hist-datalog-head").innerHTML = "<tr>" + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "</tr>";
+        // Columna de selección solo si el usuario puede borrar posiciones
+        var selHead = CFG.canRemove ? '<th class="tp-datalog__sel"><input type="checkbox" data-pos-all></th>' : "";
+        $("#tp-hist-datalog-head").innerHTML = "<tr>" + selHead + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "</tr>";
         $("#tp-hist-datalog-body").innerHTML = (j.rows || []).map(function (m) {
-          return "<tr>" + cols.map(function (c) {
+          var selCell = CFG.canRemove
+            ? '<td class="tp-datalog__sel"><input type="checkbox" data-pos-id="' + (m.id || 0) + '"></td>'
+            : "";
+          return "<tr>" + selCell + cols.map(function (c) {
             var v = m[c.key];
             if (c.key === "valid") v = v ? "sí" : "no";
             return "<td>" + esc(v == null || v === "" ? "—" : v) + "</td>";
           }).join("") + "</tr>";
         }).join("");
+        syncDeleteButton();
         $("#tp-hist-datalog-info").textContent = T("page", "Página") + " " + j.page + " / " + j.last + " · " + (j.total || 0);
         $("#tp-hist-datalog-prev").disabled = j.page <= 1;
         $("#tp-hist-datalog-next").disabled = j.page >= j.last;
@@ -1249,6 +1298,17 @@
         pinBtn.setAttribute("aria-pressed", on ? "true" : "false");
         setTimeout(function () { drawGraph(); updateFooterVar(); state.map && state.map.invalidateSize(); }, 60);
       });
+    var dlDel = $("#tp-hist-datalog-del");
+    if (dlDel) dlDel.addEventListener("click", deleteSelectedPositions);
+    $("#tp-hist-datalog-body").addEventListener("change", function (e) {
+      if (e.target.matches("[data-pos-id]")) syncDeleteButton();
+    });
+    $("#tp-hist-datalog-head").addEventListener("change", function (e) {
+      if (!e.target.matches("[data-pos-all]")) return;
+      var on = e.target.checked;
+      $("#tp-hist-datalog-body").querySelectorAll("[data-pos-id]").forEach(function (c) { c.checked = on; });
+      syncDeleteButton();
+    });
     $("#tp-hist-datalog-prev").addEventListener("click", function () { if (state.dl.page > 1) loadDataLog(state.dl.page - 1); });
     $("#tp-hist-datalog-next").addEventListener("click", function () { if (state.dl.page < state.dl.last) loadDataLog(state.dl.page + 1); });
     var dlLimit = $("#tp-hist-datalog-limit");

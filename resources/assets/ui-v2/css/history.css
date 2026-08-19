@@ -1656,3 +1656,15 @@
   box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.15));
   white-space: nowrap;
 }
+
+/* Columna de selección del registro de datos (borrado de posiciones) */
+.tp-history__datalog .tp-datalog__sel {
+  width: 30px;
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 4px;
+}
+.tp-history__datalog .tp-datalog__sel input {
+  cursor: pointer;
+  margin: 0;
+}

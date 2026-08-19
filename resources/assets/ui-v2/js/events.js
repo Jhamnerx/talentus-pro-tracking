@@ -175,6 +175,12 @@
     state.currentBase = id;
   }
 
+  // Texto del evento: con el plugin event_section_alert activo el backend manda
+  // el nombre de la alerta en `title` (paridad Event::getTitleAttribute()).
+  function evTitle(ev) {
+    return (ev && (ev.title || ev.message || ev.type)) || "";
+  }
+
   // ── Geocodificación perezosa ───────────────────────────────
   function parseGeo(text) {
     if (text == null) return "";
@@ -245,7 +251,7 @@
       '><span class="tp-events__dot tp-events__dot--' +
       sevClass(ev.severity) +
       '"></span><span class="tp-events__row-main"><span class="tp-events__row-titleline"><span class="tp-events__row-title">' +
-      esc(ev.message || ev.type) +
+      esc(evTitle(ev)) +
       "</span>" +
       (ev.attended
         ? '<span class="tp-events__attended"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Atendido</span>'
@@ -282,7 +288,7 @@
       '</div><div class="tp-ev-popup__type tp-ev-popup__type--' +
       sevClass(ev.severity) +
       '">' +
-      esc(ev.message || ev.type) +
+      esc(evTitle(ev)) +
       '</div><dl class="tp-ev-popup__defs"><dt>Hora</dt><dd>' +
       esc(ev.time) +
       "</dd>" +
@@ -335,7 +341,7 @@
     var body =
       '<div class="tp-scope tp-form"><div class="tp-form__grid">' +
       '<div class="tp-form__field"><span class="tp-form__label">Evento</span>' +
-      '<input class="tp-input" value="' + esc((ev.message || ev.type) + " · " + (ev.device_name || "")) + '" readonly></div>' +
+      '<input class="tp-input" value="' + esc((evTitle(ev)) + " · " + (ev.device_name || "")) + '" readonly></div>' +
       '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Tipo de respuesta</span>' +
       '<select class="tp-input" data-ca-resp>' +
       RESP_TYPES.map(function (t) { return '<option value="' + esc(t.type) + '">' + esc(t.title) + "</option>"; }).join("") +
@@ -603,7 +609,7 @@
     var head = ["Evento", "Vehiculo", "Fecha", "Latitud", "Longitud", "Atendido"];
     var lines = [head.join(",")];
     state.events.forEach(function (ev) {
-      lines.push([ev.message || ev.type, ev.device_name || "", ev.time || "", ev.lat != null ? ev.lat : "", ev.lng != null ? ev.lng : "", ev.attended ? "Si" : "No"].map(csvCell).join(","));
+      lines.push([evTitle(ev), ev.device_name || "", ev.time || "", ev.lat != null ? ev.lat : "", ev.lng != null ? ev.lng : "", ev.attended ? "Si" : "No"].map(csvCell).join(","));
     });
     var blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
     var a = document.createElement("a");
@@ -632,10 +638,10 @@
         var g = L.layerGroup();
         pts.forEach(function (p) {
           L.circleMarker([p.lat, p.lng], { radius: 5, color: "#fff", weight: 1, fillColor: sevColor(p.severity), fillOpacity: 0.9 })
-            .bindTooltip(esc((p.message || "") + " · " + (p.device_name || "")))
+            .bindTooltip(esc(evTitle(p) + " · " + (p.device_name || "")))
             .bindPopup(
               '<div class="tp-ev-popup"><div class="tp-ev-popup__title">' + esc(p.device_name || "") + "</div>" +
-              '<div class="tp-ev-popup__type tp-ev-popup__type--' + sevClass(p.severity) + '">' + esc(p.message || "") + "</div>" +
+              '<div class="tp-ev-popup__type tp-ev-popup__type--' + sevClass(p.severity) + '">' + esc(evTitle(p)) + "</div>" +
               '<dl class="tp-ev-popup__defs"><dt>Hora</dt><dd>' + esc(p.time) + "</dd><dt>Coordenadas</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
             )
             .addTo(g);

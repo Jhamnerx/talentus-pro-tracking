@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Ui\V2;
 
+use App\Exceptions\PermissionException;
 use App\Transformers\Device\DeviceIconTransformer;
 use CustomFacades\ModalHelpers\HistoryModalHelper;
 use Illuminate\Http\JsonResponse;
@@ -320,6 +321,9 @@ class HistoryController extends BaseController
         foreach ($data as $m) {
             $oa  = $m['other_array'] ?? ($m['other_arr'] ?? []);
             $row = [
+                // id de la posición: no es columna visible, lo consume el
+                // borrado de posiciones (perm history.remove).
+                'id'          => isset($m['id']) ? (int) $m['id'] : null,
                 'time'        => $m['time'] ?? null,
                 'server_time' => $m['server_time'] ?? null,
                 'latitude'    => $m['latitude'] ?? null,
@@ -350,6 +354,39 @@ class HistoryController extends BaseController
     }
 
     /** Divide 'Y-m-d H:i[:s]' o 'Y-m-dTH:i' en [date, time]. */
+    /**
+     * Borrar posiciones seleccionadas del registro de datos.
+     * DELETE history/positions  — delega en el helper legacy, que aplica
+     * checkException('history','remove') + ('devices','own') y regenera el tail.
+     */
+    public function destroyPositions(Request $request): JsonResponse
+    {
+        $ids = array_values(array_filter(array_map(
+            'intval',
+            (array) $request->input('ids', [])
+        )));
+
+        if (! $ids) {
+            return response()->json(['ok' => false, 'error' => 'no_ids'], 422);
+        }
+
+        try {
+            HistoryModalHelper::setUser($this->user);
+            HistoryModalHelper::setApi(true);
+            HistoryModalHelper::setData([
+                'device_id' => (int) $request->input('device', 0),
+                'ids'       => $ids,
+            ]);
+            HistoryModalHelper::deletePositions();
+        } catch (PermissionException $e) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()], 500);
+        }
+
+        return response()->json(['ok' => true, 'deleted' => count($ids)]);
+    }
+
     private function splitDateTime(string $dt): array
     {
         $dt = trim(str_replace('T', ' ', $dt));

@@ -103,8 +103,15 @@ class EventsController extends BaseController
         // sub-usuarios con alertas compartidas veían la lista vacía.
         $query = Event::userAccessible($this->user)
             ->with(['device' => function ($q) {
-                $q->with(['icon', 'traccar']);
+                // sensors: DeviceIconTransformer los consulta para el color del
+                // marcador; sin eager-load eran ~1 query por evento.
+                $q->with(['icon', 'traccar', 'sensors']);
             }])
+            // Con el plugin event_section_alert el título sale del nombre de la
+            // alerta: eager-load para no disparar N+1 (igual que el legacy).
+            ->when(settings('plugins.event_section_alert.status'), function ($q) {
+                $q->with('alert');
+            })
             ->orderBy('time', 'desc');
 
         // Rango absoluto (date_from/date_to): tiene prioridad sobre la ventana
@@ -175,6 +182,10 @@ class EventsController extends BaseController
                 'type'        => $t,
                 'severity'    => $this->eventSeverity($t),
                 'message'     => (string) $e->message,
+                // Título con el plugin event_section_alert aplicado: cuando está
+                // activo el legacy muestra el NOMBRE DE LA ALERTA en vez del
+                // mensaje (Event::getTitleAttribute()).
+                'title'       => (string) $e->title,
                 // Solo eventos con alerta pueden registrarse como acción de
                 // llamada ("Atender"): gatea el botón en el popup.
                 'alert_id'    => $e->alert_id ? (int) $e->alert_id : null,
@@ -256,7 +267,12 @@ class EventsController extends BaseController
             $query->where('message', 'like', '%' . $q . '%');
         }
 
-        $rows   = $query->limit($cap + 1)->get(['id', 'type', 'message', 'device_id', 'latitude', 'longitude', 'time']);
+        $query->when(settings('plugins.event_section_alert.status'), function ($q) {
+            $q->with('alert');
+        });
+        // alert_id es necesario para que Event::getTitleAttribute() resuelva
+        // el nombre de la alerta cuando el plugin está activo.
+        $rows   = $query->limit($cap + 1)->get(['id', 'type', 'message', 'alert_id', 'device_id', 'latitude', 'longitude', 'time']);
         $capped = $rows->count() > $cap;
         if ($capped) {
             $rows = $rows->slice(0, $cap);
@@ -269,6 +285,7 @@ class EventsController extends BaseController
                 'lng'         => (float) $e->longitude,
                 'severity'    => $this->eventSeverity((string) $e->type),
                 'message'     => (string) $e->message,
+                'title'       => (string) $e->title,
                 'device_name' => $e->device->name ?? null,
                 'time'        => \Formatter::time()->convert($e->time),
             ];

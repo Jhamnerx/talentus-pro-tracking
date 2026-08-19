@@ -1187,6 +1187,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('history',        ['as' => 'api.history',       'uses' => 'Ui\V2\HistoryController@data']);
         Route::get('history/devices', ['as' => 'api.history.devices', 'uses' => 'Ui\V2\HistoryController@devices']);
         Route::get('history/messages', ['as' => 'api.history.messages', 'uses' => 'Ui\V2\HistoryController@messages']);
+        Route::delete('history/positions',       ['as' => 'api.history.positions.destroy', 'uses' => 'Ui\V2\HistoryController@destroyPositions']);
         // Reportes (tabs guardados/logs + modal Generar/Guardar sobre helpers legacy)
         Route::get('reports/meta',         ['as' => 'api.reports.meta',        'uses' => 'Ui\V2\ReportsController@meta']);
         Route::get('reports/saved',        ['as' => 'api.reports.saved',       'uses' => 'Ui\V2\ReportsController@saved']);

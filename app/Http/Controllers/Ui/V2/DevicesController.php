@@ -1330,6 +1330,12 @@ class DevicesController extends BaseController
             try {
                 $data['recent_events'] = $device->events()
                     ->where('user_id', $this->user->id)
+                    // Con el plugin activo, Event::getTitleAttribute() lee
+                    // $event->alert->name: eager-load para evitar N+1
+                    // (idéntico a DeviceWidgetsController legacy).
+                    ->when(settings('plugins.event_section_alert.status'), function ($query) {
+                        $query->with('alert');
+                    })
                     ->latest()->limit(10)->get();
             } catch (\Throwable $e) {
                 $data['recent_events'] = collect();

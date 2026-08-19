@@ -4,7 +4,7 @@
 @section('rail-active', 'history')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/history.css') }}?v=18">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/history.css') }}?v=19">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
@@ -13,6 +13,8 @@
 @section('workspace')
     <div class="tp-history tp-history--pinned" id="tp-history" data-data-url="{{ route('ui.v2.api.history') }}"
         data-messages-url="{{ route('ui.v2.api.history.messages') }}"
+        data-positions-destroy-url="{{ route('ui.v2.api.history.positions.destroy') }}"
+        data-can-remove="{{ Auth::user()->perm('history', 'remove') ? 1 : 0 }}"
         data-devices-url="{{ route('ui.v2.api.history.devices') }}" data-geo-url="{{ route('address.get') }}"
         {{-- Dirección del punto gateada por el plugin igual que el legacy (History/index.blade → @if plugins.history_section_address.status) --}}
         data-addr-on="{{ settings('plugins.history_section_address.status') ? '1' : '' }}"
@@ -515,6 +517,12 @@
                 <div class="tp-history__datalog-foot">
                     <span class="tp-text-xs tp-text-muted" id="tp-hist-datalog-info">—</span>
                     <div class="tp-history__datalog-pager">
+                        {{-- Borrar posiciones seleccionadas (legacy: acción multi
+                             del data-log, perm history.remove) --}}
+                        @if (Auth::user()->perm('history', 'remove'))
+                            <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-hist-datalog-del" type="button"
+                                style="color:#ef4444;" disabled>{{ trans('global.delete') }}</button>
+                        @endif
                         {{-- Orden del registro: el backend ya lo soporta (sorting) --}}
                         <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-hist-datalog-sort" type="button"
                             title="{{ trans('front.date') }}" data-sort="asc">↑ {{ trans('front.date') }}</button>
@@ -620,5 +628,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=27"></script>
+    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=28"></script>
 @endpush
