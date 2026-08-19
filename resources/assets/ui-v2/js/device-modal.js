@@ -43,6 +43,10 @@
     formUrl: "/ui/v2/api/devices/{id}/form",
     storeUrl: "/ui/v2/api/devices",
     updateUrl: "/ui/v2/api/devices/{id}",
+    // Beacons: kind distinto y endpoints propios (DeviceModalHelper rechaza
+    // beacons; el legacy los edita por BeaconsController).
+    beaconStoreUrl: "/ui/v2/api/beacons",
+    beaconUpdateUrl: "/ui/v2/api/beacons/{id}",
     destroyUrl: "/ui/v2/api/devices/{id}",
     canCreate: true,
     canEdit: true,
@@ -738,6 +742,168 @@
   // Form nativo mínimo (paridad legacy: name + show_widget); las
   // credenciales FTP las genera el job del backend al crear.
   // --------------------------------------------------------------------------
+  /* ===== Configuración remota del GPS en el alta (able configure_device) ===== */
+  function wireConfigurator(scope) {
+    var chk = scope.querySelector('[data-toggle-panel="configurator"]');
+    var panel = scope.querySelector('[data-panel="configurator"]');
+    if (!chk || !panel) return;
+
+    var sync = function () {
+      panel.style.display = chk.checked ? "" : "none";
+    };
+    chk.addEventListener("change", sync);
+    sync();
+
+    // El selector de APN rellena nombre/usuario/contraseña, igual que el
+    // legacy (DeviceConfig/form.blade → device_config.get_apn_data).
+    var apnSel = scope.querySelector("[data-apn-config]");
+    if (!apnSel) return;
+
+    var fill = function () {
+      var id = apnSel.value;
+      if (!id) return;
+      tpModal
+        .fetchJSON(apnSel.getAttribute("data-apn-url") + "/" + id)
+        .then(function (res) {
+          var d = res.data && res.data.success;
+          if (!d) return;
+          var set = function (sel, v) {
+            var el = scope.querySelector(sel);
+            if (el) el.value = v == null ? "" : v;
+          };
+          set("[data-apn-name]", d.apn_name);
+          set("[data-apn-username]", d.apn_username);
+          set("[data-apn-password]", d.apn_password);
+        })
+        .catch(function () {});
+    };
+    apnSel.addEventListener("change", fill);
+    fill();
+  }
+
+  /* ===== Tab Historial: mantenimientos / suspensiones ===== */
+  // Reusa los endpoints legacy device_maintenances.* (validan can('edit') y
+  // sincronizan con el ERP); aquí solo se pinta y se envía.
+  function wireMaintenances(scope) {
+    var root = scope.querySelector("[data-tp-maint]");
+    if (!root) return;
+
+    var cfg;
+    try {
+      cfg = JSON.parse(root.querySelector("[data-maint-cfg]").textContent || "null");
+    } catch (e) {
+      cfg = null;
+    }
+    if (!cfg) return;
+
+    var rowsEl = root.querySelector("[data-maint-rows]");
+
+    var BADGES = {
+      mantenimiento: { label: "Mantenimiento", color: "#3b82f6" },
+      suspension: { label: "Suspensión", color: "#ef4444" },
+      reactivacion: { label: "Reactivación", color: "#22c55e" },
+    };
+
+    function empty(msg) {
+      rowsEl.innerHTML =
+        '<tr><td colspan="7" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + esc(msg) + "</td></tr>";
+    }
+
+    function load() {
+      empty("Cargando…");
+      tpModal
+        .fetchJSON(cfg.list)
+        .then(function (res) {
+          var items = (res.data && res.data.items) || [];
+          if (!items.length) return empty("Sin registros aún.");
+
+          rowsEl.innerHTML = items
+            .map(function (m) {
+              var b = BADGES[m.tipo] || { label: m.tipo, color: "#64748b" };
+              return (
+                "<tr>" +
+                '<td><span class="tp-maint-badge" style="background:' + b.color + ';">' + esc(b.label) + "</span></td>" +
+                "<td>" + esc(m.fecha) + "</td>" +
+                "<td>" + esc(m.motivo || "—") + "</td>" +
+                "<td>" + esc(m.notas || "—") + "</td>" +
+                '<td style="font-size:12px;">' + esc(m.user || "—") + "</td>" +
+                '<td title="' + (m.synced ? "Sincronizado" : "Pendiente de sincronizar") + '">' +
+                (m.synced ? "✅" : "⏳") + "</td>" +
+                '<td style="text-align:center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" ' +
+                'data-maint-del="' + m.id + '" style="color:#ef4444;">×</button></td>' +
+                "</tr>"
+              );
+            })
+            .join("");
+        })
+        .catch(function () {
+          empty("Error al cargar los datos.");
+        });
+    }
+
+    root.querySelector("[data-maint-save]").addEventListener("click", function (btn) {
+      var el = btn.currentTarget;
+      var motivo = (root.querySelector("[data-maint-motivo]").value || "").trim();
+      if (!motivo) {
+        tpModal.toast("El campo Motivo es obligatorio.", "warning");
+        return;
+      }
+      el.disabled = true;
+      tpModal
+        .fetchJSON(cfg.store, {
+          method: "POST",
+          json: {
+            tipo: root.querySelector("[data-maint-tipo]").value,
+            fecha: root.querySelector("[data-maint-fecha]").value,
+            motivo: motivo,
+            notas: (root.querySelector("[data-maint-notas]").value || "").trim(),
+          },
+        })
+        .then(function (res) {
+          el.disabled = false;
+          if (res.ok && res.data && res.data.status === 1) {
+            root.querySelector("[data-maint-motivo]").value = "";
+            root.querySelector("[data-maint-notas]").value = "";
+            tpModal.toast("Registro guardado.", "success");
+            load();
+            return;
+          }
+          var errs = (res.data && res.data.errors) || {};
+          var first = Object.keys(errs)[0];
+          tpModal.toast(
+            first ? [].concat(errs[first])[0] : (res.data && res.data.message) || "No se pudo guardar.",
+            "error",
+          );
+        })
+        .catch(function () {
+          el.disabled = false;
+          tpModal.toast("Error de red.", "error");
+        });
+    });
+
+    rowsEl.addEventListener("click", function (e) {
+      var del = e.target.closest("[data-maint-del]");
+      if (!del) return;
+      tpModal
+        .confirm({ title: "Eliminar registro", message: "¿Eliminar este registro del historial?", danger: true, confirmLabel: "Eliminar" })
+        .then(function (ok) {
+          if (!ok) return;
+          tpModal
+            .fetchJSON(cfg.destroy.replace("{id}", del.getAttribute("data-maint-del")), { method: "DELETE" })
+            .then(function (res) {
+              if (res.ok && res.data && res.data.status === 1) {
+                tpModal.toast("Registro eliminado.", "success");
+                load();
+              } else {
+                tpModal.toast("No se pudo eliminar.", "error");
+              }
+            });
+        });
+    });
+
+    load();
+  }
+
   function wireCamerasTab(scope) {
     var root = scope.querySelector("[data-tp-cameras]");
     if (!root) return;
@@ -1591,10 +1757,12 @@
   // --------------------------------------------------------------------------
   // Carga del HTML del formulario
   // --------------------------------------------------------------------------
-  function fetchFormHtml(id) {
+  function fetchFormHtml(id, kind) {
     var url = id
       ? CFG.formUrl.replace("{id}", encodeURIComponent(id))
       : CFG.formNewUrl;
+    // El alta de beacon pide el form con el set de tabs reducido.
+    if (!id && kind === "beacon") url += (url.indexOf("?") === -1 ? "?" : "&") + "kind=beacon";
     return tpModal.fetchJSON(url, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
         throw new Error((res.data && res.data.message) || "form_load_failed");
@@ -1725,7 +1893,7 @@
     };
 
     var dlg = tpModal.open({
-      title: isEdit ? "Editar vehículo" : "Nuevo vehículo",
+      title: (opts.kind === "beacon" ? (isEdit ? "Editar beacon" : "Nuevo beacon") : (isEdit ? "Editar vehículo" : "Nuevo vehículo")),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
@@ -1739,9 +1907,10 @@
             var form = dialog.querySelector("form.tp-device-form");
             if (!form) return;
             var payload = readForm(form);
+            var isBeacon = opts.kind === "beacon" || !!form.getAttribute("data-beacon");
             var url = isEdit
-              ? CFG.updateUrl.replace("{id}", encodeURIComponent(opts.id))
-              : CFG.storeUrl;
+              ? (isBeacon ? CFG.beaconUpdateUrl : CFG.updateUrl).replace("{id}", encodeURIComponent(opts.id))
+              : (isBeacon ? CFG.beaconStoreUrl : CFG.storeUrl);
             var method = isEdit ? "PUT" : "POST";
             tpModal.setBusy(dialog, true);
             tpModal
@@ -1787,7 +1956,7 @@
       ]),
     });
 
-    fetchFormHtml(opts.id)
+    fetchFormHtml(opts.id, opts.kind)
       .then(function (html) {
         var bodyEl = dlg.querySelector(".tp-modal__body");
         if (!bodyEl) return;
@@ -1804,6 +1973,8 @@
         wireSensorsTab(bodyEl);
         wireServicesTab(bodyEl);
         wireCamerasTab(bodyEl);
+        wireMaintenances(bodyEl);
+        wireConfigurator(bodyEl);
         wireExpensesTab(bodyEl);
       })
       .catch(function () {
@@ -1824,6 +1995,10 @@
     },
     openEdit: function (id, onSaved) {
       return open({ id: id, onSaved: onSaved });
+    },
+    // Alta de beacon (plugin beacons): mismo modal, kind y endpoints distintos.
+    openCreateBeacon: function (onSaved) {
+      return open({ onSaved: onSaved, kind: "beacon" });
     },
     open: open,
     invalidateMeta: function () {

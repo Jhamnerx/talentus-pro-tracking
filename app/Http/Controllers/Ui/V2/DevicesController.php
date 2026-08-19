@@ -275,6 +275,13 @@ class DevicesController extends BaseController
                 // Campos personalizados: mismo gate que Devices/edit.blade del
                 // legacy — can('view', $item, 'custom_fields') (que ya considera
                 // el addon vía PermissionService) + que existan campos definidos.
+                // Beacon: el modal reduce tabs/campos (paridad edit_beacon.blade)
+                'is_beacon'            => (bool) (
+                    isset($data['item'])
+                    && $data['item'] instanceof \Tobuli\Entities\Device
+                    && $data['item']->isBeacon()
+                ) || $request->get('kind') === 'beacon',
+                'beacons_plugin'       => (bool) settings('plugins.beacons.status'),
                 'has_custom_fields'    => (bool) (
                     isset($data['item'])
                     && $data['item'] instanceof \Tobuli\Entities\Device
@@ -381,6 +388,98 @@ class DevicesController extends BaseController
                 'ok'      => false,
                 'message' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    /* =================================================================
+     * Beacons (plugin beacons) — paridad BeaconsController
+     * -----------------------------------------------------------------
+     * Un beacon es un Device con kind = KIND_BEACON. No pasa por
+     * DeviceModalHelper (su edit() rechaza beacons explícitamente): se
+     * valida con BeaconFormValidator y se guarda con DeviceService.
+     * ================================================================= */
+
+    /** El plugin manda: sin él, el legacy responde 404 desde el constructor. */
+    private function assertBeaconsEnabled(): void
+    {
+        if (! settings('plugins.beacons.status')) {
+            abort(404);
+        }
+    }
+
+    /** Colores admitidos por estado (mismo mapa que BeaconsController). */
+    private function beaconIconColors(?\Tobuli\Entities\Device $item, array $data): array
+    {
+        $allowed = ['green', 'yellow', 'red', 'blue', 'orange', 'black'];
+
+        $colors = $item
+            ? $item->icon_colors + settings('device.status_colors.colors')
+            : settings('device.status_colors.colors');
+
+        foreach ($colors as $status => $color) {
+            $key = "icon_$status";
+            if (array_key_exists($key, $data) && in_array($data[$key], $allowed, true)) {
+                $colors[$status] = $data[$key];
+            }
+        }
+
+        return $colors;
+    }
+
+    public function storeBeacon(Request $request): JsonResponse
+    {
+        $this->assertBeaconsEnabled();
+        $this->checkException('devices', 'store');
+
+        // Mismo veto que el alta estándar y que BeaconsController@store.
+        if ($this->user->perm('custom_device_add', 'view')) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        try {
+            $data = $request->all();
+            $data['group_id'] = empty($data['group_id']) ? null : $data['group_id'];
+            $data['icon_colors'] = $this->beaconIconColors(null, $data);
+
+            \CustomFacades\Validators\BeaconFormValidator::validate('create', $data);
+
+            $data['kind'] = \Tobuli\Entities\Device::KIND_BEACON;
+
+            $device = app(\Tobuli\Services\DeviceService::class)->create($data);
+
+            return response()->json(['ok' => true, 'id' => (int) $device->id]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateBeacon(Request $request, $id): JsonResponse
+    {
+        $this->assertBeaconsEnabled();
+
+        $beacon = \Tobuli\Entities\Device::kindBeacon()->find((int) $id);
+        if (! $beacon) {
+            return response()->json(['ok' => false], 404);
+        }
+
+        $this->checkException('devices', 'edit', $beacon);
+
+        try {
+            $data = $request->all();
+            $data['group_id'] = empty($data['group_id']) ? null : $data['group_id'];
+            $data['icon_colors'] = $this->beaconIconColors($beacon, $data);
+
+            \CustomFacades\Validators\BeaconFormValidator::validate('update', $data, $beacon->id);
+
+            app(\Tobuli\Services\DeviceService::class)->update($beacon, $data);
+
+            return response()->json(['ok' => true, 'id' => (int) $beacon->id]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
         }
     }
 

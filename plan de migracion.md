@@ -203,12 +203,12 @@ Toda migración o fix DEBE respetar estos contratos (violarlos causó la mayorí
 Orden sugerido: **S1→S4** (seguridad) → **D1–D7, D13–D14** (corrupción activa) → **F1–F4** →
 resto de D/F por severidad. Muchas son fixes de horas, no días.
 
-### Ola 1 — Cerrar el modal device y capas
+### Ola 1 — Cerrar el modal device y capas ✅ COMPLETA (19-ago)
 1.1 ~~Tab Custom Fields (D11) + panel en Tareas (D10)~~ ✅ 19-ago.
-1.2 Grupos de geocercas y POIs con CRUD (paridad Rutas) + toggle `active` + tablas dedicadas.
-1.3 Import/Export nativo de geocercas y POIs (F2) + fix export de rutas (F3).
-1.4 Tab Historial de mantenimientos + `configure_device`/APN en alta (F17).
-1.5 Beacons (edit_beacon) (F10).
+1.2 ~~Grupos de geocercas y POIs con CRUD~~ ✅ 19-ago (crear/editar/eliminar/abrir-cerrar; componente compartido `tp-groups.js`).
+1.3 ~~Import/Export nativo de geocercas y POIs (F2) + fix export de rutas (F3)~~ ✅ 7-ago.
+1.4 ~~Tab Historial de mantenimientos + `configure_device`/APN en alta (F17)~~ ✅ 19-ago.
+1.5 ~~Beacons (edit_beacon) (F10)~~ ✅ 19-ago (kind KIND_BEACON, endpoints propios, modal con tabs reducidos).
 
 ### Ola 2 — Módulos operativos faltantes
 2.1 DeviceAlerts (periodo de vigencia por pivote — form pequeño). S/M

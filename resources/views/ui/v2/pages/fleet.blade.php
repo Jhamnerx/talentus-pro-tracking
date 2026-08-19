@@ -67,6 +67,11 @@
                         </svg>
                     </button>
                 @endif
+                {{-- Alta de beacon (plugin beacons): kind aparte, form reducido --}}
+                @if (!empty($canCreate) && settings('plugins.beacons.status'))
+                    <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-create-beacon"
+                        title="Nuevo beacon">＋ Beacon</button>
+                @endif
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-export" title="Exportar CSV">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
@@ -131,7 +136,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=16"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=18"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=1" defer></script>
     <script>
@@ -141,6 +146,17 @@
             if (!btn || !window.tpDeviceModal) return;
             btn.addEventListener('click', function() {
                 window.tpDeviceModal.openCreate(function() {
+                    var refresh = document.getElementById('tp-fleet-refresh');
+                    if (refresh) refresh.click();
+                });
+            });
+        })();
+        // Alta de beacon (plugin beacons)
+        (function() {
+            var b = document.getElementById('tp-fleet-create-beacon');
+            if (!b || !window.tpDeviceModal) return;
+            b.addEventListener('click', function() {
+                window.tpDeviceModal.openCreateBeacon(function() {
                     var refresh = document.getElementById('tp-fleet-refresh');
                     if (refresh) refresh.click();
                 });

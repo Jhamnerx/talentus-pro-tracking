@@ -15,6 +15,10 @@
     // Mismo orden de tabs que el legacy (Devices/edit.blade.php):
     // Main, Users, Icons, Advanced, Sensors, Services, Accuracy, Tail,
     // Servicios Web, Expenses, Cameras.
+    // Beacon: el legacy usa otra vista (edit_beacon/create_beacon) con un
+    // subconjunto de tabs — sin Servicios, Exactitud, Servicios Web, Cámaras
+    // ni Historial, porque un beacon no reporta posición propia.
+    $isBeacon = !empty($caps['is_beacon']);
     $tabs = collect([
         ['key' => 'principal', 'label' => trans('front.main')],
         ['key' => 'usuarios', 'label' => trans('front.users'), 'if' => !empty($caps['can_edit_users'])],
@@ -29,14 +33,28 @@
         ['key' => 'camaras', 'label' => trans('front.cameras'), 'if' => !empty($caps['can_view_cameras'])],
         // Campos personalizados: mismo gate que el legacy (Devices/edit.blade)
         ['key' => 'personalizados', 'label' => trans('admin.custom_fields'), 'if' => !empty($caps['has_custom_fields'])],
+        // Historial de mantenimientos/suspensiones (solo en edición, como el legacy)
+        ['key' => 'historial', 'label' => 'Historial', 'if' => $isEdit],
     ])
         ->filter(function ($t) {
             return !array_key_exists('if', $t) || $t['if'];
         })
+        ->filter(function ($t) use ($isBeacon) {
+            if (! $isBeacon) {
+                return true;
+            }
+
+            return in_array(
+                $t['key'],
+                ['principal', 'usuarios', 'iconos', 'informacion', 'sensores', 'cola', 'gastos'],
+                true
+            );
+        })
         ->values();
 @endphp
 
-<form class="tp-form tp-device-form" autocomplete="off" novalidate data-device-id="{{ $isEdit ? (int) $item->id : '' }}">
+<form class="tp-form tp-device-form" autocomplete="off" novalidate data-device-id="{{ $isEdit ? (int) $item->id : '' }}"
+    @if ($isBeacon) data-beacon="1" @endif>
     <div class="tp-tabs">
         <div class="tp-tabs__nav" role="tablist">
             @foreach ($tabs as $i => $t)

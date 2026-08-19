@@ -28,6 +28,9 @@
     $expM = $expTime[2] ?? '00';
     $expCombined = $hasExpire ? ($expDate . ' ' . $expH . ':' . $expM) : '';
     $isAdminCap = !empty($caps['is_admin']);
+    // Un beacon no lleva modelo de GPS ni caducidad de suscripción
+    // (create_beacon/edit_beacon del legacy solo piden active, name e imei).
+    $isBeaconCap = !empty($caps['is_beacon']);
 @endphp
 
 {{-- Una sola columna: campos apilados a todo el ancho (como la referencia) --}}
@@ -57,7 +60,7 @@
         </label>
     @endif
 
-    @if (Auth::user()->can('view', $item, 'model_id') && !empty($models))
+    @if (!$isBeaconCap && Auth::user()->can('view', $item, 'model_id') && !empty($models))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.model_id') }}</span>
             <select class="tp-input" style="width: 100%" name="model_id" data-tp-field
@@ -70,7 +73,7 @@
         </label>
     @endif
 
-    @if ($isAdminCap)
+    @if ($isAdminCap && !$isBeaconCap)
         <div class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.expiration_date') }}</span>
             <div style="display: flex; gap: 9px; align-items: center;">
@@ -95,6 +98,53 @@
                     @endfor
                 </select>
             </div>
+        </div>
+    @endif
+    {{-- Configuración remota del GPS al darlo de alta (paridad
+         Devices/partials/main.blade @if(!$item->exists && able('configure_device'))).
+         Los campos los procesa DeviceModalHelper::configureDevice() al crear. --}}
+    @if (!$isEditDev && Auth::user()->able('configure_device'))
+        <div class="tp-form__field tp-col-2" style="margin-top: 4px;">
+            <label class="tp-choice">
+                <input type="hidden" name="configure_device" value="0">
+                <input type="checkbox" class="tp-choice-input" name="configure_device" value="1"
+                    data-toggle-panel="configurator">
+                <span>{{ trans('front.device_configuration') }}</span>
+            </label>
+        </div>
+
+        <div class="tp-form__grid tp-form__grid--2 tp-col-2" data-panel="configurator" style="display: none;">
+            <label class="tp-form__field">
+                <span class="tp-form__label">{{ trans('validation.attributes.brand') }}</span>
+                <select class="tp-input" name="config_id">
+                    @foreach ($device_configs ?? [] as $cid => $cname)
+                        <option value="{{ $cid }}">{{ $cname }}</option>
+                    @endforeach
+                </select>
+                <small class="tp-form__hint">{{ trans('front.device_config_disclaimer') }}</small>
+            </label>
+            <label class="tp-form__field">
+                <span class="tp-form__label">{{ trans('front.apn_configuration') }}</span>
+                {{-- Al cambiar rellena los 3 campos APN vía device_config.get_apn_data --}}
+                <select class="tp-input" name="apn_config" data-apn-config
+                    data-apn-url="{{ url('/devices_config/getApnData') }}">
+                    @foreach ($apn_configs ?? [] as $aid => $aname)
+                        <option value="{{ $aid }}">{{ $aname }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="tp-form__field tp-col-2">
+                <span class="tp-form__label">{{ trans('validation.attributes.apn_name') }}</span>
+                <input type="text" class="tp-input" name="apn_name" data-apn-name autocomplete="off">
+            </label>
+            <label class="tp-form__field">
+                <span class="tp-form__label">{{ trans('validation.attributes.apn_username') }}</span>
+                <input type="text" class="tp-input" name="apn_username" data-apn-username autocomplete="off">
+            </label>
+            <label class="tp-form__field">
+                <span class="tp-form__label">{{ trans('validation.attributes.apn_password') }}</span>
+                <input type="text" class="tp-input" name="apn_password" data-apn-password autocomplete="off">
+            </label>
         </div>
     @endif
 </div>

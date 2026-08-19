@@ -1256,6 +1256,9 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('devices/{id}/sensors',      ['as' => 'api.devices.sensors.store', 'uses' => 'Ui\V2\DevicesController@sensorStore'])->where('id', '[0-9]+');
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
+        // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        Route::post('beacons',      ['as' => 'api.beacons.store',  'uses' => 'Ui\V2\DevicesController@storeBeacon']);
+        Route::put('beacons/{id}',  ['as' => 'api.beacons.update', 'uses' => 'Ui\V2\DevicesController@updateBeacon'])->where('id', '[0-9]+');
 
         // Cámaras y gastos del modal device
         Route::get('devices/{id}/cameras',   ['as' => 'api.devices.cameras',        'uses' => 'Ui\V2\DevicesController@camerasList'])->where('id', '[0-9]+');

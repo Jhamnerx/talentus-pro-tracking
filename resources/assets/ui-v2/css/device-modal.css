@@ -694,3 +694,15 @@
   max-height: 100%;
   object-fit: contain;
 }
+
+/* Badge de tipo en el tab Historial (mantenimiento/suspensión/reactivación) */
+.tp-maint-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
