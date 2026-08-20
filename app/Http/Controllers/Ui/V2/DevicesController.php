@@ -1778,6 +1778,67 @@ class DevicesController extends BaseController
         }
     }
 
+    /**
+     * Importa calibraciones desde CSV (paridad con
+     * SensorCalibrationsImportController del legacy). Devuelve los pares
+     * x/y para que el JS los pinte en la tabla del panel; no toca la BD:
+     * el sensor se guarda despues con el resto del formulario.
+     */
+    public function sensorCalibrationsImport(Request $request): JsonResponse
+    {
+        try {
+            // Sin modelo: checkException('devices','edit') resolveria la policy
+            // y exigiria un device concreto. Aqui solo se parsea un CSV (el
+            // legacy ni siquiera comprueba permisos), asi que basta el permiso
+            // de modulo; el sensor se guarda despues por su propia ruta.
+            if (! $this->user->perm('devices', 'edit')) {
+                return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+            }
+
+            $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'file' => 'required|file',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json(['ok' => false, 'errors' => $validator->errors()->toArray()], 422);
+            }
+
+            $manager = app(\Tobuli\Importers\DeviceSensorCalibrations\DeviceSensorCalibrationsImportManager::class);
+            $rows    = $manager->import($request->file('file'));
+
+            $items = [];
+            foreach ((array) $rows as $row) {
+                $x = is_array($row) ? ($row['x'] ?? null) : ($row->x ?? null);
+                $y = is_array($row) ? ($row['y'] ?? null) : ($row->y ?? null);
+
+                if ($x === null || $y === null || ! is_numeric($x) || ! is_numeric($y)) {
+                    continue;
+                }
+
+                $items[] = ['x' => (float) $x, 'y' => (float) $y];
+            }
+
+            return response()->json([
+                'ok'      => true,
+                'items'   => $items,
+                'append'  => (bool) $request->input('append'),
+                'skipped' => count((array) $rows) - count($items),
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // El Importer valida fila a fila y lanza la excepcion de Laravel,
+            // no la de Tobuli: sin este catch un CSV con una fila mala salia
+            // como 500 en vez de como error de validacion.
+            return response()->json(['ok' => false, 'errors' => $e->errors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
     /* =================================================================
      * Servicios / Cámaras / Gastos del modal device
      * ================================================================= */

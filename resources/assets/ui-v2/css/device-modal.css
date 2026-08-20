@@ -769,3 +769,37 @@
 .tp-sensor-form--split .tp-sensor-form__main > .tp-form__grid--2 {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* Alta de valores: bloque propio, claramente separado de la tabla de los
+   valores ya agregados (antes se leía como una fila más de la tabla). */
+.tp-sensor-pane__add {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px dashed var(--border-default);
+}
+.tp-sensor-pane__add-title {
+  display: block;
+  margin-bottom: var(--sp-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+/* La tabla de valores ya agregados: cabecera propia para que se lea como
+   "lo que ya hay" frente al bloque de alta. */
+.tp-sensor-pane .tp-embed-box {
+  margin-bottom: 0;
+}
+
+/* Cabecera del panel: título a la izquierda, acciones (importar) a la derecha. */
+.tp-sensor-pane__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.tp-sensor-pane__head .tp-sensor-pane__title {
+  margin: 0;
+}

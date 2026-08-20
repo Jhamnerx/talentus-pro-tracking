@@ -1300,6 +1300,86 @@
     return data;
   }
 
+  /**
+   * Modal de importacion de calibraciones (CSV). Port del legacy
+   * Frontend/Sensors/partials/calibrations_import.blade.php: fichero +
+   * casilla "añadir a los existentes". Devuelve los pares al callback;
+   * quien decide que hacer con ellos es el panel de calibracion.
+   */
+  function openCalibrationsImport(cfg, onDone) {
+    var dlg = tpModal.open({
+      title: "Importar calibraciones",
+      size: "sm",
+      body:
+        '<p class="tp-text-sm tp-text-muted" style="margin:0 0 12px;">' +
+        "Fichero CSV con las columnas <code>x</code> e <code>y</code> separadas por <code>;</code>." +
+        (cfg.calExample
+          ? ' <a href="' + cfg.calExample + '" target="_blank" rel="noopener">Ver ejemplo</a>.'
+          : "") +
+        "</p>" +
+        '<label class="tp-form__field" style="margin-bottom:12px;">' +
+        '<span class="tp-form__label">Fichero</span>' +
+        '<input type="file" class="tp-input" accept=".csv,text/csv" data-cal-file>' +
+        "</label>" +
+        '<label class="tp-choice">' +
+        '<input type="checkbox" class="tp-choice-input" data-cal-append>' +
+        "<span>Añadir a los valores actuales (si no, los reemplaza)</span>" +
+        "</label>",
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Importar",
+          variant: "primary",
+          close: false,
+          onClick: function (d) {
+            var fileEl = d.querySelector("[data-cal-file]");
+            var append = d.querySelector("[data-cal-append]").checked;
+            if (!fileEl.files || !fileEl.files[0]) {
+              tpModal.toast("Elige un fichero CSV.", "warning");
+              return false;
+            }
+
+            var fd = new FormData();
+            fd.append("file", fileEl.files[0]);
+            fd.append("append", append ? 1 : 0);
+
+            tpModal.setBusy(d, true);
+            tpModal
+              .fetchJSON(cfg.calImport, { method: "POST", body: fd })
+              .then(function (res) {
+                tpModal.setBusy(d, false);
+                if (res.status === 422) {
+                  var errs = (res.data && res.data.errors) || {};
+                  var first = Object.keys(errs)[0];
+                  tpModal.toast(
+                    first ? [].concat(errs[first])[0] : "El fichero no es válido.",
+                    "error",
+                  );
+                  return;
+                }
+                if (!res.ok || !res.data || !res.data.ok) {
+                  tpModal.toast(
+                    (res.data && res.data.message) || "No se pudo importar el fichero.",
+                    "error",
+                  );
+                  return;
+                }
+                tpModal.close(d);
+                onDone(res.data.items || [], append);
+              })
+              .catch(function () {
+                tpModal.setBusy(d, false);
+                tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+
+    return dlg;
+  }
+
   function openSensorForm(cfg, sensorId, onSaved) {
     var isEdit = !!sensorId;
 
@@ -1415,7 +1495,11 @@
         var blockOn = !block || block.style.display !== "none";
         var on = blockOn && chk.checked && !chk.disabled;
         el.disabled = !on;
-        if (el.getAttribute("data-enable-hide")) el.style.visibility = on ? "" : "hidden";
+        // El disabler legacy (hide-disable) hace .hide() = display:none, o sea
+        // COLAPSA el hueco. Con visibility:hidden los dos campos de setflag
+        // seguian ocupando 2/3 de la fila y el "Valor tag" quedaba lejisimos
+        // del select de comparacion.
+        if (el.getAttribute("data-enable-hide")) el.style.display = on ? "" : "none";
       });
     }
 
@@ -1523,6 +1607,25 @@
 
     // ── Calibraciones ──
     var calRows = form.querySelector("[data-cal-rows]");
+
+    /** ¿Se puede insertar este par? (x numerica y no repetida, y numerica) */
+    function calRowValid(x, y) {
+      if (x === "" || isNaN(+x)) return false;
+      if (y === "" || isNaN(+y)) return false;
+      return !calRows.querySelector('input[name="calibrations[' + x + ']"]');
+    }
+
+    function addCalRow(x, y) {
+      calRows.insertAdjacentHTML(
+        "beforeend",
+        "<tr>" +
+          "<td>" + esc(x) + '<input type="hidden" name="calibrations[' + esc(x) + ']" value="' + esc(y) + '"></td>' +
+          "<td>" + esc(y) + "</td>" +
+          '<td style="text-align:center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cal-del>×</button></td>' +
+          "</tr>",
+      );
+    }
+
     form.addEventListener("click", function (e) {
       var addCal = e.target.closest("[data-cal-add]");
       if (addCal) {
@@ -1530,28 +1633,40 @@
         var yEl = form.querySelector("[data-cal-y]");
         var x = (xEl.value || "").trim();
         var y = (yEl.value || "").trim();
-        var bad = false;
         xEl.style.borderColor = "";
         yEl.style.borderColor = "";
         if (x === "" || isNaN(+x) || calRows.querySelector('input[name="calibrations[' + x + ']"]')) {
           xEl.style.borderColor = "#ef4444";
-          bad = true;
+          return;
         }
         if (y === "" || isNaN(+y)) {
           yEl.style.borderColor = "#ef4444";
-          bad = true;
+          return;
         }
-        if (bad) return;
-        calRows.insertAdjacentHTML(
-          "beforeend",
-          "<tr>" +
-            "<td>" + esc(x) + '<input type="hidden" name="calibrations[' + esc(x) + ']" value="' + esc(y) + '"></td>' +
-            "<td>" + esc(y) + "</td>" +
-            '<td style="text-align:center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cal-del>×</button></td>' +
-            "</tr>",
-        );
+        addCalRow(x, y);
         xEl.value = "";
         yEl.value = "";
+        return;
+      }
+
+      // Importar calibraciones desde CSV (paridad con el modal
+      // calibrations_import del legacy). No toca BD: solo rellena la tabla.
+      if (e.target.closest("[data-cal-import]")) {
+        openCalibrationsImport(cfg, function (items, append) {
+          if (!append) calRows.innerHTML = "";
+          var added = 0;
+          items.forEach(function (it) {
+            var x = String(it.x);
+            var y = String(it.y);
+            if (!calRowValid(x, y)) return;
+            addCalRow(x, y);
+            added++;
+          });
+          tpModal.toast(
+            added + " de " + items.length + " valores importados.",
+            added ? "success" : "warning",
+          );
+        });
         return;
       }
       var delCal = e.target.closest("[data-cal-del]");
@@ -1625,6 +1740,9 @@
       if (!mapVt) return;
       var range = mapVt.value === "2";
       mapT.style.display = range ? "" : "none";
+      // Paridad legacy: en modo Valor el campo se rotula "Valor", no "Desde".
+      var ph = mapV.getAttribute(range ? "data-ph-from" : "data-ph-value");
+      if (ph) mapV.placeholder = ph;
       var mt = mapMt.value;
       mapMv.style.display = mt === "3" ? "none" : "";
       if (mt === "2" && !mapMv.value) mapMv.value = "[value]";

@@ -323,7 +323,14 @@
         {{-- ── Panel de calibración (visible si el tipo lo permite Y el check está marcado) ── --}}
         <div class="tp-sensor-pane" data-panel="calibration" style="display: none;">
             <div class="tp-sensor-pane__box">
-                <h4 class="tp-sensor-pane__title">{{ trans('front.calibration') }}</h4>
+                <div class="tp-sensor-pane__head">
+                    <h4 class="tp-sensor-pane__title">{{ trans('front.calibration') }}</h4>
+                    {{-- Importar CSV: el legacy lo ofrece con el icono de subida
+                         sobre la tabla (Sensors/partials/calibrations.blade.php). --}}
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cal-import>
+                        {{ trans('front.import') }}
+                    </button>
+                </div>
                 <label class="tp-choice" style="margin-bottom: 8px;">
                     <input type="hidden" name="skip_calibration" value="0">
                     <input type="checkbox" class="tp-choice-input" name="skip_calibration" value="1"
@@ -352,6 +359,10 @@
                     </table>
                 </div>
 
+                {{-- El alta va en un bloque aparte: sin separador se leia como
+                     una fila mas de la tabla de valores ya agregados. --}}
+                <div class="tp-sensor-pane__add">
+                    <span class="tp-sensor-pane__add-title">{{ trans('global.add_new') }}</span>
                 <div style="display: flex; gap: 8px; align-items: flex-end;">
                     <label class="tp-form__field" style="flex: 1;">
                         <span class="tp-form__label">{{ trans('validation.attributes.tag_value') }}</span>
@@ -363,6 +374,7 @@
                     </label>
                     <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-cal-add>+ {{ trans('global.add') }}</button>
                 </div>
+                </div>{{-- /tp-sensor-pane__add --}}
             </div>
         </div>
 
@@ -417,6 +429,8 @@
                     </table>
                 </div>
 
+                <div class="tp-sensor-pane__add">
+                    <span class="tp-sensor-pane__add-title">{{ trans('global.add_new') }}</span>
                 <div class="tp-form__grid tp-form__grid--2">
                     <label class="tp-form__field">
                         <span class="tp-form__label">{{ trans('validation.attributes.tag_value') }}</span>
@@ -428,7 +442,13 @@
                     <div class="tp-form__field">
                         <span class="tp-form__label">&nbsp;</span>
                         <div style="display: flex; gap: 8px;">
-                            <input type="text" class="tp-input" data-map-v placeholder="{{ trans('global.from') }}" style="flex: 1;">
+                            {{-- El legacy tiene DOS inputs (uno "Valor", otro "Desde") y
+                                 muestra el que toca segun vt. Aqui es uno solo, asi que
+                                 el placeholder cambia con el tipo (lo hace syncMapControls). --}}
+                            <input type="text" class="tp-input" data-map-v style="flex: 1;"
+                                placeholder="{{ trans('validation.attributes.value') }}"
+                                data-ph-value="{{ trans('validation.attributes.value') }}"
+                                data-ph-from="{{ trans('global.from') }}">
                             <input type="text" class="tp-input" data-map-t placeholder="{{ trans('global.to') }}" style="flex: 1; display: none;">
                         </div>
                     </div>
@@ -454,6 +474,7 @@
                         </div>
                     </div>
                 </div>
+                </div>{{-- /tp-sensor-pane__add --}}
             </div>
         </div>
         </aside>

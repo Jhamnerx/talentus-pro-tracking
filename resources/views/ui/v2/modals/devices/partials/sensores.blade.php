@@ -24,6 +24,8 @@
             'destroy' => url('/ui/v2/api/sensors') . '/{id}',
             'preview' => route('ui.v2.api.sensors.preview'),
             'sensorIcons' => route('ui.v2.api.sensors.icons'),
+            'calImport'   => route('ui.v2.api.sensors.calibrations.import'),
+            'calExample'  => asset('examples/import_sensor_calibrations.csv'),
         ];
     @endphp
 

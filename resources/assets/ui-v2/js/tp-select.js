@@ -158,6 +158,16 @@
 
     btn.disabled = sel.disabled;
 
+    // El <select> nativo se habilita/deshabilita por JS mucho despues de
+    // montarse el control (paneles del form de sensor, bloques data-enable,
+    // etc.). Sin observar el atributo, el boton se quedaba con el estado del
+    // primer render: el select se veia bloqueado para siempre aunque el
+    // nativo ya estuviera habilitado.
+    this._mo = new MutationObserver(function () {
+      btn.disabled = sel.disabled;
+    });
+    this._mo.observe(sel, { attributes: true, attributeFilter: ["disabled"] });
+
     btn.addEventListener("click", function (e) {
       e.stopPropagation();
       self.isOpen() ? self.close() : self.open();
@@ -394,6 +404,7 @@
 
   Dd.prototype.destroy = function () {
     this.close();
+    if (this._mo) this._mo.disconnect();
     if (this.panel.parentNode) this.panel.parentNode.removeChild(this.panel);
     if (this.wrap.parentNode) this.wrap.parentNode.removeChild(this.wrap);
     this.sel.style.display = "";
