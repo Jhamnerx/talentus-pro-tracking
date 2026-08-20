@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=61">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=62">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=8">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -811,7 +811,7 @@
     <script src="{{ asset('assets/ui/v2/js/tp-device-config.js') }}?v=1"></script>
     {{-- Galería de medios del vehículo (kebab) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-device-media.js') }}?v=2"></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=48"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=49"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=13"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>

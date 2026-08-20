@@ -82,6 +82,26 @@
     <div class="tp-rail__spacer"></div>
 
     <div class="tp-rail__foot">
+        {{-- Enlace externo configurable. MISMO gate que el header legacy:
+             addon + ajuste activo + permiso. La URL se construye con el mismo
+             builder, que sustituye los marcadores del usuario. --}}
+        @if (config('addon.external_url') && settings('external_url.enabled') && Auth::user()->perm('external_url', 'view'))
+            @php
+                $tpExternalUrl = (new \Tobuli\Helpers\TextBuilder\UserExternalUrlBuilder())
+                    ->build(settings('external_url.external_url'), Auth::user());
+            @endphp
+            <a href="{!! $tpExternalUrl !!}" target="_blank" rel="noopener"
+                class="tp-rail__item tp-has-tooltip" data-tooltip="{{ trans('front.external_url') }}"
+                aria-label="{{ trans('front.external_url') }}">
+                <span class="tp-rail__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <path d="M15 3h6v6" />
+                        <path d="M10 14 21 3" />
+                    </svg></span>
+                <span class="tp-rail__label">{{ trans('front.external_url') }}</span>
+            </a>
+        @endif
         <a href="{{ route('my_account_settings.change_lang', ['lang' => $nextLang]) }}"
             class="tp-rail__item tp-has-tooltip" data-tooltip="Cambiar idioma" aria-label="Cambiar idioma">
             <span class="tp-rail__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"

@@ -341,6 +341,97 @@ class DevicesController extends BaseController
         return response()->json($payload);
     }
 
+    /**
+     * Imagen del vehiculo: subir. Paridad con DeviceImagesController@store
+     * del legacy (mismo validador y mismo servicio); la v2 solo la mostraba.
+     */
+    public function deviceImageStore(Request $request, $id): JsonResponse
+    {
+        try {
+            $device = \Tobuli\Entities\Device::find((int) $id);
+            $this->checkException('devices', 'update', $device);
+
+            \CustomFacades\Validators\DeviceImageValidator::validate('upload', $request->all());
+
+            (new \Tobuli\Services\DeviceImageService($device))->save($request->file('image'));
+
+            $device->refresh();
+
+            return response()->json([
+                'ok'    => true,
+                'image' => $device->image ? url($device->image) : null,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
+    /** Imagen del vehiculo: borrar (DeviceImagesController@destroy). */
+    public function deviceImageDestroy($id): JsonResponse
+    {
+        try {
+            $device = \Tobuli\Entities\Device::find((int) $id);
+            $this->checkException('devices', 'update', $device);
+
+            (new \Tobuli\Services\DeviceImageService($device))->delete();
+
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
+    /**
+     * Envio de una plantilla webhook (DeviceWidgetsController@templateWebhookSend).
+     * Va al servicio externo configurado en addon.widget_template.
+     */
+    public function templateWebhookSend(Request $request, $id): JsonResponse
+    {
+        try {
+            if (! config('addon.widget_template')
+                || ! $this->user->perm('widget_template_webhook', 'view')
+            ) {
+                return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+            }
+
+            $device = \Tobuli\Entities\Device::find((int) $id);
+            $this->checkException('devices', 'show', $device);
+
+            $template = null;
+            if (\Illuminate\Support\Facades\Schema::hasTable('templates')) {
+                $template = \DB::table('templates')
+                    ->where('device_id', $device->id)
+                    ->where('template_id', $request->get('template_id'))
+                    ->first();
+            }
+
+            if (! $template) {
+                return response()->json(['ok' => false, 'error' => 'not_found'], 404);
+            }
+
+            (new \Curl())->post(config('addon.widget_template'), [
+                'device_id'   => $device->id,
+                'template_id' => $template->template_id,
+                'wox_user_id' => $this->user->id,
+            ]);
+
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
     /** Grupos del usuario con su numero de vehiculos (para el filtro). */
     private function fleetGroupOptions(): array
     {
@@ -2343,7 +2434,44 @@ class DevicesController extends BaseController
         }
 
         if ($has('image')) {
-            $data['image'] = $device->image ? url($device->image) : null;
+            // Un ARRAY, no la url suelta: con `null` el @isset del blade era
+            // falso y el widget no se pintaba nunca sin foto (ni el aviso
+            // "Sin imagen" ni, ahora, el boton de subir).
+            $data['image'] = [
+                'url' => $device->image ? url($device->image) : null,
+                // El legacy ofrece subir/borrar sobre el widget si puede
+                // editar el objeto (Widgets/image.blade).
+                'can_edit' => (bool) $this->user->can('edit', $device),
+                'store'    => url('/ui/v2/api/devices/' . $device->id . '/image'),
+                'destroy'  => url('/ui/v2/api/devices/' . $device->id . '/image'),
+            ];
+        }
+
+        // Widget de plantillas webhook. MISMO gate que el legacy: sin
+        // addon.widget_template el permiso ni existe (PermissionService lo
+        // quita) y el widget no se ofrece.
+        if ($has('template_webhook')
+            && config('addon.widget_template')
+            && $this->user->perm('widget_template_webhook', 'view')
+        ) {
+            $templates = [];
+            try {
+                // La tabla `templates` la trae el addon; si no esta, no hay
+                // plantillas y el widget se queda vacio en vez de reventar.
+                if (\Illuminate\Support\Facades\Schema::hasTable('templates')) {
+                    $templates = \DB::table('templates')
+                        ->where('device_id', $device->id)
+                        ->pluck('template_name', 'template_id')
+                        ->all();
+                }
+            } catch (\Throwable $e) {
+                $templates = [];
+            }
+
+            $data['template_webhook'] = [
+                'templates' => $templates,
+                'send_url'  => url('/ui/v2/api/devices/' . $device->id . '/template-webhook'),
+            ];
         }
 
         if ($has('services')) {

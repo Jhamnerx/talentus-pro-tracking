@@ -10,7 +10,7 @@
          sigue ganando. Fuente Inter = la misma de la ui/v2. --}}
     <link rel="preconnect" href="https://rsms.me/" crossorigin>
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/auth.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/auth.css') }}?v=3">
 
     @yield('styles')
 

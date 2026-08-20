@@ -2672,6 +2672,110 @@
 
     // Widget de Servicios: "3 rayitas" → modal LISTA, "+ Añadir servicio" → modal FORM.
     // Modales compartidos en tp-services.js (mismos que usa /ui/v2/maintenance).
+    // ── Imagen del vehiculo: subir / borrar ─────────────────────────
+    // Paridad con Widgets/image.blade del legacy. Delegado porque el widget
+    // llega por AJAX y se repinta al cambiar de vehiculo.
+    document.addEventListener("click", function (e) {
+      var box = e.target.closest("[data-dw-image]");
+      if (!box) return;
+
+      if (e.target.closest("[data-dw-image-upload]")) {
+        var file = box.querySelector("[data-dw-image-file]");
+        if (file) file.click();
+        return;
+      }
+
+      if (e.target.closest("[data-dw-image-delete]")) {
+        // tpModal.confirm devuelve una Promise; no acepta onConfirm.
+        tpModal
+          .confirm({
+            title: "Eliminar imagen",
+            message: "¿Eliminar la imagen de este vehículo?",
+            confirmLabel: "Eliminar",
+            danger: true,
+          })
+          .then(function (ok) {
+            if (!ok) return;
+            return tpModal
+              .fetchJSON(box.getAttribute("data-destroy"), { method: "DELETE" })
+              .then(function (res) {
+                if (!res.ok || !res.data || !res.data.ok) {
+                  tpModal.toast("No se pudo eliminar la imagen.", "error");
+                  return;
+                }
+                tpModal.toast("Imagen eliminada.", "success");
+                if (state.selectedId) loadDrawerWidgets(state.selectedId);
+              })
+              .catch(function () {
+                tpModal.toast("Error de red.", "error");
+              });
+          });
+      }
+    });
+
+    document.addEventListener("change", function (e) {
+      var file = e.target.closest("[data-dw-image-file]");
+      if (!file || !file.files || !file.files[0]) return;
+
+      var box = file.closest("[data-dw-image]");
+      var fd = new FormData();
+      fd.append("image", file.files[0]);
+
+      tpModal
+        .fetchJSON(box.getAttribute("data-store"), { method: "POST", body: fd })
+        .then(function (res) {
+          file.value = "";
+          if (res.status === 422) {
+            var errs = (res.data && res.data.errors) || {};
+            var first = Object.keys(errs)[0];
+            tpModal.toast(first ? [].concat(errs[first])[0] : "Imagen no válida.", "error");
+            return;
+          }
+          if (!res.ok || !res.data || !res.data.ok) {
+            tpModal.toast("No se pudo subir la imagen.", "error");
+            return;
+          }
+          tpModal.toast("Imagen actualizada.", "success");
+          if (state.selectedId) loadDrawerWidgets(state.selectedId);
+        })
+        .catch(function () {
+          file.value = "";
+          tpModal.toast("Error de red.", "error");
+        });
+    });
+
+    // ── Plantillas webhook (addon.widget_template) ──────────────────
+    // El boton solo aparece con una plantilla elegida, como el legacy.
+    document.addEventListener("change", function (e) {
+      var sel = e.target.closest("[data-dw-webhook-select]");
+      if (!sel) return;
+      var btn = sel.closest("[data-dw-webhook]").querySelector("[data-dw-webhook-send]");
+      if (btn) btn.hidden = sel.value === "0" || sel.value === "";
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest("[data-dw-webhook-send]")) return;
+      var box = e.target.closest("[data-dw-webhook]");
+      var sel = box.querySelector("[data-dw-webhook-select]");
+      if (!sel || sel.value === "0") return;
+
+      tpModal
+        .fetchJSON(box.getAttribute("data-url"), {
+          method: "POST",
+          json: { template_id: sel.value },
+        })
+        .then(function (res) {
+          if (!res.ok || !res.data || !res.data.ok) {
+            tpModal.toast("No se pudo enviar la plantilla.", "error");
+            return;
+          }
+          tpModal.toast("Plantilla enviada.", "success");
+        })
+        .catch(function () {
+          tpModal.toast("Error de red.", "error");
+        });
+    });
+
     // Delegado en document porque los widgets del drawer se inyectan por AJAX.
     document.addEventListener("click", function (e) {
       var sv = e.target.closest("[data-tp-service]");

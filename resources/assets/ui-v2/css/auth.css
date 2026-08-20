@@ -287,3 +287,19 @@ body.sign-in-layout p.sign-in-text {
     font-size: 21px;
   }
 }
+
+/* ── Badges de tienda: un solo icono ─────────────────────────────────
+   El CSS de marca (public/assets/custom/js.js, inyectado en runtime) pinta
+   el logo de la tienda como `a::before` y oculta el `<img>`, porque el
+   marcado antiguo usaba una imagen. El badge actual trae su propio <svg>
+   inline, que esa regla no oculta: salían DOS iconos por botón.
+   Gana el <svg> del marcado, que es el que versionamos. Hace falta
+   especificidad + !important porque el estilo de marca se inyecta despues. */
+body.sign-in-layout .app-links a::before {
+  content: none !important;
+  display: none !important;
+}
+body.sign-in-layout .app-links a svg {
+  display: inline-block;
+  flex-shrink: 0;
+}

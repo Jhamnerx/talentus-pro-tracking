@@ -99,16 +99,61 @@
         </section>
     @endisset
 
-    {{-- Imagen del vehículo --}}
+    {{-- Imagen del vehículo. El legacy permite subirla y borrarla desde el
+         propio widget si el usuario puede editar el objeto; la v2 solo la
+         mostraba. Los hooks (data-dw-image-*) los recoge live.js. --}}
     @isset($image)
-        <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">Imagen</h4>
-            @if ($image)
-                <a href="{{ $image }}" target="_blank" rel="noopener" class="tp-dw__image">
-                    <img src="{{ $image }}" alt="Imagen del vehículo" loading="lazy">
-                </a>
+        @php
+            $imgUrl = $image['url'] ?? null;
+            $canEditImage = !empty($image['can_edit']);
+        @endphp
+        <section class="tp-card tp-card--flat tp-mb-4" data-dw-image
+            data-store="{{ $image['store'] ?? '' }}" data-destroy="{{ $image['destroy'] ?? '' }}">
+            <div class="tp-dw__head">
+                <h4 class="tp-h6 tp-mb-0">{{ trans('front.device_image') }}</h4>
+                @if ($canEditImage)
+                    <div class="tp-dw__actions">
+                        <button type="button" class="tp-btn tp-btn--ghost tp-btn--xs" data-dw-image-upload
+                            title="{{ trans('front.upload') }}">{{ trans('front.upload') }}</button>
+                        @if ($imgUrl)
+                            <button type="button" class="tp-btn tp-btn--ghost tp-btn--xs" data-dw-image-delete
+                                title="{{ trans('global.delete') }}">{{ trans('global.delete') }}</button>
+                        @endif
+                        <input type="file" accept="image/*" hidden data-dw-image-file>
+                    </div>
+                @endif
+            </div>
+            <div data-dw-image-body>
+                @if ($imgUrl)
+                    <a href="{{ $imgUrl }}" target="_blank" rel="noopener" class="tp-dw__image">
+                        <img src="{{ $imgUrl }}" alt="{{ trans('front.device_image') }}" loading="lazy">
+                    </a>
+                @else
+                    <p class="tp-text-xs tp-text-muted tp-mb-0">Sin imagen.</p>
+                @endif
+            </div>
+        </section>
+    @endisset
+
+    {{-- Plantillas webhook (addon.widget_template). El gate lo aplica el
+         controlador: sin el addon la clave ni llega. --}}
+    @isset($template_webhook)
+        <section class="tp-card tp-card--flat tp-mb-4" data-dw-webhook
+            data-url="{{ $template_webhook['send_url'] ?? '' }}">
+            <h4 class="tp-h6 tp-mb-3">{{ trans('front.template_webhook') }}</h4>
+            @if (!empty($template_webhook['templates']))
+                <div class="tp-dw__webhook">
+                    <select class="tp-input tp-input--sm" data-dw-webhook-select>
+                        <option value="0">{{ trans('front.nothing_selected') }}</option>
+                        @foreach ($template_webhook['templates'] as $tid => $tname)
+                            <option value="{{ $tid }}">{{ $tname }}</option>
+                        @endforeach
+                    </select>
+                    <button type="button" class="tp-btn tp-btn--primary tp-btn--sm" data-dw-webhook-send
+                        hidden>{{ trans('global.apply') }}</button>
+                </div>
             @else
-                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin imagen.</p>
+                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin plantillas.</p>
             @endif
         </section>
     @endisset

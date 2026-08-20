@@ -2496,3 +2496,27 @@ table.tp-lock-hist th {
 .tp-live__group-items .tp-live__row.is-selected {
   border-color: var(--brand-300, #a9c2f5);
 }
+
+/* ── Widgets: cabecera con acciones (imagen: subir/borrar) ────────── */
+.tp-dw__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: var(--sp-3);
+}
+.tp-dw__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Plantillas webhook (addon.widget_template) */
+.tp-dw__webhook {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tp-dw__webhook .tp-input {
+  width: 100%;
+}
