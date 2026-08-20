@@ -177,10 +177,22 @@ class ChecklistsController extends BaseController
         $this->assertEnabled();
         $this->checkException('checklist', 'view');
 
-        $items = Checklist::where('service_id', (int) $serviceId)
-            ->with('rows')
-            ->orderBy('id', 'desc')
-            ->get();
+        // Paridad con ChecklistsController@getChecklists del legacy:
+        //  - sin permiso de mantenimiento no se listan checklists,
+        //  - y con checklist_qr_pre_start_only solo los de pre-arranque.
+        $items = collect();
+
+        if ($this->user->perm('maintenance', 'view')) {
+            $query = Checklist::where('service_id', (int) $serviceId)
+                ->with('rows')
+                ->orderBy('id', 'desc');
+
+            if ($this->user->perm('checklist_qr_pre_start_only', 'view')) {
+                $query->where('type', ChecklistTemplate::TYPE_PRE_START);
+            }
+
+            $items = $query->get();
+        }
 
         return response()->json([
             'ok'        => true,

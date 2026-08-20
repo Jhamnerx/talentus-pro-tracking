@@ -390,10 +390,19 @@
 
   /* ---------- Templates ---------- */
   function renderTemplates(type) {
-    setHead([T("title"), T("adapted"), T("protocol"), ""]);
+    // La columna de protocolo tambien va tras device.protocol en el legacy
+    // (UserGprsTemplates/table.blade). Si el meta aun no ha llegado se asume
+    // visible, igual que antes.
+    var tplMeta = state.tplMeta[type];
+    var showProto = !tplMeta || tplMeta.can_protocol !== false;
+
+    setHead(showProto ? [T("title"), T("adapted"), T("protocol"), ""] : [T("title"), T("adapted"), ""]);
+    // El colspan de la fila vacia tiene que seguir al numero real de columnas.
+    var cols = showProto ? 4 : 3;
+
     var items = state.templates[type];
     if (!items) {
-      els.rows.innerHTML = emptyRow(4, T("loading") + "…");
+      els.rows.innerHTML = emptyRow(cols, T("loading") + "…");
       return loadTemplates(type);
     }
     var rows = pagedClient(items);
@@ -404,11 +413,12 @@
       slice
         .map(function (r) {
           return (
-            "<tr><td>" + esc(r.title) + "</td><td>" + esc(r.adapted_title) + "</td><td>" +
-            esc(r.protocol || "-") + '</td><td class="tp-svc-table__actions">' + kebab(r.id) + "</td></tr>"
+            "<tr><td>" + esc(r.title) + "</td><td>" + esc(r.adapted_title) + "</td>" +
+            (showProto ? "<td>" + esc(r.protocol || "-") + "</td>" : "") +
+            '<td class="tp-svc-table__actions">' + kebab(r.id) + "</td></tr>"
           );
         })
-        .join("") || emptyRow(4);
+        .join("") || emptyRow(cols);
     renderPager(rows.length, state.page, pages);
   }
   function loadTemplates(type) {
@@ -422,6 +432,8 @@
         adapties: optListToMap(d.adapties),
         protocols: optListToMap(d.protocols),
         device_types: optListToMap(d.device_types),
+        can_protocol: d.can_protocol,
+        can_device_type: d.can_device_type,
       };
       if (state.tab === type) renderTemplates(type);
     });
@@ -459,13 +471,20 @@
       '</label><input type="text" name="title" class="tp-input" value="' + esc(item ? item.title : "") + '"></div>' +
       '<div class="tp-field"><label class="tp-label">' + esc(T("adapted")) +
       '</label><select name="adapted" class="tp-input" data-tpl-adapted>' + adaptedOpts + "</select></div>" +
-      '<div class="tp-field" data-tpl-proto hidden><label class="tp-label">' + esc(T("protocol")) +
-      '</label><select name="protocol" class="tp-input" data-no-ts="1">' + protoOpts + "</select></div>" +
+      // Permiso de propiedad device.protocol: sin el, el legacy no pinta el
+      // campo (no lo pinta deshabilitado: no existe).
+      (meta.can_protocol === false
+        ? ""
+        : '<div class="tp-field" data-tpl-proto hidden><label class="tp-label">' + esc(T("protocol")) +
+          '</label><select name="protocol" class="tp-input" data-no-ts="1">' + protoOpts + "</select></div>") +
       '<div class="tp-field" data-tpl-devices hidden><label class="tp-label">' + esc(T("devices")) +
       '</label><div class="tp-input-wrap"><input type="text" class="tp-input tp-input--sm" data-tpl-devsearch placeholder="' +
       esc(T("search")) + '…"></div><div class="' + UI.list + '" data-tpl-devlist></div></div>' +
-      '<div class="tp-field" data-tpl-dtypes hidden><label class="tp-label">' + esc(T("device_types")) +
-      '</label><select name="device_types" class="tp-input" multiple size="5" data-no-ts="1">' + dtypeOpts + "</select></div>" +
+      // Idem con device.device_type_id.
+      (meta.can_device_type === false
+        ? ""
+        : '<div class="tp-field" data-tpl-dtypes hidden><label class="tp-label">' + esc(T("device_types")) +
+          '</label><select name="device_types" class="tp-input" multiple size="5" data-no-ts="1">' + dtypeOpts + "</select></div>") +
       '<div class="tp-field"><label class="tp-label">' + esc(T("message")) +
       '</label><textarea name="message" class="tp-textarea" rows="3">' + esc(item ? item.message : "") + "</textarea></div>" +
       // Uso en el widget de bloqueo de motor (solo GPRS). El equipo elige la

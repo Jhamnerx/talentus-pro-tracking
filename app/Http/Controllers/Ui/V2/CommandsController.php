@@ -599,6 +599,10 @@ class CommandsController extends BaseController
             'adapties'     => $meta['adaptedies'] ?? [],
             'protocols'    => $meta['protocols'] ?? [],
             'device_types' => $meta['device_types'] ?? [],
+            // Permisos de propiedad: el form legacy oculta estos dos campos
+            // (UserGprsTemplates/create.blade, UserSmsTemplates/create.blade).
+            'can_protocol'    => (bool) $this->user->perm('device.protocol', 'view'),
+            'can_device_type' => (bool) $this->user->perm('device.device_type_id', 'view'),
         ]);
     }
 

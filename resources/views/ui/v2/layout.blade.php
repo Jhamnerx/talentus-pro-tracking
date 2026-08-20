@@ -105,7 +105,7 @@
     <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=4" defer></script>
     {{-- Ajustes de cuenta (modal con tabs; se abre desde el topbar) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=9" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=10" defer></script>
     {{-- Enviar comando (modal compartido; se abre desde rail y kebab de Live) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-commands.js') }}?v=9" defer></script>
     {{-- Hitos kilométricos (capa Leaflet compartida por páginas con mapa) --}}

@@ -167,5 +167,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/commands-page.js') }}?v=9" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/commands-page.js') }}?v=10" defer></script>
 @endpush

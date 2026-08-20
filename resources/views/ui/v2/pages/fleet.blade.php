@@ -52,7 +52,7 @@
                     </button>
                 @endif
                 {{-- Alta de beacon (plugin beacons): kind aparte, form reducido --}}
-                @if (!empty($canCreate) && settings('plugins.beacons.status'))
+                @if (!empty($canCreate) && settings('plugins.beacons.status') && Auth::user()->perm('beacons', 'edit'))
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-create-beacon"
                         title="Beacon">＋ Beacon</button>
                 @endif

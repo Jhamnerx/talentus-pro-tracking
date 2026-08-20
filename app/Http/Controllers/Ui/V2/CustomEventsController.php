@@ -80,6 +80,9 @@ class CustomEventsController extends BaseController
         return response()->json([
             'ok'        => true,
             'protocols' => $protocols,
+            // El legacy oculta la columna/campo de protocolo sin este permiso
+            // (CustomEvents/table.blade, UserGprsTemplates/create.blade).
+            'can_protocol' => (bool) $this->user->perm('device.protocol', 'view'),
             'types'     => $types,
         ]);
     }

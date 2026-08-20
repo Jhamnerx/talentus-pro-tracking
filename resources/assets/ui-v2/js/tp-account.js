@@ -564,8 +564,17 @@
   /* ---- Eventos (custom_events) ---- */
 
   var CE_META = null;
+  // La COLUMNA de protocolo va tras el permiso device.protocol, como en
+  // CustomEvents/table.blade del legacy. El CAMPO del formulario no: ahi el
+  // legacy lo pide siempre (es obligatorio para crear el evento).
+  function ceShowProtocol() {
+    return !CE_META || CE_META.can_protocol !== false;
+  }
+  function ceCols() {
+    return ceShowProtocol() ? ["Mensaje", "Protocolo", "Condiciones"] : ["Mensaje", "Condiciones"];
+  }
   function tabEvents() {
-    return crudPanel("events", "Añadir evento", ["Mensaje", "Protocolo", "Condiciones"]);
+    return crudPanel("events", "Añadir evento", ceCols());
   }
   function wireEvents(panel) {
     tpModal.fetchJSON(API + "/custom-events/meta", { method: "GET" }).then(function (res) {
@@ -574,9 +583,13 @@
     wireCrud(panel, {
       listUrl: API + "/custom-events",
       itemUrl: function (id) { return API + "/custom-events/" + id; },
-      cols: ["Mensaje", "Protocolo", "Condiciones"],
+      cols: ceCols(),
       row: function (r) {
-        return "<td>" + esc(r.message) + "</td><td>" + esc(r.protocol) + "</td><td>" + (r.conditions ? r.conditions.length : 0) + "</td>";
+        return (
+          "<td>" + esc(r.message) + "</td>" +
+          (ceShowProtocol() ? "<td>" + esc(r.protocol) + "</td>" : "") +
+          "<td>" + (r.conditions ? r.conditions.length : 0) + "</td>"
+        );
       },
       delTitle: "Eliminar evento",
       delMsg: "¿Eliminar este evento?",
