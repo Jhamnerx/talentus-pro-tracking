@@ -395,7 +395,19 @@ class DevicesController extends BaseController
             $deviceIds = array_values(array_unique(array_filter(
                 array_map('intval', (array) $request->input('devices', []))
             )));
-            $overwrite = (bool) $request->input('overwrite', false);
+            // Que hacer con lo que el destino YA tiene:
+            //   keep     conservarlo (solo se copia lo que falta)
+            //   replace  reemplazar los que coincidan en tipo+nombre
+            //   mirror   dejar el destino EXACTAMENTE igual al origen
+            // Se acepta el `overwrite` antiguo por compatibilidad.
+            $mode = (string) $request->input('mode', '');
+            if ($mode === '') {
+                $mode = $request->boolean('overwrite') ? 'replace' : 'keep';
+            }
+            if (! in_array($mode, ['keep', 'replace', 'mirror'], true)) {
+                $mode = 'keep';
+            }
+            $overwrite = ($mode === 'replace');
 
             if (! $sensorIds || ! $deviceIds) {
                 return response()->json([
@@ -419,7 +431,18 @@ class DevicesController extends BaseController
             $replaced = 0;
             $skipped = 0;
             $denied = 0;
+            $deleted = 0;
+            // Sensores del destino con el MISMO nombre que uno copiado pero
+            // distinto tipo: no cuentan como duplicado (el hash es
+            // tipo+nombre) y por eso el destino acaba con mas sensores que el
+            // origen. Se avisa en vez de dejar al usuario contando.
+            $colisiones = [];
             $detalle = [];
+
+            $nombresOrigen = [];
+            foreach ($sensors as $sen) {
+                $nombresOrigen[mb_strtolower(trim((string) $sen->name))] = $sen->hash;
+            }
 
             beginTransaction();
 
@@ -430,10 +453,27 @@ class DevicesController extends BaseController
                         continue;
                     }
 
+                    $propios = \Tobuli\Entities\DeviceSensor::where('device_id', $target->id)->get();
+
+                    if ($mode === 'mirror') {
+                        // El destino queda identico al origen: fuera todo lo
+                        // suyo antes de copiar.
+                        foreach ($propios as $own) {
+                            $own->delete();
+                            $deleted++;
+                        }
+                        $propios = collect();
+                    }
+
                     // Hashes ya presentes en el destino, para no duplicar.
                     $existing = [];
-                    foreach (\Tobuli\Entities\DeviceSensor::where('device_id', $target->id)->get() as $own) {
+                    foreach ($propios as $own) {
                         $existing[$own->hash] = $own;
+
+                        $n = mb_strtolower(trim((string) $own->name));
+                        if (isset($nombresOrigen[$n]) && $nombresOrigen[$n] !== $own->hash) {
+                            $colisiones[$own->name] = true;
+                        }
                     }
 
                     $n = 0;
@@ -474,12 +514,15 @@ class DevicesController extends BaseController
             }
 
             return response()->json([
-                'ok'       => true,
-                'copied'   => $copied,
-                'replaced' => $replaced,
-                'skipped'  => $skipped,
-                'denied'   => $denied,
-                'devices'  => $detalle,
+                'ok'         => true,
+                'mode'       => $mode,
+                'copied'     => $copied,
+                'replaced'   => $replaced,
+                'skipped'    => $skipped,
+                'denied'     => $denied,
+                'deleted'    => $deleted,
+                'collisions' => array_keys($colisiones),
+                'devices'    => $detalle,
             ]);
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);

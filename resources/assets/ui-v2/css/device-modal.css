@@ -862,3 +862,21 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Modos de la copia: qué hacer con lo que el destino ya tiene. */
+.tp-copy__modes {
+  border-top: 1px dashed var(--border-default);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+}
+.tp-copy__modes .tp-copy__row {
+  cursor: pointer;
+  align-items: flex-start;
+}
+.tp-copy__modes input[type="radio"] {
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+.tp-copy__modes .tp-copy__row span {
+  white-space: normal;
+}

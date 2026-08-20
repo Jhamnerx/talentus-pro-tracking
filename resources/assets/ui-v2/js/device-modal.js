@@ -1449,11 +1449,18 @@
         '<div class="tp-copy__list" data-cp-devices>' +
         '<p class="tp-text-sm tp-text-muted" style="padding:8px;">Cargando…</p>' +
         "</div>" +
-        '<label class="tp-choice" style="margin-top:8px;">' +
-        '<input type="checkbox" class="tp-choice-input" data-cp-overwrite>' +
-        "<span>Reemplazar los sensores que ya existan en el destino</span></label>" +
+        '<div class="tp-copy__modes">' +
+        '<span class="tp-copy__title">Qué hacer con lo que el destino ya tiene</span>' +
+        '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="keep" checked>' +
+        "<span>Conservarlo — solo se copia lo que falte</span></label>" +
+        '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="replace">' +
+        "<span>Reemplazar los que coincidan en tipo y nombre</span></label>" +
+        '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="mirror">' +
+        "<span>Dejarlo igual al origen — borra los demás sensores del destino</span></label>" +
         '<p class="tp-text-xs tp-text-muted" style="margin:6px 0 0;">' +
-        "Sin marcar, los sensores que el destino ya tenga (mismo tipo y nombre) se dejan intactos.</p>" +
+        "Dos sensores con el mismo nombre pero distinto tipo NO se consideran el mismo: " +
+        'con "Reemplazar" conviven los dos y el destino acaba con más sensores que el origen.</p>' +
+        "</div>" +
         "</div>" +
         "</div>",
       buttons: [
@@ -1481,35 +1488,71 @@
               return false;
             }
 
-            var overwrite = d.querySelector("[data-cp-overwrite]").checked;
+            var modeEl = d.querySelector('input[name="tp-cp-mode"]:checked');
+            var mode = modeEl ? modeEl.value : "keep";
 
-            tpModal.setBusy(d, true);
-            tpModal
-              .fetchJSON(cfg.copy, {
-                method: "POST",
-                json: { sensors: sIds, devices: dIds, overwrite: overwrite ? 1 : 0 },
-              })
-              .then(function (res) {
-                tpModal.setBusy(d, false);
-                if (!res.ok || !res.data || !res.data.ok) {
-                  tpModal.toast((res.data && res.data.message) || "No se pudo copiar.", "error");
-                  return;
-                }
+            function enviar() {
+              tpModal.setBusy(d, true);
+              tpModal
+                .fetchJSON(cfg.copy, {
+                  method: "POST",
+                  json: { sensors: sIds, devices: dIds, mode: mode },
+                })
+                .then(function (res) {
+                  tpModal.setBusy(d, false);
+                  if (!res.ok || !res.data || !res.data.ok) {
+                    tpModal.toast((res.data && res.data.message) || "No se pudo copiar.", "error");
+                    return;
+                  }
 
-                var r = res.data;
-                var partes = [r.copied + " copiados"];
-                if (r.replaced) partes.push(r.replaced + " reemplazados");
-                if (r.skipped) partes.push(r.skipped + " ya existían");
-                if (r.denied) partes.push(r.denied + " sin permiso");
+                  var r = res.data;
+                  var partes = [r.copied + " copiados"];
+                  if (r.replaced) partes.push(r.replaced + " reemplazados");
+                  if (r.deleted) partes.push(r.deleted + " borrados del destino");
+                  if (r.skipped) partes.push(r.skipped + " ya existían");
+                  if (r.denied) partes.push(r.denied + " sin permiso");
 
-                tpModal.close(d);
-                tpModal.toast(partes.join(" · "), r.copied || r.replaced ? "success" : "warning");
-                if (typeof onDone === "function") onDone();
-              })
-              .catch(function () {
-                tpModal.setBusy(d, false);
-                tpModal.toast("Error de red.", "error");
-              });
+                  tpModal.close(d);
+                  tpModal.toast(partes.join(" · "), r.copied || r.replaced ? "success" : "warning");
+
+                  // Mismo nombre, distinto tipo: el destino se queda con los
+                  // dos y el recuento no cuadra con el origen. Mejor decirlo.
+                  if (r.collisions && r.collisions.length) {
+                    tpModal.alert({
+                      title: "Nombres repetidos en el destino",
+                      message:
+                        "El destino ya tenía estos sensores con el mismo nombre pero distinto tipo, así que " +
+                        "ahora hay dos de cada uno: " + r.collisions.join(", ") + ". " +
+                        'Si querías que quedara igual al origen, repite la copia con "Dejarlo igual al origen".',
+                    });
+                  }
+
+                  if (typeof onDone === "function") onDone();
+                })
+                .catch(function () {
+                  tpModal.setBusy(d, false);
+                  tpModal.toast("Error de red.", "error");
+                });
+            }
+
+            // "Dejarlo igual al origen" BORRA sensores: se confirma antes.
+            if (mode === "mirror") {
+              tpModal
+                .confirm({
+                  title: "Reemplazar la configuración del destino",
+                  message:
+                    "Se borrarán los sensores que los vehículos destino tengan y no estén en esta copia. " +
+                    "Esta acción no se puede deshacer.",
+                  confirmLabel: "Sí, dejarlo igual",
+                  danger: true,
+                })
+                .then(function (ok) {
+                  if (ok) enviar();
+                });
+              return false;
+            }
+
+            enviar();
             return false;
           },
         },
