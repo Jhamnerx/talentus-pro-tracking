@@ -209,7 +209,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=23"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=24"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
     <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=10" defer></script>
     <script>

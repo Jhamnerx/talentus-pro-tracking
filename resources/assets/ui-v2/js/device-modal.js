@@ -623,12 +623,25 @@
     }
     if (searchEl) searchEl.addEventListener("input", applyFilter);
 
-    // Ultimo listado recibido: lo usa el modal de copia para ofrecer que
-    // sensores llevar, sin volver a pedirlos.
-    var currentSensors = [];
+    // Sensores que se estan mostrando. NO vale guardar solo lo que llega
+    // por AJAX: la primera vez las filas las pinta Blade (sensores.blade)
+    // y renderRows() no ha corrido todavia, asi que el modal de copia
+    // creia que el vehiculo no tenia ninguno. Se leen del DOM, que es lo
+    // que el usuario ve.
+    function sensoresVisibles() {
+      var out = [];
+      Array.prototype.forEach.call(rowsEl.querySelectorAll("tr[data-sensor-id]"), function (tr) {
+        var tds = tr.querySelectorAll("td");
+        out.push({
+          id: parseInt(tr.getAttribute("data-sensor-id"), 10),
+          name: tds[0] ? tds[0].textContent.trim() : "",
+          type: tds[1] ? tds[1].textContent.trim() : "",
+        });
+      });
+      return out;
+    }
 
     function renderRows(items) {
-      currentSensors = items || [];
       if (!items.length) {
         rowsEl.innerHTML =
           '<tr data-sensors-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
@@ -660,7 +673,7 @@
         return;
       }
       if (e.target.closest("[data-sensors-copy]")) {
-        openSensorsCopy(cfg, currentSensors, reload);
+        openSensorsCopy(cfg, sensoresVisibles(), reload);
         return;
       }
       var edit = e.target.closest("[data-sensor-edit]");

@@ -26,6 +26,12 @@
   var ICON_CLOSE =
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>';
 
+  /** Dialogo abierto mas alto (el ultimo promovido al top layer). */
+  function topDialog() {
+    var abiertos = document.querySelectorAll("dialog[open]");
+    return abiertos.length ? abiertos[abiertos.length - 1] : null;
+  }
+
   function ensureToastHost() {
     var host = document.querySelector(".tp-toast-host");
     if (!host) {
@@ -34,6 +40,16 @@
       host.setAttribute("aria-live", "polite");
       document.body.appendChild(host);
     }
+
+    // Un <dialog> abierto con showModal() vive en el "top layer" del
+    // navegador: queda por encima de CUALQUIER z-index del flujo normal, asi
+    // que un host colgado del <body> sale SIEMPRE detras del modal (pasaba en
+    // todas las pantallas). Se cuelga del dialogo mas alto; como el host es
+    // position:fixed y el dialogo ya no tiene transform una vez abierto, el
+    // overflow:hidden del modal no lo recorta.
+    var padre = topDialog() || document.body;
+    if (host.parentNode !== padre) padre.appendChild(host);
+
     return host;
   }
 
@@ -162,6 +178,13 @@
       dlg = all[all.length - 1];
     }
     if (!dlg) return;
+
+    // Si el host de avisos estaba dentro de este modal, vuelve al body antes
+    // de cerrarlo: de lo contrario se iria con el y el aviso que se lanza
+    // justo despues de cerrar no se veria.
+    var host = document.querySelector(".tp-toast-host");
+    if (host && dlg.contains(host)) document.body.appendChild(host);
+
     try {
       if (typeof dlg.close === "function") {
         dlg.close(value == null ? "" : String(value));
