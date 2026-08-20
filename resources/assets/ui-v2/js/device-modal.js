@@ -54,6 +54,17 @@
     objectDeletePass: false,
   };
 
+  /**
+   * Escape de HTML a nivel de modulo.
+   * Varias funciones internas declaran su propio `esc` y lo tapan sin
+   * problema; el que NO lo declaraba se quedaba sin nada y reventaba con
+   * "esc is not defined" (pasaba en el modal de copia de sensores y, sin
+   * detectar, en el tab de Mantenimientos al pintar filas).
+   */
+  function esc(v) {
+    return tpModal.escapeHtml(v);
+  }
+
   // --------------------------------------------------------------------------
   // Wire-ups después de inyectar el HTML
   // --------------------------------------------------------------------------
