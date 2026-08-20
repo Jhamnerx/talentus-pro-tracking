@@ -787,9 +787,21 @@
   function updateFollows() {
     for (var id in follows) updateFollow(parseInt(id, 10));
   }
+  /** Deja marcada en la lista solo la fila del vehiculo seleccionado. */
+  function markSelectedRow(id) {
+    if (!listEl) return;
+    Array.prototype.forEach.call(listEl.querySelectorAll(".tp-live__row.is-selected"), function (r) {
+      r.classList.remove("is-selected");
+    });
+    if (id == null) return;
+    var row = listEl.querySelector('.tp-live__row[data-id="' + id + '"]');
+    if (row) row.classList.add("is-selected");
+  }
+
   function selectDevice(id) {
     var prev = state.selectedId;
     state.selectedId = id;
+    markSelectedRow(id);
     // resaltar el marcador seleccionado (glow + traer al frente) y limpiar el anterior
     if (prev != null && prev !== id) {
       refreshMarkerIcon(prev);
@@ -1650,7 +1662,12 @@
     // Badge de estado de vehículo (tipo con estados: VACÍO/CARGADO…) con su color.
     var stateBadge = vehicleStateBadge(d.vehicle_state);
     return (
-      '<div class="tp-live__row" data-id="' +
+      // El legacy marca en la lista el vehiculo seleccionado (devices.select
+      // -> addClass('active')). La clase se pone aqui tambien, no solo al
+      // pulsar, para que sobreviva a un repintado de la lista.
+      '<div class="tp-live__row' +
+      (state.selectedId === d.id ? " is-selected" : "") +
+      '" data-id="' +
       d.id +
       '" data-status="' +
       status +
@@ -2706,6 +2723,7 @@
         root.removeAttribute("data-bottombar-open");
         var prev = state.selectedId;
         state.selectedId = null;
+        markSelectedRow(null);
         if (prev != null) {
           refreshMarkerIcon(prev);
           if (state.markers[prev]) state.markers[prev].setZIndexOffset(0);

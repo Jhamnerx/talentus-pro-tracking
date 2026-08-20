@@ -2477,3 +2477,22 @@ table.tp-lock-hist th {
 .tp-media-card__dl:hover {
   text-decoration: underline;
 }
+
+/* ── Vehículo seleccionado en la lista ───────────────────────────────
+   Paridad con el legacy (devices.select → .active): la fila del vehículo
+   abierto queda destacada. Allí es fondo + acento lateral; aquí además el
+   nombre en negrita, que es como se lee de un vistazo en una lista larga. */
+.tp-live__row.is-selected {
+  /* --brand-bg-subtle SI tiene variante oscura; --brand-50 es claro fijo y
+     en tema oscuro dejaria un bloque blanco. */
+  background: var(--brand-bg-subtle, rgba(46, 99, 217, 0.12));
+  border-color: var(--brand-300, #8faef1);
+  box-shadow: inset 3px 0 0 0 var(--brand-500, #2e63d9);
+}
+.tp-live__row.is-selected .tp-live__row-nametext {
+  font-weight: 700;
+  color: var(--fg-primary);
+}
+.tp-live__group-items .tp-live__row.is-selected {
+  border-color: var(--brand-300, #a9c2f5);
+}
