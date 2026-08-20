@@ -190,6 +190,13 @@ class DevicesController extends BaseController
             'field'
         );
         $wantFuel   = in_array('fuel', $activeCols, true);
+        // Columnas de sensor activas: se calcula su valor por vehículo.
+        $sensorHashes = [];
+        foreach ((array) ($this->user->getSettings('listview')['columns'] ?? []) as $c) {
+            if (is_array($c) && ($c['class'] ?? '') === 'sensor' && ! empty($c['field'])) {
+                $sensorHashes[] = (string) $c['field'];
+            }
+        }
         $wantEvents = (bool) array_intersect(['last_event_title', 'last_event_type', 'last_event_time'], $activeCols);
 
         // Último evento por vehículo, en UNA consulta para toda la página.
@@ -222,6 +229,7 @@ class DevicesController extends BaseController
         foreach ($rows as $device) {
             $st = $device->getStatus();
             $fuel = $wantFuel ? $this->fuelColumns($device) : ['percentage' => null, 'quantity' => null, 'price' => null];
+            $sensorVals = $this->sensorValues($device, $sensorHashes);
 
             $items[] = [
                 'id'              => $device->id,
@@ -285,6 +293,8 @@ class DevicesController extends BaseController
                 'last_event_title'  => $lastEvents[$device->id]['title'] ?? null,
                 'last_event_type'   => $lastEvents[$device->id]['type'] ?? null,
                 'last_event_time'   => $lastEvents[$device->id]['time'] ?? null,
+                // Valores de los sensores elegidos como columna: { hash: {text, value} }
+                'sensors'               => $sensorVals ?: null,
                 'sim_activation_date'   => $this->cleanDate($device->sim_activation_date),
                 'sim_expiration_date'   => $this->cleanDate($device->sim_expiration_date),
                 'installation_date'     => $this->cleanDate($device->installation_date),
@@ -322,6 +332,76 @@ class DevicesController extends BaseController
         'address',
     ];
 
+    /**
+     * Columnas de sensor del usuario para el selector: una por combinación
+     * tipo+nombre (el `hash` del legacy es md5(type.name)), así una misma
+     * columna sirve para todos los vehículos que tengan ese sensor.
+     */
+    private function sensorColumns(): array
+    {
+        $numeric = (array) config('tobuli.numeric_sensors', []);
+        $titles  = [];
+
+        try {
+            $titles = (new \Tobuli\Sensors\SensorsManager())->getEnabledListTitles();
+        } catch (\Throwable $e) {
+            $titles = [];
+        }
+
+        $out = [];
+        try {
+            foreach (\CustomFacades\Repositories\DeviceSensorRepo::whereUserId($this->user->id) as $sensor) {
+                $hash = $sensor->hash;
+                if (isset($out[$hash])) {
+                    continue;
+                }
+
+                $out[$hash] = [
+                    'field'   => (string) $hash,
+                    'class'   => 'sensor',
+                    'type'    => (string) $sensor->type,
+                    'label'   => $sensor->name . ' (' . ($titles[$sensor->type] ?? $sensor->type) . ')',
+                    // Solo los numéricos admiten rangos de color, igual que el
+                    // configurador del legacy.
+                    'numeric' => in_array($sensor->type, $numeric, true),
+                ];
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        return array_values($out);
+    }
+
+    /** Valor actual de cada sensor activo, por vehículo (para las columnas de sensor). */
+    private function sensorValues($device, array $hashes): array
+    {
+        if (! $hashes) {
+            return [];
+        }
+
+        $out = [];
+        try {
+            foreach ($device->sensors as $sensor) {
+                $hash = $sensor->hash;
+                if (! in_array($hash, $hashes, true)) {
+                    continue;
+                }
+
+                $value = $sensor->getValueCurrent($device);
+                $out[$hash] = [
+                    'text'  => (string) $value->getFormatted(),
+                    // El valor crudo decide el color según los rangos definidos.
+                    'value' => $value->getValue(),
+                ];
+            }
+        } catch (\Throwable $e) {
+            return $out;
+        }
+
+        return $out;
+    }
+
     public function fleetColumns(Request $request): JsonResponse
     {
         if (! $this->user->perm('devices', 'view')) {
@@ -351,12 +431,25 @@ class DevicesController extends BaseController
             ];
         }
 
+        // Columnas de sensor del usuario (una por tipo+nombre)
+        $sensorCols = $this->sensorColumns();
+        $sensorHashes = array_column($sensorCols, 'field');
+        $available = array_merge($available, $sensorCols);
+
         $saved = (array) ($this->user->getSettings('listview')['columns'] ?? []);
         $selected = [];
+        $colors   = [];
         foreach ($saved as $c) {
             $field = is_array($c) ? ($c['field'] ?? null) : $c;
-            if ($field && in_array($field, self::FLEET_COLUMNS, true)) {
+            if (! $field) {
+                continue;
+            }
+            if (in_array($field, self::FLEET_COLUMNS, true) || in_array($field, $sensorHashes, true)) {
                 $selected[] = (string) $field;
+                // Rangos de color de esa columna (solo sensores numéricos)
+                if (is_array($c) && ! empty($c['color'])) {
+                    $colors[(string) $field] = array_values((array) $c['color']);
+                }
             }
         }
 
@@ -366,6 +459,8 @@ class DevicesController extends BaseController
             // Sin configuración previa (o toda ella fuera de esta vista): el
             // set por defecto de la tabla de flota.
             'selected'  => $selected ?: ['name', 'status', 'plate_number', 'imei', 'device_model', 'sim_number', 'speed', 'time', 'expiration_date'],
+            // { hash: [{from, to, color}] } — pinta el valor del sensor según el tramo
+            'colors'    => $colors,
         ]);
     }
 
@@ -381,10 +476,50 @@ class DevicesController extends BaseController
 
         $fields = config('tobuli.listview_fields', []);
         $wanted = (array) $request->input('columns', []);
+        $colors = (array) $request->input('colors', []);
+
+        // Columnas de sensor válidas del usuario (hash => definición)
+        $sensorCols = [];
+        foreach ($this->sensorColumns() as $sc) {
+            $sensorCols[$sc['field']] = $sc;
+        }
 
         $columns = [];
         foreach ($wanted as $field) {
             $field = (string) $field;
+
+            if (isset($sensorCols[$field])) {
+                $col = [
+                    'field' => $field,
+                    'class' => 'sensor',
+                    'type'  => $sensorCols[$field]['type'],
+                ];
+
+                // Rangos de color: solo para sensores numéricos, y saneados
+                // (from/to numéricos y color en formato #rrggbb).
+                if ($sensorCols[$field]['numeric'] && ! empty($colors[$field])) {
+                    $ranges = [];
+                    foreach ((array) $colors[$field] as $r) {
+                        $from  = $r['from']  ?? null;
+                        $to    = $r['to']    ?? null;
+                        $color = (string) ($r['color'] ?? '');
+                        if (! is_numeric($from) || ! is_numeric($to)) {
+                            continue;
+                        }
+                        if (! preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+                            continue;
+                        }
+                        $ranges[] = ['from' => (float) $from, 'to' => (float) $to, 'color' => $color];
+                    }
+                    if ($ranges) {
+                        $col['color'] = $ranges;
+                    }
+                }
+
+                $columns[] = $col;
+                continue;
+            }
+
             if (! isset($fields[$field]) || ! in_array($field, self::FLEET_COLUMNS, true)) {
                 continue;
             }

@@ -456,3 +456,42 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Botón de rangos de color, dentro del selector de columnas */
+.tp-colpick__ranges {
+  margin-left: auto;
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 1px 5px;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+  opacity: 0.45;
+}
+.tp-colpick__item:hover .tp-colpick__ranges {
+  opacity: 0.9;
+}
+.tp-colpick__ranges.is-set {
+  opacity: 1;
+  border-color: var(--brand-500, #2563eb);
+}
+
+/* Editor de tramos */
+.tp-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr 42px 34px;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.tp-range__color {
+  width: 42px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--border-default, #cbd5e1);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+}

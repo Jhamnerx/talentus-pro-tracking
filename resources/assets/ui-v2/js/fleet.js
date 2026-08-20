@@ -108,7 +108,7 @@
    * de lista legacy, así que lo que se configure aquí se ve allá y viceversa.
    */
   var COLS_URL = "/ui/v2/api/fleet/columns";
-  var columnsState = { available: [], selected: [], labels: {} };
+  var columnsState = { available: [], selected: [], labels: {}, defs: {}, colors: {} };
 
   // Cómo se pinta cada columna: valor + alineación.
   var COL_RENDER = {
@@ -179,6 +179,27 @@
 
   function colValue(field, d) {
     if (COL_RENDER[field]) return COL_RENDER[field](d);
+
+    // Columna de sensor: el valor viene en d.sensors[hash] y se colorea según
+    // los tramos definidos (mismo criterio que renderHtmlSensor del legacy).
+    var def = columnsState.defs[field];
+    if (def && def.class === "sensor") {
+      var sv = d.sensors && d.sensors[field];
+      if (!sv) return "—";
+
+      var color = "";
+      var ranges = columnsState.colors[field];
+      if (ranges && sv.value !== null && sv.value !== undefined && isFinite(Number(sv.value))) {
+        var n = Number(sv.value);
+        ranges.forEach(function (r) {
+          if (n >= Number(r.from) && n <= Number(r.to)) color = r.color;
+        });
+      }
+      return color
+        ? '<span style="color:' + escapeHtml(color) + ';font-weight:600;">' + escapeHtml(sv.text || "—") + "</span>"
+        : escapeHtml(sv.text || "—");
+    }
+
     var v = d[field];
     return escapeHtml(v == null || v === "" ? "—" : v);
   }
@@ -211,9 +232,12 @@
         if (j && j.ok) {
           columnsState.available = j.available || [];
           columnsState.selected = j.selected || [];
+          columnsState.colors = j.colors || {};
           columnsState.labels = {};
+          columnsState.defs = {};
           columnsState.available.forEach(function (c) {
             columnsState.labels[c.field] = c.label;
+            columnsState.defs[c.field] = c;
           });
           renderHead();
         }
@@ -222,6 +246,79 @@
       .catch(function () {
         if (typeof done === "function") done();
       });
+  }
+
+  /* ===== Rangos de color por sensor =====
+   * Para las columnas de sensor numérico se pueden definir tramos
+   * (de X a Y en tal color) y la celda se pinta según el valor. Es el mismo
+   * formato que guarda el configurador del legacy: columns[i].color[].
+   */
+  function rangeRowHtml(r) {
+    r = r || { from: "", to: "", color: "#ef4444" };
+    return (
+      '<div class="tp-range" data-range>' +
+      '<input type="number" step="any" class="tp-input tp-input--sm" data-range-from placeholder="Desde" value="' +
+      escapeHtml(r.from) + '">' +
+      '<input type="number" step="any" class="tp-input tp-input--sm" data-range-to placeholder="Hasta" value="' +
+      escapeHtml(r.to) + '">' +
+      '<input type="color" class="tp-range__color" data-range-color value="' + escapeHtml(r.color || "#ef4444") + '">' +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-range-del title="Quitar tramo">×</button>' +
+      "</div>"
+    );
+  }
+
+  function openRangesModal(field) {
+    var def = columnsState.defs[field];
+    if (!def) return;
+
+    var current = (columnsState.colors[field] || []).slice();
+
+    tpModal.open({
+      title: "Colores · " + def.label,
+      size: "sm",
+      body:
+        '<div class="tp-ranges">' +
+        '<p class="tp-text-sm tp-text-muted" style="margin:0 0 10px;">La celda toma el color del último tramo que contenga el valor.</p>' +
+        '<div data-ranges-list>' +
+        (current.length ? current.map(rangeRowHtml).join("") : rangeRowHtml(null)) +
+        "</div>" +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-range-add style="margin-top:8px;">＋ Añadir tramo</button>' +
+        "</div>",
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Aplicar",
+          variant: "primary",
+          close: false,
+          onClick: function (d) {
+            var ranges = [];
+            d.querySelectorAll("[data-range]").forEach(function (row) {
+              var from = row.querySelector("[data-range-from]").value;
+              var to = row.querySelector("[data-range-to]").value;
+              var color = row.querySelector("[data-range-color]").value;
+              if (from === "" || to === "") return;
+              ranges.push({ from: Number(from), to: Number(to), color: color });
+            });
+
+            columnsState.colors[field] = ranges;
+            tpModal.close(d);
+            tpModal.toast("Se aplicarán al guardar las columnas.", "success");
+            return false;
+          },
+        },
+      ],
+      onMount: function (d) {
+        var list = d.querySelector("[data-ranges-list]");
+        d.querySelector("[data-range-add]").addEventListener("click", function () {
+          list.insertAdjacentHTML("beforeend", rangeRowHtml(null));
+        });
+        list.addEventListener("click", function (e) {
+          var del = e.target.closest("[data-range-del]");
+          if (!del) return;
+          if (list.querySelectorAll("[data-range]").length > 1) del.closest("[data-range]").remove();
+        });
+      },
+    });
   }
 
   function openColumnsModal() {
@@ -243,15 +340,29 @@
         '<div class="tp-colpick__grid">' +
         columnsState.available
           .map(function (c) {
+            var hasRanges = (columnsState.colors[c.field] || []).length;
             return (
               '<label class="tp-colpick__item"><input type="checkbox" data-col="' + escapeHtml(c.field) + '"' +
-              (chosen[c.field] ? " checked" : "") + "><span>" + escapeHtml(c.label) + "</span></label>"
+              (chosen[c.field] ? " checked" : "") + "><span>" + escapeHtml(c.label) + "</span>" +
+              // Solo los sensores numéricos admiten tramos de color
+              (c.numeric
+                ? '<button type="button" class="tp-colpick__ranges' + (hasRanges ? " is-set" : "") +
+                  '" data-ranges="' + escapeHtml(c.field) + '" title="Colores por rango">🎨</button>'
+                : "") +
+              "</label>"
             );
           })
           .join("") +
         "</div></div>",
       onMount: function (d) {
         d.addEventListener("click", function (e) {
+          var ranges = e.target.closest("[data-ranges]");
+          if (ranges) {
+            // el botón vive dentro del <label>: sin esto marcaría la casilla
+            e.preventDefault();
+            e.stopPropagation();
+            return openRangesModal(ranges.getAttribute("data-ranges"));
+          }
           var all = e.target.closest("[data-col-all]");
           var none = e.target.closest("[data-col-none]");
           if (!all && !none) return;
@@ -273,8 +384,14 @@
               tpModal.toast("Elige al menos una columna.", "warning");
               return false;
             }
+            // Solo los rangos de las columnas que quedan activas
+            var colors = {};
+            cols.forEach(function (f) {
+              if ((columnsState.colors[f] || []).length) colors[f] = columnsState.colors[f];
+            });
+
             tpModal
-              .fetchJSON(COLS_URL, { method: "PUT", json: { columns: cols } })
+              .fetchJSON(COLS_URL, { method: "PUT", json: { columns: cols, colors: colors } })
               .then(function (res) {
                 if (res.ok && res.data && res.data.ok) {
                   tpModal.toast("Columnas guardadas.", "success");
