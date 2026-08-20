@@ -132,13 +132,18 @@
     @endif
 
     @if ($u->perm('sharing', 'view'))
+        {{-- front.share y front.sharing se traducen los DOS como "Compartir",
+             asi que en el menu salian dos entradas identicas haciendo cosas
+             distintas: una crea un enlace y la otra lleva al listado. Se
+             matizan aqui, sin tocar los ficheros de idioma (los comparte el
+             legacy). --}}
         <button type="button" class="tp-row-menu__item" data-act="share" data-feature="share">
             <span class="tp-row-menu__icon">{!! $ic['share'] !!}</span>
             <span>{{ trans('front.share') }}</span>
         </button>
         <button type="button" class="tp-row-menu__item" data-act="sharing_list" data-feature="sharing">
             <span class="tp-row-menu__icon">{!! $ic['sharing'] !!}</span>
-            <span>{{ trans('front.sharing') }}</span>
+            <span>Enlaces compartidos</span>
         </button>
     @endif
 
@@ -158,14 +163,6 @@
         </button>
     @endif
 
-    @if ($u->able('configure_device'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="device_config"
-            data-need="sim" data-url="{{ route('device_config.index', ['device_id' => '__ID__']) }}">
-            <span class="tp-row-menu__icon">{!! $ic['device_config'] !!}</span>
-            <span>{{ trans('front.device_configuration') }}</span>
-        </button>
-    @endif
-
     @if ($u->perm('call_actions', 'view') && $u->perm('events', 'view'))
         {{-- Abre el modal nativo tp-call-actions con el device preseleccionado
              (paridad legacy call_actions.create?device_id) --}}
@@ -181,22 +178,6 @@
         <span>{{ trans('admin.device_plans') }}</span>
     </button>
 
-    @if ($u->perm('alerts', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="alerts"
-            data-url="{{ route('device.alerts.index', ['device_id' => '__ID__']) }}">
-            <span class="tp-row-menu__icon">{!! $ic['alerts'] !!}</span>
-            <span>{{ trans('front.device_alerts') }}</span>
-        </button>
-    @endif
-
-    @if ($u->perm('device_route_types', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="route_types"
-            data-url="{{ route('device_route_type.show', ['device_id' => '__ID__']) }}">
-            <span class="tp-row-menu__icon">{!! $ic['route'] !!}</span>
-            <span>{{ trans('front.route_types') }}</span>
-        </button>
-    @endif
-
     @if ($u->perm('devices', 'edit'))
         <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="reset_app_uuid"
             data-need="app_uuid" data-url="{{ route('devices.do_reset_app_uuid', '__ID__') }}">
@@ -205,21 +186,7 @@
         </button>
     @endif
 
-    @if ($u->perm('camera', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="camera"
-            data-need="general"
-            data-url="{{ route('device_media.create', ['search_phrase' => '__IMEI__', 'device_id' => '__ID__']) }}">
-            <span class="tp-row-menu__icon">{!! $ic['camera'] !!}</span>
-            <span>{!! trans('front.camera') !!}</span>
-        </button>
-    @endif
-
     <div class="tp-row-menu__sep" data-need="video"></div>
-    <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="live_video"
-        data-need="video" data-url="{{ route('device_video.live.modal', '__ID__') }}">
-        <span class="tp-row-menu__icon">{!! $ic['video'] !!}</span>
-        <span>{{ trans('front.live_video') }}</span>
-    </button>
     <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="playback"
         data-need="video" data-url="{{ route('device_video.playback.modal', '__ID__') }}">
         <span class="tp-row-menu__icon">{!! $ic['playback'] !!}</span>
