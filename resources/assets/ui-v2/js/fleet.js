@@ -151,7 +151,25 @@
       return escapeHtml(d.expiration_date || "—");
     },
   };
-  var COL_RIGHT = { speed: true };
+  // Columnas añadidas 19-ago (las mismas que ofrece el listado configurable
+  // del legacy). `fuel` se despliega en tres celdas, como allí.
+  COL_RENDER.stop_duration = function (d) { return escapeHtml(d.stop_duration || "—"); };
+  COL_RENDER.idle_duration = function (d) { return escapeHtml(d.idle_duration || "—"); };
+  COL_RENDER.ignition_duration = function (d) { return escapeHtml(d.ignition_duration || "—"); };
+  COL_RENDER.last_event_title = function (d) { return escapeHtml(d.last_event_title || "—"); };
+  COL_RENDER.last_event_type = function (d) { return escapeHtml(d.last_event_type || "—"); };
+  COL_RENDER.last_event_time = function (d) { return escapeHtml(d.last_event_time || "—"); };
+  COL_RENDER.fuel = function (d) {
+    var pct = d.fuel_percentage;
+    if (!pct || pct === "-") return "—";
+    return (
+      '<span class="tp-fuel"><span class="tp-fuel__bar"><span class="tp-fuel__fill" style="width:' +
+      (parseInt(pct, 10) || 0) + '%"></span></span>' +
+      "<span>" + escapeHtml(pct) + "</span></span>"
+    );
+  };
+
+  var COL_RIGHT = { speed: true, fuel: true };
 
   function colValue(field, d) {
     if (COL_RENDER[field]) return COL_RENDER[field](d);
@@ -521,6 +539,17 @@
   if (state.status) {
     document.querySelectorAll("[data-status]").forEach(function (b) {
       b.classList.toggle("is-active", b.getAttribute("data-status") === state.status);
+    });
+  }
+
+  /* Filas por página */
+  var limitSel = document.getElementById("tp-fleet-limit");
+  if (limitSel) {
+    limitSel.value = String(state.limit);
+    limitSel.addEventListener("change", function () {
+      state.limit = parseInt(limitSel.value, 10) || 100;
+      state.page = 1;
+      load();
     });
   }
 

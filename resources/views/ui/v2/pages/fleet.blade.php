@@ -4,7 +4,7 @@
 @section('rail-active', 'fleet')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=2">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=4">
     {{-- Kebab compartido + modales de Servicios (tab Servicios del modal device) --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
@@ -52,9 +52,12 @@
             <div class="tp-fleet__filters" role="tablist" aria-label="Estado">
                 <button class="tp-seg__btn is-active" role="tab" data-status="">Todos</button>
                 <button class="tp-seg__btn" role="tab" data-status="moving">Moviendo</button>
-                <button class="tp-seg__btn" role="tab" data-status="idle">Inactivo</button>
-                <button class="tp-seg__btn" role="tab" data-status="stopped">Detenido</button>
-                <button class="tp-seg__btn" role="tab" data-status="offline">Offline</button>
+                {{-- idle = motor encendido sin moverse (ralentí). NO es lo mismo
+                     que "inactivo" (sin datos hace tiempo): ambos se llamaban
+                     "Inactivo" y salían dos veces en la barra. --}}
+                <button class="tp-seg__btn" role="tab" data-status="idle">{{ trans('front.idle') }}</button>
+                <button class="tp-seg__btn" role="tab" data-status="stopped">{{ trans('front.stop') }}</button>
+                <button class="tp-seg__btn" role="tab" data-status="offline">{{ trans('front.offline') }}</button>
                 {{-- Estados que el legacy resolvía con tablas Lookup dedicadas --}}
                 <button class="tp-seg__btn" role="tab" data-status="inactive">{{ trans('front.inactive') }}</button>
                 <button class="tp-seg__btn" role="tab" data-status="never_connected">{{ trans('front.never_connected') }}</button>
@@ -131,9 +134,19 @@
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-selection-clear">Limpiar</button>
             </div>
             <nav class="tp-fleet__pager" aria-label="Paginación">
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-prev" disabled>—</button>
+                <label class="tp-fleet__perpage">
+                    <span class="tp-text-sm tp-text-muted">Filas</span>
+                    <select class="tp-input tp-input--sm" id="tp-fleet-limit">
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                        <option value="500">500</option>
+                    </select>
+                </label>
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-prev" disabled>‹</button>
                 <span class="tp-text-sm tp-text-muted" id="tp-fleet-page">—</span>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-next" disabled>—</button>
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-next" disabled>›</button>
             </nav>
         </footer>
 
@@ -145,7 +158,7 @@
 @push('scripts')
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=18"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=4" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=5" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.
         (function() {

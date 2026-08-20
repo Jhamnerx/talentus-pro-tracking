@@ -151,15 +151,18 @@ class DevicesController extends BaseController
             $query->wasConnected();
         }
 
-        // Estados que el legacy resuelve con tablas Lookup dedicadas
-        // (DevicesInactive/NeverConnected/Expired). Se aplican en SQL, no
-        // filtrando en PHP como los cuatro grupos básicos.
-        if ($status === 'inactive') {
-            $query->inactive();
-        } elseif ($status === 'never_connected') {
-            $query->neverConnected();
-        } elseif ($status === 'expired') {
-            $query->expired();
+        // TODOS los estados se filtran en SQL con los scopes de la entidad.
+        // Antes los cuatro básicos se filtraban en PHP DESPUÉS de paginar: la
+        // página traía 25 vehículos y descartaba los que no coincidían, así que
+        // la tabla salía vacía mientras el contador seguía diciendo 1411.
+        switch ($status) {
+            case 'moving':          $query->move();           break;
+            case 'idle':            $query->idle();           break;
+            case 'stopped':         $query->park();           break;
+            case 'offline':         $query->offline();        break;
+            case 'inactive':        $query->inactive();       break;
+            case 'never_connected': $query->neverConnected(); break;
+            case 'expired':         $query->expired();        break;
         }
 
         if ($q !== '') {
@@ -180,14 +183,45 @@ class DevicesController extends BaseController
         // Títulos de grupo del usuario (la columna 'group' del listview legacy).
         $groupTitles = $this->user->deviceGroups()->pluck('title', 'id')->all();
 
+        // Las columnas caras (combustible y último evento) solo se calculan si
+        // el usuario las tiene activas: no se paga por lo que no se mira.
+        $activeCols = array_column(
+            (array) ($this->user->getSettings('listview')['columns'] ?? []),
+            'field'
+        );
+        $wantFuel   = in_array('fuel', $activeCols, true);
+        $wantEvents = (bool) array_intersect(['last_event_title', 'last_event_type', 'last_event_time'], $activeCols);
+
+        // Último evento por vehículo, en UNA consulta para toda la página.
+        // Se agrupa por MAX(id) y no por MAX(time): sobre 1,2 M de eventos el
+        // MAX(time) con join tarda ~5,8 s y este resuelve en ~125 ms.
+        $lastEvents = [];
+        $pageIds = $rows->pluck('id')->all();
+        if ($pageIds && $wantEvents) {
+            try {
+                $maxIds = \DB::table('events')
+                    ->selectRaw('MAX(id) as mid')
+                    ->whereIn('device_id', $pageIds)
+                    ->where('user_id', $this->user->id)
+                    ->groupBy('device_id')
+                    ->pluck('mid');
+
+                foreach (\Tobuli\Entities\Event::whereIn('id', $maxIds)->get() as $ev) {
+                    $lastEvents[$ev->device_id] = [
+                        'title' => (string) $ev->title,
+                        'type'  => (string) $ev->type_title,
+                        'time'  => $ev->time ? \Formatter::time()->convert($ev->time) : null,
+                    ];
+                }
+            } catch (\Throwable $e) {
+                $lastEvents = [];
+            }
+        }
+
         $items = [];
         foreach ($rows as $device) {
             $st = $device->getStatus();
-            // Los tres de arriba ya vienen filtrados por SQL.
-            $sqlFiltered = in_array($status, ['inactive', 'never_connected', 'expired'], true);
-            if ($status !== '' && ! $sqlFiltered && $this->groupStatus($st) !== $status) {
-                continue;
-            }
+            $fuel = $wantFuel ? $this->fuelColumns($device) : ['percentage' => null, 'quantity' => null, 'price' => null];
 
             $items[] = [
                 'id'              => $device->id,
@@ -230,6 +264,23 @@ class DevicesController extends BaseController
                 'group'               => (string) (optional($device->pivot)->group_id
                     ? ($groupTitles[$device->pivot->group_id] ?? '')
                     : ''),
+                // ── Columnas que el listado configurable del legacy ofrece y
+                // aquí faltaban. Todas salen de traccar_devices o de sensores ya
+                // cargados; la única cara de verdad (dirección geocodificada) se
+                // resuelve en el cliente sobre las filas visibles.
+                'stop_duration'     => (string) $device->stop_duration,
+                'idle_duration'     => (string) $device->idle_duration,
+                'ignition_duration' => (string) $device->ignition_duration,
+                'ignition'          => (string) $device->getEngineStatus(true),
+                // Combustible: el legacy lo despliega en tres columnas
+                // (porcentaje, cantidad y precio) a partir del sensor de depósito.
+                'fuel_percentage'   => $fuel['percentage'],
+                'fuel_quantity'     => $fuel['quantity'],
+                'fuel_price'        => $fuel['price'],
+                // Último evento (una sola consulta para toda la página, ver arriba)
+                'last_event_title'  => $lastEvents[$device->id]['title'] ?? null,
+                'last_event_type'   => $lastEvents[$device->id]['type'] ?? null,
+                'last_event_time'   => $lastEvents[$device->id]['time'] ?? null,
                 'sim_activation_date'   => $this->cleanDate($device->sim_activation_date),
                 'sim_expiration_date'   => $this->cleanDate($device->sim_expiration_date),
                 'installation_date'     => $this->cleanDate($device->installation_date),
@@ -259,6 +310,9 @@ class DevicesController extends BaseController
         'vin', 'registration_number', 'object_owner', 'additional_notes',
         'active', 'sim_activation_date', 'sim_expiration_date',
         'installation_date', 'expiration_date',
+        // Añadidas 19-ago: el listado configurable del legacy ya las ofrecía.
+        'stop_duration', 'idle_duration', 'ignition_duration', 'fuel',
+        'last_event_title', 'last_event_type', 'last_event_time',
     ];
 
     public function fleetColumns(Request $request): JsonResponse
@@ -478,6 +532,36 @@ class DevicesController extends BaseController
         }
 
         return response()->json(['ok' => true, 'deleted' => $deleted]);
+    }
+
+    /**
+     * Combustible en las tres columnas del legacy (porcentaje, cantidad y
+     * precio), calculadas desde el sensor de depósito. Sin sensor: '-'.
+     */
+    private function fuelColumns($device): array
+    {
+        $none = ['percentage' => '-', 'quantity' => '-', 'price' => '-'];
+
+        try {
+            $sensor = $device->getFuelTankSensor();
+            if (! $sensor) {
+                return $none;
+            }
+
+            $value = $sensor->getValueCurrent($device)->getValue();
+            $full  = $sensor->getMaxTankValue();
+
+            $pct = $full ? floatval($value) * 100 / $full : 0;
+            $pct = max(0, min(100, $pct));
+
+            return [
+                'percentage' => round($pct) . '%',
+                'quantity'   => (string) $sensor->getValueCurrent($device)->getFormatted(),
+                'price'      => (string) round(floatval($value) * (float) $device->fuel_price, 2),
+            ];
+        } catch (\Throwable $e) {
+            return $none;
+        }
     }
 
     /** '0000-00-00' (placeholder legacy) se trata como vacío. */

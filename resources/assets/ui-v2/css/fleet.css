@@ -251,3 +251,97 @@
   gap: 8px;
   margin-left: auto;
 }
+
+/* ── Contenedor con margen y ancho acotado ───────────────────────────
+   La tabla llegaba pegada a los bordes de la pantalla y, con muchas
+   columnas, se estiraba sin control. Ahora respira por los lados y el
+   scroll horizontal ocurre DENTRO de la tarjeta, no en la página. */
+.tp-fleet__table-wrap {
+  margin: 0 16px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-raised, #fff);
+  overflow: auto;
+  /* el ancho del contenedor manda: si sobran columnas, scroll interno */
+  max-width: calc(100% - 32px);
+}
+
+.tp-fleet__table thead th:first-child,
+.tp-fleet__table tbody td:first-child {
+  padding-left: 14px;
+}
+.tp-fleet__table thead th:last-child,
+.tp-fleet__table tbody td:last-child {
+  padding-right: 14px;
+}
+
+/* Cabecera fija al hacer scroll vertical dentro de la tarjeta */
+.tp-fleet__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-raised, #fff);
+}
+
+/* Filas por página, junto al paginador */
+.tp-fleet__perpage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+}
+.tp-fleet__perpage select {
+  width: 74px;
+}
+
+/* Combustible: barra + porcentaje en una sola celda */
+.tp-fuel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  justify-content: flex-end;
+}
+.tp-fuel__bar {
+  width: 52px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-sunken, #eef1f5);
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.tp-fuel__fill {
+  display: block;
+  height: 100%;
+  background: var(--brand-500, #2563eb);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .tp-fleet__toolbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .tp-fleet__filters {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .tp-fleet__filters .tp-seg__btn {
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 780px) {
+  .tp-fleet__table-wrap {
+    margin: 0 8px 10px;
+    max-width: calc(100% - 16px);
+  }
+  .tp-fleet__table tbody td {
+    max-width: 180px;
+  }
+  .tp-fleet__footer {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}
