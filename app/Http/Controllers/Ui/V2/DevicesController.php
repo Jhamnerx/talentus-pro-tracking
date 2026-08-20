@@ -142,6 +142,11 @@ class DevicesController extends BaseController
         $page   = max(1, (int) $request->get('page', 1));
         $q      = trim((string) $request->get('q', ''));
         $status = (string) $request->get('status', '');
+        // Filtros del panel (paridad con el listado del ERP): grupo, modelo de
+        // equipo y protocolo. El grupo vive en el pivot y es POR USUARIO.
+        $group    = $request->get('group', '');
+        $model    = trim((string) $request->get('model', ''));
+        $protocol = trim((string) $request->get('protocol', ''));
 
         $query = $this->user->devices()->clearOrdersBy();
 
@@ -163,6 +168,18 @@ class DevicesController extends BaseController
             case 'inactive':        $query->inactive();       break;
             case 'never_connected': $query->neverConnected(); break;
             case 'expired':         $query->expired();        break;
+        }
+
+        if ($group !== '' && $group !== null) {
+            $query->wherePivot('group_id', (int) $group);
+        }
+
+        if ($model !== '') {
+            $query->where('devices.device_model', $model);
+        }
+
+        if ($protocol !== '') {
+            $query->traccarJoin()->where('traccar_devices.protocol', $protocol);
         }
 
         if ($q !== '') {
@@ -301,14 +318,79 @@ class DevicesController extends BaseController
             ];
         }
 
-        return response()->json([
+        $payload = [
             'ok'    => true,
             'page'  => $page,
             'limit' => $limit,
             'total' => $total,
             'items' => $items,
             'pages' => (int) ceil($total / $limit),
-        ]);
+        ];
+
+        // Opciones del panel de filtros: solo en la primera carga, no cambian
+        // al paginar. Grupos del usuario + modelos y protocolos realmente
+        // presentes en SU flota (no el catalogo entero).
+        if ($request->boolean('with_filters')) {
+            $payload['filters'] = [
+                'groups'    => $this->fleetGroupOptions(),
+                'models'    => $this->fleetDistinct('devices.device_model'),
+                'protocols' => $this->fleetDistinct('traccar_devices.protocol'),
+            ];
+        }
+
+        return response()->json($payload);
+    }
+
+    /** Grupos del usuario con su numero de vehiculos (para el filtro). */
+    private function fleetGroupOptions(): array
+    {
+        $counts = \DB::table('user_device_pivot')
+            ->where('user_id', $this->user->id)
+            ->selectRaw('group_id, COUNT(*) as n')
+            ->groupBy('group_id')
+            ->pluck('n', 'group_id')
+            ->all();
+
+        $out = [];
+        foreach ($this->user->deviceGroups()->orderBy('title')->get(['id', 'title']) as $g) {
+            $out[] = [
+                'id'    => (int) $g->id,
+                'title' => (string) $g->title,
+                'count' => (int) ($counts[$g->id] ?? 0),
+            ];
+        }
+
+        return $out;
+    }
+
+    /** Valores distintos de una columna dentro de la flota del usuario. */
+    private function fleetDistinct(string $column): array
+    {
+        try {
+            $query = $this->user->devices()->clearOrdersBy();
+
+            if (strpos($column, 'traccar_devices.') === 0) {
+                $query->traccarJoin();
+            }
+
+            // toBase(): sobre el builder de Eloquent, pluck() de una columna
+            // cualificada devuelve vacios (busca un atributo del modelo con
+            // ese nombre). Sobre el query builder si resuelve la columna.
+            $alias = substr($column, strrpos($column, '.') + 1);
+
+            return $query->whereNotNull($column)
+                ->where($column, '<>', '')
+                ->toBase()
+                ->select($column)
+                ->distinct()
+                ->orderBy($column)
+                ->pluck($alias)
+                ->filter()
+                ->values()
+                ->all();
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /* =================================================================

@@ -30,6 +30,11 @@
     })(),
     sort: "name",
     dir: "asc",
+    // Filtros del panel: grupo (pivot por usuario), modelo de equipo y
+    // protocolo. Las opciones vienen del propio feed (with_filters).
+    group: "",
+    model: "",
+    protocol: "",
     items: [],
     selected: new Set(),
     loading: false,
@@ -49,6 +54,10 @@
   var $exp = document.getElementById("tp-fleet-export");
   var $rfr = document.getElementById("tp-fleet-refresh");
   var $table = document.getElementById("tp-fleet-table");
+  var $status = document.getElementById("tp-fleet-status");
+  var $group = document.getElementById("tp-fleet-group");
+  var $model = document.getElementById("tp-fleet-model");
+  var $protocol = document.getElementById("tp-fleet-protocol");
 
   var STATUS_LABELS = {
     moving: "Moviendo",
@@ -606,15 +615,20 @@
     // En el refresco automático no se toca el pie: parpadear "Cargando…" cada
     // 30 s distrae y no aporta nada.
     if (!silent) $page.textContent = "Cargando…";
-    var url =
-      DATA_URL +
-      "?" +
-      new URLSearchParams({
-        page: state.page,
-        limit: state.limit,
-        q: state.q,
-        status: state.status,
-      }).toString();
+    var params = {
+      page: state.page,
+      limit: state.limit,
+      q: state.q,
+      status: state.status,
+      group: state.group,
+      model: state.model,
+      protocol: state.protocol,
+    };
+    // Las opciones de los desplegables solo se piden una vez: no cambian al
+    // paginar y salen de consultas DISTINCT sobre toda la flota.
+    if (!filtersLoaded) params.with_filters = 1;
+
+    var url = DATA_URL + "?" + new URLSearchParams(params).toString();
 
     return fetch(url, {
       credentials: "same-origin",
@@ -629,12 +643,62 @@
         state.total = p.total || 0;
         state.pages = p.pages || 1;
         state.loading = false;
+        if (p.filters) fillFilters(p.filters);
         render();
       })
       .catch(function (err) {
         state.loading = false;
         console.warn("[fleet] load failed", err);
       });
+  }
+
+  /**
+   * Rellena los desplegables con lo que hay realmente en la flota. Conserva
+   * el valor elegido por si el usuario ya habia filtrado antes de que llegue
+   * la respuesta.
+   */
+  var filtersLoaded = false;
+
+  function fillOptions(sel, options) {
+    if (!sel) return;
+    var keep = sel.value;
+    // La primera opcion ("Todos") se mantiene siempre.
+    while (sel.options.length > 1) sel.remove(1);
+    options.forEach(function (o) {
+      var el = document.createElement("option");
+      el.value = o.value;
+      el.textContent = o.label;
+      sel.appendChild(el);
+    });
+    if (keep) sel.value = keep;
+    if (window.tpSelect && tpSelect.refresh) {
+      try {
+        tpSelect.refresh(sel);
+      } catch (e) {}
+    }
+  }
+
+  function fillFilters(f) {
+    filtersLoaded = true;
+
+    fillOptions(
+      $group,
+      (f.groups || []).map(function (g) {
+        return { value: String(g.id), label: g.title + (g.count ? " (" + g.count + ")" : "") };
+      }),
+    );
+    fillOptions(
+      $model,
+      (f.models || []).map(function (m) {
+        return { value: m, label: m };
+      }),
+    );
+    fillOptions(
+      $protocol,
+      (f.protocols || []).map(function (p) {
+        return { value: p, label: p };
+      }),
+    );
   }
 
   /* Events */
@@ -648,14 +712,28 @@
     }, 250);
   });
 
-  var segBtns = root.querySelectorAll(".tp-fleet__filters .tp-seg__btn");
-  segBtns.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      segBtns.forEach(function (b) {
-        b.classList.remove("is-active");
-      });
-      btn.classList.add("is-active");
-      state.status = btn.getAttribute("data-status") || "";
+  // El estado paso de botones segmentados a desplegable, junto al resto de
+  // filtros. El dashboard sigue enlazando con ?status=..., asi que el select
+  // arranca con lo que traiga la URL.
+  if ($status) {
+    if (state.status) $status.value = state.status;
+    $status.addEventListener("change", function () {
+      state.status = $status.value || "";
+      state.page = 1;
+      load();
+    });
+  }
+
+  [
+    [$group, "group"],
+    [$model, "model"],
+    [$protocol, "protocol"],
+  ].forEach(function (pair) {
+    var sel = pair[0];
+    var key = pair[1];
+    if (!sel) return;
+    sel.addEventListener("change", function () {
+      state[key] = sel.value || "";
       state.page = 1;
       load();
     });

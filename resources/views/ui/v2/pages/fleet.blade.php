@@ -4,7 +4,7 @@
 @section('rail-active', 'fleet')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=5">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=8">
     {{-- Kebab compartido + modales de Servicios (tab Servicios del modal device) --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
@@ -36,66 +36,47 @@
         <script type="application/json" id="tp-device-modal-config">@json($tpDeviceModalConfig)</script>
 
 
-        <header class="tp-fleet__toolbar">
-            <div class="tp-fleet__title">
-                <h1 class="tp-h5 tp-mb-0">{{ trans('front.objects') }}</h1>
-                <span class="tp-text-muted tp-text-sm" id="tp-fleet-count">—</span>
-            </div>
+        {{-- Cabecera de página: título a la izquierda, acciones a la derecha
+             (mismo reparto que la referencia del ERP). --}}
+        <header class="tp-fleet__page-head">
+            <h1 class="tp-fleet__page-title">{{ trans('front.objects') }}</h1>
 
-            <div class="tp-fleet__search">
-                <svg class="tp-fleet__search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="7" />
-                    <path d="M21 21l-4.3-4.3" />
-                </svg>
-                <input type="search" class="tp-input tp-input--sm" id="tp-fleet-search"
-                    placeholder="Buscar por nombre, IMEI, placa, VIN…" autocomplete="off">
-            </div>
-
-            <div class="tp-fleet__filters" role="tablist" aria-label="Estado">
-                <button class="tp-seg__btn is-active" role="tab" data-status="">Todos</button>
-                <button class="tp-seg__btn" role="tab" data-status="moving">Moviendo</button>
-                {{-- idle = motor encendido sin moverse (ralentí). NO es lo mismo
-                     que "inactivo" (sin datos hace tiempo): ambos se llamaban
-                     "Inactivo" y salían dos veces en la barra. --}}
-                <button class="tp-seg__btn" role="tab" data-status="idle">{{ trans('front.idle') }}</button>
-                <button class="tp-seg__btn" role="tab" data-status="stopped">{{ trans('front.stop') }}</button>
-                <button class="tp-seg__btn" role="tab" data-status="offline">{{ trans('front.offline') }}</button>
-                {{-- Estados que el legacy resolvía con tablas Lookup dedicadas --}}
-                <button class="tp-seg__btn" role="tab" data-status="inactive">{{ trans('front.inactive') }}</button>
-                <button class="tp-seg__btn" role="tab" data-status="never_connected">{{ trans('front.never_connected') }}</button>
-                <button class="tp-seg__btn" role="tab" data-status="expired">{{ trans('front.expired') }}</button>
-            </div>
-
-            <div class="tp-fleet__actions">
+            <div class="tp-fleet__page-actions">
                 @if (!empty($canCreate))
-                    <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button"
-                        id="tp-fleet-create-device" title="Nuevo vehículo" aria-label="Nuevo vehículo">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <button class="tp-btn tp-btn--accent tp-btn--sm" type="button" id="tp-fleet-create-device">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
                             <path d="M12 5v14M5 12h14" />
                         </svg>
+                        <span>{{ trans('global.add') . ' ' . mb_strtolower(trans('front.object')) }}</span>
                     </button>
                 @endif
                 {{-- Alta de beacon (plugin beacons): kind aparte, form reducido --}}
                 @if (!empty($canCreate) && settings('plugins.beacons.status'))
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-create-beacon"
-                        title="Nuevo beacon">＋ Beacon</button>
+                        title="Beacon">＋ Beacon</button>
                 @endif
                 {{-- Columnas configurables (ajuste compartido con la lista clásica) --}}
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-columns"
-                    title="Configurar columnas">Columnas</button>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-export" title="Exportar CSV">
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-columns">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="16" rx="2" />
+                        <path d="M9 4v16M15 4v16" />
+                    </svg>
+                    <span>{{ trans('front.columns') }}</span>
+                </button>
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-export" title="{{ trans('front.export') }}">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                         <polyline points="7 10 12 15 17 10" />
                         <line x1="12" y1="15" x2="12" y2="3" />
                     </svg>
-                    <span>Exportar</span>
+                    <span>{{ trans('front.export') }}</span>
                 </button>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-refresh" title="Actualizar">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                <button class="tp-btn tp-btn--ghost tp-btn--sm tp-btn--icon" id="tp-fleet-refresh"
+                    title="Actualizar" aria-label="Actualizar">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M21 12a9 9 0 11-3-6.7L21 8" />
                         <path d="M21 3v5h-5" />
@@ -103,6 +84,83 @@
                 </button>
             </div>
         </header>
+
+        {{-- Panel de filtros en tarjeta. Los desplegables se rellenan con lo que
+             hay REALMENTE en la flota del usuario (grupos, modelos, protocolos),
+             no con un catálogo fijo: ver 'filters' en el feed. --}}
+        <section class="tp-fleet__filters-card">
+            <div class="tp-fleet__filters-grid">
+                <label class="tp-field">
+                    <span class="tp-field__label">{{ trans('front.search') }}</span>
+                    <span class="tp-fleet__search">
+                        <svg class="tp-fleet__search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="7" />
+                            <path d="M21 21l-4.3-4.3" />
+                        </svg>
+                        <input type="search" class="tp-input tp-input--sm" id="tp-fleet-search"
+                            placeholder="{{ trans('validation.attributes.name') }}, IMEI, {{ trans('validation.attributes.plate_number') }}, VIN…"
+                            autocomplete="off">
+                    </span>
+                </label>
+
+                <label class="tp-field">
+                    <span class="tp-field__label">{{ trans('front.status') }}</span>
+                    <select class="tp-input tp-input--sm" id="tp-fleet-status">
+                        <option value="">{{ trans('front.all') }}</option>
+                        <option value="moving">{{ trans('front.moving') }}</option>
+                        {{-- idle = motor encendido sin moverse (ralentí). NO es lo
+                             mismo que "inactivo" (sin datos hace tiempo): ambos se
+                             llamaban "Inactivo" y salían dos veces. --}}
+                        <option value="idle">{{ trans('front.idle') }}</option>
+                        <option value="stopped">{{ trans('front.stop') }}</option>
+                        <option value="offline">{{ trans('front.offline') }}</option>
+                        {{-- Estados que el legacy resolvía con tablas Lookup dedicadas --}}
+                        <option value="inactive">{{ trans('front.inactive') }}</option>
+                        <option value="never_connected">{{ trans('front.never_connected') }}</option>
+                        <option value="expired">{{ trans('front.expired') }}</option>
+                    </select>
+                </label>
+
+                <label class="tp-field">
+                    <span class="tp-field__label">{{ trans('front.group') }}</span>
+                    <select class="tp-input tp-input--sm" id="tp-fleet-group">
+                        <option value="">{{ trans('front.all') }}</option>
+                    </select>
+                </label>
+
+                <label class="tp-field">
+                    <span class="tp-field__label">{{ trans('validation.attributes.device_model') }}</span>
+                    <select class="tp-input tp-input--sm" id="tp-fleet-model">
+                        <option value="">{{ trans('front.all') }}</option>
+                    </select>
+                </label>
+
+                <label class="tp-field">
+                    <span class="tp-field__label">{{ trans('validation.attributes.protocol') }}</span>
+                    <select class="tp-input tp-input--sm" id="tp-fleet-protocol">
+                        <option value="">{{ trans('front.all') }}</option>
+                    </select>
+                </label>
+
+                <label class="tp-field">
+                    <span class="tp-field__label">{{ trans('front.rows_per_page') }}</span>
+                    <select class="tp-input tp-input--sm" id="tp-fleet-limit">
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                        <option value="200">200</option>
+                        <option value="500">500</option>
+                    </select>
+                </label>
+            </div>
+        </section>
+
+        <section class="tp-fleet__table-card">
+            <div class="tp-fleet__table-head">
+                <h2 class="tp-fleet__table-title">{{ trans('front.objects') }}</h2>
+                <span class="tp-fleet__table-count" id="tp-fleet-count">—</span>
+            </div>
 
         <div class="tp-fleet__table-wrap">
             <table class="tp-fleet__table" id="tp-fleet-table" role="grid">
@@ -136,22 +194,14 @@
                 <span><strong id="tp-fleet-selection-count">0</strong> seleccionados</span>
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-selection-clear">Limpiar</button>
             </div>
-            <nav class="tp-fleet__pager" aria-label="Paginación">
-                <label class="tp-fleet__perpage">
-                    <span class="tp-text-sm tp-text-muted">Filas</span>
-                    <select class="tp-input tp-input--sm" id="tp-fleet-limit">
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100" selected>100</option>
-                        <option value="200">200</option>
-                        <option value="500">500</option>
-                    </select>
-                </label>
+            {{-- "Por página" vive ahora en el panel de filtros, con el resto. --}}
+            <nav class="tp-fleet__pager" aria-label="{{ trans('front.page') }}">
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-prev" disabled>‹</button>
                 <span class="tp-text-sm tp-text-muted" id="tp-fleet-page">—</span>
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-next" disabled>›</button>
             </nav>
         </footer>
+        </section>{{-- /tp-fleet__table-card --}}
 
         {{-- Config de los modales compartidos de Servicios (tp-services.js) --}}
         @include('ui.v2.partials.services-config')
@@ -161,7 +211,7 @@
 @push('scripts')
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=22"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=9" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=10" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.
         (function() {
