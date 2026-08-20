@@ -135,7 +135,7 @@ class MapLayersController extends BaseController
         try {
             $importManager->import($request->file('file'), $request->only(['map_icon_id']));
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true, 'message' => trans('front.successfully_updated_marker')]);
@@ -182,7 +182,7 @@ class MapLayersController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -201,7 +201,7 @@ class MapLayersController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -217,7 +217,7 @@ class MapLayersController extends BaseController
 
             return response()->json(['ok' => true]);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -311,7 +311,7 @@ class MapLayersController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -330,7 +330,7 @@ class MapLayersController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -346,7 +346,7 @@ class MapLayersController extends BaseController
 
             return response()->json(['ok' => true]);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -544,7 +544,7 @@ class MapLayersController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -572,7 +572,7 @@ class MapLayersController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 

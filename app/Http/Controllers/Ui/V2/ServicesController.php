@@ -114,7 +114,7 @@ class ServicesController extends BaseController
                 ];
             }
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json($out);
@@ -148,7 +148,7 @@ class ServicesController extends BaseController
                 'errors' => $e->getErrors() ? $e->getErrors()->toArray() : [],
             ], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true, 'id' => $res['id'] ?? $id]);
@@ -162,7 +162,7 @@ class ServicesController extends BaseController
             ServiceModalHelper::setData(['id' => (int) $id]);
             $res = ServiceModalHelper::destroy((int) $id);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         if (empty($res['status'])) {

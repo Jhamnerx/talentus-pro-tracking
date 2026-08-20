@@ -590,7 +590,7 @@ class DevicesController extends BaseController
             return response()->json([
                 'ok'      => false,
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
     }
 
@@ -632,7 +632,7 @@ class DevicesController extends BaseController
             return response()->json([
                 'ok'      => false,
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
     }
 
@@ -671,7 +671,7 @@ class DevicesController extends BaseController
             return response()->json([
                 'ok'      => false,
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
     }
 
@@ -735,7 +735,7 @@ class DevicesController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -763,7 +763,7 @@ class DevicesController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -998,7 +998,7 @@ class DevicesController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
     }
 
@@ -1033,7 +1033,7 @@ class DevicesController extends BaseController
             return response()->json([
                 'ok'      => false,
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
     }
 
@@ -2131,7 +2131,7 @@ class DevicesController extends BaseController
                 $result = $svc->gprs($device, ['type' => 'custom', 'data' => $message], $this->user);
             }
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         $resp = is_array($result) ? ($result[0] ?? []) : [];

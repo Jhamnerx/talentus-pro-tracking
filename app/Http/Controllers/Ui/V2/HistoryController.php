@@ -134,7 +134,7 @@ class HistoryController extends BaseController
                 'errors' => $e->getErrors() ? $e->getErrors()->toArray() : [],
             ], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         $showInvalid = $request->boolean('show_invalid', true);
@@ -297,7 +297,7 @@ class HistoryController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'error' => 'validation'], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         $messages = $res['messages'] ?? [];
@@ -390,7 +390,7 @@ class HistoryController extends BaseController
         } catch (PermissionException $e) {
             return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true, 'deleted' => count($ids)]);

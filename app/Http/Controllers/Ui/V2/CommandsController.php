@@ -79,7 +79,7 @@ class CommandsController extends BaseController
             $connection = $request->get('connection') === 'sms' ? 'sms' : 'gprs';
             $list = (new CommandService($this->user))->getCommands($devices, true, $connection);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json($list->values()->all());
@@ -126,7 +126,7 @@ class CommandsController extends BaseController
                 'errors' => $e->getErrors() ? $e->getErrors()->toArray() : [],
             ], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         // Contrato legacy: status=0 siempre; el resultado real va en
@@ -315,7 +315,7 @@ class CommandsController extends BaseController
                 'errors' => $e->getErrors() ? $e->getErrors()->toArray() : [],
             ], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true, 'id' => (int) $cs->id]);
@@ -590,7 +590,7 @@ class CommandsController extends BaseController
                 ];
             }
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json([
@@ -646,7 +646,7 @@ class CommandsController extends BaseController
                 'errors' => $e->getErrors() ? $e->getErrors()->toArray() : [],
             ], 422);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json(['ok' => (bool) ($res['status'] ?? 0)]);
@@ -663,7 +663,7 @@ class CommandsController extends BaseController
             $helper->setData(['id' => (int) $id]);
             $res = $helper->destroy();
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         return response()->json(['ok' => (bool) ($res['status'] ?? 0)]);

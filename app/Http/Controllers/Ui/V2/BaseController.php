@@ -119,6 +119,27 @@ abstract class BaseController extends Controller
      * Group a raw device status (online, idle, stop, …) into the four
      * high-level buckets the new UI surfaces in filters and KPIs.
      */
+    /**
+     * Código HTTP que le corresponde a una excepción capturada.
+     *
+     * Los `catch (\Throwable)` devolvían siempre 500, así que un recurso
+     * inexistente (ResourseNotFoundException, que YA es un 404) o un permiso
+     * denegado llegaban al cliente como error de servidor: ensucia los logs y
+     * el front no puede distinguir "no existe" de "se rompió".
+     */
+    protected function statusFor(\Throwable $e, int $default = 500): int
+    {
+        if ($e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            return $e->getStatusCode();
+        }
+
+        if ($e instanceof \App\Exceptions\PermissionException) {
+            return 403;
+        }
+
+        return $default;
+    }
+
     protected function groupStatus(string $status): string
     {
         if (in_array($status, ['online', 'move', 'excessive_speed'], true)) {

@@ -165,7 +165,7 @@ class ZonesController extends BaseController
                 'ok'      => false,
                 'error'   => 'server_error',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         return response()->json([
@@ -217,7 +217,7 @@ class ZonesController extends BaseController
                 'ok'      => false,
                 'error'   => 'server_error',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         return response()->json([
@@ -268,7 +268,7 @@ class ZonesController extends BaseController
                 'ok'      => false,
                 'error'   => 'server_error',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true]);
@@ -297,7 +297,7 @@ class ZonesController extends BaseController
                 'ok'      => false,
                 'error'   => 'import_failed',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         return response()->json([

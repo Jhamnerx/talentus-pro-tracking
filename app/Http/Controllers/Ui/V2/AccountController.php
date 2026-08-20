@@ -595,7 +595,7 @@ class AccountController extends BaseController
         } catch (DemoAccountException $e) {
             return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
         } catch (\Throwable $e) {
-            return response()->json(['ok' => false, 'message' => $e->getMessage()], 500);
+            return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
 
         // status 0 = el gateway respondió con un aviso/error de envío

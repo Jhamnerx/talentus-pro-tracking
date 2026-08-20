@@ -95,7 +95,7 @@ class AlertsController extends BaseController
                 'ok'      => false,
                 'error'   => 'meta_failed',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         $dl      = $this->deviceListPayload();
@@ -139,7 +139,7 @@ class AlertsController extends BaseController
                 'ok'      => false,
                 'error'   => 'server_error',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         $alert = $result['item'] ?? null;
@@ -177,7 +177,7 @@ class AlertsController extends BaseController
                 'ok'      => false,
                 'error'   => 'edit_failed',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         $types = $this->reshapeTypes($data['types'] ?? []);
@@ -276,7 +276,7 @@ class AlertsController extends BaseController
                 'ok'      => false,
                 'error'   => 'server_error',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true]);
@@ -317,7 +317,7 @@ class AlertsController extends BaseController
                 'ok'      => false,
                 'error'   => 'server_error',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true]);
@@ -396,7 +396,7 @@ class AlertsController extends BaseController
                 'ok'      => false,
                 'error'   => 'commands_failed',
                 'message' => $e->getMessage(),
-            ], 500);
+            ], $this->statusFor($e));
         }
 
         return response()->json(['ok' => true, 'commands' => $out]);
