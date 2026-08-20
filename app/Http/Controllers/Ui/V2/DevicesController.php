@@ -256,6 +256,10 @@ class DevicesController extends BaseController
                 'position'            => ($device->lat && $device->lng)
                     ? round((float) $device->lat, 6) . ', ' . round((float) $device->lng, 6)
                     : null,
+                // Para la columna Dirección: el cliente geocodifica solo las
+                // filas visibles (el legacy lo hace en servidor, fila a fila).
+                'lat'                 => $device->lat ? (float) $device->lat : null,
+                'lng'                 => $device->lng ? (float) $device->lng : null,
                 'vin'                 => (string) ($device->vin ?? ''),
                 'registration_number' => (string) ($device->registration_number ?? ''),
                 'object_owner'        => (string) ($device->object_owner ?? ''),
@@ -313,6 +317,9 @@ class DevicesController extends BaseController
         // Añadidas 19-ago: el listado configurable del legacy ya las ofrecía.
         'stop_duration', 'idle_duration', 'ignition_duration', 'fuel',
         'last_event_title', 'last_event_type', 'last_event_time',
+        // La dirección se resuelve en el cliente (ver feed): el legacy la
+        // geocodifica fila a fila en servidor y son ~0,5 s por vehículo.
+        'address',
     ];
 
     public function fleetColumns(Request $request): JsonResponse

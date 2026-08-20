@@ -159,6 +159,12 @@
   COL_RENDER.last_event_title = function (d) { return escapeHtml(d.last_event_title || "—"); };
   COL_RENDER.last_event_type = function (d) { return escapeHtml(d.last_event_type || "—"); };
   COL_RENDER.last_event_time = function (d) { return escapeHtml(d.last_event_time || "—"); };
+  COL_RENDER.address = function (d) {
+    if (d.lat == null || d.lng == null) return "—";
+    var key = Number(d.lat).toFixed(5) + "," + Number(d.lng).toFixed(5);
+    var cached = geoCache[key];
+    return '<span data-addr-key="' + key + '">' + escapeHtml(cached !== undefined ? cached : "…") + "</span>";
+  };
   COL_RENDER.fuel = function (d) {
     var pct = d.fuel_percentage;
     if (!pct || pct === "-") return "—";
@@ -287,6 +293,79 @@
     });
   }
 
+  /* ===== Columna Dirección =====
+   * El legacy la geocodifica en servidor, fila a fila (~0,5 s cada una). Aquí se
+   * resuelve en el cliente y solo para las filas que se están viendo, así la
+   * tabla aparece al instante y las direcciones se van rellenando.
+   */
+  var GEO_URL = "/address";
+  var geoCache = {};
+  var geoQueue = [];
+  var geoBusy = false;
+
+  function parseGeo(text) {
+    if (text == null) return "";
+    text = String(text).trim();
+    if (!text) return "";
+    try {
+      var j = JSON.parse(text);
+      if (typeof j === "string") return j;
+      if (j && typeof j === "object") return j.address || j.name || j.title || "";
+    } catch (e) {}
+    var lt = text.indexOf("<");
+    if (lt !== -1) text = text.slice(0, lt).trim();
+    return text;
+  }
+
+  function geoKey(lat, lng) {
+    return Number(lat).toFixed(5) + "," + Number(lng).toFixed(5);
+  }
+
+  // Cola de uno en uno: el geocodificador es lento y no conviene lanzarle
+  // 100 peticiones a la vez.
+  function geoNext() {
+    if (geoBusy || !geoQueue.length) return;
+    geoBusy = true;
+
+    var job = geoQueue.shift();
+    fetch(GEO_URL + "?lat=" + job.lat + "&lng=" + job.lng, {
+      credentials: "same-origin",
+      headers: { Accept: "*/*", "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) { return r.text(); })
+      .then(function (text) {
+        var addr = parseGeo(text) || "—";
+        geoCache[job.key] = addr;
+        document.querySelectorAll('[data-addr-key="' + job.key + '"]').forEach(function (el) {
+          el.textContent = addr;
+        });
+      })
+      .catch(function () {
+        geoCache[job.key] = "—";
+      })
+      .then(function () {
+        geoBusy = false;
+        geoNext();
+      });
+  }
+
+  function resolveVisibleAddresses() {
+    if (columnsState.selected.indexOf("address") === -1) return;
+
+    geoQueue = [];
+    $tbody.querySelectorAll("[data-addr-key]").forEach(function (el) {
+      var key = el.getAttribute("data-addr-key");
+      if (geoCache[key] !== undefined) {
+        el.textContent = geoCache[key];
+        return;
+      }
+      var parts = key.split(",");
+      if (geoQueue.some(function (j) { return j.key === key; })) return;
+      geoQueue.push({ key: key, lat: parts[0], lng: parts[1] });
+    });
+    geoNext();
+  }
+
   function render() {
     var items = sortItems(state.items);
     if (!items.length) {
@@ -313,6 +392,7 @@
           "</tr>";
       }
       $tbody.innerHTML = html;
+      resolveVisibleAddresses();
     }
 
     // Header sort indicators
@@ -365,9 +445,12 @@
     }
   }
 
-  function load() {
+  function load(opts) {
+    var silent = !!(opts && opts.silent);
     state.loading = true;
-    $page.textContent = "Cargando…";
+    // En el refresco automático no se toca el pie: parpadear "Cargando…" cada
+    // 30 s distrae y no aporta nada.
+    if (!silent) $page.textContent = "Cargando…";
     var url =
       DATA_URL +
       "?" +
@@ -542,6 +625,34 @@
     });
   }
 
+  /* ===== Refresco automático =====
+   * La lista muestra estado, velocidad y duraciones, que cambian solas. Se
+   * recarga en segundo plano, pero NO mientras hay un modal abierto o filas
+   * seleccionadas (repintar bajo el usuario le haría perder el trabajo), ni
+   * con la pestaña en segundo plano.
+   */
+  var POLL_MS = parseInt(root.getAttribute("data-poll-interval"), 10) || 0;
+  var pollHandle = null;
+
+  function canAutoRefresh() {
+    if (document.hidden) return false;
+    if (state.selected && state.selected.size) return false;
+    if (document.querySelector(".tp-modal, [data-tp-modal]")) return false;
+    return true;
+  }
+
+  function startPolling() {
+    if (!POLL_MS || pollHandle) return;
+    pollHandle = setInterval(function () {
+      if (canAutoRefresh()) load({ silent: true });
+    }, POLL_MS);
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    // Al volver a la pestaña, refresca de inmediato en vez de esperar al ciclo.
+    if (!document.hidden && POLL_MS && canAutoRefresh()) load({ silent: true });
+  });
+
   /* Filas por página */
   var limitSel = document.getElementById("tp-fleet-limit");
   if (limitSel) {
@@ -560,5 +671,6 @@
   /* Boot: primero las columnas (definen la cabecera), luego los datos */
   loadColumns(function () {
     load();
+    startPolling();
   });
 })();

@@ -13,7 +13,10 @@
 @section('workspace-class', 'tp-workspace--full')
 
 @section('workspace')
-    <div class="tp-fleet" id="tp-fleet" data-data-url="{{ route('ui.v2.api.fleet') }}">
+    {{-- data-poll-interval: refresco automático de la lista (0 lo desactiva).
+         Los estados y las duraciones cambian en vivo, así que la tabla se
+         actualiza sola, como el mapa. --}}
+    <div class="tp-fleet" id="tp-fleet" data-data-url="{{ route('ui.v2.api.fleet') }}" data-poll-interval="30000">
         {{-- Device CRUD modal config (shared with live / admin → fleet) --}}
         @php
             $tpDevicesBase = url('/ui/v2/api/devices');
@@ -158,7 +161,7 @@
 @push('scripts')
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=18"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=5" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=6" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.
         (function() {
