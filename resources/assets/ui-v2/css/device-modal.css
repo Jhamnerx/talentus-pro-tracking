@@ -880,3 +880,14 @@
 .tp-copy__modes .tp-copy__row span {
   white-space: normal;
 }
+
+/* Acciones de la fila (alertas del vehículo: editar + vigencia). */
+.tp-acc-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.tp-acc-row__actions .tp-btn {
+  text-decoration: none;
+}

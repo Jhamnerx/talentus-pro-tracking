@@ -5,7 +5,7 @@
 
 @push('head')
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=62">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=11">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -806,7 +806,7 @@
     {{-- Tipos de trayecto por periodo (kebab del vehículo) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-route-types.js') }}?v=1"></script>
     {{-- Alertas del vehículo con vigencia (kebab) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-device-alerts.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-device-alerts.js') }}?v=2"></script>
     {{-- Configuración remota del GPS por SMS (kebab) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-device-config.js') }}?v=1"></script>
     {{-- Galería de medios del vehículo (kebab) --}}

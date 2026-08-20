@@ -351,6 +351,26 @@
   /* ----- Boot ----- */
   load();
 
+  // Llegada desde el kebab del vehiculo ("Editar alerta"): /ui/v2/alerts?edit=N
+  // abre esa regla en el editor completo. Se limpia la URL para que un
+  // refresco no vuelva a abrirlo.
+  (function abrirDesdeUrl() {
+    if (!CAN_EDIT) return;
+    var id;
+    try {
+      id = new URLSearchParams(location.search).get("edit");
+    } catch (e) {
+      return;
+    }
+    if (!id) return;
+
+    try {
+      history.replaceState(null, "", location.pathname);
+    } catch (e) {}
+
+    openAlertModal(id);
+  })();
+
   /* =====================================================
    * Rule modal (full 6-tab CRUD, parity with legacy)
    * ===================================================== */

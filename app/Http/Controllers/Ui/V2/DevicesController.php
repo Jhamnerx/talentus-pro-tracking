@@ -1501,12 +1501,19 @@ class DevicesController extends BaseController
         $device = DeviceRepo::find((int) $id);
         $this->checkException('devices', 'show', $device);
 
+        // withCount: el listado del legacy muestra a cuantos vehiculos
+        // aplica cada alerta (DeviceAlerts/table.blade).
         $alerts = $device->alerts()
             ->where('alerts.user_id', $this->user->id)
+            ->withCount('devices')
             ->get();
 
         return response()->json([
-            'ok'    => true,
+            'ok'       => true,
+            // El legacy deja editar la alerta desde aqui; en la v2 el editor
+            // completo vive en su propia pantalla, asi que se enlaza.
+            'can_edit' => (bool) $this->user->perm('alerts', 'edit'),
+            'edit_url' => url('/ui/v2/alerts') . '?edit=',
             'items' => $alerts->map(function ($a) {
                 return [
                     'id'          => (int) $a->id,
@@ -1515,6 +1522,7 @@ class DevicesController extends BaseController
                     'active'      => (bool) $a->active,
                     'active_from' => $a->pivot->active_from ? \Formatter::time()->convert($a->pivot->active_from) : null,
                     'active_to'   => $a->pivot->active_to ? \Formatter::time()->convert($a->pivot->active_to) : null,
+                    'devices'     => (int) ($a->devices_count ?? 0),
                 ];
             })->all(),
         ]);

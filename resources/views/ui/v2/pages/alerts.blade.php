@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=6">
     {{-- Formularios del modal de la regla (.tp-form* / inputs) --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=10">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=11">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -74,5 +74,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=6" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=7" defer></script>
 @endpush

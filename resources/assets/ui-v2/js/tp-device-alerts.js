@@ -105,6 +105,8 @@
             }
             var items = res.data.items || [];
             host.__items = items;
+            var canEdit = res.data.can_edit !== false;
+            var editUrl = res.data.edit_url || "/ui/v2/alerts?edit=";
 
             host.innerHTML = items.length
               ? items
@@ -113,13 +115,21 @@
                       a.active_from || a.active_to
                         ? (a.active_from || "…") + " → " + (a.active_to || "…")
                         : "Siempre activa";
+                    // El legacy tambien indica a cuantos vehiculos aplica.
+                    var alcance =
+                      a.devices > 1 ? " · " + a.devices + " vehículos" : a.devices === 1 ? " · 1 vehículo" : "";
                     return (
                       '<div class="tp-acc-row"><span>' +
                       "<b>" + esc(a.name) + "</b>" +
                       (a.active ? "" : ' <span class="tp-text-xs tp-text-muted">(desactivada)</span>') +
-                      '<br><span class="tp-text-xs tp-text-muted">' + esc(period) + "</span></span>" +
+                      '<br><span class="tp-text-xs tp-text-muted">' + esc(period) + esc(alcance) + "</span></span>" +
+                      '<span class="tp-acc-row__actions">' +
+                      (canEdit
+                        ? '<a class="tp-btn tp-btn--ghost tp-btn--sm" href="' +
+                          esc(editUrl) + a.id + '">Editar alerta</a>'
+                        : "") +
                       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-da-edit="' + a.id + '">Vigencia</button>' +
-                      "</div>"
+                      "</span></div>"
                     );
                   })
                   .join("")
