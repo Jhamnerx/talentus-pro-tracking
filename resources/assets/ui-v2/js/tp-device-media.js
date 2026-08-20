@@ -58,6 +58,7 @@
                     .join("") +
                   "</select>"
                 : "") +
+              '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-zip disabled>Descargar ZIP</button>' +
               (state.canRemove
                 ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-del style="color:#ef4444;" disabled>Eliminar</button>'
                 : "") +
@@ -69,9 +70,9 @@
                   .map(function (f) {
                     return (
                       '<figure class="tp-media-card">' +
-                      (state.canRemove
-                        ? '<label class="tp-media-card__sel"><input type="checkbox" data-media-ref="' + esc(f.ref) + '"></label>'
-                        : "") +
+                      // La selección sirve para descargar en ZIP y para borrar;
+                      // solo el botón Eliminar depende del permiso.
+                      '<label class="tp-media-card__sel"><input type="checkbox" data-media-ref="' + esc(f.ref) + '"></label>' +
                       '<a href="' + esc(f.url) + '" target="_blank" rel="noopener" class="tp-media-card__thumb">' +
                       (f.is_video
                         ? '<span class="tp-media-card__video">▶</span>'
@@ -110,8 +111,11 @@
             return load();
           }
           if (e.target.matches("[data-media-ref]")) {
-            var btn = root.querySelector("[data-media-del]");
-            if (btn) btn.disabled = !root.querySelectorAll("[data-media-ref]:checked").length;
+            var any = !!root.querySelectorAll("[data-media-ref]:checked").length;
+            var btnDel = root.querySelector("[data-media-del]");
+            if (btnDel) btnDel.disabled = !any;
+            var btnZip = root.querySelector("[data-media-zip]");
+            if (btnZip) btnZip.disabled = !any;
           }
         });
 
@@ -124,6 +128,42 @@
             state.page = Math.min(state.pages, state.page + 1);
             return load();
           }
+          if (e.target.closest("[data-media-zip]")) {
+            var zrefs = [];
+            root.querySelectorAll("[data-media-ref]:checked").forEach(function (c) {
+              zrefs.push(c.getAttribute("data-media-ref"));
+            });
+            if (!zrefs.length) return;
+
+            // El ZIP lo arma el endpoint legacy (ZipArchive + descarga con
+            // borrado del temporal); se envía por form-POST porque la respuesta
+            // es un binario, no JSON.
+            var form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/device_media/download/" + deviceId;
+            form.style.display = "none";
+
+            var csrf = document.createElement("input");
+            csrf.type = "hidden";
+            csrf.name = "_token";
+            csrf.value = (window.Talentus && window.Talentus.csrf) ||
+              (document.querySelector('meta[name="csrf-token"]') || {}).content || "";
+            form.appendChild(csrf);
+
+            zrefs.forEach(function (r) {
+              var i = document.createElement("input");
+              i.type = "hidden";
+              i.name = "id[]";
+              i.value = r;
+              form.appendChild(i);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+            return;
+          }
+
           if (e.target.closest("[data-media-del]")) {
             var refs = [];
             root.querySelectorAll("[data-media-ref]:checked").forEach(function (c) {

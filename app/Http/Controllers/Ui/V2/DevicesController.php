@@ -1689,21 +1689,18 @@ class DevicesController extends BaseController
         }
     }
 
-    private function expenseInput(Request $request): array
+    private function expenseInput(Request $request, string $scenario = 'create', ?int $deviceId = null): array
     {
         $data = $request->only(['name', 'type_id', 'quantity', 'unit_cost', 'supplier', 'buyer', 'additional', 'date']);
 
-        $validator = \Validator::make($data, [
-            'name'      => 'required|string|max:255',
-            'type_id'   => 'required|integer',
-            'quantity'  => 'required|numeric',
-            'unit_cost' => 'required|numeric',
-            'date'      => 'required|date',
-        ]);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator->messages());
+        // Validador legacy en vez de reglas propias: así el tipo de gasto se
+        // comprueba contra device_expense_types (antes solo se exigía que fuera
+        // un entero, y un id inexistente pasaba).
+        if ($deviceId !== null) {
+            $data['device_id'] = $deviceId;
         }
+
+        \CustomFacades\Validators\DeviceExpensesFormValidator::validate($scenario, $data);
 
         // datetime-local llega como "YYYY-MM-DDTHH:mm" → formato MySQL
         $data['date'] = date('Y-m-d H:i:s', strtotime($data['date']));
@@ -1718,7 +1715,7 @@ class DevicesController extends BaseController
         $this->sensorDevice((int) $id);
 
         try {
-            $data = $this->expenseInput($request);
+            $data = $this->expenseInput($request, 'create', (int) $id);
             $data['device_id'] = (int) $id;
             $data['user_id'] = (int) $this->user->id;
 
@@ -1743,7 +1740,7 @@ class DevicesController extends BaseController
         $this->sensorDevice((int) $expense->device_id);
 
         try {
-            $expense->update($this->expenseInput($request));
+            $expense->update($this->expenseInput($request, 'update'));
 
             return response()->json(['ok' => true]);
         } catch (ValidationException $e) {

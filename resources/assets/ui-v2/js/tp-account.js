@@ -332,6 +332,45 @@
 
   /* ---- Grupos de vehículos ---- */
 
+  /* Catálogos para el form de grupo (vehículos y reenvíos), cacheados. */
+  var GROUP_CAT = null;
+
+  function loadGroupCatalogs() {
+    if (GROUP_CAT) return Promise.resolve(GROUP_CAT);
+
+    return Promise.all([
+      tpModal.fetchJSON(API + "/devices?limit=1000"),
+      tpModal.fetchJSON(API + "/forwards"),
+    ]).then(function (res) {
+      // El feed de vehículos devuelve la lista en `data` (no en `items`).
+      var devs = (res[0].data && (res[0].data.data || res[0].data.items || [])) || [];
+      var fwds = (res[1].ok && res[1].data && (res[1].data.items || [])) || [];
+      GROUP_CAT = {
+        devices: devs.map(function (d) { return { id: d.id, name: d.name || "#" + d.id }; }),
+        // Si el usuario no tiene permiso de reenvíos, el endpoint responde 403
+        // y la lista queda vacía: el bloque no se pinta.
+        forwards: fwds.map(function (f) { return { id: f.id, title: f.title || "#" + f.id }; }),
+      };
+      return GROUP_CAT;
+    });
+  }
+
+  function checkListHtml(attr, items, labelKey, checked) {
+    if (!items.length) return "";
+    return (
+      '<div class="tp-rgroup-list" style="max-height:190px;">' +
+      items
+        .map(function (i) {
+          return (
+            '<label class="tp-rgroup-item"><input type="checkbox" ' + attr + '="' + i.id + '"' +
+            (checked[i.id] ? " checked" : "") + "><span>" + esc(i[labelKey]) + "</span></label>"
+          );
+        })
+        .join("") +
+      "</div>"
+    );
+  }
+
   function tabGroups() {
     return crudPanel("groups", "Añadir grupo", ["Título", "Vehículos"]);
   }
@@ -345,15 +384,56 @@
       delMsg: "Los vehículos quedarán sin grupo. ¿Eliminar?",
       form: function (row, onSaved) {
         var isEdit = !!(row && row.id);
-        crudDialog(
-          isEdit ? "Editar grupo" : "Nuevo grupo",
-          '<div class="tp-form">' + field("Título", '<input type="text" name="g_title" value="' + esc(row ? row.title : "") + '" data-tp-field>', true) + "</div>",
-          function (d) {
-            var title = d.querySelector('[name="g_title"]').value.trim();
-            if (!title) { tpModal.toast("El título es obligatorio.", "warning"); return; }
-            crudSave(d, isEdit ? API + "/device-groups/" + row.id : API + "/device-groups", isEdit ? "PUT" : "POST", { title: title }, onSaved);
-          },
-        );
+
+        // Vehículos y reenvíos del grupo: el backend ya los sincroniza
+        // (syncGroupDevices / syncGroupForwards); faltaba ofrecerlos aquí.
+        Promise.all([
+          loadGroupCatalogs(),
+          isEdit
+            ? tpModal.fetchJSON(API + "/device-groups/" + row.id + "/items").then(function (r) {
+                return (r.data && r.data.ok) ? r.data : { device_ids: [], forward_ids: [] };
+              })
+            : Promise.resolve({ device_ids: [], forward_ids: [] }),
+        ]).then(function (out) {
+          var cat = out[0];
+          var cur = out[1];
+          var devChecked = {};
+          (cur.device_ids || []).forEach(function (id) { devChecked[id] = true; });
+          var fwdChecked = {};
+          (cur.forward_ids || []).forEach(function (id) { fwdChecked[id] = true; });
+
+          var body =
+            '<div class="tp-form">' +
+            field("Título", '<input type="text" name="g_title" value="' + esc(row ? row.title : "") + '" data-tp-field>', true) +
+            field("Vehículos", checkListHtml("data-g-dev", cat.devices, "name", devChecked)) +
+            (cat.forwards.length ? field("Reenvíos", checkListHtml("data-g-fwd", cat.forwards, "title", fwdChecked)) : "") +
+            "</div>";
+
+          crudDialog(
+            isEdit ? "Editar grupo" : "Nuevo grupo",
+            body,
+            function (d) {
+              var title = d.querySelector('[name="g_title"]').value.trim();
+              if (!title) { tpModal.toast("El título es obligatorio.", "warning"); return; }
+
+              var devices = [];
+              d.querySelectorAll("[data-g-dev]:checked").forEach(function (c) {
+                devices.push(parseInt(c.getAttribute("data-g-dev"), 10));
+              });
+              var forwards = [];
+              d.querySelectorAll("[data-g-fwd]:checked").forEach(function (c) {
+                forwards.push(parseInt(c.getAttribute("data-g-fwd"), 10));
+              });
+
+              var payload = { title: title, devices: devices };
+              // Solo se manda si el bloque se pintó: si el usuario no ve
+              // reenvíos, no debe borrar los que el grupo ya tuviera.
+              if (cat.forwards.length) payload.forwards = forwards;
+
+              crudSave(d, isEdit ? API + "/device-groups/" + row.id : API + "/device-groups", isEdit ? "PUT" : "POST", payload, onSaved);
+            }
+          );
+        });
       },
     });
   }

@@ -165,6 +165,10 @@ class SharingController extends BaseController
             ];
         }
 
+        // Canal SMS (F11): solo tiene sentido si el usuario puede enviar SMS
+        // — gateway propio o el del sistema, igual que el resto de envíos.
+        $out['can_sms'] = (bool) (settings('sms_gateway.use_as_system_gateway') || $this->user->sms_gateway);
+
         return response()->json($out);
     }
 
@@ -179,6 +183,7 @@ class SharingController extends BaseController
 
             $this->syncDevices($sharing);
             $this->maybeSendEmail($sharing, $data);
+            $this->maybeSendSms($sharing, $data);
 
             return response()->json(['ok' => true, 'item' => $this->present($sharing->fresh())]);
         } catch (ValidationException $e) {
@@ -199,6 +204,7 @@ class SharingController extends BaseController
 
             $this->syncDevices($sharing);
             $this->maybeSendEmail($sharing, $data);
+            $this->maybeSendSms($sharing, $data);
 
             return response()->json(['ok' => true, 'item' => $this->present($sharing->fresh())]);
         } catch (ValidationException $e) {
@@ -307,6 +313,24 @@ class SharingController extends BaseController
             $this->service->sendEmail($sharing, semicol_explode($data['email']));
         } catch (\Throwable $e) {
             // El guardado no debe fallar por el envío del correo.
+        }
+    }
+
+    /**
+     * Envío del enlace por SMS (F11). El legacy lo ofrece junto al correo en
+     * SharingController@send; usa la plantilla `sharing_link` y el gateway del
+     * usuario, así que solo tiene sentido si puede enviar SMS.
+     */
+    private function maybeSendSms(Sharing $sharing, array $data): void
+    {
+        if (empty($data['send_sms']) || empty($data['sms'])) {
+            return;
+        }
+
+        try {
+            $this->service->sendSms($sharing, semicol_explode($data['sms']));
+        } catch (\Throwable $e) {
+            // Igual que el correo: el guardado no depende del envío.
         }
     }
 

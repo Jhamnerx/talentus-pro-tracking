@@ -148,6 +148,18 @@
       "</div>" +
       '<small class="tp-form__hint">Para varios correos sepáralos con punto y coma, ej.: user@example.com;user1@example.com</small>' +
       "</div>" +
+      // SMS: mismo par casilla + campo que el correo. Solo se pinta si el
+      // usuario puede enviar SMS (meta.can_sms), como el legacy.
+      (meta && meta.can_sms
+        ? '<div class="tp-form__field">' +
+          '<span class="tp-form__label">SMS</span>' +
+          '<div class="tp-input-group">' +
+          '<input type="checkbox" name="send_sms" value="1" id="tp-sh-sms-chk">' +
+          '<input type="text" name="sms" placeholder="+51999999999" data-enable="tp-sh-sms-chk" disabled data-tp-field>' +
+          "</div>" +
+          '<small class="tp-form__hint">Para varios números sepáralos con punto y coma.</small>' +
+          "</div>"
+        : "") +
       "</div></form>";
 
     return html;
@@ -194,6 +206,10 @@
       if (e.target.id === "tp-sh-email-chk") {
         var email = form.querySelector('input[name="email"]');
         if (email) email.disabled = !e.target.checked;
+      }
+      if (e.target.id === "tp-sh-sms-chk") {
+        var sms = form.querySelector('input[name="sms"]');
+        if (sms) sms.disabled = !e.target.checked;
       }
     });
     syncExpiration();
@@ -346,6 +362,10 @@
       delete_after_expiration: form.querySelector('input[name="delete_after_expiration"]').checked ? 1 : 0,
       send_email: form.querySelector('input[name="send_email"]').checked ? 1 : 0,
       email: (form.querySelector('input[name="email"]').value || "").trim(),
+      send_sms: form.querySelector('input[name="send_sms"]')
+        ? (form.querySelector('input[name="send_sms"]').checked ? 1 : 0) : 0,
+      sms: form.querySelector('input[name="sms"]')
+        ? (form.querySelector('input[name="sms"]').value || "").trim() : "",
       // Secuencia EntityLoader: deseleccionar todo + attaches = selección exacta
       selected_devices: ["s;0;"].concat(
         ids.map(function (i) {
