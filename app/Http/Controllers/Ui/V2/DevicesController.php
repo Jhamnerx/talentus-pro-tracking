@@ -341,6 +341,156 @@ class DevicesController extends BaseController
         return response()->json($payload);
     }
 
+    /* =================================================================
+     * Copiar sensores entre vehiculos
+     * -----------------------------------------------------------------
+     * No existe en el legacy: dar de alta una flota igual obligaba a
+     * repetir la misma configuracion vehiculo a vehiculo. El duplicado se
+     * detecta por el `hash` del sensor (md5(type.name)), el mismo criterio
+     * con el que la lista de flota agrupa sensores equivalentes.
+     * ================================================================= */
+
+    /** Vehiculos a los que se puede copiar (los que el usuario puede editar). */
+    public function sensorCopyTargets(Request $request, $id): JsonResponse
+    {
+        try {
+            $source = \Tobuli\Entities\Device::find((int) $id);
+            $this->checkException('devices', 'show', $source);
+
+            $items = [];
+            foreach ($this->user->devices()->orderBy('name')->get(['devices.id', 'name', 'plate_number']) as $d) {
+                if ((int) $d->id === (int) $source->id) {
+                    continue;
+                }
+                if (! $this->user->can('edit', $d)) {
+                    continue;
+                }
+
+                $items[] = [
+                    'id'    => (int) $d->id,
+                    'name'  => (string) ($d->name ?: ('#' . $d->id)),
+                    'plate' => (string) ($d->plate_number ?? ''),
+                ];
+            }
+
+            return response()->json(['ok' => true, 'items' => $items]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
+    /** Copia los sensores elegidos del vehiculo a los vehiculos destino. */
+    public function sensorsCopy(Request $request, $id): JsonResponse
+    {
+        try {
+            $source = \Tobuli\Entities\Device::find((int) $id);
+            $this->checkException('devices', 'show', $source);
+
+            $sensorIds = array_values(array_unique(array_filter(
+                array_map('intval', (array) $request->input('sensors', []))
+            )));
+            $deviceIds = array_values(array_unique(array_filter(
+                array_map('intval', (array) $request->input('devices', []))
+            )));
+            $overwrite = (bool) $request->input('overwrite', false);
+
+            if (! $sensorIds || ! $deviceIds) {
+                return response()->json([
+                    'ok'     => false,
+                    'errors' => ['sensors' => [trans('front.nothing_selected')]],
+                ], 422);
+            }
+
+            // Solo sensores del vehiculo de origen: no se copia lo ajeno.
+            $sensors = \Tobuli\Entities\DeviceSensor::where('device_id', $source->id)
+                ->whereIn('id', $sensorIds)
+                ->get();
+
+            if ($sensors->isEmpty()) {
+                return response()->json(['ok' => false, 'error' => 'not_found'], 404);
+            }
+
+            $targets = $this->user->devices()->whereIn('devices.id', $deviceIds)->get();
+
+            $copied = 0;
+            $replaced = 0;
+            $skipped = 0;
+            $denied = 0;
+            $detalle = [];
+
+            beginTransaction();
+
+            try {
+                foreach ($targets as $target) {
+                    if (! $this->user->can('edit', $target)) {
+                        $denied++;
+                        continue;
+                    }
+
+                    // Hashes ya presentes en el destino, para no duplicar.
+                    $existing = [];
+                    foreach (\Tobuli\Entities\DeviceSensor::where('device_id', $target->id)->get() as $own) {
+                        $existing[$own->hash] = $own;
+                    }
+
+                    $n = 0;
+                    foreach ($sensors as $sensor) {
+                        if (isset($existing[$sensor->hash])) {
+                            if (! $overwrite) {
+                                $skipped++;
+                                continue;
+                            }
+                            $existing[$sensor->hash]->delete();
+                            $replaced++;
+                        } else {
+                            $copied++;
+                        }
+
+                        // replicate() y no create(): hay columnas fuera de
+                        // $fillable (icon_id, on_value/off_value, formulas)
+                        // que con asignacion masiva se perderian.
+                        $copy = $sensor->replicate();
+                        $copy->device_id = $target->id;
+                        $copy->user_id   = $this->user->id;
+                        $copy->save();
+
+                        $n++;
+                    }
+
+                    $detalle[] = [
+                        'device_id' => (int) $target->id,
+                        'name'      => (string) $target->name,
+                        'copied'    => $n,
+                    ];
+                }
+
+                commitTransaction();
+            } catch (\Throwable $e) {
+                rollbackTransaction();
+                throw $e;
+            }
+
+            return response()->json([
+                'ok'       => true,
+                'copied'   => $copied,
+                'replaced' => $replaced,
+                'skipped'  => $skipped,
+                'denied'   => $denied,
+                'devices'  => $detalle,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
     /**
      * Imagen del vehiculo: subir. Paridad con DeviceImagesController@store
      * del legacy (mismo validador y mismo servicio); la v2 solo la mostraba.

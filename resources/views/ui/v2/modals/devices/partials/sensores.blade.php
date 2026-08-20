@@ -26,6 +26,8 @@
             'sensorIcons' => route('ui.v2.api.sensors.icons'),
             'calImport'   => route('ui.v2.api.sensors.calibrations.import'),
             'calExample'  => asset('examples/import_sensor_calibrations.csv'),
+            'copyTargets' => route('ui.v2.api.devices.sensors.copy_targets', $item->id),
+            'copy'        => route('ui.v2.api.devices.sensors.copy', $item->id),
         ];
     @endphp
 
@@ -42,8 +44,11 @@
                 <input type="search" class="tp-input" data-sensors-search placeholder="{{ trans('front.search') }}"
                     autocomplete="off">
             </span>
-            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sensor-add
-                style="margin-left: auto;">＋</button>
+            {{-- Copiar la configuracion de sensores a otros vehiculos: dar de
+                 alta una flota igual obligaba a repetirla uno a uno. --}}
+            <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensors-copy
+                style="margin-left: auto;">Copiar a…</button>
+            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sensor-add>＋</button>
         </div>
 
         <div class="tp-embed-box">

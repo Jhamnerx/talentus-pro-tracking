@@ -1257,6 +1257,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('devices/{id}/sensors',       ['as' => 'api.devices.sensors',       'uses' => 'Ui\V2\DevicesController@sensorsList'])->where('id', '[0-9]+');
         Route::get('devices/{id}/sensors/form',  ['as' => 'api.devices.sensors.form',  'uses' => 'Ui\V2\DevicesController@sensorFormCreate'])->where('id', '[0-9]+');
         Route::post('devices/{id}/sensors',      ['as' => 'api.devices.sensors.store', 'uses' => 'Ui\V2\DevicesController@sensorStore'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/sensors/copy-targets', ['as' => 'api.devices.sensors.copy_targets', 'uses' => 'Ui\V2\DevicesController@sensorCopyTargets'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/sensors/copy',  ['as' => 'api.devices.sensors.copy',  'uses' => 'Ui\V2\DevicesController@sensorsCopy'])->where('id', '[0-9]+');
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::post('sensors/calibrations/import', ['as' => 'api.sensors.calibrations.import', 'uses' => 'Ui\V2\DevicesController@sensorCalibrationsImport']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);

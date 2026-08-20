@@ -623,7 +623,12 @@
     }
     if (searchEl) searchEl.addEventListener("input", applyFilter);
 
+    // Ultimo listado recibido: lo usa el modal de copia para ofrecer que
+    // sensores llevar, sin volver a pedirlos.
+    var currentSensors = [];
+
     function renderRows(items) {
+      currentSensors = items || [];
       if (!items.length) {
         rowsEl.innerHTML =
           '<tr data-sensors-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
@@ -652,6 +657,10 @@
       var add = e.target.closest("[data-sensor-add]");
       if (add) {
         openSensorForm(cfg, null, reload);
+        return;
+      }
+      if (e.target.closest("[data-sensors-copy]")) {
+        openSensorsCopy(cfg, currentSensors, reload);
         return;
       }
       var edit = e.target.closest("[data-sensor-edit]");
@@ -1375,6 +1384,154 @@
           },
         },
       ],
+    });
+
+    return dlg;
+  }
+
+  /**
+   * Copiar los sensores de este vehiculo a otros. Se eligen que sensores y a
+   * que vehiculos; el duplicado se detecta por tipo+nombre y por defecto se
+   * respeta lo que ya existe en el destino.
+   */
+  function openSensorsCopy(cfg, sensors, onDone) {
+    if (!sensors || !sensors.length) {
+      tpModal.toast("Este vehículo no tiene sensores que copiar.", "warning");
+      return;
+    }
+
+    var sensorRows = sensors
+      .map(function (s) {
+        return (
+          '<label class="tp-copy__row"><input type="checkbox" data-cp-sensor="' + s.id + '" checked>' +
+          "<span>" + esc(s.name || "#" + s.id) + '</span><small class="tp-text-muted">' +
+          esc(s.type_title || s.type || "") + "</small></label>"
+        );
+      })
+      .join("");
+
+    var dlg = tpModal.open({
+      title: "Copiar sensores a otros vehículos",
+      size: "lg",
+      body:
+        '<div class="tp-copy">' +
+        '<div class="tp-copy__col">' +
+        '<h4 class="tp-copy__title">Sensores a copiar</h4>' +
+        '<div class="tp-copy__list">' + sensorRows + "</div>" +
+        "</div>" +
+        '<div class="tp-copy__col">' +
+        '<h4 class="tp-copy__title">Vehículos destino</h4>' +
+        '<input type="search" class="tp-input tp-input--sm" data-cp-search placeholder="Buscar vehículo…" autocomplete="off">' +
+        '<div class="tp-copy__list" data-cp-devices>' +
+        '<p class="tp-text-sm tp-text-muted" style="padding:8px;">Cargando…</p>' +
+        "</div>" +
+        '<label class="tp-choice" style="margin-top:8px;">' +
+        '<input type="checkbox" class="tp-choice-input" data-cp-overwrite>' +
+        "<span>Reemplazar los sensores que ya existan en el destino</span></label>" +
+        '<p class="tp-text-xs tp-text-muted" style="margin:6px 0 0;">' +
+        "Sin marcar, los sensores que el destino ya tenga (mismo tipo y nombre) se dejan intactos.</p>" +
+        "</div>" +
+        "</div>",
+      buttons: [
+        { label: "Cancelar", variant: "ghost", close: true },
+        {
+          label: "Copiar",
+          variant: "primary",
+          close: false,
+          onClick: function (d) {
+            var sIds = [];
+            d.querySelectorAll("[data-cp-sensor]:checked").forEach(function (i) {
+              sIds.push(parseInt(i.getAttribute("data-cp-sensor"), 10));
+            });
+            var dIds = [];
+            d.querySelectorAll("[data-cp-device]:checked").forEach(function (i) {
+              dIds.push(parseInt(i.getAttribute("data-cp-device"), 10));
+            });
+
+            if (!sIds.length) {
+              tpModal.toast("Elige al menos un sensor.", "warning");
+              return false;
+            }
+            if (!dIds.length) {
+              tpModal.toast("Elige al menos un vehículo destino.", "warning");
+              return false;
+            }
+
+            var overwrite = d.querySelector("[data-cp-overwrite]").checked;
+
+            tpModal.setBusy(d, true);
+            tpModal
+              .fetchJSON(cfg.copy, {
+                method: "POST",
+                json: { sensors: sIds, devices: dIds, overwrite: overwrite ? 1 : 0 },
+              })
+              .then(function (res) {
+                tpModal.setBusy(d, false);
+                if (!res.ok || !res.data || !res.data.ok) {
+                  tpModal.toast((res.data && res.data.message) || "No se pudo copiar.", "error");
+                  return;
+                }
+
+                var r = res.data;
+                var partes = [r.copied + " copiados"];
+                if (r.replaced) partes.push(r.replaced + " reemplazados");
+                if (r.skipped) partes.push(r.skipped + " ya existían");
+                if (r.denied) partes.push(r.denied + " sin permiso");
+
+                tpModal.close(d);
+                tpModal.toast(partes.join(" · "), r.copied || r.replaced ? "success" : "warning");
+                if (typeof onDone === "function") onDone();
+              })
+              .catch(function () {
+                tpModal.setBusy(d, false);
+                tpModal.toast("Error de red.", "error");
+              });
+            return false;
+          },
+        },
+      ],
+      onMount: function (d) {
+        var wrap = d.querySelector("[data-cp-devices]");
+        var search = d.querySelector("[data-cp-search]");
+
+        // La lista de destinos se pide al abrir, no con el formulario: son
+        // cientos de vehiculos y solo hacen falta aqui.
+        tpModal
+          .fetchJSON(cfg.copyTargets, { method: "GET" })
+          .then(function (res) {
+            var items = (res.data && res.data.items) || [];
+            if (!items.length) {
+              wrap.innerHTML =
+                '<p class="tp-text-sm tp-text-muted" style="padding:8px;">No hay otros vehículos que puedas editar.</p>';
+              return;
+            }
+            wrap.innerHTML = items
+              .map(function (it) {
+                return (
+                  '<label class="tp-copy__row" data-cp-item data-name="' +
+                  esc((it.name + " " + (it.plate || "")).toLowerCase()) +
+                  '"><input type="checkbox" data-cp-device="' + it.id + '">' +
+                  "<span>" + esc(it.name) + "</span>" +
+                  (it.plate ? '<small class="tp-text-muted">' + esc(it.plate) + "</small>" : "") +
+                  "</label>"
+                );
+              })
+              .join("");
+          })
+          .catch(function () {
+            wrap.innerHTML =
+              '<p class="tp-text-sm tp-text-error" style="padding:8px;">No se pudo cargar la lista.</p>';
+          });
+
+        if (search) {
+          search.addEventListener("input", function () {
+            var q = search.value.trim().toLowerCase();
+            wrap.querySelectorAll("[data-cp-item]").forEach(function (row) {
+              row.style.display = !q || row.getAttribute("data-name").indexOf(q) !== -1 ? "" : "none";
+            });
+          });
+        }
+      },
     });
 
     return dlg;

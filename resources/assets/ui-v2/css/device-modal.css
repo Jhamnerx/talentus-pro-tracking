@@ -803,3 +803,62 @@
 .tp-sensor-pane__head .tp-sensor-pane__title {
   margin: 0;
 }
+
+/* ── Copiar sensores a otros vehículos ───────────────────────────────
+   Dos columnas: qué se copia y a dónde. Las listas llevan su propio
+   scroll para que el modal no crezca con flotas de cientos de equipos. */
+.tp-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-4);
+}
+.tp-copy__col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.tp-copy__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+.tp-copy__list {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.tp-copy__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tp-copy__row:hover {
+  background: var(--surface-sunken);
+}
+.tp-copy__row span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-copy__row small {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+}
+
+@media (max-width: 720px) {
+  .tp-copy {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
