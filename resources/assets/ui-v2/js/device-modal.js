@@ -201,11 +201,51 @@
     var typeSel = scope.querySelector("[data-tp-icons-type]");
     if (!typeSel) return;
 
+    // La galería del grupo se pide la primera vez que se muestra: el catálogo
+    // pasa del millar de iconos y embeberlo hacía el formulario inmanejable.
+    function loadGallery(box) {
+      if (!box || box.getAttribute("data-loaded") === "1") return;
+      box.setAttribute("data-loaded", "1");
+
+      tpModal
+        .fetchJSON(box.getAttribute("data-url"))
+        .then(function (res) {
+          if (!res.ok || !res.data || !res.data.ok) {
+            box.innerHTML = '<span class="tp-text-muted tp-text-sm">No se pudieron cargar los iconos.</span>';
+            return;
+          }
+          var items = res.data.items || [];
+          box.innerHTML = items.length
+            ? items
+                .map(function (i) {
+                  return (
+                    '<label class="tp-icon-gallery__item' + (i.selected ? " is-selected" : "") +
+                    '" data-icon-id="' + i.id + '">' +
+                    '<input type="radio" name="icon_id" value="' + i.id + '"' + (i.selected ? " checked" : "") + ">" +
+                    '<img src="' + tpModal.escapeHtml(i.url) + '" alt="" loading="lazy"></label>'
+                  );
+                })
+                .join("")
+            : '<span class="tp-text-muted tp-text-sm">Sin iconos en este grupo.</span>';
+
+          // Los radios recién insertados siguen la regla del grupo visible
+          var group = box.closest("[data-tp-icons-group]");
+          var visible = group && group.style.display !== "none";
+          box.querySelectorAll('input[type="radio"]').forEach(function (r) {
+            r.disabled = !visible;
+          });
+        })
+        .catch(function () {
+          box.innerHTML = '<span class="tp-text-muted tp-text-sm">No se pudieron cargar los iconos.</span>';
+        });
+    }
+
     function apply() {
       var type = typeSel.value;
       Array.prototype.forEach.call(scope.querySelectorAll("[data-tp-icons-group]"), function (g) {
         var on = g.getAttribute("data-tp-icons-group") === type;
         g.style.display = on ? "" : "none";
+        if (on) loadGallery(g.querySelector("[data-tp-icons-lazy]"));
         Array.prototype.forEach.call(g.querySelectorAll('input[type="radio"]'), function (r) {
           r.disabled = !on;
         });
@@ -1961,28 +2001,46 @@
         var bodyEl = dlg.querySelector(".tp-modal__body");
         if (!bodyEl) return;
         bodyEl.innerHTML = html;
-        wireTabs(bodyEl);
-        wireIconGallery(bodyEl);
-        wireIconsTab(bodyEl);
-        wireExpiration(bodyEl);
-        wireEnablers(bodyEl);
-        wireIgnitionEngine(bodyEl);
-        wireFuelLabels(bodyEl);
-        wireRouteColors(bodyEl);
-        wireUsersTab(bodyEl);
-        wireSensorsTab(bodyEl);
-        wireServicesTab(bodyEl);
-        wireCamerasTab(bodyEl);
-        wireMaintenances(bodyEl);
-        wireConfigurator(bodyEl);
-        wireExpensesTab(bodyEl);
+
+        // Cada pestaña se inicializa por separado: si una falla, el resto del
+        // formulario sigue usable. Antes un error en cualquier wire* caía en el
+        // catch del fetch y el modal entero mostraba "No se pudo cargar el
+        // formulario", ocultando la causa real.
+        [
+          ["tabs", wireTabs],
+          ["iconGallery", wireIconGallery],
+          ["iconsTab", wireIconsTab],
+          ["expiration", wireExpiration],
+          ["enablers", wireEnablers],
+          ["ignitionEngine", wireIgnitionEngine],
+          ["fuelLabels", wireFuelLabels],
+          ["routeColors", wireRouteColors],
+          ["usersTab", wireUsersTab],
+          ["sensorsTab", wireSensorsTab],
+          ["servicesTab", wireServicesTab],
+          ["camerasTab", wireCamerasTab],
+          ["maintenances", wireMaintenances],
+          ["configurator", wireConfigurator],
+          ["expensesTab", wireExpensesTab],
+        ].forEach(function (pair) {
+          try {
+            pair[1](bodyEl);
+          } catch (e) {
+            if (window.console && console.error) {
+              console.error("[device-modal] fallo al inicializar '" + pair[0] + "':", e);
+            }
+          }
+        });
       })
-      .catch(function () {
+      .catch(function (e) {
+        if (window.console && console.error) console.error("[device-modal] carga:", e);
         var bodyEl = dlg.querySelector(".tp-modal__body");
         if (bodyEl) {
           bodyEl.innerHTML =
             '<div class="tp-text-center tp-text-error" style="padding:24px;">' +
-            "No se pudo cargar el formulario.</div>";
+            "No se pudo cargar el formulario." +
+            '<div class="tp-text-xs tp-text-muted" style="margin-top:6px;">' +
+            ((e && e.message) ? String(e.message) : "") + "</div></div>";
         }
       });
 

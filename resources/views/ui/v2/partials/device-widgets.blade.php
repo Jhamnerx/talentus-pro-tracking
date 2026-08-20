@@ -78,9 +78,15 @@
                         {{-- Icono: personalizado del mapeo de valores (admin/sensor_icons)
                              o el SVG del tipo, igual que el legacy --}}
                         <dt>
-                            @if (!empty($sensor['icon']))
-                                <img class="tp-sensor-icon" src="{{ $sensor['icon'] }}"
+                            {{-- Icono personalizado del mapeo de valores (admin →
+                                 sensor_icons) si lo hay; si no, el icono de trazo
+                                 del tipo, que hereda el color del texto. Los SVG
+                                 del tema legacy traen colores fijos y desentonaban. --}}
+                            @if (!empty($sensor['custom_icon']))
+                                <img class="tp-sensor-icon" src="{{ $sensor['custom_icon'] }}"
                                     alt="" loading="lazy" aria-hidden="true">
+                            @else
+                                @include('ui.v2.partials.sensor-icon', ['type' => $sensor['type'] ?? ''])
                             @endif
                             <span>{{ $sensor['name'] }}</span>
                         </dt>

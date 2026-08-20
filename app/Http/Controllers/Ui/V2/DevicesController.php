@@ -402,6 +402,37 @@ class DevicesController extends BaseController
         return $out;
     }
 
+    /**
+     * Galería de iconos de un grupo (icon / rotating). Va aparte del formulario
+     * porque el catálogo llega a superar el millar de iconos y embeberlo hacía
+     * que el modal de vehículo pesara ~460 KB.
+     */
+    public function deviceIcons(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $group    = (string) $request->get('group', '');
+        $selected = (int) $request->get('selected', 0);
+
+        $icons = \Tobuli\Entities\DeviceIcon::where('type', $group)
+            ->orderBy('order', 'asc')
+            ->orderBy('id', 'asc')
+            ->get(['id', 'path']);
+
+        return response()->json([
+            'ok'    => true,
+            'items' => $icons->map(function ($i) use ($selected) {
+                return [
+                    'id'       => (int) $i->id,
+                    'url'      => asset($i->path),
+                    'selected' => (int) $i->id === $selected,
+                ];
+            })->all(),
+        ]);
+    }
+
     public function fleetColumns(Request $request): JsonResponse
     {
         if (! $this->user->perm('devices', 'view')) {
@@ -2150,8 +2181,10 @@ class DevicesController extends BaseController
                         // device.js dataSensorsDOM): 1) icono personalizado del mapeo
                         // de valores (admin → sensor_icons), 2) si no hay, el SVG del
                         // tipo de sensor (con escalón para battery/gsm).
+                        // Solo el icono PERSONALIZADO llega como imagen; el del
+                        // tipo lo pinta el partial sensor-icon (SVG de trazo).
                         $custom = $value->getIcon();
-                        $icon = $custom ? asset($custom->path) : $this->sensorTypeIcon($sensor, $value->getValue());
+                        $icon = $custom ? asset($custom->path) : null;
                     }
                 } catch (\Throwable $e) {
                     $formatted = '-';
@@ -2159,8 +2192,8 @@ class DevicesController extends BaseController
                 $rows[] = [
                     'name'     => $sensor->formatName(),
                     'formated' => $formatted,
-                    'type'     => (string) $sensor->type,
-                    'icon'     => $icon,
+                    'type'        => (string) $sensor->type,
+                    'custom_icon' => $icon,
                 ];
             }
             $data['sensors'] = $rows;

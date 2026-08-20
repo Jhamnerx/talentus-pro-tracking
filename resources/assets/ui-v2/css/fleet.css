@@ -345,3 +345,148 @@
     row-gap: 8px;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Estilo de lista tipo ERP: barra de filtros en tarjeta, cabecera con
+   contador, filas de dos líneas y acciones en kebab.
+   ════════════════════════════════════════════════════════════════════ */
+
+.tp-fleet__toolbar {
+  margin: 14px 16px 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-raised, #fff);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.tp-fleet__title h1 {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.tp-fleet__title #tp-fleet-count {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg-tertiary, #94a3b8);
+}
+
+/* Cabecera de la tabla: fondo suave y texto en versalitas, como la referencia */
+.tp-fleet__table thead th {
+  background: var(--surface-sunken, #f8fafc);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary, #94a3b8);
+  padding-top: 11px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Filas más aireadas */
+.tp-fleet__table tbody td {
+  padding-top: 11px;
+  padding-bottom: 11px;
+  vertical-align: middle;
+}
+.tp-fleet__table tbody tr:hover td {
+  background: var(--brand-50, #f6f9ff);
+}
+
+/* ── Celda de identidad (icono + nombre + placa) ─────────────────── */
+.tp-fleet__ident {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.tp-fleet__ident-chip {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+.tp-fleet__ident-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+.tp-fleet__ident-name {
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-600, #2563eb);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-fleet__ident-name:hover {
+  text-decoration: underline;
+}
+.tp-fleet__ident-sub {
+  font-size: 11.5px;
+  color: var(--fg-tertiary, #94a3b8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Acciones en kebab ───────────────────────────────────────────── */
+.tp-fleet__kebab {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+.tp-fleet__kebab-btn {
+  background: none;
+  border: 0;
+  border-radius: 8px;
+  padding: 4px 6px;
+  color: var(--fg-tertiary, #94a3b8);
+  cursor: pointer;
+}
+.tp-fleet__kebab-btn:hover {
+  background: var(--surface-sunken, #eef2f7);
+  color: var(--fg-primary, #0f172a);
+}
+.tp-fleet__kebab-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 30;
+  min-width: 168px;
+  padding: 5px;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16);
+  display: flex;
+  flex-direction: column;
+}
+.tp-fleet__kebab-menu[hidden] {
+  display: none;
+}
+.tp-fleet__kebab-menu button {
+  background: none;
+  border: 0;
+  border-radius: 7px;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--fg-primary, #0f172a);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tp-fleet__kebab-menu button:hover {
+  background: var(--brand-50, #f2f5fd);
+  color: var(--brand-700, #1d4ed8);
+}

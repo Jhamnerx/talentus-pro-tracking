@@ -113,11 +113,21 @@
   // Cómo se pinta cada columna: valor + alineación.
   var COL_RENDER = {
     name: function (d) {
+      // Celda de identidad: chip con el color de estado + nombre y, debajo, la
+      // placa (o el IMEI si no hay). Dos líneas, como la lista del ERP.
+      var sub = d.plate || d.imei || "";
       return (
-        '<div class="tp-fleet__row-name">' +
-        '<span class="tp-fleet__row-dot" style="background:' + escapeHtml(d.icon_color || "#94a3b8") + '"></span>' +
-        '<span class="tp-fleet__row-name-text" title="' + escapeHtml(d.name) + '">' + escapeHtml(d.name) + "</span>" +
-        "</div>"
+        '<div class="tp-fleet__ident">' +
+        '<span class="tp-fleet__ident-chip" style="background:' +
+        escapeHtml(hexToSoft(d.icon_color)) + ';color:' + escapeHtml(statusHex(d.icon_color)) + '">' +
+        '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M5 17H3v-6l2-5h9l3 5v6h-2"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/></svg>' +
+        "</span>" +
+        '<span class="tp-fleet__ident-text">' +
+        '<button type="button" class="tp-fleet__ident-name" data-view="' + d.id + '" title="' + escapeHtml(d.name) + '">' +
+        escapeHtml(d.name) + "</button>" +
+        '<span class="tp-fleet__ident-sub">' + escapeHtml(sub || "—") + "</span>" +
+        "</span></div>"
       );
     },
     status: function (d) {
@@ -176,6 +186,28 @@
   };
 
   var COL_RIGHT = { speed: true, fuel: true };
+
+  // El estado del vehículo llega como nombre de color (green, yellow…), que es
+  // lo que guarda el legacy, no como hex.
+  var STATUS_HEX = {
+    green: "#16a34a", yellow: "#eab308", red: "#ef4444",
+    blue: "#2563eb", orange: "#f97316", black: "#334155",
+  };
+
+  function statusHex(c) {
+    if (!c) return "#64748b";
+    return STATUS_HEX[String(c).toLowerCase()] || (String(c).charAt(0) === "#" ? c : "#64748b");
+  }
+
+  // Fondo suave del chip de identidad, a partir del color de estado
+  function hexToSoft(c) {
+    var hex = statusHex(c);
+    if (hex.charAt(0) !== "#" || hex.length < 7) return "rgba(100,116,139,.12)";
+    var r = parseInt(hex.slice(1, 3), 16);
+    var g = parseInt(hex.slice(3, 5), 16);
+    var b = parseInt(hex.slice(5, 7), 16);
+    return "rgba(" + r + "," + g + "," + b + ",.14)";
+  }
 
   function colValue(field, d) {
     if (COL_RENDER[field]) return COL_RENDER[field](d);
@@ -502,10 +534,16 @@
               return "<td" + (COL_RIGHT[f] ? ' class="tp-text-right"' : "") + ">" + colValue(f, d) + "</td>";
             })
             .join("") +
-          '<td><button class="tp-fleet__row-action" data-view="' + d.id +
-          '" title="Ver en mapa" aria-label="Ver en mapa">' +
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
-          "</button></td>" +
+          '<td class="tp-fleet__th-actions">' +
+          '<div class="tp-fleet__kebab">' +
+          '<button type="button" class="tp-fleet__kebab-btn" data-kebab="' + d.id + '" aria-haspopup="menu" aria-label="Acciones">' +
+          '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
+          "</button>" +
+          '<div class="tp-fleet__kebab-menu" role="menu" hidden>' +
+          '<button type="button" role="menuitem" data-view="' + d.id + '">Ver en el mapa</button>' +
+          '<button type="button" role="menuitem" data-edit="' + d.id + '">Editar</button>' +
+          '<button type="button" role="menuitem" data-history="' + d.id + '">Historial</button>' +
+          "</div></div></td>" +
           "</tr>";
       }
       $tbody.innerHTML = html;
@@ -677,12 +715,42 @@
     render();
   });
 
-  // Row "view on map"
+  // Acciones de fila: kebab (ver en el mapa / editar / historial)
+  function closeKebabs(except) {
+    $tbody.querySelectorAll(".tp-fleet__kebab-menu:not([hidden])").forEach(function (m) {
+      if (m !== except) m.hidden = true;
+    });
+  }
+  document.addEventListener("click", function () { closeKebabs(); });
+
   $tbody.addEventListener("click", function (e) {
-    var btn = e.target.closest("[data-view]");
-    if (!btn) return;
-    var id = btn.getAttribute("data-view");
-    window.location.href = "/ui/v2/live?device=" + encodeURIComponent(id);
+    var kebab = e.target.closest("[data-kebab]");
+    if (kebab) {
+      e.stopPropagation();
+      var menu = kebab.parentNode.querySelector(".tp-fleet__kebab-menu");
+      var willOpen = menu.hidden;
+      closeKebabs(menu);
+      menu.hidden = !willOpen;
+      return;
+    }
+
+    var view = e.target.closest("[data-view]");
+    if (view) {
+      window.location.href = "/ui/v2/live?device=" + encodeURIComponent(view.getAttribute("data-view"));
+      return;
+    }
+
+    var edit = e.target.closest("[data-edit]");
+    if (edit) {
+      closeKebabs();
+      if (window.tpDeviceModal) tpDeviceModal.openEdit(edit.getAttribute("data-edit"), function () { load(); });
+      return;
+    }
+
+    var hist = e.target.closest("[data-history]");
+    if (hist) {
+      window.location.href = "/ui/v2/history?device=" + encodeURIComponent(hist.getAttribute("data-history")) + "&range=today";
+    }
   });
 
   // CSV export (current page)

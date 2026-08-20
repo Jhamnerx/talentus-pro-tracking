@@ -34,20 +34,25 @@
     </label>
 </div>
 
-<input type="hidden" name="icon_id" value="0">
+{{-- Valor actual del icono. Antes era 0 fijo porque los radios de la galería
+     siempre estaban en el DOM y uno de ellos lo sobrescribía; ahora la galería
+     se carga al abrir el tab, así que guardar sin pasar por él enviaría 0 y
+     borraría el icono del vehículo. --}}
+<input type="hidden" name="icon_id" value="{{ $iconId }}">
 
-{{-- Galerías por grupo (icon / rotating) — visibles solo si el tipo coincide --}}
-@foreach ($grouped as $group => $icons)
+{{-- Galerías por grupo (icon / rotating).
+     El catálogo puede pasar del millar de iconos: incrustarlo en el formulario
+     lo hacía pesar ~460 KB (el 77% eran estas galerías) y ralentizaba cada
+     apertura del modal. Ahora el contenedor va vacío y device-modal.js pide la
+     galería del grupo la primera vez que se muestra. --}}
+{{-- Se itera clave=>valor (ignorando los iconos): en el alta $grouped es una
+     Collection y array_keys() reventaba. --}}
+@foreach ($grouped as $group => $iconsUnused)
     <div class="tp-form__section" data-tp-icons-group="{{ $group }}" style="display: none;">
         <h4 class="tp-form__section-title">{{ trans('validation.attributes.icon_id') }}</h4>
-        <div class="tp-icon-gallery">
-            @foreach ($icons as $icon)
-                @php $sel = (int) $icon->id === $iconId; @endphp
-                <label class="tp-icon-gallery__item{{ $sel ? ' is-selected' : '' }}" data-icon-id="{{ $icon->id }}">
-                    <input type="radio" name="icon_id" value="{{ $icon->id }}" {{ $sel ? 'checked' : '' }} disabled>
-                    <img src="{{ asset($icon->path) }}" alt="icono #{{ $icon->id }}" loading="lazy">
-                </label>
-            @endforeach
+        <div class="tp-icon-gallery" data-tp-icons-lazy="{{ $group }}"
+            data-url="{{ url('/ui/v2/api/devices/icons') }}?group={{ $group }}&selected={{ $iconId }}">
+            <span class="tp-text-muted tp-text-sm">{{ trans('front.loading') ?: 'Cargando…' }}</span>
         </div>
     </div>
 @endforeach

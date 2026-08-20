@@ -1256,6 +1256,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('devices/{id}/sensors',      ['as' => 'api.devices.sensors.store', 'uses' => 'Ui\V2\DevicesController@sensorStore'])->where('id', '[0-9]+');
         Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
         Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
+        Route::get('devices/icons',              ['as' => 'api.devices.icons',         'uses' => 'Ui\V2\DevicesController@deviceIcons']);
         // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
         // Selector de idioma (catálogo activo + cambio)
         Route::get('languages',  ['as' => 'api.languages',        'uses' => 'Ui\V2\AccountController@languages']);

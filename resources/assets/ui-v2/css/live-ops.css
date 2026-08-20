@@ -2393,11 +2393,22 @@ table.tp-lock-hist th {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tp-sensor-icon {
+.tp-sensor-icon,
+.tp-sensor-ico {
   width: 16px;
   height: 16px;
   flex: 0 0 16px;
   object-fit: contain;
+}
+/* El SVG de trazo hereda el color del texto: se ve como parte de la fila,
+   no como una pegatina de color suelta. */
+.tp-sensor-ico {
+  color: var(--fg-tertiary, #94a3b8);
+}
+.tp-defs--sensors dt:hover .tp-sensor-ico {
+  color: var(--brand-600, #2563eb);
+}
+.tp-sensor-icon {
   opacity: 0.85;
 }
 
