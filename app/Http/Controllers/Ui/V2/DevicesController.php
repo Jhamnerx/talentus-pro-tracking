@@ -284,7 +284,9 @@ class DevicesController extends BaseController
             $available[] = [
                 'field' => (string) ($def['field'] ?? $key),
                 'class' => (string) ($def['class'] ?? 'device'),
-                'label' => (string) ($def['title'] ?? $def['text'] ?? $key),
+                // listviewTrans() devuelve las etiquetas con entidades HTML
+                // ("Ultima conexi&oacute;n"); el JS las escapa y se veían crudas.
+                'label' => html_entity_decode((string) ($def['title'] ?? $def['text'] ?? $key), ENT_QUOTES, 'UTF-8'),
             ];
         }
 

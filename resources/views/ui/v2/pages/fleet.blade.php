@@ -5,7 +5,7 @@
 
 @push('head')
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=1">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=13">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=4">
     {{-- Kebab compartido + modales de Servicios (tab Servicios del modal device) --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
 @endpush
@@ -145,7 +145,7 @@
 @push('scripts')
     <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=18"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=4" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.
         (function() {

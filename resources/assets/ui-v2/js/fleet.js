@@ -209,17 +209,31 @@
       title: "Columnas de la lista",
       size: "md",
       body:
-        '<div class="tp-text-muted tp-text-sm" style="margin-bottom:10px;">Se comparte con la vista de lista clásica.</div>' +
-        '<div class="tp-rgroup-list">' +
+        '<div class="tp-colpick">' +
+        '<div class="tp-colpick__head">' +
+        '<span class="tp-colpick__hint">Se comparte con la vista de lista clásica.</span>' +
+        '<span class="tp-colpick__bulk">' +
+        '<button type="button" class="tp-linkbtn" data-col-all>Todas</button>' +
+        '<button type="button" class="tp-linkbtn" data-col-none>Ninguna</button>' +
+        "</span></div>" +
+        '<div class="tp-colpick__grid">' +
         columnsState.available
           .map(function (c) {
             return (
-              '<label class="tp-rgroup-item"><input type="checkbox" data-col="' + escapeHtml(c.field) + '"' +
+              '<label class="tp-colpick__item"><input type="checkbox" data-col="' + escapeHtml(c.field) + '"' +
               (chosen[c.field] ? " checked" : "") + "><span>" + escapeHtml(c.label) + "</span></label>"
             );
           })
           .join("") +
-        "</div>",
+        "</div></div>",
+      onMount: function (d) {
+        d.addEventListener("click", function (e) {
+          var all = e.target.closest("[data-col-all]");
+          var none = e.target.closest("[data-col-none]");
+          if (!all && !none) return;
+          d.querySelectorAll("[data-col]").forEach(function (c) { c.checked = !!all; });
+        });
+      },
       buttons: [
         { label: "Cancelar", variant: "ghost", close: true },
         {
