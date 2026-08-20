@@ -49,7 +49,7 @@ class DashboardController extends BaseController
         }
 
         return View::make('ui.v2.pages.dashboard', [
-            'pageTitle' => 'Command Center',
+            'pageTitle' => trans('front.dashboard'),
         ]);
     }
 

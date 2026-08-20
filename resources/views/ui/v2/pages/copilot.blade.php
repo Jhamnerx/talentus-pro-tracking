@@ -1,6 +1,6 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Co-Pilot IA')
+@section('title', $pageTitle ?? 'Copiloto IA')
 @section('rail-active', 'copilot')
 
 @push('head')

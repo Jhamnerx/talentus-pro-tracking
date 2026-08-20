@@ -346,7 +346,7 @@
       '<div class="tp-hist-pt__bar"><span class="tp-hist-pt__baric"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span></div>' +
       '<dl class="tp-hist-pt__defs">' +
       (CFG.addrOn ? ptRow(T("address", "Dirección"), '<span data-addr>…</span>') : "") +
-      ptRow(T("street_view", "Street view"), '<a href="' + sv + '" target="_blank" rel="noopener">' + T("preview", "Preview") + "</a>") +
+      ptRow(T("street_view", "Vista de calle"), '<a href="' + sv + '" target="_blank" rel="noopener">' + T("preview", "Ver") + "</a>") +
       ptRow(T("latitude", "Latitud"), p.lat + "&deg;") +
       ptRow(T("longitude", "Longitud"), p.lng + "&deg;") +
       (p.alt != null ? ptRow(T("altitude", "Altitud"), Math.round(p.alt) + " m") : "") +

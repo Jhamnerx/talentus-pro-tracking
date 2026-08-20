@@ -1,6 +1,6 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Command Center')
+@section('title', $pageTitle ?? trans('front.dashboard'))
 @section('rail-active', 'dashboard')
 
 @push('head')

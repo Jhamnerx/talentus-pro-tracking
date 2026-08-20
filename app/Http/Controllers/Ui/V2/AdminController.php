@@ -19,7 +19,7 @@ class AdminController extends BaseController
     public function index(Request $request)
     {
         return View::make('ui.v2.pages.admin', [
-            'pageTitle' => 'Admin & Integrations',
+            'pageTitle' => 'Administración e integraciones',
             'isAdmin'   => (bool) $this->user->isAdmin(),
             'isManager' => method_exists($this->user, 'isManager') ? (bool) $this->user->isManager() : false,
         ]);

@@ -1,6 +1,6 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Fleet')
+@section('title', $pageTitle ?? trans('front.objects'))
 @section('rail-active', 'fleet')
 
 @push('head')
@@ -38,7 +38,7 @@
 
         <header class="tp-fleet__toolbar">
             <div class="tp-fleet__title">
-                <h1 class="tp-h5 tp-mb-0">Fleet</h1>
+                <h1 class="tp-h5 tp-mb-0">{{ trans('front.objects') }}</h1>
                 <span class="tp-text-muted tp-text-sm" id="tp-fleet-count">—</span>
             </div>
 

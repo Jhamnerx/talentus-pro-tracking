@@ -1,6 +1,6 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'History & Replay')
+@section('title', $pageTitle ?? trans('front.history'))
 @section('rail-active', 'history')
 
 @push('head')
@@ -628,5 +628,5 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=28"></script>
+    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=29"></script>
 @endpush

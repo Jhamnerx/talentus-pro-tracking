@@ -1,6 +1,6 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Admin & Integrations')
+@section('title', $pageTitle ?? 'Administración e integraciones')
 @section('rail-active', 'admin')
 
 @push('head')
@@ -15,7 +15,7 @@
 
         <header class="tp-admin__head">
             <div>
-                <h1 class="tp-h5 tp-mb-0">Admin & Integrations</h1>
+                <h1 class="tp-h5 tp-mb-0">Administración e integraciones</h1>
                 <p class="tp-text-muted tp-text-sm tp-mb-0">API, webhooks, SSO, branding y accesos rápidos al panel clásico.
                 </p>
             </div>

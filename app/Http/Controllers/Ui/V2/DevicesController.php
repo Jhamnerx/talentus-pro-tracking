@@ -38,7 +38,7 @@ class DevicesController extends BaseController
         }
 
         return View::make('ui.v2.pages.live', [
-            'pageTitle'     => 'Live Ops · Mapa',
+            'pageTitle'     => trans('front.map'),
             'socketPort'    => config('server.socket_port', env('SOCKET_PORT', 3000)),
             'socketSslPort' => config('server.socket_ssl_port', env('SOCKET_SSL_PORT', 3001)),
             'mapConfig'     => $this->buildMapConfig(),
@@ -124,7 +124,7 @@ class DevicesController extends BaseController
         }
 
         return View::make('ui.v2.pages.fleet', [
-            'pageTitle' => 'Fleet',
+            'pageTitle' => trans('front.objects'),
             'canCreate' => $this->user->perm('devices', 'edit'),
         ]);
     }

@@ -161,7 +161,7 @@
   function load() {
     tpModal.fetchJSON(BASE).then(function (res) {
       if (!res.ok || !res.data) {
-        els.rows.innerHTML = '<tr><td colspan="4" class="tp-svc-table__empty">' + esc(T("error", "Error")) + "</td></tr>";
+        els.rows.innerHTML = '<tr><td colspan="4" class="tp-svc-table__empty">' + esc(T("error", "Se produjo un error")) + "</td></tr>";
         return;
       }
       state.items = res.data.items || [];
@@ -188,7 +188,7 @@
         if (!(res.ok && res.data && res.data.ok)) {
           r.active = !next;
           render();
-          tpModal.toast(T("error", "Error"), "error");
+          tpModal.toast(T("error", "Se produjo un error"), "error");
         }
       });
   }
@@ -269,7 +269,7 @@
           if (res.ok && res.data && res.data.ok) {
             tpModal.toast(T("route_deleted", "Ruta eliminada."), "success");
             load();
-          } else tpModal.toast(T("error", "Error"), "error");
+          } else tpModal.toast(T("error", "Se produjo un error"), "error");
         });
       });
   }

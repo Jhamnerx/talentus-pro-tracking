@@ -16,7 +16,7 @@
     // perm(módulo,'view') por ítem; call_actions exige además events (paridad).
     // Dashboard, Objetos e Historial no se condicionan en el legacy.
     $items = [
-        ['key' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'stats', 'url' => url('/ui/v2/dashboard')],
+        ['key' => 'dashboard', 'label' => trans('front.dashboard'), 'icon' => 'stats', 'url' => url('/ui/v2/dashboard')],
         ['key' => 'live', 'label' => 'Objetos', 'icon' => 'navigation', 'url' => url('/ui/v2/live')],
         ['key' => 'monitor', 'label' => 'Monitoreo de grupo', 'icon' => 'grid', 'url' => url('/ui/v2/monitor')],
         ['key' => 'events', 'label' => 'Eventos', 'icon' => 'events', 'url' => url('/ui/v2/events'), 'can' => $u->perm('events', 'view')],

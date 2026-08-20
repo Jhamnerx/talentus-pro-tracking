@@ -32,7 +32,7 @@ class ShellController extends BaseController
     public function preview(Request $request)
     {
         return View::make('ui.v2.pages.preview', [
-            'pageTitle' => 'Live Ops',
+            'pageTitle' => trans('front.map'),
         ]);
     }
 

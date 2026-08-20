@@ -149,7 +149,7 @@
     function loadMeta(dlg) {
       tpModal.fetchJSON(cfg().urls.meta).then(function (res) {
         if (!res.ok || !res.data || !res.data.ok) {
-          showAlert(dlg, "error", (res.data && res.data.message) || T("error", "Error"));
+          showAlert(dlg, "error", (res.data && res.data.message) || T("error", "Se produjo un error"));
           return;
         }
         S.meta = res.data;
@@ -399,12 +399,12 @@
             });
             showAlert(dlg, "error", lines.join("<br>"), true);
           } else {
-            showAlert(dlg, "error", esc((res.data && res.data.message) || T("error", "Error")), true);
+            showAlert(dlg, "error", esc((res.data && res.data.message) || T("error", "Se produjo un error")), true);
           }
         })
         .catch(function () {
           tpModal.setBusy(dlg, false);
-          showAlert(dlg, "error", esc(T("error", "Error")), true);
+          showAlert(dlg, "error", esc(T("error", "Se produjo un error")), true);
         });
     }
 

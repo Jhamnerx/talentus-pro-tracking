@@ -1,6 +1,6 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Live Ops')
+@section('title', $pageTitle ?? trans('front.map'))
 @section('rail-active', 'live')
 
 @push('head')
@@ -301,7 +301,7 @@
                         </tr>
                         <tr>
                             <td><span class="tp-chip">4</span></td>
-                            <td>History & Playback</td>
+                            <td>Historial y reproducción</td>
                             <td><span class="tp-chip">Pendiente</span></td>
                             <td class="tp-text-muted">Timeline swimlanes</td>
                         </tr>

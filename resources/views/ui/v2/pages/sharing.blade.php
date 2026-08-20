@@ -48,7 +48,7 @@
                         <tr>
                             <th>{{ trans('validation.attributes.active') }}</th>
                             <th>{{ trans('validation.attributes.name') }}</th>
-                            <th>Link</th>
+                            <th>Enlace</th>
                             <th>{{ trans('front.expired') }}</th>
                             <th>{{ trans('validation.attributes.expiration_date') }}</th>
                             <th class="tp-svc-table__actions"></th>
