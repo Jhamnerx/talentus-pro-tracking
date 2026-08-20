@@ -1420,16 +1420,31 @@
     }
 
     function syncPanels() {
+      var anyOn = false;
+
       ["calibration", "mapping"].forEach(function (k) {
         var panel = form.querySelector('[data-panel="' + k + '"]');
         if (!panel) return;
         var chk = form.querySelector('input[type="checkbox"][name="' + k + '"]');
         var on = !!activeInputs[k] && chk && chk.checked && !chk.disabled;
         panel.style.display = on ? "" : "none";
+        if (on) anyOn = true;
         Array.prototype.forEach.call(panel.querySelectorAll("input, select, textarea"), function (i) {
           i.disabled = !on;
         });
       });
+
+      // Paridad con calibationShow()/calibationHide() del legacy: los paneles
+      // no son "mas campos" del formulario, son una seccion propia. Al activar
+      // Calibracion o Cartografia el form se parte en dos y el modal se
+      // ensancha; al apagarlos vuelve a una sola columna.
+      var side = form.querySelector("[data-sensor-side]");
+      if (side) side.style.display = anyOn ? "" : "none";
+      form.classList.toggle("tp-sensor-form--split", anyOn);
+      if (dlg && dlg.classList) {
+        dlg.classList.toggle("tp-modal--xl", anyOn);
+        dlg.classList.toggle("tp-modal--lg", !anyOn);
+      }
     }
 
     function populateShownBy(t) {

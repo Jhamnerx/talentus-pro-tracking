@@ -706,3 +706,66 @@
   line-height: 1.6;
   white-space: nowrap;
 }
+
+/* ── Sensor: calibración / cartografía como sección propia ──────────────
+   El legacy (calibationShow/Hide en Frontend/Sensors/form.blade.php) parte
+   el formulario en dos col-md-6 y ensancha el modal cuando se activa
+   Calibración o Cartografía, para que se lea como una sección aparte y no
+   como más campos del mismo formulario. Aquí se replica ese comportamiento:
+   .tp-sensor-form--split lo pone el JS (syncPanels). */
+.tp-sensor-form__panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+.tp-sensor-form--split .tp-sensor-form__panes {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.tp-sensor-form__main {
+  min-width: 0;
+}
+.tp-sensor-form__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+/* Separador vertical: refuerza que la derecha es otra sección. */
+.tp-sensor-form--split .tp-sensor-form__side {
+  border-left: 1px solid var(--border-subtle);
+  padding-left: var(--sp-4);
+}
+.tp-sensor-pane__box {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  background: var(--surface-page);
+  padding: var(--sp-3);
+}
+.tp-sensor-pane__title {
+  margin: 0 0 var(--sp-3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+
+/* Bajo 900px el modal ya no da para dos columnas: se apilan. */
+@media (max-width: 900px) {
+  .tp-sensor-form--split .tp-sensor-form__panes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tp-sensor-form--split .tp-sensor-form__side {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--sp-4);
+  }
+}
+
+/* Al partirse, la columna izquierda se estrecha: los campos pasan a una sola
+   columna (igual que el col-md-6 del legacy) en vez de quedar apretados. */
+.tp-sensor-form--split .tp-sensor-form__main > .tp-form__grid--2 {
+  grid-template-columns: minmax(0, 1fr);
+}

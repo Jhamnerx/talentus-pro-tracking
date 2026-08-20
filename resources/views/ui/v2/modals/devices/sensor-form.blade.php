@@ -38,6 +38,11 @@
         <input type="hidden" name="id" value="{{ (int) $item->id }}">
     @endif
 
+    {{-- Dos columnas: campos a la izquierda, paneles de calibración /
+         cartografía a la derecha (paridad con calibationShow() del legacy).
+         El JS añade .tp-sensor-form--split al form cuando hay panel activo. --}}
+    <div class="tp-sensor-form__panes">
+        <div class="tp-sensor-form__main">
     <div class="tp-form__grid tp-form__grid--2">
 
         <label class="tp-form__field tp-form__field--required">
@@ -311,9 +316,14 @@
             </div>
         </div>
 
+    </div>{{-- /tp-form__grid --}}
+        </div>{{-- /tp-sensor-form__main --}}
+
+        <aside class="tp-sensor-form__side" data-sensor-side style="display: none;">
         {{-- ── Panel de calibración (visible si el tipo lo permite Y el check está marcado) ── --}}
-        <div class="tp-col-2" data-panel="calibration" style="display: none;">
-            <div style="border: 1px solid var(--border-default, #e2e8f0); border-radius: var(--r-lg, 12px); padding: 12px;">
+        <div class="tp-sensor-pane" data-panel="calibration" style="display: none;">
+            <div class="tp-sensor-pane__box">
+                <h4 class="tp-sensor-pane__title">{{ trans('front.calibration') }}</h4>
                 <label class="tp-choice" style="margin-bottom: 8px;">
                     <input type="hidden" name="skip_calibration" value="0">
                     <input type="checkbox" class="tp-choice-input" name="skip_calibration" value="1"
@@ -357,8 +367,9 @@
         </div>
 
         {{-- ── Panel de mapping (visible si el tipo lo permite Y el check está marcado) ── --}}
-        <div class="tp-col-2" data-panel="mapping" style="display: none;">
-            <div style="border: 1px solid var(--border-default, #e2e8f0); border-radius: var(--r-lg, 12px); padding: 12px;">
+        <div class="tp-sensor-pane" data-panel="mapping" style="display: none;">
+            <div class="tp-sensor-pane__box">
+                <h4 class="tp-sensor-pane__title">{{ trans('front.mapping') }}</h4>
                 <div class="tp-embed-box" style="max-height: 220px; overflow-y: auto; margin-bottom: 10px;">
                     <table>
                         <thead>
@@ -445,6 +456,6 @@
                 </div>
             </div>
         </div>
-
-    </div>
+        </aside>
+    </div>{{-- /tp-sensor-form__panes --}}
 </form>
