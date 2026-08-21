@@ -18,10 +18,12 @@
 | 15 | Cabecera y pie de los reportes | Bajo | — | **3º** |
 | 8 | Ampliar el registro de cambios | Bajo | — | **4º** |
 | 12 | Puntuación de conducción | Medio | Ver §12 | **5º** |
-| 10 | Costo por kilómetro | Medio | **Faltan datos** | **6º** |
+| 10 | Costo por kilómetro | Medio | 1 pregunta abierta | **6º** |
 
-El orden va por relación valor/riesgo, no por número. El 10 va al final porque
-hoy **no hay datos de costo que mostrar** (ver §10).
+Antes de todo eso va el **arreglo de WiseTrack** (índice + purga de fallidos),
+aprobado y descrito en §11: es un incidente vivo, no una mejora.
+
+El orden va por relación valor/riesgo, no por número.
 
 ---
 
@@ -78,17 +80,23 @@ con esta bandera activada por defecto.
 ### Eventos personalizados en las plantillas
 
 Una alerta de tipo `custom` apunta a filas de `events_custom`, que son **por
-usuario**. Al aplicar la plantilla a un cliente hay que resolver a qué evento
-personalizado suyo se engancha. Tres casos:
+usuario y por protocolo**. Al aplicar la plantilla a un cliente hay que resolver
+a qué evento personalizado suyo se engancha. Tres casos:
 
-1. **El evento ya existe en ese usuario** (mismo protocolo y condiciones): se
-   reutiliza.
-2. **No existe**: se crea a partir del que trae la plantilla.
+1. **Ya existe en ese usuario** (mismo protocolo y condiciones): se reutiliza.
+2. **No existe**: se crea a partir del que trae la plantilla, **una variante por
+   cada protocolo que los vehículos de ese usuario estén reportando** (ver el
+   análisis del protocolo en §12).
 3. **Existe con otro nombre**: se reutiliza y se avisa, sin renombrárselo.
 
-Esto se apoya en lo del punto 12: si los eventos de conducción brusca pasan a
-ser **de sistema y sembrados a todos**, la mayoría de plantillas caen en el caso
-1 y el problema casi desaparece.
+Y para el caso que te preocupaba —un cliente añade mañana un equipo de un
+protocolo que no tenía—: al reaplicar la plantilla, o mediante un trabajo
+periódico que compare protocolos presentes contra variantes creadas, se le añade
+la que falte.
+
+Esto se apoya en lo del punto 12: si los eventos de conducción brusca pasan a ser
+**de sistema y sembrados a todos**, la mayoría de plantillas caen en el caso 1 y
+el problema casi desaparece.
 
 ### Decisiones abiertas
 
@@ -126,8 +134,18 @@ campo de estado y las filas se borran al enviarse.
 **Hallazgo operativo, independiente del panel:** de los 3.984 trabajos fallidos,
 **3.813 son `SendDataWisetrackJob`**, entre el 11-may y el 22-jun. Por eso la
 cola de WiseTrack arranca en el id 1 y ha crecido a 694.191 filas: los envíos
-fallan y nadie se enteró en seis semanas. Esto hay que mirarlo aunque el panel
-no se haga.
+fallan y nadie se enteró en seis semanas.
+
+**Aprobado, va primero:**
+
+1. **Migración** que añade el índice de `device_id` a `wisetrack`. Ojo: crear un
+   índice sobre 694k filas bloquea la tabla un momento; conviene hacerlo en hora
+   valle y avisar. En producción se aplica con `php artisan migrate --force`.
+2. **Purga de los trabajos fallidos** ya resueltos. Se hace con un comando, no a
+   mano, para poder repetirlo y dejar constancia de cuántos se borraron.
+
+Antes de purgar hay que mirar **por qué** fallan: si la causa sigue viva, la cola
+volverá a crecer. Borrar los fallidos sin diagnosticar solo esconde el problema.
 
 ### Qué se construye
 
@@ -291,9 +309,50 @@ detectar directamente, sin depender de cómo lo haya llamado cada cliente.
 **Con una salvedad importante:** el motor exige que coincida el protocolo
 (`$eventCustom->protocol != $position->protocol` → descarta). Los eventos
 personalizados de hoy solo cubren tres protocolos (teltonika, gt06, gps103) y la
-flota usa cinco. Un evento por defecto necesita **una fila por protocolo**, o
-bien permitir un comodín "cualquier protocolo" en la comprobación. Recomiendo el
-comodín: una fila y no cinco, y cubre protocolos futuros sin tocar nada.
+flota usa cinco.
+
+### El problema del protocolo — analizado
+
+Propusiste definir las plantillas **por modelo de equipo** en vez de por
+protocolo. Miré si el modelo permite deducir el protocolo, y la respuesta corta
+es que **casi, pero no de forma fiable**:
+
+- 28 modelos distintos; 6 aparecen con más de un protocolo. Casi siempre es un
+  error de captura (`FMC920` sale 801 veces como teltonika y una vez suelta como
+  tk103, gps103 y vacío).
+- El campo `devices.device_model` es **texto libre**, y se nota: `FMC920`,
+  `FMC-920`, `FMB920`, `FMB-920`, `F,B920` son la misma familia escrita de cinco
+  formas. 26 valores distintos para ~6 familias reales.
+- `device_type_id` sí es un catálogo de verdad (12 tipos, 1.459 de 1.530 equipos
+  asignados), pero **un tipo abarca varios protocolos**: el tipo *FMX920* cubre
+  teltonika, tk103, gps103, android y gt06.
+
+O sea: ni el modelo en texto libre ni el tipo dan un protocolo fiable.
+
+**Y hay una tabla que ya existe para esto y está vacía:**
+
+```
+device_models: id, active, title, protocol, model      -- 0 filas
+```
+
+Es exactamente el catálogo modelo → protocolo que hace falta, y está sin
+estrenar.
+
+### Propuesta
+
+Combinar las dos cosas, cada una donde funciona:
+
+1. **La plantilla se define por modelo** (como pediste), apoyada en
+   `device_models`, que hay que poblar. Eso es lo que ve y elige el
+   administrador.
+2. **Al aplicarla, el protocolo no se deduce del modelo: se lee del equipo.** Se
+   miran los protocolos que los vehículos de ESE usuario están reportando de
+   verdad, y se crea un evento personalizado por cada protocolo presente.
+
+Así los errores de captura del modelo no rompen nada, y cuando un cliente meta un
+equipo con un protocolo nuevo basta con reaplicar la plantilla —o que un trabajo
+periódico lo detecte— para que se le añada la variante que falta. Que era tu
+preocupación.
 
 ### Qué se construye
 
@@ -333,39 +392,57 @@ pesos configurables con un valor por defecto, en vez de una fórmula fija.
 
 ## 10 · Costo por kilómetro
 
-### Lo que hay hoy — y por qué va el último
+### Lo que hay hoy
 
 | Tabla | Filas | Problema |
 | ----- | ----- | -------- |
-| `device_expenses` | **0** | existe y tiene `quantity`/`unit_cost`, pero nadie la usa |
+| `device_expenses` | **0** | existe con `quantity`/`unit_cost`, pero nadie la usa |
 | `device_maintenances` | 91 | **no tiene columna de costo** |
 
-El kilometraje sí está resuelto (`DeviceMileageService`, ya verificado contra
-datos reales de mayo).
+Los mantenimientos se registran en la pestaña **Historial** del modal del
+vehículo, con tipo / fecha / motivo / notas.
 
-Dicho claro: **hoy el panel mostraría ceros**. La cañería es construible, pero
-sin datos que meter no sirve de nada.
+El kilometraje sí está resuelto: `DeviceMileageService`, ya verificado contra
+datos reales de mayo.
+
+### Decisión tomada: un campo en Información
+
+Va un campo nuevo de costo de mantenimiento en la pestaña **Información** del
+vehículo, que ya tiene su modal de alta y edición.
+
+Encaja con cómo está pensada esa pestaña: **ya guarda `fuel_price` y
+`fuel_quantity`**, o sea parámetros de costo por vehículo. El costo de
+mantenimiento se suma a esa familia.
+
+Eso define el modelo de cálculo: **costo estimado por tarifas**, no costo real
+por facturas.
+
+```
+costo/km = (combustible consumido × fuel_price + costo de mantenimiento) ÷ km
+```
+
+Ventaja: funciona desde el primer día, sin pedirle a nadie que capture facturas.
+Límite honesto: es una estimación, no contabilidad. Si más adelante quieres el
+costo real, la pestaña Gastos ya está construida y solo hay que empezar a usarla
+— los dos modelos pueden convivir.
+
+### Pregunta pendiente — una sola
+
+**¿En qué unidad se expresa ese costo de mantenimiento?**
+
+- **Por kilómetro** (ej. 0,15 S/ por km): entra directo en la fórmula, es lo más
+  simple y lo que suele publicar el fabricante.
+- **Por periodo** (ej. 300 S/ al mes): hay que prorratearlo al rango del reporte,
+  y decidir qué pasa con un vehículo que estuvo parado medio mes.
+
+Recomiendo **por kilómetro**: no necesita prorrateo y compara bien entre
+vehículos con uso muy distinto.
 
 ### Qué se construye
 
-1. **Añadir costo al mantenimiento** (`device_maintenances.costo`, o registrar el
-   gasto asociado). Es el cambio que desbloquea todo lo demás.
-2. **Poner en uso la pestaña Gastos**, que ya existe en el modal del vehículo.
-3. **Cálculo**: costo del periodo ÷ km del periodo, por vehículo, desglosado por
-   tipo de gasto (combustible, mantenimiento, otros).
-4. **Comparativa** entre vehículos del mismo grupo y evolución mensual.
-
-### Decisión abierta
-
-**¿De dónde sale el costo del mantenimiento?** Dos caminos:
-
-- Columna nueva en `device_maintenances` — simple, pero duplica el concepto de
-  gasto.
-- Cada mantenimiento genera un `device_expense` — más limpio y unifica el
-  informe, pero toca el flujo actual de mantenimientos.
-
-Recomiendo el segundo, pero es tu decisión: afecta a cómo tu equipo registra el
-día a día.
+1. Campo nuevo en Información, junto a `fuel_price`, con su migración.
+2. Cálculo por vehículo y periodo, desglosado en combustible y mantenimiento.
+3. Comparativa entre vehículos del mismo grupo y evolución mensual.
 
 ---
 
