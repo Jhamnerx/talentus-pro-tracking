@@ -1080,6 +1080,7 @@ return [
     'sticky' => 'Sticky',
     'event_type_4' => 'Not equals to (!=)',
     'event_type_5' => 'Empty',
+    'event_type_6' => 'Includes (comma-separated list)',
     'user_is_currently_logged_in' => 'User is currently logged in',
     'follow_payment_instructions_in_your_email' => 'Follow payment instructions in your email',
     'mapped_value' => 'Mapped value',

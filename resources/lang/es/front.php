@@ -379,6 +379,7 @@ return [
     'event_type_3' => 'Menos que (<)',
     'event_type_4' => 'No es igual a (!=)',
     'event_type_5' => 'Vacío',
+    'event_type_6' => 'Incluye (lista separada por comas)',
     'events' => 'Eventos',
     'every' => 'Cada',
     'exact_date' => 'Fecha exacta',
