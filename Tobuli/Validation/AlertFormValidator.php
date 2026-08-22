@@ -20,6 +20,8 @@ class AlertFormValidator extends Validator
 
             'drivers'           => 'required_if:type,driver|array',
             'events_custom'     => 'required_if:type,custom|array',
+            // Una alerta de alarma sin alarmas elegidas no vigilaria nada
+            'alarms'            => 'required_if:type,device_alarm|array',
             'geofences'         => 'required_if:type,geofence_in,geofence_out,geofence_inout|array',
             'pois'              => 'required_if:type,poi_stop_duration,poi_idle_duration|array',
 

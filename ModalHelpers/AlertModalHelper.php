@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\Alert;
 use Tobuli\Entities\Geofence;
+use Tobuli\Helpers\Alerts\Check\DeviceAlarmAlertCheck;
 use Tobuli\Entities\TaskStatus;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Alerts\NotificationProvider;
@@ -678,6 +679,15 @@ class AlertModalHelper extends ModalHelper
                             ->setOptionsClosure('groupPois', [$this->user]),
                     ]);
                     break;
+                case 'device_alarm':
+                    $type['attributes'] = AttributesCollection::make([
+                        Field::multiSelect(
+                            'alarms',
+                            trans('front.device_alarm_which'),
+                            $alert ? $alert->alarms : []
+                        )->setOptions(self::getDeviceAlarmOptions())
+                    ]);
+                    break;
                 case 'task_status':
                     $type['attributes'] = AttributesCollection::make([
                         Field::multiSelect(
@@ -704,12 +714,35 @@ class AlertModalHelper extends ModalHelper
         return $types;
     }
 
+    /**
+     * Alarmas ofrecidas por el tipo `device_alarm`, con su nombre traducido.
+     * El catálogo vive en la clase de comprobación, que es quien lo aplica.
+     */
+    public static function getDeviceAlarmOptions(): array
+    {
+        $opciones = [];
+
+        foreach (DeviceAlarmAlertCheck::catalogo() as $alarma => $tipoEvento) {
+            $opciones[$alarma] = trans('front.alarm_' . $alarma);
+        }
+
+        return $opciones;
+    }
+
     public static function getTypes()
     {
         $types = [
             [
                 'type'  => 'overspeed',
                 'title' => trans('front.overspeed'),
+            ],
+            [
+                // Alarmas normalizadas del equipo (parámetro `alarm` de
+                // Traccar): conducción brusca, choque, corte de corriente,
+                // interferencia. Una sola alerta para todas, sin depender del
+                // protocolo ni de los puertos del equipo.
+                'type'  => 'device_alarm',
+                'title' => trans('front.device_alarm'),
             ],
             [
                 'type'  => 'stop_duration',

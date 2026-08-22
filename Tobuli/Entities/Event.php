@@ -17,6 +17,20 @@ class Event extends AbstractEntity implements DisplayInterface
 {
     use Filterable, Searchable;
 
+    /**
+     * Alarmas normalizadas de Traccar (parámetro `alarm`). Un tipo por alarma
+     * para que reportes y puntuación de conducción las distingan; el usuario
+     * las configura desde un único tipo de alerta.
+     * Caben en events.type, que es string(30).
+     */
+    const TYPE_HARSH_ACCELERATION = 'harsh_acceleration';
+    const TYPE_HARSH_BRAKING      = 'harsh_braking';
+    const TYPE_HARSH_CORNERING    = 'harsh_cornering';
+    const TYPE_HIGH_RPM           = 'high_rpm';
+    const TYPE_ACCIDENT           = 'accident';
+    const TYPE_POWER_CUT          = 'power_cut';
+    const TYPE_JAMMING            = 'jamming';
+
     const TYPE_FUEL_FILL  = 'fuel_fill';
     const TYPE_FUEL_THEFT = 'fuel_theft';
     const TYPE_EXPIRED_DEVICE = 'expired_device';
@@ -585,6 +599,36 @@ class Event extends AbstractEntity implements DisplayInterface
             [
                 'type' => Event::TYPE_DISTANCE,
                 'title' => trans('global.distance'),
+            ],
+            // Alarmas normalizadas del equipo. Sin titulo aqui, el listado de
+            // eventos las mostraria como "-".
+            [
+                'type' => Event::TYPE_HARSH_ACCELERATION,
+                'title' => trans('front.alarm_hardAcceleration'),
+            ],
+            [
+                'type' => Event::TYPE_HARSH_BRAKING,
+                'title' => trans('front.alarm_hardBraking'),
+            ],
+            [
+                'type' => Event::TYPE_HARSH_CORNERING,
+                'title' => trans('front.alarm_hardCornering'),
+            ],
+            [
+                'type' => Event::TYPE_HIGH_RPM,
+                'title' => trans('front.alarm_highRpm'),
+            ],
+            [
+                'type' => Event::TYPE_ACCIDENT,
+                'title' => trans('front.alarm_accident'),
+            ],
+            [
+                'type' => Event::TYPE_POWER_CUT,
+                'title' => trans('front.alarm_powerCut'),
+            ],
+            [
+                'type' => Event::TYPE_JAMMING,
+                'title' => trans('front.alarm_jamming'),
             ],
         ]);
     }

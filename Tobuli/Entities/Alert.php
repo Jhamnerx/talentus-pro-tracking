@@ -58,7 +58,8 @@ class Alert extends AbstractEntity implements DisplayInterface
         'authorized',
         'state',
         'acceptable_time_from',
-        'statuses'
+        'statuses',
+        'alarms'
     );
 
     protected $casts = [
@@ -95,7 +96,9 @@ class Alert extends AbstractEntity implements DisplayInterface
         'authorized' => 0,
         'acceptable_time_from' => 0,
         'state' => null,
-        'statuses' => []
+        'statuses' => [],
+        // Alarmas del equipo a vigilar (tipo device_alarm)
+        'alarms' => []
     ];
 
     public function user(): BelongsTo

@@ -4,6 +4,7 @@ namespace Tobuli\Helpers\Alerts\Check;
 
 
 use Tobuli\Entities\Event;
+use Tobuli\Services\ConditionService;
 
 class SosAlertCheck extends AlertCheck
 {
@@ -30,7 +31,14 @@ class SosAlertCheck extends AlertCheck
         if ( ! $this->checkAlertPosition($position))
             return false;
 
-        if ($position->getParameter('alarm') != 'sos')
+        // Traccar acumula las alarmas separando por comas
+        // (Position::addAlarm), asi que con una igualdad un "sos,powerCut" se
+        // quedaba sin avisar. Se compara elemento a elemento.
+        if ( ! ConditionService::check(
+            ConditionService::TYPE_CONTAINS,
+            $position->getParameter('alarm'),
+            'sos'
+        ))
             return false;
 
         return true;
