@@ -338,21 +338,40 @@ device_models: id, active, title, protocol, model      -- 0 filas
 Es exactamente el catálogo modelo → protocolo que hace falta, y está sin
 estrenar.
 
-### Propuesta
+### Las alternativas, y cuál recomiendo
 
-Combinar las dos cosas, cada una donde funciona:
+Tienes razón en que `device_type` no pide protocolo: su formulario solo tiene
+activo, título, grupo de sensor y logo. Y el grupo de sensor tampoco sirve —
+`sensor_groups` es solo `id, title, count`; el protocolo está únicamente dentro
+del texto del título ("TELTONIKA - FMC920 - CORTE"). Adivinar el protocolo
+parseando un nombre es justo el tipo de cosa que se rompe sola.
 
-1. **La plantilla se define por modelo** (como pediste), apoyada en
-   `device_models`, que hay que poblar. Eso es lo que ve y elige el
-   administrador.
-2. **Al aplicarla, el protocolo no se deduce del modelo: se lee del equipo.** Se
-   miran los protocolos que los vehículos de ESE usuario están reportando de
-   verdad, y se crea un evento personalizado por cada protocolo presente.
+Cuatro caminos posibles:
 
-Así los errores de captura del modelo no rompen nada, y cuando un cliente meta un
-equipo con un protocolo nuevo basta con reaplicar la plantilla —o que un trabajo
-periódico lo detecte— para que se le añada la variante que falta. Que era tu
-preocupación.
+| | Alternativa | Coste | Problema |
+| - | ----------- | ----- | -------- |
+| A | Añadir `protocol` a `device_type` | Bajo | Sería un protocolo *declarado*: hoy el tipo FMX920 agrupa equipos de 5 protocolos distintos |
+| B | Poblar `device_models` | Medio | Catálogo nuevo que mantener, y enlazarlo con un `device_model` de texto libre es frágil |
+| C | Resolver por lo que reportan los equipos del usuario | Medio | Correcto siempre, pero crea N filas por evento y hay que re-sincronizar |
+| **D** | **Comodín "cualquier protocolo" en el evento** | **Bajo** | **Ninguno detectado — ver abajo** |
+
+**Recomiendo la D**, y lo comprobé antes de proponerla: de los **108 eventos
+personalizados existentes, 0 tienen el protocolo vacío**. Así que dar al valor
+vacío el significado "cualquier protocolo" **no cambia el comportamiento de nada
+de lo que ya existe**. Es un `if` en `EventCustomAlertCheck` y una opción más en
+el formulario del admin.
+
+Con eso:
+
+- **Un solo evento por defecto** cubre aceleración, frenado y giro para toda la
+  flota, sea cual sea el equipo.
+- **Los protocolos futuros entran solos**, sin tocar catálogos ni reaplicar nada.
+  Que era exactamente tu preocupación.
+- Y el que quiera afinar por protocolo lo sigue pudiendo hacer: el campo se
+  queda como está, solo gana el valor "cualquiera".
+
+La A sigue teniendo sentido por separado si quieres saber qué protocolo *debería*
+hablar cada tipo de equipo, pero no hace falta para esto.
 
 ### Qué se construye
 
@@ -392,59 +411,63 @@ pesos configurables con un valor por defecto, en vez de una fórmula fija.
 
 ## 10 · Costo por kilómetro
 
-### Lo que hay hoy
+### Corrección: Gastos ya está construido, y con datos sembrados
 
-| Tabla | Filas | Problema |
-| ----- | ----- | -------- |
-| `device_expenses` | **0** | existe con `quantity`/`unit_cost`, pero nadie la usa |
-| `device_maintenances` | 91 | **no tiene columna de costo** |
+Preguntaste si sería mejor usar Gastos. **Sí, y me equivoqué al restarle
+importancia.** Miré la tabla de tipos y no está vacía: trae **20 tipos ya
+sembrados**, y son justo categorías de mantenimiento.
 
-Los mantenimientos se registran en la pestaña **Historial** del modal del
-vehículo, con tipo / fecha / motivo / notas.
+| | |
+| - | - |
+| Combustible · Peaje · Lavado | gastos de operación |
+| Mantenimiento Preventivo · Cambio de Aceite · Cambio de Llantas | mantenimiento |
+| Alineación y Balanceo · Cambio de Frenos · Cambio de Filtros | mantenimiento |
+| Reparación Motor · Transmisión · Eléctrica | correctivo |
 
-El kilometraje sí está resuelto: `DeviceMileageService`, ya verificado contra
-datos reales de mayo.
+`device_expenses` guarda `type_id`, `quantity`, `unit_cost`, `date`, `supplier` y
+`buyer`. La pestaña **Gastos** del modal del vehículo ya existe en la v2. Lo
+único que falta es que alguien empiece a registrar.
 
-### Decisión tomada: un campo en Información
+### El problema real: dos sitios para lo mismo
 
-Va un campo nuevo de costo de mantenimiento en la pestaña **Información** del
-vehículo, que ya tiene su modal de alta y edición.
+Hay dos registros paralelos del mismo hecho:
 
-Encaja con cómo está pensada esa pestaña: **ya guarda `fuel_price` y
-`fuel_quantity`**, o sea parámetros de costo por vehículo. El costo de
-mantenimiento se suma a esa familia.
+| | `device_maintenances` | `device_expenses` |
+| - | --------------------- | ----------------- |
+| Filas | 91 | 0 |
+| Campos | tipo, fecha, motivo, notas | tipo, cantidad, **costo**, fecha, proveedor |
+| Dónde | pestaña Historial | pestaña Gastos |
+| Dinero | **no** | sí |
 
-Eso define el modelo de cálculo: **costo estimado por tarifas**, no costo real
-por facturas.
+Se registra el mantenimiento en un sitio y el dinero en otro que nadie usa. Ahí
+está el nudo, no en que falte un campo.
+
+### Propuesta
+
+**Gastos es la fuente de costos reales.**
 
 ```
-costo/km = (combustible consumido × fuel_price + costo de mantenimiento) ÷ km
+costo/km del periodo = suma de gastos del periodo ÷ km del periodo
 ```
 
-Ventaja: funciona desde el primer día, sin pedirle a nadie que capture facturas.
-Límite honesto: es una estimación, no contabilidad. Si más adelante quieres el
-costo real, la pestaña Gastos ya está construida y solo hay que empezar a usarla
-— los dos modelos pueden convivir.
+Desglosado por tipo, que ya viene clasificado. Comparativa entre vehículos del
+mismo grupo y evolución mensual.
 
-### Pregunta pendiente — una sola
+**Y el campo por kilómetro que decidiste, como respaldo.** Confirmaste que va por
+kilómetro: entra en Información junto a `fuel_price`, y sirve para los vehículos
+que aún no tienen gastos registrados. Así el informe da un número desde el primer
+día, y va ganando precisión conforme se capturen gastos reales.
 
-**¿En qué unidad se expresa ese costo de mantenimiento?**
+En el informe se distingue de dónde sale cada cifra: **real** (de gastos) o
+**estimada** (de la tarifa). Sin esa distinción, un costo estimado acaba
+tomándose por contabilidad.
 
-- **Por kilómetro** (ej. 0,15 S/ por km): entra directo en la fórmula, es lo más
-  simple y lo que suele publicar el fabricante.
-- **Por periodo** (ej. 300 S/ al mes): hay que prorratearlo al rango del reporte,
-  y decidir qué pasa con un vehículo que estuvo parado medio mes.
+### Lo que se construye
 
-Recomiendo **por kilómetro**: no necesita prorrateo y compara bien entre
-vehículos con uso muy distinto.
-
-### Qué se construye
-
-1. Campo nuevo en Información, junto a `fuel_price`, con su migración.
-2. Cálculo por vehículo y periodo, desglosado en combustible y mantenimiento.
-3. Comparativa entre vehículos del mismo grupo y evolución mensual.
-
----
+1. Campo de costo por km en Información, junto a `fuel_price`, con su migración.
+2. Enlazar el alta de mantenimiento con un gasto, para no seguir registrando el
+   hecho en un sitio y el dinero en otro.
+3. Informe de costo por km: real, estimado, o mezcla, siempre indicando cuál.
 
 ## Fuera de plan, pero urgente
 
