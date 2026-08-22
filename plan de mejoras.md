@@ -338,7 +338,84 @@ device_models: id, active, title, protocol, model      -- 0 filas
 Es exactamente el catálogo modelo → protocolo que hace falta, y está sin
 estrenar.
 
-### Las alternativas, y cuál recomiendo
+### Estandarizar sobre `alarm` — la solución de fondo
+
+Propusiste estandarizar apoyándote en que tu decoder es Traccar y que ahí casi
+todo llega en `alarm`. Lo comprobé y **es la salida buena**, mejor que cualquiera
+de las alternativas de más abajo.
+
+**Traccar ya normaliza el evento entre protocolos.** En `Position.java` hay **38
+valores estándar** (`hardAcceleration`, `hardBraking`, `hardCornering`,
+`highRpm`, `jamming`, `accident`, `powerCut`, `sos`, `overspeed`, `tow`,
+`tampering`…), y los emiten **139 de los 271 decoders**. Los cinco protocolos de
+tu flota están entre ellos:
+
+| Protocolo | Referencias a `ALARM_` en su decoder |
+| --------- | ----------------------------------- |
+| gt06 | 73 |
+| tk103 | 19 |
+| gps103 | 14 |
+| teltonika | 11 |
+| h02 | 4 |
+
+Y no es teoría: muestreando posiciones reales del vehículo 219, los valores que
+llegan son exactamente esos.
+
+| Valor de `alarm` | Posiciones |
+| ---------------- | ---------- |
+| jamming | 34 |
+| hardBraking | 24 |
+| hardAcceleration | 23 |
+| accident | 16 |
+| hardCornering | 8 |
+
+### Por qué eso resuelve el problema del protocolo
+
+Mira los eventos que tienes configurados hoy: `io252`, `io247`, `io255`, `io318`,
+`io249`, `%setflag[6,7,0]%`. **Esos son puertos de entrada de un equipo
+concreto** — por eso hay que redefinirlos para cada protocolo y cada modelo, y
+por eso todo acaba duplicado.
+
+Los mismos hechos ya vienen normalizados en `alarm`:
+
+| Hoy (por equipo) | Estándar |
+| ---------------- | -------- |
+| `io247` → Detección de choque | `accident` |
+| `io252` → Desconexión de batería | `powerCut` |
+| `io318` / `io249` → GNSS Jamming | `jamming` |
+| `io255` → Exceso de velocidad | `overspeed` |
+| `alarm` → Aceleración / Frenado / Giro | ya está bien |
+
+**Con `alarm`, la definición del evento deja de depender del protocolo.** Una
+sola definición vale para toda la flota, presente y futura. El comodín de
+protocolo pasa a ser el complemento natural, no un parche.
+
+### Un detalle que hay que resolver antes
+
+`Position.addAlarm()` **acumula separando por comas**: si el equipo reporta dos
+alarmas a la vez, el valor es `hardBraking,overspeed`.
+
+Y `ConditionService` solo tiene **igual, mayor, menor, distinto y vacío** — no
+tiene "contiene". Con una condición de igualdad, ese evento doble **no se
+detectaría**.
+
+En la muestra real de 105 posiciones no apareció ningún valor múltiple, así que
+hoy no está fallando. Pero con gt06 (73 alarmas distintas) es cuestión de tiempo.
+
+**Solución**: añadir un operador "contiene" a `ConditionService`. Es aditivo —una
+constante nueva— y no cambia el comportamiento de ninguna condición existente.
+
+### Qué se construye entonces
+
+1. **Operador "contiene"** en `ConditionService`, y disponible en el formulario
+   del admin.
+2. **Catálogo estándar de eventos** basado en los valores de Traccar, sembrado a
+   todos los usuarios y marcado como de sistema (no borrable, no renombrable).
+3. **Tabla de equivalencias** para que los eventos actuales por puerto sigan
+   contando en los informes y no se pierda el histórico.
+4. El comodín de protocolo, que con `alarm` ya tiene sentido pleno.
+
+### Las alternativas que había estudiado antes
 
 Tienes razón en que `device_type` no pide protocolo: su formulario solo tiene
 activo, título, grupo de sensor y logo. Y el grupo de sensor tampoco sirve —
@@ -355,11 +432,12 @@ Cuatro caminos posibles:
 | C | Resolver por lo que reportan los equipos del usuario | Medio | Correcto siempre, pero crea N filas por evento y hay que re-sincronizar |
 | **D** | **Comodín "cualquier protocolo" en el evento** | **Bajo** | **Ninguno detectado — ver abajo** |
 
-**Recomiendo la D**, y lo comprobé antes de proponerla: de los **108 eventos
-personalizados existentes, 0 tienen el protocolo vacío**. Así que dar al valor
-vacío el significado "cualquier protocolo" **no cambia el comportamiento de nada
-de lo que ya existe**. Es un `if` en `EventCustomAlertCheck` y una opción más en
-el formulario del admin.
+De las cuatro, la **D** es la que acompaña a la estandarización sobre `alarm`, y
+lo comprobé antes de proponerla: de los **108 eventos personalizados existentes,
+0 tienen el protocolo vacío**. Así que dar al valor vacío el significado
+"cualquier protocolo" **no cambia el comportamiento de nada de lo que ya
+existe**. Es un `if` en `EventCustomAlertCheck` y una opción más en el
+formulario.
 
 Con eso:
 
