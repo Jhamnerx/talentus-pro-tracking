@@ -51,8 +51,14 @@
                     @endif
                     <div class="rep-head__title">{{ $titulo }}</div>
                     @if ($desde || $hasta)
+                        {{-- Con Formatter, como el resto de las vistas del
+                             reporte (ver partials/item_title): las fechas se
+                             guardan en UTC y sin convertir la cabecera diria
+                             una hora y las filas otra. --}}
                         <div class="rep-head__period">
-                            {{ trans('global.from') }} {{ $desde }} · {{ trans('global.to') }} {{ $hasta }}
+                            {{ trans('global.from') }} {{ \Formatter::time()->human($desde) }}
+                            · {{ trans('global.to') }} {{ \Formatter::time()->human($hasta) }}
+                            ({{ \Formatter::time()->unit() }})
                         </div>
                     @endif
                 </div>
@@ -66,7 +72,7 @@
              paginas. --}}
         @if ($formato === 'html')
             <footer class="rep-foot">
-                {{ trans('global.date') }}: {{ \Formatter::time()->convert(now()) }}
+                {{ trans('global.date') }}: {{ \Formatter::time()->human(now()) }}
             </footer>
         @endif
 
