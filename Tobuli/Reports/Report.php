@@ -474,7 +474,23 @@ abstract class Report implements Arrayable
 
     public function toPDF()
     {
-        return PDF::loadView($this->getView(), ['report' => $this]);
+        $pdf = PDF::loadView($this->getView(), ['report' => $this]);
+
+        // Pie del PDF. Va por opciones de wkhtmltopdf y no por CSS porque es
+        // el motor el unico que sabe cuantas paginas hay: con contadores CSS
+        // no se puede poner "3 de 12".
+        try {
+            $pdf->setOption('footer-left', trans('global.date') . ': ' . \Formatter::time()->convert(now()))
+                ->setOption('footer-right', trans('front.page') . ' [page] / [topage]')
+                ->setOption('footer-font-size', 7)
+                ->setOption('footer-spacing', 4);
+        } catch (\Throwable $e) {
+            // Si el binario no admite estas opciones, el PDF sale igual pero
+            // sin pie: preferible a no generar el reporte.
+            report($e);
+        }
+
+        return $pdf;
     }
 
     public function toPDFLand()

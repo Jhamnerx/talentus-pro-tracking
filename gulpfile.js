@@ -1,6 +1,11 @@
 const gulp = require("gulp"),
   es = require("event-stream"),
-  sass = require("gulp-sass")(require("sass")), // dart-sass (node-sass no soporta Node moderno)
+  // node-sass (libsass): el tema legacy usa @extend sobre selectores
+  // compuestos (13 casos en layout/_icons.scss, tipo
+  // `@extend .ico-gsm-0:before`), que dart-sass rechaza desde la 1.x y
+  // dejaba `gulp sass-all` y `gulp templates` sin poder compilar.
+  // Requiere Node 16 para las binarias nativas de node-sass 7.
+  sass = require("gulp-sass")(require("node-sass")),
   sourcemaps = require("gulp-sourcemaps"),
   cleanCSS = require("gulp-clean-css"),
   browserSync = require("browser-sync").create(),

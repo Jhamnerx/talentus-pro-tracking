@@ -1,39 +1,76 @@
+@php
+    $formato = $report->getFormat();
+    $esExcel = in_array($formato, ['xls', 'xlsx']);
+
+    // En HTML el logo va por URL; en PDF wkhtmltopdf necesita la ruta de disco.
+    $tieneLogo = Appearance::assetFileExists('logo');
+    $logoSrc = $tieneLogo
+        ? ($formato === 'html' ? Appearance::getAssetFileUrl('logo') : Appearance::getAssetFilePath('logo'))
+        : null;
+
+    $empresa = Appearance::getSetting('server_name');
+
+    // Periodo: el reporte ya los guarda en la zona horaria del usuario
+    $desde = method_exists($report, 'getDateFrom') ? $report->getDateFrom() : null;
+    $hasta = method_exists($report, 'getDateTo') ? $report->getDateTo() : null;
+
+    $titulo = method_exists($report, 'title') ? $report->title() : trans('front.report');
+@endphp
 <!DOCTYPE html>
-<html lang="{{ Language::iso() }}" dir="{{ Language::dir() == 'rtl' ? 'RTL' : 'LTR' }}" >
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        @if ($report->getFormat() == 'xls' || $report->getFormat() == 'xlsx')
-            <title>Report</title>
-        @else
-            <title>{{ Appearance::getSetting('server_name') }}</title>
-            <style><?php require ( base_path('public/assets/css/report.css') ); ?></style>
-            @yield('scripts')
-            @yield('styles')
+<html lang="{{ Language::iso() }}" dir="{{ Language::dir() == 'rtl' ? 'RTL' : 'LTR' }}">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    @if ($esExcel)
+        <title>Report</title>
+    @else
+        <title>{{ $empresa }}</title>
+        <style><?php require base_path('public/assets/css/report.css'); ?></style>
+        @yield('scripts')
+        @yield('styles')
+    @endif
+</head>
+
+<body class="reports">
+    <div class="container">
+
+        {{-- Cabecera común a todos los formatos salvo Excel. Antes el PDF
+             llevaba el logo suelto, sin decir de quién era el reporte, de qué
+             iba ni de qué fechas. --}}
+        @unless ($esExcel)
+            <header class="rep-head">
+                @if ($logoSrc)
+                    <div class="rep-head__logo">
+                        <img src="{{ $logoSrc }}" alt="{{ $empresa }}">
+                    </div>
+                @endif
+
+                <div class="rep-head__meta">
+                    @if ($empresa)
+                        <div class="rep-head__brand">{{ $empresa }}</div>
+                    @endif
+                    <div class="rep-head__title">{{ $titulo }}</div>
+                    @if ($desde || $hasta)
+                        <div class="rep-head__period">
+                            {{ trans('global.from') }} {{ $desde }} · {{ trans('global.to') }} {{ $hasta }}
+                        </div>
+                    @endif
+                </div>
+            </header>
+        @endunless
+
+        @yield('content')
+
+        {{-- Pie: solo en HTML. En PDF lo pone wkhtmltopdf con sus propias
+             opciones (ver Report::toPDF), que es lo unico que sabe numerar
+             paginas. --}}
+        @if ($formato === 'html')
+            <footer class="rep-foot">
+                {{ trans('global.date') }}: {{ \Formatter::time()->convert(now()) }}
+            </footer>
         @endif
 
-    </head>
+    </div>
+</body>
 
-    <body class="reports">
-        <div class="container">
-            @if ($report->getFormat() == 'html')
-            <header>
-                <div class="header-left">
-                    <div class="report-wrap">
-                        <div class="report-logo" style="background: none;">
-                            <img src="{{ Appearance::getAssetFileUrl('logo') }}" class="logo" alt="Logo">
-                        </div>
-                    </div>
-                    <div class="report-curve"></div>
-                </div>
-                <div class="header-right"></div>
-            </header>
-
-            @elseif ($report->getFormat() != 'xls' && Appearance::assetFileExists('logo'))
-                <img src="{{ Appearance::getAssetFilePath('logo') }}" class="logo" alt="Logo">
-            @endif
-
-            @yield('content')
-
-        </div>
-    </body>
 </html>
