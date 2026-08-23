@@ -19,6 +19,7 @@
   var CAN_EDIT = root.getAttribute("data-can-edit") === "1";
   var CAN_CREATE = root.getAttribute("data-can-create") === "1";
   var CAN_REMOVE = root.getAttribute("data-can-remove") === "1";
+  var IS_ADMIN = root.getAttribute("data-is-admin") === "1";
   var META_CACHE = null;
 
   var WORKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
@@ -108,6 +109,10 @@
     return TYPE_LABELS[t] || String(t || "").replace(/_/g, " ");
   }
 
+  var ICON_COPY =
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>';
+
   /* ----- Kebab de fila ----- */
   function kebabHtml(r) {
     var items = "";
@@ -127,6 +132,15 @@
         " " +
         (r.active ? "Desactivar" : "Activar") +
         "</button>";
+    // Guardar como plantilla: se captura ESTA alerta ya configurada, para
+    // sembrarla despues a los clientes que se den de alta.
+    if (IS_ADMIN)
+      items +=
+        '<button type="button" role="menuitem" data-act="template" data-id="' +
+        r.id +
+        '">' +
+        ICON_COPY +
+        " Guardar como plantilla</button>";
     if (CAN_REMOVE)
       items +=
         '<button type="button" role="menuitem" class="is-danger" data-act="delete" data-id="' +
@@ -299,6 +313,7 @@
       var a = act.getAttribute("data-act");
       closeKebabs();
       if (a === "edit") openAlertModal(id);
+    else if (a === "template") saveAsTemplate(id);
       else if (a === "toggle") toggleRule(id);
       else if (a === "delete") deleteRule(id);
       return;
@@ -347,6 +362,9 @@
     var tr = e.target.closest("tr[data-id]");
     if (tr && CAN_EDIT) openAlertModal(tr.getAttribute("data-id"));
   });
+
+  var btnTpl = document.getElementById("tp-alerts-templates");
+  if (btnTpl) btnTpl.addEventListener("click", openTemplates);
 
   /* ----- Boot ----- */
   load();
@@ -1499,6 +1517,167 @@
         if (btn) btn.disabled = false;
         window.tpModal.toast("Error de red.", "error");
       });
+  }
+
+  /* =====================================================
+   * Plantillas de alerta
+   * -----------------------------------------------------
+   * Se capturan de una regla ya configurada, para no mantener un segundo
+   * formulario. Al dar de alta un cliente se le crean las alertas de las
+   * plantillas de su plan, con "todos los vehiculos" activado, asi que los
+   * que se le asignen despues entran solos.
+   * ===================================================== */
+
+  var TPL_URL = "/ui/v2/api/alert-templates";
+
+  function saveAsTemplate(id) {
+    var regla = (state.rules || []).filter(function (r) {
+      return String(r.id) === String(id);
+    })[0];
+
+    window.tpModal
+      .fetchJSON(TPL_URL, { method: "GET" })
+      .then(function (res) {
+        var planes = (res.data && res.data.plans) || [];
+        var opciones =
+          '<option value="">Todos los planes</option>' +
+          planes
+            .map(function (p) {
+              return '<option value="' + p.id + '">' + esc(p.title) + "</option>";
+            })
+            .join("");
+
+        window.tpModal.open({
+          title: "Guardar como plantilla",
+          size: "sm",
+          body:
+            '<p class="tp-text-sm tp-text-muted" style="margin:0 0 12px;">Se guardará <b>' +
+            esc(regla ? regla.name : "esta regla") +
+            "</b> como plantilla. A partir de ahora, los clientes que se den de alta la recibirán ya creada.</p>" +
+            '<label class="tp-form__field" style="margin-bottom:10px;">' +
+            '<span class="tp-form__label">Aplicar a</span>' +
+            '<select class="tp-input" data-tpl-plan>' + opciones + "</select></label>" +
+            '<label class="tp-form__field">' +
+            '<span class="tp-form__label">Nota (opcional)</span>' +
+            '<input type="text" class="tp-input" data-tpl-desc placeholder="Para qué sirve"></label>',
+          buttons: [
+            { label: "Cancelar", variant: "ghost", close: true },
+            {
+              label: "Guardar",
+              variant: "primary",
+              close: false,
+              onClick: function (d) {
+                var plan = d.querySelector("[data-tpl-plan]").value;
+                var desc = d.querySelector("[data-tpl-desc]").value.trim();
+
+                window.tpModal.setBusy(d, true);
+                window.tpModal
+                  .fetchJSON(BASE + "/" + encodeURIComponent(id) + "/template", {
+                    method: "POST",
+                    json: { plan_id: plan || null, description: desc },
+                  })
+                  .then(function (r) {
+                    window.tpModal.setBusy(d, false);
+                    if (!r.ok || !r.data || !r.data.ok) {
+                      window.tpModal.toast("No se pudo guardar la plantilla.", "error");
+                      return;
+                    }
+                    window.tpModal.close(d);
+                    window.tpModal.toast("Plantilla guardada.", "success");
+                  })
+                  .catch(function () {
+                    window.tpModal.setBusy(d, false);
+                    window.tpModal.toast("Error de red.", "error");
+                  });
+                return false;
+              },
+            },
+          ],
+        });
+      })
+      .catch(function () {
+        window.tpModal.toast("No se pudo cargar la lista de planes.", "error");
+      });
+  }
+
+  function openTemplates() {
+    var dlg = window.tpModal.open({
+      title: "Plantillas de alerta",
+      size: "lg",
+      body: '<div data-tpl-list><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
+      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      onMount: function (d) {
+        var host = d.querySelector("[data-tpl-list]");
+
+        function cargar() {
+          window.tpModal.fetchJSON(TPL_URL, { method: "GET" }).then(function (res) {
+            var items = (res.data && res.data.items) || [];
+
+            if (!items.length) {
+              host.innerHTML =
+                '<p class="tp-text-sm tp-text-muted">Todavía no hay plantillas. Se crean desde el menú de una regla, con "Guardar como plantilla".</p>';
+              return;
+            }
+
+            host.innerHTML =
+              '<p class="tp-text-xs tp-text-muted" style="margin:0 0 10px;">Los clientes que se den de alta reciben las plantillas activas de su plan. Las alertas ya creadas no se tocan.</p>' +
+              items
+                .map(function (t) {
+                  return (
+                    '<div class="tp-acc-row"><span><b>' + esc(t.name) + "</b>" +
+                    (t.active ? "" : ' <span class="tp-text-xs tp-text-muted">(inactiva)</span>') +
+                    '<br><span class="tp-text-xs tp-text-muted">' +
+                    esc(t.type) + " · " + esc(t.plan || "todos los planes") +
+                    (t.description ? " · " + esc(t.description) : "") +
+                    "</span></span>" +
+                    '<span class="tp-acc-row__actions">' +
+                    '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-toggle="' + t.id +
+                    '" data-active="' + (t.active ? 1 : 0) + '">' +
+                    (t.active ? "Desactivar" : "Activar") + "</button>" +
+                    '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-del="' + t.id +
+                    '">Eliminar</button></span></div>'
+                  );
+                })
+                .join("");
+          });
+        }
+
+        cargar();
+
+        host.addEventListener("click", function (e) {
+          var tg = e.target.closest("[data-tpl-toggle]");
+          if (tg) {
+            window.tpModal
+              .fetchJSON(TPL_URL + "/" + tg.getAttribute("data-tpl-toggle"), {
+                method: "PUT",
+                json: { active: tg.getAttribute("data-active") === "1" ? 0 : 1 },
+              })
+              .then(cargar);
+            return;
+          }
+
+          var del = e.target.closest("[data-tpl-del]");
+          if (del) {
+            window.tpModal
+              .confirm({
+                title: "Eliminar plantilla",
+                message:
+                  "Deja de sembrarse a los clientes nuevos. Las alertas ya creadas NO se tocan.",
+                danger: true,
+                confirmLabel: "Eliminar",
+              })
+              .then(function (ok) {
+                if (!ok) return;
+                window.tpModal
+                  .fetchJSON(TPL_URL + "/" + del.getAttribute("data-tpl-del"), { method: "DELETE" })
+                  .then(cargar);
+              });
+          }
+        });
+      },
+    });
+
+    return dlg;
   }
 
   function deleteRule(id) {

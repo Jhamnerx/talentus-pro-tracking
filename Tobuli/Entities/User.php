@@ -181,6 +181,14 @@ class User extends AbstractEntity implements
             if (settings('main_settings.email_verification') && !$user->hasVerifiedEmail()) {
                 $user->sendEmailVerificationNotification();
             }
+
+            // Alertas por defecto del plan. Va en try/catch a proposito: si
+            // sembrar falla, el alta del usuario NO se cae por eso.
+            try {
+                (new \Tobuli\Services\AlertTemplateService())->applyToUser($user);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         });
 
         static::updating(function (User $user) {
@@ -361,7 +369,16 @@ class User extends AbstractEntity implements
     public function getAvailableMapsAttribute($value)
     {
         try {
-            $list = unserialize($value);
+            // unserialize() devuelve FALSE con valor vacio o corrupto, y
+            // array_filter(false) lanza un TypeError, que NO es Exception: se
+            // escapaba de este catch y tumbaba cualquier lectura del usuario
+            // (por ejemplo al registrar sus cambios al crearlo).
+            $list = @unserialize((string) $value);
+
+            if (! is_array($list)) {
+                return [];
+            }
+
             $maps = array_keys(getAvailableMaps());
 
             $list = array_filter($list, function ($id) use ($maps) {
@@ -369,7 +386,7 @@ class User extends AbstractEntity implements
             });
 
             return array_values($list);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [];
         }
     }

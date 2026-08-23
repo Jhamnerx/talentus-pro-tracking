@@ -18,7 +18,8 @@
         data-meta-url="{{ route('ui.v2.api.alerts.meta') }}" data-store-url="{{ route('ui.v2.api.alerts.store') }}"
         data-commands-url="{{ route('ui.v2.api.alerts.commands') }}" data-toggle-url="{{ url('/ui/v2/api/alerts') }}"
         data-can-edit="{{ $canEdit ? 1 : 0 }}" data-can-create="{{ $canCreate ? 1 : 0 }}"
-        data-can-remove="{{ !empty($canRemove) ? 1 : 0 }}">
+        data-can-remove="{{ !empty($canRemove) ? 1 : 0 }}"
+        data-is-admin="{{ isAdmin() ? 1 : 0 }}">
 
         <header class="tp-maint__head">
             <h2 class="tp-maint__title">
@@ -43,6 +44,11 @@
                     </svg>
                 </button>
                 @if ($canCreate)
+                    {{-- Las plantillas son cosa del administrador: sirven para sembrar
+                         alertas a los clientes al darlos de alta. --}}
+                    @if (isAdmin())
+                        <button type="button" class="tp-btn tp-btn--ghost" id="tp-alerts-templates">Plantillas</button>
+                    @endif
                     <button type="button" class="tp-btn tp-btn--accent" id="tp-alerts-new">＋ Nueva regla</button>
                 @endif
             </div>
@@ -74,5 +80,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=7" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=8" defer></script>
 @endpush

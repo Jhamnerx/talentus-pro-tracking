@@ -1213,6 +1213,10 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('alerts/meta',         ['as' => 'api.alerts.meta',    'uses' => 'Ui\V2\AlertsController@meta']);
         Route::post('alerts/commands',    ['as' => 'api.alerts.commands', 'uses' => 'Ui\V2\AlertsController@commands']);
         Route::post('alerts',             ['as' => 'api.alerts.store',   'uses' => 'Ui\V2\AlertsController@store']);
+        Route::get('alert-templates',            ['as' => 'api.alert_templates',         'uses' => 'Ui\V2\AlertsController@templates']);
+        Route::post('alerts/{id}/template',      ['as' => 'api.alerts.template',         'uses' => 'Ui\V2\AlertsController@templateStore'])->where('id', '[0-9]+');
+        Route::put('alert-templates/{id}',       ['as' => 'api.alert_templates.update',  'uses' => 'Ui\V2\AlertsController@templateUpdate'])->where('id', '[0-9]+');
+        Route::delete('alert-templates/{id}',    ['as' => 'api.alert_templates.destroy', 'uses' => 'Ui\V2\AlertsController@templateDestroy'])->where('id', '[0-9]+');
         Route::get('alerts/{id}/edit',    ['as' => 'api.alerts.edit',    'uses' => 'Ui\V2\AlertsController@editData'])->where('id', '[0-9]+');
         Route::put('alerts/{id}',         ['as' => 'api.alerts.update',  'uses' => 'Ui\V2\AlertsController@update'])->where('id', '[0-9]+');
         Route::post('alerts/{id}/toggle', ['as' => 'api.alerts.toggle',  'uses' => 'Ui\V2\AlertsController@toggle'])->where('id', '[0-9]+');

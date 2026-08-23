@@ -117,6 +117,141 @@ class AlertsController extends BaseController
         ]);
     }
 
+    /* =================================================================
+     * Plantillas de alerta
+     * -----------------------------------------------------------------
+     * Se capturan de una alerta YA configurada en vez de tener su propio
+     * formulario: asi se reutiliza el editor completo (tipos, parametros,
+     * canales, horarios) en lugar de mantener dos.
+     *
+     * Al dar de alta un usuario se le crean las alertas de las plantillas
+     * que le tocan por su plan. Es una COPIA: lo que el cliente edite
+     * despues manda, y volver a sembrar no le pisa nada.
+     * ================================================================= */
+
+    /** Listado de plantillas (solo admin). */
+    public function templates(Request $request): JsonResponse
+    {
+        if (! isAdmin()) {
+            return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+        }
+
+        $planes = \Tobuli\Entities\BillingPlan::pluck('title', 'id')->all();
+
+        $items = \Tobuli\Entities\AlertTemplate::orderBy('name')->get()->map(function ($t) use ($planes) {
+            return [
+                'id'          => (int) $t->id,
+                'active'      => (bool) $t->active,
+                'name'        => (string) $t->name,
+                'type'        => (string) $t->type,
+                'plan_id'     => $t->billing_plan_id ? (int) $t->billing_plan_id : null,
+                'plan'        => $t->billing_plan_id ? ($planes[$t->billing_plan_id] ?? '?') : null,
+                'all_devices' => (bool) $t->for_all_user_devices,
+                'description' => (string) ($t->description ?? ''),
+            ];
+        })->all();
+
+        return response()->json([
+            'ok'    => true,
+            'items' => $items,
+            'plans' => array_map(
+                fn($id, $title) => ['id' => (int) $id, 'title' => (string) $title],
+                array_keys($planes),
+                array_values($planes)
+            ),
+        ]);
+    }
+
+    /** Guarda una alerta existente como plantilla. */
+    public function templateStore(Request $request, $id): JsonResponse
+    {
+        try {
+            if (! isAdmin()) {
+                return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+            }
+
+            $alert = $this->user->alerts()->find((int) $id);
+
+            if (! $alert) {
+                return response()->json(['ok' => false, 'error' => 'not_found'], 404);
+            }
+
+            $plan = $request->input('plan_id');
+
+            $plantilla = (new \Tobuli\Services\AlertTemplateService())->captureFrom($alert, [
+                'billing_plan_id' => $plan ? (int) $plan : null,
+                'description'     => (string) $request->input('description', ''),
+            ]);
+
+            return response()->json(['ok' => true, 'id' => (int) $plantilla->id]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
+    /** Activar/desactivar o cambiar el plan de una plantilla. */
+    public function templateUpdate(Request $request, $id): JsonResponse
+    {
+        try {
+            if (! isAdmin()) {
+                return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+            }
+
+            $plantilla = \Tobuli\Entities\AlertTemplate::find((int) $id);
+
+            if (! $plantilla) {
+                return response()->json(['ok' => false, 'error' => 'not_found'], 404);
+            }
+
+            if ($request->has('active')) {
+                $plantilla->active = (bool) $request->input('active');
+            }
+
+            if ($request->has('plan_id')) {
+                $plan = $request->input('plan_id');
+                $plantilla->billing_plan_id = $plan ? (int) $plan : null;
+            }
+
+            if ($request->has('all_devices')) {
+                $plantilla->for_all_user_devices = (bool) $request->input('all_devices');
+            }
+
+            $plantilla->save();
+
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
+    public function templateDestroy($id): JsonResponse
+    {
+        try {
+            if (! isAdmin()) {
+                return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+            }
+
+            $plantilla = \Tobuli\Entities\AlertTemplate::find((int) $id);
+
+            if ($plantilla) {
+                $plantilla->delete();
+            }
+
+            return response()->json(['ok' => true]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
     public function store(Request $request): JsonResponse
     {
         $user = $this->user;
