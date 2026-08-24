@@ -1,10 +1,14 @@
 <?php namespace Tobuli\Entities;
 
+use Tobuli\Traits\ChangeLogs;
+
 use Carbon\Carbon;
 use Tobuli\Traits\Filterable;
 use Tobuli\Traits\Searchable;
 
 class Sharing extends AbstractEntity {
+    use ChangeLogs;
+
     use Searchable, Filterable;
 
     private $searchable = [];

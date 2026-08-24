@@ -1239,6 +1239,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('devices/{id}/image',        ['as' => 'api.devices.image.store',   'uses' => 'Ui\V2\DevicesController@deviceImageStore'])->where('id', '[0-9]+');
         Route::delete('devices/{id}/image',      ['as' => 'api.devices.image.destroy', 'uses' => 'Ui\V2\DevicesController@deviceImageDestroy'])->where('id', '[0-9]+');
         Route::post('devices/{id}/template-webhook', ['as' => 'api.devices.template_webhook', 'uses' => 'Ui\V2\DevicesController@templateWebhookSend'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/changes',       ['as' => 'api.devices.changes',       'uses' => 'Ui\V2\DevicesController@deviceChanges'])->where('id', '[0-9]+');
         Route::get('devices/{id}/widgets', ['as' => 'api.devices.widgets', 'uses' => 'Ui\V2\DevicesController@widgets'])->where('id', '[0-9]+');
         Route::get('devices/updates',     ['as' => 'api.devices.updates', 'uses' => 'Ui\V2\DevicesController@updates']);
         Route::get('devices/filter-ids',  ['as' => 'api.devices.filter_ids', 'uses' => 'Ui\V2\DevicesController@filterIds']);

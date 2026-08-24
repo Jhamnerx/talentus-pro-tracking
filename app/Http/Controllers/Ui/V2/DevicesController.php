@@ -625,6 +625,155 @@ class DevicesController extends BaseController
         }
     }
 
+    /* =================================================================
+     * Historial de cambios del vehiculo
+     * -----------------------------------------------------------------
+     * Lee model_change_logs, que ya se venia llenando. Incluye lo que le
+     * pasa a sus PARTES —sensores, servicios, mantenimientos—, no solo a
+     * la ficha: es lo que uno espera al preguntar "que se hizo con este
+     * vehiculo".
+     *
+     * Se excluyen los inicios de sesion (login_success / login_fail): son
+     * el 90% de la tabla y no son cambios.
+     * ================================================================= */
+    public function deviceChanges(Request $request, $id): JsonResponse
+    {
+        try {
+            $device = DeviceRepo::find((int) $id);
+            $this->checkException('devices', 'show', $device);
+
+            // El vehiculo usa alias del morphMap; sus partes, el nombre completo
+            $condiciones = [
+                ['device', [(int) $device->id]],
+            ];
+
+            $sensores = \Tobuli\Entities\DeviceSensor::where('device_id', $device->id)->pluck('id')->all();
+            if ($sensores) {
+                $condiciones[] = [\Tobuli\Entities\DeviceSensor::class, $sensores];
+            }
+
+            try {
+                $servicios = \Tobuli\Entities\DeviceService::where('device_id', $device->id)->pluck('id')->all();
+                if ($servicios) {
+                    $condiciones[] = [\Tobuli\Entities\DeviceService::class, $servicios];
+                }
+            } catch (\Throwable $e) {
+                // sin servicios, se sigue
+            }
+
+            try {
+                $mantenimientos = \Tobuli\Entities\DeviceMaintenance::where('device_id', $device->id)->pluck('id')->all();
+                if ($mantenimientos) {
+                    $condiciones[] = [\Tobuli\Entities\DeviceMaintenance::class, $mantenimientos];
+                }
+            } catch (\Throwable $e) {
+                // sin mantenimientos, se sigue
+            }
+
+            $query = \Tobuli\Entities\ModelChangeLog::query()
+                ->whereIn('description', ['created', 'updated', 'deleted'])
+                ->where(function ($q) use ($condiciones) {
+                    foreach ($condiciones as [$tipo, $ids]) {
+                        $q->orWhere(function ($w) use ($tipo, $ids) {
+                            $w->where('subject_type', $tipo)->whereIn('subject_id', $ids);
+                        });
+                    }
+                })
+                ->with('causer')
+                ->orderBy('id', 'desc')
+                ->limit(200);
+
+            $items = [];
+
+            foreach ($query->get() as $log) {
+                $props = (array) $log->properties;
+                $nuevos = (array) ($props['attributes'] ?? []);
+                $viejos = (array) ($props['old'] ?? []);
+
+                $cambios = [];
+                foreach ($nuevos as $campo => $valor) {
+                    $cambios[] = [
+                        'field'  => (string) $campo,
+                        'before' => $this->valorLegible($viejos[$campo] ?? null),
+                        'after'  => $this->valorLegible($valor),
+                    ];
+                }
+
+                $items[] = [
+                    'id'      => (int) $log->id,
+                    'at'      => $log->created_at ? \Formatter::time()->convert($log->created_at) : null,
+                    'what'    => $this->etiquetaSujeto((string) $log->subject_type),
+                    'action'  => (string) $log->description,
+                    'who'     => $this->quienLoHizo($log),
+                    'ip'      => (string) ($log->ip ?? ''),
+                    'changes' => $cambios,
+                ];
+            }
+
+            return response()->json([
+                'ok'     => true,
+                'device' => ['id' => (int) $device->id, 'name' => (string) $device->name],
+                'items'  => $items,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
+    /** Nombre de quien hizo el cambio; si ya no existe, se dice. */
+    private function quienLoHizo($log): string
+    {
+        try {
+            $causer = $log->causer;
+
+            if (! $causer) {
+                return trans('front.unknown');
+            }
+
+            return (string) ($causer->email ?? $causer->name ?? ('#' . $log->causer_id));
+        } catch (\Throwable $e) {
+            return trans('front.unknown');
+        }
+    }
+
+    /** De qué entidad es el cambio, en palabras. */
+    private function etiquetaSujeto(string $tipo): string
+    {
+        $mapa = [
+            'device'                => trans('front.object'),
+            \Tobuli\Entities\DeviceSensor::class      => trans('front.sensor'),
+            \Tobuli\Entities\DeviceService::class     => trans('front.service'),
+            \Tobuli\Entities\DeviceMaintenance::class => trans('front.maintenance'),
+        ];
+
+        return $mapa[$tipo] ?? class_basename($tipo);
+    }
+
+    /** Valores legibles: los arrays y objetos se resumen, no se vuelcan. */
+    private function valorLegible($valor): string
+    {
+        if ($valor === null) {
+            return '';
+        }
+
+        if (is_bool($valor)) {
+            return $valor ? '1' : '0';
+        }
+
+        if (is_array($valor) || is_object($valor)) {
+            $json = json_encode($valor, JSON_UNESCAPED_UNICODE);
+
+            return mb_strlen($json) > 120 ? mb_substr($json, 0, 117) . '...' : $json;
+        }
+
+        $texto = (string) $valor;
+
+        return mb_strlen($texto) > 120 ? mb_substr($texto, 0, 117) . '...' : $texto;
+    }
+
     /** Grupos del usuario con su numero de vehiculos (para el filtro). */
     private function fleetGroupOptions(): array
     {

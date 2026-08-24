@@ -2,11 +2,15 @@
 
 namespace Tobuli\Entities;
 
+use Tobuli\Traits\ChangeLogs;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DeviceMaintenance extends Model
 {
+    use ChangeLogs;
+
     const TIPO_MANTENIMIENTO  = 'mantenimiento';
     const TIPO_SUSPENSION     = 'suspension';
     const TIPO_REACTIVACION   = 'reactivacion';

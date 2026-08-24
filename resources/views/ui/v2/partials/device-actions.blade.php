@@ -163,6 +163,13 @@
         </button>
     @endif
 
+    {{-- Quien toco este vehiculo y que cambio. Incluye lo que le pasa a sus
+         sensores, servicios y mantenimientos, no solo a la ficha. --}}
+    <button type="button" class="tp-row-menu__item" data-act="changes">
+        <span class="tp-row-menu__icon">{!! $ic['yesterday'] !!}</span>
+        <span>Historial de cambios</span>
+    </button>
+
     @if ($u->perm('call_actions', 'view') && $u->perm('events', 'view'))
         {{-- Abre el modal nativo tp-call-actions con el device preseleccionado
              (paridad legacy call_actions.create?device_id) --}}

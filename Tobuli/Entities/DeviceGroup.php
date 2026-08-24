@@ -1,11 +1,15 @@
 <?php namespace Tobuli\Entities;
 
+use Tobuli\Traits\ChangeLogs;
+
 
 use Tobuli\Traits\Searchable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class DeviceGroup extends AbstractGroup
 {
+    use ChangeLogs;
+
     use Searchable;
 
 	protected $table = 'device_groups';

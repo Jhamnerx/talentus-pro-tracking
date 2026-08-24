@@ -1,5 +1,7 @@
 <?php namespace Tobuli\Entities;
 
+use Tobuli\Traits\ChangeLogs;
+
 use App\Events\DeviceSensorDeleted;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,6 +14,8 @@ use Tobuli\Services\ConditionService;
 
 class DeviceSensor extends AbstractEntity
 {
+    use ChangeLogs;
+
     use HasFactory;
 
     protected $table = 'device_sensors';

@@ -1820,6 +1820,81 @@
     return node;
   }
 
+  /**
+   * Historial de cambios del vehiculo: quien toco que y cuando.
+   *
+   * Incluye lo que le pasa a sus partes —sensores, servicios,
+   * mantenimientos—, no solo a la ficha, y deja fuera los inicios de sesion,
+   * que son el 90% del registro y no son cambios.
+   */
+  function abrirHistorialCambios(id) {
+    if (!window.tpModal) return;
+
+    var dlg = tpModal.open({
+      title: "Historial de cambios",
+      size: "xl",
+      body: '<div data-hist><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
+      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      onMount: function (d) {
+        var host = d.querySelector("[data-hist]");
+
+        tpModal
+          .fetchJSON("/ui/v2/api/devices/" + id + "/changes", { method: "GET" })
+          .then(function (res) {
+            if (!res.ok || !res.data || !res.data.ok) {
+              host.innerHTML = '<p class="tp-text-sm tp-text-error">No se pudo cargar.</p>';
+              return;
+            }
+
+            var items = res.data.items || [];
+
+            if (!items.length) {
+              host.innerHTML =
+                '<p class="tp-text-sm tp-text-muted">Sin cambios registrados para este vehículo.</p>';
+              return;
+            }
+
+            var accion = { created: "Creado", updated: "Modificado", deleted: "Eliminado" };
+
+            host.innerHTML =
+              '<div style="max-height:62vh;overflow:auto;"><table class="tp-table"><thead><tr>' +
+              "<th>Cuándo</th><th>Qué</th><th>Acción</th><th>Quién</th><th>Cambios</th>" +
+              "</tr></thead><tbody>" +
+              items
+                .map(function (it) {
+                  var cambios = (it.changes || []).length
+                    ? it.changes
+                        .map(function (c) {
+                          return (
+                            "<div><b>" + esc(c.field) + "</b>: " +
+                            '<span class="tp-text-muted">' + (esc(c.before) || "—") + "</span> → " +
+                            esc(c.after || "—") + "</div>"
+                          );
+                        })
+                        .join("")
+                    : '<span class="tp-text-muted">—</span>';
+
+                  return (
+                    "<tr><td>" + esc(it.at || "—") +
+                    "</td><td>" + esc(it.what) +
+                    "</td><td>" + esc(accion[it.action] || it.action) +
+                    "</td><td>" + esc(it.who) +
+                    (it.ip ? '<br><span class="tp-text-xs tp-text-muted">' + esc(it.ip) + "</span>" : "") +
+                    '</td><td class="tp-text-xs">' + cambios + "</td></tr>"
+                  );
+                })
+                .join("") +
+              "</tbody></table></div>";
+          })
+          .catch(function () {
+            host.innerHTML = '<p class="tp-text-sm tp-text-error">Error de red.</p>';
+          });
+      },
+    });
+
+    return dlg;
+  }
+
   var rowMenu = null;
   function closeRowMenu() {
     if (rowMenu) {
@@ -1874,6 +1949,9 @@
           if (state.devices[iDa].id === id) { dDa = state.devices[iDa]; break; }
         }
         if (window.tpDeviceAlerts) tpDeviceAlerts.open(id, dDa && dDa.name);
+      }
+      else if (act === "changes") {
+        abrirHistorialCambios(id);
       }
       else if (act === "route_types") {
         var dRt = null;
