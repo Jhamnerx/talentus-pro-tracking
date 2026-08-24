@@ -104,7 +104,14 @@ class SendDataSutranBatch implements ShouldQueue
     {
 
         try {
-            $client = new Client(['verify' => false]);
+            // Sin timeout explicito Guzzle usa 0 = infinito: si SUTRAN deja de responder
+            // a medias, el worker se queda bloqueado en el socket para siempre y ni
+            // queue:restart ni SIGTERM lo sacan de ahi (hay que matarlo con SIGKILL).
+            $client = new Client([
+                'verify'          => false,
+                'connect_timeout' => 10,
+                'timeout'         => 30,
+            ]);
             $response = $client->request('POST', $ip_sutran, [
                 'headers' => [
                     'access-token' => $token,
