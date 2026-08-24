@@ -717,3 +717,20 @@
   opacity: 0.55;
   transition: opacity 0.15s ease;
 }
+
+/* ---------- Ranking de conducción ---------- */
+/* Dos columnas: la comparación es el sentido del bloque, y en pantalla
+   estrecha se apilan para que las barras no queden ilegibles. */
+.tp-rank {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .tp-rank { grid-template-columns: 1fr; }
+}
+.tp-rank__foot {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--fg-muted, #94a3b8);
+}

@@ -4,7 +4,7 @@
 @section('rail-active', 'dashboard')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=5">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=6">
 @endpush
 
 @section('workspace-class', 'tp-workspace--scroll')
@@ -115,9 +115,14 @@
                 <div class="tp-widget__body">
                     <div class="tp-driving">
                         <div class="tp-driving__score">
-                            <div class="tp-eco" id="tp-eco">
+                            {{-- Puntuación 0-100 de la flota (más es mejor). Se
+                                 llama distinto del "índice" del ranking, que es
+                                 eventos por 100 km y va al revés: dos números
+                                 con el mismo nombre no se pueden leer. --}}
+                            <div class="tp-eco" id="tp-eco"
+                                title="Puntuación de 0 a 100 sobre los eventos de riesgo por vehículo en el período. Más alto es mejor.">
                                 <div class="tp-eco__value" data-eco-value>—</div>
-                                <div class="tp-eco__label">Índice de<br>conducción</div>
+                                <div class="tp-eco__label">Puntuación<br>de flota</div>
                             </div>
                             <div class="tp-driving__risk">
                                 <span class="tp-driving__risk-val" data-risk-events>—</span>
@@ -180,6 +185,31 @@
                 </header>
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-toprisk"></div></div>
             </article>
+
+            {{-- Ranking de conducción: el MISMO cálculo que el reporte de
+                 Conducción (DrivingScoreService), para que el panel y el
+                 reporte no digan cosas distintas del mismo vehículo. --}}
+            @if (Auth::user()->perm('reports', 'view'))
+                <article class="tp-widget tp-widget--span-12" data-widget="ranking">
+                    <header class="tp-widget__head">
+                        <h3 class="tp-h6 tp-mb-0">Ranking de conducción</h3>
+                        <span class="tp-widget__hint" id="tp-rank-hint">—</span>
+                    </header>
+                    <div class="tp-widget__body">
+                        <div class="tp-rank">
+                            <div class="tp-rank__col">
+                                <div class="tp-widget__subhead">Mejor conducción</div>
+                                <div class="tp-barlist" id="tp-dash-rank-best"></div>
+                            </div>
+                            <div class="tp-rank__col">
+                                <div class="tp-widget__subhead">Peor conducción</div>
+                                <div class="tp-barlist" id="tp-dash-rank-worst"></div>
+                            </div>
+                        </div>
+                        <p class="tp-rank__foot" id="tp-rank-foot"></p>
+                    </div>
+                </article>
+            @endif
 
             {{-- Reparto de la flota por estado: los mismos 6 grupos y colores del
                  bloque device_overview del legacy --}}
@@ -244,5 +274,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=9" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=10" defer></script>
 @endpush

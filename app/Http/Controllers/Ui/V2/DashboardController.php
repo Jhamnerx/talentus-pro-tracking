@@ -59,11 +59,15 @@ class DashboardController extends BaseController
             return response()->json(['ok' => false], 403);
         }
 
-        // scope=all|live|period. Los cards "en vivo" (KPIs + donuts + top
-        // velocidad + actividad) recorren TODA la flota (~1400 devices ≈ 850ms)
-        // y NO dependen del rango; se piden solo en el boot y el polling. Al
-        // cambiar de rango se pide solo scope=period (queries de events +
-        // kilometraje, ~250ms) → los filtros responden rápido.
+        // scope=all|live|period|driving. Los cards "en vivo" (KPIs + donuts +
+        // top velocidad + actividad) recorren TODA la flota (~1400 devices ≈
+        // 850ms) y NO dependen del rango; se piden solo en el boot y el
+        // polling. Al cambiar de rango se pide solo scope=period (queries de
+        // events + kilometraje, ~250ms) → los filtros responden rápido.
+        //
+        // El ranking de conducción va en su propio scope porque necesita el
+        // kilometraje vehículo a vehículo (~400ms en la flota mayor): así se
+        // pide en paralelo y no retrasa al resto del panel.
         $scope = (string) $request->get('scope', 'all');
         $out   = ['ok' => true];
 
@@ -89,9 +93,40 @@ class DashboardController extends BaseController
             );
         }
 
+        if ($scope === 'driving') {
+            [$range, $from, $to] = $this->resolveRange($request);
+            $out['range'] = $range;
+            $out['drivingRanking'] = $this->drivingRanking($from, $to);
+        }
+
         $out['fetchedAt'] = date('c');
 
         return response()->json($out);
+    }
+
+    /**
+     * Ranking de conducción: los mismos eventos, los mismos pesos y el mismo
+     * kilometraje que el reporte de Conducción (tipo 907), porque el cálculo
+     * está en DrivingScoreService y lo comparten los dos. Si el panel y el
+     * reporte dieran números distintos del mismo vehículo, no serviría
+     * ninguno de los dos.
+     */
+    private function drivingRanking(string $from, string $to): array
+    {
+        try {
+            // Las fechas del rango vienen en la zona del usuario y tanto las
+            // posiciones como los eventos se guardan en la de almacenamiento.
+            return (new \Tobuli\Services\DrivingScoreService())->ranking(
+                $this->user,
+                \Formatter::time()->reverse(substr($from, 0, 10) . ' 00:00'),
+                \Formatter::time()->reverse($to)
+            );
+        } catch (\Throwable $e) {
+            return [
+                'peores' => [], 'mejores' => [], 'cubiertos' => 0, 'flota' => 0,
+                'acotado' => false, 'indice' => null, 'km' => 0.0, 'ponderado' => 0,
+            ];
+        }
     }
 
     /**

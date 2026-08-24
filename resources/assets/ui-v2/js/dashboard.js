@@ -185,6 +185,51 @@
       .join("");
   }
 
+  /* ----- Ranking de conducción -----
+     Índice = eventos de riesgo ponderados por cada 100 km. Menos es mejor,
+     así que la barra del ranking se dibuja invertida en "Mejor": la más
+     larga es la del que mejor conduce, no la del que más eventos tiene. */
+  function renderRanking(r) {
+    if (!r) return;
+
+    var hint = $("#tp-rank-hint");
+    if (hint) {
+      hint.textContent = r.indice != null
+        ? r.indice + " eventos/100 km en la flota"
+        : "Sin kilometraje en el período";
+    }
+
+    var peorMax = (r.peores || []).reduce(function (m, x) { return Math.max(m, x.index); }, 0) || 1;
+
+    renderBarList("tp-dash-rank-worst", r.peores, {
+      label: function (x) { return x.name || "#" + x.id; },
+      value: function (x) { return x.index; },
+      display: function (x) { return x.index + " · " + fmt(x.events) + " ev"; },
+      color: function () { return "#ef4444"; },
+    });
+
+    // En "Mejor" el valor de la barra se invierte para que llene más el que
+    // menos incidencias tiene por kilómetro.
+    renderBarList("tp-dash-rank-best", r.mejores, {
+      label: function (x) { return x.name || "#" + x.id; },
+      value: function (x) { return Math.max(0.01, peorMax - x.index); },
+      display: function (x) { return x.index + " · " + fmt(x.events) + " ev"; },
+      color: function () { return "#16a34a"; },
+    });
+
+    var foot = $("#tp-rank-foot");
+    if (foot) {
+      var partes = [
+        "Índice: eventos ponderados (choque ×10, exceso ×2, resto ×1) por cada 100 km.",
+        "Medidos " + fmt(r.cubiertos) + " de " + fmt(r.flota) + " vehículos con kilometraje en el período.",
+      ];
+      if (r.acotado) {
+        partes.push("En flotas grandes el ranking se calcula sobre los vehículos con incidencias y los de actividad más reciente.");
+      }
+      foot.textContent = partes.join(" ");
+    }
+  }
+
   /* ----- Notificaciones ----- */
   function renderTasks(items) {
     var host = $("#tp-dash-tasks");
@@ -335,9 +380,12 @@
   }
 
   // scope: "all" (boot) · "period" (cambio de rango, rápido) · "live" (polling)
+  // · "driving" (ranking, en paralelo porque calcula kilometraje por vehículo)
   function load(scope) {
     scope = scope || "all";
-    var showBusy = scope !== "live";
+    // El ranking se pide aparte y en paralelo: no debe apagar el indicador
+    // de carga del resto del panel ni parpadear al llegar.
+    var showBusy = scope !== "live" && scope !== "driving";
     if (showBusy) setBusy(true);
     return fetch(buildUrl(scope), { credentials: "same-origin", headers: { Accept: "application/json" } })
       .then(function (r) { return r.json(); })
@@ -371,6 +419,7 @@
             display: function (r) { return fmt(r.km) + " km"; }, color: function () { return "#3b82f6"; },
           });
         });
+        if (p.drivingRanking) safe("ranking", function () { renderRanking(p.drivingRanking); });
         if ("notifications" in p) safe("notes", function () { renderNotes(p.notifications); });
 
         // Estado de la flota: 6 grupos con los colores del usuario (device_overview)
@@ -428,6 +477,13 @@
       .then(function () { if (showBusy) setBusy(false); });
   }
 
+  // El periodo son dos peticiones en paralelo: la rápida pinta el panel y
+  // el ranking llega cuando termina de medir el kilometraje.
+  function loadPeriod() {
+    load("period");
+    load("driving");
+  }
+
   /* ----- Toolbar de rango (solo recarga la data de PERÍODO → rápido) ----- */
   $$("#tp-dash-range [data-range]").forEach(function (btn) {
     btn.addEventListener("click", function () {
@@ -439,7 +495,7 @@
       state.from = r.from; state.to = r.to;
       setDateInput("tp-dash-from", r.from);
       setDateInput("tp-dash-to", r.to);
-      load("period");
+      loadPeriod();
     });
   });
   var applyBtn = $("#tp-dash-apply");
@@ -449,10 +505,10 @@
       if (!f || !t) return;
       state.range = "custom"; state.from = f; state.to = t;
       $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });
-      load("period");
+      loadPeriod();
     });
   var refreshBtn = $("#tp-dash-refresh");
-  if (refreshBtn) refreshBtn.addEventListener("click", function () { load("all"); });
+  if (refreshBtn) refreshBtn.addEventListener("click", function () { load("all"); load("driving"); });
 
   /* ----- Tema / resize ----- */
   new MutationObserver(function () {
@@ -472,6 +528,7 @@
   })();
 
   load("all");
+  load("driving");
   // Polling: solo refresca la data EN VIVO (donuts/KPIs), el rango se mantiene.
   setInterval(function () { load("live"); }, POLL);
 })();
