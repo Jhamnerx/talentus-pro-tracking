@@ -3,13 +3,19 @@
 namespace Tobuli\Entities;
 
 use Tobuli\Traits\ChangeLogs;
+use Tobuli\Traits\DisplayTrait;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class DeviceMaintenance extends Model
+class DeviceMaintenance extends Model implements DisplayInterface
 {
     use ChangeLogs;
+
+    use DisplayTrait;
+
+    // No tiene nombre propio: se identifica por tipo y motivo
+    public static array $displayField = ['tipo', 'motivo'];
 
     const TIPO_MANTENIMIENTO  = 'mantenimiento';
     const TIPO_SUSPENSION     = 'suspension';

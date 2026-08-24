@@ -1,6 +1,7 @@
 <?php namespace Tobuli\Entities;
 
 use Tobuli\Traits\ChangeLogs;
+use Tobuli\Traits\DisplayTrait;
 
 use App\Events\DeviceSensorDeleted;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
@@ -12,9 +13,14 @@ use Tobuli\Sensors\SensorsManager;
 use Tobuli\Sensors\Value;
 use Tobuli\Services\ConditionService;
 
-class DeviceSensor extends AbstractEntity
+class DeviceSensor extends AbstractEntity implements DisplayInterface
 {
     use ChangeLogs;
+
+    use DisplayTrait;
+
+    // Nombre con el que sale en el registro de cambios del admin
+    public static string $displayField = 'name';
 
     use HasFactory;
 

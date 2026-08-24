@@ -1,14 +1,20 @@
 <?php namespace Tobuli\Entities;
 
 use Tobuli\Traits\ChangeLogs;
+use Tobuli\Traits\DisplayTrait;
 
 
 use Tobuli\Traits\Searchable;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class DeviceGroup extends AbstractGroup
+class DeviceGroup extends AbstractGroup implements DisplayInterface
 {
     use ChangeLogs;
+
+    use DisplayTrait;
+
+    // Nombre con el que sale en el registro de cambios del admin
+    public static string $displayField = 'title';
 
     use Searchable;
 

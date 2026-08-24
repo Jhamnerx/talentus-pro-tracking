@@ -1903,15 +1903,54 @@
       document.removeEventListener("click", closeRowMenu);
     }
   }
+  /**
+   * Coloca el menú junto al kebab. Se mide DESPUÉS de montar las opciones,
+   * porque la altura depende de cuántas haya: anclando siempre el borde
+   * superior al del botón, los vehículos del final de la lista abrían el
+   * menú hacia abajo y quedaba cortado por el borde de la ventana.
+   */
+  function situarRowMenu(btn) {
+    if (!rowMenu) return;
+
+    var MARGEN = 8;
+    var r = btn.getBoundingClientRect();
+    var m = rowMenu.getBoundingClientRect();
+
+    // Si no cabe hacia abajo, se abre hacia arriba anclado al kebab.
+    var top = r.top;
+    if (top + m.height > window.innerHeight - MARGEN) {
+      top = r.bottom - m.height;
+    }
+
+    // Y si tampoco cabe hacia arriba (menú más alto que la ventana), se pega
+    // al borde superior y se le deja scroll propio.
+    if (top < MARGEN) {
+      top = MARGEN;
+      rowMenu.style.maxHeight = window.innerHeight - MARGEN * 2 + "px";
+      rowMenu.style.overflowY = "auto";
+    }
+
+    // A la izquierda del kebab antes que salirse por la derecha.
+    var left = r.right + 6;
+    if (left + m.width > window.innerWidth - MARGEN) {
+      left = Math.max(MARGEN, r.left - m.width - 6);
+    }
+
+    rowMenu.style.left = Math.round(left) + "px";
+    rowMenu.style.top = Math.round(top) + "px";
+    rowMenu.style.visibility = "";
+  }
+
   function openRowMenu(btn, id) {
     closeRowMenu();
     rowMenu = document.createElement("div");
     rowMenu.className = "tp-row-menu";
-    document.body.appendChild(rowMenu);
-    var r = btn.getBoundingClientRect();
     rowMenu.style.position = "fixed";
-    rowMenu.style.left = Math.min(r.right + 6, window.innerWidth - 250) + "px";
-    rowMenu.style.top = Math.max(8, r.top) + "px";
+    rowMenu.style.left = "0px";
+    rowMenu.style.top = "0px";
+    // Oculto mientras se mide: si se pinta en 0,0 se ve dar el salto.
+    rowMenu.style.visibility = "hidden";
+    document.body.appendChild(rowMenu);
     rowMenu.addEventListener("click", function (e) {
       var it = e.target.closest(".tp-row-menu__item");
       if (!it) return;
@@ -1978,6 +2017,9 @@
     rowMenu.innerHTML = "";
     if (built) rowMenu.appendChild(built);
     else rowMenu.innerHTML = '<div class="tp-row-menu__loading">Sin acciones.</div>';
+
+    situarRowMenu(btn);
+
     setTimeout(function () {
       document.addEventListener("click", closeRowMenu);
     }, 0);
