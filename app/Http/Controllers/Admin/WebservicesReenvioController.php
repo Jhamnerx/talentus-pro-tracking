@@ -72,11 +72,21 @@ class WebservicesReenvioController extends BaseController
     private function sendOsinergminBatch(array $tramas): array
     {
         $client   = new Client(['verify' => false, 'timeout' => 60]);
-        $response = $client->request('POST', 'https://prod.osinergmin-agent-2021.com/api/v1/trama-batch', [
+        $response = $client->request('POST', 'https://pmgo.osinergmin.gob.pe/api-gps-ingesta-batch/api/v1/trama-batch', [
             'headers' => ['Content-Type' => 'application/json'],
             'json'    => $tramas,
         ]);
         return json_decode($response->getBody()->getContents(), true) ?? [];
+    }
+
+    /**
+     * ¿PMGO acepto la trama? ACCEPTED es el estado del manual vigente; CREATED el del
+     * endpoint anterior (prod.osinergmin-agent-2021.com). Se aceptan los dos porque el
+     * panel quedaba marcando ERROR en tramas que en realidad si entraron.
+     */
+    private function tramaAceptada(array $item): bool
+    {
+        return in_array(strtoupper((string) ($item['status'] ?? '')), ['ACCEPTED', 'CREATED'], true);
     }
 
     // ─── Vista principal ─────────────────────────────────────────────
@@ -267,10 +277,10 @@ class WebservicesReenvioController extends BaseController
             $result = $this->sendOsinergminBatch($tramas);
             $ok = $err = 0;
             foreach ($result['data'] ?? [] as $d) {
-                if (($d['status'] ?? '') === 'CREATED') $ok++;
+                if ($this->tramaAceptada($d)) $ok++;
                 elseif (($d['status'] ?? '') === 'ERROR') $err++;
             }
-            $this->log($logs, 'success', "Resultado: CREATED={$ok}, ERROR={$err}");
+            $this->log($logs, 'success', "Resultado: ACEPTADAS={$ok}, ERROR={$err}");
             return response()->json(['success' => true, 'logs' => $logs]);
         } catch (RequestException $e) {
             $body = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
@@ -328,9 +338,9 @@ class WebservicesReenvioController extends BaseController
 
         try {
             $result = $this->sendOsinergminBatch([$trama]);
-            $status = ($result['data'][0]['status'] ?? '') === 'CREATED' ? 'CREATED' : 'ERROR';
+            $status = $this->tramaAceptada($result['data'][0] ?? []) ? 'ACCEPTED' : 'ERROR';
             return response()->json([
-                'success' => $status === 'CREATED',
+                'success' => $status === 'ACCEPTED',
                 'gpsDate' => $trama['gpsDate'],
                 'status'  => $status,
             ]);
@@ -395,11 +405,11 @@ class WebservicesReenvioController extends BaseController
             foreach (array_chunk($tramas, 250) as $chunk) {
                 $result = $this->sendOsinergminBatch($chunk);
                 foreach ($result['data'] ?? [] as $d) {
-                    if (($d['status'] ?? '') === 'CREATED') $ok++;
+                    if ($this->tramaAceptada($d)) $ok++;
                     elseif (($d['status'] ?? '') === 'ERROR') $err++;
                 }
             }
-            $this->log($logs, 'success', "Resultado: CREATED={$ok}, ERROR={$err}");
+            $this->log($logs, 'success', "Resultado: ACEPTADAS={$ok}, ERROR={$err}");
             return response()->json(['success' => true, 'logs' => $logs]);
         } catch (RequestException $e) {
             $body = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();
@@ -479,11 +489,11 @@ class WebservicesReenvioController extends BaseController
             foreach (array_chunk($tramas, 250) as $chunk) {
                 $result = $this->sendOsinergminBatch($chunk);
                 foreach ($result['data'] ?? [] as $d) {
-                    if (($d['status'] ?? '') === 'CREATED') $ok++;
+                    if ($this->tramaAceptada($d)) $ok++;
                     elseif (($d['status'] ?? '') === 'ERROR') $err++;
                 }
             }
-            $this->log($logs, 'success', "Resultado: CREATED={$ok}, ERROR={$err}");
+            $this->log($logs, 'success', "Resultado: ACEPTADAS={$ok}, ERROR={$err}");
             return response()->json(['success' => true, 'logs' => $logs]);
         } catch (RequestException $e) {
             $body = $e->hasResponse() ? $e->getResponse()->getBody()->getContents() : $e->getMessage();

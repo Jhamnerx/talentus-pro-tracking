@@ -1458,6 +1458,26 @@ return [
         \Tobuli\Entities\DeviceService::class => [
             'attributes' => ['*'],
         ],
+        // Añadidas 23-ago: no dejaban rastro. La primera es la que mas
+        // importa, porque la copia masiva de sensores puede cambiar decenas
+        // de equipos de una vez. Poner el trait en la entidad NO basta: sin
+        // estar aqui, attributesToBeLogged() queda vacio y no se registra nada.
+        \Tobuli\Entities\DeviceSensor::class => [
+            'attributes' => ['*'],
+            // calibrations y mappings son bloques enteros; el registro guarda
+            // que cambiaron, no su contenido completo.
+            'attributes_to_ignore' => ['created_at', 'updated_at'],
+        ],
+        \Tobuli\Entities\DeviceMaintenance::class => [
+            'attributes' => ['*'],
+            'attributes_to_ignore' => ['created_at', 'updated_at', 'synced_at'],
+        ],
+        \Tobuli\Entities\Sharing::class => [
+            'attributes' => ['*'],
+        ],
+        \Tobuli\Entities\DeviceGroup::class => [
+            'attributes' => ['*'],
+        ],
         'login' => [
             'enable_successful' => true,
             'enable_failed' => 3, // number of failed attempts to log after

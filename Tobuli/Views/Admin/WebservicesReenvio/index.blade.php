@@ -694,7 +694,7 @@
                     if (idx >= sequence.length) {
                         showLog([{
                             level: ok === sequence.length ? 'success' : 'warn',
-                            msg: 'Rango completado: CREATED=' + ok + ', ERROR=' + err
+                            msg: 'Rango completado: ACEPTADAS=' + ok + ', ERROR=' + err
                         }]);
                         setLoading($btn, $spinner, false);
                         return;

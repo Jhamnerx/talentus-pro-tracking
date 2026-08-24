@@ -686,7 +686,12 @@ class DevicesController extends BaseController
             $items = [];
 
             foreach ($query->get() as $log) {
-                $props = (array) $log->properties;
+                // properties viene como Collection (asi lo castea spatie). Con
+                // (array) se obtienen sus propiedades internas, no el
+                // contenido: los cambios salian siempre vacios.
+                $props = $log->properties instanceof \Illuminate\Support\Collection
+                    ? $log->properties->toArray()
+                    : (array) $log->properties;
                 $nuevos = (array) ($props['attributes'] ?? []);
                 $viejos = (array) ($props['old'] ?? []);
 
