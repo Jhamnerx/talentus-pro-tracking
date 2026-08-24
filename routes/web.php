@@ -1206,6 +1206,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::delete('reports/{id}',      ['as' => 'api.reports.destroy',     'uses' => 'Ui\V2\ReportsController@destroy'])->where('id', '[0-9]+');
         Route::delete('reports/logs/{id}', ['as' => 'api.reports.logs.destroy', 'uses' => 'Ui\V2\ReportsController@logDestroy'])->where('id', '[0-9]+');
         Route::get('admin',          ['as' => 'api.admin',         'uses' => 'Ui\V2\AdminController@data']);
+        Route::get('integrations/status', ['as' => 'api.integrations.status', 'uses' => 'Ui\V2\AdminController@integrations']);
         Route::get('copilot/insights', ['as' => 'api.copilot.insights', 'uses' => 'Ui\V2\CopilotController@insights']);
         Route::get('copilot/ask',      ['as' => 'api.copilot.ask',      'uses' => 'Ui\V2\CopilotController@ask']);
 

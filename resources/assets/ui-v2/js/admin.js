@@ -219,9 +219,185 @@
     });
   }
 
+  /* =====================================================
+   * Cumplimiento regulatorio
+   * -----------------------------------------------------
+   * Lee el resumen precalculado por `integrations:status`. La pantalla no
+   * consulta las colas de reenvio: son cientos de miles de filas y los jobs
+   * de envio estan trabajando sobre ellas.
+   * ===================================================== */
+
+  var CMP_URL = "/ui/v2/api/integrations/status";
+  var CMP_DATOS = null;
+
+  var CMP_ETIQUETA = {
+    ok: "Al día",
+    curso: "En curso",
+    aviso: "Con atraso",
+    critico: "Crítico",
+  };
+
+  function cmpEsc(v) {
+    return window.tpModal ? tpModal.escapeHtml(v) : String(v == null ? "" : v);
+  }
+
+  function cmpCargar(cb) {
+    if (!window.tpModal) return;
+
+    window.tpModal
+      .fetchJSON(CMP_URL, { method: "GET" })
+      .then(function (res) {
+        if (!res.ok || !res.data || !res.data.ok) {
+          var lista = document.getElementById("cmp-list");
+          if (lista) lista.innerHTML = '<div class="tp-text-muted" style="padding:12px;">No disponible.</div>';
+          return;
+        }
+        CMP_DATOS = res.data;
+        cmpPintarTarjeta();
+        if (typeof cb === "function") cb();
+      })
+      .catch(function () {
+        var lista = document.getElementById("cmp-list");
+        if (lista) lista.innerHTML = '<div class="tp-text-error" style="padding:12px;">Error de red.</div>';
+      });
+  }
+
+  function cmpPintarTarjeta() {
+    var d = CMP_DATOS;
+    if (!d) return;
+
+    var ok = 0, aviso = 0, critico = 0, vehiculos = 0;
+    (d.summary || []).forEach(function (s2) {
+      ok += s2.ok + s2.curso;
+      aviso += s2.aviso;
+      critico += s2.critico;
+      vehiculos += s2.devices;
+    });
+
+    function poner(id, valor) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = valor;
+    }
+
+    poner("cmp-ok", ok);
+    poner("cmp-aviso", aviso);
+    poner("cmp-critico", critico);
+    poner("cmp-count", vehiculos + " obligados");
+    poner("cmp-calculado", d.computed_at ? "Calculado " + d.computed_at : "");
+
+    var lista = document.getElementById("cmp-list");
+    if (!lista) return;
+
+    if (!(d.summary || []).length) {
+      lista.innerHTML =
+        '<div class="tp-text-muted" style="padding:12px;">Ningún vehículo tiene integraciones activas.</div>';
+      return;
+    }
+
+    lista.innerHTML = d.summary
+      .map(function (s2) {
+        var mal = s2.aviso + s2.critico;
+        var color = s2.critico ? "danger" : mal ? "warn" : "ok";
+        return (
+          '<div class="tp-admin__list-item">' +
+          '<span class="tp-admin__list-item-dot tp-admin__list-item-dot--' +
+          (s2.critico ? "off" : "on") + '"></span>' +
+          '<span class="tp-admin__list-item-title">' + cmpEsc(s2.integration) +
+          ' <span class="tp-text-xs tp-text-muted">· ' + s2.devices + " veh. · " +
+          s2.pending.toLocaleString() + " en cola</span></span>" +
+          '<span class="tp-cmp-chip tp-cmp-chip--' + color + '">' +
+          (mal ? mal + " con atraso" : "al día") +
+          "</span></div>"
+        );
+      })
+      .join("");
+  }
+
+  function cmpDetalle(soloFallos) {
+    if (!window.tpModal) return;
+
+    var url = CMP_URL + (soloFallos ? "?failing=1" : "");
+
+    window.tpModal.fetchJSON(url, { method: "GET" }).then(function (res) {
+      var d = (res.data && res.data.ok) ? res.data : null;
+
+      if (!d) {
+        window.tpModal.toast("No se pudo cargar el detalle.", "error");
+        return;
+      }
+
+      var filas = d.items || [];
+
+      var cuerpo =
+        '<p class="tp-text-xs tp-text-muted" style="margin:0 0 10px;">' +
+        "Se considera <b>con atraso</b> a partir de " + d.thresholds.aviso +
+        " min en cola, y <b>crítico</b> a partir de " + d.thresholds.critico + " min. " +
+        (d.computed_at ? "Resumen calculado " + cmpEsc(d.computed_at) + "." : "") +
+        "</p>";
+
+      if (!filas.length) {
+        cuerpo +=
+          '<p class="tp-text-sm tp-text-muted">' +
+          (soloFallos ? "Ningún vehículo con atraso." : "Sin datos.") +
+          "</p>";
+      } else {
+        cuerpo +=
+          '<div style="max-height:60vh;overflow:auto;"><table class="tp-table"><thead><tr>' +
+          "<th>Vehículo</th><th>Integración</th><th>En cola</th><th>Más antigua</th><th>Estado</th>" +
+          "</tr></thead><tbody>" +
+          filas
+            .map(function (f) {
+              return (
+                "<tr><td>" + cmpEsc(f.name) +
+                (f.plate ? ' <span class="tp-text-xs tp-text-muted">' + cmpEsc(f.plate) + "</span>" : "") +
+                "</td><td>" + cmpEsc(f.integration) +
+                '</td><td style="text-align:right;">' + f.pending.toLocaleString() +
+                "</td><td>" + cmpEsc(f.oldest_at || "—") +
+                '</td><td><span class="tp-cmp-chip tp-cmp-chip--' +
+                (f.status === "critico" ? "danger" : f.status === "aviso" ? "warn" : "ok") +
+                '">' + (CMP_ETIQUETA[f.status] || f.status) + "</span></td></tr>"
+              );
+            })
+            .join("") +
+          "</tbody></table></div>";
+      }
+
+      // Los fallos de los jobs: una cola que no drena suele venir de aqui
+      var fallos = d.failed_jobs || {};
+      var nombres = Object.keys(fallos);
+      if (nombres.length) {
+        cuerpo +=
+          '<p class="tp-text-xs tp-text-muted" style="margin:12px 0 4px;"><b>Trabajos fallidos recientes</b></p>' +
+          nombres
+            .map(function (n) {
+              return '<span class="tp-cmp-chip tp-cmp-chip--danger" style="margin-right:6px;">' +
+                cmpEsc(n) + ": " + fallos[n] + "</span>";
+            })
+            .join("");
+      }
+
+      window.tpModal.open({
+        title: soloFallos ? "Cumplimiento · solo los que fallan" : "Cumplimiento regulatorio",
+        size: "xl",
+        body: cuerpo,
+        buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      });
+    });
+  }
+
+  function cmpBind() {
+    var ver = document.getElementById("cmp-ver");
+    if (ver) ver.addEventListener("click", function () { cmpDetalle(false); });
+
+    var fallos = document.getElementById("cmp-fallos");
+    if (fallos) fallos.addEventListener("click", function () { cmpDetalle(true); });
+  }
+
   function init() {
     bind();
     load();
+    cmpBind();
+    cmpCargar();
   }
 
   if (document.readyState === "loading") {

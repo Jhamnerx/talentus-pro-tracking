@@ -4,7 +4,7 @@
 @section('rail-active', 'admin')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/admin.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/admin.css') }}?v=2">
 @endpush
 
 @section('workspace-class', 'tp-workspace--scroll')
@@ -62,6 +62,41 @@
             </article>
 
             {{-- WEBHOOKS --}}
+            {{-- Cumplimiento regulatorio. Lee el resumen precalculado
+                 (integration_status), nunca las colas de reenvio. --}}
+            <article class="tp-admin__card" id="card-cumplimiento">
+                <header class="tp-admin__card-head">
+                    <div class="tp-admin__card-icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            <path d="m9 12 2 2 4-4" />
+                        </svg>
+                    </div>
+                    <div class="tp-admin__card-title">
+                        <h3 class="tp-h6 tp-mb-0">Cumplimiento regulatorio</h3>
+                        <span class="tp-text-muted tp-text-xs">Reenvio a entes y proveedores</span>
+                    </div>
+                    <span class="tp-cmp-chip" id="cmp-count">—</span>
+                </header>
+
+                <div class="tp-admin__meta">
+                    <div class="tp-admin__stat"><strong id="cmp-ok">0</strong><span>al dia</span></div>
+                    <div class="tp-admin__stat"><strong id="cmp-aviso">0</strong><span>con atraso</span></div>
+                    <div class="tp-admin__stat"><strong id="cmp-critico">0</strong><span>criticos</span></div>
+                </div>
+
+                <div class="tp-admin__list" id="cmp-list">
+                    <div class="tp-text-muted tp-text-center" style="padding:16px;">Cargando…</div>
+                </div>
+
+                <footer class="tp-admin__card-foot">
+                    <button type="button" class="tp-btn tp-btn--primary tp-btn--xs" id="cmp-ver">Ver detalle</button>
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--xs" id="cmp-fallos">Solo los que fallan</button>
+                    <span class="tp-text-muted tp-text-xs" id="cmp-calculado" style="margin-left:auto;"></span>
+                </footer>
+            </article>
+
             <article class="tp-admin__card" id="card-webhooks">
                 <header class="tp-admin__card-head">
                     <div class="tp-admin__card-icon" aria-hidden="true">
@@ -188,5 +223,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/admin.js') }}?v=1"></script>
+    <script src="{{ asset('assets/ui/v2/js/admin.js') }}?v=2"></script>
 @endpush

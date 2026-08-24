@@ -25,6 +25,100 @@ class AdminController extends BaseController
         ]);
     }
 
+    /* =================================================================
+     * Cumplimiento regulatorio
+     * -----------------------------------------------------------------
+     * Lee el resumen precalculado (tabla integration_status), NUNCA las
+     * colas: son cientos de miles de filas y los jobs de envio estan
+     * trabajando sobre ellas. El resumen lo refresca `integrations:status`
+     * cada 10 minutos.
+     * ================================================================= */
+    public function integrations(Request $request): JsonResponse
+    {
+        try {
+            if (! isAdmin()) {
+                return response()->json(['ok' => false, 'error' => 'forbidden'], 403);
+            }
+
+            $soloFallos = $request->boolean('failing');
+
+            $filas = \DB::table('integration_status AS s')
+                ->join('devices AS d', 'd.id', '=', 's.device_id')
+                ->select([
+                    's.device_id', 's.integration', 's.pending', 's.oldest_at',
+                    's.last_at', 's.computed_at', 'd.name', 'd.plate_number',
+                ])
+                ->orderBy('s.pending', 'desc')
+                ->orderBy('d.name')
+                ->limit(2000)
+                ->get();
+
+            $items = [];
+            $resumen = [];
+
+            foreach ($filas as $f) {
+                $estado = \Tobuli\Services\IntegrationStatusService::semaforo((int) $f->pending, $f->oldest_at);
+
+                $resumen[$f->integration] = $resumen[$f->integration] ?? [
+                    'integration' => $f->integration,
+                    'devices' => 0, 'ok' => 0, 'curso' => 0, 'aviso' => 0, 'critico' => 0,
+                    'pending' => 0,
+                ];
+                $resumen[$f->integration]['devices']++;
+                $resumen[$f->integration][$estado]++;
+                $resumen[$f->integration]['pending'] += (int) $f->pending;
+
+                if ($soloFallos && in_array($estado, ['ok', 'curso'], true)) {
+                    continue;
+                }
+
+                $items[] = [
+                    'device_id'   => (int) $f->device_id,
+                    'name'        => (string) $f->name,
+                    'plate'       => (string) ($f->plate_number ?? ''),
+                    'integration' => (string) $f->integration,
+                    'pending'     => (int) $f->pending,
+                    'oldest_at'   => $f->oldest_at ? \Formatter::time()->convert($f->oldest_at) : null,
+                    'last_at'     => $f->last_at ? \Formatter::time()->convert($f->last_at) : null,
+                    'status'      => $estado,
+                ];
+            }
+
+            // Fallos recientes de los jobs de reenvio: la otra mitad de la
+            // señal, porque una cola que no drena suele venir de aqui.
+            $fallos = [];
+            try {
+                foreach (\DB::table('jobs_failed')->orderBy('failed_at', 'desc')->limit(200)->get() as $j) {
+                    if (preg_match('/([A-Za-z]+)Job/', (string) $j->payload, $m)) {
+                        $clase = $m[1];
+                        $fallos[$clase] = ($fallos[$clase] ?? 0) + 1;
+                    }
+                }
+            } catch (\Throwable $e) {
+                $fallos = [];
+            }
+
+            $calculado = \DB::table('integration_status')->max('computed_at');
+
+            return response()->json([
+                'ok'          => true,
+                'items'       => $items,
+                'summary'     => array_values($resumen),
+                'failed_jobs' => $fallos,
+                'computed_at' => $calculado ? \Formatter::time()->convert($calculado) : null,
+                'thresholds'  => [
+                    'aviso'   => \Tobuli\Services\IntegrationStatusService::AVISO_MIN,
+                    'critico' => \Tobuli\Services\IntegrationStatusService::CRITICO_MIN,
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(
+                ['ok' => false, 'error' => 'server_error', 'message' => $e->getMessage()],
+                $this->statusFor($e)
+            );
+        }
+    }
+
     public function data(Request $request): JsonResponse
     {
         $user = $this->user;

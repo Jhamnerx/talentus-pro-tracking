@@ -28,6 +28,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\BootTest',
         'App\Console\Commands\DispatchPendingCommands',
         'App\Console\Commands\ImportHitosKmCommand',
+        'App\Console\Commands\IntegrationStatusCommand',
         'App\Console\Commands\Tracker\RestartCommand',
         'App\Console\Commands\Tracker\ConfigCommand',
         'App\Console\Commands\Tracker\ConfigAliasCommand',
@@ -179,6 +180,10 @@ class Kernel extends ConsoleKernel
 
         // Procesamiento de posiciones GPS (ProcessManager controla solapamiento)
         $schedule->command('insert:run')->everyMinute();
+
+        // Resumen de reenvio para el panel de cumplimiento. Cada 10 min:
+        // el panel lee el resumen y nunca las colas.
+        $schedule->command('integrations:status')->everyTenMinutes()->withoutOverlapping();
 
         // Regeneración de cámaras
         $schedule->command('device_cameras:regenerate')->everyMinute()->withoutOverlapping();
