@@ -21,22 +21,27 @@ class SendDataSidersales implements ShouldQueue
     public $tries = 3;
     public $timeout = 120;
 
-    protected $offset;
-    protected $batchSize;
+    /** Margen antes del $timeout: al agotarse el job corta y deja las tramas
+     *  restantes en la tabla (solo se borran al enviarse OK), asi no muere a
+     *  medias por SIGKILL del worker ni se reintenta el lote completo. */
+    const DEADLINE_MARGIN = 20;
+
+    protected $minId;
+    protected $maxId;
     protected $url;
     protected $service;
     protected $plates;
     protected $userId;
     protected $logService;
 
-    public function __construct(int $offset, int $batchSize, string $url, array $service, array $plates, ?int $userId = null)
+    public function __construct(int $minId, int $maxId, string $url, array $service, array $plates, ?int $userId = null)
     {
-        $this->offset    = $offset;
-        $this->batchSize = $batchSize;
-        $this->url       = $url;
-        $this->service   = $service;
-        $this->plates    = $plates;
-        $this->userId    = $userId;
+        $this->minId   = $minId;
+        $this->maxId   = $maxId;
+        $this->url     = $url;
+        $this->service = $service;
+        $this->plates  = $plates;
+        $this->userId  = $userId;
         $this->onQueue('web-services-sidersales');
     }
 
@@ -56,17 +61,41 @@ class SendDataSidersales implements ShouldQueue
         }
 
         $this->logService->logStart('Sidersales', 'Iniciando procesamiento de tramas Sidersales', [
-            'offset'    => $this->offset,
-            'batchSize' => $this->batchSize,
+            'minId' => $this->minId,
+            'maxId' => $this->maxId,
         ]);
 
-        $tramas = Sidersales::offset($this->offset)
-            ->limit($this->batchSize)
+        // Rango de ids (no offset): resiste los borrados de los jobs en paralelo
+        // y usa la PK en vez de escanear millones de filas.
+        $tramas = Sidersales::whereBetween('id', [$this->minId, $this->maxId])
             ->whereIn('placa', $this->plates)
             ->with('device')
             ->get();
 
+        // Un solo cliente para todo el lote (antes se instanciaba uno por trama).
+        // Sin timeout explicito Guzzle usa 0 = infinito: si Gerdau deja el socket
+        // colgado el worker se bloquea para siempre y no lo saca ni queue:restart.
+        $client = new Client([
+            'verify'          => false,
+            'connect_timeout' => 10,
+            'timeout'         => 30,
+        ]);
+
+        $deadline = microtime(true) + ($this->timeout - self::DEADLINE_MARGIN);
+        $enviadas = 0;
+
         foreach ($tramas as $trama) {
+            if (microtime(true) >= $deadline) {
+                Log::channel('sidersales')->warning('Lote Sidersales cortado por deadline', [
+                    'user_id'   => $this->userId,
+                    'minId'     => $this->minId,
+                    'maxId'     => $this->maxId,
+                    'enviadas'  => $enviadas,
+                    'restantes' => $tramas->count() - $enviadas,
+                ]);
+                break;
+            }
+
             $payload = [
                 'placa'            => $trama->placa,
                 'latitud'          => (string) $trama->latitud,
@@ -77,14 +106,14 @@ class SendDataSidersales implements ShouldQueue
                 'ProveedorGPS'     => 'TALENTUS TECHNOLOGY SAC',
             ];
 
-            $this->enviarTrama($trama, $payload, $accessToken);
+            $this->enviarTrama($client, $trama, $payload, $accessToken);
+            $enviadas++;
         }
     }
 
-    protected function enviarTrama(Sidersales $trama, array $payload, string $accessToken): void
+    protected function enviarTrama(Client $client, Sidersales $trama, array $payload, string $accessToken): void
     {
         try {
-            $client = new Client(['verify' => false]);
             $response = $client->request('POST', $this->url, [
                 'headers' => [
                     'Authorization' => 'Bearer ' . $accessToken,
