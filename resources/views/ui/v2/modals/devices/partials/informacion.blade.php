@@ -242,6 +242,16 @@
         </div>
     </div>
 
+    {{-- Costo estimado por kilómetro: el supuesto del cliente para valorar un
+         recorrido. El costo REAL sale de Gastos; el reporte muestra los dos
+         y dice cuál es cuál. --}}
+    <label class="tp-form__field">
+        <span class="tp-form__label">{{ trans('front.cost_per_km') }}</span>
+        <input type="number" step="0.0001" min="0" name="cost_per_km" placeholder="0.00"
+            value="{{ $item->cost_per_km ?? '' }}" data-tp-field>
+        <small class="tp-form__hint">{{ trans('front.cost_per_km_hint') }}</small>
+    </label>
+
     {{-- ── Reenvío (forward): input-group con checkbox embebido + Protocolo ── --}}
     @if ($cv('forward'))
         <div class="tp-form__field">

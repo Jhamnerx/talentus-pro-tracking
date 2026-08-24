@@ -112,6 +112,7 @@ class ReportManager
         905 => Reports\OverspeedsInGeofenceCustomReportV2::class,
         906 => Reports\OverspeedsInGeofenceCustomReportBuenaventura::class,
         907 => Reports\DrivingBehaviourReport::class,
+        908 => Reports\OperatingCostReport::class,
 
     ];
 

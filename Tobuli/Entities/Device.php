@@ -113,6 +113,9 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'fuel_quantity',
         'fuel_price',
         'fuel_per_km',
+        // Costo estimado por kilómetro del vehículo (ver el reporte de costo
+        // de operación: el real sale de Gastos, este es el supuesto).
+        'cost_per_km',
         'sim_number',
         'operator_sim',
         'device_model',
