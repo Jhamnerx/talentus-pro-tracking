@@ -66,6 +66,14 @@ function getNavigation()
                 'childs' => []
             ];
         }
+
+        if (Auth::user()->isAdmin()) {
+            $items[] = [
+                'title'  => '<i class="fa fa-shield"></i> ' . '<span class="text">' . trans('admin.integrations_status') . '</span>',
+                'route'  => 'admin.integrations_status.index',
+                'childs' => []
+            ];
+        }
     }
 
     $items['content'] = [

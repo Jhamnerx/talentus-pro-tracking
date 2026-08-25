@@ -996,6 +996,8 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::post('webservices-reenvio/mininter/reenviar', ['as' => 'webservices_reenvio.mininter', 'uses' => 'WebservicesReenvioController@mininterReenviar']);
 
     # User change logs
+    // Cumplimiento regulatorio: estado de reenvio a entes y proveedores
+    Route::get('integrations_status', ['as' => 'integrations_status.index', 'uses' => 'IntegrationsStatusController@index']);
     Route::get('model_change_logs/index', ['as' => 'model_change_logs.index', 'uses' => 'ModelChangeLogsController@index']);
     Route::get('model_change_logs/show/{id}', ['as' => 'model_change_logs.show', 'uses' => 'ModelChangeLogsController@show']);
     Route::get('model_change_logs/causers', ['as' => 'model_change_logs.causers', 'uses' => 'ModelChangeLogsController@causers']);
@@ -1132,7 +1134,6 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('call-actions', ['as' => 'call_actions', 'uses' => 'Ui\V2\CallActionsController@page']);
     Route::get('chat',         ['as' => 'chat',         'uses' => 'Ui\V2\ChatController@page']);
     Route::get('expenses',     ['as' => 'expenses',     'uses' => 'Ui\V2\ExpensesController@page']);
-    Route::get('admin',     ['as' => 'admin',     'uses' => 'Ui\V2\AdminController@index']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
     Route::prefix('api')->group(function () {
@@ -1205,8 +1206,6 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('reports',             ['as' => 'api.reports.store',       'uses' => 'Ui\V2\ReportsController@store']);
         Route::delete('reports/{id}',      ['as' => 'api.reports.destroy',     'uses' => 'Ui\V2\ReportsController@destroy'])->where('id', '[0-9]+');
         Route::delete('reports/logs/{id}', ['as' => 'api.reports.logs.destroy', 'uses' => 'Ui\V2\ReportsController@logDestroy'])->where('id', '[0-9]+');
-        Route::get('admin',          ['as' => 'api.admin',         'uses' => 'Ui\V2\AdminController@data']);
-        Route::get('integrations/status', ['as' => 'api.integrations.status', 'uses' => 'Ui\V2\AdminController@integrations']);
         Route::get('copilot/insights', ['as' => 'api.copilot.insights', 'uses' => 'Ui\V2\CopilotController@insights']);
         Route::get('copilot/ask',      ['as' => 'api.copilot.ask',      'uses' => 'Ui\V2\CopilotController@ask']);
 

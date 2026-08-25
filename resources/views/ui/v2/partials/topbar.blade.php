@@ -94,6 +94,18 @@
         </svg>
     </button>
 
+    {{-- Panel de administración. Mismo gate que el header legacy: isAdmin().
+         Lleva al admin clásico, que es donde vive todo lo de administración. --}}
+    @if (isAdmin())
+        <a href="{{ route('admin') }}" class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip"
+            data-tooltip="{{ trans('global.admin') }}" aria-label="{{ trans('global.admin') }}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+        </a>
+    @endif
+
     {{-- Ajustes de cuenta (abre el modal con tabs) --}}
     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" id="tp-account-btn" data-tp-account
         data-tooltip="Ajustes de cuenta" aria-label="Ajustes de cuenta">
