@@ -1,11 +1,135 @@
 # TalentusPro · Estado de migración
 
-> Snapshot al **31 de mayo de 2026** · Rama `nuevo-tema`
-> Convenciones y plan macro: ver [plan de migracion.md](plan%20de%20migracion.md)
+> **Verificado contra el código el 25 de agosto de 2026** · rama `nuevo-tema`
+> Plan de olas y contratos de datos: [plan de migracion.md](../plan%20de%20migracion.md)
 
-Documento vivo que resume **qué está implementado** en el shell nuevo y **qué falta** por migrar desde el legacy. Lo organizamos por dominio.
+Este documento dice qué falta por migrar del legacy a la UI v2. Lo de arriba
+está **comprobado contra el código**, no contra el historial de commits: se
+enumeraron los 68 módulos de `Tobuli/Views/Frontend`, se contrastó cada uno
+contra las 255 rutas `ui.v2.*`, los 42 bundles JS, las 19 páginas y los
+partials del modal de vehículo, y se abrieron los dudosos uno a uno.
+
+> ⚠️ **Si vuelves a este documento pasadas unas semanas, vuelve a verificar
+> antes de planificar.** La versión anterior daba por pendientes 11 cosas que
+> ya estaban hechas y por abiertos hallazgos de auditoría ya corregidos; se
+> perdió tiempo comprobándolo. Un estado escrito envejece; el código no miente.
 
 ---
+
+## 1 · Qué falta
+
+Solo dos cosas, y las dos están aplazadas por decisión del cliente para justo
+antes del despliegue:
+
+| # | Qué | Legacy | Estado en v2 |
+|---|-----|--------|--------------|
+| 1 | **Vídeo a bordo** — reproducción en vivo y grabaciones | `DeviceVideo/`, `Video/` | Nada. El kebab del vehículo abre un modal que lo explica; falta la integración del decoder (JT808/Howen) |
+| 2 | **Suscripciones y planes** (ERP) | `DevicePlans/`, `DeviceSubscription/`, `Subscriptions/` | Nada |
+
+**Fuera de alcance por decisión, no por falta de trabajo:**
+
+- **Administración**: vive en el panel clásico. La v2 solo lleva un botón al
+  admin en el header, con el mismo gate que el legacy (`isAdmin()`). El
+  **import masivo de vehículos** es `/admin/objects/import`, o sea admin: se
+  queda donde está.
+- **Autenticación y páginas públicas**: login, registro, recuperación,
+  confirmación de correo, captcha, registro custom. Son 13 módulos fuera del
+  shell de usuario.
+
+---
+
+## 2 · Cobertura verificada por dominio
+
+Todo lo de esta tabla se comprobó el 25-ago. ✅ = existe y tiene endpoints
+propios; los matices están en la columna de la derecha.
+
+| Dominio legacy | En la v2 | Notas |
+|---|---|---|
+| `Objects/` (mapa + sidebar) | `live` (Leaflet) ✅ | Paneles de objetos, geocercas, POIs y rutas |
+| `ObjectsList/` | `fleet` ✅ | Columnas configurables por usuario con rangos de color por sensor (`api.fleet.columns`) |
+| `Devices/` (CRUD) | modal de 14 tabs ✅ | Incluye `personalizados` (campos propios, mismo gate que el legacy) e `historial` |
+| `DevicesGroups/` | kebab de grupo en Live ✅ | |
+| `Geofences/` · `Pois/` · `Routes/` (+ grupos) | paneles `live-*` ✅ | CRUD, grupos, import/export, visibilidad y confirmación antes de borrar |
+| `Alerts/` · `Events/` · `CustomEvents/` | `alerts` · `events` · tab de cuenta ✅ | Incluye el tipo **Alarma del equipo** sobre el `alarm` normalizado de Traccar |
+| `DeviceAlerts/` | alertas del vehículo desde el kebab ✅ | |
+| `History/` | `history` ✅ | Con borrado de posiciones y export GSR/KML/GPX/CSV |
+| `Reports/` (~130 tipos) | `reports` ✅ | Más los propios: **Conducción** (907) y **Costo de operación** (908) |
+| `SendCommand/` · `CommandSchedules/` · plantillas GPRS/SMS | `commands` ✅ | |
+| `Sharing/` | `sharing` ✅ | Canales correo y SMS |
+| `Services/` · `Maintenance/` · `DeviceExpenses/` | `maintenance` · `expenses` ✅ | |
+| `Tasks/` · `TaskSets/` | `tasks` ✅ | Con campos personalizados de tarea |
+| `Checklist/` · `ChecklistTemplates/` | 11 endpoints ✅ | Plantillas, filas, firma e imágenes. Hoy **apagado** en esta instalación (`addon.checklists = false`) |
+| `UserDrivers/` | `drivers` ✅ | |
+| `Chat/` · `CallAction/` | `chat` · `call-actions` ✅ | |
+| `Sensors/` | tab del modal ✅ | Con copia entre vehículos, calibraciones e import |
+| `DeviceConfig/` · `LockStatus/` | ✅ | Configuración remota y bloqueo de motor |
+| `DeviceMedia/` · `MediaCategories/` | galería ✅ | Paginada, filtro por categoría, selección, descarga y borrado. Falta solo el playback en vivo → es el punto 1 de §1 |
+| `MyAccount/` · `MyAccountSettings/` · `Languages/` | modal de cuenta ✅ | Incluye credenciales secundarias y categorías de medios |
+| `VehicleTypes/` | tipos/estados + matriz de límites ✅ | |
+| `Dashboard/` · `Widgets/` | `dashboard` ✅ | KPIs, donuts, conducción, ranking, kilometraje, tareas y notificaciones |
+| `Popups/` | incluidos en el layout ✅ | Banners y modales condicionales del admin |
+| `Forwards/` · `SecondaryCredentials/` · `Beacons/` · `DeviceRoutesType/` · `IconsModal/` · `CustomFields/` | ✅ | |
+| **Módulo nuevo, sin equivalente legacy** | `monitor` (grilla 3×3) · `copilot` | |
+| `DeviceVideo/` · `Video/` | ❌ | Ver §1 |
+| `DevicePlans/` · `DeviceSubscription/` · `Subscriptions/` | ❌ | Ver §1 |
+
+---
+
+## 3 · Ola 0 (paridad legacy↔v2) — **cerrada**
+
+La auditoría del 6 de agosto levantó 9 hallazgos de seguridad (S), 16 de
+corrupción de datos (D) y 19 de funcionalidad rota (F). Verificado el 25-ago:
+**no queda ninguno abierto.**
+
+Dos que el plan aún daba por pendientes y en realidad estaban resueltos:
+
+- **F7** — confirmar antes de borrar geocerca/POI/ruta: la v2 no usa el
+  middleware `confirmed_action` porque no pasa por las rutas legacy, pero
+  pregunta con su propio diálogo (`tpModal.confirm`), que es lo que ese
+  middleware hace (es un "¿seguro?", no una contraseña).
+- **F15** — `PermissionException` convertida en 500: `BaseController::statusFor()`
+  la mapea a **403** y todos los `catch` de `ServicesController` la usan.
+
+El detalle hallazgo por hallazgo, con el porqué de cada corrección, está en
+[plan de migracion.md §1](../plan%20de%20migracion.md).
+
+---
+
+## 4 · Convenciones vigentes
+
+> El tema se debrandeó de `talentus` a `ui/v2`. Si encuentras rutas o carpetas
+> con el nombre viejo en documentos antiguos, la buena es esta.
+
+- Rutas: grupo `['prefix' => 'ui/v2', 'as' => 'ui.v2.']` en [routes/web.php](../routes/web.php).
+- Controllers: `App\Http\Controllers\Ui\V2\*Controller` extendiendo `BaseController`.
+- API JSON: `ui.v2.api.<dominio>.*` (CRUD `meta|form|store|edit|update|destroy`).
+- Vistas: `resources/views/ui/v2/pages/<dominio>.blade.php` sobre `ui.v2.layout`.
+- Partials de modales: `resources/views/ui/v2/modals/<dominio>/`.
+- Fuentes de assets: `resources/assets/ui-v2/{css,js}` → `gulp ui-v2-css ui-v2-js`
+  → `public/assets/ui/v2/`. **Subir el `?v=N`** del blade tras compilar, o el
+  navegador sirve el anterior.
+- Modales, avisos y confirmaciones: `window.tpModal.{open,close,confirm,toast,tabs,fetchJSON}`.
+- Permisos: `$this->user->perm('<dominio>', 'view|edit|remove')` — los únicos
+  modos válidos según `config/permissions.php`.
+- Reutilizar `ModalHelpers/`, `Repositories/` y `Validators/`: la UI nueva solo
+  orquesta, no reimplementa reglas de negocio.
+- **Gates de addon/plugin (regla de oro):** toda condición `config('addon.*')` o
+  `settings('plugins.*.status')` del legacy **debe existir idéntica** en su
+  equivalente v2. Al portar un botón, menú o campo, copiar su `@if (...)` tal
+  cual. No relajar ni asumir "siempre activo".
+- **Kilometraje:** fuente única `Tobuli\Services\DeviceMileageService`. No
+  calcularlo de otra manera en una pantalla nueva: es lo que hacía que
+  historial, flota y reportes no cuadraran entre sí.
+- **Conducción:** fuente única `Tobuli\Services\DrivingScoreService`, que
+  comparten el reporte 907 y el ranking del panel.
+
+---
+
+## 5 · Bitácora
+
+Histórico de sesiones, de lo más reciente a lo más antiguo. Se conserva por el
+porqué de cada decisión; para saber **qué falta**, mirar §1, que es lo que se
+verifica.
 
 ## 🔄 Actualización · 7 ago 2026 (3) — Módulo NUEVO "Monitoreo de grupo" (grilla 3×3)
 
@@ -469,262 +593,3 @@ Marcador **real del device** según `DeviceIconTransformer` (icono incluido en `
 **Pendiente inmediato**: ~~página **Eventos**~~ ✅ hecha · ~~POIs CRUD~~ ✅ hecho (ver actualización 27 jun). Quedan: Rutas CRUD, comandos, compartir, mantenimientos, topbar Herramientas + idioma.
 
 ---
-
-## 1 · Convenciones vigentes
-
-- Rutas: `Route::group(['prefix' => 'talentus', 'as' => 'talentus.'])` en [routes/web.php](routes/web.php#L1105-L1162).
-- Controllers: `App\Http\Controllers\Talentus\*Controller` extendiendo `BaseController`. Cross-cutting en [app/Http/Controllers/Frontend/TalentusController.php](app/Http/Controllers/Frontend/TalentusController.php).
-- API JSON: `talentus.api.<dominio>.*` (CRUD `meta|form|store|edit|update|destroy`).
-- Vistas: `resources/views/talentus/pages/<dominio>.blade.php` extendiendo `talentus.layout`.
-- Partials de modales: `resources/views/talentus/modals/<dominio>/*`.
-- Assets: `public/assets/talentus/{css,js}/<dominio>.*` con `?v=N`.
-- Modales/drawers/toasts: `window.tpModal.{open,close,confirm,toast,tabs,fetchJSON,...}`.
-- Permisos: `$this->user->perm('<dominio>', 'view|edit|remove')` (los únicos modos válidos según `config/permissions.php`).
-- Reutilizar `ModalHelpers/`, `Repositories/`, `Validators/` — la UI nueva solo orquesta.
-- **Gates de addon/plugin (regla de oro):** toda condición `config('addon.*')` o `settings('plugins.*.status')` presente en una vista/flujo legacy **debe existir idéntica** en su equivalente v2. Al portar un botón/menú/campo, copiar su `@if (...)` tal cual (ej. geolocalización → `config('addon.html_geolocation')`). No relajar ni asumir "siempre activo".
-
----
-
-## 2 · Lo implementado en esta rama
-
-### 2.1 Reorganización del controller monolítico
-
-Se eliminó la concentración en `Frontend\TalentusController` (1 949 líneas, 42 métodos). Ahora hay 9 controllers por dominio bajo `App\Http\Controllers\Talentus\*`:
-
-| Controller | Rol |
-|---|---|
-| [BaseController](app/Http/Controllers/Talentus/BaseController.php) | Helpers compartidos (`buildMapConfig`, `groupStatus`, `eventSeverity`, `haversine`) y constantes de preferencia (`PREF_THEME`, `PREF_DENSITY`, `PREF_MAP_ID`). |
-| [DevicesController](app/Http/Controllers/Talentus/DevicesController.php) | Live + Fleet + CRUD modal de vehículos. |
-| [DashboardController](app/Http/Controllers/Talentus/DashboardController.php) | Página Dashboard + KPIs. |
-| [ZonesController](app/Http/Controllers/Talentus/ZonesController.php) | Geocercas (CRUD + import/export). |
-| [AlertsController](app/Http/Controllers/Talentus/AlertsController.php) | Reglas + feed de eventos. |
-| [HistoryController](app/Http/Controllers/Talentus/HistoryController.php) | Historial + tramos. |
-| [ReportsController](app/Http/Controllers/Talentus/ReportsController.php) | Generación de reportes. |
-| [AdminController](app/Http/Controllers/Talentus/AdminController.php) | Vistas administrativas (deeplinks a legacy). |
-| [CopilotController](app/Http/Controllers/Talentus/CopilotController.php) | Asistente IA del shell. |
-
-[Frontend\TalentusController](app/Http/Controllers/Frontend/TalentusController.php) queda como shell delgado (~220 líneas) con: `preview`, `legacy`, `search`, `notifications`, `preferences`.
-
-> Total de rutas `talentus.*` actuales: **42**.
-
-### 2.2 Bug fixes runtime
-
-- Permiso CRUD: `perm('devices','create')` no existe en `config/permissions.php` (modos válidos: `view|edit|remove`) → reemplazado por `'edit'` en `live`, `fleet`, `store` ([DevicesController.php](app/Http/Controllers/Talentus/DevicesController.php)).
-- Blade `@json` con array inline que contenía `{id}` rompía el parser → ahora se construye el array en bloque `@php ... @endphp` y se pasa por variable.
-- `DeviceIcon::orderBy('order_no')` no existe → `orderBy('id','asc')`.
-- `route()` rechaza `__ID__` por regex `[0-9]+` → se usa `url('/talentus/api/devices') . '/{id}/edit'`.
-
-### 2.3 Modal de vehículo (Live + Fleet + Admin → Fleet)
-
-Arquitectura **HTML-first** (server-side rendering):
-
-| Capa | Archivo |
-|---|---|
-| Endpoint que renderiza Blade | [DevicesController::form()](app/Http/Controllers/Talentus/DevicesController.php) → `GET /talentus/api/devices/form` y `GET /talentus/api/devices/{id}/form` |
-| Vista contenedora con tabs | [resources/views/talentus/modals/devices/form.blade.php](resources/views/talentus/modals/devices/form.blade.php) |
-| Partial: Principal | [partials/principal.blade.php](resources/views/talentus/modals/devices/partials/principal.blade.php) |
-| Partial: Iconos (galería + colores por estado) | [partials/iconos.blade.php](resources/views/talentus/modals/devices/partials/iconos.blade.php) |
-| Partial: Información (SIM, VIN, placa, propietario, notas, etc.) | [partials/informacion.blade.php](resources/views/talentus/modals/devices/partials/informacion.blade.php) |
-| Partial: Exactitud (motor, velocidad, combustible, LBS) | [partials/exactitud.blade.php](resources/views/talentus/modals/devices/partials/exactitud.blade.php) |
-| Partial: Cola (color + longitud) | [partials/cola.blade.php](resources/views/talentus/modals/devices/partials/cola.blade.php) |
-| Placeholders condicionales | `partials/usuarios.blade.php`, `partials/sensores.blade.php`, `partials/webservices.blade.php` |
-| JS minimal (fetch HTML, wire tabs/submit/galería) | [public/assets/talentus/js/device-modal.js](public/assets/talentus/js/device-modal.js) |
-| Estilos | [public/assets/talentus/css/device-modal.css](public/assets/talentus/css/device-modal.css) |
-
-El JS reduce sus responsabilidades a:
-
-1. `tpModal.open()` con cuerpo "Cargando…".
-2. `fetch` del HTML al endpoint Blade e inyectarlo.
-3. Wire de pestañas, galería de iconos y mirror del `enable_expiration_date`.
-4. Submit POST/PUT con `FormData` → objeto (soporta `icon_colors[moving]` → `data.icon_colors.moving`).
-
-Reutiliza **íntegro** `DeviceModalHelper::createData()/editData()/create()/edit()` legacy: mismos catálogos, misma validación, mismos `name=`.
-
-Modal **tabbed** con paridad legacy:
-
-| Pestaña | Estado |
-|---|---|
-| Principal | ✅ |
-| Usuarios *(admin)* | ⚠️ Placeholder → deeplink a legacy |
-| Iconos | ✅ |
-| Información | ✅ |
-| Sensores *(admin)* | ⚠️ Placeholder |
-| Exactitud | ✅ |
-| Cola | ✅ |
-| Servicios Web *(perm)* | ⚠️ Placeholder |
-
-### 2.4 Botón "+ Nuevo" en Live y Fleet
-
-Se cableó `#tp-live-create-device` y el botón equivalente en Fleet a `window.tpDeviceModal.openCreate(...)`. Comparten la misma instancia.
-
-### 2.5 Endpoint `meta()` enriquecido
-
-[DevicesController::meta()](app/Http/Controllers/Talentus/DevicesController.php) ahora expone también `icon_types`, `icon_colors`, `fuel_detect_stops`, `operator_sim`, `icons_grouped`, `caps` y `defaults` extendidos (colores de estado, mín. movimiento, mín. fillings/thefts, etc.).
-
-> Nota: con el rediseño HTML-first, el front del modal ya **no consume `/meta`** (Blade los lee directo del `DeviceModalHelper`). Se mantiene útil para otros consumidores (filtros, dropdowns en otras pantallas).
-
-### 2.6 Modal base · `window.tpModal`
-
-Añadido tamaño `xl` (980 px) en [modal.js](public/assets/talentus/js/modal.js) + [modal.css](public/assets/talentus/css/modal.css) para acomodar el form tabbed.
-
----
-
-## 3 · Cobertura por dominio (estado actual)
-
-Leyenda: ✅ migrado · ⚠️ parcial · ❌ falta
-
-> **Tabla actualizada · 25 jul 2026** (auditoría completa de los 68 módulos de `Tobuli/Views/Frontend`)
->
-> **Pendientes reales user-facing** (prioridad sugerida):
-> 1. **Cámara / Medios** (`DeviceMedia`·`DeviceVideo`·`Video`·`MediaCategories`) — página galería + live/playback (hoy solo widget de lectura).
-> 2. **DeviceAlerts** — asignación de alertas por dispositivo.
-> 3. **Chat** · **CallAction** (Acciones de llamada) — hoy stubs en el rail.
-> 4. **DeviceConfig** · **LockStatus** — configuración remota / bloqueo del dispositivo.
-> 5. **Import** masivo de dispositivos (CSV/XLS) — hoy solo import de geocercas/POIs.
-> 6. **Checklist** · **ChecklistTemplates** — prestart/servicio + QR (addon `checklists`).
-> 7. **CustomFields** — panel de campos personalizados en los forms de device/tarea/usuario (addon).
-> 8. Menores: **DeviceRoutesType**, icon-picker por sensor (`IconsModal`), **Beacons**, **Forwards**, **SecondaryCredentials** (hoy deeplink a legacy).
-> 9. **Comercial** (`DevicePlans`·`DeviceSubscription`·`Subscriptions`) — evaluar si entra en el alcance del tema.
-> 10. **Popups** (`Popups/` — banners/modales condicionales del admin por reglas: FirstLogin/DemoUser/SubscriptionEnding/UserCreatedBefore/BillingPlan, posiciones top/esquinas/center, `show_every_days`, shortcodes). Gated por addon `notification_popops` (`SHOW_POPUPS`). Requiere incluir en `ui.v2.layout` los equivalentes de `Frontend.Popups.index_banners_top` (banners) y `Frontend.Popups.index` (modales auto-abiertos). NO confundir con `tp-notify.js` (toasts de eventos en vivo, ya ✅).
->
-> Auth (`Login`/`Registration`/…) y admin (`Emails`/`Docs`/`Lookup`/`LoginAs`/`Schedules`/`SmsGateway` admin) quedan **fuera** del shell v2 de usuario.
-
-| Dominio legacy | UI v2 | Estado |
-|---|---|---|
-| `Layouts/loged.blade.php` (live shell + mapa) | `live` (Leaflet) | ✅ Falta: **regla de medición** (leaflet.ruler), tools showPoint/showAddress, chat flotante |
-| `Objects/` (sidebar tabs objects/events/history/alerts/geofencing/routes/pois) | live (paneles) + páginas propias | ⚠️ objects/geofencing/pois = paneles ✅; events/history = páginas ✅; **routes tab sin CRUD**; alerts tab → página Alertas |
-| `Dashboard/` (24 widgets) | `dashboard` | ⚠️ KPIs básicos; faltan los widgets configurables del legacy |
-| `Devices/` (CRUD 8 tabs) | `fleet` + modal tabbed | ⚠️ 8 tabs nativos PERO auditoría 6-ago: expiración deriva TZ + checkbox marcado al crear (D1), falta tab CustomFields (D11) e Historial de mantenimientos (F17), sensores solo-admin (F9), beacons 422 (F10), gate `custom_device_add` (S7) |
-| `DevicesGroups/` | ✅ kebab en cabeceras de grupo de Live (Agregar/Editar/Eliminar) + modal "Grupos de objetos" (título + vehículos agrupados con Seleccionar todo); endpoints `api.device_groups.*` con UPDATE del pivot `user_device_pivot.group_id` por usuario (0 = sin grupo, paridad legacy) | ✅ (23-jul) |
-| `Geofences/` · `GeofencesGroups/` | panel zones (draw + vértices + VSL) | ⚠️ auditoría 6-ago: sin policy read-only/demo + `can('view')` en update/destroy (S4), `speed_limit` se corrompe por unidades (D2), edit reactiva geocercas desactivadas (D7), import/export roto (F2), `device_id`/intervals (F7/D12); grupos solo lectura |
-| `Pois/` · `PoisGroups/` | panel pois (CRUD + drag) | ⚠️ sin toggle `active` (D7), import/export roto (F2); grupos solo lectura |
-| `Routes/` · `RoutesGroups/` | panel routes (draw + CRUD + grupos + lista agrupable) `live-routes.js` + página `/ui/v2/routes/table` + export/import nativos | ✅ |
-| `Alerts/` · `Events/` | `alerts` (tabla índice + modal 6 tabs) · `events` (página) | ⚠️ alertas: riesgo `sync([])` en modo api (D5) · eventos: alcance sin `userAccessible` + TZ (D13/D14), sin borrado (F6) |
-| `DeviceAlerts/` · `CustomEvents/` | — | ❌ |
-| `History/` (+ historyPlayer/historyGraph) | `history` (rediseño integrado, pipeline legacy) | ⚠️ auditoría 6-ago: `snap_to_road` no-op (F1), data-log siempre asc + `distance_sum` ≠ legacy + borrar posiciones sin superficie (F5). Export GSR/KML/GPX/CSV sí funciona (endpoint legacy) |
-| `Reports/` (~130 tipos) | página tabs guardados/logs + modal Generar/Guardar (campos por tipo, schedules, range picker propio) | ⚠️ auditoría 6-ago: `send_to_ftp` degradado a checkbox — **destruye la URL FTP al editar** (D4); `period` preset no viaja |
-| `SendCommand/` · `CommandSchedules/` · `UserGprsTemplates/` · `UserSmsTemplates/` | modal `tp-commands.js` + hub `/ui/v2/commands` | ⚠️ auditoría 6-ago: quitar vehículo de un horario nunca desasigna (D6), editar plantilla adaptada desasocia devices (D9), listado de plantillas da 500 a usuarios view-sin-edit (F4) |
-| `Sharing/` (crear + lista + página pública) | `/ui/v2/sharing` + `tp-sharing.js`; página pública = legacy reutilizada | ⚠️ auditoría 6-ago: `expiration_date` sin `reverse()` — caduca desfasado (D3); canal SMS y sharing_device ausentes (F11); escenario validador `send` en update |
-| `Services/` · `Maintenance/` · `DeviceExpenses/` | `tp-services.js` + `/ui/v2/maintenance` + tab Gastos del modal + página `/ui/v2/expenses` | ⚠️ auditoría 6-ago: **colisión de rutas `expenses/{id}`** (S2), gastos sin permiso `device_expenses` ni validator legacy (S6), `ServicesController` convierte PermissionException en 500 (F15) |
-| `Tasks/` · `TaskSets/` · `Checklist/` · `ChecklistTemplates/` | `/ui/v2/tasks` + `tp-tasks.js` (tabla + modal + import CSV/XLS + Conjuntos) | ⚠️ auditoría 6-ago: `custom_fields_task` no se guardan ni muestran (D10); `assign` salta el service (Ola 0). Checklists/ChecklistTemplates sin migrar |
-| `UserDrivers/` (conductores) | ✅ `/ui/v2/drivers` + `tp-drivers.js` (CRUD + pivot devices + vehículo actual) | ✅ (22-jul; falta activity log + RFID inline) |
-| `Chat/` | `/ui/v2/chat` + `tp-chat.js` (lista + hilo con polling) | ⚠️ **auditoría 6-ago: IDOR — messages/send sin comprobar pertenencia (`ChatPolicy`); módulo `chat` vs `chats` legacy (S1)**; sin chat user↔user ni paginación hacia atrás |
-| `CallAction/` | `/ui/v2/call-actions` + `tp-call-actions.js` | ⚠️ auditoría 6-ago: `user_id` falsificable en store (S5); `called_at` se sobrescribe al editar con date_format ≠ ISO (D8); mass-assignment del request crudo |
-| `DeviceMedia/` · `DeviceVideo/` · `Video/` · `MediaCategories/` | widget Cámara (lectura) + links video legacy | ❌ galería/live/playback nativos |
-| `Sensors/` (modal) | ✅ migrado como tab **Sensores** del modal device (CRUD vía `SensorModalHelper`, buscador + grupo + preview) | ✅ |
-| `DeviceConfig/` · `LockStatus/` | `LockStatus` ✅ (widget de bloqueo v2: estado + Cortar/Restablecer + historial, comandos preconfigurables) · `DeviceConfig` stub | ⚠️ Falta solo **DeviceConfig** (config remota del device) |
-| `DevicePlans/` · `DeviceSubscription/` · `Subscriptions/` | stub | ❌ |
-| `MyAccount/` · `MyAccountSettings/` · `Languages/` | ✅ **modal Ajustes de cuenta** (`tp-account.js`, engranaje/menú de usuario del topbar) con **paridad total de tabs** (títulos exactos legacy): Principal (unidades, formatos, inicio de semana, TZ, horario de verano) · Grupos de vehículos · Conductores · Tipos de vehículo · Eventos · SMS gateway · Plantillas de SMS · Plantillas de GPRS · Widgets · Tablero · Cliente · **Mapa** (2 toggles: velocidad en marcador + color de etiqueta por estado, per-usuario en map_controls, aplicados en Live). Tabs de formulario guardan contra `AccountController`; tabs CRUD reutilizan/crean endpoints (device-groups, drivers, vehicle-types, custom-events, commands/templates). **Contraseña** salió del modal → item "Cambiar contraseña" del menú de usuario (modal dedicado). Reutiliza validadores/servicios legacy | ✅ (23-jul; opciones avanzadas de bloques del Tablero y Membresía/Planes fuera de alcance) |
-| `VehicleTypes/` (tipos/estados p/ límites por geocerca) | matriz VSL + CRUD de tipos/estados (tab del modal de cuenta) + label/color/badge/cambiador (29-jul) | ⚠️ auditoría 6-ago: `VehicleTypesController` v2 **sin ningún gate** en data/store/update/destroy (S3) |
-| `CustomEvents/` (events_custom) | ✅ tab "Eventos" del modal de cuenta (`CustomEventsController` ui/v2 sobre CustomEventModalHelper; protocolo + mensaje + condiciones tag/tipo/valor) | ✅ (23-jul) |
-| notifications.js (popup + sonido + desktop Notification de eventos) | ✅ `tp-notify.js` global (toast+sonido+Notification API, feed `events/live`) + tray con eventos reales | ✅ (22-jul) |
-| `Popups/` (banners/modales condicionales del admin, por reglas) | ❌ no incluido en `layout.blade.php` v2 | ❌ **pendiente** (sistema distinto de `tp-notify`; ver ítem 10 de pendientes) |
-| `ObjectsList/` (listview) | `fleet` | ⚠️ NO equivalente: faltan columnas configurables por usuario + rangos de color por sensor (`listview_fields`/`numeric_sensors`) (F14) |
-| `Import/` (masivo devices) | solo geofences/pois import links | ❌ |
-| `Forwards/` · `SecondaryCredentials/` · `SmsGateway/` · `Beacons/` · `Lookup/` · `Addresses/` · `Docs` · `LoginAs/` · `Schedules/` | `admin` (deeplinks) | ⚠️ Solo enlace |
-| `Login/` · `Registration/` · `PasswordReminder/` · `EmailConfirmation/` · `CustomRegistration/` · `Captcha/` | — | ❌ Solo legacy (fuera del shell) |
-| `CustomFields/` (campos personalizados device/task/user — addon) | — | ❌ panel `CustomFields.panel` embebido en forms; falta en modal device/tareas v2 (gated por addon `custom_fields`/`custom_fields_task`) |
-| `DeviceRoutesType/` (tipo de ruta por device) | — | ❌ CRUD por device (`device/{id}/route_type`) sin migrar |
-| `IconsModal/` (selector de iconos del device) | ⚠️ galería de iconos en el tab **Iconos** del modal device | ⚠️ falta icon-picker por mapping de sensor |
-| `Emails/` (`template.blade`) · `EmailSettings` | `admin` (deeplink) | ⚠️ admin/sistema — no user |
-
----
-
-## 4 · Roadmap por olas (extracto · prioridad)
-
-### Ola 1 — Esenciales (parcialmente en curso)
-
-| # | Pendiente | Notas | Esfuerzo |
-|---|---|---|---|
-| 1.1 | Modal device CRUD | ✅ Hecho (esta rama) | — |
-| 1.2 | Drawer detalle del vehículo (Fleet) + acceso nativo a sensores / config / iconos | Reutilizar `Sensors/`, `DeviceConfig/`, `IconsModal/`; ampliar `api.devices` con `sensors` | L |
-| 1.3 | Send command desde drawer Live | `talentus.api.commands.{list,send}` apoyado en `SendCommand/` + `CallAction/` | S |
-| 1.4 | POIs nativos (CRUD + toggle real en mapa) | `Pois/`, `PoisGroups/` → `talentus.api.pois.*` | M |
-| 1.5 | Routes nativos (subsección de zones o página propia) | `Routes`, `RoutesGroups/` → `talentus.api.routes.*` | M |
-
-### Ola 2 — Operación diaria
-
-| # | Pendiente | Esfuerzo |
-|---|---|---|
-| 2.1 | `DevicesGroups` filtrable desde Fleet | S |
-| 2.2 | Drivers (`UserDrivers`) y asignación a vehículos | S |
-| 2.3 | `DeviceAlerts` por vehículo (drawer en fleet/live) | S |
-| 2.4 | `CustomEvents` dentro de Alerts | S |
-| 2.5 | `Schedules` dentro de Reports (programar envío) | M |
-| 2.6 | `Sharing` (links públicos por vehículo) | M |
-
-### Ola 3 — Mantenimiento y operaciones
-
-| # | Pendiente | Esfuerzo |
-|---|---|---|
-| 3.1 | `/talentus/maintenance` con tabs (Servicios · Gastos · Mantenimientos · Tareas · Checklists) | L |
-| 3.2 | `/talentus/media` (galería de fotos/videos por vehículo) | M |
-| 3.3 | `/talentus/chat` (mensajería interna) | M |
-
-### Ola 4 — Cuenta + integraciones
-
-| # | Pendiente | Esfuerzo |
-|---|---|---|
-| 4.1 | `/talentus/account` (perfil, idioma, zona horaria, plantillas SMS/GPRS personales) | M |
-| 4.2 | `/talentus/admin/forwards` nativo | S |
-| 4.3 | `/talentus/admin/sms-gateways` nativo | S |
-| 4.4 | `/talentus/admin/secondary-credentials` nativo | S |
-| 4.5 | Importar/Exportar masivo (vehículos, POIs, geocercas, drivers) | M |
-
-### Ola 5 — Suscripciones, billing y onboarding
-
-| # | Pendiente | Esfuerzo |
-|---|---|---|
-| 5.1 | `/talentus/billing` (planes, suscripción, facturación) | L |
-| 5.2 | `/talentus/objects` (catálogo de objetos rastreables / beacons) | M |
-
-### Ola 6 — Públicas (fuera del shell)
-
-| # | Pendiente | Esfuerzo |
-|---|---|---|
-| 6.1 | Login moderno | S |
-| 6.2 | Registro + custom registration multitenant | M |
-| 6.3 | Recuperar contraseña + confirmación de email | S |
-| 6.4 | Página pública de tracking compartido | M |
-
-### Ola 7 — Páginas residuales / utilidades
-
-| # | Pendiente | Esfuerzo |
-|---|---|---|
-| 7.1 | Selector de iconos nativo (drawer) | S |
-| 7.2 | Lookup global de direcciones | S |
-| 7.3 | Documentación API en `/talentus/docs` | S |
-| 7.4 | LoginAs (suplantación de usuario) | S |
-| 7.5 | Centro de widgets embebibles | M |
-| 7.6 | Bandeja de popups del operador | S |
-
----
-
-## 5 · Próximas tareas concretas para la siguiente sesión
-
-Prioridad sugerida — todas son trabajo "feature" pequeño/mediano:
-
-1. **Drawer de Fleet** → reusar el endpoint `devices/{id}/form` con flag de "read-only" o `details=1` que renderice un Blade resumen (no formulario). Permite ver datos sin el costo de cargar el modal.
-2. **POIs nativos** (`talentus.api.pois.*`) reutilizando `Pois/` repos + activar el toggle del mapa que hoy es informativo.
-3. **Pestaña Sensores del modal device** — convertir la fila dinámica de `Tobuli/Views/Frontend/Devices/partials/sensors.blade.php` en un partial nuevo `resources/views/talentus/modals/devices/partials/sensores.blade.php` con add/remove rows. Reutilizar `SensorModalHelper`.
-4. **Pestaña Servicios Web** — el legacy tiene un partial por proveedor (`consatel`, `mininter`, `sutran`, `osinergmin`, `wisetrack`, `sidersales`, `epscenter`). Cada uno con sus campos. Migrarlos 1 a 1 a partials Blade, gateados por `perm('webservice.<x>','view')`.
-5. **Schedules** (envío programado de reports) — completar el dominio de reportes.
-6. **DevicesGroups CRUD** — paso previo para filtrar Fleet por grupo.
-7. **Send command desde drawer Live** — endpoint corto, valor alto.
-
----
-
-## 6 · Cómo seguir
-
-```powershell
-git checkout nuevo-tema
-git log --oneline -5
-```
-
-- Los partials Blade comparten variables con `DeviceModalHelper::createData()/editData()` → si se necesita un dato nuevo en el form, primero **expónlo en el ModalHelper** y luego úsalo en Blade.
-- El JS del modal **no debe crecer** salvo para nuevos comportamientos (no para templating). Si necesitas más HTML, agrega un partial Blade.
-- Cuando agregues una nueva pestaña, basta crear `resources/views/talentus/modals/devices/partials/<key>.blade.php` y registrarla en el array `$tabs` de [form.blade.php](resources/views/talentus/modals/devices/form.blade.php) (con su `caps` condicional si aplica).
-
----
-
-**Última actualización:** 6 agosto 2026 (auditoría exhaustiva legacy↔v2) · rama `nuevo-tema`
