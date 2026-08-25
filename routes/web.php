@@ -1111,8 +1111,7 @@ Route::get('/icons', ['as' => 'icons', 'uses' => function () {
 # Isolated under /ui/v2/* prefix. Does not affect legacy UI.
 # ============================================================
 Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], function () {
-    // Cross-cutting shell endpoints (preview + legacy redirect)
-    Route::get('preview',   ['as' => 'preview',   'uses' => 'Ui\V2\ShellController@preview']);
+    // Cross-cutting shell endpoints
     Route::get('legacy',    ['as' => 'legacy',    'uses' => 'Ui\V2\ShellController@legacy']);
 
     // Per-domain controllers under App\Http\Controllers\Ui\V2\*

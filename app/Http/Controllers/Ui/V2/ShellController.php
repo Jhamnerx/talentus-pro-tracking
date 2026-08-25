@@ -17,7 +17,6 @@ use Illuminate\Support\Facades\View;
  *
  * This shell only keeps cross-cutting endpoints that don't belong
  * to a single domain:
- *   - preview()      → /ui/v2/preview
  *   - search()       → /ui/v2/api/search          (command palette)
  *   - notifications()→ /ui/v2/api/notifications   (tray feed)
  *   - preferences()  → /ui/v2/api/preferences     (theme/density/map)
@@ -29,13 +28,6 @@ use Illuminate\Support\Facades\View;
  */
 class ShellController extends BaseController
 {
-    public function preview(Request $request)
-    {
-        return View::make('ui.v2.pages.preview', [
-            'pageTitle' => trans('front.map'),
-        ]);
-    }
-
     public function legacy()
     {
         // Preferencia explícita del usuario: volver a la UI anterior. Sin esto,
