@@ -268,6 +268,9 @@ class ReportsController extends BaseController
                 'title'              => (string) $report->title,
                 'type'               => (int) $report->type,
                 'format'             => (string) $report->format,
+                // Periodo rapido guardado (Hoy/Ayer/Esta semana...). Sin esto
+                // el modal reabria siempre en "Personalizado".
+                'period'             => (string) ($report->period ?? ''),
                 'date_from'          => substr($fromF, 0, 10),
                 'from_time'          => substr($fromF, 11, 5) ?: '00:00',
                 'date_to'            => substr($toF, 0, 10),

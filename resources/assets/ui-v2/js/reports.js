@@ -80,6 +80,12 @@
       byId[d.id] = d.name;
     });
 
+    // Paginado, como el selector del legacy: con 1.400 vehiculos volcar la
+    // lista entera en el panel lo vuelve inmanejable.
+    var POR_PAGINA = 100;
+    var pagina = 1;
+    var deshabilitado = false;
+
     var box = document.createElement("div");
     box.className = "tp-input";
     box.tabIndex = 0;
@@ -121,14 +127,35 @@
       });
     }
 
-    function renderPanel(q) {
+    /** Los que pasan la busqueda: sobre ellos actuan paginado y los botones. */
+    function filtrados(q) {
       q = (q || "").toLowerCase();
+
+      return items.filter(function (d) {
+        return !q || d.name.toLowerCase().indexOf(q) >= 0;
+      });
+    }
+
+    function renderPanel(q, mantenerPagina) {
+      q = (q || "").toLowerCase();
+      if (!mantenerPagina) pagina = 1;
+
+      var coincidencias = filtrados(q);
+      var paginas = Math.max(1, Math.ceil(coincidencias.length / POR_PAGINA));
+      if (pagina > paginas) pagina = paginas;
+
+      // Sin agrupar se pagina; agrupado se respetan los grupos enteros, que
+      // partir un grupo por la mitad no ayuda a nadie.
+      var visibles = groups ? coincidencias : coincidencias.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA);
+      var enPagina = {};
+      visibles.forEach(function (d) { enPagina[d.id] = true; });
+
       var body = "";
 
       function rows(list) {
         return list
           .filter(function (d) {
-            return !q || d.name.toLowerCase().indexOf(q) >= 0;
+            return enPagina[d.id];
           })
           .map(function (d) {
             return (
@@ -143,7 +170,7 @@
 
       if (groups) {
         var byGroup = {};
-        items.forEach(function (d) {
+        coincidencias.forEach(function (d) {
           var gid = d.group_id || 0;
           (byGroup[gid] = byGroup[gid] || []).push(d);
         });
@@ -157,28 +184,57 @@
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:4px 6px;">' + r + "</div></div>";
         });
       } else {
-        body = rows(items);
+        body = rows(coincidencias);
       }
+
+      var BTN =
+        "appearance:none;cursor:pointer;flex:1;border:1px solid var(--border-default,#cbd5e1);" +
+        "background:var(--surface-raised,#fff);border-radius:8px;padding:5px 10px;font-size:12.5px;" +
+        "font-weight:600;color:var(--fg-secondary,#475569);";
 
       panel.innerHTML =
         '<div style="position:sticky;top:0;background:inherit;padding:2px 4px 6px;z-index:1;">' +
         '<input type="search" data-cs-search placeholder="Búsqueda" autocomplete="off" ' +
-        'style="width:100%;height:30px;padding:0 10px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;font-size:13px;background:var(--surface-sunken,#f8fafc);" value="' + esc(q) + '">' +
-        "</div>" +
+        'style="width:100%;height:30px;padding:0 10px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;font-size:13px;background:var(--surface-sunken,#f8fafc);">' +
+        // Accesos del legacy: marcar y desmarcar de golpe. Actuan sobre lo
+        // que la busqueda deja a la vista, no sobre toda la flota, que es lo
+        // que se espera al haber filtrado antes.
+        '<div style="display:flex;gap:6px;margin-top:6px;">' +
+        '<button type="button" data-cs-all style="' + BTN + '">Seleccionar todo</button>' +
+        '<button type="button" data-cs-none style="' + BTN + '">Deseleccionar todo</button>' +
+        "</div></div>" +
         (body || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>') +
         '<div style="position:sticky;bottom:0;background:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 4px;border-top:1px solid var(--border-default,#eef2f7);z-index:1;">' +
-        '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">' +
-        '<input type="checkbox" class="tp-choice-input" data-cs-all> Seleccionar todo</label>' +
+        '<span style="display:flex;gap:4px;align-items:center;">' + paginacionHtml(paginas) + "</span>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cs-close>Cerrar</button></div>';
-      syncAll();
+
+      var buscador = panel.querySelector("[data-cs-search]");
+      if (buscador) buscador.value = q;
     }
 
-    function syncAll() {
-      var all = panel.querySelector("[data-cs-all]");
-      if (!all) return;
-      var on = Object.keys(selected).length;
-      all.checked = items.length > 0 && on === items.length;
-      all.indeterminate = on > 0 && on < items.length;
+    /** Primera, alrededor de la actual y ultima: con 15 paginas no caben todas. */
+    function paginacionHtml(paginas) {
+      if (paginas < 2) return "";
+
+      var nums = [];
+      [1, pagina - 1, pagina, pagina + 1, paginas].forEach(function (n) {
+        if (n >= 1 && n <= paginas && nums.indexOf(n) < 0) nums.push(n);
+      });
+      nums.sort(function (a, b) { return a - b; });
+
+      return nums
+        .map(function (n) {
+          var activa = n === pagina;
+          return (
+            '<button type="button" data-cs-page="' + n + '" style="appearance:none;cursor:pointer;' +
+            "min-width:26px;height:26px;border-radius:7px;font-size:12px;font-weight:600;padding:0 6px;" +
+            (activa
+              ? "border:1px solid var(--brand-500,#2e63d9);background:var(--brand-500,#2e63d9);color:#fff;"
+              : "border:1px solid var(--border-default,#cbd5e1);background:var(--surface-raised,#fff);color:var(--fg-secondary,#475569);") +
+            '">' + n + "</button>"
+          );
+        })
+        .join("");
     }
 
     function position() {
@@ -214,36 +270,55 @@
 
     panel.addEventListener("change", function (e) {
       var opt = e.target.closest("[data-cs-opt]");
-      if (opt) {
-        var did = opt.getAttribute("data-cs-opt");
-        if (opt.checked) selected[did] = true;
-        else delete selected[did];
-        renderChips();
-        syncAll();
-        return;
-      }
-      if (e.target.closest("[data-cs-all]")) {
-        var on = e.target.checked;
-        items.forEach(function (d) {
-          if (on) selected[d.id] = true;
-          else delete selected[d.id];
-        });
-        Array.prototype.forEach.call(panel.querySelectorAll("[data-cs-opt]"), function (c) {
-          c.checked = on;
-        });
-        renderChips();
-        syncAll();
-      }
+      if (!opt) return;
+
+      var did = opt.getAttribute("data-cs-opt");
+      if (opt.checked) selected[did] = true;
+      else delete selected[did];
+      renderChips();
     });
 
     panel.addEventListener("click", function (e) {
-      if (e.target.closest("[data-cs-close]")) panel.hidden = true;
+      if (e.target.closest("[data-cs-close]")) {
+        panel.hidden = true;
+        return;
+      }
+
+      var pg = e.target.closest("[data-cs-page]");
+      if (pg) {
+        pagina = parseInt(pg.getAttribute("data-cs-page"), 10) || 1;
+        renderPanel(consulta(), true);
+        position();
+        return;
+      }
+
+      // Marcar / desmarcar de golpe lo que la busqueda deja a la vista.
+      var todos = e.target.closest("[data-cs-all]");
+      var ninguno = e.target.closest("[data-cs-none]");
+      if (!todos && !ninguno) return;
+
+      filtrados(consulta()).forEach(function (d) {
+        if (todos) selected[d.id] = true;
+        else delete selected[d.id];
+      });
+
+      Array.prototype.forEach.call(panel.querySelectorAll("[data-cs-opt]"), function (c) {
+        c.checked = !!todos;
+      });
+      renderChips();
     });
+
+    /** Lo que hay escrito ahora mismo en el buscador del panel. */
+    function consulta() {
+      var s = panel.querySelector("[data-cs-search]");
+      return s ? s.value : "";
+    }
 
     panel.addEventListener("input", function (e) {
       if (e.target.matches("[data-cs-search]")) {
         var q = e.target.value;
         renderPanel(q);
+        position();
         var s = panel.querySelector("[data-cs-search]");
         s.focus();
         s.setSelectionRange(q.length, q.length);
@@ -258,204 +333,91 @@
 
     renderChips();
 
+    /**
+     * Deshabilitar, no ocultar: es lo que hace el legacy con los campos que
+     * no aplican al tipo de reporte elegido. Ocultarlos movia el formulario
+     * entero al cambiar de tipo y escondia opciones que el usuario esperaba
+     * encontrar siempre en el mismo sitio.
+     */
+    function setDisabled(v) {
+      deshabilitado = !!v;
+      box.style.opacity = deshabilitado ? "0.55" : "";
+      box.style.pointerEvents = deshabilitado ? "none" : "";
+      box.tabIndex = deshabilitado ? -1 : 0;
+      if (deshabilitado) panel.hidden = true;
+    }
+
     return {
       getIds: function () {
-        return Object.keys(selected);
+        return deshabilitado ? [] : Object.keys(selected);
+      },
+      setDisabled: setDisabled,
+      isDisabled: function () {
+        return deshabilitado;
       },
       root: box,
     };
   }
 
-  /* ================= Picker de rango (2 meses + rangos rápidos) ====== */
-  var LOCALE = document.documentElement.lang || "es";
-  var MONTHS = (function () {
+  /* ================= Periodos rápidos (paridad legacy) ============== */
+  // Mismos valores que el select `period` del legacy (ReportModalHelper), y
+  // el mismo calculo de fechas que momentCalendar() de helper.js.
+  var PERIODOS = [
+    ["", "Personalizado"],
+    ["1", "Hoy"],
+    ["2", "Ayer"],
+    ["3", "Antes de 2 días"],
+    ["4", "Antes de 3 días"],
+    ["5", "Esta semana"],
+    ["6", "La semana pasada"],
+    ["7", "Este mes"],
+    ["8", "El mes pasado"],
+  ];
+
+  /**
+   * Fechas de un periodo rápido. Port de momentCalendar(): el fin es
+   * EXCLUSIVO (hoy = de hoy a mañana), que es como lo entiende el backend.
+   * Devuelve null para "Personalizado".
+   */
+  function rangoDePeriodo(valor) {
+    var inicioSemana = 1;
     try {
-      var f = new Intl.DateTimeFormat(LOCALE, { month: "short" });
-      var a = [];
-      for (var i = 0; i < 12; i++) {
-        var n = f.format(new Date(2000, i, 1));
-        a.push(n.charAt(0).toUpperCase() + n.slice(1).replace(".", ""));
+      if (window.app && app.settings && app.settings.weekStart != null) {
+        inicioSemana = parseInt(app.settings.weekStart, 10);
       }
-      return a;
-    } catch (e) {
-      return ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-    }
-  })();
-  var DOWS = (function () {
-    try {
-      var f = new Intl.DateTimeFormat(LOCALE, { weekday: "short" });
-      var a = [];
-      for (var d = 0; d < 7; d++) a.push(f.format(new Date(2024, 0, 1 + d)).slice(0, 2).toUpperCase());
-      return a;
-    } catch (e) {
-      return ["LU", "MA", "MI", "JU", "VI", "SA", "DO"];
-    }
-  })();
+    } catch (e) {}
 
-  // range = {from:'YYYY-MM-DD', fromTime:'HH:MM', to:'YYYY-MM-DD', toTime:'HH:MM'}
-  function openRangePicker(range, onSet) {
-    var dr = {
-      from: range.from ? new Date(range.from + "T00:00") : new Date(),
-      to: range.to ? new Date(range.to + "T00:00") : new Date(),
-      // fin por defecto 23:59 = día completo (00:00 confundía: excluía el último día)
-      ft: range.fromTime || "00:00",
-      tt: range.toTime || "23:59",
-    };
-    var base = new Date(dr.from.getFullYear(), dr.from.getMonth(), 1);
+    function dia(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+    function suma(d, n) { var x = dia(d); x.setDate(x.getDate() + n); return x; }
+    function inicioMes(d, m) { return new Date(d.getFullYear(), d.getMonth() + (m || 0), 1); }
 
-    var QUICK = [
-      ["today", "Hoy"],
-      ["yesterday", "Ayer"],
-      ["2days", "Hace 2 días"],
-      ["3days", "Hace 3 días"],
-      ["week", "Esta semana"],
-      ["lastweek", "Semana pasada"],
-      ["month", "Este mes"],
-      ["lastmonth", "Mes pasado"],
-    ];
-
-    var dlg = tpModal.open({
-      title: "Seleccionar fecha",
-      size: "lg",
-      static: true,
-      body: '<div data-dr-body></div>',
-      buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
-        {
-          label: "Establecer",
-          variant: "primary",
-          close: true,
-          onClick: function (dialog) {
-            var ft = dialog.querySelector("[data-dr-fromtime]").value || dr.ft || "00:00";
-            var tt = dialog.querySelector("[data-dr-totime]").value || dr.tt || "23:59";
-            onSet({ from: ymd(dr.from), fromTime: ft, to: ymd(dr.to), toTime: tt });
-          },
-        },
-      ],
-    });
-
-    var body = dlg.querySelector("[data-dr-body]");
-
-    function calHtml(y, m) {
-      var first = new Date(y, m, 1);
-      var startDow = (first.getDay() + 6) % 7;
-      var days = new Date(y, m + 1, 0).getDate();
-      var html =
-        '<div style="display:flex;justify-content:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:6px;">' +
-        MONTHS[m] + " " + y + "</div>" +
-        '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;">' +
-        DOWS.map(function (d) {
-          return '<span style="height:26px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--fg-muted,#94a3b8);">' + d + "</span>";
-        }).join("");
-      for (var i = 0; i < startDow; i++) html += "<span></span>";
-      for (var d = 1; d <= days; d++) {
-        var cur = new Date(y, m, d);
-        var t = cur.getTime();
-        var isStart = t === dr.from.getTime();
-        var isEnd = t === dr.to.getTime();
-        var inRange = t > dr.from.getTime() && t < dr.to.getTime();
-        var st = "appearance:none;border:0;cursor:pointer;height:30px;border-radius:8px;font-size:13px;background:transparent;color:var(--fg-primary,#0f172a);";
-        if (inRange) st += "background:var(--brand-bg-subtle,#e5edfb);";
-        if (isStart || isEnd) st += "background:var(--brand-500,#2e63d9);color:#fff;font-weight:600;";
-        html += '<button type="button" data-dr-day="' + ymd(cur) + '" style="' + st + '">' + d + "</button>";
-      }
-      return html + "</div>";
+    // Lunes de la semana de `d`, corregido por el dia de inicio del usuario.
+    function inicioDeSemana(d, semanas) {
+      var x = dia(d);
+      var dow = (x.getDay() + 6) % 7; // 0 = lunes
+      x.setDate(x.getDate() - dow + (inicioSemana > 1 ? inicioSemana - 1 : 0) - 7 * (semanas || 0));
+      return x;
     }
 
-    function render() {
-      var y = base.getFullYear();
-      var m = base.getMonth();
-      var n = new Date(y, m + 1, 1);
-      body.innerHTML =
-        '<div style="display:flex;gap:14px;">' +
-        '<div style="flex:0 0 130px;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--border-default,#eef2f7);padding-right:10px;">' +
-        QUICK.map(function (q) {
-          return '<button type="button" data-dr-quick="' + q[0] + '" style="appearance:none;border:0;background:transparent;cursor:pointer;text-align:left;padding:7px 10px;border-radius:8px;font-size:13px;color:var(--fg-secondary,#475569);">' + q[1] + "</button>";
-        }).join("") +
-        "</div>" +
-        '<div style="flex:1;">' +
-        '<div style="display:flex;gap:16px;align-items:flex-start;">' +
-        '<button type="button" data-dr-prev style="appearance:none;border:0;background:transparent;cursor:pointer;font-size:16px;color:var(--fg-muted,#94a3b8);padding:4px;">‹</button>' +
-        '<div style="flex:1;">' + calHtml(y, m) + "</div>" +
-        '<div style="flex:1;">' + calHtml(n.getFullYear(), n.getMonth()) + "</div>" +
-        '<button type="button" data-dr-next style="appearance:none;border:0;background:transparent;cursor:pointer;font-size:16px;color:var(--fg-muted,#94a3b8);padding:4px;">›</button>' +
-        "</div>" +
-        '<div style="display:flex;gap:10px;align-items:flex-end;margin-top:12px;">' +
-        '<div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">Desde</div>' +
-        '<div style="display:flex;gap:8px;"><input type="text" class="tp-input" value="' + ymd(dr.from) + '" readonly style="flex:1;background:var(--surface-sunken,#f8fafc);">' +
-        '<select class="tp-input" data-dr-fromtime style="width:96px;">' + timeOptionsHtml(dr.ft) + "</select></div></div>" +
-        '<span style="padding-bottom:9px;color:var(--fg-muted,#94a3b8);">—</span>' +
-        '<div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">Hasta</div>' +
-        '<div style="display:flex;gap:8px;"><input type="text" class="tp-input" value="' + ymd(dr.to) + '" readonly style="flex:1;background:var(--surface-sunken,#f8fafc);">' +
-        '<select class="tp-input" data-dr-totime style="width:96px;">' + timeOptionsHtml(dr.tt) + "</select></div></div>" +
-        "</div></div></div>";
+    var hoy = new Date();
+
+    switch (String(valor)) {
+      case "1": return [dia(hoy), suma(hoy, 1)];
+      case "2": return [suma(hoy, -1), dia(hoy)];
+      case "3": return [suma(hoy, -2), suma(hoy, -1)];
+      case "4": return [suma(hoy, -3), suma(hoy, -2)];
+      case "5": return [inicioDeSemana(hoy, 0), suma(inicioDeSemana(hoy, 0), 7)];
+      case "6": return [inicioDeSemana(hoy, 1), inicioDeSemana(hoy, 0)];
+      case "7": return [inicioMes(hoy, 0), inicioMes(hoy, 1)];
+      case "8": return [inicioMes(hoy, -1), inicioMes(hoy, 0)];
+      default: return null;
     }
-
-    // Persistir horas editadas (render() re-crea los inputs al navegar meses)
-    body.addEventListener("change", function (e) {
-      if (e.target.matches("[data-dr-fromtime]")) dr.ft = e.target.value || "00:00";
-      if (e.target.matches("[data-dr-totime]")) dr.tt = e.target.value || "23:59";
-    });
-
-    body.addEventListener("click", function (e) {
-      var prev = e.target.closest("[data-dr-prev]");
-      var next = e.target.closest("[data-dr-next]");
-      var day = e.target.closest("[data-dr-day]");
-      var quick = e.target.closest("[data-dr-quick]");
-      if (prev) {
-        base = new Date(base.getFullYear(), base.getMonth() - 1, 1);
-        render();
-        return;
-      }
-      if (next) {
-        base = new Date(base.getFullYear(), base.getMonth() + 1, 1);
-        render();
-        return;
-      }
-      if (day) {
-        var p = day.getAttribute("data-dr-day").split("-");
-        var picked = new Date(+p[0], +p[1] - 1, +p[2]);
-        if (dr.to.getTime() !== dr.from.getTime() || picked.getTime() < dr.from.getTime()) {
-          dr.from = picked;
-          dr.to = picked;
-        } else {
-          dr.to = picked;
-        }
-        render();
-        return;
-      }
-      if (quick) {
-        var n2 = new Date();
-        var a = new Date(n2.getFullYear(), n2.getMonth(), n2.getDate());
-        var b = new Date(a);
-        var k = quick.getAttribute("data-dr-quick");
-        if (k === "yesterday") {
-          a.setDate(a.getDate() - 1);
-          b.setDate(b.getDate() - 1);
-        } else if (k === "2days") a.setDate(a.getDate() - 2);
-        else if (k === "3days") a.setDate(a.getDate() - 3);
-        else if (k === "week") a.setDate(a.getDate() - ((a.getDay() + 6) % 7));
-        else if (k === "lastweek") {
-          a.setDate(a.getDate() - ((a.getDay() + 6) % 7) - 7);
-          b = new Date(a);
-          b.setDate(b.getDate() + 6);
-        } else if (k === "month") a = new Date(n2.getFullYear(), n2.getMonth(), 1);
-        else if (k === "lastmonth") {
-          a = new Date(n2.getFullYear(), n2.getMonth() - 1, 1);
-          b = new Date(n2.getFullYear(), n2.getMonth(), 0);
-        }
-        dr.from = a;
-        dr.to = b;
-        // Rango rápido = días completos
-        dr.ft = "00:00";
-        dr.tt = "23:59";
-        base = new Date(a.getFullYear(), a.getMonth(), 1);
-        render();
-      }
-    });
-
-    render();
   }
+
+  /* El picker de rango de dos meses se retiro al pasar a Periodo +
+     Fecha desde/hasta (paridad legacy): quedo sin usar y ya no
+     describia la interfaz. Sigue en el historial de git. */
+
 
   /* ================= Modal Generar / Guardar ========================= */
 
@@ -531,6 +493,27 @@
     ];
 
     var HR = '<hr style="border:0;border-top:1px solid var(--border-default,#eef2f7);margin:16px 0;">';
+    // Franjas de 15 minutos, las mismas 96 que getSelectTimeRange() del legacy.
+    function horaOpciones(sel) {
+      var o = "";
+      for (var i = 0; i < 96; i++) {
+        var h = pad2(Math.floor(i / 4)) + ":" + pad2((i % 4) * 15);
+        o += '<option value="' + h + '"' + (h === sel ? " selected" : "") + ">" + h + "</option>";
+      }
+      return o;
+    }
+
+    // Fecha + hora en una fila, como el input-group del legacy.
+    function fechaHora(cual, fecha, hora) {
+      return (
+        '<div style="display:flex;gap:6px;">' +
+        '<input type="date" data-rep-date="' + cual + '" value="' + esc(fecha) + '" style="flex:1;min-width:0;">' +
+        '<select class="tp-input" data-rep-time="' + cual + '" style="width:104px;flex:0 0 auto;">' +
+        horaOpciones(hora) +
+        "</select></div>"
+      );
+    }
+
     var ROW = '<div class="tp-form__grid tp-form__grid--2">';
 
     body.innerHTML =
@@ -538,10 +521,14 @@
       (item.id ? '<input type="hidden" name="id" value="' + item.id + '">' : "") +
       // ── Fila 1 (layout referencia): izquierda Título/Tipo/Formato
       //    apilados; derecha el bloque de Periodo ──
-      ROW +
-      '<div style="display:flex;flex-direction:column;gap:12px;">' +
-      '<label class="tp-form__field"><span class="tp-form__label">Título</span>' +
+      // ── Distribución del modal legacy (Reports/create.blade): Título a lo
+      //    ancho y luego dos columnas — Tipo|Formato, Periodo|Dispositivos,
+      //    Fecha desde|Geocercas, Fecha hasta|control de días. Antes Título,
+      //    Tipo y Formato iban apilados a la izquierda y el periodo ocupaba
+      //    toda la derecha, que no se parecía a lo que el operador conoce.
+      '<label class="tp-form__field" style="margin-bottom:12px;"><span class="tp-form__label">Título</span>' +
       '<input type="text" name="title" maxlength="120" value="' + esc(item.title || "") + '" data-tp-field></label>' +
+      ROW +
       '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
       '<select class="tp-input" style="width:100%" name="type" data-tp-field>' +
       (meta.templates || []).map(function (t) {
@@ -555,10 +542,30 @@
       }).join("") +
       "</select></label>" +
       "</div>" +
-      '<div class="tp-form__field"><span class="tp-form__label">Periodo</span>' +
-      '<input type="text" data-rep-period readonly style="cursor:pointer;background:var(--surface-raised,#fff);" value="">' +
-      '<button type="button" data-rep-days-toggle style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:12px;font-weight:600;text-align:center;padding:4px;">Controlar días y horas ▾</button>' +
-      '<div data-rep-days hidden>' +
+      ROW +
+      // Periodo rápido: los mismos 8 del legacy. Al elegir uno se rellenan
+      // las dos fechas; tocarlas a mano lo deja en "Personalizado".
+      '<label class="tp-form__field"><span class="tp-form__label">Periodo</span>' +
+      '<select class="tp-input" style="width:100%" name="period" data-rep-period>' +
+      PERIODOS.map(function (p) {
+        return '<option value="' + p[0] + '">' + esc(p[1]) + "</option>";
+      }).join("") +
+      "</select></label>" +
+      '<div class="tp-form__field" data-rep-field="devices"><span class="tp-form__label">Dispositivos</span><div data-rep-devices></div></div>' +
+      "</div>" +
+      ROW +
+      '<div class="tp-form__field"><span class="tp-form__label">Fecha desde</span>' +
+      fechaHora("from", range.from, range.fromTime) + "</div>" +
+      '<div class="tp-form__field" data-rep-field="geofences"><span class="tp-form__label">Geocercas</span><div data-rep-geofences></div></div>' +
+      "</div>" +
+      ROW +
+      '<div class="tp-form__field"><span class="tp-form__label">Fecha hasta</span>' +
+      fechaHora("to", range.to, range.toTime) + "</div>" +
+      // Filtro de días y franja horaria: no lo tiene el legacy, pero es lo
+      // que permite "solo lunes a viernes de 08:00 a 18:00". Plegado.
+      '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
+      '<button type="button" data-rep-days-toggle style="appearance:none;border:1px solid var(--border-default,#cbd5e1);background:var(--surface-raised,#fff);border-radius:8px;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:12.5px;font-weight:600;padding:8px;">Controlar días y horas ▾</button>' +
+      '<div data-rep-days hidden style="margin-top:10px;">' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">' +
       DAY_PILLS.map(function (d) {
         return (
@@ -568,7 +575,6 @@
         );
       }).join("") +
       "</div>" +
-      // Slider de franja horaria (dos manijas)
       '<div style="display:flex;gap:12px;align-items:center;margin-top:12px;padding:0 4px;">' +
       '<span data-ts-label style="font-size:12px;font-weight:600;min-width:92px;color:var(--fg-primary,#0f172a);">00:00 - 24:00</span>' +
       '<div data-ts-track style="position:relative;flex:1;height:22px;cursor:pointer;touch-action:none;">' +
@@ -578,13 +584,8 @@
       '<button type="button" data-ts-h="from" style="position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid var(--border-strong,#cbd5e1);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:grab;transform:translateX(-50%);padding:0;appearance:none;"></button>' +
       '<button type="button" data-ts-h="to" style="position:absolute;top:2px;width:18px;height:18px;border-radius:50%;background:#fff;border:1px solid var(--border-strong,#cbd5e1);box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:grab;transform:translateX(-50%);padding:0;appearance:none;"></button>' +
       "</div></div></div></div>" +
-      "</div>" + // /fila1
+      "</div> " +
       HR +
-      // ── Devices | Geocercas (fila fija: ocultar deja hueco, no re-fluye) ──
-      ROW +
-      '<div class="tp-form__field" data-rep-field="devices"><span class="tp-form__label">Dispositivos</span><div data-rep-devices></div></div>' +
-      '<div class="tp-form__field" data-rep-field="geofences"><span class="tp-form__label">Geocercas</span><div data-rep-geofences></div></div>' +
-      "</div>" +
       // Parámetros dinámicos por tipo
       '<div data-rep-extra class="tp-form__grid tp-form__grid--2" style="margin-top:12px;display:none;"></div>' +
       '<div class="tp-form__grid tp-form__grid--2" style="margin-top:12px;">' +
@@ -631,18 +632,48 @@
 
     var form = body.querySelector("form.tp-report-form");
 
-    // ── Periodo ──
+    // ── Periodo y fechas ──
+    // `form._range` sigue siendo la única fuente de la que sale el payload;
+    // los tres campos solo escriben en ella.
     var periodEl = form.querySelector("[data-rep-period]");
+    var dateFrom = form.querySelector('[data-rep-date="from"]');
+    var dateTo = form.querySelector('[data-rep-date="to"]');
+    var timeFrom = form.querySelector('[data-rep-time="from"]');
+    var timeTo = form.querySelector('[data-rep-time="to"]');
+
     form._range = range;
-    function syncPeriod() {
-      periodEl.value = range.from + " " + range.fromTime + "  —  " + range.to + " " + range.toTime;
+
+    if (item.period) periodEl.value = String(item.period);
+
+    function leerFechas() {
+      range = {
+        from: dateFrom.value || range.from,
+        fromTime: timeFrom.value || "00:00",
+        to: dateTo.value || range.to,
+        toTime: timeTo.value || "00:00",
+      };
+      form._range = range;
     }
-    syncPeriod();
-    periodEl.addEventListener("click", function () {
-      openRangePicker(range, function (r) {
-        range = r;
-        form._range = r;
-        syncPeriod();
+
+    periodEl.addEventListener("change", function () {
+      var r = rangoDePeriodo(periodEl.value);
+      if (!r) return; // Personalizado: se respeta lo que haya escrito
+
+      dateFrom.value = ymd(r[0]);
+      dateTo.value = ymd(r[1]);
+      timeFrom.value = "00:00";
+      timeTo.value = "00:00";
+      leerFechas();
+    });
+
+    // Tocar una fecha a mano deja de ser un periodo rápido.
+    [dateFrom, dateTo, timeFrom, timeTo].forEach(function (el) {
+      el.addEventListener("change", function () {
+        periodEl.value = "";
+        if (periodEl._tpdd && window.tpSelect && tpSelect.refresh) {
+          try { tpSelect.refresh(periodEl); } catch (e) {}
+        }
+        leerFechas();
       });
     });
 
@@ -908,6 +939,26 @@
 
   // Muestra/oculta campos según el tipo y renderiza sus parámetros
   // dinámicos (port de buildReportAttributes del create.blade legacy).
+  /**
+   * Habilita o apaga un campo del formulario por su `data-rep-field`. Los
+   * de chips (devices/geocercas/metas) tienen su propio setDisabled, porque
+   * no son inputs nativos.
+   */
+  function setFieldEnabled(form, campo, on) {
+    var bloque = form.querySelector('[data-rep-field="' + campo + '"]');
+    if (!bloque) return;
+
+    var chips = { devices: form._devices, geofences: form._geofences, metas: form._metas }[campo];
+    if (chips && chips.setDisabled) chips.setDisabled(!on);
+
+    Array.prototype.forEach.call(bloque.querySelectorAll("input,select,textarea,button"), function (el) {
+      el.disabled = !on;
+    });
+
+    bloque.style.opacity = on ? "" : "0.55";
+    bloque.title = on ? "" : "No aplica a este tipo de reporte";
+  }
+
   function applyType(form, meta, typeId, item) {
     var url = meta.typeUrl.replace("{type}", typeId);
     tpModal.fetchJSON(url, { method: "GET" }).then(function (res) {
@@ -915,9 +966,13 @@
       var fields = type.fields || [];
       if (!Array.isArray(fields)) fields = Object.values(fields);
 
+      // Paridad legacy (buildReportForm de Reports/create.blade): los campos
+      // que no aplican al tipo se DESHABILITAN, no se ocultan. Ocultarlos
+      // movia el formulario entero al cambiar de tipo y hacia creer que la
+      // v2 habia perdido opciones -Metas y Zonas en lugar de direcciones
+      // desaparecian segun el reporte-. Ahora siempre estan, en gris.
       ["devices", "geofences", "metas", "speed_limit", "stops", "zones_instead", "show_addresses"].forEach(function (f) {
-        var block = form.querySelector('[data-rep-field="' + f + '"]');
-        if (block) block.style.display = fields.indexOf(f) >= 0 ? "" : "none";
+        setFieldEnabled(form, f, fields.indexOf(f) >= 0);
       });
 
       // Formatos permitidos por el tipo
@@ -1008,6 +1063,9 @@
       title: form.querySelector('input[name="title"]').value.trim(),
       type: form.querySelector('select[name="type"]').value,
       format: form.querySelector('select[name="format"]').value,
+      // El periodo elegido viaja junto a las fechas: al reabrir un reporte
+      // guardado se vuelve a ver "Esta semana" y no unas fechas sueltas.
+      period: (form.querySelector('[data-rep-period]') || {}).value || "",
       date_from: range.from,
       from_time: range.fromTime,
       date_to: range.to,
