@@ -19,6 +19,10 @@
   var POIS_URL = root.getAttribute("data-pois-url");
   var ROUTES_URL = root.getAttribute("data-routes-url");
   // "Atender" = registrar acción de llamada sobre el evento (perm call_actions+events).
+  // El tilde del estado "Atendido", que pintan la lista y el popup.
+  var ATENDIDO_ICONO =
+    '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+    'stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   var CA_ON = root.getAttribute("data-ca-on") === "1";
   var CA_STORE_URL = root.getAttribute("data-ca-store-url");
   // Tipos de respuesta REALES (mismas etiquetas que la tabla de call actions).
@@ -254,7 +258,7 @@
       esc(evTitle(ev)) +
       "</span>" +
       (ev.attended
-        ? '<span class="tp-events__attended"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Atendido</span>'
+        ? '<span class="tp-events__attended">' + ATENDIDO_ICONO + 'Atendido</span>'
         : "") +
       '</span><span class="tp-events__row-sub">' +
       esc(ev.device_name || "#" + (ev.device_id || "")) +
@@ -304,10 +308,15 @@
       (ev.device_id
         ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ev-history="' + ev.id + '" style="flex:1;">Historial</button>'
         : "") +
-      // "Atender": solo con permiso y si el evento tiene alerta (el backend
-      // exige alert_id para registrar la acción de llamada).
+      // "Atender": solo con permiso, si el evento tiene alerta (el backend
+      // exige alert_id) y si NO se atendió ya. La lista sí miraba `attended`
+      // y el popup no, así que sobre un evento ya atendido seguía ofreciendo
+      // el botón y se registraban dos acciones de llamada para el mismo
+      // evento. Atendido: se muestra el estado, no un botón.
       (CA_ON && ev.alert_id
-        ? '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-ca-attend="' + ev.id + '" style="flex:1;">Atender</button>'
+        ? (ev.attended
+            ? '<span class="tp-events__attended" style="flex:1;justify-content:center;">' + ATENDIDO_ICONO + 'Atendido</span>'
+            : '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-ca-attend="' + ev.id + '" style="flex:1;">Atender</button>')
         : "") +
       // "Eliminar": paridad legacy events.destroy (perm events.clean → remove).
       (CAN_REMOVE
@@ -315,6 +324,20 @@
         : "") +
       "</div></div>"
     );
+  }
+
+  /**
+   * Repinta el popup abierto si es el de este evento. Se usa tras atender:
+   * el estado vive en `ev`, pero el popup ya está en el DOM con el HTML de
+   * antes, así que seguiría mostrando el botón "Atender".
+   */
+  function repintarPopup(ev) {
+    if (!state.marker || state.selectedId !== ev.id) return;
+
+    var popup = state.marker.getPopup();
+    if (!popup) return;
+
+    popup.setContent(popupHtml(ev));
   }
 
   // Componente fecha+hora: date custom (tp-datepicker) + 2 tp-select (HH:MM).
@@ -398,6 +421,9 @@
         ev.attended = true;
         var rowEl = listEl.querySelector('.tp-events__row[data-id="' + ev.id + '"]');
         if (rowEl) rowEl.outerHTML = rowHtml(ev);
+        // Y el popup del mapa, si es el de este evento: si no, se queda con
+        // el botón "Atender" invitando a registrar la acción otra vez.
+        repintarPopup(ev);
         tpModal.close(d);
         tpModal.toast("Evento atendido.", "success");
       })

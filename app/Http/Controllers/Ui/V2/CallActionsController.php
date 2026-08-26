@@ -227,10 +227,22 @@ class CallActionsController extends BaseController
             return [];
         }
 
-        return $device->events()
-            ->latest()->take(25)->get()
-            ->map(function ($e) {
-                return ['id' => (int) $e->id, 'label' => (string) $e->message, 'alert' => (bool) $e->alert_id];
-            })->all();
+        $eventos = $device->events()->latest()->take(25)->get();
+
+        // Cuáles de esos eventos ya tienen acción de llamada. Sin esto el
+        // selector los ofrece todos por igual y se registra una segunda
+        // acción sobre un evento ya atendido, sin que el operador lo sepa.
+        $atendidos = CallAction::whereIn('event_id', $eventos->pluck('id'))
+            ->pluck('event_id')
+            ->flip();
+
+        return $eventos->map(function ($e) use ($atendidos) {
+            return [
+                'id'       => (int) $e->id,
+                'label'    => (string) $e->message,
+                'alert'    => (bool) $e->alert_id,
+                'attended' => $atendidos->has($e->id),
+            ];
+        })->all();
     }
 }

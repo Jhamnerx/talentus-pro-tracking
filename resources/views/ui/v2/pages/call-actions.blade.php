@@ -72,5 +72,5 @@
 @push('scripts')
     @include('ui.v2.partials.services-config')
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=4" defer></script>
 @endpush

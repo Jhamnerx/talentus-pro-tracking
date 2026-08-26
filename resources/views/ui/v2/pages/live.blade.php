@@ -800,7 +800,7 @@
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
     {{-- Acciones de llamada (modo modal global; se activa solo si existe #tp-ca-config) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=3" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=4" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=4"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
     {{-- Tipos de trayecto por periodo (kebab del vehículo) --}}

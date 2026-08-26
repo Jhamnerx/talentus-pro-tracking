@@ -39,7 +39,11 @@
   function options(list, sel, ph) {
     return (ph ? '<option value="">' + esc(ph) + "</option>" : "") +
       (list || []).map(function (o) {
-        return '<option value="' + esc(o.id) + '"' + (String(sel) === String(o.id) ? " selected" : "") + ">" + esc(o.label || o.name) + "</option>";
+        // Los eventos ya atendidos se marcan: siguen elegibles -a veces se
+        // llama dos veces al mismo evento a proposito- pero el operador ve
+        // que ya tienen accion y deja de duplicarlas sin querer.
+        var etiqueta = esc(o.label || o.name) + (o.attended ? " · ya atendido" : "");
+        return '<option value="' + esc(o.id) + '"' + (String(sel) === String(o.id) ? " selected" : "") + ">" + etiqueta + "</option>";
       }).join("");
   }
   function nowLocalInput() {
