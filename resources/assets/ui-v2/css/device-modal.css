@@ -891,3 +891,28 @@
 .tp-acc-row__actions .tp-btn {
   text-decoration: none;
 }
+
+/* ---------- Modal de reportes ----------
+   Es alto, de dos columnas y con filas encadenadas: con el interlineado
+   base la etiqueta de una fila quedaba pegada al campo de la de arriba
+   ("Periodo" tocando el select de Tipo). Se separa solo aquí, para no
+   mover el resto de formularios de la v2. */
+.tp-form.tp-report-form .tp-form__field {
+  gap: 7px;
+}
+.tp-form.tp-report-form .tp-form__grid {
+  gap: 18px 18px;
+}
+/* Aire entre filas consecutivas, que iban pegadas una debajo de otra. */
+.tp-form.tp-report-form .tp-form__grid + .tp-form__grid {
+  margin-top: 18px;
+}
+.tp-form.tp-report-form .tp-form__label {
+  margin-bottom: 1px;
+}
+/* La caja de chips y los selects, a la misma altura que los inputs de
+   fecha: si no, cada columna termina a una altura distinta. */
+.tp-form.tp-report-form .tp-form__field > .tp-input,
+.tp-form.tp-report-form .tp-form__field > div > .tp-input {
+  min-height: 38px;
+}
