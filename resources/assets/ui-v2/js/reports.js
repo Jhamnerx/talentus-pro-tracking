@@ -429,26 +429,43 @@
       size: "xl",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      // Mismo orden y jerarquia que el legacy: Generar es la accion
+      // principal -es la que descarga el reporte, lo que se viene a hacer-
+      // y Guardar solo deja la definicion para mas tarde. Estaban al reves.
       buttons: [
         {
           label: "Generar",
-          variant: "outline",
+          variant: "primary",
           close: false,
           onClick: function (dialog) {
             doGenerate(dialog);
             return false;
           },
         },
-        { label: "Cancelar", variant: "ghost", close: true },
         {
           label: "Guardar",
-          variant: "primary",
+          variant: "outline",
           close: false,
           onClick: function (dialog) {
             doSave(dialog, id);
             return false;
           },
         },
+        {
+          // "Nuevo" del legacy: limpia para volver a generar o guardar sin
+          // arrastrar lo anterior. Se reabre el modal en vez de resetear
+          // campo por campo: asi no se queda ninguno a medias -ni el id, que
+          // es lo que convertia un alta en una edicion silenciosa-.
+          label: "Nuevo",
+          variant: "ghost",
+          close: false,
+          onClick: function (dialog) {
+            tpModal.close(dialog);
+            openReportModal();
+            return false;
+          },
+        },
+        { label: "Cancelar", variant: "ghost", close: true },
       ],
     });
 
