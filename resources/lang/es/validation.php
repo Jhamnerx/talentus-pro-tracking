@@ -622,6 +622,7 @@ return [
         'show_addresses' => 'Mostrar direcciones',
         'zones_instead' => 'Zonas en lugar de direcciones',
         'noreply_email' => 'Dirección de correo electrónico de respuesta',
+        'reply_to_email' => 'Correo de respuesta (Reply-To)',
         'company_id' => 'Compañia',
         'address' => 'Dirección',
         'pickup_address' => 'Dirección de recogida',

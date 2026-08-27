@@ -179,6 +179,7 @@ return array(
         'frequency' => 'Frequentie',
         'unit' => 'Eenheid',
         'noreply_email' => 'Geen antwoord e-mail adres',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Handtekening',
         'use_smtp_server' => 'Gebruik SMTP-server',
         'smtp_server_host' => 'SMTP- server host',

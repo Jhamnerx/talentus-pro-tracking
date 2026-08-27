@@ -65,6 +65,7 @@ class EmailSettingsController extends BaseController {
                     $update = [
                         'from_name' => $input['from_name'],
                         'noreply_email' => $input['noreply_email'],
+                        'reply_to_email' => $input['reply_to_email'] ?? null,
                         'use_smtp_server' => $input['use_smtp_server'],
                         'smtp_server_host' => $input['smtp_server_host'],
                         'smtp_server_port' => $input['smtp_server_port'],
@@ -78,6 +79,7 @@ class EmailSettingsController extends BaseController {
                     $update = [
                         'from_name' => $input['from_name'],
                         'noreply_email' => $input['noreply_email'],
+                        'reply_to_email' => $input['reply_to_email'] ?? null,
                     ];
                 }
             }
@@ -86,6 +88,7 @@ class EmailSettingsController extends BaseController {
                 $update = [
                     'from_name' => $input['from_name'],
                     'noreply_email' => $input['noreply_email'],
+                    'reply_to_email' => $input['reply_to_email'] ?? null,
                     'api_key' => $input['api_key'],
                     'domain' => $input['domain'],
                     'region' => $input['region'],
@@ -96,6 +99,7 @@ class EmailSettingsController extends BaseController {
                 $update = [
                     'from_name' => $input['from_name'],
                     'noreply_email' => $input['noreply_email'],
+                    'reply_to_email' => $input['reply_to_email'] ?? null,
                     'api_key' => $input['api_key'],
                 ];
             }

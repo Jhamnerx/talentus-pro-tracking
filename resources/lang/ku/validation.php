@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Pircarînî',
         'unit' => 'Yekbûn',
         'noreply_email' => 'Navnîşana emailê tune',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Destnîşan',
         'use_smtp_server' => 'Serverê SMTP bikar bînin',
         'smtp_server_host' => 'Servera SMTP',

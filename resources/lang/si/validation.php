@@ -183,6 +183,7 @@ return array(
         'frequency' => 'සංඛ්‍යාතය',
         'unit' => 'ඒකකය',
         'noreply_email' => 'පිළිතුරු ඊමේල් ලිපිනයක් නොමැත',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'අත්සන',
         'use_smtp_server' => 'SMTP සේවාදායකය භාවිතා කරන්න',
         'smtp_server_host' => 'SMTP සේවාදායක සත්කාරක',

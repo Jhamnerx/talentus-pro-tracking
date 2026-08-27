@@ -35,6 +35,12 @@ class EventServiceProvider extends ServiceProvider
         'Illuminate\Auth\Events\Logout' => [
             'App\Handlers\Events\AuthLogoutEventHandler',
         ],
+        // Todo el correo sale por Mail::send(), asi que un solo listener
+        // sobre MessageSending cubre los cinco proveedores sin tocar ni
+        // un Mailable.
+        'Illuminate\Mail\Events\MessageSending' => [
+            'App\Listeners\SetMailReplyTo',
+        ],
         'App\Events\NewMessage' => [
             'App\Listeners\NewMessageListener'
         ],

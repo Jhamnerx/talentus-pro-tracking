@@ -33,6 +33,16 @@
                         {!! Form::text('noreply_email', isset($settings['noreply_email']) ? $settings['noreply_email'] : null, ['class' => 'form-control']) !!}
                         </div>
                     </div>
+                    {{-- Reply-To: fuera de cualquier div provider-*, porque se
+                         aplica igual con smtp, sendgrid, postmark, mailgun y
+                         gpswoxmailer (lo pone un listener sobre el mensaje, no
+                         el transporte). Vacio = no se toca la cabecera. --}}
+                    <div class="form-group">
+                        {!! Form::label('reply_to_email', trans('validation.attributes.reply_to_email'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
+                        <div class="col-xs-12 col-sm-8">
+                        {!! Form::text('reply_to_email', isset($settings['reply_to_email']) ? $settings['reply_to_email'] : null, ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
                     <div class="form-group">
                         {!! Form::label('signature', trans('validation.attributes.signature'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
                         <div class="col-xs-12 col-sm-8">

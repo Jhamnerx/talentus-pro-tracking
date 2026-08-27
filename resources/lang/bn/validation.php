@@ -183,6 +183,7 @@ return array(
         'frequency' => 'ফ্রিকোয়েন্সি',
         'unit' => 'ইউনিট',
         'noreply_email' => 'কোন উত্তর ইমেল ঠিকানা',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'স্বাক্ষর',
         'use_smtp_server' => 'এসএমটিপি সার্ভার ব্যবহার করুন',
         'smtp_server_host' => 'এসএমটিপি সার্ভার হোস্ট',

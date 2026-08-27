@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Frekuencë',
         'unit' => 'Njësi',
         'noreply_email' => 'Asnjë adresë emaili përgjigje',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Nënshkrim',
         'use_smtp_server' => 'Përdorni serverin SMTP',
         'smtp_server_host' => 'Pritësi i serverit SMTP',
