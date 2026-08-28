@@ -27,6 +27,7 @@ var app = {
   deviceMedia: new DeviceMedia(),
   chat: new Chat(),
   dashboard: new Dashboard(),
+  silentDevices: new SilentDevices(),
 
   rulerDraw: null,
   drawnItems: null,
@@ -376,6 +377,7 @@ var app = {
     this.events.init();
     this.chat.init();
     this.deviceMedia.init();
+    this.silentDevices.events();
 
     app.widgets = $("#widgets");
     app.ajaxItems = $("#ajax-items");

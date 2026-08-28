@@ -1,11 +1,5 @@
 const gulp = require("gulp"),
   es = require("event-stream"),
-  // node-sass (libsass): el tema legacy usa @extend sobre selectores
-  // compuestos (13 casos en layout/_icons.scss, tipo
-  // `@extend .ico-gsm-0:before`), que dart-sass rechaza desde la 1.x y
-  // dejaba `gulp sass-all` y `gulp templates` sin poder compilar.
-  // Requiere Node 16 para las binarias nativas de node-sass 7.
-  sass = require("gulp-sass")(require("node-sass")),
   sourcemaps = require("gulp-sourcemaps"),
   cleanCSS = require("gulp-clean-css"),
   browserSync = require("browser-sync").create(),
@@ -17,6 +11,21 @@ const gulp = require("gulp"),
   tailwindcss = require("tailwindcss"),
   autoprefixer = require("autoprefixer"),
   terser = require("gulp-terser");
+
+// Por que node-sass (libsass) y no dart-sass: el tema legacy usa @extend
+// sobre selectores compuestos (13 casos en layout/_icons.scss, del tipo
+// `@extend .ico-gsm-0:before`), que dart-sass rechaza desde la 1.x y dejaba
+// `gulp sass-all` y `gulp templates` sin poder compilar. node-sass 7 exige
+// Node 16 para sus binarias nativas.
+//
+// Y por que en carga perezosa: al ser un binario compilado contra una
+// version concreta de Node, requerirlo arriba hacia fallar la CARGA del
+// gulpfile en cualquier otro Node, y con ella TODAS las tareas, incluidas
+// las de JS que no tocan sass. Cargandolo solo cuando una tarea de sass lo
+// pide, `gulp scripts` corre en cualquier Node y solo los temas exigen el 16.
+function sass() {
+  return require("gulp-sass")(require("node-sass"))();
+}
 
 var scripts = {
   report: [
@@ -108,6 +117,7 @@ var scripts = {
     "resources/assets/js/controller/routes.js",
     "resources/assets/js/controller/alerts.js",
     "resources/assets/js/controller/events.js",
+    "resources/assets/js/controller/silentDevices.js",
     "resources/assets/js/controller/app.js",
     "resources/assets/js/controller/notifications.js",
     "resources/assets/js/controller/commands.js",

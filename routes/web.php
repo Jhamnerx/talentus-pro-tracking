@@ -185,6 +185,11 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('devices/{device_id}/alerts/{alert_id}/time_period', ['as' => 'device.alerts.time_period.edit', 'uses' => 'DeviceAlertsController@editTimePeriod']);
     Route::post('devices/{device_id}/alerts/{alert_id}/time_period', ['as' => 'device.alerts.time_period.update', 'uses' => 'DeviceAlertsController@updateTimePeriod']);
 
+    # Herramienta de mapa: unidades sin transmitir dentro de una zona
+    Route::post('devices/silent_in_zone', ['as' => 'devices.silent_in_zone', 'uses' => 'SilentDevicesController@search']);
+    Route::post('devices/silent_in_zone/export', ['as' => 'devices.silent_in_zone.export', 'uses' => 'SilentDevicesController@export']);
+    Route::post('devices/silent_in_zone/export_xlsx', ['as' => 'devices.silent_in_zone.export_xlsx', 'uses' => 'SilentDevicesController@exportXlsx']);
+
     # Devices
     Route::get('devices/edit/{id?}/{admin?}', ['as' => 'devices.edit', 'uses' => 'DevicesController@edit']);
     Route::post('devices/change_active', ['as' => 'devices.change_active', 'uses' => 'DevicesController@changeActive']);

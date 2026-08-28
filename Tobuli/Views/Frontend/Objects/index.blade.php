@@ -28,6 +28,7 @@
     @include('Frontend.Objects.partials.deletePoi')
     @include('Frontend.Objects.tools.showPoint')
     @include('Frontend.Objects.tools.showAddress')
+    @include('Frontend.Objects.tools.silentDevices')
 
 @stop
 

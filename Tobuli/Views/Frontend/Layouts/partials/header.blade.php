@@ -118,6 +118,14 @@
                                     <span class="text">{!! trans('front.show_address') !!}</span>
                                 </a>
                             </li>
+                            @if (Auth::User()->perm('devices', 'view'))
+                                <li>
+                                    <a href="javascript:" data-toggle="modal" data-target="#silentDevices">
+                                        <span class="icon device"></span>
+                                        <span class="text">{!! trans('front.silent_devices') !!}</span>
+                                    </a>
+                                </li>
+                            @endif
                             @if (Auth::User()->perm('send_command', 'view'))
                                 <li>
                                     <a href="javascript:" data-url="{{ route('send_command.create') }}"

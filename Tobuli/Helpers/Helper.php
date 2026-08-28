@@ -1681,6 +1681,11 @@ function getJsConfig()
             'streetViewEnable' => route('streetViewEnable'),
             'streetViewFrame' => route('streetViewFrame'),
 
+            // Herramienta de mapa: unidades sin transmitir en una zona
+            'silentDevicesInZone' => route('devices.silent_in_zone'),
+            'silentDevicesInZoneExport' => route('devices.silent_in_zone.export'),
+            'silentDevicesInZoneExportXlsx' => route('devices.silent_in_zone.export_xlsx'),
+
             'events' => route('events.index'),
             'eventDoDelete' => route('events.do_destroy'),
 
