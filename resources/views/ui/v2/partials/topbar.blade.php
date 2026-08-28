@@ -60,6 +60,16 @@
                         stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     Buscar dirección
                 </button>
+                {{-- Unidades sin transmitir: mismo gate que ver los vehiculos
+                     en el mapa, porque no enseña nada que el usuario no
+                     pudiera mirar uno a uno. --}}
+                @if (auth()->user()->perm('devices', 'view'))
+                    <button class="tp-menu__item" role="menuitem" data-tp-tool="silent-devices">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 13a10 10 0 0 1 3-2"/><path d="M2 8.8A15 15 0 0 1 6 6.3"/><path d="M22 8.8a15 15 0 0 0-9.7-2.7"/><circle cx="12" cy="20" r="1"/></svg>
+                        Unidades sin transmitir
+                    </button>
+                @endif
                 @if (config('addon.forwards') && auth()->user()->perm('forwards', 'view'))
                     <hr class="tp-divider" style="margin:4px 0;">
                     <button class="tp-menu__item" role="menuitem" data-tp-tool="forwards"

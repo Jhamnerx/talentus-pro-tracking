@@ -2653,6 +2653,9 @@
         if (tool === "ruler") rulerToggle();
         else if (tool === "point") toolShowPoint();
         else if (tool === "address") toolSearchAddress(toolsMenu.getAttribute("data-address-search-url"));
+        else if (tool === "silent-devices") {
+          if (window.tpSilentDevices) window.tpSilentDevices.open();
+        }
         else if (tool === "forwards") {
           if (window.tpForwards) window.tpForwards.open(it.getAttribute("data-forwards-url"));
         }
