@@ -229,7 +229,7 @@ class PositionsWriter
         $parameters[Position::VIRTUAL_ENGINE_HOURS_KEY] = 0;
 
         if ($this->apply_network_data && $networkData = Arr::get($data, 'network.cellTowers.0')) {
-            $parameters = array_merge($parameters, $networkData);
+            $parameters = array_merge($parameters, $this->networkParameters($networkData));
         }
 
         $gsmSignal = Arr::get($data, 'network.cellTowers.0.signalStrength');
@@ -291,6 +291,42 @@ class PositionsWriter
         $data['longitude'] = $response['lng'];
         $data['accuracy'] = $response['accuracy'];
         $data['valid'] = 1;
+    }
+
+    /**
+     * Normaliza la celda GSM de `network.cellTowers.0` a parametros en
+     * minusculas, siguiendo la misma convencion que el resto de atributos.
+     *
+     * Protocolos como gt06 mandan mcc y mnc por separado y nunca el numero de
+     * operador plano; Teltonika (I/O 241) manda el concatenado. Aqui se rearma
+     * para que ambos casos alimenten el mismo parametro `operator`.
+     */
+    protected function networkParameters(array $cellTower): array
+    {
+        $map = [
+            'mobileCountryCode' => 'mcc',
+            'mobileNetworkCode' => 'mnc',
+            'locationAreaCode'  => 'lac',
+            'cellId'            => 'cellid',
+            'radioType'         => 'radiotype',
+        ];
+
+        $parameters = [];
+
+        foreach ($map as $from => $to) {
+            $value = Arr::get($cellTower, $from);
+
+            if (is_null($value) || $value === '')
+                continue;
+
+            $parameters[$to] = $value;
+        }
+
+        // mcc * 100 + mnc solo es reversible con mnc de 2 digitos.
+        if (isset($parameters['mcc'], $parameters['mnc']) && $parameters['mnc'] < 100)
+            $parameters['operator'] = $parameters['mcc'] * 100 + $parameters['mnc'];
+
+        return $parameters;
     }
 
     protected function isHistory($time = null)

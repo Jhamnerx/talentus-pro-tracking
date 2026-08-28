@@ -153,7 +153,7 @@ return [
     'max_speed' => env('MAX_SPEED_LIMIT', 300),
     'min_time_gap' => env('MIN_TIME_GAP', 600),
     'prev_position_device_object' => env('PREV_POSITION_DEVICE_OBJECT', false),
-    'apply_network_data' => env('APPLY_NETWORK_DATA', false),
+    'apply_network_data' => env('APPLY_NETWORK_DATA', true),
     'overwrite_invalid'  => env('OVERWRITE_INVALID', true),
     'device_sidebar_query' => env('DEVICE_SIDEBAR_QUERY', true),
     'entityloader_store_query' => env('ENTITYLOADER_STORE_QUERY', false),
