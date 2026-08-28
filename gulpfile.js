@@ -1,6 +1,5 @@
 const gulp = require("gulp"),
   es = require("event-stream"),
-  sass = require("gulp-sass")(require("node-sass")),
   sourcemaps = require("gulp-sourcemaps"),
   cleanCSS = require("gulp-clean-css"),
   browserSync = require("browser-sync").create(),
@@ -8,6 +7,15 @@ const gulp = require("gulp"),
   group = require("gulp-group-files"),
   minify = require("gulp-minify"),
   purify = require("gulp-purifycss");
+
+// node-sass es un binario compilado contra una version concreta de Node. Si
+// se requiere aqui arriba, en otro Node falla la CARGA del gulpfile y con
+// ella todas las tareas, incluidas las de JS que no tienen nada que ver.
+// Cargandolo solo cuando una tarea de sass lo pide, `gulp scripts` funciona
+// en cualquier Node y solo los temas exigen el correcto.
+function sass() {
+  return require("gulp-sass")(require("node-sass"))();
+}
 
 var scripts = {
   report: [
@@ -99,6 +107,7 @@ var scripts = {
     "resources/assets/js/controller/routes.js",
     "resources/assets/js/controller/alerts.js",
     "resources/assets/js/controller/events.js",
+    "resources/assets/js/controller/silentDevices.js",
     "resources/assets/js/controller/app.js",
     "resources/assets/js/controller/notifications.js",
     "resources/assets/js/controller/commands.js",
