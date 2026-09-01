@@ -13,7 +13,9 @@ class DeviceFormValidator extends Validator
      */
     public $rules = [
         'create' => [
-            'imei'                => 'required|unique:devices,imei,%s',
+            'imei'                => 'required|imei|unique:devices,imei,%s',
+            'fuel_type'           => 'in:petrol,diesel,biodiesel,biogas,hydrogen,electric,ethanol,petrol_electric,diesel_electric,propane,methanol',
+            'fuel_emissions'      => 'numeric|min:0',
             'name'                => 'required|string|between:1,255',
             'icon_id'             => 'exists:device_icons,id',
             'model_id'            => 'exists:device_models,id',
@@ -47,7 +49,9 @@ class DeviceFormValidator extends Validator
             'object_owner' => 'required_if:wisetrack,1',
         ],
         'update' => [
-            'imei'                => 'sometimes|required|unique:devices,imei,%s',
+            'imei'                => 'sometimes|required|imei|unique:devices,imei,%s',
+            'fuel_type'           => 'in:petrol,diesel,biodiesel,biogas,hydrogen,electric,ethanol,petrol_electric,diesel_electric,propane,methanol',
+            'fuel_emissions'      => 'numeric|min:0',
             'name'                => 'sometimes|required|string|between:1,255',
             'icon_id'             => 'exists:device_icons,id',
             'model_id'            => 'exists:device_models,id',

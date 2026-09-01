@@ -101,8 +101,21 @@ class UserService
         $data = array_merge($this->getDefaults(), $data);
         $data = $this->normalize($data);
 
-        $user = User::create($data);
+        $user = User::make($data);
+
+        if (empty($data['email_verification'])) {
+            $user->email_verified_at = date('Y-m-d H:i:s');
+        }
+
+        if (empty($data['phone_verification'])) {
+            $user->phone_verified_at = date('Y-m-d H:i:s');
+        }
+
+        $user->save();
+
         $this->setDefaultTimezone($user);
+
+        $user->setSettings('widgets', $data['widgets'] ?? settings('widgets'), false);
 
         if ($user->isMonitoring() && $user->manager_id) {
             (new MonitoringDeviceSyncService())->syncFromManager($user);
@@ -248,6 +261,9 @@ class UserService
             if (!empty($user) && ($user->isReseller() || $user->isOperator()))
                 $data['manager_id'] = $user->id;
         }
+
+        $data['email_verification'] = settings('main_settings.email_verification');
+        $data['phone_verification'] = settings('main_settings.phone_verification');
 
         $user = $this->create($data + ['group_id' => 2]);
 

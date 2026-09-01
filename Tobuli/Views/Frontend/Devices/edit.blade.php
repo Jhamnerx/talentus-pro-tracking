@@ -36,6 +36,9 @@
             <li><a href="#device-custom-fields" role="tab" data-toggle="tab">{!! trans('admin.custom_fields') !!}</a></li>
         @endif
         <li><a href="#device-form-maintenances" role="tab" data-toggle="tab">Historial</a></li>
+        @if (Auth::user()->can('edit', $item, 'tags'))
+            <li><a href="#device-form-tags" role="tab" data-toggle="tab">{!!trans('front.tags')!!}</a></li>
+        @endif
     </ul>
 
     {!! Form::open(['route' => 'devices.update', 'method' => 'PUT']) !!}
@@ -92,6 +95,12 @@
         @if (Auth::user()->can('view', $item, 'custom_fields') && $item->hasCustomFields())
             <div id="device-custom-fields" class="tab-pane">
                 @include('Frontend.CustomFields.panel')
+            </div>
+        @endif
+
+        @if (Auth::user()->can('edit', $item, 'tags'))
+            <div id="device-form-tags" class="tab-pane">
+                @include('Frontend.Devices.partials.tags')
             </div>
         @endif
 

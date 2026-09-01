@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Events\DeviceCreated;
 use App\Events\DeviceDeleted;
+use App\Events\DeviceImeiChanged;
+use App\Listeners\ClearDeviceOauthTokens;
 use App\Events\DeviceSensorDeleted;
 use App\Events\SensorIconsDeleted;
 use App\Events\UserPasswordChanged;
@@ -94,6 +96,15 @@ class EventServiceProvider extends ServiceProvider
         ],
         DeviceDeleted::class => [
             BackupRemoveDevice::class
+        ],
+        'Illuminate\Auth\Events\PasswordReset' => [
+            'App\Listeners\ClearUserOauthTokens',
+        ],
+        'App\Events\TaskCreate' => [
+            'App\Listeners\TaskCreateListener',
+        ],
+        DeviceImeiChanged::class => [
+            ClearDeviceOauthTokens::class
         ],
     ];
 }

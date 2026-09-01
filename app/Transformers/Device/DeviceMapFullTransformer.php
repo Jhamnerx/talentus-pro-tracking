@@ -136,7 +136,7 @@ class DeviceMapFullTransformer extends DeviceTransformer
         $result = [];
 
         foreach ($entity->services as $service) {
-            $service->setSensors($entity->sensors);
+            $service->setDevice($entity)->setSensors($entity->sensors);
 
             $result[] = [
                 'id'       => $service->id,
