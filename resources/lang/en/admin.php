@@ -162,4 +162,5 @@ return [
     'user' => 'User',
     'tools' => 'Tools',
     'setup' => 'Setup',
+    'automatic_backup_disabled' => 'Automatic backups are disabled, purchase the service',
 ];

@@ -428,6 +428,11 @@
             $format.selectpicker('refresh');
 
             var fields = [
+                'period',
+                'date_from',
+                'from_time',
+                'date_to',
+                'to_time',
                 'devices',
                 'geofences',
                 'speed_limit',
@@ -511,11 +516,15 @@
                     case 'select':
                     case 'multiselect':
                     case 'multiselect-group':
+                    case 'select-loader':
+                    case 'multiselect-loader':
                         var attr = 'class="form-control"';
 
-                        if ('multiselect' === parameter.type || 'multiselect-group' === parameter.type)
+                        if (parameter.type.startsWith('multi'))
                             attr = attr + ' name="' + parameter.html_name +
                             '" multiple="multiple" data-live-search="true" data-actions-box="true"';
+                        else if (parameter.type === 'select-loader')
+                            attr = attr + ' name="' + parameter.html_name + '" data-live-search="true"';
                         else
                             attr = attr + ' name="' + parameter.html_name + '"';
 
@@ -535,6 +544,12 @@
                                 });
                                 $select.append($group);
                             });
+                        } else if (parameter.type.endsWith('loader')) {
+                            $select.attr('data-ajax', parameter.url);
+
+                            if (value) {
+                                $select.attr('data-selected', value)
+                            }
                         } else {
                             $.each(parameter.options, function(index, option) {
                                 $select.append('<option value="' + option.id + '">' + option.title +

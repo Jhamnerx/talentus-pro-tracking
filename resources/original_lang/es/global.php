@@ -109,4 +109,6 @@ return [
     'weekend' => 'Fin de semana',
     'workdays' => 'Días laborables',
     'yes' => 'Si',
+    'verified_email' => 'Correo verificado',
+    'verified_phone' => 'Telefono verificado',
 ];

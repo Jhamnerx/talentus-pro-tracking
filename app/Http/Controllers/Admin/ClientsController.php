@@ -30,6 +30,7 @@ use Tobuli\Reports\ReportTypesUserConfig;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Importers\POI\POIImportManager;
 use Tobuli\Validation\ClientFormValidator;
+use Illuminate\Auth\Events\PasswordReset;
 use Tobuli\Services\EntityLoader\UsersLoader;
 use App\Transformers\User\UserFullTransformer;
 use Tobuli\Importers\Route\RouteImportManager;
@@ -594,8 +595,12 @@ class ClientsController extends BaseController
             throw $e;
         }
 
-        if (!empty($input['password']) && !empty($input['send_account_password_changed_email'])) {
-            $this->notifyUser($input, 'account_password_changed');
+        if (!empty($input['password'])) {
+            event(new PasswordReset($item));
+
+            if (!empty($input['send_account_password_changed_email'])) {
+                $this->notifyUser($input, 'account_password_changed');
+            }
         }
 
         if ($item->alerts()->get()->count() <= 0) {
@@ -669,11 +674,9 @@ class ClientsController extends BaseController
 
     public function importPoi()
     {
-        $users = User::userAccessible($this->user)->orderby('email')->get();
-
         $icons = MapIcon::all();
 
-        return View::make('admin::' . ucfirst($this->section) . '.import_poi')->with(compact('users', 'icons'));
+        return View::make('admin::' . ucfirst($this->section) . '.import_poi')->with(compact('icons'));
     }
 
     public function importPoiSet(POIImportManager $importManager)
@@ -714,9 +717,7 @@ class ClientsController extends BaseController
 
     public function importGeofences()
     {
-        $users = User::userAccessible($this->user)->orderby('email')->get();
-
-        return View::make('admin::' . ucfirst($this->section) . '.import_geofences')->with(compact('users'));
+        return View::make('admin::' . ucfirst($this->section) . '.import_geofences');
     }
 
     public function importGeofencesSet(GeofenceImportManager $importManager)
@@ -755,9 +756,7 @@ class ClientsController extends BaseController
 
     public function importRoutes()
     {
-        $users = User::userAccessible($this->user)->orderby('email')->get();
-
-        return View::make('admin::' . ucfirst($this->section) . '.import_routes')->with(compact('users'));
+        return View::make('admin::' . ucfirst($this->section) . '.import_routes');
     }
 
     public function importRoutesSet(RouteImportManager $importManager)
@@ -1053,6 +1052,14 @@ class ClientsController extends BaseController
         }
 
         (new MonitoringDeviceSyncService())->syncManagerMonitoringUsers($user);
+    }
+
+    public function users()
+    {
+        $usersLoader = new UsersLoader($this->user);
+        $usersLoader->setRequestKey('user_id');
+
+        return response()->json($usersLoader->get());
     }
 
     public function managers()

@@ -641,6 +641,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
 
     Route::group(['as' => 'admin.'], function () {
         # Clients
+        Route::any('users/users', ['as' => 'clients.users', 'uses' => 'ClientsController@users']);
         Route::any('users/managers', ['as' => 'clients.managers', 'uses' => 'ClientsController@managers']);
         Route::get('users/clients/import_geofences', ['as' => 'clients.import_geofences', 'uses' => 'ClientsController@importGeofences']);
         Route::post('users/clients/import_geofences', ['as' => 'clients.import_geofences_set', 'uses' => 'ClientsController@importGeofencesSet']);

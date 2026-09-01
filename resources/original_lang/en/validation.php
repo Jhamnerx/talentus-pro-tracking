@@ -606,4 +606,5 @@ return array(
     'select_placeholder' => 'Select',
     'address_placeholder' => 'Select address',
     'invalid_export_type' => 'Selected export type is not valid.',
+    'imei' => 'Invalid IMEI, possible characters: A-Z a-z 0-9 _ # -',
 );

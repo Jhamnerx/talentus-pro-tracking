@@ -162,4 +162,5 @@ return [
     'all_webservices' => 'Todos los Webservices',
     'with_webservices' => 'Con Webservices',
     'webservices' => 'Webservices',
+    'automatic_backup_disabled' => 'Copia de seguridad automatica deshabilitada',
 ];
