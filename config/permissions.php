@@ -233,6 +233,21 @@ return [
             'edit' => 1,
             'remove' => 0,
         ],
+        'device.tags' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'flights_info' => [
+            'view'  => 1,
+            'edit'  => 0,
+            'remove'  => 0,
+        ],
+        'tags' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
         'sharing' => [
             'view'  => 1,
             'edit'  => 1,

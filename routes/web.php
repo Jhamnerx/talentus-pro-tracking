@@ -63,8 +63,10 @@ Route::group([], function () {
         Route::post('register/step/{step}', ['as' => 'register.step.store', 'uses' => 'CustomRegistrationController@stepStore']);
         Route::resource('register', 'CustomRegistrationController', ['except' => ['create', 'store']]);
     });
-    Route::get('verification', ['as' => 'verification', 'uses' => 'Frontend\EmailVerificationController@notice']);
-    Route::get('verification/{token}', ['as' => 'verification.verify', 'uses' => 'Frontend\EmailVerificationController@verify']);
+    Route::get('verification/email', ['as' => 'verification.email', 'uses' => 'Frontend\EmailVerificationController@notice']);
+    Route::get('verification/email/{token}', ['as' => 'verification.email.verify', 'uses' => 'Frontend\EmailVerificationController@verify']);
+    Route::get('verification/phone', ['as' => 'verification.phone', 'uses' => 'Frontend\SmsVerificationController@notice']);
+    Route::get('verification/phone/{token}', ['as' => 'verification.phone.verify', 'uses' => 'Frontend\SmsVerificationController@verify']);
 
     # Exceptions to CSRF verification - \App\Http\Middleware\VerifyCsrfToken
     Route::any('payments/{gateway}/webhook', ['as' => 'payments.webhook', 'uses' => 'Frontend\PaymentsController@webhook']);
@@ -247,6 +249,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('alerts/list', ['as' => 'alerts.index_modal', 'uses' => 'AlertsController@index_modal']);
     Route::get('alerts/list/table', ['as' => 'alerts.table', 'uses' => 'AlertsController@table']);
     Route::get('alerts/users/{id?}', ['as' => 'alerts.users', 'uses' => 'AlertsController@users']);
+    Route::get('alerts/zones/{id?}', ['as' => 'alerts.zones', 'uses' => 'AlertsController@zones']);
     Route::resource('alerts', 'AlertsController', ['except' => ['edit', 'update', 'destroy']]);
 
     # History
@@ -745,6 +748,15 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         # FCM Test
         Route::get('fcm_test', ['as' => 'fcm_test.create', 'uses' => 'FcmTestController@create']);
         Route::post('fcm_test', ['as' => 'fcm_test.store', 'uses' => 'FcmTestController@store']);
+
+        # Tags
+        Route::get('tags', ['as' => 'tags.index', 'uses' => 'TagsController@index']);
+        Route::get('tags/table', ['as' => 'tags.table', 'uses' => 'TagsController@table']);
+        Route::get('tags/create', ['as' => 'tags.create', 'uses' => 'TagsController@create']);
+        Route::post('tags', ['as' => 'tags.store', 'uses' => 'TagsController@store']);
+        Route::get('tags/{id?}/edit', ['as' => 'tags.edit', 'uses' => 'TagsController@edit']);
+        Route::put('tags/{id?}', ['as' => 'tags.update', 'uses' => 'TagsController@update']);
+        Route::delete('tags/{id?}', ['as' => 'tags.destroy', 'uses' => 'TagsController@destroy']);
     });
 });
 
@@ -965,6 +977,9 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     # Device types
     Route::delete('device_type/{device_type?}', ['as' => 'device_type.destroy', 'uses' => 'DeviceTypeController@destroy']);
     Route::resource('device_type', 'DeviceTypeController', ['only' => ['index', 'create', 'store', 'edit', 'update']]);
+
+    # Widgets
+    Route::resource('widgets', 'WidgetsController', ['only' => ['index', 'store']]);
 
     # Media category
     Route::delete('media_category/{category?}', ['as' => 'media_category.destroy', 'uses' => 'MediaCategoryController@destroy']);

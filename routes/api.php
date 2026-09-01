@@ -293,6 +293,11 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::delete('task_sets/{id}', ['uses' => 'TaskSetsController@destroy']);
 
             Route::apiResource('user_client', 'UserClientController', ['only' => ['index', 'store']]);
+
+            Route::post('device/{id}/tags', 'DeviceTagsController@store');
+            Route::delete('device/{id}/tags', 'DeviceTagsController@destroy');
+
+            Route::apiResource('tags', 'TagsController', ['only' => ['index']]);
         });
     });
 
@@ -337,6 +342,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth.api', 'active_subscrip
     Route::delete('companies/{id}', ['uses' => 'Admin\CompaniesController@destroy']);
 
     Route::apiResource('users/{user_id}/client', 'Api\Admin\UserClientsController', ['only' => ['index', 'store']]);
+
+    Route::get('tags/form_data', 'Api\Admin\TagsController@formData');
+    Route::apiResource('tags', 'Api\Admin\TagsController');
 
     Route::get('devices', ['as' => 'api.admin.devices', 'uses' => 'Api\Admin\DevicesController@index']);
     Route::get('device/{device}', ['as' => 'api.admin.device.get', 'uses' => 'Api\Admin\DevicesController@get']);

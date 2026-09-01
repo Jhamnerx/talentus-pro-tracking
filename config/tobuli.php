@@ -1,6 +1,6 @@
 <?php
 return [
-    'version' => '3.7.11',
+    'version' => '3.7.13',
     'key'  => env('key', ''),
     'type' => env('APP_TYPE', 'ss3'),
 
@@ -13,6 +13,7 @@ return [
     'geocoder_cache_driver' => env('GEOCODER_CACHE_DRIVER', 'sqlite'),
 
     'payments_error_log' => env('PAYMENTS_ERROR_LOG', false),
+    'check_service_expire_log' => env('CHECK_SERVICE_EXPIRE_LOG', false),
 
     'fuel_check_lock_log' => env('FUEL_CHECK_LOCK_LOG', false),
 
@@ -52,6 +53,7 @@ return [
         'showHistoryArrow' => true,
         'showHistoryStop' => true,
         'showHistoryEvent' => true,
+        'showAircraft' => false,
     ],
 
     'main_settings' => [
@@ -134,6 +136,7 @@ return [
         'google_play_link' => null,
         'enable_device_plans' => 0,
         'email_verification' => 0,
+        'phone_verification' => 0,
         'custom_registration_fields' => [
             'enabled' => 0,
             'fields' => [
@@ -245,9 +248,7 @@ return [
     ],
     'duration_formats' => [
         'standart' => 'h min s',
-        'standart2' => 'd h min s',
         'hh:mm:ss' => 'hh:mm:ss',
-        'dd:hh:mm:ss' => 'dd:hh:mm:ss',
     ],
     'object_online_timeouts' => [],
 
@@ -383,6 +384,10 @@ return [
         ],
         'expiration_date' => [
             'field' => 'expiration_date',
+            'class' => 'device'
+        ],
+        'distance' => [
+            'field' => 'distance',
             'class' => 'device'
         ],
     ],
@@ -596,6 +601,7 @@ return [
         'light-purple'      => 'Light Purple',
         'light-win10-blue'  => 'Light Win10 Blue',
         'light-ocean-blue'  => 'Light Ocean Blue',
+        'light-tropical-blue'=> 'Light Tropical Blue',
         'light-indigo'      => 'Light Indigo',
         'light-black'       => 'Light Black',
         'light-gray'        => 'Light Gray',
@@ -609,6 +615,7 @@ return [
         'dark-purple'       => 'Dark Purple',
         'dark-win10-blue'   => 'Dark Win10 Blue',
         'dark-ocean-blue'   => 'Dark Ocean Blue',
+        'dark-tropical-blue'=> 'Dark Tropical Blue',
         'dark-indigo'       => 'Dark Indigo',
         'dark-gray'         => 'Dark Gray',
         'dark-golden'       => 'Dark Golden',
@@ -1430,10 +1437,17 @@ return [
         ],
         \Tobuli\Entities\User::class => [
             'attributes' => ['*'],
-            'attributes_to_ignore' => ['created_at', 'updated_at', 'loged_at'],
+            'attributes_to_ignore' => [
+                'map_id',
+                'map_controls',
+                'created_at',
+                'updated_at',
+                'loged_at',
+            ],
         ],
         \Tobuli\Entities\Alert::class => [
             'attributes' => ['*'],
+            'include_hidden' => true,
         ],
         \Tobuli\Entities\Report::class => [
             'attributes' => ['*'],
@@ -1465,8 +1479,14 @@ return [
         \Tobuli\Entities\DeviceSensor::class => [
             'attributes' => ['*'],
             // calibrations y mappings son bloques enteros; el registro guarda
-            // que cambiaron, no su contenido completo.
-            'attributes_to_ignore' => ['created_at', 'updated_at'],
+            // que cambiaron, no su contenido completo. value_set_at y
+            // value_changed_at cambian con cada posicion: sin ignorarlos el
+            // changelog se llenaria de ruido.
+            'attributes_to_ignore' => ['created_at', 'updated_at', 'value_set_at', 'value_changed_at'],
+        ],
+        \Tobuli\Entities\SensorGroupSensor::class => [
+            'attributes' => ['*'],
+            'attributes_to_ignore' => ['created_at', 'updated_at', 'value_set_at', 'value_changed_at'],
         ],
         \Tobuli\Entities\DeviceMaintenance::class => [
             'attributes' => ['*'],
@@ -1568,5 +1588,6 @@ return [
         \Tobuli\Reports\Reports\SpeedReport::TYPE_ID => ['status' => false],
         \Tobuli\Reports\Reports\RoutesReport::TYPE_ID => ['status' => true],
         \Tobuli\Reports\Reports\RoutesSummarizedReport::TYPE_ID => ['status' => true],
+        \Tobuli\Reports\Reports\UsersDevicesReport::TYPE_ID => ['status' => false],
     ],
 ];
