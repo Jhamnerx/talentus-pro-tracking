@@ -1,131 +1,126 @@
 function DeviceEvents() {
-  var _this = this,
-    items = [],
-    loadFails = 0,
-    loading = false;
+    var
+        _this = this,
+        items = [],
+        loadFails = 0,
+        loading = false;
 
-  _this.events = function () {
-    $(document)
-      .on(
-        "keyup",
-        "#events_search_field",
-        $.debounce(500, function () {
-          _this.list();
-        }),
-      )
-      .on(
-        "shown.bs.tab",
-        '[data-toggle="tab"][href="#events_tab"]',
-        function (e) {
-          _this.list();
-        },
-      );
-  };
+    _this.events = function() {
+        $(document)
+            .on('keyup', '#events_search_field', $.debounce(500, function () {
+                _this.list();
+            }))
+            .on('shown.bs.tab', '[data-toggle="tab"][href="#events_tab"]', function (e) {
+                _this.list();
+            });
+    };
 
-  _this.init = function () {
-    _this.events();
-  };
+    _this.init = function() {
+        _this.events();
+    };
 
-  _this.list = function () {
-    var dataType = "html";
+    _this.list = function() {
+        var dataType = 'html';
 
-    dd("events.list");
+        dd('events.list');
 
-    var $container = $("#ajax-events");
+        var $container = $('#ajax-events');
 
-    $.ajax({
-      type: "GET",
-      dataType: dataType,
-      url: app.urls.events,
-      data: {
-        search: $("#events_search_field").val(),
-      },
-      beforeSend: function () {
-        loader.add($container);
-      },
-      success: function (response) {
-        dd("events.list.success");
+        $.ajax({
+            type: 'GET',
+            dataType: dataType,
+            url: app.urls.events,
+            data: {
+                search: $('#events_search_field').val()
+            },
+            beforeSend: function() {
+                loader.add( $container );
+            },
+            success: function(response) {
+                dd('events.list.success');
 
-        $container.html(response);
+                $container.html(response);
 
-        initComponents($container);
+                initComponents( $container );
 
-        loadFails = 0;
-      },
-      complete: function () {
-        loader.remove($container);
-      },
-      error: function (jqXHR, textStatus, errorThrown) {
-        handlerFail(jqXHR, textStatus, errorThrown);
+                loadFails = 0;
+            },
+            complete: function() {
+                loader.remove( $container );
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                handlerFail(jqXHR, textStatus, errorThrown);
 
-        loadFails++;
+                loadFails++;
 
-        if (loadFails >= 5) {
-          app.notice.error("Failed to recover events.");
-        } else {
-          _this.list();
+                if ( loadFails >= 5 ) {
+                    app.notice.error('Failed to recover events.');
+                }
+                else {
+                    _this.list();
+                }
+            }
+        });
+    };
+
+    _this.get = function( id ) {
+        var _item = items[ id ];
+
+        if ( typeof _item === "EventSys" )
+            return null;
+
+        return _item;
+    };
+
+    _this.parse = function(all) {
+        $.each(all , function( index, data ) {
+            _this.add(data, true);
+        });
+    };
+
+    _this.addMulti = function(all) {
+        $.each(all , function( index, data ) {
+            _this.add(data);
+        });
+    };
+
+    _this.add = function(data, fresh) {
+        data = data || {};
+
+        if ( typeof data === 'string' ) {
+            data = JSON.parse(data);
         }
-      },
-    });
-  };
 
-  _this.get = function (id) {
-    var _item = items[id];
+        if ( ! data ) {
+            return;
+        }
 
-    if (typeof _item === "EventSys") return null;
+        if (typeof items[ data.id ] === 'undefined' ) {
+            items[ data.id ] = new EventSys(data);
+        } else {
+            items[ data.id ].update(data);
+        }
 
-    return _item;
-  };
+        if ( fresh ) {
+            items[ data.id ].notice();
 
-  _this.parse = function (all) {
-    $.each(all, function (index, data) {
-      _this.add(data, true);
-    });
-  };
+            items[ data.id ].sound();
 
-  _this.addMulti = function (all) {
-    $.each(all, function (index, data) {
-      _this.add(data);
-    });
-  };
+            $( items[ data.id ].html() ).prependTo( $("#ajax-events") );
 
-  _this.add = function (data, fresh) {
-    data = data || {};
+            initComponents( $("#ajax-events") );
+        }
+    };
 
-    if (typeof data === "string") {
-      data = JSON.parse(data);
-    }
+    _this.select = function(event_id) {
+        dd('events.select');
 
-    if (!data) {
-      return;
-    }
+        if ( ! items[event_id] )
+            return;
 
-    if (typeof items[data.id] === "undefined") {
-      items[data.id] = new EventSys(data);
-    } else {
-      items[data.id].update(data);
-      return;
-    }
+        $('#ajax-events [data-event-id]').removeClass('active');
+        $('#ajax-events [data-event-id="'+event_id+'"]').addClass('active');
 
-    if (fresh) {
-      items[data.id].notice();
-
-      items[data.id].sound();
-
-      $(items[data.id].html()).prependTo($("#ajax-events"));
-
-      initComponents($("#ajax-events"));
-    }
-  };
-
-  _this.select = function (event_id) {
-    dd("events.select");
-
-    if (!items[event_id]) return;
-
-    $("#ajax-events [data-event-id]").removeClass("active");
-    $('#ajax-events [data-event-id="' + event_id + '"]').addClass("active");
-
-    items[event_id].popup();
-  };
+        items[event_id].popup();
+    };
 }

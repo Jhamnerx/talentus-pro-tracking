@@ -2980,7 +2980,42 @@ class DevicesController extends BaseController
             'filters' => $request->get('filters'),
         ]);
 
-        return response()->json($helper->itemsJson());
+        $payload = $helper->itemsJson();
+
+        // Desde 3.7.13 itemsJson() pagina por cursor (1000 por pagina) para
+        // aliviar la carga del mapa legacy. La v2 espera la lista plana, asi
+        // que aqui se recorren todas las paginas en el servidor y se conserva
+        // el contrato {items: [...], events, time, version} que consume live.js.
+        if (isset($payload['items']['data'])) {
+            $result = $payload;
+            $items = $payload['items']['data'];
+
+            $guard = 0;
+            while (($next = $payload['items']['pagination']['next_page_url'] ?? null) && $guard < 50) {
+                parse_str(parse_url($next, PHP_URL_QUERY) ?: '', $params);
+
+                if (empty($params['cursor'])) {
+                    break;
+                }
+
+                request()->merge(['cursor' => $params['cursor']]);
+                $helper->setData([
+                    'time'    => $request->get('time'),
+                    'filters' => $request->get('filters'),
+                    'cursor'  => $params['cursor'],
+                ]);
+
+                $payload = $helper->itemsJson();
+                $items = array_merge($items, $payload['items']['data'] ?? []);
+                $guard++;
+            }
+
+            $result['items'] = $items;
+
+            return response()->json($result);
+        }
+
+        return response()->json($payload);
     }
 
     /**

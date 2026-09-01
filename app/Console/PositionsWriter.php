@@ -10,6 +10,7 @@ use App\Events\PositionResultRetrieved;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceSensor;
 use Tobuli\Entities\EpsCenter;
@@ -168,6 +169,7 @@ class PositionsWriter
         ], $data);
 
         $data['speed'] = floatval($data['speed']) * 1.852;
+        $data['altitude'] = floatval($data['altitude']);
 
         if ($data['ack']) {
             if (! empty($data['deviceTime'])) {
@@ -181,6 +183,14 @@ class PositionsWriter
 
         if (is_null($data['device_time'])) {
             $data['device_time'] = $this->device->getDeviceTime() ?? date('Y-m-d H:i:s');
+        }
+
+        if (in_array($data['protocol'], ['gt06', 'gt062', 'h02'])) {
+            $current = strtotime($data['device_time']);
+
+            //2007-01-01
+            if ($current < 1167609600)
+                $data['device_time'] = date('Y-m-d H:i:s', $current + 619315200);
         }
 
         $data['time'] = $data['device_time'];
@@ -1247,11 +1257,15 @@ class PositionsWriter
                         ];
                     }
 
+                    $engineHoursValue = $this->position->getParameter(Position::VIRTUAL_ENGINE_HOURS_KEY, 0) / 3600;
+
+                    $sensor->setValue(round($engineHoursValue, 2), $this->position);
+
                     continue;
                 }
 
-                if ($sensor->isUpdatable() && ! $this->isHistory()) {
-                    $sensorValue = $sensor->getValue($this->position->other);
+                if ($sensor->isUpdatable()) {
+                    $sensorValue = $sensor->getValue($this->position->other, false);
                     $sensor->setValue($sensorValue, $this->position);
                 }
 
@@ -1471,10 +1485,17 @@ class PositionsWriter
             return;
         }
 
+        // moving started earlier
+        if (!($this->device->traccar->move_at > $this->device->traccar->move_begin_at)) {
+            return;
+        }
+
         $stopDuration = strtotime($position->time) - strtotime($this->device->traccar->stop_begin_at);
 
         if ($stopDuration >= self::PARKED_MIN_DURATION) {
             $this->device->traccar->parked_end_at = $position->time;
+
+            $this->addDeviceTrip($position);
         }
     }
 
@@ -1556,6 +1577,14 @@ class PositionsWriter
             return false;
 
         return $position->speed >= $this->device->min_moving_speed;
+    }
+
+    protected function addDeviceTrip($position): void
+    {
+        DB::table('device_trips')->insert([
+            'device_id' => $this->device->id,
+            'date'      => $position->time,
+        ]);
     }
 
     protected function addPosition($position)
