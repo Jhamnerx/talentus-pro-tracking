@@ -24,6 +24,7 @@ use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Laravel\Passport\HasApiTokens;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
 use Tobuli\Helpers\Settings\Settingable;
+use Tobuli\Helpers\SMS\SMSGatewayManager;
 use Tobuli\Relations\HasManyTable;
 use Tobuli\Services\NotificationService;
 use Tobuli\Traits\ChangeLogs;
@@ -45,6 +46,7 @@ class User extends AbstractEntity implements
     SecondaryCredentialsInterface
 {
     const VERIFY_EMAIL_TIMEOUT_MIN = 5;
+    const VERIFY_PHONE_TIMEOUT = 300;
 
     use Authenticatable,
         CanResetPassword,
@@ -444,6 +446,16 @@ class User extends AbstractEntity implements
     public function billing_plan()
     {
         return $this->hasOne('Tobuli\Entities\BillingPlan', 'id', 'billing_plan_id');
+    }
+
+    public function userPermissions(): HasMany
+    {
+        return $this->hasMany(UserPermission::class);
+    }
+
+    public function billingPlanPermissions(): HasMany
+    {
+        return $this->hasMany(UserBillingPlanPermission::class, 'plan_id', 'billing_plan_id');
     }
 
     public function alerts()
@@ -1054,6 +1066,40 @@ class User extends AbstractEntity implements
     {
         $this->email_verified_at = date('Y-m-d H:i:s');
         $this->save();
+    }
+
+    public function hasVerifiedPhone(): bool
+    {
+        return $this->phone_verified_at !== null;
+    }
+
+    public function markPhoneAsVerified()
+    {
+        $this->phone_verified_at = date('Y-m-d H:i:s');
+        $this->save();
+    }
+
+    public function sendPhoneVerificationNotification(): void
+    {
+        if (!$this->phone_number) {
+            return;
+        }
+
+        if (Cache::get('user_' . $this->id . '_phone_verification_reminder')) {
+            return;
+        }
+
+        /** @var SmsTemplate $smsTemplate */
+        $smsTemplate = SmsTemplate::getTemplate('phone_verification', $this);
+
+        $token = sha1($this->phone_number) . ';' . $this->id;
+
+        $sms = $smsTemplate->buildTemplate($token);
+
+        $smsSenderService = (new SMSGatewayManager())->loadSender($this, ['request_method' => 'system']);
+        $smsSenderService->send($this->phone_number, $sms['body']);
+
+        Cache::put('user_' . $this->id . '_phone_verification_reminder', 1, self::VERIFY_PHONE_TIMEOUT);
     }
 
     public function sendEmailVerificationNotification()

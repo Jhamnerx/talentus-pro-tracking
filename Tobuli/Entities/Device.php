@@ -10,6 +10,7 @@ use Tobuli\Traits\Nameable;
 use Tobuli\Traits\Chattable;
 use App\Events\DeviceCreated;
 use App\Events\DeviceDeleted;
+use App\Events\DeviceImeiChanged;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\Filterable;
 use Tobuli\Traits\Includable;
@@ -112,6 +113,9 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'fuel_measurement_id',
         'fuel_quantity',
         'fuel_price',
+        'fuel_type',
+        'fuel_emissions',
+        'custom_data',
         'fuel_per_km',
         // Costo estimado por kilómetro del vehículo (ver el reporte de costo
         // de operación: el real sale de Gastos, este es el supuesto).
@@ -186,7 +190,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     protected $casts = [
         'currents' => 'array',
-        'icon_colors' => 'array'
+        'icon_colors' => 'array',
+        'custom_data' => 'array',
     ];
 
     protected $searchable = [
@@ -266,6 +271,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                     'name' => $device->name,
                     'uniqueId' => $device->imei
                 ]);
+            }
+
+            if ($device->isDirty('imei')) {
+                event(new DeviceImeiChanged($device));
             }
 
             if ($device->isDirty('timezone_id')) {
@@ -457,6 +466,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     public function services()
     {
         return $this->hasMany('Tobuli\Entities\DeviceService', 'device_id');
+    }
+
+    public function tags()
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
     }
 
     public function expenses()

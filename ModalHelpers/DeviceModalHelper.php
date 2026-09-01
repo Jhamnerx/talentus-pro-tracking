@@ -51,6 +51,7 @@ use Tobuli\Services\DeviceSensorsService;
 use Tobuli\Services\DeviceService;
 use Tobuli\Services\DeviceUsersService;
 use Tobuli\Services\EntityLoader\UsersLoader;
+use Tobuli\Services\FractalSerializers\DataArraySerializer;
 use Tobuli\Services\FractalSerializers\WithoutDataArraySerializer;
 use Tobuli\Services\FractalTransformerService;
 
@@ -170,6 +171,21 @@ class DeviceModalHelper extends ModalHelper
         $this->usersLoader = new UsersLoader($this->user);
         $this->usersLoader->setRequestKey('user_id');
 
+        $this->fuel_types = [
+            null => trans('front.nothing_selected'),
+            'petrol' => trans('front.petrol'),
+            'diesel' => trans('front.diesel'),
+            'biodiesel' => trans('front.biodiesel'),
+            'biogas' => trans('front.biogas'),
+            'hydrogen' => trans('front.hydrogen'),
+            'electric' => trans('front.electric'),
+            'ethanol' => trans('front.ethanol'),
+            'petrol_electric' => trans('front.petrol_electric'),
+            'diesel_electric' => trans('front.diesel_electric'),
+            'propane' => trans('front.propane'),
+            'methanol' => trans('front.methanol'),
+        ];
+
         $this->talentusSyncService = app(TalentusDeviceSyncService::class);
     }
 
@@ -264,6 +280,8 @@ class DeviceModalHelper extends ModalHelper
 
         $webservices = $this->getWebservices($item);
 
+        $fuel_types = $this->fuel_types;
+
         return compact(
             'device_groups',
             'sensor_groups',
@@ -273,6 +291,7 @@ class DeviceModalHelper extends ModalHelper
             'users',
             'timezones',
             'expiration_date_select',
+            'fuel_types',
             'device_fuel_measurements_select',
             'icons_type',
             'device_icons_grouped',
@@ -438,6 +457,8 @@ class DeviceModalHelper extends ModalHelper
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
         $vehicle_types = VehicleType::with('states')->where('user_id', $this->user->id)->orderBy('name')->get();
 
+        $fuel_types = $this->fuel_types;
+
         return compact(
             'device_id',
             'engine_hours',
@@ -452,6 +473,7 @@ class DeviceModalHelper extends ModalHelper
             'sensors',
             'services',
             'expiration_date_select',
+            'fuel_types',
             'timezones',
             'users',
             'sel_users',
@@ -655,23 +677,33 @@ class DeviceModalHelper extends ModalHelper
 
         $query = empty($this->data['id']) ? $this->user->devices() : $this->user->accessibleDevices();
 
-        $items = $query
+        $query
             ->filter($this->data)
             ->filter($this->data['filters'] ?? null)
             ->updatedAfter(date('Y-m-d H:i:s', $time))
-            ->clearOrdersBy()
-            ->get();
+            ->clearOrdersBy();
 
-        $transformer = $this->api ? DeviceFullJsonTransformer::class : DeviceMapTransformer::class;
+        if (request()->has('page') || request()->has('limit')) {
+            $page = max(1, request()->get('page', 1));
+            $limit = max(1, request()->get('limit', 100));
+            $query->forPage($page, $limit);
+        }
 
-        $items = $this->transformerService->collection($items, $transformer)->toArray();
+        $items = $this->api
+            ? $this->transformerService
+                ->collection($query->get(), DeviceFullJsonTransformer::class)->toArray()
+            : $this->transformerService
+                ->setSerializer(new DataArraySerializer())
+                ->cursorPaginate($query->cursorPaginate(1000)->appends(['time' => $time]), DeviceMapTransformer::class)->toArray();
 
-        if ($this->user->perm('events', 'view')) {
+        if ($this->user->perm('events', 'view') && empty($this->data['cursor'])) {
             $eventTime = ($now - $time > 300) ? $now - 300 : $time;
 
             $events = Event::userAccessible($this->user)->higherTime($eventTime, $this->data['id'] ?? null)->get();
             $events = $events->filter(fn($event) => Arr::get($event, 'alert.notifications.popup.active', true));
-            $events = $this->transformerService->collection($events, EventLatestTransformer::class)->toArray();
+            $events = $this->transformerService
+                ->setSerializer(new WithoutDataArraySerializer())
+                ->collection($events, EventLatestTransformer::class)->toArray();
         } else {
             $events = [];
         }
