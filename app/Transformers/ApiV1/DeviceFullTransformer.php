@@ -3,8 +3,11 @@
 namespace App\Transformers\ApiV1;
 
 use App\Transformers\BaseTransformer;
+use App\Transformers\DeviceImage\DeviceImageTransformer;
+use App\Transformers\Tag\TagListTransformer;
 use Formatter;
 use Carbon\Carbon;
+use League\Fractal\Resource\Item;
 use Tobuli\Entities\Device;
 use Tobuli\Helpers\OdometerOptimizer;
 use Illuminate\Support\Facades\App;
@@ -13,6 +16,11 @@ class DeviceFullTransformer extends BaseTransformer
 {
 
     protected $json = false;
+
+    protected $availableIncludes = [
+        'image',
+        'tags',
+    ];
 
     protected static function requireLoads()
     {
@@ -74,6 +82,8 @@ class DeviceFullTransformer extends BaseTransformer
         $device_data['icon_id'] = intval($entity->icon_id);
         $device_data['deleted'] = intval($entity->deleted);
         $device_data['fuel_measurement_id'] = intval($entity->fuel_measurement_id);
+        $device_data['fuel_type'] = $entity->fuel_type;
+        $device_data['fuel_emissions'] = $entity->fuel_emissions;
         $device_data['tail_length'] = intval($entity->tail_length);
         $device_data['min_moving_speed'] = intval($entity->min_moving_speed);
         $device_data['min_fuel_fillings'] = intval($entity->min_fuel_fillings);
@@ -251,7 +261,7 @@ class DeviceFullTransformer extends BaseTransformer
         $result = [];
 
         foreach ($entity->services as $service) {
-            $service->setSensors($entity->sensors);
+            $service->setDevice($entity)->setSensors($entity->sensors);
 
             $result[] = [
                 'id'       => $service->id,
@@ -262,6 +272,20 @@ class DeviceFullTransformer extends BaseTransformer
         }
 
         return $result;
+    }
+
+    public function includeImage(Device $entity): Item
+    {
+        return $this->item($entity, new DeviceImageTransformer(), false);
+    }
+
+    public function includeTags(Device $entity)
+    {
+        if (!$this->user->can('view', $entity, 'tags')) {
+            return null;
+        }
+
+        return $this->collection($entity->tags, new TagListTransformer(), false);
     }
 
     protected function extraerUrlVideo($urlCompleta)

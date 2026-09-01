@@ -1,13 +1,13 @@
-<?php
+<?php namespace Tobuli\Helpers\Dashboard\Blocks;
 
-namespace Tobuli\Helpers\Dashboard\Blocks;
-
-use Carbon\Carbon;
-use Tobuli\Entities\Device;
+use Illuminate\Support\Carbon;
+use Tobuli\Helpers\Dashboard\DeviceDistance\Periods\DayPeriods;
+use Tobuli\Helpers\Dashboard\DeviceDistance\Periods\WeekPeriods;
+use Tobuli\Helpers\Dashboard\Traits\HasPeriodOption;
 
 class DeviceDistanceBlock extends Block implements BlockInterface
 {
-    const DAYS_PERIOD = 5;
+    use HasPeriodOption;
 
     /**
      * @return string
@@ -18,43 +18,27 @@ class DeviceDistanceBlock extends Block implements BlockInterface
     }
 
     /**
-     * Device ditances devided into day intevals.
+     * Devices distances grouped by selected intervals.
      *
      * @return array
      */
     protected function getContent()
     {
-        $results = [];
-        $keys = [];
+        $devices = $this->user
+            ->devices()
+            ->orderBy('updated_at','desc')
+            ->limit(10)
+            ->get()
+            ->sortBy('timestamp');
 
-        $from = Carbon::now()->startOfDay();
-        $to   = Carbon::now();
+        $periods = match ($this->getConfig('options.period')) {
+            'day' => new DayPeriods($this->user, $devices),
+            'week' => new WeekPeriods($this->user, $devices),
+            default => throw new \InvalidArgumentException('Unsupported period')
+        };
 
-        $devices = $this->user->devices()->orderBy('updated_at', 'desc')->limit(10)->get()->sortBy('timestamp');
+        $results = $periods->process(Carbon::now(), 5);
 
-        $i = 0;
-        while ($i < self::DAYS_PERIOD) {
-            $from_date = $from->toDateString();
-
-            foreach ($devices as $device) {
-                try {
-                    $data = $device->getDistanceBetween($from_date, $to->toDateTimeString());
-                } catch (\Exception $e) {
-                    $data = 0;
-                }
-
-                $results[$device->name][] = [$i, $data];
-            }
-
-            $keys[] = Carbon::parse($from_date)->locale('es')->isoFormat('D MMM');
-            $to = clone $from;
-            $from->subDay();
-            $i++;
-        }
-
-        return [
-            'data' => json_encode($results),
-            'keys' => json_encode($keys),
-        ];
+        return array_map(fn ($item) => json_encode($item), $results);
     }
 }

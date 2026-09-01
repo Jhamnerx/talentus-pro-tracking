@@ -288,21 +288,28 @@ function formatBytes($bytes)
 
 function getGeoAddress($lat, $lon)
 {
-    return CustomFacades\GeoLocation::resolveAddress($lat, $lon);
+    return CustomFacades\GeoLocation::resolveAddressHandled($lat, $lon);
 }
 
-function prepareServiceData($input, $values = NULL)
+function prepareServiceData(array $input, array $values, ?User $user = null): array
 {
     $last_service = $input['last_service'];
 
     if ($input['expiration_by'] == 'days') {
-        $today = Carbon::parse(Formatter::time()->convert(Carbon::now()));
+        $today = Carbon::now();
         $last_service = Carbon::parse($last_service);
+
+        if ($user) {
+            $last_service = $last_service->format('Y-m-d H:i:s');
+            $last_service = Formatter::time()->reverse($last_service);
+            $last_service = Carbon::parse($last_service);
+        }
+
         $input['last_service'] = $last_service->copy();
         $input['expires_date'] = $last_service->copy()
             ->addDays($input['interval']);
 
-        if ($today >= $input['expires_date'] && isset($input['renew_after_expiration'])) {
+        if ($today >= $input['expires_date'] && !empty($input['renew_after_expiration'])) {
             $diff = $today->diffInDays($last_service);
             $times = floor($diff / $input['interval']);
             $daysTillExpiration = $input['interval'] - ($times > 0 ? ($diff - $input['interval'] * $times) : 0);
@@ -323,15 +330,15 @@ function prepareServiceData($input, $values = NULL)
         $input['expired'] = $today >= $input['expires_date'];
         $input['event_sent'] = $today >= $input['remind_date'];
 
-        $input['expires_date'] = $input['expires_date']->format('Y-m-d');
-        $input['remind_date'] = $input['remind_date']->format('Y-m-d');
-        $input['last_service'] = $input['last_service']->format('Y-m-d');
+        $input['expires_date'] = $input['expires_date']->format('Y-m-d H:i:s');
+        $input['remind_date'] = $input['remind_date']->format('Y-m-d H:i:s');
+        $input['last_service'] = $input['last_service']->format('Y-m-d H:i:s');
     } else {
         $value = $values[$input['expiration_by']];
         $input['last_service'] = (is_numeric($last_service) && $last_service > 0) ? $last_service : 0;
         $input['expires'] = $input['interval'] + $input['last_service'];
 
-        if ($value >= $input['expires'] && isset($input['renew_after_expiration'])) {
+        if ($value >= $input['expires'] && !empty($input['renew_after_expiration'])) {
             $over = $value - $input['expires'];
             $times = ceil($over / $input['interval']);
             $input['expires'] = $input['expires'] + ($input['interval'] * ($times > 0 ? $times : 1));

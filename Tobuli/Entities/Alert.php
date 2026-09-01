@@ -21,6 +21,11 @@ class Alert extends AbstractEntity implements DisplayInterface
     use SentCommandActor;
     use Searchable;
 
+    const CASE_EXPIRED = Event::TYPE_EXPIRED_DEVICE;
+    const CASE_EXPIRING = Event::TYPE_EXPIRING_DEVICE;
+    const CASE_EXPIRED_SIM = Event::TYPE_EXPIRED_SIM;
+    const CASE_EXPIRING_SIM = Event::TYPE_EXPIRING_SIM;
+
     public static string $displayField = 'name';
 
     protected $table = 'alerts';
@@ -59,7 +64,9 @@ class Alert extends AbstractEntity implements DisplayInterface
         'state',
         'acceptable_time_from',
         'statuses',
-        'alarms'
+        'alarms',
+        'case',
+        'days',
     );
 
     protected $casts = [
@@ -98,7 +105,9 @@ class Alert extends AbstractEntity implements DisplayInterface
         'state' => null,
         'statuses' => [],
         // Alarmas del equipo a vigilar (tipo device_alarm)
-        'alarms' => []
+        'alarms' => [],
+        'case' => '',
+        'days' => 0,
     ];
 
     public function user(): BelongsTo
@@ -220,12 +229,27 @@ class Alert extends AbstractEntity implements DisplayInterface
             'distance',
             'poi_stop_duration',
             'poi_idle_duration',
+            'device_expiration',
         ]);
     }
 
     public function scopeEnabled(Builder $query): Builder
     {
         return $query;
+    }
+
+    public static function getAvailableCases(): array
+    {
+        $cases = [self::CASE_EXPIRED, self::CASE_EXPIRING];
+
+        if (settings('plugins.additional_installation_fields.status')
+            && settings('plugins.send_sim_expiration_notification.status')
+        ) {
+            $cases[] = self::CASE_EXPIRED_SIM;
+            $cases[] = self::CASE_EXPIRING_SIM;
+        }
+
+        return $cases;
     }
 
     public function isActive()

@@ -103,6 +103,14 @@ function getNavigation()
             ];
         }
 
+        if (auth()->user()->perm('tags', 'edit')) {
+            $items['content']['childs'][] = [
+                'title' => '<span class="text">' . trans('front.tags') . '</span>',
+                'route' => 'admin.tags.index',
+                'childs' => []
+            ];
+        }
+
         $items[] = [
             'title' => '<i class="icon setup"></i> ' . '<span class="text">' .  trans('validation.attributes.logo') . '</span>',
             'route' => 'admin.main_server_settings.index',
@@ -235,6 +243,14 @@ function getNavigation()
             ];
         }
 
+        if (auth()->user()->perm('tags', 'edit')) {
+            $items['content']['childs'][] = [
+                'title' => '<span class="text">' . trans('front.tags') . '</span>',
+                'route' => 'admin.tags.index',
+                'childs' => []
+            ];
+        }
+
         if (config('auth.secondary_credentials') && Auth::user()->isMainLogin()) {
             $items['content']['childs'][] = [
                 'title' =>  '<span class="text">' . trans('front.secondary_credentials') . '</span>',
@@ -329,6 +345,12 @@ function getNavigation()
         $items['setup']['childs'][] = [
             'title' => '<span class="text">' .  trans('admin.fcm_configurations') . '</span>',
             'route' => 'admin.fcm_configurations.index',
+            'childs' => []
+        ];
+
+        $items['setup']['childs'][] = [
+            'title' => '<span class="text">' . trans('front.widgets') . '</span>',
+            'route' => 'admin.widgets.index',
             'childs' => []
         ];
 

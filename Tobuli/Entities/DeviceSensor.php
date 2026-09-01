@@ -1,28 +1,19 @@
 <?php namespace Tobuli\Entities;
 
-use Tobuli\Traits\ChangeLogs;
-use Tobuli\Traits\DisplayTrait;
-
 use App\Events\DeviceSensorDeleted;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Arr;
-use Tobuli\Entities\TraccarPosition as Position;
 use Tobuli\Sensors\Extractions\Calibration;
 use Tobuli\Sensors\SensorsManager;
 use Tobuli\Sensors\Value;
-use Tobuli\Services\ConditionService;
+use Tobuli\Traits\ChangeLogs;
+use Tobuli\Traits\DisplayTrait;
 
 class DeviceSensor extends AbstractEntity implements DisplayInterface
 {
-    use ChangeLogs;
-
+    use HasFactory, ChangeLogs;
     use DisplayTrait;
-
-    // Nombre con el que sale en el registro de cambios del admin
-    public static string $displayField = 'name';
-
-    use HasFactory;
 
     protected $table = 'device_sensors';
 
@@ -47,6 +38,7 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
         //'value_formula',
         //'show_in_popup',
         'unit_of_measurement',
+        'unit_type',
         'on_tag_value',
         'off_tag_value',
         'on_type',
@@ -54,15 +46,16 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
         'calibrations',
         'skip_calibration',
         'skip_empty',
+        'reset_blank',
         'decbin',
         'hexbin',
         'bitcut',
         'mappings',
         'data',
         'ascii',
+        'value_set_at',
+        'value_changed_at',
     );
-
-    public $timestamps = false;
 
     private $cacheSensor;
 
@@ -73,6 +66,8 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
         'mappings' => 'array',
         'data' => AsArrayObject::class
     ];
+
+    public static string $displayField = 'name';
 
     protected static function boot()
     {
@@ -213,7 +208,7 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
             $this->data['anon_longitude'] = $position->longitude;
         }
 
-        if (is_null($value))
+        if (is_null($value) && (!$this->reset_blank))
             return false;
 
         if (is_array($value))
@@ -224,6 +219,16 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
 
         if ($this->skip_empty && empty($value))
             return false;
+
+        $time = $position->time ?? date('Y-m-d H:i:s');
+
+        if ($time < $this->value_set_at)
+            return false;
+
+        $this->value_set_at = $time;
+
+        if ($value !== $this->value)
+            $this->value_changed_at = $this->value_set_at;
 
         $this->value = $value;
 
@@ -320,19 +325,11 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
             $value = $this->getCurrent();
         }
 
-        if (is_null($value)) {
-            return new Value(null, '-', null);
-        }
-        
         if ($value === '-') {
-            return new Value(null, '-', null);
+            $value = null;
         }
 
-        return new Value(
-            $value,
-            $this->getSensor()->getValueFormatted($value),
-            $this->getSensor()->getValueIcon($value)
-        );
+        return $this->getSensor()->toValue($value);
     }
 
     public function getValuePosition($position)
@@ -419,5 +416,23 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
         }
 
         return asset("assets/icons/sensors_{$name}_l.svg");
+    }
+
+    protected function performUpdate(Builder $query)
+    {
+        if (!array_diff(array_keys($this->getDirty()), ['value', 'value_formula', 'value_set_at', 'value_changed_at'])) {
+            $this->timestamps = false;
+        }
+
+        $result = parent::performUpdate($query);
+
+        $this->timestamps = true;
+
+        return $result;
+    }
+
+    public function scopeUserAccessible(Builder $query, User $user): Builder
+    {
+        return $query->whereIn('device_id', $user->devices()->select('devices.id'));
     }
 }
