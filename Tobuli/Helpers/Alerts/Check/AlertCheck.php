@@ -376,6 +376,6 @@ abstract class AlertCheck
         $notifications = $this->alert->notifications;
         $silent = Arr::get($notifications, 'silent', null);
 
-        return $this->silentDuration = ($silent && $silent['active']) ? (intval($silent['input']) * 60) : 0;
+        return $this->silentDuration = ($silent['active'] ?? null) ? (intval($silent['input']) * 60) : 0;
     }
 }

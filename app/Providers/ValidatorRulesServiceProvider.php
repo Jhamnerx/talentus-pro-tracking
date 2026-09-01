@@ -324,6 +324,10 @@ class ValidatorRulesServiceProvider extends ServiceProvider
         Validator::replacer('exists_or_empty', function ($message, $attribute, $rule, $parameters) {
             return trans('validation.exists', ['attribute' => $attribute]);
         });
+
+        Validator::extend('imei', function ($attribute, $value, $parameters, $validator) {
+            return !preg_match('/[^A-Za-z0-9.#_\\-$]/', $value);
+        });
     }
 
     public function register()

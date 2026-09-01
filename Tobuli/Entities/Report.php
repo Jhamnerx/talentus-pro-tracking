@@ -44,6 +44,7 @@ class Report extends AbstractEntity implements DisplayInterface
         'parameters',
         'metas',
         'skip_blank_results',
+        'for_all_user_devices',
     ];
 
     protected $appends = array('from_formated', 'to_formated');

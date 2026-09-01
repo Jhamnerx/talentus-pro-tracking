@@ -208,18 +208,16 @@ class CustomRegistrationController extends Controller
 
         $data = array_replace($this->data, [
             'user_id' => [$this->user->id],
-            'expiration_date' => Carbon::now()
-                ->subDay()
-                ->format('Y-m-d H:i:s'),
+
             'device_type_id' => $deviceTypeImei->device_type_id ?? null,
             'msisdn' => $deviceTypeImei ? $deviceTypeImei->msisdn : ""
         ]);
 
         if ($device) {
             $this->checkException('devices', 'own', $device);
-
             $device = $this->deviceService->update($device, $data);
         } else {
+            $data['expiration_date'] = Carbon::now()->subDay()->format('Y-m-d H:i:s');
             $device = $this->deviceService->create($data);
 
             session(['activation_device_id' => $device->id]);

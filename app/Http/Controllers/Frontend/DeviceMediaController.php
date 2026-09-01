@@ -303,10 +303,32 @@ class DeviceMediaController extends Controller
     private function objectForMapDisplay($device, $image)
     {
         if (isset($image)) {
-            $closest_position = $device->positions()
+            $closestPositions = collect();
+            $closestPositions->add($device->positions()
                 ->where('valid', true)
                 ->whereNotNull('time')
-                ->orderByRaw("abs(TIMESTAMPDIFF(second, time, '" . $image->created_at . "')) ASC")
+                ->where('time', '<=', $image->created_at)
+                ->orderBy('time', 'DESC')
+                ->orderBy('id', 'DESC')
+                ->first()
+            );
+
+            $closestPositions->add($device->positions()
+                ->where('valid', true)
+                ->whereNotNull('time')
+                ->where('time', '=>', $image->created_at)
+                ->orderBy('time', 'ASC')
+                ->orderBy('id', 'ASC')
+                ->first()
+            );
+
+            $closest_position = $closestPositions
+                ->filter(function ($position) {
+                    return !empty($position);
+                })
+                ->sortBy(function ($position) use ($image) {
+                    return abs(strtotime($position->time) - strtotime($image->created_at));
+                })
                 ->first();
         }
 

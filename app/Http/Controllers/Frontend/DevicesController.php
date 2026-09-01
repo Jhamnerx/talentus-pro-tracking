@@ -21,6 +21,7 @@ use Tobuli\History\Actions\Duration;
 use Tobuli\History\Actions\GroupGeofenceInOut;
 use Tobuli\History\DeviceHistory;
 use Tobuli\Services\DeviceImageService;
+use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 use Tobuli\Services\EntityLoader\UserDevicesLoader;
 use Tobuli\Services\FractalSerializers\WithoutDataArraySerializer;
 
@@ -28,26 +29,35 @@ class DevicesController extends Controller
 {
     private UserDevicesLoader $devicesLoader;
 
+    private UserDevicesGroupLoader $devicesGroupLoader;
+
     protected function afterAuth($user)
     {
         $this->devicesLoader = new UserDevicesLoader($user);
         $this->devicesLoader->setRequestKey(request('request_key', 'devices'));
+
+        $this->devicesGroupLoader = new UserDevicesGroupLoader($user);
+        $this->devicesGroupLoader->setRequestKey(request('request_key', 'devices'));
     }
 
-    public function index()
+    public function index(Request $request)
     {
         if (!$this->user->perm('devices', 'view'))
             throw new PermissionException();
 
-        if (request('type') === 'sms') {
-            $this->devicesLoader->setQueryItems(
-                $this->devicesLoader->getQueryItems()->where('sim_number', '!=', '')
+        $loader = $request->has('grouped')
+            ? $this->devicesGroupLoader
+            : $this->devicesLoader;
+
+        if ($request->get('type') === 'sms') {
+            $loader->setQueryItems(
+                $loader->getQueryItems()->where('sim_number', '!=', '')
             );
         }
 
-        $items = $this->devicesLoader->get();
+        $loader->addAppends(['type', 'grouped']);
 
-        return response()->json($items);
+        return response()->json($loader->get());
     }
 
     public function create()

@@ -77,6 +77,33 @@
                         </div>
                     </div>
 
+                    <div class="form-group provider-gmail">
+                        {!! Form::label('client_id', trans('validation.attributes.client_id'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
+                        <div class="col-xs-12 col-sm-8">
+                            {!! Form::text('client_id', $settings['client_id'] ?? null, ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
+
+                    <div class="form-group provider-gmail">
+                        {!! Form::label('client_secret', trans('validation.attributes.client_secret'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
+                        <div class="col-xs-12 col-sm-8">
+                            {!! Form::text('client_secret', $settings['client_secret'] ?? null, ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
+
+                    <div class="form-group provider-gmail">
+                        {!! Form::label('redirect_uri', 'Redirect URI', ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
+                        <div class="col-xs-12 col-sm-7">
+                            {!! Form::text('redirect_uri', url()->route('gmail.oauth2.callback'), ['class' => 'form-control', 'readonly' => true]) !!}
+                        </div>
+                        <div class="col-xs-12 col-sm-1">
+                            <a href="javascript:" type="button" class="btn btn-sm btn-default" data-modal="provider_manual"
+                                    data-url="{{ route('admin.email_settings.manual', 'gmail') }}">
+                                <i class="fa fa-question-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="form-group provider-smtp">
                         {!! Form::label('use_smtp_server', trans('validation.attributes.use_smtp_server'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
                         <div class="col-xs-12 col-sm-8">

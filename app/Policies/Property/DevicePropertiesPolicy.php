@@ -33,6 +33,7 @@ class DevicePropertiesPolicy extends PropertyPolicy
         'model_id',
         'max_speed',
         'lbs',
+        'tags',
     ];
 
     protected $viewable = [
@@ -59,6 +60,7 @@ class DevicePropertiesPolicy extends PropertyPolicy
         'model_id',
         'max_speed',
         'lbs',
+        'tags',
     ];
 
     protected function expirationDateEditPolicy(User $user, Model $model)
@@ -112,5 +114,15 @@ class DevicePropertiesPolicy extends PropertyPolicy
     protected function lbsEditPolicy()
     {
         return config('addon.lbs');
+    }
+
+    protected function tagsViewPolicy()
+    {
+        return config('addon.tags');
+    }
+
+    protected function tagsEditPolicy()
+    {
+        return config('addon.tags');
     }
 }

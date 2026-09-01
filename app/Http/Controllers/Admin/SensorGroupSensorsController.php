@@ -18,7 +18,7 @@ class SensorGroupSensorsController extends BaseController
     public function index($id, $ajax = 0)
     {
         $items = SensorGroupSensor::where(['group_id' => $id])
-            ->orderBy('name')
+            ->orderBy('id', 'desc')
             ->get()
             ->filter(function ($item) {
                 return $item->getTypeObject()::isEnabled();

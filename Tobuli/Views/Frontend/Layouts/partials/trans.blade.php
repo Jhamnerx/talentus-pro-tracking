@@ -41,7 +41,7 @@
         stop_duration: '{{ trans('front.stop_duration') }}',
         top_speed: '{{ trans('front.top_speed') }}',
         fuel_cons: '{{ trans('front.fuel_cons') }}',
-        parameters: '{{ trans('front.tags') }}',
+        parameters: '{{ trans('validation.attributes.parameters') }}',
         driver: '{{ trans('front.driver') }}',
         street_view: '{{ trans('front.street_view') }}',
         preview: '{{ trans('front.preview') }}',

@@ -1,5 +1,7 @@
 <?php namespace App\Http\Controllers\Admin;
 
+use App\Services\Mail\GmailTransport;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -38,7 +40,8 @@ class EmailSettingsController extends BaseController {
             'sendgrid' => 'SendGrid',
             'postmark' => 'Postmark',
             'mailgun' => 'Mailgun',
-            'gpswoxmailer' => 'Mailer',
+            'gpswoxmailer' => 'GPSWOX Mailer',
+            'gmail' => 'Gmail',
         ];
 
         return View::make('admin::EmailSettings.index')->with(compact('settings', 'providers'));
@@ -94,6 +97,17 @@ class EmailSettingsController extends BaseController {
                     'region' => $input['region'],
                 ];
             }
+            elseif ($input['provider'] == 'gmail') {
+                $this->adminEmailSettingsFormValidator->validate('gmail', $input);
+
+                $update = Arr::only($input, ['from_name', 'noreply_email', 'client_id', 'client_secret']);
+
+                // invisible parameters
+                $update += Arr::only($item_arr, ['refresh_token', 'current_auth_client_id']);
+
+                $needGoogleAuth = $update['client_id'] . $update['client_secret'] !== Arr::get($update, 'current_auth_client')
+                    || empty($update['refresh_token']);
+            }
             else {
                 $this->adminEmailSettingsFormValidator->validate('sendgrid', $input);
                 $update = [
@@ -111,12 +125,21 @@ class EmailSettingsController extends BaseController {
 
             Artisan::call('config:clear');
 
+            if (!empty($needGoogleAuth)) {
+                return GmailTransport::initAuthentication($update);
+            }
+
             return Redirect::route('admin.email_settings.index')->withSuccess(trans('front.successfully_saved'));
         }
         catch (ValidationException $e)
         {
             return Redirect::route('admin.email_settings.index')->withInput()->withErrors($e->getErrors());
         }
+    }
+
+    public function manual(string $id)
+    {
+        return View::make('Admin.EmailSettings.manuals.' . $id);
     }
 
     public function testEmail() {

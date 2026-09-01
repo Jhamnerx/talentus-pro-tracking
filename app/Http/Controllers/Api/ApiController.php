@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Api;
+<?php namespace App\Http\Controllers\Api;
 
 use App\Exceptions\Manager;
 use App\Exceptions\PermissionException;
@@ -571,7 +569,7 @@ class ApiController extends Controller
         if (!$device)
             return response()->json(['status' => 0, 'errors' => ['imei' => dontExist('global.device')]], 400);
 
-        if (! $this->user->can('edit', $device, 'expiration_date'))
+        if ( ! $this->user->can('edit', $device, 'expiration_date'))
             throw new PermissionException();
 
         $device->expiration_date = request()->get('expiration_date');
@@ -639,24 +637,6 @@ class ApiController extends Controller
         return response()->json(['status' => 1]);
     }
 
-    public function destroyFcmToken(FcmService $fcmService)
-    {
-        $validator = Validator::make(request()->all(), ['token' => 'required']);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator->errors());
-        }
-
-        $token = request('token');
-        $result = $fcmService->destroyFcmToken($this->user, $token);
-
-        if (!$result) {
-            return response()->json(['status' => 0, 'message' => 'El token no existe'], 404);
-        }
-
-        return response()->json(['status' => 1, 'message' => 'Token eliminado con éxito.']);
-    }
-
     public function getServicesKeys()
     {
         $services = [];
@@ -677,7 +657,7 @@ class ApiController extends Controller
             return response()->json(['status' => 0, 'message' => 'Method does not exist!'], 500);
         }
 
-        if (! is_array($response))
+        if ( ! is_array($response))
             return $response;
 
         if (!array_key_exists('status', $response))

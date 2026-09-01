@@ -4,6 +4,7 @@ namespace Tobuli\Entities;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Tobuli\Sensors\Value;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\DisplayTrait;
 
@@ -39,6 +40,7 @@ class DeviceService extends AbstractEntity implements DisplayInterface
 
     protected $sensor;
     protected $sensors;
+    protected Device $_device;
 
     public $timestamps = false;
 
@@ -62,6 +64,13 @@ class DeviceService extends AbstractEntity implements DisplayInterface
         $this->sensors = $sensors;
     }
 
+    public function setDevice(Device $device): self
+    {
+        $this->_device = $device;
+
+        return $this;
+    }
+
     public function getLeftAttribute()
     {
         return $this->getLeft();
@@ -83,7 +92,15 @@ class DeviceService extends AbstractEntity implements DisplayInterface
                 if (! $sensor = $this->getSensor())
                     return null;
 
-                if ($value = $sensor->getCurrent())
+                $value = isset($this->_device)
+                    ? $sensor->getValueCurrent($this->_device)
+                    : $sensor->getValueCurrent($this->device);
+
+                if ($value instanceof Value) {
+                    $value = $value->getValue();
+                }
+
+                if ($value)
                     return $this->expires - (int)$value;
 
                 return $this->expires;
@@ -230,16 +247,14 @@ class DeviceService extends AbstractEntity implements DisplayInterface
             return null;
 
         foreach ($this->sensors as $sensor) {
-            if ($sensor['type'] == $type) {
-                $type_sensor = $sensor;
-                break;
+            if ($sensor['type'] != $type) {
+                continue;
             }
+            
+            return $sensor;
         }
 
-        if (empty($type_sensor))
-            return null;
-
-        return $type_sensor;
+        return null;
     }
 
     public function scopeUserAccessible($query, User $user)
@@ -260,15 +275,8 @@ class DeviceService extends AbstractEntity implements DisplayInterface
     public function scopeExpireByDays($query, $value)
     {
         return $query
-            ->select('device_services.*')
-            ->join('users', 'device_services.user_id', '=', 'users.id')
-            ->join('timezones', 'users.timezone_id', '=', 'timezones.id')
             ->where('device_services.expiration_by', 'days')
-            ->whereRaw("
-                IF( timezones.prefix = 'plus', 
-                NOW() + INTERVAL timezones.time HOUR_MINUTE, 
-                NOW() - INTERVAL timezones.time HOUR_MINUTE ) > DATE($value)
-                ")
+            ->where($value, '<', Carbon::now())
             ->groupBy('device_services.id');
     }
 

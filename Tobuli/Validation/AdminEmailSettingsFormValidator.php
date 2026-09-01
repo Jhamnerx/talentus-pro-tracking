@@ -34,6 +34,12 @@ class AdminEmailSettingsFormValidator extends Validator {
             'domain' => 'required',
             'region' => 'required|in:0,eu',
         ],
+        'gmail' => [
+            'from_name' => 'required',
+            'noreply_email' => 'required|email',
+            'client_id' => 'required',
+            'client_secret' => 'required',
+        ],
     ];
 
 }   //end of class

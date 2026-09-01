@@ -21,7 +21,6 @@ class DeviceFullTransformer extends DeviceTransformer
             'id'                  => intval($entity->id),
             'active'              => (bool)$entity->active,
             'name'                => $entity->name,
-            'image'               => $entity->image,
             'imei'                => $this->canView($entity, 'imei'),
             'sim_number'          => $this->canView($entity, 'sim_number'),
             'device_model'        => $this->canView($entity, 'device_model'),

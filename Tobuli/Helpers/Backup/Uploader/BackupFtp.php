@@ -127,7 +127,7 @@ class BackupFtp implements BackupUploaderInterface
             sleep(1);
             $timer++;
 
-            if ($backupProcess && $timer % BackupProcess::DURATION_ALIVE) {
+            if ($backupProcess && ($timer % BackupProcess::DURATION_ALIVE === 0)) {
                 $backupProcess->updateReservation();
             }
         }

@@ -259,6 +259,20 @@
         </div>
     </div>
 </div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            {!!Form::label('fuel_type', trans('validation.attributes.fuel_type').':')!!}
+            {!!Form::select('fuel_type', $fuel_types, $item->fuel_type, ['class' => 'form-control'])!!}
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-group">
+            {!!Form::label('fuel_emissions', trans('validation.attributes.fuel_emissions').':')!!}
+            {!!Form::text('fuel_emissions', $item->fuel_emissions, ['class' => 'form-control', 'placeholder' => '0.00'])!!}
+        </div>
+    </div>
+</div>
 
 @if (Auth::user()->can('view', $item, 'forward'))
     <div class="form-group">
