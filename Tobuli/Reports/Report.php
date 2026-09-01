@@ -22,10 +22,24 @@ abstract class Report implements Arrayable
 {
     protected $formats = ['html', 'json', 'xls', 'xlsx', 'pdf', 'pdf_land'];
     protected $disabledFormats = [];
-    protected $enableFields = ['devices', 'geofences', 'metas', 'speed_limit', 'stops', 'show_addresses', 'zones_instead'];
+    protected $enableFields = [
+        'period',
+        'date_from',
+        'from_time',
+        'date_to',
+        'to_time',
+        'devices',
+        'geofences',
+        'metas',
+        'speed_limit',
+        'stops',
+        'show_addresses',
+        'zones_instead',
+    ];
     protected $disableFields = [];
     protected $validation = [];
     protected $deviceless = false;
+    protected bool $allDevices = false;
 
     /** @var User */
     protected $user;
@@ -106,6 +120,21 @@ abstract class Report implements Arrayable
     public function isDeviceless()
     {
         return $this->deviceless;
+    }
+
+    public function hasAllDevices(): bool
+    {
+        return $this->allDevices;
+    }
+
+    public function hasDateFrom(): bool
+    {
+        return !in_array('date_from', $this->disableFields) && in_array('date_from', $this->enableFields);
+    }
+
+    public function hasDateTo(): bool
+    {
+        return !in_array('date_to', $this->disableFields) && in_array('date_to', $this->enableFields);
     }
 
     protected function beforeGenerate()
@@ -344,9 +373,19 @@ abstract class Report implements Arrayable
             'metas.*'           => Rule::in(array_keys(ReportManager::getMetaList($this->user))),
             'send_to_email'     => ['array_max:' . config('tobuli.limits.report_emails')],
             'send_to_email.*'   => 'email',
-            'date_from'         => 'required|date',
-            'date_to'           => 'required|date|after_or_equal:date_from',
         ];
+
+        if ($this->hasDateFrom()) {
+            $rules['date_from'] = 'required|date';
+        }
+
+        if ($this->hasDateTo()) {
+            $rules['date_to'] = 'required|date';
+
+            if ($this->hasDateFrom()) {
+                $rules['date_to'] .= '|after_or_equal:date_from';
+            }
+        }
 
         if (config('addon.report_send_to_ftp')) {
             $rules['send_to_ftp'] = 'url|starts_with:ftp,sftp';
@@ -428,13 +467,17 @@ abstract class Report implements Arrayable
 
     public function getFilename()
     {
-        $items = [
-            //$this::title(),
-            Str::snake(class_basename(get_class($this))),
-            Formatter::time()->convert($this->date_from),
-            Formatter::time()->convert($this->date_to),
-            time()
-        ];
+        $items = [Str::snake(class_basename(get_class($this)))];
+
+        if ($this->hasDateFrom()) {
+            $items[] = Formatter::time()->convert($this->date_from);
+        }
+
+        if ($this->hasDateTo()) {
+            $items[] = Formatter::time()->convert($this->date_to);
+        }
+
+        $items[] = time();
 
         $filename = implode('_', $items);
         $filename = mb_convert_encoding($filename, 'ASCII');
@@ -660,7 +703,7 @@ abstract class Report implements Arrayable
             $address = $this->getGeofencesNames($position);
 
         if ($this->show_addresses && ! $address) {
-            $address = $this->geoLocation->resolveAddress($position->latitude, $position->longitude);
+            $address = $this->geoLocation->resolveAddressHandled($position->latitude, $position->longitude);
         }
 
         return $address ? htmlentities(removeEmoji($address)) : null;

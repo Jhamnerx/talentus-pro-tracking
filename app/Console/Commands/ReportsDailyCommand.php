@@ -10,6 +10,7 @@ use CustomFacades\Server;
 use Formatter;
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 use Tobuli\Entities\EmailTemplate;
 use Tobuli\Entities\Report;
 use Tobuli\Entities\ReportLog;
@@ -68,10 +69,13 @@ class ReportsDailyCommand extends Command
      */
     public function handle()
     {
-        $timeout = config('tobuli.process.reportdaily_timeout');
-        $limit = config('tobuli.process.reportdaily_limit');
+        $timeout = $this->option('timeout') ?? config('tobuli.process.reportdaily_timeout');
+        $limit = $this->option('limit') ?? config('tobuli.process.reportdaily_limit');
+        $loop = $this->option('loop') ?? false;
 
-        $this->processManager = new ProcessManager('reports:daily', $timeout, $limit);
+        $schedule_type = $this->argument('type');
+
+        $this->processManager = new ProcessManager('reports:daily', $timeout, $limit, $schedule_type);
 
         if (! $this->processManager->canProcess()) {
             echo "Cant process \n";
@@ -83,15 +87,20 @@ class ReportsDailyCommand extends Command
 
         $this->sendToFtp = (bool)config('addon.report_send_to_ftp');
 
-        $schedule_type = $this->argument('type');
-
         if ($schedule_type == 'daily')
             $types = ['daily'];
         else
             $types = ['weekly', 'monthly'];
 
-        foreach ($types as $type)
-            $this->proccess($type);
+        do {
+            foreach ($types as $type) {
+                $this->proccess($type);
+            }
+
+            if ($loop) {
+                sleep(3);
+            }
+        } while ($loop && $this->processManager->canProcess());
 
         echo "DONE\n";
 
@@ -117,7 +126,11 @@ class ReportsDailyCommand extends Command
      */
     protected function getOptions()
     {
-        return array();
+        return [
+            ['timeout', null, InputOption::VALUE_OPTIONAL, 'Report process timeout option.', null],
+            ['limit', null, InputOption::VALUE_OPTIONAL, 'Report process limit option.', null],
+            ['loop', null, InputOption::VALUE_OPTIONAL, 'Report process loop option.', null],
+        ];
     }
 
     public function proccess($schedule_type)

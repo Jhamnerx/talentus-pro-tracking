@@ -39,7 +39,7 @@ class ReportManager
         25 => Reports\ObjectHistoryReport::class,
         27 => Reports\AutomonCustomReport::class,
         28 => Reports\GeofencesShiftReport::class,
-        29 => Reports\EngineHoursVirtualReport::class,
+        29 => Reports\EngineHoursDailyReport::class,
         30 => Reports\IgnitionOnOff24ModeReport::class,
         31 => Reports\GeofencesTouchAllReport::class,
         32 => Reports\SentCommandsReport::class,
@@ -106,6 +106,9 @@ class ReportManager
         93 => Reports\LastLocationReport::class,
         94 => Reports\GeofencesOutReport::class,
         95 => Reports\StopsFilterReport::class,
+        96 => Reports\FuelTankUsageSplitReport::class,
+        97 => Reports\UsersDevicesReport::class,
+        98 => Reports\GeofencesInOutDriversReport::class,
         902 => Reports\DevicesAlerts::class,
         903 => Reports\ObjectHistoryMovementReport::class,
         904 => Reports\OverspeedsInGeofenceCustomReport::class,
@@ -306,7 +309,7 @@ class ReportManager
     public function fromEntity(\Tobuli\Entities\Report $report, $data)
     {
         //check report
-        $this->report($data['type']);
+        $type = $this->report($data['type']);
 
         Formatter::byUser($data['user']);
 
@@ -317,6 +320,8 @@ class ReportManager
 
         if ($report->devices()->count()) {
             $deviceQuery = $report->devices();
+        } elseif ($type->hasAllDevices()) {
+            $deviceQuery = $data['user']->accessibleDevices();
         } else {
             $deviceQuery = $data['user']->devices();
         }

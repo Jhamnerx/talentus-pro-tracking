@@ -62,7 +62,8 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\InsertCommand',
         'App\Console\Commands\CheckPositionsCommand',
         'App\Console\Commands\CheckTimeCommand',
-        'App\Console\Commands\ResetDevicesTimezoneCommand',
+        'App\Console\Commands\DevicesTimezoneResetCommand',
+        'App\Console\Commands\DevicesTimezoneApplyCommand',
         'App\Console\Commands\CheckSubscriptionsCommand',
         'App\Console\Commands\CheckDevicesExpirationCommand',
         'App\Console\Commands\CheckOfflineDevices',
@@ -149,6 +150,10 @@ class Kernel extends ConsoleKernel
             ->command('server:check')
             ->daily()
             ->withoutOverlapping();
+
+        $schedule
+            ->command('passport:purge')
+            ->daily();
 
         $schedule
             ->command('sharing:clean')
