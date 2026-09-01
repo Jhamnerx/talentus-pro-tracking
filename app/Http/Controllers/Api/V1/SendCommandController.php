@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Api\V1;
+<?php namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -108,16 +106,8 @@ class SendCommandController extends Controller
             '0' => trans('front.off'),
         ]);
 
-        return compact(
-            'devices_sms',
-            'devices_gprs',
-            'sms_templates',
-            'gprs_templates',
-            'commands',
-            'units',
-            'number_index',
-            'actions'
-        );
+        return compact('devices_sms', 'devices_gprs', 'sms_templates',
+            'gprs_templates', 'commands', 'units', 'number_index', 'actions');
     }
 
     public function sendSMS(Request $request)
@@ -221,4 +211,5 @@ class SendCommandController extends Controller
 
         return $this->commandService->getGprsCommands($devices, true);
     }
+
 }

@@ -27,6 +27,15 @@
     </div>
 
     <script>
+        $(document).ready(function () {
+            $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+                let $button = $('.modal .modal-footer .buttons .btn-action.update');
+                let forms = ['#new_sharing'];
+
+                $button.attr('disabled',  ! forms.includes($(e.target).attr("href")));
+            });
+        });
+
         tables.set_config('device_sharing_form', {
             url: '{!! route('sharing.table', ['devices_id' => $device_id]) !!}'
         });

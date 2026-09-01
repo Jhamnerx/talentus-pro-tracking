@@ -12,7 +12,15 @@ class SentCommandsReport extends DeviceReport
     const STATUS_FAIL = 'fail';
     const STATUS_SENT = 'sent';
 
-    protected $enableFields = ['devices', 'metas'];
+    protected $enableFields = [
+        'period',
+        'date_from',
+        'from_time',
+        'date_to',
+        'to_time',
+        'devices',
+        'metas',
+    ];
 
     public function getInputParameters(): array
     {

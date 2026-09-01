@@ -2,11 +2,10 @@
 
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\File;
-
 
 class AppServiceProvider extends ServiceProvider {
 
@@ -17,14 +16,6 @@ class AppServiceProvider extends ServiceProvider {
      */
     public function boot()
     {
-        if (version_compare(phpversion(), '8.0.0', '<')) {
-            abort(404);
-        }
-        $cachePath = storage_path('cache/storage');
-        if (!File::exists($cachePath)) {
-            abort(404);
-        }
-        
         Route::singularResourceParameters(false);
 
         try {
@@ -36,6 +27,24 @@ class AppServiceProvider extends ServiceProvider {
         } else {
             error_reporting(0);
         }
+
+        Response::macro('downloadStreamFile', function ($file, $name = null, array $headers = []) {
+
+            $headers = array_merge([
+                'Content-Type' => 'application/octet-stream',
+                'Content-Disposition' => 'attachment; filename="' . (is_null($name) ? basename($file) : $name) . '"',
+            ], $headers);
+
+            return Response::streamDownload(function() use ($file) {
+                if ($f = fopen($file, 'rb')) {
+                    while(!feof($f) and (connection_status()==0)) {
+                        print(fread($f, 1024*8));
+                        flush();
+                    }
+                    fclose($f);
+                }
+            }, $name, $headers);
+        });
     }
 
     /**

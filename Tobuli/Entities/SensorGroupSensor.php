@@ -2,8 +2,12 @@
 
 
 use Tobuli\Sensors\SensorsManager;
+use Tobuli\Traits\ChangeLogs;
 
-class SensorGroupSensor extends AbstractEntity {
+class SensorGroupSensor extends AbstractEntity
+{
+    use ChangeLogs;
+
 	protected $table = 'sensor_group_sensors';
 
     protected $fillable = array(
@@ -26,6 +30,7 @@ class SensorGroupSensor extends AbstractEntity {
         //'value_formula',
         //'show_in_popup',
         'unit_of_measurement',
+        'unit_type',
         'on_tag_value',
         'off_tag_value',
         'on_type',
@@ -33,6 +38,7 @@ class SensorGroupSensor extends AbstractEntity {
         'calibrations',
         'skip_calibration',
         'skip_empty',
+        'reset_blank',
         'decbin',
         'hexbin',
         'bitcut',
@@ -48,6 +54,8 @@ class SensorGroupSensor extends AbstractEntity {
     protected $hidden = ['value'];
 
     public $timestamps = false;
+
+    public static string $displayField = 'name';
 
     public function setCalibrationsAttribute($value)
     {

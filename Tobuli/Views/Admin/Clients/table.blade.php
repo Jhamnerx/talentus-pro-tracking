@@ -10,7 +10,6 @@
             ]) !!}
             {!! tableHeaderSort($items->sorting, 'active', NULL) !!}
             {!! tableHeaderSort($items->sorting, 'email') !!}
-            {!! tableHeader(trans('validation.attributes.name'), '') !!}
             @if (Auth::User()->isAdmin())
                 {!! tableHeaderSort($items->sorting, 'group_id') !!}
                 {!! tableHeaderSort($items->sorting, 'manager_id', trans('validation.attributes.manager_id')) !!}
@@ -43,9 +42,6 @@
                     </td>
                     <td>
                         {!! $item->email !!}
-                    </td>
-                    <td>
-                        {!! $item->client ? $item->client->first_name.' '.$item->client->last_name:'' !!}
                     </td>
                     @if (Auth::User()->isAdmin())
                         <td>
@@ -96,7 +92,9 @@
 
                                     @if($canLogin)
                                         <li>
-                                            <a href="{{ route('admin.clients.login_as_agree', $item->id) }}">{!! trans('front.login_as') !!}</a>
+                                            <a href="javascript:" data-modal="{!! $section !!}_login_as" data-url="{!! route("admin.{$section}.login_as", $item->id) !!}">
+                                                {!! trans('front.login_as') !!}
+                                            </a>
                                         </li>
                                     @endif
                                 </ul>

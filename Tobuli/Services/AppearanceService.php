@@ -103,8 +103,8 @@ class AppearanceService
 
         $path = str_replace(public_path(), '', $file);
 
-        if (app()->runningInConsole()) {
-            return \CustomFacades\Server::url() . $path;
+        if (app()->runningInConsole()){
+            return \CustomFacades\Server::url().$path;
         }
 
         return asset_resource($path);
@@ -362,7 +362,7 @@ class AppearanceService
 
         $path = $fileData['filename'];
 
-        foreach (glob($path . '.*') as $filename) {
+        foreach (glob($path.'.*') as $filename) {
             unlink($filename);
         }
 

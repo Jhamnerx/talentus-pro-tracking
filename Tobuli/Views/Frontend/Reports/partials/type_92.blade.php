@@ -8,6 +8,7 @@
             <table class="table table-hover">
                 <thead>
                 <tr>
+                    <th>Trip ID</th>
                     <th>Date</th>
                     <th>Event Type</th>
                     <th>Vehicle No</th>
@@ -29,12 +30,13 @@
                 <tbody>
                 @forelse ($report->getItems() as $item)
                     <tr>
+                        <td>{!! $item['trip_id'] !!}</td>
                         <td>{!! $item['date'] !!}</td>
                         <td>{!! $item['type'] !!}</td>
                         <td>{!! $item['plate_number'] !!}</td>
                         <td>{!! $item['driver_name'] !!}</td>
                         <td>{!! $item['driver_rfid'] !!}</td>
-                        <td></td>
+                        <td>{!! $item['event_key'] !!}</td>
                         <td>{!! $item['location_start'] !!}</td>
                         <td>{!! $item['location_end'] !!}</td>
                         <td>{!! $item['start_at'] !!}</td>

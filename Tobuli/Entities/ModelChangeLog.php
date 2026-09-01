@@ -30,7 +30,7 @@ class ModelChangeLog extends Activity
 
     public function attributesCount(): int
     {
-        return count($this->properties['attributes']);
+        return count($this->properties['attributes'] ?? []);
     }
 
     public function getCauserName(): string

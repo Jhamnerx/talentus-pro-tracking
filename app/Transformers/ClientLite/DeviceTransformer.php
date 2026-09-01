@@ -72,4 +72,17 @@ abstract class DeviceTransformer extends BaseTransformer {
 
         return $colors[$color] ?? $color;
     }
+
+    public static function serializeDeviceDateTime(Device $device)
+    {
+        $timestamp = strtotime($device->time);
+
+        if (empty($timestamp))
+            return null;
+
+        return [
+            'timestamp' => $timestamp,
+            'formatted' => $device->time
+        ];
+    }
 }

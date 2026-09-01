@@ -29,7 +29,7 @@ class DeviceFullTransformer extends DeviceTransformer  {
             'group_id' => $entity->pivot ? (int)$entity->pivot->group_id : 0,
             'name'     => $entity->name,
             'active'   => $entity->pivot ? (bool)$entity->pivot->active : null,
-            'time'     => $this->serializeDateTime($entity->time),
+            'time'     => self::serializeDeviceDateTime($entity),
             'speed'    => $this->serializeFormatter(Formatter::speed(), $entity->getSpeed()),
             'engine_status' => $entity->getEngineStatus(),
         ];

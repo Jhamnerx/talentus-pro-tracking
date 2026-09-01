@@ -18,6 +18,9 @@
                             <th>{{ trans('global.distance') }}</th>
                             <th>{{ trans('front.geofence') }}</th>
                             <th>{{ trans('front.drivers') }}</th>
+                            @if($report->show_addresses)
+                                <th>{{ trans('front.address') }}</th>
+                            @endif
                         </tr>
                         </thead>
 
@@ -30,6 +33,9 @@
                                 <td>{{ $row['distance'] }}</td>
                                 <td>{{ $row['group_geofence'] }}</td>
                                 <td>{{ $row['drivers'] }}</td>
+                                @if($report->show_addresses)
+                                    <th>{{ $row['location'] }}</th>
+                                @endif
                             </tr>
                         @endforeach
                         </tbody>

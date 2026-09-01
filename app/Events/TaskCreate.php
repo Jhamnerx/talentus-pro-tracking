@@ -17,7 +17,9 @@ class TaskCreate extends Event implements ShouldBroadcast
     }
 
     public function broadcastOn() {
-        return [md5('task_for_'. 1)];
+        return [
+            $this->task->device->getSocketChannel()
+        ];
     }
 
     public function broadcastAs()

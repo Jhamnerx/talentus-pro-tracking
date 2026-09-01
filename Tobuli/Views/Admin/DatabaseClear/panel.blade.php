@@ -5,18 +5,13 @@
     </div>
 
     <div class="panel-body">
-        {!! Form::open([
-            'route' => 'admin.db_clear.save',
-            'method' => 'POST',
-            'class' => 'form form-horizontal',
-            'id' => 'database-clear-form',
-        ]) !!}
+        {!! Form::open(array('route' => 'admin.db_clear.save', 'method' => 'POST', 'class' => 'form form-horizontal', 'id' => 'database-clear-form')) !!}
 
         <div class="form-group">
             <div class="col-xs-12">
                 <div class="checkbox">
                     {!! Form::checkbox('status', 1, !empty($settings['status'])) !!}
-                    {!! Form::label('status', trans('validation.attributes.database_clear_status')) !!}
+                    {!! Form::label('status', trans('validation.attributes.database_clear_status') ) !!}
                 </div>
             </div>
         </div>
@@ -24,19 +19,17 @@
             {!! Form::label(null, trans('front.from'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
             <div class="col-xs-8">
                 <div class="radio-inline">
-                    {!! Form::radio('from', 'server_time', 'server_time' == \Illuminate\Support\Arr::get($settings, 'from')) !!}
-                    {!! Form::label('from', trans('front.server_time')) !!}
+                    {!! Form::radio('from', 'server_time', 'server_time' == \Illuminate\Support\Arr::get($settings,'from')) !!}
+                    {!! Form::label('from', trans('front.server_time') ) !!}
                 </div>
                 <div class="radio-inline">
-                    {!! Form::radio('from', 'last_connection', 'last_connection' == \Illuminate\Support\Arr::get($settings, 'from')) !!}
-                    {!! Form::label('from', trans('admin.last_connection')) !!}
+                    {!! Form::radio('from', 'last_connection', 'last_connection' == \Illuminate\Support\Arr::get($settings,'from')) !!}
+                    {!! Form::label('from', trans('admin.last_connection') ) !!}
                 </div>
             </div>
         </div>
         <div class="form-group">
-            {!! Form::label('days', trans('validation.attributes.database_clear_days'), [
-                'class' => 'col-xs-12 col-sm-4 control-label"',
-            ]) !!}
+            {!! Form::label('days', trans('validation.attributes.database_clear_days'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
             <div class="col-xs-12 col-sm-8">
                 {!! Form::text('days', isset($settings['days']) ? $settings['days'] : 90, ['class' => 'form-control']) !!}
             </div>
@@ -60,8 +53,7 @@
     </div>
 
     <div class="panel-footer">
-        <button type="submit" class="btn btn-action"
-            onClick="$('#database-clear-form').submit();">{{ trans('global.save') }}</button>
+        <button type="submit" class="btn btn-action" onClick="$('#database-clear-form').submit();">{{ trans('global.save') }}</button>
     </div>
 </div>
 
@@ -79,15 +71,13 @@
                 success: function(response) {
                     $('.progress', container).show();
                     $('#db-size-total').html(response.total.size);
-                    $('#db-size-used').css('width', response.used.percentage + '%').html(response.used
-                        .size);
-                    $('#db-size-reserved').css('width', response.reserved.percentage + '%').html(
-                        response.reserved.size);
+                    $('#db-size-used').css('width', response.used.percentage + '%').html(response.used.size);
+                    $('#db-size-reserved').css('width', response.reserved.percentage + '%').html(response.reserved.size);
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     handlerFailTarget(jqXHR, textStatus, errorThrown, container);
                 },
-                complete: function() {
+                complete: function () {
                     loader.remove(container);
                 }
             });

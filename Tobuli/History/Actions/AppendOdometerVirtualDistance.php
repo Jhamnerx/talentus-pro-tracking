@@ -31,7 +31,12 @@ class AppendOdometerVirtualDistance extends ActionAppend
 
             if (is_null($distance)) {
                 try {
-                    $distance = $this->getDevice()->getSumDistance($this->getDateFrom());
+                    $distance = $this->getDevice()
+                        ->positions()
+                        ->where('time', '>=', $this->getDateFrom())
+                        ->where('valid', '>', 0)
+                        ->sum('distance');
+
                 } catch (QueryException $exception) {
                     if ($exception->getCode() != '42S02') {
                         throw $exception;
@@ -43,7 +48,7 @@ class AppendOdometerVirtualDistance extends ActionAppend
 
             $value = floatval($sensor->value);
 
-            $sensor->value = $value ? round($value - $distance) : $value;
+            $sensor->value = $value ? ($value - $distance) : $value;
 
             $this->sensors[] = $sensor;
         }

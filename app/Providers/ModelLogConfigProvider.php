@@ -36,7 +36,7 @@ class ModelLogConfigProvider extends ServiceProvider
                 $class::$logAttributesToIgnore = $config['attributes_to_ignore'];
             }
 
-            if ($class::$ignoreHidden
+            if (empty($config['include_hidden'])
                 && count($hidden = (new \ReflectionClass($class))->getDefaultProperties()['hidden'])
                 // creating instance directly causes improper boot execution
             ) {

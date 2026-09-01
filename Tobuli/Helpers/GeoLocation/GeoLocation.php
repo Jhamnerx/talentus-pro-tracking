@@ -55,15 +55,43 @@ class GeoLocation
         });
     }
 
-    public function resolveLocation(User $user, $lat, $lon)
+    public function resolveLocationHandled(?User $user, $lat, $lon)
     {
-        if ($this->geofenceOverAddress)
+        try {
+            return $this->resolveLocation($user, $lat, $lon);
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
+    public function resolveLocation(?User $user, $lat, $lon)
+    {
+        if ($this->geofenceOverAddress && $user)
             return $this->locateGeofence($user, $lat, $lon);
 
         return $this->resolveAddress($lat, $lon);
     }
 
-    public function locateGeofence(User $user, $lat, $lon)
+    public function resolveAddressHandled($lat, $lon)
+    {
+        try {
+            return $this->resolveAddress($lat, $lon);
+        } catch (\Exception $e) {
+            return $e->getMessage();
+        }
+    }
+
+    public function resolveAddress($lat, $lon)
+    {
+        $location = $this->byCoordinates($lat, $lon);
+
+        if ($location)
+            return $location->address;
+
+        return trans('front.nothing_found_request');
+    }
+
+    protected function locateGeofence(User $user, $lat, $lon)
     {
         $geofence = Geofence::userOwned($user)
             ->containPoint($lat, $lon)
@@ -74,20 +102,6 @@ class GeoLocation
         }
 
         return $this->resolveAddress($lat, $lon);
-    }
-
-    public function resolveAddress($lat, $lon)
-    {
-        try {
-            $location = $this->byCoordinates($lat, $lon);
-
-            if ($location)
-                return $location->address;
-
-            return trans('front.nothing_found_request');
-        } catch (\Exception $e) {
-            return $e->getMessage();
-        }
     }
 
     protected function setService(string $geocoder)
@@ -123,10 +137,10 @@ class GeoLocation
         }
 
         return new $class((new GeoSettings())
-                ->setApiKey($settings['api_key'] ?? '')
-                ->setApiUrl($settings['api_url'] ?? '')
-                ->setAppId($settings['api_app_id'] ?? '')
-                ->setAppSecret($settings['api_app_secret'] ?? '')
+            ->setApiKey($settings['api_key'] ?? '')
+            ->setApiUrl($settings['api_url'] ?? '')
+            ->setAppId($settings['api_app_id'] ?? '')
+            ->setAppSecret($settings['api_app_secret'] ?? '')
         );
     }
 

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Schema;
@@ -55,24 +56,45 @@ class DevicePositionsImportJob implements ShouldQueue
         $device = $this->device;
 
         // Table doesn't exists
-        if (str_contains($e->getMessage(), "ERROR 1146")) {
+        if (str_contains($e->getMessage(), 'ERROR 1146')) {
             $device->createPositionsTable();
 
             return true;
         }
 
         // Column count doesn't match value count
-        if (str_contains($e->getMessage(), "ERROR 1136")) {
+        if (str_contains($e->getMessage(), 'ERROR 1136')) {
             $table = "positions_{$device->traccar->id}";
             $dbName = DatabaseService::instance()->getDatabaseName($device->traccar->database_id);
             $schema = Schema::connection($dbName);
 
-            $schema->table($table, function($t) use ($table) {
-                $t->integer('device_id')->nullable()->after('id');
-                $t->double('power')->nullable()->after('other');
-            });
+            $hasDeviceId = $schema->hasColumn($table, 'device_id');
+            $hasPower = $schema->hasColumn($table, 'power');
 
-            return true;
+            if ($hasDeviceId && $hasPower) {
+                $schema->table($table, function (Blueprint $table) {
+                    $table->dropColumn('device_id');
+                });
+
+                return true;
+            }
+
+            if (!$hasDeviceId && $hasPower) {
+                $schema->table($table, function (Blueprint $table) {
+                    $table->dropColumn('power');
+                });
+
+                return true;
+            }
+
+            if (!$hasDeviceId && !$hasPower) {
+                $schema->table($table, function (Blueprint $table) {
+                    $table->integer('device_id')->nullable()->after('id');
+                    $table->double('power')->nullable()->after('other');
+                });
+
+                return true;
+            }
         }
 
         return false;

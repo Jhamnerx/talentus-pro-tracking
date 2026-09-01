@@ -2,29 +2,30 @@
 
 namespace Tobuli\Helpers\GeoLocation\GeoServices;
 
-use Language;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
 use Illuminate\Support\Arr;
-use Tobuli\Exceptions\ValidationException;
+use Language;
 use Tobuli\Helpers\GeoLocation\GeoSettings;
 use Tobuli\Helpers\GeoLocation\Location;
 
 
 class GeoHere extends AbstractGeoService
 {
-    private $curl;
-    private $urls;
-    private $requestOptions = [];
+    private GuzzleClient $client;
+    private array $urls;
+    private array $requestOptions;
 
 
     public function __construct(GeoSettings $settings)
     {
         parent::__construct($settings);
 
-        $curl = new \Curl;
-        $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
-        $curl->options['CURLOPT_TIMEOUT'] = 5;
-
-        $this->curl = $curl;
+        $this->client = new GuzzleClient([
+            RequestOptions::TIMEOUT  => 5,
+            RequestOptions::VERIFY   => false,
+        ]);
 
         $this->urls = [
             "reverse" => "https://revgeocode.search.hereapi.com/v1/revgeocode",
@@ -95,17 +96,19 @@ class GeoHere extends AbstractGeoService
 
     private function request($method, $options)
     {
-        $response = $this->curl->get(
-            $this->urls[$method],
-            array_merge($options, $this->requestOptions)
-        );
+        try {
+            $response = $this->client->get(
+                $this->urls[$method],
+                ['query' => array_merge($options, $this->requestOptions)]
+            );
+        } catch (RequestException $e) {
+            $response = $e->getResponse();
+        }
 
-        $response_body = json_decode($response->body, true);
-
-        if ($response->headers['Status-Code'] != 200 || $response_body == null)
+        if (!$response || $response->getStatusCode() !== 200)
             throw new \Exception('Geocoder API error.');
 
-        return $response_body ?? null;
+        return json_decode($response->getBody()->getContents(), true);
     }
 
     private function locationObject($address)

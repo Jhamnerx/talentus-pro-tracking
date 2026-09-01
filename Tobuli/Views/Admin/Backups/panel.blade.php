@@ -5,6 +5,13 @@
     </div>
 
     <div class="panel-body">
+
+        @if(!(new \Tobuli\Helpers\Backup\BackupService(settings('backups')))->hasHiveCredentials())
+        <div class="alert alert-warning">
+            <span class="warning">{{ trans('admin.automatic_backup_disabled') }}</span>
+        </div>
+        @endif
+
         {!! Form::open(['route' => 'admin.backups.save', 'method' => 'POST', 'class' => 'form form-horizontal', 'id' => 'database-backup-form']) !!}
 
         <div class="form-group">

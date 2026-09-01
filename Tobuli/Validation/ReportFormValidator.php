@@ -14,8 +14,8 @@ class ReportFormValidator extends Validator {
             'speed_limit' => 'numeric',
             'devices' => 'array',
             'geofences' => 'array',
-            'date_from' => 'required|date',
-            'date_to' => 'required|date',
+            'date_from' => 'date',
+            'date_to' => 'date',
             'from_time' => 'regex:/^\d{2}:\d{2}(:\d{2})?$/',
             'to_time'   => 'regex:/^\d{2}:\d{2}(:\d{2})?$/',
         ]

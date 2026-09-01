@@ -280,7 +280,7 @@ class TranslationService
      */
     private function getBasePath(string $file = null, string $lang = null)
     {
-        return base_path('resources/lang'.$this->formatLanguageAndFile($file, $lang));
+        return app()->langPath() . $this->formatLanguageAndFile($file, $lang);
     }
 
     /**

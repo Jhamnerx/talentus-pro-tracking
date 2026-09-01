@@ -11,8 +11,7 @@ class DevicePositionChanged extends Event
 
     public $device;
 
-    public function __construct(Device $device)
-    {
+    public function __construct(Device $device) {
         $this->device = $device;
     }
 }

@@ -3,6 +3,7 @@
 
 namespace Tobuli\Sensors\Types;
 
+use Illuminate\Support\Collection;
 use Tobuli\Sensors\Tag;
 use Tobuli\Entities\TraccarPosition as Position;
 
@@ -51,7 +52,7 @@ class EngineHours extends Numerical
                 'tag_name' => true,
                 'skip_empty' => true,
                 'formula' => true,
-                'unit' => true,
+                'unit_type' => true,
                 'add_to_history' => true,
                 'add_to_graph' => true,
             ],
@@ -69,6 +70,24 @@ class EngineHours extends Numerical
                 'add_to_graph' => true,
             ]
         ];
+    }
+
+    public static function unitTypes(): Collection
+    {
+        return collect([
+            [
+                'key' => 'h',
+                'title' => trans('front.hour'),
+            ],
+            [
+                'key' => 'm',
+                'title' => trans('front.minute'),
+            ],
+            [
+                'key' => 's',
+                'title' => trans('front.second'),
+            ],
+        ]);
     }
 
     public function getDataValue($data)
@@ -97,11 +116,28 @@ class EngineHours extends Numerical
         }
     }
 
+    public function setUnitType($unit_type)
+    {
+        parent::setUnitType($unit_type);
+
+        if ($unit_type) {
+            $this->setUnit(trans('front.hour_short'));
+        }
+    }
+
     protected function getResult($value)
     {
-        if (!$this->valueTag)
-            return parent::getResult($value);
+        if ($this->valueTag)
+            return $this->getResultLogical($value);
 
+        if ($result = parent::getResult($value))
+            return $this->unitTypeConvert($result);
+
+        return null;
+    }
+
+    protected function getResultLogical($value)
+    {
         if ($this->on && $this->on->parse($value)) {
             return true;
         }
@@ -111,5 +147,18 @@ class EngineHours extends Numerical
         }
 
         return null;
+    }
+
+    protected function unitTypeConvert($value)
+    {
+        switch ($this->unit_type) {
+            case 's':
+                return $value / 3600;
+            case 'm':
+                return $value / 60;
+            case 'h':
+            default:
+                return $value;
+        }
     }
 }

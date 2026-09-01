@@ -123,7 +123,7 @@ class FlowPerHourRateReport extends DeviceReport
         ];
 
         $result = array_filter($result, fn ($value) => $value !== null);
-        $result = array_map(fn ($value) => round($value, 2), $result);
+        $result = array_map(fn ($value) => round(floatval($value), 2), $result);
 
         return $result;
     }

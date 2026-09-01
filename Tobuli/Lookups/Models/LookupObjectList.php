@@ -6,6 +6,7 @@ use CustomFacades\Repositories\UserRepo;
 use Illuminate\Support\Arr;
 use Tobuli\Entities\Device;
 use Tobuli\Lookups\LookupModel;
+use Formatter;
 
 class LookupObjectList extends LookupDevice
 {
@@ -128,6 +129,16 @@ class LookupObjectList extends LookupDevice
         return $this->settings = $settings;
     }
 
+    public function renderDistance($device)
+    {
+        return $device->getTotalDistance();
+    }
+
+    public function renderHtmlDistance($device)
+    {
+        return $this->renderDistance($device) . " " . Formatter::distance()->unit();
+    }
+
     public function renderFuelPercentage($device)
     {
         $sensor = $device->getFuelTankSensor();
@@ -139,7 +150,7 @@ class LookupObjectList extends LookupDevice
         $value = $sensor->getValueCurrent($device)->getValue();
         $fullTank = $sensor->getMaxTankValue();
 
-        $percentage = $fullTank ? floatval($value) * 100 / $fullTank : 0;
+        $percentage = ($fullTank && $fullTank > 0) ? floatval($value) * 100 / $fullTank : 0;
 
         if ( $percentage < 0 )
             $percentage = 0;

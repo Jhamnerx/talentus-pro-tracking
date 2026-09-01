@@ -38,23 +38,10 @@ class FcmService
         $token->save();
     }
 
-    public function destroyFcmToken(FcmTokenableInterface $tokenable, string $fcmToken): bool
-    {
-        $token = $tokenable->fcmTokens()->where('token', $fcmToken)->first();
-
-        if (!$token) {
-            return false;
-        }
-
-        $token->delete();
-
-        return true;
-    }
-
     /**
      * @param Model&FcmTokenableInterface $tokenable
      */
-    public function send($tokenable, $title, $body, array $data = [], $type = null)
+    public function send($tokenable, $title, $body, array $data = [])
     {
         if (!$tokenable instanceof FcmTokenableInterface) {
             return;
@@ -68,15 +55,15 @@ class FcmService
 
         $payload = array_merge($data, ['title' => $title, 'content' => $body]);
 
-        $this->sendToTokens($tokens, $title, $body, $payload, $type);
+        $this->sendToTokens($tokens, $title, $body, $payload);
     }
 
     /**
      * @param  FcmToken[]  $tokens
      */
-    public function sendToTokens(array $tokens, string $title, string $body, ?array $payloadData = null, $type = null): void
+    public function sendToTokens(array $tokens, string $title, string $body, ?array $payloadData = null): void
     {
-        $message = $this->buildMessage($title, $body, $payloadData, $type);
+        $message = $this->buildMessage($title, $body, $payloadData);
 
         foreach ($tokens as $token) {
             $projectId = $token->project_id ?: $this->fcmConfigurationService->getDefaultProjectId();
@@ -229,7 +216,7 @@ class FcmService
             && $error['status'] === 'UNAUTHENTICATED';
     }
 
-    private function buildMessage(string $title, string $body, ?array $payloadData = null, $type = null): array
+    private function buildMessage(string $title, string $body, ?array $payloadData = null): array
     {
         $message = [
             'token' => null,
@@ -256,15 +243,10 @@ class FcmService
                 }
             });
         }
-        
+
         $channelId = config('fcm.channel_id');
         $sound = config('fcm.sound');
-
         $ttl = 20 * 60; // https://firebase.google.com/docs/cloud-messaging/concept-options#ttl
-
-        $type = isset($payloadData['type']) ? $payloadData['type'] : 'default';
-
-        $channelId = $type;
 
         $message['android']['ttl'] = $ttl . 's';
         $message['android']['priority'] = 'high';

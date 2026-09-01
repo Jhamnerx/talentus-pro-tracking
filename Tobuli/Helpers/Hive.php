@@ -4,7 +4,6 @@ namespace Tobuli\Helpers;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
-use Tobuli\Entities\User;
 
 class Hive
 {
@@ -29,23 +28,19 @@ class Hive
         return !empty($response['status']);
     }
 
-    public function getBackupServer()
-    {
+    public function getBackupServer() {
         return $this->json('GET', "backup_server");
     }
 
-    public function backupServerError(array $data)
-    {
+    public function backupServerError(array $data) {
         return $this->json('POST', "backup_server/error", $data);
     }
 
-    public function getApns()
-    {
+    public function getApns() {
         return $this->json('GET', "apns");
     }
 
-    public function getDeviceConfigs()
-    {
+    public function getDeviceConfigs() {
         return $this->json('GET', "device_configs");
     }
 

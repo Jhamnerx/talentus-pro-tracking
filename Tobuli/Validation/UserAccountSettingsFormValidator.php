@@ -11,10 +11,10 @@ class UserAccountSettingsFormValidator extends Validator {
      */
     public $rules = [
         'update' => [
-            'timezone_id' => 'required|exists:timezones,id',
-            'unit_of_distance' => 'required|in:km,mi,nm',
-            'unit_of_capacity' => 'required|in:lt,gl',
-            'unit_of_altitude' => 'required|in:mt,ft'
+            'timezone_id' => 'exists:timezones,id',
+            'unit_of_distance' => 'in:km,mi,nm',
+            'unit_of_capacity' => 'in:lt,gl',
+            'unit_of_altitude' => 'in:mt,ft'
         ]
     ];
 

@@ -5,7 +5,7 @@
 @stop
 
 @section('body')
-    {!! Form::open(['route' => 'pois.import', 'method' => 'POST']) !!}
+    {!! Form::open(['route' => 'pois.import.store', 'method' => 'POST']) !!}
     {!! Form::hidden('id') !!}
     <div class="form-group">
         {!!Form::label(null, trans('validation.attributes.map_icon_id').'*:')!!}

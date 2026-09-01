@@ -22,6 +22,11 @@ class Textual extends Sensor
         return $value;
     }
 
+    public static function isNullableValue() : bool
+    {
+        return true;
+    }
+
     public function getValueFormatted($value)
     {
         return $this->getMappingValue($value);
@@ -35,6 +40,7 @@ class Textual extends Sensor
                 'setflag' => true,
                 //'bin' => true,
                 'bitcut' => true,
+                'reset_blank' => true,
                 'mapping' => true,
                 'ascii' => true,
                 'add_to_history' => true,

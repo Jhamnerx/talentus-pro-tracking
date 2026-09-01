@@ -34,7 +34,9 @@ class BackupManageCommand extends Command
 
         switch ($action) {
             case self::ACTION_PAUSE:
-                $affected = $this->backupService->pause(null, $item);
+                while (!ctype_digit($pauseLength = $this->ask('How many minutes should it be paused?')));
+
+                $affected = $this->backupService->pause($pauseLength, null, $item);
 
                 $this->info("Paused $affected processes");
 
@@ -64,13 +66,7 @@ class BackupManageCommand extends Command
     {
         $item = $this->input->getArgument('item');
 
-        $choices = Backup::whereHas('processes', fn (Builder $query) => $query
-            ->whereUnexpired()
-            ->where(fn (Builder $query) => $query
-                ->whereNull('completed_at')
-                ->orWhereNull('failed_at')
-            )
-        )
+        $choices = Backup::whereHas('processes', fn (Builder $query) => $query->whereUnfinished())
             ->pluck('name', 'id')
             ->prepend('All', self::ITEM_ALL)
             ->all();

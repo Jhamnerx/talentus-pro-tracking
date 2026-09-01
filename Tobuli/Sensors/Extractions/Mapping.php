@@ -4,12 +4,14 @@
 namespace Tobuli\Sensors\Extractions;
 
 
+use Illuminate\Support\Collection;
 use Tobuli\Sensors\Contracts\Extraction;
 
 class Mapping implements Extraction
 {
     const VALUE_TYPE = 1;
     const RANGE_TYPE = 2;
+    const EMPTY_TYPE = 3;
     const TEXT_MAP = 1;
     const FORMULA_MAP = 2;
     const VALUE_MAP = 3;
@@ -36,6 +38,11 @@ class Mapping implements Extraction
                 case self::RANGE_TYPE:
                     $in = function($value) use ($mapping) {
                         return $value >= $mapping['v'] && $value <= $mapping['t'];
+                    };
+                    break;
+                case self::EMPTY_TYPE:
+                    $in = function($value) use ($mapping) {
+                        return is_null($value);
                     };
                     break;
             }
@@ -86,5 +93,23 @@ class Mapping implements Extraction
         }
 
         return null;
+    }
+
+    public static function getValueTypes() : Collection
+    {
+        return collect([
+            self::VALUE_TYPE => trans('front.value'),
+            self::RANGE_TYPE => trans('front.range'),
+            self::EMPTY_TYPE => trans('front.empty'),
+        ]);
+    }
+
+    public static function getMapTypes() : Collection
+    {
+        return collect([
+            self::TEXT_MAP    => trans('front.text'),
+            self::FORMULA_MAP => trans('front.formula'),
+            self::VALUE_MAP   => trans('front.value'),
+        ]);
     }
 }

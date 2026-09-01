@@ -1,9 +1,6 @@
-<?php
+<?php namespace Tobuli\Validation;
 
-namespace Tobuli\Validation;
-
-class SharingFormValidator extends Validator
-{
+class SharingFormValidator extends Validator {
 
     /**
      * @var array Validation rules for the test form, they can contain in-built Laravel rules or our custom rules

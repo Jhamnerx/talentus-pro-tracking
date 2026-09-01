@@ -1,16 +1,14 @@
 <p>{{ trans('front.time_period') }}</p>
 
-<div class="radio">
-    {!! Form::radio("dashboard[blocks][$block][options][period]", 'day', $period == 'day') !!}
-    {!! Form::label(null, ucfirst(trans('front.day'))) !!}
-</div>
-
-<div class="radio">
-    {!! Form::radio("dashboard[blocks][$block][options][period]", 'week', $period == 'week') !!}
-    {!! Form::label(null, trans('front.week')) !!}
-</div>
-
-<div class="radio">
-    {!! Form::radio("dashboard[blocks][$block][options][period]", 'month', $period == 'month') !!}
-    {!! Form::label(null, ucfirst(trans('front.month'))) !!}
-</div>
+@foreach([
+    'day' => ucfirst(trans('front.day')),
+    'week' => trans('front.week'),
+    'month' => ucfirst(trans('front.month')),
+] as $key => $name)
+    @if(empty($excluded) || !in_array($key, $excluded))
+        <div class="radio">
+            {!! Form::radio("dashboard[blocks][$block][options][period]", $key, $period === $key) !!}
+            {!! Form::label(null, $name) !!}
+        </div>
+    @endif
+@endforeach

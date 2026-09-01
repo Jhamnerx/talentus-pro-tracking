@@ -1,6 +1,4 @@
-<?php
-
-namespace ModalHelpers;
+<?php namespace ModalHelpers;
 
 use CustomFacades\Repositories\DeviceRepo;
 use CustomFacades\Validators\SendCommandFormValidator;
@@ -11,6 +9,7 @@ use Tobuli\Exceptions\ValidationException;
 use Tobuli\Protocols\Commands;
 use Tobuli\Services\Commands\CommandService;
 use Tobuli\Services\Commands\SendCommandService;
+use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 use Tobuli\Services\EntityLoader\UserDevicesLoader;
 use Validator;
 
@@ -26,12 +25,18 @@ class SendCommandModalHelper extends ModalHelper
      */
     private $commandService;
 
+    /**
+     * @var UserDevicesGroupLoader
+     */
+    private $devicesLoader;
+
     public function __construct()
     {
         parent::__construct();
 
         $this->sendCommandService = new SendCommandService();
         $this->commandService = new CommandService($this->user);
+        $this->devicesLoader = new UserDevicesGroupLoader($this->user);
     }
 
     public function createData()
@@ -57,33 +62,27 @@ class SendCommandModalHelper extends ModalHelper
 
         $command_schedules = $this->user->commandSchedules;
 
-        return compact(
-            'devices_sms',
-            'devices_gprs',
-            'sms_templates',
-            'gprs_templates',
-            'device_id',
-            'command_schedules'
-        );
+        return compact('devices_sms', 'devices_gprs', 'sms_templates', 'gprs_templates',
+            'device_id', 'command_schedules');
     }
 
     public function create()
     {
         $this->checkException('send_command', 'view');
 
-        if (! $this->user->sms_gateway)
+        if ( ! $this->user->sms_gateway)
             throw new ValidationException(['id' => trans('front.sms_gateway_disabled')]);
 
         SendCommandFormValidator::validate('sms', $this->data);
 
-        $devicesLoader = new UserDevicesLoader($this->user);
-        $devicesLoader->setRequestKey('devices');
 
-        if (!$devicesLoader->hasAttach()) {
+        $this->devicesLoader->setRequestKey('devices');
+
+        if (!$this->devicesLoader->hasAttach()) {
             throw new ValidationException(['devices' => trans('global.not_found')]);
         }
 
-        $devices = $devicesLoader->getQuerySelected()->get();
+        $devices = $this->devicesLoader->getQuerySelected()->get();
 
         if ($devices->isEmpty()) {
             throw new ValidationException(['devices' => trans('global.not_found')]);
@@ -100,16 +99,13 @@ class SendCommandModalHelper extends ModalHelper
 
         SendCommandFormValidator::validate('gprs', $this->data);
 
-        $devicesLoader = new UserDevicesLoader($this->user);
-        $devicesLoader->setRequestKey('devices');
+        $this->devicesLoader->setRequestKey('devices');
 
-        if (!$devicesLoader->hasAttach()) {
+        if (!$this->devicesLoader->hasAttach()) {
             throw new ValidationException(['devices' => trans('global.not_found')]);
         }
 
-        $query = $devicesLoader->getQuerySelected();
-
-        $devices = $query->get();
+        $devices = $this->devicesLoader->getQuerySelected()->get();
 
         if ($devices->isEmpty()) {
             throw new ValidationException(['devices' => trans('global.not_found')]);
@@ -117,21 +113,7 @@ class SendCommandModalHelper extends ModalHelper
 
         $this->commandService->validateGPRS($devices, $this->data);
 
-        $responses = collect();
-
-        foreach ($devices->chunk(100) as $chunk) {
-            foreach ($chunk as $device) {
-                $response = $this->sendCommandService->gprs(
-                    collect([$device]),
-                    $this->data,
-                    $this->user
-                );
-
-                $result = $response->first();
-                $result['device'] = $device->name;
-                $responses->push($result);
-            }
-        }
+        $responses = $this->sendCommandService->gprs($devices, $this->data, $this->user);
 
         $errors = $responses
             ->filter(function ($response) {
@@ -171,13 +153,12 @@ class SendCommandModalHelper extends ModalHelper
 
     function getDeviceCommands()
     {
-        $devicesLoader = new UserDevicesLoader($this->user);
-        $devicesLoader->setRequestKey('devices');
+        $this->devicesLoader->setRequestKey('devices');
 
-        if (!$devicesLoader->hasAttach())
+        if (!$this->devicesLoader->hasAttach())
             return [];
 
-        return $this->commandService->getCommands($devicesLoader, true, Arr::get($this->data, 'connection'));
+        return $this->commandService->getCommands($this->devicesLoader, true, Arr::get($this->data, 'connection'));
     }
 
     public function getCommands($devices)

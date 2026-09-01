@@ -30,5 +30,5 @@
 </div>
 
 <div class="nav-pagination">
-    {!! $logs->setPath(route('command_schedules.logs', ['id' => $command_schedule->id]))->render() !!}
+    {!! $logs->setPath(route('command_schedules.logs', ['schedule' => $command_schedule->id]))->render() !!}
 </div>

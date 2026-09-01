@@ -3,7 +3,10 @@
 namespace Tobuli\Traits;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Pipeline\Pipeline;
 use Spatie\Activitylog\ActivityLogger;
+use Spatie\Activitylog\EventLogBag;
+use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Tobuli\Entities\DisplayInterface;
 use Tobuli\Entities\ModelChangeLog;
@@ -14,7 +17,6 @@ trait ChangeLogs
 
     public static array $logAttributes;
     public static array $logAttributesToIgnore = ['created_at', 'updated_at'];
-    public static bool $ignoreHidden = true;
     public static bool $logFillable;
     public static bool $logUnguarded;
     public static bool $logOnlyDirty = true;
@@ -23,20 +25,49 @@ trait ChangeLogs
 
     public ?ModelChangeLog $lastActivity = null;
 
-    public function getLogNameToUse($eventName)
+    public function getActivitylogOptions(): LogOptions
     {
-        return $this instanceof DisplayInterface ? $this->getDisplayName() : '';
+        $options = (new LogOptions())
+            ->logOnly(static::$logAttributes)
+            ->logExcept(static::$logAttributesToIgnore)
+            ->dontLogIfAttributesChangedOnly(static::$logAttributesToIgnore)
+            ->useLogName($this instanceof DisplayInterface ? $this->getDisplayName() : '')
+        ;
+        $options->submitEmptyLogs = static::$submitEmptyLogs;
+
+        if (isset(static::$logFillable)) {
+            $options->logFillable = static::$logFillable;
+        }
+
+        if (isset(static::$logUnguarded)) {
+            $options->logUnguarded = static::$logUnguarded;
+        }
+
+        if (isset(static::$logOnlyDirty)) {
+            $options->logOnlyDirty = static::$logOnlyDirty;
+        }
+
+        return $options;
     }
 
     protected static function bootLogsActivity()
     {
         static::eventsToBeRecorded()->each(function ($eventName) {
+            if ($eventName === 'updated') {
+                static::updating(function (Model $model) {
+                    $oldValues = (new static())->setRawAttributes($model->getRawOriginal());
+                    $model->oldAttributes = static::logChanges($oldValues);
+                });
+            }
+
             return static::$eventName(function (Model $model) use ($eventName) {
                 $class = get_class($model);
 
                 if (!empty($class::$logPaused)) {
                     return;
                 }
+
+                $model->activitylogOptions = $model->getActivitylogOptions();
 
                 if (! $model->shouldLogEvent($eventName)) {
                     return;
@@ -55,9 +86,14 @@ trait ChangeLogs
                     return;
                 }
 
-                $attrs = $model->attributeValuesToBeLogged($eventName);
+                $changes = $model->attributeValuesToBeLogged($eventName);
 
-                if ($model->isLogEmpty($attrs) && ! $model->shouldSubmitEmptyLogs()) {
+                if ($eventName === 'deleted') {
+                    $changes['attributes'] = $changes['old'];
+                    unset($changes['old']);
+                }
+
+                if ($model->isLogEmpty($changes) && ! $model->activitylogOptions->submitEmptyLogs) {
                     return;
                 }
 
@@ -65,10 +101,20 @@ trait ChangeLogs
                 $lastActivity = $model->lastActivity;
 
                 if (!$lastActivity) {
+                    // User can define a custom pipelines to mutate, add or remove from changes
+                    // each pipe receives the event carrier bag with changes and the model in
+                    // question every pipe should manipulate new and old attributes.
+                    $event = app(Pipeline::class)
+                        ->send(new EventLogBag($eventName, $model, $changes, $model->activitylogOptions))
+                        ->through(static::$changesPipes)
+                        ->thenReturn();
+
+                    // Actual logging
                     $logger = app(ActivityLogger::class)
                         ->useLog($logName)
+                        ->event($eventName)
                         ->performedOn($model)
-                        ->withProperties($attrs);
+                        ->withProperties($event->changes);
 
                     if (method_exists($model, 'tapActivity')) {
                         $logger->tap([$model, 'tapActivity'], $eventName);
@@ -76,19 +122,22 @@ trait ChangeLogs
 
                     $model->lastActivity = $logger->log($description);
 
+                    // Reset log options so the model can be serialized.
+                    $model->activitylogOptions = null;
+
                     return;
                 }
 
                 $properties = $lastActivity->properties;
-                $hasNew = isset($properties['attributes']) && isset($attrs['attributes']);
-                $hasOld = isset($properties['old']) && isset($attrs['old']);
+                $hasNew = isset($properties['attributes']) && isset($changes['attributes']);
+                $hasOld = isset($properties['old']) && isset($changes['old']);
 
                 if ($hasNew) {
-                    $properties['attributes'] = array_merge($properties['attributes'], $attrs['attributes']);
+                    $properties['attributes'] = array_merge($properties['attributes'], $changes['attributes']);
                 }
 
                 if ($hasOld) {
-                    $properties['old'] = array_merge($attrs['old'], $properties['old']);
+                    $properties['old'] = array_merge($changes['old'], $properties['old']);
                 }
 
                 $lastActivity->properties = $properties;

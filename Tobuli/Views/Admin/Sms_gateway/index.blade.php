@@ -47,11 +47,11 @@
                         {!!Form::label('authentication', trans('validation.attributes.authentication').':')!!}
                         {!!Form::select('authentication', config('sms.authentications'), \Illuminate\Support\Arr::get($params, 'authentication'), ['class' => 'form-control'])!!}
                     </div>
-                    <div class="form-group sms-gateway-auth">
+                    <div class="form-group" data-disablable="#authentication;hide-disable;1">
                         {!!Form::label('username', trans('validation.attributes.username').':')!!}
                         {!!Form::text('username', \Illuminate\Support\Arr::get($params, 'username'), ['class' => 'form-control'])!!}
                     </div>
-                    <div class="form-group sms-gateway-auth">
+                    <div class="form-group" data-disablable="#authentication;hide-disable;1">
                         {!!Form::label('password', trans('validation.attributes.password').':')!!}
                         {!!Form::text('password', \Illuminate\Support\Arr::get($params, 'password'), ['class' => 'form-control'])!!}
                     </div>
@@ -119,13 +119,6 @@
             dd('select[name="request_method"]');
             $('.request-method', $sms_gateway_container).hide();
             $('.request-method-' + $(this).val(), $sms_gateway_container).show();
-        });
-
-        $sms_gateway_container.on('change', 'select[name="authentication"]', function () {
-            if ($(this).val() == 1)
-                $('.sms-gateway-auth', $sms_gateway_container).show();
-            else
-                $('.sms-gateway-auth', $sms_gateway_container).hide();
         });
 
         $('select[name="request_method"]', $sms_gateway_container).trigger('change');

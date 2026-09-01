@@ -1,13 +1,14 @@
 <?php namespace ModalHelpers;
 
 use CustomFacades\Repositories\DeviceRepo;
-use CustomFacades\Repositories\DeviceSensorRepo;
 use CustomFacades\Repositories\DeviceServiceRepo;
 use CustomFacades\Validators\ServiceFormValidator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
-use Tobuli\Exceptions\ValidationException;
 use Tobuli\Entities\Checklist;
-use Auth;
+use Tobuli\Entities\DeviceService;
+use Tobuli\Exceptions\ValidationException;
 
 class ServiceModalHelper extends ModalHelper {
 
@@ -15,7 +16,10 @@ class ServiceModalHelper extends ModalHelper {
         if (is_null($device_id)) {
             $device_id = array_key_exists('device_id', $this->data) ? $this->data['device_id'] : request()->route('device_id');
         }
-        $services = DeviceServiceRepo::searchAndPaginate(['filter' => ['device_id' => $device_id]], 'id', 'desc', 10);
+
+        $services = DeviceService::when(!$device_id, fn (Builder $query) => $query->userAccessible($this->user))
+            ->when($device_id, fn (Builder $query) => $query->where('device_id', $device_id))
+            ->toPaginator(10, 'id', 'DESC');
 
         foreach ($services as &$service)
             $service->expires = $service->expiration();
@@ -61,7 +65,7 @@ class ServiceModalHelper extends ModalHelper {
 
         $data = $this->formatInput();
 
-        if ( ! empty($this->data['expired'])) {
+        if ( empty($this->data['allow_expired_value']) && ! empty($this->data['expired'])) {
             throw new ValidationException(['id' => trans('front.service_already_expired')]);
         }
 
@@ -114,7 +118,7 @@ class ServiceModalHelper extends ModalHelper {
 
         $input = $this->formatInput();
 
-        if (isset($this->data['expired']) && $this->data['expired'] == 1)
+        if (empty($this->data['allow_expired_value']) && isset($this->data['expired']) && $this->data['expired'] == 1)
             throw new ValidationException(['id' => trans('front.service_already_expired')]);
 
         DeviceServiceRepo::update($item->id, $input);
@@ -180,7 +184,7 @@ class ServiceModalHelper extends ModalHelper {
             'engine_hours' => $engineHoursSensor ? $engineHoursSensor->getValueCurrent($device)->getValue() : 0
         ];
 
-        $this->data = prepareServiceData($this->data, $values);
+        $this->data = prepareServiceData($this->data, $values, $this->user);
         $this->data['renew_after_expiration'] = (isset($this->data['renew_after_expiration']) && $this->data['renew_after_expiration'] == 1);
 
         unset($this->data['user_id']);

@@ -102,6 +102,14 @@ class SharingController extends BaseController
             $this->sharingService->syncDevices($entity, $devices);
         }
 
+        if (!empty($this->data['sms'])) {
+            $this->sharingService->sendSms($entity, $this->data['sms']);
+        }
+
+        if (!empty($this->data['email'])) {
+            $this->sharingService->sendEmail($entity, $this->data['email']);
+        }
+
         return $this->transformEntity($entity);
     }
 

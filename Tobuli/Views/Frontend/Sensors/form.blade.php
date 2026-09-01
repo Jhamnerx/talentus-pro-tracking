@@ -24,11 +24,26 @@
             </div>
         </div>
 
+        <div data-sensor-input="unit_type">
+            <div class="form-group">
+                {!! Form::label('unit_type', trans('validation.attributes.unit_type').':') !!}
+                {!! Form::select('unit_type', \Tobuli\Sensors\Types\EngineHours::unitTypes()->pluck('title', 'key')->prepend(trans('front.none'), ''), $item->unit_type ?? null, ['class' => 'form-control']) !!}
+            </div>
+        </div>
+
         <div class="form-group" data-sensor-input="skip_empty">
             <div class="checkbox">
                 {!! Form::hidden('skip_empty', 0) !!}
                 {!! Form::checkbox('skip_empty', 1, $item->skip_empty ?? null) !!}
                 {!! Form::label('skip_empty', trans('validation.attributes.skip_empty')) !!}
+            </div>
+        </div>
+
+        <div class="form-group" data-sensor-input="reset_blank">
+            <div class="checkbox">
+                {!! Form::hidden('reset_blank', 0) !!}
+                {!! Form::checkbox('reset_blank', 1, $item->reset_blank ?? null) !!}
+                {!! Form::label('reset_blank', trans('validation.attributes.reset_blank')) !!}
             </div>
         </div>
 
@@ -69,14 +84,14 @@
                 {!! Form::label('bitcut', trans('front.bitcut').':') !!}
                 <div class="input-group">
                     <div class="checkbox input-group-btn">
-                        {!! Form::checkbox('bitcut', 1, !empty($item->bitcut), ['id' => 'bitcut_set']) !!}
+                        {!! Form::checkbox(null, 1, !empty($item->bitcut), ['id' => 'bitcut_set']) !!}
                         {!! Form::label(null) !!}
                     </div>
-                    {!! Form::text('bitcut_start', $item->bitcut['start'] ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.bitcut_start'), 'data-disablable' => '#bitcut_set;disable']) !!}
+                    {!! Form::text('bitcut[start]', $item->bitcut['start'] ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.bitcut_start'), 'data-disablable' => '#bitcut_set;disable']) !!}
                     <span class="input-group-btn"></span>
-                    {!! Form::text('bitcut_count', $item->bitcut['count'] ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.bitcut_count'), 'data-disablable' => '#bitcut_set;disable']) !!}
+                    {!! Form::text('bitcut[count]', $item->bitcut['count'] ?? null, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.bitcut_count'), 'data-disablable' => '#bitcut_set;disable']) !!}
                     <span class="input-group-btn"></span>
-                    {!! Form::select('bitcut_base', ['10' => 'DEC', '16' => 'HEX'], $item->bitcut['base'] ?? null, ['class' => 'form-control', 'data-disablable' => '#bitcut_set;disable']) !!}
+                    {!! Form::select('bitcut[base]', \Tobuli\Sensors\Extractions\BitCut::bases()->pluck('title', 'key'), $item->bitcut['base'] ?? null, ['class' => 'form-control', 'data-disablable' => '#bitcut_set;disable']) !!}
                 </div>
             </div>
         </div>

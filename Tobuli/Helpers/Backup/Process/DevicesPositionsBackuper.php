@@ -84,8 +84,9 @@ class DevicesPositionsBackuper extends AbstractBackuper
             . " --no-create-info"
             . " --skip-add-drop-table"
             . " -u '{$config['username']}'"
-            . " -h {$config['host']}"
+            . " -h '{$config['host']}'"
             . " -p'{$config['password']}'"
+            . " --port={$config['port']}"
             . " {$config['database']}";
     }
 

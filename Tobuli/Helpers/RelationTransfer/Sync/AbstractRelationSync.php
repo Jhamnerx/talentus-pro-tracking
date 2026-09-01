@@ -8,21 +8,32 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 abstract class AbstractRelationSync extends Job implements ShouldQueue
 {
     use InteractsWithQueue, SerializesModels;
 
     protected Model $parent;
-    protected $data;
+    protected mixed $data;
     protected string $method;
     protected bool $insertIgnores = true;
+
+    protected string $pivotTable;
+    protected string $entity;
+    protected string $entitiesTable;
+    protected string $pivotKey;
 
     public function __construct(Model $parent, string $method, $data = null)
     {
         $this->parent = $parent;
         $this->method = $method;
         $this->data = $data;
+
+        /** @var Model $entity */
+        $entity = new $this->entity;
+        $this->entitiesTable = $entity->getTable();
+        $this->pivotKey = Str::singular($this->entitiesTable) . '_id';
     }
 
     abstract protected function _attach($only): void;

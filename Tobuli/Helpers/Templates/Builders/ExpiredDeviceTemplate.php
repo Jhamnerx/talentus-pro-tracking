@@ -15,15 +15,19 @@ class ExpiredDeviceTemplate extends TemplateBuilder
     {
         $deviceReplacer = (new DeviceReplacer())->setUser($this->user)->setPrefix('device');
 
+        $daysPassed = \Carbon::now()->diffInDays($event->device->expiration_date);
+
         return array_merge([
-            '[days]'   => settings('main_settings.expire_notification.days_after'),
+            '[days]'        => settings('main_settings.expire_notification.days_after'),
+            '[days_passed]' => $daysPassed,
         ], $deviceReplacer->replacers($event->device));
     }
 
     protected function placeholders()
     {
         return array_merge([
-            '[days]'   => 'Days after expiration',
+            '[days]'        => 'Days after expiration',
+            '[days_passed]' => 'Days passed since device\'s expiration',
         ], (new DeviceReplacer())->setPrefix('device')->placeholders());
     }
 }

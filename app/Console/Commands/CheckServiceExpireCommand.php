@@ -1,14 +1,14 @@
 <?php namespace App\Console\Commands;
 
-use App\Services\Mail\PostmarkTransport;
+use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
 use Formatter;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 use Tobuli\Entities\DeviceService;
 use Tobuli\Entities\EmailTemplate;
 use Tobuli\Entities\SmsTemplate;
-
-use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
 
 
 class CheckServiceExpireCommand extends Command
@@ -25,6 +25,8 @@ class CheckServiceExpireCommand extends Command
      */
     protected $description = 'Check for service expired.';
 
+    private ?Logger $logger = null;
+
     /**
      * Create a new command instance.
      *
@@ -32,6 +34,11 @@ class CheckServiceExpireCommand extends Command
      */
     public function __construct()
     {
+        if (config('tobuli.check_service_expire_log')) {
+            $this->logger = (new Logger('check_service_expire'))
+                ->pushHandler(new StreamHandler(storage_path('logs/check_service_expire.log')));
+        }
+
         parent::__construct();
     }
 
@@ -71,7 +78,7 @@ class CheckServiceExpireCommand extends Command
         return 'DONE';
     }
 
-    protected function processItem($service)
+    protected function processItem(DeviceService $service): void
     {
         if ($service->user)
             Formatter::byUser($service->user);
@@ -106,7 +113,17 @@ class CheckServiceExpireCommand extends Command
         switch ($service->expiration_by) {
             case 'odometer':
                 $sensor = $service->device->getOdometerSensor();
-                $values = $sensor ? ['odometer' => $sensor->getValueCurrent($service->device)->getValue()] : [];
+
+                if (!$sensor) {
+                    $values = [];
+                    break;
+                }
+
+                $currentValue = $sensor->shown_value_by === 'connected_odometer'
+                    ? $sensor->value_formula
+                    : $sensor->getValueCurrent($service->device)->getValue();
+
+                $values = ['odometer' => $currentValue];
                 break;
 
             case 'engine_hours':
@@ -118,12 +135,18 @@ class CheckServiceExpireCommand extends Command
                 $values = [];
         }
 
+        if ($this->logger) {
+            $msg = 'SERVICE -- ' . json_encode($service->attributesToArray());
+            $msg .= ' VALUES -- ' . json_encode($values);
+            $msg .= isset($sensor) ? ' SENSOR -- ' . json_encode($sensor->attributesToArray()) : '';
+
+            $this->logger->info($msg);
+        }
+
         $update = prepareServiceData($service->toArray(), $values);
         $update = Arr::only($update, $service->getFillable());
 
         $service->update($update);
-
-        return null;
     }
 
     /**

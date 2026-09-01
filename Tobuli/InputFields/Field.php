@@ -85,4 +85,14 @@ class Field
     {
         return new MultiGroupSelectField($name, $title, $default);
     }
+
+    public function selectLoader(string $name, string $title, string $url, mixed $default = null): SelectLoaderField
+    {
+        return new SelectLoaderField($name, $title, $url, $default);
+    }
+
+    public function multiSelectLoader(string $name, string $title, string $url, mixed $default = null): MultiSelectLoaderField
+    {
+        return new MultiSelectLoaderField($name, $title, $url, $default);
+    }
 }

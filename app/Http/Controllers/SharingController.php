@@ -9,6 +9,7 @@ use App\Transformers\Device\DeviceMapFullTransformer;
 use App\Transformers\Device\DeviceMapTransformer;
 use Illuminate\Support\Facades\Config;
 use Tobuli\Entities\Sharing;
+use Tobuli\Services\FractalSerializers\DataArraySerializer;
 use Tobuli\Services\FractalSerializers\WithoutDataArraySerializer;
 use Tobuli\Services\FractalTransformerService;
 use FractalTransformer;
@@ -82,13 +83,13 @@ class SharingController extends Controller
         $items = $this->sharing->activeDevices()
             ->connectedAfter(date('Y-m-d H:i:s', $time))
             ->clearOrdersBy()
-            ->get()
-            ->map(function($device) {
-                return $this->transformerService->item($device, DeviceMapTransformer::class)->toArray();
-            });
+            ->cursorPaginate(1000)
+            ->appends(['time' => $time]);
 
         return [
-            'items' => $items,
+            'items' => $this->transformerService
+                ->setSerializer(new DataArraySerializer())
+                ->cursorPaginate($items, DeviceMapTransformer::class)->toArray(),
             'events' => [],
             'time' => $time,
             'version' => Config::get('tobuli.version')

@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Console\Commands;
+<?php namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\QueryException;
@@ -42,11 +40,11 @@ class CalcVirtualOdometerCommand extends Command
         settings('alerts_last_check', time());
 
         $devices = Device::connectedAfter($time)
-            ->whereHas('sensors', function ($query) {
+            ->whereHas('sensors', function($query){
                 $query->where('type', 'odometer');
                 $query->where('shown_value_by', 'virtual_odometer');
             })
-            ->with(['sensors' => function ($query) {
+            ->with(['sensors' => function($query) {
                 $query->where('type', 'odometer');
                 $query->where('shown_value_by', 'virtual_odometer');
             }])
@@ -107,6 +105,7 @@ class CalcVirtualOdometerCommand extends Command
                 'value' => floatval($sensor->value) + $distance
             ]);
         }
+
     }
 
     protected function process2(Device $device, $time)

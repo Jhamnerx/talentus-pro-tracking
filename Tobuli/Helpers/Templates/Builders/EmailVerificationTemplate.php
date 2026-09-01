@@ -7,7 +7,7 @@ class EmailVerificationTemplate extends TemplateBuilder
     protected function variables($token): array
     {
         return [
-            '[link]' => route('verification.verify', $token),
+            '[link]' => route('verification.email.verify', $token),
         ];
     }
 

@@ -1,6 +1,7 @@
 <?php namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Console\Input\InputOption;
@@ -41,21 +42,29 @@ class GeoCacheSetupCommand extends Command
         if (File::exists($database)) {
             if ( ! $force)
                 return;
+            
+            $files = array_map(fn ($sub) => $database . $sub, ["", ".wal", ".shm", "-wal", "-shm"]);
 
-            File::delete($database);
+            foreach ($files as $file) {
+                if (File::exists($file))
+                    File::delete($file);
+            }
         }
 
         File::put($database, '');
-        exec("chmod -R 0777 $database");
+        File::chmod($database, 0777);
 
-        if (Schema::connection('sqlite')->hasTable('cache')) { return; }
+        if (!Schema::connection('sqlite')->hasTable('cache')) {
+            Schema::connection('sqlite')->create('cache', function (Blueprint $table) {
+                $table->string('key', 255)->primary();
+                $table->text('value')->nullable(false);
+                $table->integer('expiration')->default(0);
+            });
+        }
 
-        Schema::connection('sqlite')->create('cache', function (Blueprint $table) {
-            $table->string('key', 255)->primary();
-            $table->text('value')->nullable(false);
-            $table->integer('expiration')->default(0);
-        });
-
+        DB::connection('sqlite')->unprepared(<<<SQL
+                PRAGMA journal_mode = WAL;
+                SQL);
     }
 
     /**

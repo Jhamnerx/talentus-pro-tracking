@@ -49,6 +49,11 @@ abstract class Sensor implements SensorInterface
      */
     protected $unit;
 
+    /**
+     * @var string
+     */
+    protected $unit_type;
+
     protected static $defaultShowType = 'default';
 
     protected static $timeout = null;
@@ -90,6 +95,11 @@ abstract class Sensor implements SensorInterface
     public static function isUpdatable() : bool
     {
         return true;
+    }
+
+    public static function isNullableValue() : bool
+    {
+        return false;
     }
 
     public static function isPositionValue() : bool
@@ -150,6 +160,11 @@ abstract class Sensor implements SensorInterface
         $this->unit = $unit;
     }
 
+    public function setUnitType($unit_type)
+    {
+        $this->unit_type = $unit_type;
+    }
+
     public function getUnit()
     {
         return $this->unit;
@@ -188,12 +203,13 @@ abstract class Sensor implements SensorInterface
                 continue;
 
             $saved = $value['val'] ?? null;
-            if ($saved === '-')
-                $saved = null;
-            break;
+
+            return ($saved === '-')
+                ? null
+                : $this->valueTypeConvert($saved);
         }
 
-        return $saved ?? null;
+        return null;
     }
 
     public function getDataValue($data)
@@ -257,5 +273,23 @@ abstract class Sensor implements SensorInterface
             return null;
 
         return $this->mapping->getIcon($value);
+    }
+
+    protected function valueTypeConvert($value)
+    {
+        return $value;
+    }
+
+    /**
+     * @param $value
+     * @return Value
+     */
+    public function toValue($value)
+    {
+        if (is_null($value) && !$this->isNullableValue()) {
+            return new Value(null, '-', null);
+        }
+
+        return new Value($value, $this->getValueFormatted($value), $this->getValueIcon($value));
     }
 }

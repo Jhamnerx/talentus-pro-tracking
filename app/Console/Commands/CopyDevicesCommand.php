@@ -3,14 +3,13 @@
 set_time_limit(0);
 
 
-use Carbon\Carbon;
-use Illuminate\Console\Command;
-use Illuminate\Support\Arr;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Input\InputArgument;
 use App\Console\ProcessManager;
+use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\TraccarDevice;
+use Tobuli\Entities\User;
 use Tobuli\Services\DatabaseService;
 
 class CopyDevicesCommand extends Command {
@@ -33,7 +32,6 @@ class CopyDevicesCommand extends Command {
      * @var DatabaseService
      */
     protected $dbService;
-
 
     public function __construct()
 	{
@@ -58,6 +56,8 @@ class CopyDevicesCommand extends Command {
         }
 
         $query = Device::query();
+
+        $this->filterUser($query);
         $this->displayFilterCount($query);
 
         $this->filterId($query);
@@ -98,6 +98,31 @@ class CopyDevicesCommand extends Command {
 
         return 0;
 	}
+
+    private function filterUser(Builder &$query): void
+    {
+        $type = $this->choice('Apply filter?', [
+            'No',
+            'User',
+        ]);
+
+        if ($type === 'No') {
+            return;
+        }
+
+        do {
+            $email = $this->ask('Enter user email');
+
+            $user = User::firstWhere('email', $email);
+
+            if ($user === null) {
+                $this->error("User `$email` not found");
+            }
+        } while ($user === null);
+
+
+        $query = $user->accessibleDevices()->getQuery();
+    }
 
     protected function performTask($device, $database_id, $mode) {
         try {

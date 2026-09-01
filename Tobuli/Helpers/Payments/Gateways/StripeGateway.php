@@ -18,6 +18,7 @@ use Stripe\Plan;
 use Stripe\Stripe;
 use Stripe\Subscription;
 use Tobuli\Entities\Order;
+use Tobuli\Entities\User;
 use Tobuli\Exceptions\ExternalSubscriptionNotFoundException;
 
 class StripeGateway extends PaymentGateway implements PaymentGatewayInterface
@@ -37,7 +38,7 @@ class StripeGateway extends PaymentGateway implements PaymentGatewayInterface
     public function pay($user, Order $order)
     {
         try {
-            $customer = $this->createCustomer($user, request('stripeSource'));
+            $this->getCustomer($user, request('stripeSource'));
 
             $intent = PaymentIntent::retrieve(request('intent'));
         } catch (ApiErrorException $e) {
@@ -97,7 +98,7 @@ class StripeGateway extends PaymentGateway implements PaymentGatewayInterface
                 $stripe_plan = $this->createPlan($plan);
             }
 
-            $customer = $this->createCustomer($user, request('stripeSource'));
+            $customer = $this->getCustomer($user, request('stripeSource'));
 
             $currentExpirationDate = !$entity->isExpiredWithoutExtra() && $entity->plan_id == $plan->id
                 ? Carbon::parse($entity->expiration_date)
@@ -359,8 +360,17 @@ class StripeGateway extends PaymentGateway implements PaymentGatewayInterface
         $this->renewSubscription($subscription, date('Y-m-d H:i:s', $endTimestamp));
     }
 
-    private function createCustomer($user, $token)
+    private function getCustomer(User $user, ?string $token): Customer
     {
+        $customer = Customer::search([
+            'query' => "email:'" . addslashes($user->email) . "'",
+            'limit' => 1,
+        ])->first(); // latest created
+
+        if ($customer instanceof Customer) {
+            return $customer;
+        }
+
         return Customer::create([
             'email'  => $user->email,
             'source' => $token,

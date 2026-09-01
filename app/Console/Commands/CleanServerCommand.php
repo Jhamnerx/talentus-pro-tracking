@@ -3,8 +3,6 @@
 use Illuminate\Console\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputArgument;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Artisan; 
 use App\Console\ProcessManager;
 use Tobuli\Entities\TraccarDevice;
 
@@ -59,9 +57,6 @@ class CleanServerCommand extends Command {
 			$this->line("CLEAN TABLES ({$i}/{$all})\n");
 			$i++;
 		}
-		
-        $server = File::exists('/etc/ser')? true : false;
-        if (!$server){Artisan::call('down');}
 
 		$this->line("Job done[OK]\n");
 

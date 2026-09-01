@@ -4,6 +4,7 @@ namespace Tobuli\Helpers\Backup;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Backup;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Helpers\Backup\Exception\InvalidFtpConfigException;
@@ -67,7 +68,7 @@ class BackupService
         return !$this->isAutoSettings() || $this->hive->hasBackupServer();
     }
 
-    private function hasHiveCredentials(): bool
+    public function hasHiveCredentials(): bool
     {
         return $this->isAutoSettings() && $this->hive->hasBackupServer();
     }
@@ -210,23 +211,39 @@ class BackupService
 
     public function kill(?string $launcher = null, ?int $backupId = null): int
     {
-        return $this->getUpdatableProcesses($launcher, $backupId)->update([
-            'failed_at' => date('Y-m-d H:i:s')
-        ]);
+        $this->killCurrentProcesses();
+
+        $updated = 0;
+
+        DB::transaction(function () use ($launcher, $backupId, &$updated) {
+            $updated = $this->getUpdatableProcesses($launcher, $backupId)->update([
+                'failed_at' => date('Y-m-d H:i:s')
+            ]);
+
+            if ($updated) {
+                Backup::when($backupId, fn (Builder $query) => $query->where('id', $backupId))
+                    ->when($launcher, fn (Builder $query) => $query->where('launcher', $launcher))
+                    ->update(['message' => 'Killed']);
+            }
+        });
+
+        return $updated;
     }
 
-    public function pause(?string $launcher = null, ?int $backupId = null): int
+    public function pause(int $minutes, ?string $launcher = null, ?int $backupId = null): int
     {
+        $this->killCurrentProcesses();
+
+        $date = date('Y-m-d H:i:s', time() + ($minutes * 60));
+
         return $this->getUpdatableProcesses($launcher, $backupId)->update([
-            'reserved_at' => date('Y-m-d H:i:s')
+            'reserved_at' => $date
         ]);
     }
 
     private function getUpdatableProcesses(?string $launcher = null, ?int $backupId = null): Builder
     {
-        $query = BackupProcess::whereUnexpired()
-            ->whereNotNull('completed_at')
-            ->whereNotNull('failed_at');
+        $query = BackupProcess::whereUnfinished();
 
         if ($launcher || $backupId) {
             $query->whereHas('backup', fn (Builder $query) => $query
@@ -291,5 +308,10 @@ class BackupService
         }
 
         return $this->ftp;
+    }
+
+    protected function killCurrentProcesses(): void
+    {
+        (new \App\Console\ProcessManager('backup:mysql'))->killProcesses();
     }
 }

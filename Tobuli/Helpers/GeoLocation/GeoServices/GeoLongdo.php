@@ -1,24 +1,27 @@
 <?php
 namespace Tobuli\Helpers\GeoLocation\GeoServices;
 
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
 use Illuminate\Support\Arr;
 use Tobuli\Helpers\GeoLocation\GeoSettings;
 use Tobuli\Helpers\GeoLocation\Location;
 
 class GeoLongdo extends AbstractGeoService
 {
-    private $curl;
-    private $requestOptions = [];
+    private GuzzleClient $client;
+    private array $requestOptions = [];
 
     public function __construct(GeoSettings $settings)
     {
         parent::__construct($settings);
 
-        $curl = new \Curl;
-        $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
-        $curl->options['CURLOPT_TIMEOUT'] = 5;
+        $this->client = new GuzzleClient([
+            RequestOptions::TIMEOUT  => 5,
+            RequestOptions::VERIFY   => false,
+        ]);
 
-        $this->curl = $curl;
         $this->requestOptions = [
             'locale' => config('tobuli.languages.'.config('app.locale').'.iso', 'en'),
             'key'      => $this->settings->getApiKey(),
@@ -67,14 +70,19 @@ class GeoLongdo extends AbstractGeoService
 
     private function request($url, $options)
     {
-        $response = $this->curl->get(
-            $url,
-            array_merge($options, $this->requestOptions)
-        );
+        try {
+            $response = $this->client->get($url, [
+                RequestOptions::QUERY => array_merge($options, $this->requestOptions)
+            ]);
 
-        $responseBody = json_decode($response->body, true);
+            $statusCode = $response->getStatusCode();
+            $responseBody = json_decode($response->getBody()->getContents(), true);
+        } catch (RequestException $e) {
+            $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 500;
+            $responseBody = null;
+        }
 
-        if ($response->headers['Status-Code'] != 200 || is_null($responseBody)) {
+        if ($statusCode !== 200 || is_null($responseBody)) {
             throw new \Exception(Arr::get($responseBody, 'error_message') ?: 'Geocoder API error.');
         }
 
@@ -91,10 +99,6 @@ class GeoLongdo extends AbstractGeoService
         }
 
         if (strpos($url, 'json/search') !== false) {
-            if (! isset($responseBody['data'][0])) {
-                return null;
-            }
-
             return $responseBody['data'][0] ?? null;
         }
 

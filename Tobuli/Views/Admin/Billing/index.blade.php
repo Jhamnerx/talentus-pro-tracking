@@ -32,6 +32,13 @@
                     </div>
 
                     <div class="form-group">
+                        {!! Form::label('phone_verification', trans('validation.attributes.phone_verification'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
+                        <div class="col-xs-12 col-sm-8">
+                            {!! Form::select('phone_verification', ['0' => trans('global.no'), '1' => trans('global.yes')], $settings['phone_verification'], ['class' => 'form-control']) !!}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
                         {!! Form::label('allow_users_registration', trans('validation.attributes.allow_users_registration'), ['class' => 'col-xs-12 col-sm-4 control-label"']) !!}
                         <div class="col-xs-12 col-sm-8">
                             {!! Form::select('allow_users_registration', ['0' => trans('global.no'), '1' => trans('global.yes')], $settings['allow_users_registration'], ['class' => 'form-control']) !!}
@@ -343,11 +350,11 @@
                             {!!Form::label('authentication', trans('validation.attributes.authentication').':')!!}
                             {!!Form::select('authentication', $authentications, $userDefaultSms['authentication'], ['class' => 'form-control'])!!}
                         </div>
-                        <div class="form-group sms-gateway-auth">
+                        <div class="form-group" data-disablable="#authentication;hide-disable;1">
                             {!!Form::label('username', trans('validation.attributes.username').':')!!}
                             {!!Form::text('username', $userDefaultSms['username'], ['class' => 'form-control'])!!}
                         </div>
-                        <div class="form-group sms-gateway-auth">
+                        <div class="form-group" data-disablable="#authentication;hide-disable;1">
                             {!!Form::label('password', trans('validation.attributes.password').':')!!}
                             {!!Form::password('password', ['class' => 'form-control'])!!}
                         </div>
@@ -416,13 +423,6 @@
         dd('select[name="request_method"]');
         $('.request-method', $sms_gateway_container).hide();
         $('.request-method-' + $(this).val(), $sms_gateway_container).show();
-    });
-
-    $sms_gateway_container.on('change', 'select[name="authentication"]', function () {
-        if ($(this).val() == 1)
-            $('.sms-gateway-auth', $sms_gateway_container).show();
-        else
-            $('.sms-gateway-auth', $sms_gateway_container).hide();
     });
 
     tables.set_config('table_billing_plans', {

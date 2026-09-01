@@ -118,7 +118,7 @@ class PositionsBeaconsWriter
 
     private function isPositionValid(TraccarPosition $position): bool
     {
-        if (!in_array($position->protocol, ['flespi', 'teltonika']))
+        if (!in_array($position->protocol, ['flespi', 'teltonika', 'teltonika2']))
             return false;
 
         return $position->speed >= $this->detectionSpeed;

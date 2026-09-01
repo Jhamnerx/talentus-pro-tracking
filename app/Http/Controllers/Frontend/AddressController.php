@@ -19,10 +19,7 @@ class AddressController extends Controller
     {
         $data = $this->validatePoint(request()->all());
 
-        if (settings('plugins.geofence_over_address.status') && $this->user)
-            return GeoLocation::locateGeofence($this->user, $data['lat'], $data['lng']);
-
-        return GeoLocation::resolveAddress($data['lat'], $data['lng']);
+        return GeoLocation::resolveLocationHandled($this->user, $data['lat'], $data['lng']);
     }
 
     public function search()

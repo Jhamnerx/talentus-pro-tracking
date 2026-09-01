@@ -10,8 +10,11 @@ class ResetPasswordTemplate extends TemplateBuilder
      */
     protected function variables($token): array
     {
+        $url = route('password.reset', $token, true);
+
         return [
-            '[url]' => route('password.reset', $token, true),
+            '[url]' => $url,
+            '[hyper_link]' => "<a href='$url'>$url</a>",
         ];
     }
 
@@ -19,6 +22,7 @@ class ResetPasswordTemplate extends TemplateBuilder
     {
         return [
             '[url]' => 'Password reset url link',
+            '[hyper_link]' => 'Password reset hyper link',
         ];
     }
 }

@@ -14,7 +14,7 @@
             <hr>
 
             <div class="alert alert-success alert-dismissible">
-                {{ trans('front.please_verify_email') }}
+                {{ $msg ?? trans('front.please_verify_email') }}
             </div>
 
             <hr>

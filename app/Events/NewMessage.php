@@ -14,24 +14,23 @@ class NewMessage extends Event implements ShouldBroadcast
 
     public $message, $user;
 
-    public function __construct($message)
-    {
+    public function __construct($message) {
         $this->message = $message;
     }
 
-    public function broadcastOn()
-    {
+    public function broadcastOn() {
         $channels = [];
         $channels[] = $this->message->chat->room_hash;
 
-        foreach ($this->message->chat->participants as $participant) {
-            if (! $participant->chattable)
+        foreach ($this->message->chat->participants as $participant)
+        {
+            if ( ! $participant->chattable)
                 continue;
 
             if ($participant->isUser() && $participant->chattable->perm('chat', 'view')) {
                 $channels[] = $participant->chattable->getSocketChannel();;
             }
-
+            
             if ($participant->isDevice()) {
                 $channels[] = $participant->chattable->getSocketChannel();
             }
@@ -40,8 +39,7 @@ class NewMessage extends Event implements ShouldBroadcast
         return $channels;
     }
 
-    public function broadcastAs()
-    {
+    public function broadcastAs() {
         return 'message';
     }
 

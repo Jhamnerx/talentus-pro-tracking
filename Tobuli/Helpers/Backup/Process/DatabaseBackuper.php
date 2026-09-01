@@ -11,9 +11,10 @@ class DatabaseBackuper extends AbstractBackuper
         $command = "mysqldump"
             . " --single-transaction=TRUE"
             . " --lock-tables=false"
-            . " -h {$item['host']}"
-            . " -u {$item['username']}"
-            . " --password={$item['password']}"
+            . " -u '{$item['username']}'"
+            . " -h '{$item['host']}'"
+            . " -p'{$item['password']}'"
+            . " --port={$item['port']}"
             . " --databases {$item['database']}";
 
         $this->uploader->process($command, $this->process, $item);

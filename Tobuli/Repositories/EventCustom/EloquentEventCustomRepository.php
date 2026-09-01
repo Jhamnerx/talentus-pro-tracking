@@ -1,25 +1,29 @@
-<?php namespace Tobuli\Repositories\EventCustom;
+<?php
+
+namespace Tobuli\Repositories\EventCustom;
 
 use Tobuli\Entities\EventCustom as Entity;
 use Tobuli\Repositories\EloquentRepository;
 use Illuminate\Support\Facades\DB;
 
-class EloquentEventCustomRepository extends EloquentRepository implements EventCustomRepositoryInterface {
+class EloquentEventCustomRepository extends EloquentRepository implements EventCustomRepositoryInterface
+{
 
-    public function __construct( Entity $entity )
+    public function __construct(Entity $entity)
     {
         $this->entity = $entity;
     }
 
-    public function getProtocols($user_id, $protocols = NULL) {
+    public function getProtocols($user_id, $protocols = NULL)
+    {
         $query = $this->entity
             ->groupBy('protocol');
 
-        if ( ! is_null($protocols)) {
+        if (! is_null($protocols)) {
             $query->whereIn('protocol', $protocols);
         }
 
-        if ( ! is_array($user_id))
+        if (! is_array($user_id))
             $user_id = [$user_id];
 
         return $query->whereIn('user_id', $user_id)
@@ -27,7 +31,8 @@ class EloquentEventCustomRepository extends EloquentRepository implements EventC
             ->get();
     }
 
-    public function whereProtocols($ids, $protocols) {
+    public function whereProtocols($ids, $protocols)
+    {
         return $this->entity
             ->whereIn('id', $ids)
             ->whereIn('protocol', $protocols)
@@ -48,7 +53,7 @@ class EloquentEventCustomRepository extends EloquentRepository implements EventC
             ->search($data['search_phrase'] ?? null)
             ->where(function ($query) use ($data) {
                 if (count($data['filter'])) {
-                    foreach ($data['filter'] as $key=>$value) {
+                    foreach ($data['filter'] as $key => $value) {
                         $query->where($key, $value);
                     }
                 }

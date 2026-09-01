@@ -1,64 +1,60 @@
-<?php
-
-namespace App\Console\Commands;
+<?php namespace App\Console\Commands;
 
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 use App\Console\ProcessManager;
 
-use Tobuli\Entities\User;
+class AutoCleanServerCommand extends Command {
 
-class AutoCleanServerCommand extends Command
-{
+	/**
+	 * The console command name.
+	 *
+	 * @var string
+	 */
+	protected $name = 'server:autoclean';
 
-    /**
-     * The console command name.
-     *
-     * @var string
-     */
-    protected $name = 'server:autoclean';
-
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description.';
+	/**
+	 * The console command description.
+	 *
+	 * @var string
+	 */
+	protected $description = 'Command description.';
 
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
+	public function __construct()
+	{
+		parent::__construct();
+	}
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
-    {
-
+	/**
+	 * Execute the console command.
+	 *
+	 * @return mixed
+	 */
+	public function handle()
+	{
         $this->processManager = new ProcessManager($this->name, $timeout = 3600, $limit = 1);
 
-        if (! $this->processManager->canProcess()) {
+        if ( ! $this->processManager->canProcess())
+        {
             echo "Cant process \n";
             return -1;
         }
 
         $settings = settings('db_clear');
 
-        if (! (isset($settings['status']) && $settings['status'] && $settings['days'] > 0)) {
+        if ( ! (isset($settings['status']) && $settings['status'] && $settings['days'] > 0) ) {
             $this->line("Auto cleanup disabled.");
             return -1;
         }
 
         $date = Carbon::now()->subDays($settings['days']);
-        $diff = $date->diffInDays(Carbon::now(), false);
+        $diff = $date->diffInDays( Carbon::now(), false);
         $min  = config('tobuli.min_database_clear_days');
 
-        if ($diff < $min) {
+        if ( $diff < $min )
+        {
             $this->line("Days to keep not reached: min - $min, current - $diff.\n");
             return -1;
         }
@@ -84,5 +80,5 @@ class AutoCleanServerCommand extends Command
         ]);
 
         return 0;
-    }
+	}
 }

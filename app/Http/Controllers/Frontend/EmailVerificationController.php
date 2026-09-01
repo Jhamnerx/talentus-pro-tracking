@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Frontend;
 
+use App\Events\NoticeEvent;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Tobuli\Entities\User;
 
 class EmailVerificationController extends Controller
 {
-    public function notice(): \Illuminate\Contracts\View\View
+    public function notice()
     {
         $url = session()->get('url', route('home'));
 
@@ -19,7 +19,7 @@ class EmailVerificationController extends Controller
         ]);
     }
 
-    public function verify(string $token): RedirectResponse
+    public function verify(string $token)
     {
         try {
             list($hash, $id) = explode(';', $token, 2);
@@ -35,10 +35,20 @@ class EmailVerificationController extends Controller
 
         $user->markEmailAsVerified();
 
+        $message = trans('global.verified_email', ['email' => $user->email]);
+
         if (config('verification.autologin')) {
             Auth::loginUsingId($user->id);
         }
 
-        return redirect()->to(config('verification.redirect'));
+        $url = config('verification.redirect');
+
+        if (!$url) {
+            return view('verification_success')->with(compact('message', 'url'));
+        }
+
+        event(new NoticeEvent($user, NoticeEvent::TYPE_SUCCESS, $message));
+
+        return redirect()->to($url)->with('success', $message);
     }
 }

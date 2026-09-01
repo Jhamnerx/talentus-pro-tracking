@@ -4,6 +4,7 @@
 namespace Tobuli\Sensors\Extractions;
 
 
+use Illuminate\Support\Collection;
 use Tobuli\Sensors\Contracts\Extraction;
 
 class BitCut implements Extraction
@@ -42,5 +43,19 @@ class BitCut implements Extraction
         }
 
         return $value === false ? null : $value;
+    }
+
+    public static function bases(): Collection
+    {
+        return collect([
+            [
+                'key' => '10',
+                'title' => 'DEC',
+            ],
+            [
+                'key' => '16',
+                'title' => 'HEX',
+            ],
+        ]);
     }
 }

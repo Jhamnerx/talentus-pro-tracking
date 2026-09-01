@@ -33,16 +33,16 @@ class EventsController extends Controller
             ->search($request->get('search'))
             ->orderBy('events.id', 'desc');
 
-        if (! empty($data['date_from']))
+        if ( ! empty($data['date_from']))
             $query->where('events.time', '>=', Formatter::time()->reverse($data['date_from']));
 
-        if (! empty($data['date_to']))
+        if ( ! empty($data['date_to']))
             $query->where('events.time', '<=', Formatter::time()->reverse($data['date_to']));
 
-        if (! empty($data['created_from']))
+        if ( ! empty($data['created_from']))
             $query->where('events.created_at', '>=', Formatter::time()->reverse($data['created_from']));
 
-        if (! empty($data['created_to']))
+        if ( ! empty($data['created_to']))
             $query->where('events.created_at', '<=', Formatter::time()->reverse($data['created_to']));
 
         $events = $query->paginate(20);
@@ -51,4 +51,6 @@ class EventsController extends Controller
             $this->transformerService->paginate($events, EventTransformer::class)->toArray()
         );
     }
+
+
 }

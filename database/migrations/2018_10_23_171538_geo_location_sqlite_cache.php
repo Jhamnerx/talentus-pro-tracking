@@ -17,7 +17,7 @@ class GeoLocationSqliteCache extends Migration
 
         if ( ! File::exists($database)) {
             File::put($database, '');
-            exec("chmod -R 0777 $database");
+            File::chmod($database, 0777);
         }
 
         if (Schema::connection('sqlite')->hasTable('cache')) { return; }

@@ -36,6 +36,7 @@ use App\Policies\RoutePolicy;
 use App\Policies\SharingPolicy;
 use App\Policies\SmsTemplatePolicy;
 use App\Policies\SubscriptionPolicy;
+use App\Policies\TagPolicy;
 use App\Policies\TaskPolicy;
 use App\Policies\TaskSetPolicy;
 use App\Policies\UserGprsTemplatePolicy;
@@ -83,6 +84,7 @@ use Tobuli\Entities\RouteGroup;
 use Tobuli\Entities\Sharing;
 use Tobuli\Entities\SmsTemplate;
 use Tobuli\Entities\Subscription;
+use Tobuli\Entities\Tag;
 use Tobuli\Entities\Task;
 use Tobuli\Entities\TaskSet;
 use Tobuli\Entities\User;
@@ -136,6 +138,7 @@ class AuthServiceProvider extends ServiceProvider
         MediaCategory::class     => MediaCategoryPolicy::class,
         Company::class           => CompanyPolicy::class,
         Forward::class           => ForwardPolicy::class,
+        Tag::class               => TagPolicy::class,
     ];
 
     /**

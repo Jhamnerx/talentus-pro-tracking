@@ -31,7 +31,6 @@ class StopsReport extends DrivesStopsReport
             DriveStop::class,
             Duration::class,
             Distance::class,
-            Speed::class,
             Fuel::class,
             EngineHours::class,
             Drivers::class,

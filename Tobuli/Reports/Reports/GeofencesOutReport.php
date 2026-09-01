@@ -13,7 +13,7 @@ class GeofencesOutReport extends DeviceHistoryReport
 {
     const TYPE_ID = 94;
 
-    protected $disableFields = ['speed_limit', 'stops'];
+    protected $disableFields = ['speed_limit', 'stops', 'zones_instead'];
     protected $validation = ['geofences' => 'required'];
 
     public function typeID()
@@ -44,18 +44,24 @@ class GeofencesOutReport extends DeviceHistoryReport
 
     protected function getTable($data)
     {
+        $fields = [
+            'start_at',
+            'end_at',
+            'duration',
+            'distance',
+            'drivers',
+            'group_geofence',
+        ];
+
+        if ($this->show_addresses) {
+            $fields[] = 'location';
+        }
+
         $rows = [];
 
         /** @var Group $group */
         foreach ($data['groups']->all() as $group) {
-            $rows[] = $this->getDataFromGroup($group, [
-                'start_at',
-                'end_at',
-                'duration',
-                'distance',
-                'drivers',
-                'group_geofence',
-            ]);
+            $rows[] = $this->getDataFromGroup($group, $fields);
         }
 
         return $rows;

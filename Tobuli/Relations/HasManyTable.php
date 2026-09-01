@@ -28,4 +28,9 @@ class HasManyTable extends HasMany
     {
         $model->setTable($this->related->getTable());
     }
+
+    public function __clone()
+    {
+        $this->query = clone $this->query;
+    }
 }

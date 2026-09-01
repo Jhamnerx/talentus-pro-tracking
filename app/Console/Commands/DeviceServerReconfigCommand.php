@@ -55,6 +55,8 @@ class DeviceServerReconfigCommand extends Command
      */
     public function handle()
     {
+        setActingUser(User::find(User::getGodID()));
+
         $devices = Device::whereIn('imei', fn (Builder $q) => $q
             ->select('dip.imei')
             ->from('device_ip_log', 'dip')
