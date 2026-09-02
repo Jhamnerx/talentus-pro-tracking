@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services\Mail;
 
 use GuzzleHttp\Client;
@@ -6,45 +7,32 @@ use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Mail\Transport\Transport;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redirect;
-use Swift_Mime_SimpleMessage;
-use Swift_TransportException;
+use Symfony\Component\Mailer\Exception\TransportException;
+use Symfony\Component\Mailer\SentMessage;
+use Symfony\Component\Mailer\Transport\AbstractTransport;
+use Symfony\Component\Mime\Message;
 
-/**
- * Proveedor Gmail (GPSWox 3.7.12) adaptado a SwiftMailer/Laravel 8.
- * Envia por la API REST de Gmail (users/me/messages/send) con OAuth2:
- * el refresh_token guardado en settings('email') se canjea por un
- * access_token cacheado hasta su expiracion. El flujo de autorizacion
- * (initAuthentication/authenticate) es identico al upstream 3.7.13.
- */
-class GmailTransport extends Transport
+class GmailTransport extends AbstractTransport
 {
-    /**
-     * @var ClientInterface
-     */
-    private $client;
-
-    /**
-     * @var array
-     */
-    private $config;
-
-    public function __construct(ClientInterface $client, array $config)
-    {
-        $this->client = $client;
-        $this->config = $config;
+    public function __construct(
+        private ClientInterface $client,
+        private array $config,
+    ) {
+        parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    protected function doSend(SentMessage $message): void
     {
-        $this->beforeSendPerformed($message);
+        $origMessage = $message->getOriginalMessage();
 
-        $encodedEmail = rtrim(strtr(base64_encode($message->toString()), '+/', '-_'), '=');
+        if (!$origMessage instanceof Message) {
+            throw new \InvalidArgumentException('Invalid email message');
+        }
+
+        $email = $origMessage->toString();
+        $encodedEmail = rtrim(strtr(base64_encode($email), '+/', '-_'), '=');
 
         try {
             $response = $this->client->request('POST', 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send', [
@@ -60,17 +48,11 @@ class GmailTransport extends Transport
             $status = $response->getStatusCode();
 
             if ($status >= 300 || $status < 200) {
-                throw new Swift_TransportException("Status code $status: " . $response->getBody());
+                throw new TransportException("Status code $status: " . $response->getBody());
             }
-        } catch (Swift_TransportException $e) {
-            throw $e;
         } catch (\Exception $e) {
-            throw new Swift_TransportException('Gmail API transport failed: ' . $e->getMessage(), 0, $e);
+            throw new TransportException('Gmail API transport failed: ' . $e->getMessage(), 0, $e);
         }
-
-        $this->sendPerformed($message);
-
-        return $this->numberOfRecipients($message);
     }
 
     protected function getAccessToken(): string
@@ -91,7 +73,7 @@ class GmailTransport extends Transport
         $response = json_decode($response->getBody()->getContents(), true);
 
         if (!isset($response['access_token'])) {
-            throw new Swift_TransportException('Unable to retrieve access token from refresh token.');
+            throw new TransportException('Unable to retrieve access token from refresh token.');
         }
 
         Cache::put('gmail_api_access_token', $response['access_token'], $response['expires_in'] - 60);
@@ -128,5 +110,10 @@ class GmailTransport extends Transport
             'access_type' => 'offline',
             'prompt' => 'consent',
         ]));
+    }
+
+    public function __toString(): string
+    {
+        return 'gmail';
     }
 }

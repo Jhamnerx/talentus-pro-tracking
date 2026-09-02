@@ -177,7 +177,6 @@ $result = [
 		'App\Providers\SettingsServiceProvider',
 		'App\Providers\ValidatorRulesServiceProvider',
 		'Tobuli\Repositories\RepositoriesServiceProvider',
-		'Fideloper\Proxy\TrustedProxyServiceProvider',
 		'Illuminate\Notifications\NotificationServiceProvider',
 		'App\Providers\FractalTransformerServiceProvider',
 		'App\Providers\PropertyPolicyServiceProvider',

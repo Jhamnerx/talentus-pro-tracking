@@ -2,200 +2,184 @@
 
 namespace App\Services\Mail;
 
+use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\RequestOptions;
+use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\Header\MetadataHeader;
+use Symfony\Component\Mailer\Header\TagHeader;
+use Symfony\Component\Mailer\SentMessage;
+use Symfony\Component\Mailer\Transport\TransportInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Header\UnstructuredHeader;
+use Symfony\Component\Mime\RawMessage;
 
-use Swift_Mime_SimpleMessage;
-use GuzzleHttp\ClientInterface;
-use Illuminate\Mail\Transport\Transport;
-
-class PostmarkTransport extends Transport
+/**
+ * @link https://github.com/craigpaul/laravel-postmark/blob/3.x/src/PostmarkTransport.php
+ */
+class PostmarkTransport implements TransportInterface
 {
-    /**
-     * Guzzle client instance.
-     *
-     * @var \GuzzleHttp\ClientInterface
-     */
-    protected $client;
+    protected const BYPASS_HEADERS = [
+        'from',
+        'to',
+        'cc',
+        'bcc',
+        'subject',
+        'content-type',
+        'sender',
+        'reply-to',
+    ];
 
-    /**
-     * The Postmark Server Token key.
-     *
-     * @var string
-     */
-    protected $key;
+    public function __construct(
+        protected HttpClient $http,
+        protected string $token,
+    ) {}
 
-    /**
-     * Create a new Postmark transport instance.
-     *
-     * @param  \GuzzleHttp\ClientInterface  $client
-     * @param  string  $key
-     */
-    public function __construct(ClientInterface $client, $key)
+    public function send(RawMessage $message, Envelope $envelope = null): ?SentMessage
     {
-        $this->key = $key;
-        $this->client = $client;
+        if (!$message instanceof Email) {
+            throw new \InvalidArgumentException('Invalid email message.');
+        }
+
+        $envelope = $envelope ?? Envelope::create($message);
+
+        $sentMessage = new SentMessage($message, $envelope);
+
+        $response = $this->http->post($this->getApiEndpoint($message), [
+            RequestOptions::JSON => $this->getPayload($message, $envelope),
+            RequestOptions::HEADERS => [
+                'X-Postmark-Server-Token' => $this->getServerToken($message),
+            ],
+        ]);
+
+        $data = json_decode($response->getBody()->getContents(), true);
+
+        $sentMessage->setMessageId($data['MessageID'] ?? null);
+
+        return $sentMessage;
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    protected function getApiEndpoint(Email $email): string
     {
-        $this->beforeSendPerformed($message);
+        $url = 'https://api.postmarkapp.com/email';
 
-        $options = [
-            'json' => $this->getPayload($message),
-            'headers' => [
-                'X-Postmark-Server-Token' => $this->key
-            ]
+        if ($this->getTemplatedContent($email) === null) {
+            return $url;
+        }
+
+        return $url.'/withTemplate';
+    }
+
+    protected function getAttachments(Email $email): array
+    {
+        $attachments = [];
+
+        foreach ($email->getAttachments() as $attachment) {
+            $headers = $attachment->getPreparedHeaders();
+
+            $filename = $headers->getHeaderParameter('Content-Disposition', 'filename');
+            $disposition = $headers->getHeaderBody('Content-Disposition');
+
+            $attributes = [
+                'Name' => $filename,
+                'Content' => $attachment->bodyToString(),
+                'ContentType' => $headers->get('Content-Type')->getBody(),
+            ];
+
+            if ($disposition === 'inline') {
+                $attributes['ContentID'] = 'cid:'.$filename;
+            }
+
+            $attachments[] = $attributes;
+        }
+
+        return $attachments;
+    }
+
+    protected function getPayload(Email $email, Envelope $envelope): array
+    {
+        $payload = [
+            'From' => $envelope->getSender()->toString(),
+            'To' => $this->stringifyAddresses($this->getRecipients($email, $envelope)),
+            'Cc' => $this->stringifyAddresses($email->getCc()),
+            'Bcc' => $this->stringifyAddresses($email->getBcc()),
+            'Subject' => $email->getSubject(),
+            'HtmlBody' => $email->getHtmlBody(),
+            'TextBody' => $email->getTextBody(),
+            'ReplyTo' => $this->stringifyAddresses($email->getReplyTo()),
+            'Attachments' => $this->getAttachments($email),
         ];
 
-        $response = $this->client->post('https://api.postmarkapp.com/email', $options);
+        foreach ($email->getHeaders()->all() as $name => $header) {
+            if (in_array($name, self::BYPASS_HEADERS, true)) {
+                continue;
+            }
 
-        if (is_callable("sendPerformed")) {
-            $this->sendPerformed($message);
+            if ($header instanceof TagHeader) {
+                $payload['Tag'] = $header->getValue();
+
+                continue;
+            }
+
+            if ($header instanceof MetadataHeader) {
+                $payload['Metadata'][$header->getKey()] = $header->getValue();
+
+                continue;
+            }
+
+            if ($header instanceof UnstructuredHeader) {
+                continue;
+            }
+
+            $payload['Headers'][] = [
+                'Name' => $name,
+                'Value' => $header->getBodyAsString(),
+            ];
         }
 
-        if (is_callable("numberOfRecipients")) {
-            return $this->numberOfRecipients ?: $this->numberOfRecipients($message);
+        if ($content = $this->getTemplatedContent($email)) {
+            $payload['TemplateId'] = $content['id'] ?? null;
+            $payload['TemplateAlias'] = $content['alias'] ?? null;
+            $payload['TemplateModel'] = $content['model'] ?? null;
+
+            unset($payload['Subject'], $payload['HtmlBody'], $payload['TextBody']);
         }
 
-        return $response;
+        return array_filter($payload);
     }
 
-    /**
-     * Convert email dictionary with emails and names
-     * to array of emails with names.
-     *
-     * @param  array  $emails
-     * @return array
-     */
-    private function convertEmailsArray(array $emails) {
-        $convertedEmails = array();
-        foreach ($emails as $email => $name) {
-            $convertedEmails[] = $name
-                ? '"' . str_replace('"', '\\"', $name) . "\" <{$email}>"
-                : $email;
-        }
-        return $convertedEmails;
+    protected function getRecipients(Email $email, Envelope $envelope): array
+    {
+        $copies = array_merge($email->getCc(), $email->getBcc());
+
+        return array_filter($envelope->getRecipients(), function (Address $address) use ($copies) {
+            return in_array($address, $copies, true) === false;
+        });
     }
 
-    /**
-     * Gets MIME parts that match the message type.
-     * Excludes parts of type \Swift_Mime_Attachment as those
-     * are handled later.
-     *
-     * @param  Swift_Mime_SimpleMessage  $message
-     * @param  string              $mimeType
-     * @return \Swift_Mime_SimpleMimeEntity
-     */
-    private function getMIMEPart(\Swift_Mime_SimpleMessage $message, $mimeType) {
-        foreach ($message->getChildren() as $part) {
-            if (strpos($part->getContentType(), $mimeType) === 0 && !($part instanceof \Swift_Mime_Attachment)) {
-                return $part;
-            }
+    protected function getServerToken(Email $email): string
+    {
+        $header = $email->getHeaders()->get('X-Postmark-Server-Token');
+
+        if ($header === null) {
+            return $this->token;
         }
+
+        return $header->getBody();
     }
 
-    /**
-     * Convert a Swift Mime Message to a Postmark Payload.
-     *
-     * @param  Swift_Mime_SimpleMessage  $message
-     * @return array
-     */
-    protected function getPayload(Swift_Mime_SimpleMessage $message) {
-        $payload = [];
+    protected function getTemplatedContent(Email $email): ?array
+    {
+        return json_decode($email->getHtmlBody(), flags: JSON_OBJECT_AS_ARRAY);
+    }
 
-        $payload['From'] = join(',', $this->convertEmailsArray($message->getFrom()));
-        $payload['To'] = join(',', $this->convertEmailsArray($message->getTo()));
-        $payload['Subject'] = $message->getSubject();
+    protected function stringifyAddresses(array $addresses): string
+    {
+        return implode(',', array_map(fn (Address $address) => $address->toString(), $addresses));
+    }
 
-        if ($cc = $message->getCc()) {
-            $payload['Cc'] = join(',', $this->convertEmailsArray($cc));
-        }
-        if ($reply_to = $message->getReplyTo()) {
-            $payload['ReplyTo'] = join(',', $this->convertEmailsArray($reply_to));
-        }
-        if ($bcc = $message->getBcc()) {
-            $payload['Bcc'] = join(',', $this->convertEmailsArray($bcc));
-        }
-
-        //Get the primary message.
-        switch ($message->getContentType()) {
-            case 'text/html':
-            case 'multipart/alternative':
-            case 'multipart/mixed':
-                $payload['HtmlBody'] = $message->getBody();
-                break;
-            default:
-                $payload['TextBody'] = $message->getBody();
-                break;
-        }
-
-        // Provide an alternate view from the secondary parts.
-        if ($plain = $this->getMIMEPart($message, 'text/plain')) {
-            $payload['TextBody'] = $plain->getBody();
-        }
-        if ($html = $this->getMIMEPart($message, 'text/html')) {
-            $payload['HtmlBody'] = $html->getBody();
-        }
-        if ($message->getChildren()) {
-            $payload['Attachments'] = array();
-            foreach ($message->getChildren() as $attachment) {
-                if (is_object($attachment) and $attachment instanceof \Swift_Mime_Attachment) {
-                    $a = array(
-                        'Name' => $attachment->getFilename(),
-                        'Content' => base64_encode($attachment->getBody()),
-                        'ContentType' => $attachment->getContentType()
-                    );
-                    if($attachment->getDisposition() != 'attachment' && $attachment->getId() != NULL) {
-                        $a['ContentID'] = 'cid:'.$attachment->getId();
-                    }
-                    $payload['Attachments'][] = $a;
-                }
-            }
-        }
-
-        if ($message->getHeaders()) {
-            $headers = [];
-
-            foreach ($message->getHeaders()->getAll() as $key => $value) {
-                $fieldName = $value->getFieldName();
-
-                $excludedHeaders = ['Subject', 'Content-Type', 'MIME-Version', 'Date'];
-
-                if (!in_array($fieldName, $excludedHeaders)) {
-
-                    if ($value instanceof \Swift_Mime_Headers_UnstructuredHeader ||
-                        $value instanceof \Swift_Mime_Headers_OpenDKIMHeader) {
-                        if($fieldName != 'X-PM-Tag'){
-                            array_push($headers, [
-                                'Name' => $fieldName,
-                                'Value' => $value->getValue(),
-                            ]);
-                        }else{
-                            $payload['Tag'] = $value->getValue();
-                        }
-                    } else if ($value instanceof \Swift_Mime_Headers_DateHeader ||
-                        $value instanceof \Swift_Mime_Headers_IdentificationHeader ||
-                        $value instanceof \Swift_Mime_Headers_ParameterizedHeader ||
-                        $value instanceof \Swift_Mime_Headers_PathHeader) {
-                        array_push($headers, [
-                            'Name' => $fieldName,
-                            'Value' => $value->getFieldBody(),
-                        ]);
-
-                        if ($value->getFieldName() == 'Message-ID') {
-                            array_push($headers, [
-                                'Name' => 'X-PM-KeepID',
-                                'Value' => 'true',
-                            ]);
-                        }
-                    }
-                }
-            }
-            $payload['Headers'] = $headers;
-        }
-
-        return $payload;
+    public function __toString(): string
+    {
+        return 'postmark';
     }
 }
