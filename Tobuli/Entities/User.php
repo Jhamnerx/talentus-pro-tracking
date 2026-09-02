@@ -90,7 +90,7 @@ class User extends AbstractEntity implements
      *
      * @var array
      */
-    protected $hidden = ['remember_token', 'api_hash', 'password', 'login_token', 'untouchable'];
+    protected $hidden = ['remember_token', 'api_hash', 'password', 'login_token', 'untouchable', 'google2fa_secret'];
 
     protected $fillable = array(
         'id',
@@ -1071,6 +1071,23 @@ class User extends AbstractEntity implements
     public function hasVerifiedPhone(): bool
     {
         return $this->phone_verified_at !== null;
+    }
+
+    public function reset2fa(): self
+    {
+        $this->google2fa_secret = null;
+
+        return $this;
+    }
+
+    public function is2faSetup(): bool
+    {
+        return $this->google2fa_secret !== null;
+    }
+
+    public function is2faEnabled(): bool
+    {
+        return $this->is2faSetup() && $this->google2fa_secret;
     }
 
     public function markPhoneAsVerified()

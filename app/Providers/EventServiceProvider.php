@@ -30,6 +30,7 @@ class EventServiceProvider extends ServiceProvider
         'Illuminate\Auth\Events\Login' => [
             'App\Handlers\Events\AuthLoginEventHandler',
             'App\Listeners\SetActingUser',
+            'PragmaRX\Google2FALaravel\Listeners\LoginViaRemember',
         ],
         'Illuminate\Auth\Events\Failed' => [
             'App\Handlers\Events\AuthFailedEventHandler',

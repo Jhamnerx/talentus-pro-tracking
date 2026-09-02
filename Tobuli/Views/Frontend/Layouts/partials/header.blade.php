@@ -281,6 +281,12 @@
                                         <span class="icon password"></span>
                                         <span class="text">{!! trans('front.change_password') !!}</span>
                                     </a>
+                                    @if (config('google2fa.enabled') && !Auth::user()->is2faEnabled())
+                                        <a href="{!! route('google_2fa_setup.create') !!}">
+                                            <span class="icon lock"></span>
+                                            <span class="text">{!! trans('front.setup_2fa') !!}</span>
+                                        </a>
+                                    @endif
                                 @endif
                             </li>
                             <li>

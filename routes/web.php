@@ -615,6 +615,15 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::resource('forwards', 'ForwardsController', ['except' => ['destroy']]);
 
     Route::post('ftp/test', ['as' => 'ftp.test', 'uses' => 'FtpController@test']);
+
+    Route::group(['excluded_middleware' => [\App\Http\Middleware\Check2fa::class]], function () {
+        Route::get('google_2fa_setup', ['as' => 'google_2fa_setup.create', 'uses' => 'Google2faSetupController@create']);
+        Route::post('google_2fa_setup', ['as' => 'google_2fa_setup.store', 'uses' => 'Google2faSetupController@store']);
+        Route::get('google_2fa_setup/confirm', ['as' => 'google_2fa_setup.create_confirm', 'uses' => 'Google2faSetupController@createConfirm']);
+        Route::post('google_2fa_setup/confirm', ['as' => 'google_2fa_setup.store_confirm', 'uses' => 'Google2faSetupController@storeConfirm']);
+
+        Route::post('google_2fa', 'Google2faController')->name('google_2fa');
+    });
 });
 
 Route::group(['middleware' => ['auth', 'auth.manager', 'active_subscription']], function () {

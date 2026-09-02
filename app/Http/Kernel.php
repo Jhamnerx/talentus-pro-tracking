@@ -64,15 +64,18 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\SetLang::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \App\Http\Middleware\EnsureEmailIsVerified::class,
+            \App\Http\Middleware\EnsurePhoneVerified::class,
             \App\Http\Middleware\TokenAuth::class,
             \App\Http\Middleware\OneSessionPerUser::class,
             \App\Http\Middleware\LogRequest::class,
+            \App\Http\Middleware\Check2fa::class,
         ],
 
         'api' => [
             \App\Http\Middleware\ApiActive::class,
             \App\Http\Middleware\SetLang::class,
             \App\Http\Middleware\EnsureEmailIsVerified::class,
+            \App\Http\Middleware\EnsurePhoneVerified::class,
             // 'throttle:60,1',
             // 'bindings',
         ],

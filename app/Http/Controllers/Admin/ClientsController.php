@@ -415,6 +415,10 @@ class ClientsController extends BaseController
 
         $input = onlyEditables($item, $this->user, $input);
 
+        if (!empty($input['reset_2fa'])) {
+            $item->reset2fa();
+        }
+
         if ($this->user->hasDeviceLimit()) {
             $input['enable_devices_limit'] = 1;
             $input['devices_limit'] = $input['devices_limit'] ?? $this->user->devices_limit;
