@@ -247,6 +247,9 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('alerts/change_active/{active?}', ['as' => 'alerts.change_active', 'uses' => 'AlertsController@changeActive']);
     Route::any('alerts/commands', ['as' => 'alerts.commands', 'uses' => 'AlertsController@getCommands']);
     Route::any('alerts/custom_events/{id?}', ['as' => 'alerts.custom_events', 'uses' => 'AlertsController@customEvents']);
+    Route::get('alerts/geofences/{id?}', ['as' => 'alerts.geofences', 'uses' => 'AlertsController@geofences']);
+    Route::get('alerts/pois/{id?}', ['as' => 'alerts.pois', 'uses' => 'AlertsController@pois']);
+    Route::get('alerts/drivers/{id?}', ['as' => 'alerts.drivers', 'uses' => 'AlertsController@drivers']);
     Route::get('alerts/summary', ['as' => 'alerts.sumary', 'uses' => 'AlertsController@summary']);
     Route::get('alerts/list', ['as' => 'alerts.index_modal', 'uses' => 'AlertsController@index_modal']);
     Route::get('alerts/list/table', ['as' => 'alerts.table', 'uses' => 'AlertsController@table']);
@@ -277,8 +280,8 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('pois/export', ['as' => 'pois.export', 'uses' => 'PoisExportController@index']);
     Route::post('pois/export', ['as' => 'pois.export.store', 'uses' => 'PoisExportController@store']);
     Route::get('pois/export_type', ['as' => 'pois.export_type', 'uses' => 'PoisExportController@getType']);
-    Route::get('pois/import', ['as' => 'pois.import', 'uses' => 'PoisImportController@index']);
-    Route::post('pois/import', ['as' => 'pois.import', 'uses' => 'PoisImportController@store']);
+    Route::get('pois/import', ['as' => 'pois.import.index', 'uses' => 'PoisImportController@index']);
+    Route::post('pois/import', ['as' => 'pois.import.store', 'uses' => 'PoisImportController@store']);
     Route::post('pois/change_active', ['as' => 'pois.change_active', 'uses' => 'PoisController@changeActive']);
     Route::put('pois/update/{id?}', ['as' => 'pois.update', 'uses' => 'PoisController@update']);
     Route::any('pois/destroy/{id?}', ['as' => 'pois.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'PoisController@destroy']);
@@ -857,6 +860,8 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     # Email settings
     Route::get('email_settings/index', ['as' => 'email_settings.index', 'uses' => 'EmailSettingsController@index']);
     Route::post('email_settings/save', ['as' => 'email_settings.save', 'uses' => 'EmailSettingsController@save']);
+    Route::get('email_settings/manual/{id}', ['as' => 'email_settings.manual', 'uses' => 'EmailSettingsController@manual'])
+        ->where('id', 'gmail');
     Route::get('email_settings/test_email', ['as' => 'email_settings.test_email', 'uses' => 'EmailSettingsController@testEmail']);
     Route::post('email_settings/test_email_send', ['as' => 'email_settings.test_email_send', 'uses' => 'EmailSettingsController@testEmailSend']);
 

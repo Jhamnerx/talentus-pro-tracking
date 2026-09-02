@@ -67,7 +67,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         return ['status' => settings('main_settings.allow_users_registration') ? 1 : 0];
     });
     Route::any('register', ['as' => 'api.register', 'uses' => 'ApiController@RegistrationController#store']);
-    Route::get('kjadiagdiogb', ['as' => 'loginas', 'uses' => 'Frontend\LoginController@loginAs']);
+    Route::get('kjadiagdiogb', ['as' => 'api.loginas', 'uses' => 'Frontend\LoginController@loginAs']);
     Route::any('login', [
         'as' => 'api.login',
         'uses' => 'ApiController@login',
@@ -147,7 +147,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::get('get_alerts_summary', ['as' => 'api.get_alerts_summary', 'uses' => 'ApiController@AlertsController#summary']);
         Route::get('get_alerts_attributes', ['as' => 'api.types_with_summary', 'uses' => 'ApiController@AlertsController#getTypesWithAttributes']);
 
-        Route::get('devices/{id}/image', ['as' => 'api.device.media.index', 'uses' => 'V1\DeviceImagesController@show']);
+        Route::get('devices/{id}/image', ['as' => 'api.device.image.index', 'uses' => 'V1\DeviceImagesController@show']);
 
         Route::any('get_geofences', ['as' => 'api.get_geofences', 'uses' => 'V1\GeofencesController@index']);
         Route::any('add_geofence_data', ['as' => 'api.add_geofence_data', 'uses' => 'V1\GeofencesController@create']);
@@ -207,7 +207,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('send_test_sms', ['as' => 'api.send_test_sms', 'uses' => 'ApiController@SmsGatewayController#sendTestSms']);
 
         Route::any('get_user_gprs_templates', ['as' => 'api.get_user_gprs_templates', 'uses' => 'ApiController@UserGprsTemplatesController#index']);
-        Route::any('add_user_gprs_template_data', ['as' => 'api.add_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#create']);
+        Route::any('add_user_gprs_template_data', ['as' => 'api.add_user_gprs_template_data', 'uses' => 'ApiController@UserGprsTemplatesController#create']);
         Route::any('add_user_gprs_template', ['as' => 'api.add_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#store']);
         Route::any('edit_user_gprs_template_data', ['as' => 'api.edit_user_gprs_template_data', 'uses' => 'ApiController@UserGprsTemplatesController#edit']);
         Route::any('edit_user_gprs_template', ['as' => 'api.edit_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#update']);
@@ -215,7 +215,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('destroy_user_gprs_template', ['as' => 'api.destroy_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#destroy']);
 
         Route::any('get_user_sms_templates', ['as' => 'api.get_user_sms_templates', 'uses' => 'ApiController@UserSmsTemplatesController#index']);
-        Route::any('add_user_sms_template_data', ['as' => 'api.add_user_sms_template', 'uses' => 'ApiController@UserSmsTemplatesController#create']);
+        Route::any('add_user_sms_template_data', ['as' => 'api.add_user_sms_template_data', 'uses' => 'ApiController@UserSmsTemplatesController#create']);
         Route::any('add_user_sms_template', ['as' => 'api.add_user_sms_template', 'uses' => 'ApiController@UserSmsTemplatesController#store']);
         Route::any('edit_user_sms_template_data', ['as' => 'api.edit_user_sms_template_data', 'uses' => 'ApiController@UserSmsTemplatesController#edit']);
         Route::any('edit_user_sms_template', ['as' => 'api.edit_user_sms_template', 'uses' => 'ApiController@UserSmsTemplatesController#update']);
@@ -242,7 +242,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::get('sharing/{id}', ['as' => 'api.sharing.show', 'uses' => 'SharingController@show']);
             Route::put('sharing/{id}', ['as' => 'api.sharing.update', 'uses' => 'SharingController@update']);
             Route::delete('sharing/{id}', ['as' => 'api.sharing.delete', 'uses' => 'SharingController@delete']);
-            Route::put('sharing/{id}/devices', ['as' => 'api.sharing.delete', 'uses' => 'SharingController@updateDevices']);
+            Route::put('sharing/{id}/devices', ['as' => 'api.sharing.devices.update', 'uses' => 'SharingController@updateDevices']);
 
             # Checklists
             Route::get('checklists/types', ['as' => 'api.checklists.types', 'uses' => 'ChecklistController@getTypes']);
@@ -251,7 +251,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::patch('checklists/templates/{template_id}', ['as' => 'api.checklists.templates.update', 'uses' => 'ChecklistTemplateController@update']);
             Route::delete('checklists/templates', ['as' => 'api.checklists.templates.destroy', 'uses' => 'ChecklistTemplateController@destroy']);
             Route::get('checklists/completed', ['as' => 'api.checklists.completed', 'uses' => 'ChecklistController@getCompleted']);
-            Route::get('checklists/failed', ['as' => 'api.checklists.completed', 'uses' => 'ChecklistController@getFailed']);
+            Route::get('checklists/failed', ['as' => 'api.checklists.failed', 'uses' => 'ChecklistController@getFailed']);
             Route::get('checklists/{service_id}', ['as' => 'api.checklists.index', 'uses' => 'ChecklistController@index']);
             Route::post('checklists/{service_id}', ['as' => 'api.checklists.store', 'uses' => 'ChecklistController@store']);
             Route::delete('checklists', ['as' => 'api.checklists.destroy', 'uses' => 'ChecklistController@destroy']);
@@ -282,8 +282,8 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::get('call_actions/{id}', ['as' => 'api.call_actions.show', 'uses' => 'CallActionsController@show']);
 
             # Custom fields
-            Route::get('device/custom_fields', ['as' => 'api.custom_fields.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'device']);
-            Route::get('user/custom_fields', ['as' => 'api.custom_fields.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'user']);
+            Route::get('device/custom_fields', ['as' => 'api.custom_fields.device.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'device']);
+            Route::get('user/custom_fields', ['as' => 'api.custom_fields.user.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'user']);
 
             # Task sets
             Route::get('task_sets', ['uses' => 'TaskSetsController@index']);
@@ -297,7 +297,9 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::post('device/{id}/tags', 'DeviceTagsController@store');
             Route::delete('device/{id}/tags', 'DeviceTagsController@destroy');
 
-            Route::apiResource('tags', 'TagsController', ['only' => ['index']]);
+            // apiResource autogeneraba 'tags.index', el mismo nombre que la
+            // ruta de administracion; se le da uno propio.
+            Route::apiResource('tags', 'TagsController', ['only' => ['index'], 'names' => ['index' => 'api.tags.index']]);
         });
     });
 
@@ -355,7 +357,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth.api', 'active_subscrip
     Route::post('device/{device}/expiration', ['as' => 'api.admin.device.expiration.store', 'uses' => 'Api\Admin\DevicesController@expiration']);
 });
 
-Route::get('/doc', ['as' => 'testing', 'uses' => function () {
+Route::get('/doc', ['as' => 'api.doc', 'uses' => function () {
     echo '<iframe style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;" src="https://gpswox.stoplight.io/"></iframe>';
 }]);
 
