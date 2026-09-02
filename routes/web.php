@@ -83,6 +83,8 @@ Route::group([], function () {
     ]);
 
     Route::any('geo_address', ['as' => 'geo_address', 'uses' => 'Frontend\AddressController@get']);
+
+    Route::get('gmail/oauth2/callback', ['as' => 'gmail.oauth2.callback', 'uses' => 'Admin\EmailSettingsGmailController@__invoke']);
 });
 
 // Authenticated Frontend |active_subscription

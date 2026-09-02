@@ -44,4 +44,16 @@ class MailManager extends IlluminateMailManager
 
         return new GpswoxMailerTransport(new Curl(), $config['api_key']);
     }
+
+    /**
+     * Create an instance of the Gmail API Swift Transport driver.
+     */
+    protected function createGmailTransport(): GmailTransport
+    {
+        $config = $this->app['config']->get('services.gmail', []);
+
+        $client = new HttpClient(Arr::get($config, 'guzzle', []));
+
+        return new GmailTransport($client, $config);
+    }
 }

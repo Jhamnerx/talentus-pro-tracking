@@ -70,6 +70,13 @@ class ConfigurableMailServiceProvider extends MailServiceProvider {
                     'api_key' => Arr::get($settings, 'api_key', '')
                 ]);
                 break;
+            case 'gmail':
+                $this->app['config']->set('services.gmail', [
+                    'client_id' => Arr::get($settings, 'client_id', ''),
+                    'client_secret' => Arr::get($settings, 'client_secret', ''),
+                    'refresh_token' => Arr::get($settings, 'refresh_token', ''),
+                ]);
+                break;
             case 'mailgun':
                 switch (Arr::get($settings, 'region', null)) {
                     case 'eu':
