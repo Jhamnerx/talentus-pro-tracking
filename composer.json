@@ -40,7 +40,6 @@
     "fruitcake/laravel-cors": "^3.0",
     "laravel/ui": "^3.4",
     "fakerphp/faker": "^1.23",
-    "spatie/laravel-activitylog": "^3.9",
     "laravel/tinker": "*",
     "pragmarx/google2fa-laravel": "^2.3"
   },
@@ -48,8 +47,9 @@
     "phpunit/phpunit": "^9.0",
     "barryvdh/laravel-ide-helper": "^2.8",
     "filp/whoops": "~2.14",
-    "phpspec/phpspec": "^6.3",
-    "barryvdh/laravel-debugbar": "~3.4"
+    "phpspec/phpspec": "^7.0",
+    "barryvdh/laravel-debugbar": "~3.4",
+    "spatie/laravel-activitylog": "^4.0"
   },
   "autoload": {
     "files": [
