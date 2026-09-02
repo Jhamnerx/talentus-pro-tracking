@@ -73,6 +73,10 @@ return array(
         ),
     ),
     'attributes'  => array(
+        'tags' => 'Tags',
+        'fuel_type' => 'Fuel type',
+        'fuel_emissions' => 'Fuel emissions',
+
         'email' => 'Email',
         'password' => 'Password',
         'password_confirmation' => 'Password confirmation',

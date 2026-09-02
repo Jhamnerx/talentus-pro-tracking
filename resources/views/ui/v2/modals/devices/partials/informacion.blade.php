@@ -240,6 +240,24 @@
                     value="{{ $item->fuel_price ?? '' }}" data-tp-field>
             </label>
         </div>
+
+        {{-- Tipo de combustible + emisiones (GPSWox 3.7.13) --}}
+        <div class="tp-form__grid tp-form__grid--2">
+            <label class="tp-form__field">
+                <span class="tp-form__label">{{ trans('validation.attributes.fuel_type') }}</span>
+                <select class="tp-input" style="width: 100%" name="fuel_type" data-tp-field>
+                    @foreach (($fuel_types ?? []) as $ftValue => $ftLabel)
+                        <option value="{{ $ftValue }}" {{ (string) ($item->fuel_type ?? '') === (string) $ftValue ? 'selected' : '' }}>
+                            {{ $ftLabel }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label class="tp-form__field">
+                <span class="tp-form__label">{{ trans('validation.attributes.fuel_emissions') }} (CO2 g/km)</span>
+                <input type="number" step="0.01" min="0" name="fuel_emissions" placeholder="0.00"
+                    value="{{ $item->fuel_emissions ?? '' }}" data-tp-field>
+            </label>
+        </div>
     </div>
 
     {{-- Costo estimado por kilómetro: el supuesto del cliente para valorar un
@@ -251,6 +269,23 @@
             value="{{ $item->cost_per_km ?? '' }}" data-tp-field>
         <small class="tp-form__hint">{{ trans('front.cost_per_km_hint') }}</small>
     </label>
+
+    {{-- ── Tags del dispositivo (GPSWox 3.7.13): DeviceService::saveTags sincroniza tags[] ── --}}
+    @if (Auth::user()->can('edit', $item, 'tags'))
+        @php
+            $tagsOptions = \Tobuli\Entities\Tag::userAccessible(Auth::user())->pluck('name', 'id')->all();
+            $tagsSelected = $item->exists ? array_map('strval', $item->tags->pluck('id')->all()) : [];
+        @endphp
+        <label class="tp-form__field">
+            <span class="tp-form__label">{{ trans('front.tags') }}</span>
+            <select class="tp-input" name="tags[]" multiple size="4" data-tp-field>
+                @foreach ($tagsOptions as $tagId => $tagName)
+                    <option value="{{ $tagId }}" {{ in_array((string) $tagId, $tagsSelected, true) ? 'selected' : '' }}>
+                        {{ $tagName }}</option>
+                @endforeach
+            </select>
+        </label>
+    @endif
 
     {{-- ── Reenvío (forward): input-group con checkbox embebido + Protocolo ── --}}
     @if ($cv('forward'))

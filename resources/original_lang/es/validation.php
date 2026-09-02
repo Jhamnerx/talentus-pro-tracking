@@ -534,6 +534,10 @@ return [
     'wrong_captcha' => 'Captcha incorrecto',
     'zones_instead' => 'Zonas en lugar de direcciones',
     'attributes' => [
+        'tags' => 'Etiquetas',
+        'fuel_type' => 'Tipo de combustible',
+        'fuel_emissions' => 'Emisiones de combustible',
+
         'objects' => 'Vehículos',
         'select_all_objects' => 'Seleccionar todos los vehículos',
         'count' => 'Total',

@@ -536,6 +536,10 @@ return [
     'wrong_captcha' => 'Captcha incorrecto',
     'zones_instead' => 'Zonas en lugar de direcciones',
     'attributes' => [
+        'tags' => 'Etiquetas',
+        'fuel_type' => 'Tipo de combustible',
+        'fuel_emissions' => 'Emisiones de combustible',
+
         'vehicle_type_id' => 'Tipo de vehículo',
         'vehicle_state_id' => 'Estado del vehículo',
         'expiration_by' => 'Expira por',
