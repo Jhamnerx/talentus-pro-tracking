@@ -183,6 +183,7 @@ return array(
         'frequency' => 'ความถี่',
         'unit' => 'หน่วย',
         'noreply_email' => 'ไม่มีที่อยู่อีเมลตอบกลับ',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'ลายเซ็น',
         'use_smtp_server' => 'ใช้ SMTP เซิร์ฟเวอร์',
         'smtp_server_host' => 'SMTP โฮสต์ เซิร์ฟเวอร์',

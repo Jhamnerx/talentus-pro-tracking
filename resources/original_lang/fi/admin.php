@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Päivärahat',
     'forwards' => 'Eteenpäin',
     'group_6' => 'Valvoja',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Käyttäjä luotu ennen päivää',
     'reminders_trans' => 'Muistutusten käännökset',
     'passwords_trans' => 'Salasanan käännökset',

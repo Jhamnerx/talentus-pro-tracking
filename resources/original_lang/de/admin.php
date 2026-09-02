@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Tagessätze',
     'forwards' => 'Vorwärts',
     'group_6' => 'Aufsicht',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Benutzer vor Tagen erstellt',
     'reminders_trans' => 'Übersetzungen von Erinnerungen',
     'passwords_trans' => 'Übersetzungen von Passwörtern',

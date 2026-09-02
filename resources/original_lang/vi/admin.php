@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Tỷ lệ diem',
     'forwards' => 'Tiền đạo',
     'group_6' => 'Người giám sát',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Người dùng đã tạo trước ngày',
     'reminders_trans' => 'Bản dịch nhắc nhở',
     'passwords_trans' => 'Bản dịch mật khẩu',

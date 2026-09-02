@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'معدلات ديم',
     'forwards' => 'المهاجمون',
     'group_6' => 'مشرف',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'تم إنشاء المستخدم قبل أيام',
     'reminders_trans' => 'ترجمات التذكير',
     'passwords_trans' => 'ترجمة كلمات المرور',

@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diem priser',
     'forwards' => 'Forwards',
     'group_6' => 'Veileder',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Bruker opprettet før dager',
     'reminders_trans' => 'Påminnelser oversettelser',
     'passwords_trans' => 'Passord oversettelser',

@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Tarifes diem',
     'forwards' => 'Davanters',
     'group_6' => 'Supervisor',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Usuari creat abans de dies',
     'reminders_trans' => 'Traduccions de recordatoris',
     'passwords_trans' => 'Traducció de contrasenyes',

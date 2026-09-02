@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Harcırah oranları',
     'forwards' => 'Forvet',
     'group_6' => 'Süpervizör',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Kullanıcı günlerden önce oluşturuldu',
     'reminders_trans' => 'Hatırlatma çevirileri',
     'passwords_trans' => 'Şifre çevirileri',

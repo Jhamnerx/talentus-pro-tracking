@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Dienas naudas likmes',
     'forwards' => 'Uzbrucēji',
     'group_6' => 'Uzraugs',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Lietotājs izveidots pirms dienām',
     'reminders_trans' => 'Atgādinājumu tulkojumi',
     'passwords_trans' => 'Paroļu tulkojumi',

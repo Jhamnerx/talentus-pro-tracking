@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Sıklık',
         'unit' => 'Birim',
         'noreply_email' => 'Cevap e-posta adresi yok',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'İmza',
         'use_smtp_server' => 'SMTP sunucusunu kullan',
         'smtp_server_host' => 'SMTP sunucusu ana bilgisayarı',

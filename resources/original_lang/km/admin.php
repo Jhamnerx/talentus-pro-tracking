@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'អត្រាមរណភាព',
     'forwards' => 'ទៅមុខ',
     'group_6' => 'អ្នកគ្រប់គ្រង',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'អ្នកប្រើប្រាស់បានបង្កើតមុនថ្ងៃ',
     'reminders_trans' => 'ការបកប្រែរំលឹក',
     'passwords_trans' => 'ការបកប្រែពាក្យសម្ងាត់',

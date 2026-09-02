@@ -122,6 +122,7 @@ return array(
     'diem_rates' => '每日津贴率',
     'forwards' => '前锋',
     'group_6' => '导师',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => '几天前创建的用户',
     'reminders_trans' => '提醒翻译',
     'passwords_trans' => '密码翻译',

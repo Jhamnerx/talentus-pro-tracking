@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Фреквенција',
         'unit' => 'Јединица',
         'noreply_email' => 'Нема адресе е-поште за одговор',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Потпис',
         'use_smtp_server' => 'Користите СМТП сервер',
         'smtp_server_host' => 'СМТП сервер хост',

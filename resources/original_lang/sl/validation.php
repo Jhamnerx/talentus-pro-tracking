@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Pogostost',
         'unit' => 'Enota',
         'noreply_email' => 'E -poštni naslov brez odgovora',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Podpis',
         'use_smtp_server' => 'Uporabite strežnik SMTP',
         'smtp_server_host' => 'Gostitelj strežnika SMTP',

@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diem takster',
     'forwards' => 'Forlængere',
     'group_6' => 'Tilsynsførende',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Bruger oprettet før dage',
     'reminders_trans' => 'Påmindelser oversættelser',
     'passwords_trans' => 'Adgangskoder oversættelser',

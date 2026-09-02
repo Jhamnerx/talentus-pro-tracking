@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'ඩයිම් අනුපාත',
     'forwards' => 'ඉදිරියට',
     'group_6' => 'සුපරීක්ෂක',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'පරිශීලකයා දින කිහිපයකට පෙර නිර්මාණය කරන ලදී',
     'reminders_trans' => 'මතක් කිරීම් පරිවර්තන',
     'passwords_trans' => 'මුරපද පරිවර්තන',

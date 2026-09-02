@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Давтамж',
         'unit' => 'Нэгж',
         'noreply_email' => 'Авто имэйл',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Гарын үсэг',
         'use_smtp_server' => 'SMTP сервер ашиглах',
         'smtp_server_host' => 'SMTP серверийн хост',

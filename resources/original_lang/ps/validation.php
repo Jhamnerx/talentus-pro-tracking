@@ -183,6 +183,7 @@ return array(
         'frequency' => 'فریکونسی',
         'unit' => 'واحد',
         'noreply_email' => 'د ځواب بریښنالیک پته نشته',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'لاسلیک',
         'use_smtp_server' => 'د SMTP سرور وکاروئ',
         'smtp_server_host' => 'د SMTP سرور کوربه',

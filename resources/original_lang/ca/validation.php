@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Freqüència',
         'unit' => 'Unitat',
         'noreply_email' => 'Sense adreça electronica de resposta',
+        'reply_to_email' => 'Correu de resposta (Reply-To)',
         'signature' => 'Firma',
         'use_smtp_server' => 'Utilitzeu el servidor SMTP',
         'smtp_server_host' => 'Amfitrió del servidor SMTP',

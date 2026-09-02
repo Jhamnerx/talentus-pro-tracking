@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'দিন হার',
     'forwards' => 'ফরোয়ার্ড',
     'group_6' => 'কর্মকর্তা',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'দিন আগে ব্যবহারকারী তৈরি',
     'reminders_trans' => 'অনুস্মারক অনুবাদ',
     'passwords_trans' => 'পাসওয়ার্ড অনুবাদ',

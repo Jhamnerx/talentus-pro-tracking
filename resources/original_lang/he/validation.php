@@ -209,6 +209,7 @@ return array(
         'permission_to_add_devices' => 'הוסף התקנים אחד',
         'trigger_event_left' => 'הפעל אירוע כאשר משמאל',
         'noreply_email' => 'אין תשובה לכתובת דוא&quot;ל',
+        'reply_to_email' => 'Reply-To email',
         'use_smtp_server' => 'השתמש בשרת SMTP',
         'smtp_server_host' => 'מארח שרת SMTP',
         'smtp_server_port' => 'יציאת שרת SMTP',

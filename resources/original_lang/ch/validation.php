@@ -181,6 +181,7 @@ return [
         'frequency' => 'Frecuencia',
         'unit' => 'Unidad',
         'noreply_email' => 'Ninguna dirección de correo electrónico de respuesta',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Firma',
         'use_smtp_server' => 'Usar servidor SMTP',
         'smtp_server_host' => 'Host del servidor SMTP',
