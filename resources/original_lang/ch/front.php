@@ -1237,7 +1237,6 @@ return [
     'placeholder_email' => 'Correo electrónico',
     'placeholder_phone' => 'Teléfono',
     'create_account' => 'Crear una cuenta',
-    // UI v2: claves anadidas (Historial y comunes)
     'advanced_options' => 'Advanced',
     'select_device' => 'Select device',
     'select_date' => 'Select date',
@@ -1264,10 +1263,8 @@ return [
     'generating_export' => 'Generating export',
     'export_failed' => 'Export could not be generated',
     'select_device_and_date' => 'Select a device and a date',
-
     'driving' => 'Driving',
     'parked' => 'Parked',
-
     'auto_send_when_online' => 'Auto-send when online',
     'queued_for_online' => 'Queued: it will be sent when the device comes online.',
     'queued' => 'Queued',
