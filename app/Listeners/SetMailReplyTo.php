@@ -35,8 +35,9 @@ class SetMailReplyTo
             return;
         }
 
-        // Symfony Mailer (Laravel 9+): el mensaje es un Symfony\Component        // Mime\Email y el metodo se llama replyTo(), no setReplyTo() como en
-        // el Swift_Message de Laravel 8.
+        // Symfony Mailer (Laravel 9+): el mensaje es un Email de
+        // Symfony\Component\Mime y el metodo se llama replyTo(), no
+        // setReplyTo() como en el Swift_Message de Laravel 8.
         $event->message->replyTo($replyTo);
     }
 }
