@@ -86,6 +86,21 @@
       if (!c || !g.radius) return null;
       return L.circle([c.lat, c.lng], Object.assign({ radius: Number(g.radius) }, style));
     }
+    if (g.type === "line") {
+      var eje = normCoords(g.coordinates);
+      if (eje.length < 2 || !g.radius) return null;
+      // Una linea con extremos y uniones redondos ES el buffer de la linea:
+      // basta con darle el grosor que corresponde a su anchura real (lo hace
+      // updateCorridorWeights, que depende del zoom).
+      var corredor = L.polyline(
+        eje.map(function (pt) {
+          return [pt.lat, pt.lng];
+        }),
+        Object.assign({}, style, { fill: false, lineCap: "round", lineJoin: "round" }),
+      );
+      corredor.corridorRadius = Number(g.radius);
+      return corredor;
+    }
     var coords = normCoords(g.coordinates);
     if (coords.length < 3) return null;
     return L.polygon(
@@ -94,6 +109,24 @@
       }),
       style,
     );
+  }
+
+  /**
+   * Grosor de los corredores: los metros por pixel cambian con el zoom, asi
+   * que hay que recalcularlo cada vez que se mueve.
+   */
+  function updateCorridorWeights() {
+    var m = map();
+    if (!m) return;
+    var centro = m.getCenter();
+    var a = m.latLngToLayerPoint(centro);
+    var metrosPor100px = m.distance(centro, m.layerPointToLatLng(L.point(a.x + 100, a.y)));
+    if (!metrosPor100px) return;
+    Object.keys(S.layersById).forEach(function (id) {
+      var capa = S.layersById[id];
+      if (!capa || !capa.corridorRadius) return;
+      capa.setStyle({ weight: (capa.corridorRadius * 2) / (metrosPor100px / 100) });
+    });
   }
 
   function renderLayers() {
@@ -113,6 +146,14 @@
       S.layer.addLayer(layer);
       S.layersById[g.id] = layer;
     });
+
+    updateCorridorWeights();
+
+    // Una sola vez: el grosor del corredor depende del zoom
+    if (!m.__zoneCorridorBound) {
+      m.__zoneCorridorBound = true;
+      m.on("zoomend", updateCorridorWeights);
+    }
   }
 
   S.filtered = function () {
@@ -226,7 +267,9 @@
       '</span></div><div class="tp-dev-popup__status">' +
       (g.type === "circle"
         ? "Círculo · " + (g.radius ? Math.round(g.radius) + " m" : "—")
-        : "Polígono · " + (g.coordinates || []).length + " pts") +
+        : g.type === "line"
+          ? "Corredor · " + (g.coordinates || []).length + " pts · ±" + Math.round(g.radius || 0) + " m"
+          : "Polígono · " + (g.coordinates || []).length + " pts") +
       "</div>" +
       (canEdit
         ? '<div class="tp-poi-popup__actions"><button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-edit>Editar</button>' +
@@ -361,6 +404,7 @@
         })
         .join("");
     var isCircle = (geometry && geometry.type === "circle") || (g && g.type === "circle");
+    var isLine = (geometry && geometry.type === "line") || (g && g.type === "line");
     return (
       '<form id="tp-zone-form" class="tp-poi-form">' +
       '<div class="tp-field"><label class="tp-field__label">Nombre</label><input type="text" name="name" class="tp-input" value="' +
@@ -385,6 +429,12 @@
         ? '<div class="tp-field"><label class="tp-field__label">Radio (m)</label><input type="number" name="radius" class="tp-input" value="' +
           (geometry ? geometry.radius : g ? Math.round(g.radius) : "") +
           '"></div>'
+        : "") +
+      (isLine
+        ? '<div class="tp-field"><label class="tp-field__label">Distancia al eje (m)</label>' +
+          '<input type="number" name="radius" class="tp-input" min="1" value="' +
+          (g && g.radius ? Math.round(g.radius) : 100) +
+          '"><small class="tp-field__hint">Cuánto se puede separar el vehículo de la línea antes de contar como fuera.</small></div>'
         : "") +
       '<div class="tp-field"><label class="tp-field__label">Límite de velocidad (km/h)</label><input type="number" name="speed_limit" class="tp-input" min="0" value="' +
       (g && g.speed_limit != null ? g.speed_limit : "") +
@@ -587,6 +637,15 @@
       var c = layer.getLatLng();
       return { type: "circle", center: { lat: c.lat, lng: c.lng }, radius: Math.round(layer.getRadius()), polygon: [] };
     }
+    // L.Polygon extiende L.Polyline, asi que el corredor se comprueba antes
+    if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+      return {
+        type: "line",
+        polygon: layer.getLatLngs().map(function (pt) {
+          return { lat: pt.lat, lng: pt.lng };
+        }),
+      };
+    }
     var rings = layer.getLatLngs();
     var pts = rings && rings.length ? rings[0] : [];
     if (Array.isArray(pts[0])) pts = pts[0];
@@ -620,7 +679,9 @@
     S.drawer =
       type === "circle"
         ? new L.Draw.Circle(m, { shapeOptions: shape, metric: true })
-        : new L.Draw.Polygon(m, { shapeOptions: shape, allowIntersection: false, showArea: false });
+        : type === "line"
+          ? new L.Draw.Polyline(m, { shapeOptions: shape })
+          : new L.Draw.Polygon(m, { shapeOptions: shape, allowIntersection: false, showArea: false });
     S.drawer.enable();
     showDrawBar(type === "circle" ? "circle" : "polygon");
   }
@@ -631,7 +692,7 @@
     m.on(L.Draw.Event.CREATED, function (e) {
       if (S.editId) return; // la edición de forma no usa draw:created
       var t = e.layerType;
-      if (t !== "polygon" && t !== "circle") return;
+      if (t !== "polygon" && t !== "circle" && t !== "polyline") return;
       var geometry = geometryFromLayer(e.layer);
       try {
         m.removeLayer(e.layer);
@@ -647,6 +708,10 @@
         tpModal && tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
         return;
       }
+      if (geometry.type === "line" && geometry.polygon.length < 2) {
+        tpModal && tpModal.toast && tpModal.toast("Un corredor necesita al menos 2 puntos.", "warning");
+        return;
+      }
       openCreateModal(geometry); // ← formulario: nombre, color, grupo, velocidad, límites
     });
   }
@@ -657,6 +722,8 @@
     disposeDraft();
     S.editId = g.id;
     S.editName = g.name;
+    // El corredor se valida con su anchura: si no viaja, el PUT se rechaza
+    S.editRadius = g.type === "line" ? g.radius : null;
     var layer = buildLayerFor(g);
     if (!layer) return;
     S.draft = layer.addTo(m);
@@ -673,6 +740,13 @@
     if (geometry.type === "polygon" && geometry.polygon.length < 3) {
       tpModal && tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
       return;
+    }
+    if (geometry.type === "line") {
+      if (geometry.polygon.length < 2) {
+        tpModal && tpModal.toast && tpModal.toast("Un corredor necesita al menos 2 puntos.", "warning");
+        return;
+      }
+      geometry.radius = S.editRadius;
     }
     var id = S.editId,
       name = S.editName;
@@ -703,7 +777,8 @@
       body:
         '<p style="margin:0 0 12px;font-size:14px;">¿Qué tipo quieres dibujar?</p>' +
         '<div class="tp-row" style="gap:8px;"><button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="polygon">Polígono</button>' +
-        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="circle">Círculo</button></div>',
+        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="circle">Círculo</button>' +
+        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="line">Corredor</button></div>',
       buttons: [{ label: "Cancelar", variant: "ghost" }],
     });
     if (dlg)

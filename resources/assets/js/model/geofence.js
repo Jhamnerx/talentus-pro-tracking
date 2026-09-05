@@ -16,6 +16,7 @@ function Geofence(data, map) {
         },
         options = {},
         layer = null,
+        halo = null,
         popup = null;
 
     _this.id = function() {
@@ -67,6 +68,10 @@ function Geofence(data, map) {
         }
         else if (layer instanceof L.Circle) {
             return layer.getLatLng();
+        }
+        // L.Polygon extiende L.Polyline, asi que este caso va DESPUES
+        else if (layer instanceof L.Polyline) {
+            return layer.getLatLngs();
         }
     };
 
@@ -128,6 +133,22 @@ function Geofence(data, map) {
                         fillOpacity: 0.3,
                         fillColor: _options.polygon_color
                     });
+                    break;
+
+                case 'line':
+                    // El eje. Es lo que se dibuja y se edita; la anchura la
+                    // pinta el halo (ver drawCorridorHalo), que ademas es
+                    // geometricamente exacto: una linea con extremos y uniones
+                    // redondos ES el buffer de la linea.
+                    layer = L.polyline(_options.coordinates, {
+                        color: _options.polygon_color,
+                        weight: 3,
+                        opacity: 1,
+                        lineCap: 'round',
+                        lineJoin: 'round'
+                    });
+
+                    layer.corridorRadius = parseFloat(_options.radius) || 0;
                     break;
 
                 case 'polygon':
@@ -231,11 +252,68 @@ function Geofence(data, map) {
     _this.onLayerAdd = function() {
         dd('goefence.onLayerAdd');
         _this.addPopup();
+        _this.addCorridorHalo();
     };
 
     _this.onLayerRemove = function() {
         dd('goefence.onLayerRemove');
         _this.removePopup();
+        _this.removeCorridorHalo();
+    };
+
+    /**
+     * Halo del corredor: la misma linea, pero con el grosor en pixeles que
+     * corresponde a su anchura real en el zoom actual. Se redibuja al hacer
+     * zoom porque los metros por pixel cambian.
+     */
+    _this.addCorridorHalo = function() {
+        if (!layer || !layer.corridorRadius || !_map)
+            return;
+
+        if (!halo) {
+            halo = L.polyline(layer.getLatLngs(), {
+                color: options.polygon_color,
+                opacity: 0.25,
+                lineCap: 'round',
+                lineJoin: 'round',
+                interactive: false
+            });
+        }
+
+        _this.updateCorridorHalo();
+
+        halo.addTo(_map);
+
+        _map.on('zoomend', _this.updateCorridorHalo);
+    };
+
+    _this.updateCorridorHalo = function() {
+        if (!halo || !layer || !_map)
+            return;
+
+        var centro = _map.getCenter();
+        var a = _map.latLngToLayerPoint(centro);
+        var b = L.point(a.x + 100, a.y);
+        var metrosPor100px = _map.distance(centro, _map.layerPointToLatLng(b));
+
+        if (!metrosPor100px)
+            return;
+
+        halo.setLatLngs(layer.getLatLngs());
+        // radius es la distancia al eje: el grosor es el doble
+        halo.setStyle({ weight: (layer.corridorRadius * 2) / (metrosPor100px / 100) });
+    };
+
+    _this.removeCorridorHalo = function() {
+        if (!halo)
+            return;
+
+        if (_map) {
+            _map.off('zoomend', _this.updateCorridorHalo);
+            _map.removeLayer(halo);
+        }
+
+        halo = null;
     };
 
     _this.polygonToCircle = function() {

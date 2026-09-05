@@ -361,6 +361,10 @@ function Geofences() {
           feet: app.settings.units.speed.radio != 1,
         });
         break;
+      case "line":
+        // Corredor: se dibuja el eje; la anchura se escribe en el formulario
+        draw = new L.Draw.Polyline(_this.map());
+        break;
       default:
         draw = new L.Draw.Polygon(_this.map());
     }
@@ -380,6 +384,22 @@ function Geofences() {
         name: "polygon",
         value: JSON.stringify(tmpItem.getLatLngs()),
       });
+    } else if (
+      tmpItem.getLayer() instanceof L.Polyline &&
+      !(tmpItem.getLayer() instanceof L.Polygon)
+    ) {
+      // Corredor: el eje va en polygon y la anchura en radius, que aqui es la
+      // distancia maxima al eje (la mitad del ancho).
+      data.push(
+        {
+          name: "polygon",
+          value: JSON.stringify(tmpItem.getLatLngs()),
+        },
+        {
+          name: "type",
+          value: "line",
+        },
+      );
     } else if (tmpItem.getLayer() instanceof L.Circle) {
       data.push(
         {
@@ -451,6 +471,26 @@ function Geofences() {
         {
           name: "type",
           value: "polygon",
+        },
+      );
+    } else if (
+      tmpItem.getLayer() instanceof L.Polyline &&
+      !(tmpItem.getLayer() instanceof L.Polygon)
+    ) {
+      // Corredor: el eje va en polygon; la anchura sale del campo radius del
+      // formulario, que ya viene en data por serializeArray().
+      data.push(
+        {
+          name: "polygon",
+          value: JSON.stringify(tmpItem.getLatLngs()),
+        },
+        {
+          name: "id",
+          value: tmpItem.id(),
+        },
+        {
+          name: "type",
+          value: "line",
         },
       );
     } else if (tmpItem.getLayer() instanceof L.Circle) {

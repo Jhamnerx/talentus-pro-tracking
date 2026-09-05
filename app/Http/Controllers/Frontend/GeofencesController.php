@@ -88,7 +88,11 @@ class GeofencesController extends Controller
 
     private function getFormData()
     {
-        $geofenceTypes = ['polygon' => trans('front.polygon'), 'circle' => trans('front.circle')];
+        $geofenceTypes = [
+            'polygon' => trans('front.polygon'),
+            'circle'  => trans('front.circle'),
+            'line'    => trans('front.corridor'),
+        ];
 
         $geofenceGroups = GeofenceGroup::userOwned($this->user)
             ->pluck('title', 'id')

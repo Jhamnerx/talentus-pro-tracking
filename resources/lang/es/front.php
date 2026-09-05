@@ -1438,4 +1438,10 @@ return [
     'alert_report_minutes_after' => 'Minutos después del evento',
     'alert_report_hint' => 'El reporte cubre el vehículo desde X minutos antes hasta X minutos después del evento, y se envía cuando esa ventana ya ha pasado.',
     'report_format' => 'Formato',
+
+    // Geocerca de linea (corredor)
+    'corridor' => 'Corredor (línea)',
+    'corridor_width' => 'Distancia al eje (m)',
+    'corridor_width_hint' => 'Cuánto se puede separar el vehículo de la línea dibujada antes de contar como fuera.',
+    'please_draw_corridor' => 'Dibuja el eje del corredor en el mapa e indica cuánto puede separarse el vehículo.',
 ];

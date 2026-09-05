@@ -134,6 +134,7 @@ class ZonesController extends BaseController
             'types'         => [
                 ['key' => 'polygon', 'label' => trans('front.polygon')],
                 ['key' => 'circle',  'label' => trans('front.circle')],
+                ['key' => 'line',    'label' => trans('front.corridor')],
             ],
             'groups'        => $groups,
             'devices'       => $devices,

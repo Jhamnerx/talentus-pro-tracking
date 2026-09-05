@@ -18,6 +18,11 @@
             'onChange' => 'app.geofences.changeType(this);',
         ]) !!}
     </div>
+    <div class="form-group geofence-corridor-width">
+        {!! Form::label('radius', trans('front.corridor_width') . ':') !!}
+        {!! Form::number('radius', 100, ['class' => 'form-control', 'min' => 1, 'step' => 1]) !!}
+        <small>{{ trans('front.corridor_width_hint') }}</small>
+    </div>
     @if (settings('plugins.moving_geofence.status'))
         <div class="form-group">
             {!! Form::label('device_id', trans('validation.attributes.geofence_device') . ':') !!}
@@ -82,3 +87,20 @@
     </div>
 </div>
 {!! Form::close() !!}
+
+{{-- La anchura solo tiene sentido para el corredor: se muestra con el tipo.
+     Va aqui y no en el JS del mapa porque es puro formulario. --}}
+<script>
+    (function () {
+        var $form = $('#geofence_create');
+
+        function toggleCorridorWidth() {
+            var esCorredor = $form.find('select[name="type"]').val() === 'line';
+
+            $form.find('.geofence-corridor-width').toggle(esCorredor);
+        }
+
+        $form.on('change', 'select[name="type"]', toggleCorridorWidth);
+        toggleCorridorWidth();
+    })();
+</script>

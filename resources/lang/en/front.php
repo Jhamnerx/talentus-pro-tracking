@@ -1440,4 +1440,10 @@ return [
     'alert_report_minutes_after' => 'Minutes after the event',
     'alert_report_hint' => 'The report covers the vehicle from X minutes before to X minutes after the event, and is sent once that window has passed.',
     'report_format' => 'Format',
+
+    // Geocerca de linea (corredor)
+    'corridor' => 'Corridor (line)',
+    'corridor_width' => 'Distance to the axis (m)',
+    'corridor_width_hint' => 'How far from the drawn line the vehicle may go before it counts as outside.',
+    'please_draw_corridor' => 'Draw the corridor axis on the map and set how far from it the vehicle may go.',
 ];
