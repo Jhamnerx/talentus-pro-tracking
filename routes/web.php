@@ -1178,6 +1178,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('call-actions', ['as' => 'call_actions', 'uses' => 'Ui\V2\CallActionsController@page']);
     Route::get('chat',         ['as' => 'chat',         'uses' => 'Ui\V2\ChatController@page']);
     Route::get('expenses',     ['as' => 'expenses',     'uses' => 'Ui\V2\ExpensesController@page']);
+    Route::get('route-schedules', ['as' => 'route_schedules', 'uses' => 'Ui\V2\RouteSchedulesController@page']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
     Route::prefix('api')->group(function () {
@@ -1196,6 +1197,16 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
 
         // Gastos (fleet-wide) + Reenvíos
+        // Programaciones de ruta, puntos de control y cumplimiento
+        Route::get('route-schedules',            ['as' => 'api.route_schedules',            'uses' => 'Ui\V2\RouteSchedulesController@data']);
+        Route::get('route-schedules/meta',       ['as' => 'api.route_schedules.meta',       'uses' => 'Ui\V2\RouteSchedulesController@meta']);
+        Route::get('route-schedules/adherence',  ['as' => 'api.route_schedules.adherence',  'uses' => 'Ui\V2\RouteSchedulesController@adherence']);
+        Route::post('route-schedules',           ['as' => 'api.route_schedules.store',      'uses' => 'Ui\V2\RouteSchedulesController@store']);
+        Route::put('route-schedules/{id}',       ['as' => 'api.route_schedules.update',     'uses' => 'Ui\V2\RouteSchedulesController@update'])->where('id', '[0-9]+');
+        Route::delete('route-schedules/{id}',    ['as' => 'api.route_schedules.destroy',    'uses' => 'Ui\V2\RouteSchedulesController@destroy'])->where('id', '[0-9]+');
+        Route::get('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints',         'uses' => 'Ui\V2\RouteSchedulesController@checkpoints'])->where('id', '[0-9]+');
+        Route::put('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints.save',    'uses' => 'Ui\V2\RouteSchedulesController@saveCheckpoints'])->where('id', '[0-9]+');
+
         Route::get('expenses',        ['as' => 'api.expenses',        'uses' => 'Ui\V2\ExpensesController@data']);
         Route::get('expenses/meta',   ['as' => 'api.expenses.meta',   'uses' => 'Ui\V2\ExpensesController@meta']);
         Route::post('expenses',       ['as' => 'api.expenses.store',  'uses' => 'Ui\V2\ExpensesController@store']);

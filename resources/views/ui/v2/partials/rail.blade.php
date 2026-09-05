@@ -35,6 +35,7 @@
         ['key' => 'call_actions', 'label' => 'Acciones de llamada', 'icon' => 'phone', 'url' => url('/ui/v2/call-actions'), 'can' => $u->perm('call_actions', 'view') && $u->perm('events', 'view')],
         ['key' => 'zones', 'label' => 'Geocercas', 'icon' => 'geofence', 'url' => url('/ui/v2/live?panel=zones'), 'can' => $u->perm('geofences', 'view')],
         ['key' => 'routes', 'label' => 'Rutas', 'icon' => 'route', 'url' => url('/ui/v2/live?panel=routes'), 'can' => $u->perm('routes', 'view')],
+        ['key' => 'route_schedules', 'label' => 'Programaciones de ruta', 'icon' => 'history', 'url' => url('/ui/v2/route-schedules'), 'can' => $u->perm('routes', 'view')],
         ['key' => 'pois', 'label' => 'POI', 'icon' => 'mappin', 'url' => url('/ui/v2/live?panel=pois'), 'can' => $u->perm('poi', 'view')],
     ];
 
