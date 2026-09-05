@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\View;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\InputFields\AbstractField;
 use Tobuli\InputFields\SelectField;
+use Tobuli\Reports\ReportManager;
 use Tobuli\Services\Commands\CommandService;
 
 /**
@@ -114,6 +115,9 @@ class AlertsController extends BaseController
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
             'schedules'     => $data['schedules']     ?? [],
             'can_command'   => (bool) $user->perm('send_command', 'view'),
+            // Para el canal "reporte por correo": que reporte y en que formato
+            'report_types'   => $this->reportTypes($user),
+            'report_formats' => ReportManager::getFormats(),
         ]);
     }
 
@@ -359,6 +363,10 @@ class AlertsController extends BaseController
             'devices'              => array_map('intval', $devicesSelected),
             'geofences'            => array_map('intval', $geofencesSelected),
             'notifications'        => (array) ($alert->notifications ?? []),
+            'report_type'           => $alert->report_type ? (int) $alert->report_type : null,
+            'report_format'         => (string) ($alert->report_format ?: 'pdf'),
+            'report_minutes_before' => (int) $alert->report_minutes_before,
+            'report_minutes_after'  => (int) $alert->report_minutes_after,
             'fields'               => $typeFieldValues,
         ];
 
@@ -373,6 +381,8 @@ class AlertsController extends BaseController
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
             'schedules'     => $data['schedules']   ?? [],
             'can_command'   => (bool) $user->perm('send_command', 'view'),
+            'report_types'   => $this->reportTypes($user),
+            'report_formats' => ReportManager::getFormats(),
         ]);
     }
 
@@ -579,6 +589,18 @@ class AlertsController extends BaseController
      * (notifications JSON stores {name:{active,input}} — array_filter alone
      * keeps every present key, active or not).
      */
+    /** Reportes que el usuario puede generar, para el canal de reporte. */
+    private function reportTypes($user): array
+    {
+        $lista = [];
+
+        foreach ((new ReportManager())->getUserEnabledNameList($user) as $id => $nombre) {
+            $lista[] = ['id' => (int) $id, 'name' => (string) $nombre];
+        }
+
+        return $lista;
+    }
+
     private function activeChannels($notifications): array
     {
         if (! is_array($notifications)) return [];

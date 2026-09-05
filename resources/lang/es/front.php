@@ -1431,4 +1431,11 @@ return [
     'route_max_delay' => 'Mayor retraso',
     'route_only_breaches' => 'Solo vueltas con incidencias',
     'route_schedule_required' => 'Elige al menos una programación.',
+
+    // Acción de alerta: enviar reporte por correo
+    'alert_report_notification' => 'Reporte por correo',
+    'alert_report_minutes_before' => 'Minutos antes del evento',
+    'alert_report_minutes_after' => 'Minutos después del evento',
+    'alert_report_hint' => 'El reporte cubre el vehículo desde X minutos antes hasta X minutos después del evento, y se envía cuando esa ventana ya ha pasado.',
+    'report_format' => 'Formato',
 ];

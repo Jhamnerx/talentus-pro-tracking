@@ -651,11 +651,21 @@ class AlertModalHelper extends ModalHelper
                     break;
                 case 'geofence_overspeed':
                     $type['attributes'] = AttributesCollection::make([
-                        Field::multiSelect(
-                            'geofences',
-                            trans('validation.attributes.geofences'),
-                            $alert ? $alert->geofences->pluck('id')->all() : []
-                        )->setOptions($geofences),
+                        // Mismo reparto que geofence_in/out: $geofences solo
+                        // existe en el camino de la API. Por la web hay que
+                        // usar el loader; con setOptions($geofences) el
+                        // formulario de alertas moria con un toOptions(null).
+                        $this->api
+                            ? Field::multiSelect(
+                                'geofences',
+                                trans('validation.attributes.geofences'),
+                                $alert ? $alert->geofences->pluck('id')->all() : []
+                            )->setOptions($geofences)
+                            : Field::multiSelectLoader(
+                                'geofences',
+                                trans('validation.attributes.geofences'),
+                                route('alerts.geofences', $alert?->id)
+                            ),
                         Field::number(
                             'speed_tolerance',
                             'Tolerancia de velocidad (' . Formatter::speed()->getUnit() . ')',

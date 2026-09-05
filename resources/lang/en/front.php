@@ -1433,4 +1433,11 @@ return [
     'route_max_delay' => 'Largest delay',
     'route_only_breaches' => 'Only rounds with incidents',
     'route_schedule_required' => 'Pick at least one schedule.',
+
+    // Acción de alerta: enviar reporte por correo
+    'alert_report_notification' => 'Report by email',
+    'alert_report_minutes_before' => 'Minutes before the event',
+    'alert_report_minutes_after' => 'Minutes after the event',
+    'alert_report_hint' => 'The report covers the vehicle from X minutes before to X minutes after the event, and is sent once that window has passed.',
+    'report_format' => 'Format',
 ];

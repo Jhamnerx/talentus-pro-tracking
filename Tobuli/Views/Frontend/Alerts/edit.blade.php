@@ -150,6 +150,12 @@
                         @if (\Illuminate\Support\Arr::has($notification, 'description'))
                             <small>{!! $notification['description'] !!}</small>
                         @endif
+
+                        {{-- El canal de reporte necesita mas que una lista de
+                             correos: que reporte, en que formato y que ventana. --}}
+                        @if ($notification['name'] === 'report')
+                            @include('front::Alerts.partials.report_notification')
+                        @endif
                     </div>
                 </div>
             @endforeach

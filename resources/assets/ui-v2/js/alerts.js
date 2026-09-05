@@ -1004,6 +1004,43 @@
     );
   }
 
+  function reportSettings(meta) {
+    var it = (meta && meta.item) || {};
+
+    var tipos = (meta.report_types || [])
+      .map(function (t) {
+        return (
+          '<option value="' + esc(t.id) + '"' +
+          (String(t.id) === String(it.report_type || "") ? " selected" : "") +
+          ">" + esc(t.name) + "</option>"
+        );
+      })
+      .join("");
+
+    var formatos = Object.keys(meta.report_formats || {})
+      .map(function (k) {
+        return (
+          '<option value="' + esc(k) + '"' +
+          (k === (it.report_format || "pdf") ? " selected" : "") +
+          ">" + esc(meta.report_formats[k]) + "</option>"
+        );
+      })
+      .join("");
+
+    return (
+      '<div class="tp-notif__report">' +
+      '<label>Reporte<select class="tp-input tp-input--sm" data-no-ts="1" data-report-type>' +
+      '<option value="">—</option>' + tipos + "</select></label>" +
+      '<label>Formato<select class="tp-input tp-input--sm" data-no-ts="1" data-report-format>' +
+      formatos + "</select></label>" +
+      '<label>Min. antes<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-before value="' +
+      esc(it.report_minutes_before == null ? 15 : it.report_minutes_before) + '"></label>' +
+      '<label>Min. después<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-after value="' +
+      esc(it.report_minutes_after == null ? 15 : it.report_minutes_after) + '"></label>' +
+      "</div>"
+    );
+  }
+
   function panelNotifications(meta) {
     var list = meta.notifications || [];
     if (!list.length)
@@ -1025,6 +1062,9 @@
           (n.description
             ? '<small class="tp-notif__hint">' + n.description + "</small>"
             : "") +
+          // El canal de reporte necesita mas que una lista de correos: que
+          // reporte, en que formato y que ventana alrededor del evento.
+          (n.name === "report" ? reportSettings(meta) : "") +
           "</div>"
         );
       })
@@ -1312,6 +1352,16 @@
       if (inp) o.input = inp.value;
       data.notifications[key] = o;
     });
+
+    // Los ajustes del reporte viajan sueltos (son campos de la alerta, no del
+    // canal: el canal solo guarda active + input).
+    var rt = dlg.querySelector("[data-report-type]");
+    if (rt) {
+      data.report_type = rt.value || null;
+      data.report_format = dlg.querySelector("[data-report-format]").value;
+      data.report_minutes_before = dlg.querySelector("[data-report-before]").value;
+      data.report_minutes_after = dlg.querySelector("[data-report-after]").value;
+    }
 
     var typeObj = (meta.types || []).filter(function (t) {
       return t.key === data.type;

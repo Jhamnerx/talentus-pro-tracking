@@ -659,6 +659,25 @@ button.tp-alerts__rule-toggle:hover {
   font-size: 11px;
   color: var(--fg-tertiary);
 }
+/* Ajustes del canal "reporte por correo": van sangrados como el resto del
+   contenido del canal, y en rejilla porque son cuatro campos cortos. */
+.tp-notif__report {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin: 8px 0 0 26px;
+  max-width: 520px;
+}
+.tp-notif__report label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--fg-tertiary);
+}
+.tp-notif.is-off .tp-notif__report {
+  opacity: 0.5;
+}
 .tp-notif__color {
   width: 44px;
   height: 30px;

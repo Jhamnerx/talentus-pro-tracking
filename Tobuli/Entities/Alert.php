@@ -67,6 +67,11 @@ class Alert extends AbstractEntity implements DisplayInterface
         'alarms',
         'case',
         'days',
+        // Accion "enviar reporte por correo" (canal report)
+        'report_type',
+        'report_format',
+        'report_minutes_before',
+        'report_minutes_after',
     );
 
     protected $casts = [
@@ -108,6 +113,12 @@ class Alert extends AbstractEntity implements DisplayInterface
         'alarms' => [],
         'case' => '',
         'days' => 0,
+        // Reporte que acompana al evento: tipo, formato y la ventana de
+        // minutos antes y despues del evento que tiene que cubrir.
+        'report_type' => null,
+        'report_format' => 'pdf',
+        'report_minutes_before' => 15,
+        'report_minutes_after' => 15,
     ];
 
     public function user(): BelongsTo
