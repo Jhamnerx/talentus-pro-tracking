@@ -536,6 +536,12 @@ return [
     'wrong_captcha' => 'Captcha incorrecto',
     'zones_instead' => 'Zonas en lugar de direcciones',
     'attributes' => [
+        'route_id' => 'Ruta',
+        'weekdays' => 'Días',
+        'start_time' => 'horario de ida',
+        'return_start_time' => 'horario de vuelta',
+        'tolerance_early' => 'Tolerancia de adelanto',
+        'tolerance_late' => 'Tolerancia de retraso',
         'tags' => 'Etiquetas',
         'fuel_type' => 'Tipo de combustible',
         'fuel_emissions' => 'Emisiones de combustible',

@@ -73,6 +73,12 @@ return array(
         ),
     ),
     'attributes'  => array(
+        'route_id' => 'Route',
+        'weekdays' => 'Days',
+        'start_time' => 'Outbound departure',
+        'return_start_time' => 'Return departure',
+        'tolerance_early' => 'Early tolerance',
+        'tolerance_late' => 'Late tolerance',
         'tags' => 'Tags',
         'fuel_type' => 'Fuel type',
         'fuel_emissions' => 'Fuel emissions',

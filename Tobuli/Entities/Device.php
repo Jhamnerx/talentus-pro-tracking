@@ -513,6 +513,17 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasOne('Tobuli\Entities\VehicleState', 'id', 'vehicle_state_id');
     }
 
+    /** Programaciones de ruta asignadas a esta unidad. */
+    public function routeSchedules()
+    {
+        return $this->belongsToMany(
+            'Tobuli\Entities\RouteSchedule',
+            'device_route_schedule',
+            'device_id',
+            'route_schedule_id'
+        );
+    }
+
     public function subscriptions()
     {
         return $this->hasManyThrough(

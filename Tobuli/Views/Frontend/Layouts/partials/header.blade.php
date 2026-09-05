@@ -81,6 +81,13 @@
                                         <span class="text">{!! trans('front.routes') !!}</span>
                                     </a>
                                 </li>
+                                <li>
+                                    <a href="javascript:" data-url="{!! route('route_schedules.index') !!}"
+                                       data-modal="route_schedules" role="button">
+                                        <span class="icon routes"></span>
+                                        <span class="text">{!! trans('front.route_schedules') !!}</span>
+                                    </a>
+                                </li>
                             @endif
                             @if (Auth::User()->perm('reports', 'view'))
                                 <li>

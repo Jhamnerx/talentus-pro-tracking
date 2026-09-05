@@ -1460,6 +1460,9 @@ return [
             'attributes' => ['*'],
             'attributes_to_ignore' => ['created_at', 'updated_at', 'coordinates'],
         ],
+        \Tobuli\Entities\RouteSchedule::class => [
+            'attributes' => ['*'],
+        ],
         \Tobuli\Entities\Poi::class => [
             'attributes' => ['*'],
         ],

@@ -169,6 +169,14 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('routes/list/table', ['as' => 'routes.table', 'uses' => 'RoutesController@table']);
     Route::resource('route', 'RoutesController', ['names' => 'routes', 'except' => ['update', 'destroy', 'edit']]);
 
+    # Route schedules & checkpoints (adherencia)
+    Route::get('route_schedules/table', ['as' => 'route_schedules.table', 'uses' => 'RouteSchedulesController@table']);
+    Route::any('route_schedules/destroy/{id?}', ['as' => 'route_schedules.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'RouteSchedulesController@destroy']);
+    Route::resource('route_schedules', 'RouteSchedulesController', ['except' => ['show', 'destroy']]);
+
+    Route::get('route_checkpoints/{route}', ['as' => 'route_checkpoints.edit', 'uses' => 'RouteCheckpointsController@edit'])->where('route', '[0-9]+');
+    Route::put('route_checkpoints/{route}', ['as' => 'route_checkpoints.update', 'uses' => 'RouteCheckpointsController@update'])->where('route', '[0-9]+');
+
     # Route groups
     Route::get('route_groups/change_status', ['as' => 'route_groups.change_status', 'uses' => 'RoutesGroupsController@changeStatus']);
     Route::resource('route_groups', 'RoutesGroupsController', ['except' => ['destroy']]);
