@@ -470,6 +470,8 @@ class PositionsWriter
 
     protected function proccess($data)
     {
+        $this->debugDoutTrace($data);
+
         if ($result = $data['parameters']['result'] ?? null) {
             event(new PositionResultRetrieved($this->device, is_scalar($result) ? $result : json_encode($result)));
         }
@@ -1837,5 +1839,64 @@ class PositionsWriter
 
         $this->position->speed = 0;
         $this->position->setParameter('ghost_speed', 'true');
+    }
+
+    /**
+     * DIAGNOSTICO TEMPORAL (caso DOUT1 / IMEI 860693084599456).
+     * Vuelca TODO lo que llega desde Traccar/Redis para este equipo,
+     * antes de cualquier filtro, para poder ver la posicion exacta
+     * (lat/lon/hora) en la que aparece DOUT1 activo, y detectar si viene
+     * algun atributo/evento que el resto del pipeline esta ignorando.
+     * Quitar la llamada en proccess() cuando ya no se necesite.
+     */
+    protected function debugDoutTrace(array $data): void
+    {
+        $targetImei = '860693084599456';
+
+        if (($data['imei'] ?? null) != $targetImei) {
+            return;
+        }
+
+        $attributes = is_array($data['attributes'] ?? null) ? $data['attributes'] : [];
+
+        $relevant = [];
+        foreach ($attributes as $key => $value) {
+            $lower = strtolower((string) $key);
+            if (str_contains($lower, 'out')
+                || str_contains($lower, 'in1')
+                || str_contains($lower, 'adc')
+                || $lower === 'io9'
+                || $lower === 'io841'
+                || str_contains($lower, 'event')
+                || str_contains($lower, 'alarm')
+            ) {
+                $relevant[$key] = $value;
+            }
+        }
+
+        $outActive = false;
+        foreach ($relevant as $key => $value) {
+            $lower = strtolower((string) $key);
+            if (in_array($lower, ['out1', 'dout1'], true)
+                && ($value === true || $value === 1 || $value === '1' || $value === 'true')
+            ) {
+                $outActive = true;
+            }
+        }
+
+        $line = sprintf(
+            "[%s] time=%s lat=%s lon=%s speed=%s course=%s OUT1_ACTIVO=%s relevantes=%s | TODOS_LOS_ATRIBUTOS=%s\n",
+            date('Y-m-d H:i:s'),
+            $data['time'] ?? 'N/A',
+            $data['latitude'] ?? 'N/A',
+            $data['longitude'] ?? 'N/A',
+            $data['speed'] ?? 'N/A',
+            $data['course'] ?? 'N/A',
+            $outActive ? 'SI <-----' : 'no',
+            json_encode($relevant),
+            json_encode($attributes)
+        );
+
+        file_put_contents(storage_path('logs/dout_trace_' . $targetImei . '.log'), $line, FILE_APPEND);
     }
 }

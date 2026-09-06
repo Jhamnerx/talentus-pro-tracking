@@ -70,6 +70,7 @@ class EventServiceProvider extends ServiceProvider
         ],
         'App\Events\PositionResultRetrieved' => [
             'App\Listeners\PositionResultRetrievedListener',
+            'App\Listeners\AutoDisableDoutListener',
         ],
         UserSecondaryCredentialsPasswordChanged::class => [
             UserSecondaryCredentialsPasswordChangedListener::class
