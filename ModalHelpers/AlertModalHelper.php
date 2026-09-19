@@ -21,6 +21,7 @@ use Tobuli\Entities\Geofence;
 use Tobuli\Helpers\Alerts\Check\DeviceAlarmAlertCheck;
 use Tobuli\Entities\TaskStatus;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Helpers\Alerts\Check\SensorValueAlertCheck;
 use Tobuli\Helpers\Alerts\NotificationProvider;
 use Tobuli\InputFields\AttributesCollection;
 use Tobuli\Protocols\Commands;
@@ -758,6 +759,33 @@ class AlertModalHelper extends ModalHelper
                             ),
                     ]);
                     break;
+                case 'sensor_value':
+                    $type['attributes'] = AttributesCollection::make([
+                        Field::select(
+                            'sensor_type',
+                            trans('front.sensor_value_type'),
+                            $alert ? $alert->sensor_type : null
+                        )->setOptions(SensorValueAlertCheck::tipos()),
+                        Field::select(
+                            'sensor_operator',
+                            trans('front.sensor_value_operator'),
+                            $alert ? $alert->sensor_operator : SensorValueAlertCheck::OPERATOR_ABOVE
+                        )->setOptions(SensorValueAlertCheck::operadores()),
+                        // Sin minimo y con paso decimal: el caso principal es
+                        // la temperatura, y -18,5 grados tiene que poder
+                        // escribirse.
+                        Field::number(
+                            'sensor_value',
+                            trans('front.sensor_value_limit'),
+                            $alert ? $alert->sensor_value : 0
+                        )->setStep(0.1),
+                        Field::number(
+                            'sensor_duration',
+                            trans('front.sensor_value_duration'),
+                            $alert ? $alert->sensor_duration : 0
+                        )->setMin(0)->setDescription(trans('front.sensor_value_duration_hint')),
+                    ]);
+                    break;
                 case 'device_alarm':
                     $type['attributes'] = AttributesCollection::make([
                         Field::multiSelect(
@@ -839,6 +867,13 @@ class AlertModalHelper extends ModalHelper
                 // protocolo ni de los puertos del equipo.
                 'type'  => 'device_alarm',
                 'title' => trans('front.device_alarm'),
+            ],
+            [
+                // Umbral sobre el valor de cualquier sensor numerico. Un solo
+                // tipo en vez de uno por magnitud: sirve igual para
+                // temperatura, voltaje, carga o RPM.
+                'type'  => 'sensor_value',
+                'title' => trans('front.sensor_value'),
             ],
             [
                 'type'  => 'stop_duration',

@@ -24,6 +24,11 @@ class AlertFormValidator extends Validator
             'events_custom'     => 'array',
             // Una alerta de alarma sin alarmas elegidas no vigilaria nada
             'alarms'            => 'required_if:type,device_alarm|array',
+            // Umbral sobre un sensor: sin tipo, lado y valor no hay nada que vigilar
+            'sensor_type'       => 'required_if:type,sensor_value|string',
+            'sensor_operator'   => 'required_if:type,sensor_value|in:above,below',
+            'sensor_value'      => 'required_if:type,sensor_value|numeric',
+            'sensor_duration'   => 'nullable|integer|between:0,1440',
             'geofences'         => 'array',
             'pois'              => 'array',
             'zones'             => 'array',

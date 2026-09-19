@@ -65,6 +65,8 @@ class Event extends AbstractEntity implements DisplayInterface
     const TYPE_DISTANCE = 'distance';
     const TYPE_POI_STOP_DURATION = 'poi_stop_duration';
     const TYPE_POI_IDLE_DURATION = 'poi_idle_duration';
+    // Umbral sobre el valor de un sensor (temperatura, voltaje, carga...)
+    const TYPE_SENSOR_VALUE = 'sensor_value';
     const TYPE_DEVICE_SUBSCRIPTION_EXPIRED = 'device_subscription_expired';
     const TYPE_UNPLUGGED = 'unplugged';
     const TYPE_PLUGGED_IN = 'plugged_in';
@@ -422,6 +424,11 @@ class Event extends AbstractEntity implements DisplayInterface
                 break;
             case Event::TYPE_POI_IDLE_DURATION:
                 $name = trans('front.poi_idle_duration');
+                break;
+            case Event::TYPE_SENSOR_VALUE:
+                // El nombre del sensor y el valor van en los adicionales; aqui
+                // solo la etiqueta del tipo, como el resto.
+                $name = trans('front.sensor_value');
                 break;
             case Event::TYPE_SOS:
                 $name = 'SOS';

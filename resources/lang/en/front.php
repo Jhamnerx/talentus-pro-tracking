@@ -1449,4 +1449,14 @@ return [
 
     // Grafico del historial: varias series a la vez
     'graph_series_hint' => 'Click to add or remove this series from the chart',
+
+    // Alerta por umbral de sensor
+    'sensor_value' => 'Sensor value',
+    'sensor_value_type' => 'Sensor to watch',
+    'sensor_value_operator' => 'Fires when the value is',
+    'sensor_value_above' => 'Above',
+    'sensor_value_below' => 'Below',
+    'sensor_value_limit' => 'Threshold',
+    'sensor_value_duration' => 'Minimum duration (min)',
+    'sensor_value_duration_hint' => 'How long the value must stay past the threshold before it alerts. 0 alerts on the first reading. It only alerts once until the value goes back to normal.',
 ];

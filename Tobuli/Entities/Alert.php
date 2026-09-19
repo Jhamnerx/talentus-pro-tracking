@@ -67,6 +67,11 @@ class Alert extends AbstractEntity implements DisplayInterface
         'alarms',
         'case',
         'days',
+        // Alerta por umbral de sensor (tipo sensor_value)
+        'sensor_type',
+        'sensor_operator',
+        'sensor_value',
+        'sensor_duration',
         // Accion "enviar reporte por correo" (canal report)
         'report_type',
         'report_format',
@@ -113,6 +118,12 @@ class Alert extends AbstractEntity implements DisplayInterface
         'alarms' => [],
         'case' => '',
         'days' => 0,
+        // Umbral sobre un sensor: que tipo vigilar, por encima o por debajo,
+        // el valor y cuantos minutos tiene que aguantar antes de avisar.
+        'sensor_type' => null,
+        'sensor_operator' => 'above',
+        'sensor_value' => 0,
+        'sensor_duration' => 0,
         // Reporte que acompana al evento: tipo, formato y la ventana de
         // minutos antes y despues del evento que tiene que cubrir.
         'report_type' => null,
