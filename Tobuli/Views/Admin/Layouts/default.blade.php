@@ -14,7 +14,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <link rel="shortcut icon" href="{{ Appearance::getAssetFileUrl('favicon') }}"/>
-    <link rel="stylesheet" type="text/css" href="{{ asset_resource('assets/css/'.Appearance::getSetting('template_color').'.css') }}" />
+    {{-- Admin v2: tema propio del panel (tokens de ui-v2); independiente
+         del template_color que use el frontend --}}
+    <link rel="stylesheet" type="text/css" href="{{ asset_resource('assets/css/admin-v2.css') }}" />
 
     @yield('styles')
 </head>

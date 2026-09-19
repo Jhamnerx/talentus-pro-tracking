@@ -15,8 +15,8 @@
         cursor: pointer;
 
         &:hover:after {
-          @extend .icon-fa:before;
-          @extend .fa-pencil:before;
+          font-family: "FontAwesome";
+          content: $fa-var-pencil;
           color: $color-text-700;
           position: absolute;
           top: 5px;
@@ -110,11 +110,11 @@
         }
         &:before {
           top: 2px;
-          @extend .ico-arrow-up:before;
+          content: "\e954";
         }
         &:after {
           bottom: 2px;
-          @extend .ico-arrow-down:before;
+          content: "\e910";
         }
       }
 

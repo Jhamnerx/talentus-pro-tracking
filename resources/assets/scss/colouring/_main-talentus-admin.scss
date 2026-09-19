@@ -1,0 +1,28 @@
+// ===================================================================
+// Talentus Pro — marca del panel Admin
+// Valores tomados de los design tokens de ui-v2 (resources/assets/ui-v2)
+// para que el admin comparta identidad con el frontend v2.
+// ===================================================================
+
+$brand-primary:          #1b43a3;   // --brand-600 (links, activo)
+$brand-success:          #10b981;   // --success-500
+$brand-info:             #2e63d9;   // --info-500 / --brand-500
+$brand-warning:          #f59e0b;   // --warning-500
+$brand-danger:           #ef4444;   // --danger-500
+
+// Marca
+$ap-navy:                #060b34;   // --brand-900
+$ap-accent:              #1b99bd;   // --brand-accent (cian Talentus)
+$ap-primary-hover:       #122f71;   // --brand-700 (bg sólido de ui-v2)
+$ap-primary-active:      #0e2157;   // --brand-800
+
+// Estados de flota — mismos valores que ui-v2 (--status-*)
+$ap-status-moving:       #10b981;
+$ap-status-engine:       #2e63d9;
+$ap-status-stopped:      #f59e0b;   // --status-idle
+$ap-status-offline:      #4b5563;   // --status-offline
+$ap-status-alert:        #ef4444;
+
+// Historial: tramos de recorrido
+$ap-track-day:           #2e63d9;
+$ap-track-night:         #7c5cfc;

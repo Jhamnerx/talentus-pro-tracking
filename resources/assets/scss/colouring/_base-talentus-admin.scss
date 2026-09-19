@@ -1,0 +1,76 @@
+// ===================================================================
+// Talentus Pro Admin — neutros, tipografía y forma según ui-v2
+// Asignaciones planas: ganan sobre los !default de _base-airpatrol,
+// que se importa después y completa lo no definido aquí.
+// ===================================================================
+
+// -------------------------------------------------- neutros (--neutral-*)
+$color-bg-000: #ffffff;   // --neutral-0    (surface)
+$color-bg-100: #f7f8fb;   // --neutral-50   (surface-2)
+$color-bg-200: #eef1f6;   // --neutral-100
+$color-bg-300: #dfe3eb;   // --neutral-200
+
+$color-text-000: #ffffff;
+$color-text-100: #0d1018; // --neutral-900
+$color-text-200: #1a1f2b; // --neutral-800
+$color-text-300: #2c3340; // --neutral-700
+$color-text-400: #2c3340;
+$color-text-500: #4b5563; // --neutral-600
+$color-text-600: #6b7280; // --neutral-500
+$color-text-700: #898989; // --neutral-400
+$color-text-800: #c4cad6; // --neutral-300
+$color-text-900: #dfe3eb; // --neutral-200
+
+$color-border-100: #dfe3eb; // --border-subtle
+$color-border-200: #eef1f6;
+$color-shadow:     rgba(6, 11, 52, 0.12);
+
+$body-bg: #f7f8fb;          // --surface-app
+
+// -------------------------------------------------- tipografía (ui-v2)
+$font-family-sans-serif: "Inter", -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+$ap-font-mono:           "JetBrains Mono", ui-monospace, SFMono-Regular,
+                         "SF Mono", Menlo, Consolas, monospace;
+$font-size-base:   13px;    // --fs-base
+$line-height-base: 1.45;    // --lh-normal
+
+// -------------------------------------------------- radios (--r-*)
+$border-radius-base:  8px;  // --r-md
+$border-radius-large: 12px; // --r-lg
+$border-radius-small: 4px;  // --r-sm
+$modal-border-radius: 16px; // --r-xl
+
+// -------------------------------------------------- sombras (--shadow-*)
+$ap-shadow-sm: 0 1px 2px rgba(6, 11, 52, 0.06);
+$ap-shadow-md: 0 12px 32px rgba(6, 11, 52, 0.12), 0 4px 8px rgba(6, 11, 52, 0.06);
+
+// -------------------------------------------------- semánticos suaves (ui-v2 *-soft)
+$alert-success-bg:     #ecfdf5;
+$alert-success-text:   #059669;
+$alert-success-border: #b5ead6;
+$alert-info-bg:        #eff4fe;
+$alert-info-text:      #1b43a3;
+$alert-info-border:    #c2d3f6;
+$alert-warning-bg:     #fffbeb;
+$alert-warning-text:   #d97706;
+$alert-warning-border: #f6e3b2;
+$alert-danger-bg:      #fef2f2;
+$alert-danger-text:    #dc2626;
+$alert-danger-border:  #f7c6c6;
+
+$state-success-text: #059669;
+$state-success-bg:   #ecfdf5;
+$state-info-text:    #1b43a3;
+$state-info-bg:      #eff4fe;
+$state-warning-text: #d97706;
+$state-warning-bg:   #fffbeb;
+$state-danger-text:  #dc2626;
+$state-danger-bg:    #fef2f2;
+
+// -------------------------------------------------- labels / badges
+$label-default-bg: #6b7280;
+$badge-bg:         #6b7280;
+
+// -------------------------------------------------- tooltips
+$tooltip-bg: #0d1018;
