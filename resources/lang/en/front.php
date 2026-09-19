@@ -1446,4 +1446,7 @@ return [
     'corridor_width' => 'Distance to the axis (m)',
     'corridor_width_hint' => 'How far from the drawn line the vehicle may go before it counts as outside.',
     'please_draw_corridor' => 'Draw the corridor axis on the map and set how far from it the vehicle may go.',
+
+    // Grafico del historial: varias series a la vez
+    'graph_series_hint' => 'Click to add or remove this series from the chart',
 ];

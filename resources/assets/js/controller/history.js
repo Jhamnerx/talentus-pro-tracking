@@ -603,8 +603,14 @@ function History() {
 
         $graph_sensors.html('');
 
+        // Sin data-toggle="tab": las pestañas ya no son excluyentes, cada una
+        // añade o quita su serie del gráfico (ver HistoryGraph.toggle). El
+        // título explica que se pueden combinar, que si no no se descubre.
         $.each(window.history_sensors, function(index, sensor) {
-            $graph_sensors.append('<li role="presentation"><a href="#' + sensor.key + '" role="tab" data-toggle="tab" data-id="' + sensor.key + '">' + sensor.name + '</a></li>');
+            $graph_sensors.append(
+                '<li role="presentation"><a href="javascript:" data-id="' + sensor.key + '"'
+                + ' title="' + (app.lang.graph_series_hint || '') + '">' + sensor.name + '</a></li>'
+            );
         });
 
         $('#bottom-history').show();

@@ -10,6 +10,8 @@ use Illuminate\Support\Arr;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Event;
 use Tobuli\Entities\UserDriver;
+use Tobuli\History\Actions\AppendFuelFilling;
+use Tobuli\History\Actions\AppendFuelTheft;
 use Tobuli\History\Actions\AppendRouteColor;
 use Tobuli\History\Actions\Distance;
 use Tobuli\History\Actions\Drivers;
@@ -132,9 +134,28 @@ class HistoryModalHelper extends ModalHelper
             $history->registerActions([GroupEvent::class]);
         }
 
+        // Rellenos y robos para marcarlos sobre la curva del grafico. El
+        // relleno ya entraba solo (AppendFuelConsumptionLevelSensors lo pide);
+        // el robo no lo pedia nadie. Se registran unicamente si el equipo tiene
+        // sensor de nivel: sin el no hay nada que detectar y el pipeline del
+        // historial lo recorre TODO el mundo, no solo quien mide combustible.
+        if ($this->hasFuelTankSensor($device)) {
+            $history->registerActions([
+                AppendFuelFilling::class,
+                AppendFuelTheft::class,
+            ]);
+        }
+
         $history->setSensors($this->getDeviceSensors($device));
 
         return $history->get();
+    }
+
+    private function hasFuelTankSensor($device): bool
+    {
+        return $device->sensors->contains(function ($sensor) {
+            return $sensor->type === 'fuel_tank';
+        });
     }
 
     private function getDeviceSensors($device)
@@ -237,6 +258,27 @@ class HistoryModalHelper extends ModalHelper
                                 foreach ($position->sensors as $sensor_id => $sensor_data) {
                                     $data["s{$sensor_id}"] = $sensor_data['v'];
                                 }
+                            }
+
+                            // Relleno y robo detectados en esta posicion, para
+                            // poder marcarlos sobre la curva del grafico. Es lo
+                            // que distingue "bajo porque iba andando" de "bajo
+                            // parado a las 3 de la manana".
+                            foreach (['fill' => 'fuel_filling', 'theft' => 'fuel_theft'] as $clave => $campo) {
+                                if (empty($position->$campo)) {
+                                    continue;
+                                }
+
+                                $evento = $position->$campo;
+
+                                $data[$clave] = [
+                                    'sensor' => 's' . $evento['sensor_id'],
+                                    'name'   => $evento['name'],
+                                    'diff'   => round((float) $evento['diff'], 2),
+                                    'from'   => round((float) $evento['previous'], 2),
+                                    'to'     => round((float) $evento['current'], 2),
+                                    'unit'   => $evento['unit'],
+                                ];
                             }
 
                             return $data;

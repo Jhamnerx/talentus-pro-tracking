@@ -1444,4 +1444,7 @@ return [
     'corridor_width' => 'Distancia al eje (m)',
     'corridor_width_hint' => 'Cuánto se puede separar el vehículo de la línea dibujada antes de contar como fuera.',
     'please_draw_corridor' => 'Dibuja el eje del corredor en el mapa e indica cuánto puede separarse el vehículo.',
+
+    // Gráfico del historial: varias series a la vez
+    'graph_series_hint' => 'Haz clic para añadir o quitar esta serie del gráfico',
 ];
