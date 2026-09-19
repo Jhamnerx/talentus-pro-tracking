@@ -455,13 +455,13 @@
       if (it.top_speed != null) r += ptRow(T("top_speed", "Velocidad máxima"), it.top_speed + " " + (gUnitSpeed() || "km/h"));
       if (it.distance != null) r += ptRow(T("route_length", "Longitud de ruta"), it.distance + " km");
       r += ptRow(T("duration", "Duración"), esc(it.duration || "-"));
-      if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " L");
+      if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
       if (it.engine_hours != null) r += ptRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
     } else if (it.status === S_STOP) {
       r += ptRow(T("start", "Inicio"), esc(it.from)) + ptRow(T("end", "Fin"), esc(it.to));
       r += ptRow(T("driver", "Conductor"), esc(it.driver || "-"));
       r += ptRow(T("duration", "Duración"), esc(it.duration || "-"));
-      if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " L");
+      if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
       if (it.engine_hours != null) r += ptRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
     } else if (it.status === S_START || it.status === S_END) {
       r += ptRow(T("driver", "Conductor"), esc(tripDriver() || "-"));
@@ -668,7 +668,7 @@
         rows += tlRow(T("speed", "Velocidad"), "0 " + (gUnitSpeed() || "km/h"));
         rows += tlRow(T("altitude", "Altitud"), startPos && startPos.alt != null ? Math.round(startPos.alt) + " m" : "0 m", true);
         rows += tlRow(T("duration", "Duración"), it.duration, true);
-        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " L", true);
+        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel(), true);
         if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours), true);
         sub = "";
       } else if (it.status === S_DRIVE) {
@@ -677,7 +677,7 @@
         rows += tlRow(T("top_speed", "Velocidad máxima"), it.top_speed != null ? it.top_speed + " " + (gUnitSpeed() || "km/h") : null);
         rows += tlRow(T("route_length", "Longitud de ruta"), it.distance != null ? it.distance + " km" : null, true);
         rows += tlRow(T("duration", "Duración"), it.duration, true);
-        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " L", true);
+        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel(), true);
         if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours), true);
         sub = "";
       } else {
@@ -836,6 +836,12 @@
   function gUnitSpeed() {
     var s = (state.sensorList || []).filter(function (x) { return x.id === "speed"; })[0];
     return s && s.sufix ? s.sufix : "";
+  }
+  // Unidad de capacidad del usuario (L, Gal...). El consumo por tramo llega
+  // como numero ya convertido a esa unidad, asi que escribir "L" a mano era
+  // mentir en cuanto el usuario tenia galones configurados.
+  function gUnitFuel() {
+    return (state.summary && state.summary.fuel_unit) || "";
   }
   function tick(now) {
     if (!state.playing) return;

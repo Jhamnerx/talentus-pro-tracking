@@ -335,7 +335,11 @@
                             </div>
                             @if (!empty($f['values']))
                                 <canvas class="tp-fuel-chart" data-fuel-chart height="80"></canvas>
-                                <script type="application/json" data-fuel-data>{!! json_encode(['values' => $f['values'], 'unit' => $f['unit']]) !!}</script>
+                                <script type="application/json" data-fuel-data>{!! json_encode([
+                                    'values' => $f['values'],
+                                    'unit'   => $f['unit'],
+                                    'max'    => $f['max'] ?? null,
+                                ]) !!}</script>
                             @else
                                 <p class="tp-text-xs tp-text-muted tp-mb-0">Sin datos en las últimas 24 h.</p>
                             @endif

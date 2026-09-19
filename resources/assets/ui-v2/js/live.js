@@ -1002,11 +1002,11 @@
       } catch (e) {
         return;
       }
-      drawFuelChart(canvas, payload.values || [], payload.unit || "");
+      drawFuelChart(canvas, payload.values || [], payload.unit || "", payload.max);
     });
   }
 
-  function drawFuelChart(canvas, values, unit) {
+  function drawFuelChart(canvas, values, unit, max) {
     var pts = (values || [])
       .map(function (p) {
         return { t: parseInt(p.t, 10), v: parseFloat(p.v) };
@@ -1031,7 +1031,18 @@
       if (p.v < minY) minY = p.v;
       if (p.v > maxY) maxY = p.v;
     });
-    if (maxY === minY) maxY = minY + 1;
+
+    // Contra el tanque, no contra los datos. Autoescalando, pasar del 62% al
+    // 61% en 24 h se dibujaba como una caida de arriba abajo del recuadro:
+    // parecia que el vehiculo se habia quedado sin combustible.
+    var cap = parseFloat(max);
+
+    if (isFinite(cap) && cap > 0) {
+      minY = 0;
+      maxY = Math.max(cap, maxY);
+    } else if (maxY === minY) {
+      maxY = minY + 1;
+    }
     var padT = 8, padB = 6, padL = 4, padR = 4;
     function X(t) {
       return padL + (maxX === minX ? 0 : (t - minX) / (maxX - minX)) * (w - padL - padR);

@@ -256,6 +256,12 @@ class HistoryController extends BaseController
                 'stop_duration' => $res['stop_duration'] ?? null,
                 'engine_hours'  => $res['engine_hours'] ?? null,
                 'fuel'          => $res['fuel_consumption'] ?? null,
+                // El consumo por tramo viaja como numero suelto, ya convertido
+                // a la unidad de capacidad del usuario (ver getGroupMetas:
+                // (int) $stat->format()). Sin mandar la unidad, la pantalla no
+                // tiene forma de saber si son litros o galones y hasta ahora
+                // escribia "L" a mano: con un usuario en galones, mentia.
+                'fuel_unit'     => \Formatter::capacity()->getUnit(),
                 'drives'        => $drives,
                 'stops'         => $stops,
                 'events'        => $events,

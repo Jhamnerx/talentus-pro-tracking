@@ -2731,14 +2731,26 @@ class DevicesController extends BaseController
                     $history->registerActions([]);
                     $history->get();
 
+                    $porId = $fuelSensors->keyBy('id');
+
                     foreach ((array) $history->getSensorsData() as $s) {
                         $values = array_values($s['values'] ?? []);
                         $last = ! empty($values) ? end($values) : null;
+
+                        // Capacidad del tanque (full_tank, o el tope de la
+                        // curva de calibracion). Va al front para que la
+                        // grafica se dibuje contra el tanque y no contra el
+                        // minimo y maximo de las ultimas 24 h: sin esto, bajar
+                        // del 62% al 61% se pinta como un tanque vaciandose.
+                        $sensor = $porId->get($s['id'] ?? null);
+                        $max = $sensor ? $sensor->getMaxTankValue() : null;
+
                         $fuel[] = [
                             'name'   => $s['name'] ?? '',
                             'unit'   => $s['unit'] ?? '',
                             'values' => $values,                       // [{t,v}]
                             'last'   => $last ? $last['v'] : null,
+                            'max'    => is_numeric($max) ? (float) $max : null,
                         ];
                     }
                 }
