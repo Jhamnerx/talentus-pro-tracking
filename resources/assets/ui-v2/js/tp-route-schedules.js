@@ -123,8 +123,11 @@
 
   /* ---------- Formulario ---------- */
   function field(label, input, full) {
-    return '<div class="tp-field"' + (full ? ' style="grid-column:1/-1;"' : "") +
-      '><label class="tp-field__label">' + label + "</label>" + input + "</div>";
+    // Sin etiqueta no se pinta el <label>: uno vacio dejaba un hueco encima
+    // de la casilla "Activa" que descuadraba la rejilla.
+    return '<div class="tp-field"' + (full ? ' style="grid-column:1/-1;"' : "") + ">" +
+      (label ? '<label class="tp-field__label">' + label + "</label>" : "") +
+      input + "</div>";
   }
 
   function openForm(item) {
@@ -133,9 +136,6 @@
     }).join("");
 
     var elegidos = item ? item.devices.map(function (d) { return d.id; }) : [];
-    var vehOpts = state.devices.map(function (d) {
-      return '<option value="' + d.id + '"' + (elegidos.indexOf(d.id) >= 0 ? " selected" : "") + ">" + esc(d.name) + "</option>";
-    }).join("");
 
     var dias = item ? item.weekdays : [1, 2, 3, 4, 5];
     var diasHtml = state.weekdays.map(function (w) {
@@ -153,11 +153,11 @@
         '<span class="tp-field__hint">Vacío = solo ida.</span>') +
       field("Tolerancia de adelanto (min) *", '<input type="number" min="0" class="tp-input" data-x-early value="' + (item ? item.tolerance_early : 5) + '" style="width:100%;">') +
       field("Tolerancia de retraso (min) *", '<input type="number" min="0" class="tp-input" data-x-late value="' + (item ? item.tolerance_late : 10) + '" style="width:100%;">') +
-      field("Vehículos", '<select class="tp-input" data-x-devices multiple size="6" style="width:100%;">' + vehOpts + "</select>", true) +
+      field("Vehículos", '<div data-x-devices></div>', true) +
       field("", '<label class="tp-rsch__check"><input type="checkbox" data-x-active' + (!item || item.active ? " checked" : "") + "> Activa</label>", true) +
       '<div data-x-err style="grid-column:1/-1;display:none;color:#ef4444;font-size:13px;"></div></div>';
 
-    tpModal.open({
+    var dlg = tpModal.open({
       title: item ? "Editar programación" : "Nueva programación",
       size: "md",
       body: body,
@@ -166,6 +166,19 @@
         { label: "Guardar", variant: "primary", close: false, onClick: function (d) { save(d, item); return false; } },
       ],
     });
+
+    // El mismo selector que el modal de reportes: chips, buscador, paginado y
+    // seleccionar / quitar todos. Un <select multiple> con 1.400 vehiculos no
+    // se puede buscar ni deja ver lo elegido.
+    if (dlg && window.tpChipsSelect) {
+      dlg._devices = tpChipsSelect({
+        mount: dlg.querySelector("[data-x-devices]"),
+        items: state.devices || [],
+        selected: elegidos,
+        placeholder: "Seleccionar vehículos…",
+        host: dlg,
+      });
+    }
   }
 
   function save(d, item) {
@@ -178,8 +191,7 @@
     var dias = [];
     d.querySelectorAll("[data-x-day]:checked").forEach(function (c) { dias.push(Number(c.value)); });
 
-    var vehiculos = [];
-    d.querySelectorAll("[data-x-devices] option:checked").forEach(function (o) { vehiculos.push(Number(o.value)); });
+    var vehiculos = (d._devices ? d._devices.getIds() : []).map(Number);
 
     var payload = {
       name: v("[data-x-name]").trim(),

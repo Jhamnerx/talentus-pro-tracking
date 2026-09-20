@@ -116,5 +116,6 @@
     {{-- tp-services aporta el toggle global del kebab (.tp-svc-kebab) --}}
     @include('ui.v2.partials.services-config')
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/reports.js') }}?v=12" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-chips-select.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/reports.js') }}?v=13" defer></script>
 @endpush

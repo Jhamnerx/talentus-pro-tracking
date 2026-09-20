@@ -124,5 +124,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/tp-route-schedules.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-chips-select.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-route-schedules.js') }}?v=2" defer></script>
 @endpush
