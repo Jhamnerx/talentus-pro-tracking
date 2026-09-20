@@ -4,7 +4,7 @@
 @section('rail-active', 'monitor')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/monitor.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/monitor.css') }}?v=3">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
@@ -18,11 +18,18 @@
 
         <header class="tp-mon__head">
             <h1 class="tp-h5 tp-mb-0">Monitoreo de grupo</h1>
-            <span class="tp-text-muted tp-text-sm">Elige hasta 9 vehículos — cada celda los sigue en vivo.
-                La selección se recuerda en este navegador.</span>
+            <span class="tp-text-muted tp-text-sm" id="tp-mon-hint"></span>
+
+            {{-- Los botones los pinta monitor.js desde su tabla LAYOUTS, para
+                 que no haya dos listas de tamaños que puedan discrepar. --}}
+            <div class="tp-mon__sizes">
+                <span class="tp-mon__sizeslabel">Celdas</span>
+                <div class="tp-segmented" id="tp-mon-sizes" role="tablist"
+                    aria-label="Tamaño de la cuadrícula"></div>
+            </div>
         </header>
 
-        {{-- 9 celdas: las renderiza monitor.js (vacía = botón +, llena = mini-mapa) --}}
+        {{-- Las celdas las renderiza monitor.js (vacía = botón +, llena = mini-mapa) --}}
         <div class="tp-mon__grid" id="tp-mon-grid"></div>
     </div>
 @endsection
@@ -30,5 +37,5 @@
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/monitor.js') }}?v=1" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/monitor.js') }}?v=2" defer></script>
 @endpush

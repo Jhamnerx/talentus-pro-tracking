@@ -26,27 +26,43 @@
   color: var(--brand-800, #0e2157);
 }
 
-/* --- grilla 3×3 --- */
+/* --- selector de tamaño --- */
+.tp-mon__sizes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  /* La cabecera alinea por baseline (h1 + texto); el control es una caja y
+     con baseline queda descolgado. */
+  align-self: center;
+}
+.tp-mon__sizeslabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-tertiary, #64748b);
+}
+.tp-mon__sizes .tp-segmented__item {
+  min-width: 34px;
+  padding: 5px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- cuadrícula --- */
 .tp-mon__grid {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(3, 1fr);
+  /* Las columnas las pone monitor.js: la forma del tamaño elegido,
+     recortada a las que quepan con un ancho de celda usable. */
+  grid-template-columns: repeat(var(--mon-cols, 3), 1fr);
+  /* 1fr reparte el alto cuando hay pocas celdas; el mínimo evita que con
+     24 o 32 el mapa quede en una franja inservible, y entonces se hace
+     scroll en vez de aplastarlas. */
+  grid-auto-rows: minmax(190px, 1fr);
   gap: 12px;
-}
-@media (max-width: 1100px) {
-  .tp-mon__grid {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: none;
-    grid-auto-rows: 300px;
-    overflow-y: auto;
-  }
-}
-@media (max-width: 700px) {
-  .tp-mon__grid {
-    grid-template-columns: 1fr;
-  }
+  overflow-y: auto;
 }
 
 /* --- celda --- */

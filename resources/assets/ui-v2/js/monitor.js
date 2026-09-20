@@ -1,9 +1,10 @@
 /* =====================================================
  * TalentusPro · Monitoreo de grupo
  * -----------------------------------------------------
- * Grilla 3×3 de mini-mapas; cada celda sigue en vivo a un
- * vehículo elegido con el selector agrupado (grupo → devices
- * con estado + icono). La selección persiste en localStorage.
+ * Cuadricula de mini-mapas a elegir (de 2 a 32 celdas); cada
+ * celda sigue en vivo a un vehículo elegido con el selector
+ * agrupado (grupo → devices con estado + icono). El tamaño y
+ * la selección persisten en localStorage.
  * Reusa el feed de Live (api.devices + api.devices.updates).
  * ===================================================== */
 (function () {
@@ -24,8 +25,31 @@
     }
   })();
 
-  var SLOTS = 9;
+  /* Disposiciones ofrecidas. Es la unica fuente de verdad: los botones del
+     selector se pintan desde aqui, asi no hay forma de que el HTML y el JS
+     discrepen sobre que tamaños existen. `cols` es la forma deseada; si la
+     pantalla no da, se recorta al vuelo (ver aplicaColumnas). */
+  var LAYOUTS = [
+    { n: 2, cols: 2 },
+    { n: 4, cols: 2 },
+    { n: 6, cols: 3 },
+    { n: 9, cols: 3 },
+    { n: 12, cols: 4 },
+    { n: 16, cols: 4 },
+    { n: 24, cols: 6 },
+    { n: 32, cols: 8 }
+  ];
+  var MAX_SLOTS = 32;
+  var TAM_POR_DEFECTO = 9;
+  var ANCHO_MIN_CELDA = 230; // por debajo de esto el mini-mapa no dice nada
+
   var LS_KEY = "tp_monitor_slots";
+  var LS_TAM = "tp_monitor_size";
+
+  function layoutDe(n) {
+    for (var i = 0; i < LAYOUTS.length; i++) if (LAYOUTS[i].n === n) return LAYOUTS[i];
+    return null;
+  }
 
   var state = {
     index: {},
@@ -33,6 +57,7 @@
     groups: [],
     slots: [],
     cells: [],
+    size: TAM_POR_DEFECTO,
     checkTime: "",
   };
   try {
@@ -40,8 +65,16 @@
   } catch (e) {
     state.slots = [];
   }
-  while (state.slots.length < SLOTS) state.slots.push(null);
-  state.slots = state.slots.slice(0, SLOTS);
+  // El array se guarda SIEMPRE con 32 huecos aunque se vean menos: al
+  // encoger, los vehiculos de las celdas que se ocultan no se pierden y
+  // vuelven tal cual si se agranda otra vez.
+  while (state.slots.length < MAX_SLOTS) state.slots.push(null);
+  state.slots = state.slots.slice(0, MAX_SLOTS);
+
+  try {
+    var tamGuardado = parseInt(localStorage.getItem(LS_TAM), 10);
+    if (layoutDe(tamGuardado)) state.size = tamGuardado;
+  } catch (e) {}
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -121,11 +154,38 @@
 
   /* ----- celdas ----- */
   var grid = document.getElementById("tp-mon-grid");
-  for (var i = 0; i < SLOTS; i++) {
-    var el = document.createElement("div");
-    el.className = "tp-mon__cell tp-mon__cell--empty";
-    grid.appendChild(el);
-    state.cells.push({ el: el, map: null, marker: null });
+
+  /* Columnas: la forma del layout, recortada a lo que quepa. Un 8x4 en una
+     pantalla estrecha daria celdas de 90px, que no son un mapa. */
+  function aplicaColumnas() {
+    var lay = layoutDe(state.size) || { cols: 3 };
+    var ancho = grid.clientWidth || window.innerWidth || 1200;
+    var caben = Math.max(1, Math.floor(ancho / ANCHO_MIN_CELDA));
+
+    grid.style.setProperty("--mon-cols", Math.min(lay.cols, caben));
+  }
+
+  function tiraMapas() {
+    state.cells.forEach(function (c) {
+      if (c.map) {
+        try { c.map.remove(); } catch (e) {}
+      }
+    });
+    state.cells = [];
+  }
+
+  function construyeCeldas() {
+    tiraMapas();
+    grid.innerHTML = "";
+
+    for (var i = 0; i < state.size; i++) {
+      var el = document.createElement("div");
+      el.className = "tp-mon__cell tp-mon__cell--empty";
+      grid.appendChild(el);
+      state.cells.push({ el: el, map: null, marker: null });
+    }
+
+    renderAll();
   }
 
   var PLUS =
@@ -201,17 +261,71 @@
   }
 
   function renderAll() {
-    for (var i = 0; i < SLOTS; i++) renderCell(i);
+    for (var i = 0; i < state.cells.length; i++) renderCell(i);
   }
   function updateAll() {
-    for (var i = 0; i < SLOTS; i++) updateCell(i);
+    for (var i = 0; i < state.cells.length; i++) updateCell(i);
   }
+
+  /* ----- selector de tamaño de cuadricula ----- */
+  var cajaTam = document.getElementById("tp-mon-sizes");
+  var pista = document.getElementById("tp-mon-hint");
+
+  function pintaSelectorTam() {
+    if (cajaTam) {
+      cajaTam.innerHTML = LAYOUTS.map(function (l) {
+        return '<button type="button" class="tp-segmented__item" data-size="' + l.n + '"' +
+          (l.n === state.size ? ' aria-selected="true"' : "") +
+          ' title="' + l.n + " vehículos, hasta " + l.cols + ' columnas">' + l.n + "</button>";
+      }).join("");
+    }
+
+    if (pista) {
+      pista.textContent = "Elige hasta " + state.size +
+        " vehículos — cada celda los sigue en vivo. El tamaño y la selección se recuerdan en este navegador.";
+    }
+  }
+
+  function cambiaTam(n) {
+    if (!layoutDe(n) || n === state.size) return;
+
+    state.size = n;
+    try { localStorage.setItem(LS_TAM, String(n)); } catch (e) {}
+
+    pintaSelectorTam();
+    aplicaColumnas();
+    construyeCeldas();
+  }
+
+  if (cajaTam) {
+    cajaTam.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-size]");
+      if (b) cambiaTam(parseInt(b.getAttribute("data-size"), 10));
+    });
+  }
+
+  /* Al cambiar el ancho puede caber otra columna: se recalcula y se avisa a
+     Leaflet, que si no se queda con el tamaño viejo y pinta tiles cortadas. */
+  var tRedim;
+  window.addEventListener("resize", function () {
+    clearTimeout(tRedim);
+    tRedim = setTimeout(function () {
+      aplicaColumnas();
+      state.cells.forEach(function (c) {
+        if (c.map) {
+          try { c.map.invalidateSize(); } catch (e) {}
+        }
+      });
+    }, 180);
+  });
 
   /* ----- selector de vehículo (agrupado, con estado + icono) ----- */
   function openPicker(slot) {
+    // Solo cuentan las celdas a la vista: marcar "En uso" por un vehiculo
+    // que vive en una celda oculta seria incomprensible.
     var used = {};
     state.slots.forEach(function (id, idx) {
-      if (id && idx !== slot) used[id] = 1;
+      if (id && idx !== slot && idx < state.size) used[id] = 1;
     });
     var groupsMap = { 0: "Sin grupo" };
     (state.groups || []).forEach(function (g) {
@@ -276,9 +390,27 @@
     listEl.addEventListener("click", function (e) {
       var it = e.target.closest("[data-pick]");
       if (!it || it.disabled) return;
-      state.slots[slot] = parseInt(it.getAttribute("data-pick"), 10);
+
+      var elegido = parseInt(it.getAttribute("data-pick"), 10);
+
+      // Fuera de cualquier otra celda, incluidas las ocultas: si no, al
+      // agrandar la cuadricula saldria el mismo vehiculo dos veces.
+      var liberadas = [];
+      state.slots.forEach(function (v, idx) {
+        if (v === elegido && idx !== slot) {
+          state.slots[idx] = null;
+          liberadas.push(idx);
+        }
+      });
+
+      state.slots[slot] = elegido;
       save();
+
       renderCell(slot);
+      liberadas.forEach(function (idx) {
+        if (idx < state.cells.length) renderCell(idx);
+      });
+
       tpModal.close(dlg);
     });
   }
@@ -344,6 +476,10 @@
       })
       .catch(function () {});
   }
+
+  pintaSelectorTam();
+  aplicaColumnas();
+  construyeCeldas();
 
   fetchDevices().then(function () {
     setInterval(poll, 15000);
