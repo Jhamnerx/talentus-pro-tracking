@@ -135,10 +135,20 @@
     var cs = window.getComputedStyle(sel);
     var w = sel.offsetWidth;
     var parentW = sel.parentNode ? sel.parentNode.clientWidth : 0;
+    // En una rejilla el ancho lo manda la columna, y el select SIEMPRE mide
+    // menos que su contenedor. El heuristico de abajo leia eso como "select
+    // pequeño" y le sumaba 26px que no existen: el control se salia de su
+    // celda y tapaba el campo de al lado. Ahi no medimos nada; el wrap es un
+    // div con min-w-0, que es justo lo que la celda necesita.
+    //
+    // Solo grid: en flex el ancho lo pone el contenido, asi que quitar la
+    // medida ensancharia selects que hoy se ven bien en toda la v2.
+    var padre = sel.parentNode ? window.getComputedStyle(sel.parentNode).display : "";
+    var enRejilla = padre.indexOf("grid") !== -1;
     if (sel.style.width) {
       wrap.style.width = sel.style.width;
       wrap.classList.add("inline-block");
-    } else if (w > 0 && parentW > 0 && w < parentW - 8) {
+    } else if (!enRejilla && w > 0 && parentW > 0 && w < parentW - 8) {
       wrap.style.width = Math.max(w + 26, 68) + "px";
       wrap.classList.add("inline-block");
     }

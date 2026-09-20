@@ -74,16 +74,73 @@
   color: var(--fg-primary, #0f172a);
 }
 
-.tp-rsch__cp {
-  /* geocerca · minutos · antes · después · etiqueta · quitar */
+/* nº · geocerca · minutos · antes · después · etiqueta · acciones */
+.tp-rsch__cp,
+.tp-rsch__cphead {
   display: grid;
-  grid-template-columns: minmax(140px, 2fr) 80px 80px 80px minmax(100px, 1fr) 32px;
+  grid-template-columns: 22px minmax(140px, 2fr) 74px 74px 74px minmax(100px, 1fr) 90px;
   gap: 6px;
+  align-items: center;
+}
+
+.tp-rsch__cp {
+  counter-increment: cp;
   margin-bottom: 6px;
+}
+
+/* Las celdas de una rejilla no bajan de su min-content si no se les dice:
+   sin esto, una geocerca de nombre largo ensancha su columna y empuja al
+   resto fuera del modal. */
+.tp-rsch__cp > * {
+  min-width: 0;
 }
 
 .tp-rsch__cp .tp-input {
   width: 100%;
+}
+
+.tp-rsch__cphead {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--fg-muted, #64748b);
+}
+
+.tp-rsch__cpnum {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--fg-muted, #64748b);
+}
+
+.tp-rsch__cpnum::before {
+  content: counter(cp);
+}
+
+.tp-rsch__cpacts {
+  display: flex;
+  gap: 2px;
+}
+
+/* El contador se reinicia por sentido: ida y vuelta se numeran cada una
+   desde 1, que es como las guarda el backend (position por direction). */
+.tp-rsch__cps [data-cp-list] {
+  counter-reset: cp;
+}
+
+/* El texto del vacío vive en el HTML (traducible, y el minificador no le
+   toca los acentos); aquí solo se decide cuándo se ve. */
+.tp-rsch__cpempty {
+  display: none;
+  padding: 10px 2px;
+  font-size: 12px;
+  color: var(--fg-muted, #64748b);
+}
+
+.tp-rsch__cps [data-cp-list]:empty + .tp-rsch__cpempty {
+  display: block;
 }
 
 /* ---------- Vueltas (cumplimiento) ---------- */

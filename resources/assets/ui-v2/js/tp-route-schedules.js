@@ -249,22 +249,42 @@
     { key: "inbound", label: "Vuelta" },
   ];
 
+  /* Cabecera de columnas: sin ella los campos son cuatro numeros sueltos y
+     no hay forma de saber cual es el minuto y cual la tolerancia. */
+  var CP_CABECERA =
+    '<div class="tp-rsch__cphead" aria-hidden="true">' +
+      "<span></span>" +
+      "<span>Geocerca</span>" +
+      "<span>Min.</span>" +
+      "<span>Antes</span>" +
+      "<span>Después</span>" +
+      "<span>Etiqueta</span>" +
+      "<span></span>" +
+    "</div>";
+
   function cpRow(geofences, punto) {
     var opts = '<option value="">—</option>' + geofences.map(function (g) {
       return '<option value="' + g.id + '"' + (punto && punto.geofence_id === g.id ? " selected" : "") + ">" + esc(g.name) + "</option>";
     }).join("");
 
+    // El numero lo pinta el CSS con un contador, asi se renumera solo al
+    // reordenar o borrar sin que el JS tenga que repasar las filas.
     return '<div class="tp-rsch__cp" data-cp-row>' +
-      '<select class="tp-input" data-cp-geofence>' + opts + "</select>" +
-      '<input type="number" min="0" class="tp-input" data-cp-offset placeholder="min" title="Minutos desde la salida" value="' +
+      '<span class="tp-rsch__cpnum" aria-hidden="true"></span>' +
+      '<select class="tp-input" data-cp-geofence aria-label="Geocerca del punto">' + opts + "</select>" +
+      '<input type="number" min="0" class="tp-input" data-cp-offset placeholder="0" aria-label="Minutos desde la salida" value="' +
         (punto ? punto.planned_offset : "") + '">' +
-      '<input type="number" min="0" class="tp-input" data-cp-early placeholder="±antes" title="Tolerancia de adelanto (vacío = la de la programación)" value="' +
+      '<input type="number" min="0" class="tp-input" data-cp-early placeholder="—" aria-label="Tolerancia de adelanto, en minutos" value="' +
         (punto && punto.tolerance_early != null ? punto.tolerance_early : "") + '">' +
-      '<input type="number" min="0" class="tp-input" data-cp-late placeholder="±después" title="Tolerancia de retraso (vacío = la de la programación)" value="' +
+      '<input type="number" min="0" class="tp-input" data-cp-late placeholder="—" aria-label="Tolerancia de retraso, en minutos" value="' +
         (punto && punto.tolerance_late != null ? punto.tolerance_late : "") + '">' +
-      '<input type="text" class="tp-input" data-cp-name placeholder="Etiqueta" value="' +
+      '<input type="text" class="tp-input" data-cp-name placeholder="Opcional" aria-label="Etiqueta del punto" value="' +
         (punto && punto.name ? esc(punto.name) : "") + '">' +
-      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-del title="Quitar">×</button>' +
+      '<span class="tp-rsch__cpacts">' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-up title="Subir">↑</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-down title="Bajar">↓</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-del title="Quitar">×</button>' +
+      "</span>" +
       "</div>";
   }
 
@@ -276,12 +296,16 @@
       var geofences = d.geofences || [];
 
       var body = '<div class="tp-scope tp-rsch__cps">' +
-        '<p class="tp-text-muted">Cada punto de control es una geocerca. El vehículo tiene que pasar por ellos en este orden.</p>' +
+        '<p class="tp-text-muted">Cada punto de control es una geocerca y el vehículo tiene que pasar por ellos en el orden de la lista. ' +
+        '<strong>Min.</strong> son los minutos desde la salida; <strong>Antes</strong> y <strong>Después</strong> son la tolerancia en minutos ' +
+        '(en blanco, se usa la de la programación).</p>' +
         SENTIDOS.map(function (s) {
           var filas = (d.checkpoints[s.key] || []).map(function (p) { return cpRow(geofences, p); }).join("");
           return '<section data-cp-dir="' + s.key + '">' +
             "<h4>" + s.label + "</h4>" +
+            CP_CABECERA +
             '<div data-cp-list>' + filas + "</div>" +
+            '<p class="tp-rsch__cpempty">Sin puntos todavía en este sentido.</p>' +
             '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cp-add>＋ Añadir punto</button>' +
             "</section>";
         }).join("") +
@@ -305,6 +329,23 @@
           add.parentNode.querySelector("[data-cp-list]").insertAdjacentHTML("beforeend", cpRow(geofences, null));
           return;
         }
+        // Subir y bajar: el orden de las filas ES el orden de paso, asi que
+        // sin esto un punto olvidado a medio recorrido obligaba a rehacer
+        // todos los de detras.
+        var sube = e.target.closest("[data-cp-up]");
+        if (sube) {
+          var fs = sube.closest("[data-cp-row]");
+          if (fs.previousElementSibling) fs.parentNode.insertBefore(fs, fs.previousElementSibling);
+          return;
+        }
+
+        var baja = e.target.closest("[data-cp-down]");
+        if (baja) {
+          var fb = baja.closest("[data-cp-row]");
+          if (fb.nextElementSibling) fb.parentNode.insertBefore(fb.nextElementSibling, fb);
+          return;
+        }
+
         var quita = e.target.closest("[data-cp-del]");
         if (quita) quita.closest("[data-cp-row]").remove();
       });
