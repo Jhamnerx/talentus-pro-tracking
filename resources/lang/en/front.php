@@ -1459,4 +1459,9 @@ return [
     'sensor_value_limit' => 'Threshold',
     'sensor_value_duration' => 'Minimum duration (min)',
     'sensor_value_duration_hint' => 'How long the value must stay past the threshold before it alerts. 0 alerts on the first reading. It only alerts once until the value goes back to normal.',
+
+    // Video a bordo: canales por vehiculo
+    'video_channels' => 'On-board video channels',
+    'video_channels_hint' => 'How many cameras the vehicle carries (up to 6). With 0 the vehicle does not offer video and the widget is hidden.',
+    'video_channels_unsupported' => 'This tracker protocol does not carry video, so the viewer will not open even with channels set.',
 ];

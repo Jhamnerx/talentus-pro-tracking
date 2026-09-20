@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use CustomFacades\Repositories\DeviceRepo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use Tobuli\Entities\Device;
 use Tobuli\Services\DeviceVideoService;
 
 class DeviceVideoController extends Controller
@@ -30,13 +31,33 @@ class DeviceVideoController extends Controller
         return $device;
     }
 
+    /**
+     * El vehiculo tiene video y el canal pedido es uno de los suyos.
+     *
+     * Se comprueban las dos cosas: sin canales configurados no hay video
+     * aunque el protocolo lo traiga, y pedir el canal 5 a un equipo de 3
+     * camaras es una peticion invalida, no un canal vacio.
+     */
+    private function checkVideo(Device $device, ?int $channel = null): ?JsonResponse
+    {
+        if (! $this->videoService->isEnabled($device)) {
+            return response()->json(['error' => 'Video not enabled for this device'], 422);
+        }
+
+        if ($channel !== null && ! in_array($channel, $this->videoService->channelList($device), true)) {
+            return response()->json(['error' => 'Channel not available on this device'], 422);
+        }
+
+        return null;
+    }
+
     public function liveStart(int $deviceId): JsonResponse
     {
         $device  = $this->findDevice($deviceId);
         $channel = (int) ($this->data['channel'] ?? 1);
 
-        if (! $this->videoService->isSupported($device)) {
-            return response()->json(['error' => 'Video not supported for this device protocol'], 422);
+        if ($error = $this->checkVideo($device, $channel)) {
+            return $error;
         }
 
         return response()->json($this->videoService->startLive($device, $channel));
@@ -58,8 +79,8 @@ class DeviceVideoController extends Controller
         $channel = (int) ($this->data['channel'] ?? 1);
         $mode    = (int) ($this->data['mode']    ?? 0); // 0=listen, 1=intercom
 
-        if (! $this->videoService->isSupported($device)) {
-            return response()->json(['error' => 'Audio not supported for this device protocol'], 422);
+        if ($error = $this->checkVideo($device, $channel)) {
+            return $error;
         }
 
         $this->videoService->startAudio($device, $channel, $mode);
@@ -81,11 +102,17 @@ class DeviceVideoController extends Controller
     {
         $device = $this->findDevice($deviceId);
 
-        if (! $this->videoService->isSupported($device)) {
-            abort(404, 'El protocolo del dispositivo no soporta video en vivo.');
+        // isEnabled, no isSupported: con el protocolo bien pero sin canales
+        // configurados el visor abria vacio, con cero reproductores.
+        if (! $this->videoService->isEnabled($device)) {
+            abort(404, 'Este vehiculo no tiene video configurado.');
         }
 
-        return view('front::DeviceVideo.live_modal', compact('device'));
+        // Canales del vehiculo (1..6). Antes el visor pintaba 4 cajas fijas,
+        // asi que un camion con 2 camaras mostraba dos reproductores muertos.
+        $channels = $this->videoService->channelList($device);
+
+        return view('front::DeviceVideo.live_modal', compact('device', 'channels'));
     }
 
     // -------------------------------------------------------------------------
@@ -96,11 +123,13 @@ class DeviceVideoController extends Controller
     {
         $device = $this->findDevice($deviceId);
 
-        if (! $this->videoService->isSupported($device)) {
-            abort(404, 'El protocolo del dispositivo no soporta video.');
+        if (! $this->videoService->isEnabled($device)) {
+            abort(404, 'Este vehiculo no tiene video configurado.');
         }
 
-        return view('front::DeviceVideo.playback_modal', compact('device'));
+        $channels = $this->videoService->channelList($device);
+
+        return view('front::DeviceVideo.playback_modal', compact('device', 'channels'));
     }
 
     public function playbackSearch(int $deviceId): JsonResponse
@@ -108,7 +137,8 @@ class DeviceVideoController extends Controller
         $device = $this->findDevice($deviceId);
 
         $params = [
-            'channels'  => $this->data['channels']  ?? '1;2;3;4',
+            // Por defecto, los canales que tenga el vehiculo
+            'channels'  => $this->data['channels'] ?? implode(';', $this->videoService->channelList($device)),
             'startTime' => $this->data['startTime']  ?? null,
             'endTime'   => $this->data['endTime']    ?? null,
             'fileType'  => $this->data['fileType']   ?? '1',

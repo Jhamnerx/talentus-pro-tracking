@@ -123,6 +123,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'sim_number',
         'operator_sim',
         'device_model',
+        // Canales de video a bordo: 0 = el vehiculo no lleva video
+        'video_channels',
         'plate_number',
         'vin',
         'registration_number',

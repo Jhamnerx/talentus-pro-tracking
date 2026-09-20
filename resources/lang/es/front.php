@@ -1457,4 +1457,9 @@ return [
     'sensor_value_limit' => 'Umbral',
     'sensor_value_duration' => 'Duración mínima (min)',
     'sensor_value_duration_hint' => 'Cuánto tiene que mantenerse el valor pasado el umbral antes de avisar. Con 0 avisa a la primera lectura. Solo avisa una vez hasta que el valor vuelve a la normalidad.',
+
+    // Vídeo a bordo: canales por vehículo
+    'video_channels' => 'Canales de vídeo a bordo',
+    'video_channels_hint' => 'Cuántas cámaras lleva el vehículo (hasta 6). Con 0 el vehículo no ofrece vídeo y el widget no se muestra.',
+    'video_channels_unsupported' => 'El protocolo de este equipo no lleva vídeo, así que el visor no abrirá aunque se configuren canales.',
 ];

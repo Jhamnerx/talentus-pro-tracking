@@ -14,9 +14,52 @@ class DeviceVideoService
         $this->tracker = new Tracker();
     }
 
+    /** Tope de canales por equipo. */
+    public const MAX_CHANNELS = 6;
+
+    /** Protocolos cuyo decoder trae video a bordo. */
+    public const PROTOCOLS = ['howen', 'jt808', 'jt1078'];
+
     public function isSupported(Device $device): bool
     {
-        return in_array(strtolower($device->protocol ?? ''), ['howen', 'jt808', 'jt1078']);
+        return in_array(strtolower($device->protocol ?? ''), self::PROTOCOLS, true);
+    }
+
+    /**
+     * Si este vehiculo tiene video, y por tanto si se le ofrece.
+     *
+     * Dos condiciones, y las dos hacen falta: el protocolo tiene que traer
+     * video (si no, el visor no puede funcionar) y alguien tiene que haber
+     * dicho cuantas camaras lleva el vehiculo. Sin lo segundo el widget salia
+     * en toda la flota -- 1.429 equipos sin una sola camara.
+     *
+     * Es la UNICA regla: la usan el widget, el menu del vehiculo y el propio
+     * visor, que antes cada uno comprobaba lo suyo (y el menu se habia quedado
+     * con una lista de protocolos mas corta que la del servicio).
+     */
+    public function isEnabled(Device $device): bool
+    {
+        return $this->isSupported($device) && $this->channels($device) > 0;
+    }
+
+    /** Canales configurados en el vehiculo, recortados al tope soportado. */
+    public function channels(Device $device): int
+    {
+        $canales = (int) ($device->video_channels ?? 0);
+
+        if ($canales < 1) {
+            return 0;
+        }
+
+        return min($canales, self::MAX_CHANNELS);
+    }
+
+    /** Lista de canales para el visor: [1, 2, ... n]. */
+    public function channelList(Device $device): array
+    {
+        $canales = $this->channels($device);
+
+        return $canales ? range(1, $canales) : [];
     }
 
     /**

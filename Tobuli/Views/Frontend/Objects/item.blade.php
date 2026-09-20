@@ -215,7 +215,9 @@
                     </li>
                 @endif
 
-                @if (in_array($item->protocol, ['jt808', 'howen']) && $item->traccar_device_id)
+                {{-- Misma regla que el widget y el visor: protocolo compatible
+                     y canales de video configurados en el vehiculo. --}}
+                @if (app(\Tobuli\Services\DeviceVideoService::class)->isEnabled($item) && $item->traccar_device_id)
                     <li>
                         <a href="javascript:" data-url="{{ route('device_video.live.modal', $item->id) }}"
                             data-modal="device_video_live_{{ $item->id }}" role="button">

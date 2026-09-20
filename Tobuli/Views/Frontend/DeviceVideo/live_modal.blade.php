@@ -192,7 +192,7 @@
     </style>
 
     <div class="lvm-grid" id="lvm-grid">
-        @for ($ch = 1; $ch <= 4; $ch++)
+        @foreach ($channels as $ch)
             <div class="lvm-card" data-ch="{{ $ch }}">
                 <div class="lvm-card-header">
                     <span>{{ trans('front.channel') }} {{ $ch }}</span>
@@ -225,7 +225,7 @@
                     <span class="lvm-audio-indicator" id="lvm-audio-status-{{ $ch }}"></span>
                 </div>
             </div>
-        @endfor
+        @endforeach
     </div>
 
     <script>

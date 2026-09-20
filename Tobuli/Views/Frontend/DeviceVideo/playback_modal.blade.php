@@ -474,12 +474,12 @@
             <div class="pb-sb-group">
                 <div class="pb-sb-title" style="margin-top:4px">Canales</div>
                 <div class="pb-sb-channels">
-                    @for ($ch = 1; $ch <= 4; $ch++)
+                    @foreach ($channels as $ch)
                         <label class="pb-sb-ch-label">
                             <input type="checkbox" class="pb-ch-check" value="{{ $ch }}" checked>
                             CH{{ $ch }}
                         </label>
-                    @endfor
+                    @endforeach
                 </div>
             </div>
 
@@ -530,7 +530,7 @@
         <div class="pb-main">
 
             <div class="pb-grid">
-                @for ($ch = 1; $ch <= 4; $ch++)
+                @foreach ($channels as $ch)
                     <div class="pb-card" data-ch="{{ $ch }}" id="pb-card-{{ $ch }}">
                         <div class="pb-card-header">
                             <span>Canal {{ $ch }}</span>
@@ -552,7 +552,7 @@
                             <span class="pb-err" id="pb-err-{{ $ch }}"></span>
                         </div>
                     </div>
-                @endfor
+                @endforeach
             </div>
 
             {{-- Timeline --}}
@@ -707,7 +707,8 @@
                 var channels = Array.from(checks).map(function(c) {
                     return c.value;
                 }).join(';');
-                if (!channels) channels = '1;2;3;4';
+                // Sin nada marcado, los canales del vehiculo (no un 1;2;3;4 fijo)
+                if (!channels) channels = '{{ implode(';', $channels) }}';
 
                 return {
                     startTime: ds + ' ' + (ts || '00:00') + ':00',
@@ -1093,7 +1094,7 @@
             /* ------------------------------------------------------------------ */
             /* Botones de playback por canal                                        */
             /* ------------------------------------------------------------------ */
-            @for ($ch = 1; $ch <= 4; $ch++)
+            @foreach ($channels as $ch)
                 document.getElementById('pb-play-{{ $ch }}').addEventListener('click', function() {
                     var ch = {{ $ch }};
                     if (selectedSegment && selectedSegment.ch === ch) {
@@ -1108,7 +1109,7 @@
                 document.getElementById('pb-pstop-{{ $ch }}').addEventListener('click', function() {
                     stopChannelPlayback({{ $ch }});
                 });
-            @endfor
+            @endforeach
 
             /* ------------------------------------------------------------------ */
             /* Botones globales                                                     */

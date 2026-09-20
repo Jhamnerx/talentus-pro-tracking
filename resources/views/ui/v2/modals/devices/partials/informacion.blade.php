@@ -186,6 +186,18 @@
         </label>
     @endif
 
+    {{-- Vídeo a bordo: es el interruptor del widget "Video en vivo" y del
+         visor. Con 0 el vehículo no ofrece vídeo. --}}
+    @if (auth()->user()->perm('device_camera', 'view'))
+        <label class="tp-form__field">
+            <span class="tp-form__label">{{ trans('front.video_channels') }}</span>
+            <input type="number" name="video_channels" min="0"
+                max="{{ \Tobuli\Services\DeviceVideoService::MAX_CHANNELS }}"
+                value="{{ $item->video_channels ?? 0 }}" data-tp-field>
+            <small class="tp-form__hint">{{ trans('front.video_channels_hint') }}</small>
+        </label>
+    @endif
+
     @if ($cv('additional_notes'))
         <label class="tp-form__field tp-col-2">
             <span class="tp-form__label">{{ trans('validation.attributes.additional_notes') }}</span>

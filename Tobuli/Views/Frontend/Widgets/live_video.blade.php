@@ -24,15 +24,37 @@
         var $widgets = document.getElementById('widgets');
         if (!$widgets) return;
 
+        // El vehiculo seleccionado tiene video? Es la misma regla del servidor
+        // (DeviceVideoService::isEnabled), que viaja en el payload del mapa.
+        // Aqui hace falta en cliente porque esta caja es UNA sola y cambia con
+        // el vehiculo: no puede decidirse al renderizar, como el menu del objeto.
+        function tieneVideo(deviceId) {
+            try {
+                // app.devices.get(id): `items` es privado dentro del controlador
+                var item = app.devices.get(deviceId);
+
+                return !!(item && item.options() && item.options().video);
+            } catch (e) {
+                return false;
+            }
+        }
+
         new MutationObserver(function(mutations) {
             mutations.forEach(function(m) {
                 if (m.attributeName !== 'data-device-id') return;
                 var deviceId = $widgets.getAttribute('data-device-id');
                 var btn = document.getElementById('widget-live-video-btn');
                 var hint = document.getElementById('widget-live-video-hint');
+                var box = document.getElementById('widget-live-video');
                 if (!btn) return;
 
-                if (deviceId) {
+                // Sin video, la caja entera se esconde: ofrecer un boton que
+                // abre un visor que devuelve 404 no ayuda a nadie.
+                if (box) {
+                    box.style.display = (deviceId && !tieneVideo(deviceId)) ? 'none' : '';
+                }
+
+                if (deviceId && tieneVideo(deviceId)) {
                     btn.setAttribute('data-url', '/device_video/' + deviceId + '/live/modal');
                     btn.setAttribute('data-modal', 'device_video_live_' + deviceId);
                     btn.style.display = 'inline-block';

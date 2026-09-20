@@ -98,6 +98,11 @@ class DeviceMapTransformer extends DeviceTransformer
             'engine_status' => $entity->getEngineStatus(),
             'inaccuracy' => is_null($inaccuracy) ? null : intval($inaccuracy),
 
+            // Video a bordo: lo necesita el widget "Video en vivo", que es una
+            // sola caja compartida y reacciona al vehiculo seleccionado, asi
+            // que no puede decidirlo en servidor como hace el menu del objeto.
+            'video' => app(\Tobuli\Services\DeviceVideoService::class)->isEnabled($entity),
+
             'moved_timestamp'    => (int)$entity->moved_timestamp,
             'stop_duration_sec'  => $entity->getStopDuration(),
             'total_distance'     => $entity->getTotalDistance(),

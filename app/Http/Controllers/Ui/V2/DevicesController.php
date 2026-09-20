@@ -242,6 +242,10 @@ class DevicesController extends BaseController
             }
         }
 
+        // Una sola instancia para toda la pagina: la regla del video es la
+        // misma para todos los vehiculos.
+        $videoService = new \Tobuli\Services\DeviceVideoService();
+
         $items = [];
         foreach ($rows as $device) {
             $st = $device->getStatus();
@@ -269,7 +273,10 @@ class DevicesController extends BaseController
                 'plans'           => (bool) $device->isPlanAble(),
                 'app_uuid'        => ! empty($device->app_uuid),
                 'general'         => (bool) $device->isGeneral(),
-                'video'           => in_array($device->protocol, ['jt808', 'howen']) && $device->traccar_device_id,
+                // Misma regla que el widget y que el visor. Antes esta lista
+                // de protocolos se habia quedado corta respecto a la del
+                // servicio (le faltaba jt1078).
+                'video'           => $videoService->isEnabled($device) && $device->traccar_device_id,
 
                 // Campos extra para las columnas configurables (catálogo
                 // config('tobuli.listview_fields')). Solo los que salen del
@@ -2916,7 +2923,10 @@ class DevicesController extends BaseController
             $data['driver'] = $device->driver; // hasOne UserDriver (current_driver_id)
         }
 
-        if ($has('live_video')) {
+        // El widget SOLO en vehiculos con video: protocolo compatible y
+        // canales configurados. Antes bastaba con tener el widget activado y
+        // salia en toda la flota, incluidos 1.429 equipos sin una sola camara.
+        if ($has('live_video') && (new \Tobuli\Services\DeviceVideoService())->isEnabled($device)) {
             $data['video_live_url']     = url('/device_video/' . $device->id . '/live/modal');
             $data['video_playback_url'] = url('/device_video/' . $device->id . '/playback/modal');
         }
