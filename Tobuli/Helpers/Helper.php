@@ -876,7 +876,11 @@ function listviewTrans($user_id, &$settings, &$fields)
         if ($field['class'] == 'sensor') {
             $field['title'] = $field['name'] . " (" . Arr::get($sensors_trans, $field['type'], 'none') . ")";
         } else {
-            $field['title'] = $fields_trans[$field['field']];
+            // Si un campo se añade a tobuli.listview_fields y se olvida su
+            // titulo, antes saltaba "Undefined array key" y se caia con 500
+            // el listado entero (y el de la v2, y el del admin). Mejor la
+            // columna con un nombre feo que la pantalla sin columnas.
+            $field['title'] = Arr::get($fields_trans, $field['field'], $field['field']);
         }
 
         $field['title'] = htmlentities($field['title'], ENT_QUOTES);
@@ -1523,6 +1527,7 @@ function listsTranslations()
         'sim_expiration_date' => trans('validation.attributes.sim_expiration_date'),
         'installation_date' => trans('validation.attributes.installation_date'),
         'expiration_date' => trans('validation.attributes.expiration_date'),
+        'distance' => trans('front.distance'),
     ]);
 
     $widgetsData = [
