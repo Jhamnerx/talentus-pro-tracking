@@ -851,8 +851,198 @@ function MapTiles() {
 
                     return _tileLayer;
                 }
+            },
+
+            /* --- Mapas propios de config/maps.php -------------------------
+               Estaban declarados en el servidor (y ya funcionaban en la UI
+               v2, ver tp-basemaps.js) pero nunca aqui: un usuario con uno de
+               ellos elegido se quedaba sin mapa. Son tiles directas, no
+               necesitan la API JS de Google. --------------------------- */
+            51: {
+                name:       'Google Map - Normal ≠',
+                maxZoom:    21,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://mt{s}.google.com/vt/lyrs=m&hl=' + _langGoogle() + '&x={x}&y={y}&z={z}&s=Ga',
+                        {
+                            minZoom: 0,
+                            maxZoom: 21,
+                            subdomains: ['0', '1', '2', '3'],
+                            attribution: '&copy; Google Maps'
+                        }
+                    );
+
+                    _tileLayer.map_id = 51;
+
+                    return _tileLayer;
+                }
+            },
+            53: {
+                name:       'Google Map - Hibrido ≠',
+                maxZoom:    21,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://mt{s}.google.com/vt/lyrs=y&hl=' + _langGoogle() + '&x={x}&y={y}&z={z}&s=Ga',
+                        {
+                            minZoom: 0,
+                            maxZoom: 21,
+                            subdomains: ['0', '1', '2', '3'],
+                            attribution: '&copy; Google Maps'
+                        }
+                    );
+
+                    _tileLayer.map_id = 53;
+
+                    return _tileLayer;
+                }
+            },
+            54: {
+                name:       'Google Map - Satelital ≠',
+                maxZoom:    21,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://mt{s}.google.com/vt/lyrs=s&hl=' + _langGoogle() + '&x={x}&y={y}&z={z}&s=Ga',
+                        {
+                            minZoom: 0,
+                            maxZoom: 21,
+                            subdomains: ['0', '1', '2', '3'],
+                            attribution: '&copy; Google Maps'
+                        }
+                    );
+
+                    _tileLayer.map_id = 54;
+
+                    return _tileLayer;
+                }
+            },
+            55: {
+                name:       'Google Map - Terreno ≠',
+                maxZoom:    21,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://mt{s}.google.com/vt/lyrs=p&hl=' + _langGoogle() + '&x={x}&y={y}&z={z}&s=Ga',
+                        {
+                            minZoom: 0,
+                            maxZoom: 21,
+                            subdomains: ['0', '1', '2', '3'],
+                            attribution: '&copy; Google Maps'
+                        }
+                    );
+
+                    _tileLayer.map_id = 55;
+
+                    return _tileLayer;
+                }
+            },
+            56: {
+                name:       'Google Map - Trafico Hibrido ≠',
+                maxZoom:    21,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://mt{s}.google.com/vt/lyrs=y,traffic&hl=' + _langGoogle() + '&x={x}&y={y}&z={z}&s=Ga',
+                        {
+                            minZoom: 0,
+                            maxZoom: 21,
+                            subdomains: ['0', '1', '2', '3'],
+                            attribution: '&copy; Google Maps'
+                        }
+                    );
+
+                    _tileLayer.map_id = 56;
+
+                    return _tileLayer;
+                }
+            },
+            57: {
+                name:       'Google Map - Trafico ≠',
+                maxZoom:    21,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://mt{s}.google.com/vt/lyrs=m,traffic&hl=' + _langGoogle() + '&x={x}&y={y}&z={z}&s=Ga',
+                        {
+                            minZoom: 0,
+                            maxZoom: 21,
+                            subdomains: ['0', '1', '2', '3'],
+                            attribution: '&copy; Google Maps'
+                        }
+                    );
+
+                    _tileLayer.map_id = 57;
+
+                    return _tileLayer;
+                }
+            },
+            70: {
+                name:       'Carto',
+                maxZoom:    18,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                        {minZoom: 2, maxZoom: 18, subdomains: 'abcd', attribution: '&copy; CARTO &copy; OpenStreetMap'}
+                    );
+
+                    _tileLayer.map_id = 70;
+
+                    return _tileLayer;
+                }
+            },
+            71: {
+                name:       'LocationIQ Streets',
+                maxZoom:    18,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://{s}-tiles.locationiq.com/v3/streets/r/{z}/{x}/{y}.png?key=pk.0f147952a41c555a5b70614039fd148b',
+                        {minZoom: 2, maxZoom: 18, subdomains: ['a', 'b', 'c'], attribution: '&copy; LocationIQ &copy; OpenStreetMap'}
+                    );
+
+                    _tileLayer.map_id = 71;
+
+                    return _tileLayer;
+                }
+            },
+            72: {
+                name:       'Carto Dark',
+                maxZoom:    18,
+                tile:       function(){
+                    var _tileLayer = new L.TileLayer(
+                        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+                        {minZoom: 2, maxZoom: 18, subdomains: 'abcd', attribution: '&copy; CARTO &copy; OpenStreetMap'}
+                    );
+
+                    _tileLayer.map_id = 72;
+
+                    return _tileLayer;
+                }
             }
         };
+
+    /* Idioma de las etiquetas de Google, en formato corto ('es', no 'es_PE'). */
+    function _langGoogle() {
+        try {
+            return String((app.lang && (app.lang.iso || app.lang.locale)) || 'en').split(/[_-]/)[0] || 'en';
+        } catch (e) {
+            return 'en';
+        }
+    }
+
+    /* Ultimo recurso cuando no hay ni un mapa utilizable: mas vale OSM que
+       una pagina en blanco. Se registra en _this.layers para que el control
+       de capas tenga algo que ofrecer. */
+    function _capaDeReserva() {
+        var nombre = _maps[2] ? _maps[2].name : 'OpenStreetMap';
+
+        if (!_this.layers[nombre]) {
+            var capa = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18});
+            capa.map_id = 2;
+
+            _this.addOverlayLayerEvents(capa);
+            _this.layers[nombre] = capa;
+        }
+
+        app.settings.map_id = 2;
+
+        return _this.layers[nombre];
+    }
 
     _this.mapList = function () {
         var requires = {};
@@ -870,7 +1060,18 @@ function MapTiles() {
 
             var tileLayer = _tile.tile();
             _this.addOverlayLayerEvents(tileLayer);
-            _this.layers[_tile.name] = tileLayer;
+
+            // Dos mapas pueden llamarse igual (el catalogo trae duplicados
+            // historicos con distinto id). Como la clave es el nombre, el
+            // segundo borraba al primero y desaparecia del control de capas.
+            // Se guarda la clave usada en el propio mapa para que current()
+            // busque por ella y no por el nombre a secas.
+            var clave = _tile.name;
+            var n = 2;
+            while (_this.layers[clave]) clave = _tile.name + ' (' + n++ + ')';
+
+            _tile._layerKey = clave;
+            _this.layers[clave] = tileLayer;
 
             if (typeof _tile.require !== "undefined" && typeof requires[_tile.require] === "undefined") {
                 requires[_tile.require] = _tile.require;
@@ -921,7 +1122,7 @@ function MapTiles() {
                 if (app.settings.map_id != map_id)
                     return;
 
-                if (!_maps[map_id].tile())
+                if (!_maps[map_id] || !_maps[map_id].tile())
                     return;
 
                 _existMapID = true;
@@ -935,7 +1136,11 @@ function MapTiles() {
 
         if (!app.settings.map_id) {
             $.each(app.settings.availableMaps, function (index, map_id) {
-                if (!_maps[map_id].tile())
+                // El servidor (config/maps.php) puede ofrecer mapas que este
+                // catalogo no conoce. Sin esta comprobacion, UNO solo de esos
+                // lanzaba aqui un TypeError y se quedaba la pagina en blanco,
+                // sin mapa y sin lista de objetos.
+                if (!_maps[map_id] || !_maps[map_id].tile())
                     return;
 
                 app.settings.map_id = map_id;
@@ -943,7 +1148,12 @@ function MapTiles() {
             });
         }
 
-        return _this.layers[_maps[app.settings.map_id].name];
+        if (!app.settings.map_id || !_maps[app.settings.map_id])
+            return _capaDeReserva();
+
+        var actual = _maps[app.settings.map_id];
+
+        return _this.layers[actual._layerKey || actual.name] || _capaDeReserva();
     };
 
     _this.addLayerCurrent = function () {
