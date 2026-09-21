@@ -4,7 +4,7 @@
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=11">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=12">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 

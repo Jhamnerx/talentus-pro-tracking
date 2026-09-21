@@ -189,7 +189,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--brand-800, #0e2157);
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
   border-radius: 8px;
   padding: 6px 10px;
   margin: 6px 2px 2px;
@@ -209,7 +209,7 @@
   transition: background 0.12s;
 }
 .tp-mon__pickitem:hover:not(:disabled) {
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 .tp-mon__pickitem:disabled {
   opacity: 0.45;
@@ -240,4 +240,9 @@
   font-size: 11px;
   color: var(--fg-tertiary, #64748b);
   flex: 0 0 auto;
+}
+
+/* Cabecera de grupo del selector: en oscuro, texto claro sobre el tinte. */
+[data-theme="dark"] .tp-mon__pickgroup {
+  color: var(--brand-300);
 }

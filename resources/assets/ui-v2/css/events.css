@@ -56,7 +56,7 @@
   background: var(--surface-2, #f7f8fb);
 }
 .tp-events__row[aria-selected="true"] {
-  background: var(--brand-50, #eef4ff);
+  background: var(--brand-bg-subtle, var(--brand-50));
   box-shadow: inset 3px 0 0 var(--brand-500, #2e63d9);
 }
 .tp-events__dot {

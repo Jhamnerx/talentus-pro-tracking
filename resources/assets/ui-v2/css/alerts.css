@@ -1019,7 +1019,7 @@ button.tp-alert-toggle:hover {
 .tp-alert-modal .tp-tabs__nav {
   margin: 0 0 16px;
   padding: 4px;
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
   border: 1px solid var(--brand-100);
   border-bottom: 1px solid var(--brand-100);
   border-radius: 12px;
@@ -1060,13 +1060,13 @@ button.tp-alert-toggle:hover {
   color: var(--brand-600);
 }
 .tp-alert-modal .tp-devbox__banner {
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
   border-left-color: var(--brand-500);
   border-bottom: 1px solid var(--border-subtle);
   color: var(--brand-800);
 }
 .tp-alert-modal .tp-devbox__group {
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
   border-top: 0;
   border-radius: 8px;
   margin: 6px 4px 2px;
@@ -1076,7 +1076,7 @@ button.tp-alert-toggle:hover {
   color: var(--brand-800);
 }
 .tp-alert-modal .tp-devbox__item:hover {
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 .tp-alert-modal .tp-devbox__foot {
   background: var(--surface-page);
@@ -1106,7 +1106,7 @@ button.tp-alert-toggle:hover {
   color: var(--brand-700);
 }
 .tp-alert-modal .tp-picklist__item:hover {
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 
 /* --- grilla de horario --- */
@@ -1115,7 +1115,7 @@ button.tp-alert-toggle:hover {
   border-radius: 12px;
 }
 .tp-alert-modal .tp-sched__cell {
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
   border-right-color: var(--surface-page);
 }
 .tp-alert-modal .tp-sched__cell:hover {
@@ -1141,7 +1141,7 @@ button.tp-alert-toggle:hover {
 }
 .tp-alert-modal .tp-sched__quick button:hover {
   border-color: var(--brand-400);
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
   color: var(--brand-700);
 }
 
@@ -1154,4 +1154,11 @@ button.tp-alert-toggle:hover {
 }
 .tp-alert-modal .tp-field__hint {
   color: var(--fg-muted);
+}
+
+/* Sobre el fondo sutil de marca, en oscuro un texto de marca oscuro queda
+   ilegible: se sube a un tono claro de la misma escala. */
+[data-theme="dark"] .tp-alert-modal .tp-devbox__banner,
+[data-theme="dark"] .tp-alert-modal .tp-sched__quick button:hover {
+  color: var(--brand-300);
 }

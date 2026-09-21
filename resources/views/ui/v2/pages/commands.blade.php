@@ -4,7 +4,7 @@
 @section('rail-active', 'send_command')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/commands.css') }}?v=1">
 @endpush
 

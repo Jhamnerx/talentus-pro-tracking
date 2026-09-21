@@ -4,7 +4,7 @@
 @section('rail-active', 'routes')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/routes-table.css') }}?v=1">
 @endpush
 

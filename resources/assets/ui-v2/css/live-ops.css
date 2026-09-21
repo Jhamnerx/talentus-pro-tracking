@@ -2372,7 +2372,7 @@ table.tp-lock-hist th {
   font-size: 13px;
 }
 .tp-zexp-item:hover {
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 
 /* Sensores con icono (paridad legacy: icono personalizado del mapeo de valores

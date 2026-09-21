@@ -4,7 +4,7 @@
 @section('rail-active', 'monitor')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/monitor.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/monitor.css') }}?v=4">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 

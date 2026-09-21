@@ -460,7 +460,7 @@
   vertical-align: middle;
 }
 .tp-fleet__table tbody tr:hover td {
-  background: var(--brand-50, #f6f9ff);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 
 /* ── Celda de identidad (icono + nombre + placa) ─────────────────── */
@@ -556,7 +556,7 @@
   white-space: nowrap;
 }
 .tp-fleet__kebab-menu button:hover {
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
   color: var(--brand-700, #1d4ed8);
 }
 
@@ -599,4 +599,9 @@
   display: block;
   max-width: none;
   min-width: 0;
+}
+
+/* En oscuro el fondo sutil de marca es oscuro: el texto tiene que aclararse. */
+[data-theme="dark"] .tp-fleet__kebab-menu button:hover {
+  color: var(--brand-300);
 }

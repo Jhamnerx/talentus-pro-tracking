@@ -5,10 +5,10 @@
 
 @push('head')
     {{-- Tabla índice + kebab compartidos (mismo estilo que call-actions / maintenance) --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=2">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=6">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=7">
     {{-- Formularios del modal de la regla (.tp-form* / inputs) --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=12">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=13">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')

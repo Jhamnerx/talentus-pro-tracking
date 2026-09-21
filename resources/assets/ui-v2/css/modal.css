@@ -204,7 +204,7 @@
   display: flex;
   gap: 4px;
   border: 1px solid var(--brand-100);
-  background: var(--brand-50);
+  background: var(--brand-bg-subtle, var(--brand-50));
   border-radius: 12px;
   padding: 4px;
   overflow-x: auto;
@@ -380,7 +380,7 @@
 }
 .tp-lang-item:hover {
   border-color: var(--brand-500, #2563eb);
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 .tp-lang-item.is-active {
   border-color: var(--brand-500, #2563eb);
@@ -444,7 +444,7 @@
   cursor: pointer;
 }
 .tp-colpick__item:hover {
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 .tp-colpick__item input[type="checkbox"] {
   flex: 0 0 auto;

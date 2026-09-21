@@ -286,7 +286,7 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: var(--brand-50, #f0fdfa);
+  background: var(--brand-bg-subtle, var(--brand-50));
   color: var(--brand-600, #0d9488);
 }
 .tp-maint__tools {
@@ -332,4 +332,10 @@
 .tp-maint .tp-svc-left.is-expired {
   color: var(--danger-500, #ef4444);
   font-weight: var(--fw-medium, 500);
+}
+
+/* El icono del titulo usa el acento teal; en oscuro se aclara para que siga
+   destacando sobre el tinte oscuro. */
+[data-theme="dark"] .tp-maint__title-ico {
+  color: var(--brand-accent, #1b99bd);
 }

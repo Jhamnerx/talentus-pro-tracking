@@ -634,7 +634,7 @@
   margin-top: 6px;
 }
 .tp-acc-row:hover {
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 
 /* Picker de icono por fila de mapeo del sensor (paridad legacy icons-modal) */
@@ -652,7 +652,7 @@
 }
 .tp-map-icon:hover {
   border-color: var(--brand-500, #2563eb);
-  background: var(--brand-50, #f2f5fd);
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 .tp-map-icon img {
   width: 18px;
