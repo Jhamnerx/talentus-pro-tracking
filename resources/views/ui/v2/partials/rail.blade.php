@@ -103,7 +103,9 @@
                 <span class="tp-rail__label">{{ trans('front.external_url') }}</span>
             </a>
         @endif
-        <a href="{{ route('my_account_settings.change_lang', ['lang' => $nextLang]) }}"
+        {{-- 'return' devuelve a esta misma pantalla: sin el, cambiar el idioma
+             te sacaba de la v2 y te dejaba en el mapa legacy. --}}
+        <a href="{{ route('my_account_settings.change_lang', ['lang' => $nextLang, 'return' => request()->getRequestUri()]) }}"
             class="tp-rail__item tp-has-tooltip" data-tooltip="Cambiar idioma" aria-label="Cambiar idioma">
             <span class="tp-rail__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
