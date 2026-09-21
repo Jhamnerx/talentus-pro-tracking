@@ -30,8 +30,7 @@
         data-routes-import-url="{{ route('routes.import') }}"
         data-zones-export-url="{{ route('geofences.export_create') }}"
         data-pois-export-url="{{ route('pois.export.store') }}"
-        data-socket-port="{{ $socketPort }}"
-        data-socket-ssl-port="{{ $socketSslPort }}" data-poll-interval="15000">
+        data-poll-interval="5000">
 
         {{-- Map config (provider IDs, API keys) injected for the JS layer --}}
         <script type="application/json" id="tp-live-map-config">@json($mapConfig)</script>
@@ -810,7 +809,7 @@
     {{-- Configuración remota del GPS por SMS (kebab) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-device-config.js') }}?v=1"></script>
     {{-- Galería de medios del vehículo (kebab) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-device-media.js') }}?v=2"></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-device-media.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-silent-devices.js') }}?v=1" defer></script>
     <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=52"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>

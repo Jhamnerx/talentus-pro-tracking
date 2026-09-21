@@ -67,7 +67,15 @@
                 eventsLive: '{{ url('/ui/v2/api/events/live') }}',
                 preferences: '{{ url('/ui/v2/api/preferences') }}',
             },
-            locale: '{{ app()->getLocale() }}'
+            locale: '{{ app()->getLocale() }}',
+            // Tiempo real: mismo servidor y mismo canal que el legacy.
+            // Los puertos por defecto son los de socket/socket.js (9001/9002),
+            // NO 3000/3001: con esos la v2 no conectaba con nada.
+            socket: {
+                port: {{ (int) env('SOCKET_PORT', 9001) }},
+                sslPort: {{ (int) env('SOCKET_SSL_PORT', 9002) }},
+                channel: @json($user ? $user->getSocketChannel() : null)
+            }
         };
     </script>
 
@@ -101,6 +109,10 @@
 
     {{-- tp-select: componente de select propio (100% Tailwind, sin dependencias).
          Auto-enhancea todo select.tp-input / select.tp-select, incl. AJAX. --}}
+    {{-- Tiempo real (avisos, chat, camaras). Va antes que todo lo demas para
+         que cualquier script pueda suscribirse con tpSocket.on(). --}}
+    <script src="{{ asset('assets/ui/v2/js/lib/socket.io.js') }}" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-socket.js') }}?v=1" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=10" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=2" defer></script>
     <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=5" defer></script>

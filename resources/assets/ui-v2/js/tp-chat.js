@@ -126,9 +126,18 @@
       }
     });
   }
+  /* Con push NO se sondea: el socket avisa y se pide la conversacion en ese
+     momento. Se deja un sondeo lento de red de seguridad por si se pierde
+     algun aviso, y el rapido de siempre cuando no hay socket. */
+  var MS_CON_PUSH = 60000;
+  var MS_SIN_PUSH = 5000;
+
   function startMsgPoll() {
     clearInterval(msgTimer);
-    msgTimer = setInterval(pollMessages, 5000);
+
+    var hayPush = window.tpSocket && tpSocket.isConnected();
+
+    msgTimer = setInterval(pollMessages, hayPush ? MS_CON_PUSH : MS_SIN_PUSH);
   }
 
   /* ----- Enviar ----- */
@@ -142,6 +151,22 @@
       else { inputEl.value = text; if (window.tpModal) tpModal.toast("No se pudo enviar.", "error"); }
     }).catch(function () { inputEl.value = text; });
   });
+
+  /* ----- Tiempo real -----
+     Al llegar un mensaje se relee la conversacion en vez de pintar el payload
+     del socket: es un viaje de ida y vuelta minimo, pero reusa el mismo camino
+     ya probado y no hay que duplicar el formato del mensaje en dos sitios. */
+  if (window.tpSocket) {
+    tpSocket.on("message", function () {
+      pollMessages();
+      loadConversations();
+    });
+
+    // Si el socket se cae, se vuelve al sondeo rapido; al volver, se espacia.
+    tpSocket.onStatus(function () {
+      if (state.chatId) startMsgPoll();
+    });
+  }
 
   /* ----- Boot + polling de la lista ----- */
   loadConversations();

@@ -17,6 +17,10 @@
 
   var BASE = "/ui/v2/api/devices";
 
+  // Galeria abierta ahora mismo, para poder recargarla desde fuera cuando
+  // llega una foto nueva por el socket.
+  var abierta = null;
+
   function open(deviceId, deviceName) {
     if (!window.tpModal) return;
 
@@ -29,6 +33,12 @@
       buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
       onMount: function (dialog) {
         var root = dialog.querySelector("[data-media-root]");
+
+        abierta = { deviceId: deviceId, recarga: function () { load(); } };
+
+        dialog.addEventListener("close", function () {
+          if (abierta && abierta.deviceId === deviceId) abierta = null;
+        });
 
         function load() {
           var qs = new URLSearchParams({ page: state.page, limit: 24 });
@@ -197,5 +207,26 @@
     });
   }
 
-  window.tpDeviceMedia = { open: open };
+  window.tpDeviceMedia = {
+    open: open,
+
+    /** Recarga la galeria si la que esta abierta es la de ese vehiculo. */
+    refresh: function (deviceId) {
+      if (abierta && (!deviceId || abierta.deviceId === deviceId)) abierta.recarga();
+    },
+  };
+
+  /* Foto nueva de camara: el legacy recarga su tabla, aqui se recarga la
+     galeria si la tienes delante y, si no, se avisa sin molestar. */
+  if (window.tpSocket) {
+    tpSocket.on("device_camera_create", function (msg) {
+      if (msg && msg.success === false) return;
+
+      if (abierta) {
+        abierta.recarga();
+      } else if (window.tpModal) {
+        tpModal.toast("Hay una foto nueva de c\u00e1mara.", "info");
+      }
+    });
+  }
 })();

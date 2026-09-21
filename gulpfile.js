@@ -239,7 +239,16 @@ gulp.task("ui-v2-js", function () {
     .pipe(browserSync.reload({ stream: true }));
 });
 
-gulp.task("ui-v2", gulp.series("ui-v2-css", "ui-v2-js"));
+// El cliente de socket.io lo comparte el legacy: se copia tal cual, sin pasar
+// por terser (ya viene minificado; re-minificar un UMD de terceros solo gasta
+// tiempo y añade riesgo). Una sola copia del fichero en el repo.
+gulp.task("ui-v2-vendor", function () {
+  return gulp
+    .src("resources/assets/js/lib/socket.io.js")
+    .pipe(gulp.dest("public/assets/ui/v2/js/lib"));
+});
+
+gulp.task("ui-v2", gulp.series("ui-v2-css", "ui-v2-js", "ui-v2-vendor"));
 
 gulp.task("watch", function () {
   browserSync.init({
