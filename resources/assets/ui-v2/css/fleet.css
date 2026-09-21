@@ -478,6 +478,16 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
+  overflow: hidden;
+}
+
+/* Los iconos del catalogo no son cuadrados (los hay de 38x74): contain para
+   que entren enteros en el chip sin deformarse. */
+.tp-fleet__ident-icon {
+  max-width: 22px;
+  max-height: 26px;
+  object-fit: contain;
+  display: block;
 }
 .tp-fleet__ident-text {
   display: flex;

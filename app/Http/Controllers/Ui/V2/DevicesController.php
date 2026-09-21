@@ -193,7 +193,8 @@ class DevicesController extends BaseController
 
         $total = (clone $query)->count();
 
-        $rows = $query->orderBy('devices.name', 'asc')
+        $rows = $query->with('icon')
+            ->orderBy('devices.name', 'asc')
             ->forPage($page, $limit)
             ->get();
 
@@ -260,6 +261,7 @@ class DevicesController extends BaseController
                 'model'           => $device->device_model,
                 'sim'             => $device->sim_number,
                 'icon_color'      => $device->getStatusColor($st),
+                'icon'            => $this->deviceIconData($device),
                 'status'          => $st,
                 'status_group'    => $this->groupStatus($st),
                 'active'          => (bool) $device->active,
@@ -2621,6 +2623,30 @@ class DevicesController extends BaseController
     }
 
     /**
+     * Icono asignado al vehiculo, como lo resuelve el mapa.
+     *
+     * El accessor Device::icon ya aplica el icono por estado cuando el set
+     * lo tiene (by_status). Se devuelve null si el vehiculo no tiene icono
+     * propio: el JS pinta entonces la flecha del color de estado, igual que
+     * el monitoreo de grupo.
+     */
+    protected function deviceIconData($device): ?array
+    {
+        $icon = $device->icon;
+
+        if (! $icon || empty($icon->path)) {
+            return null;
+        }
+
+        return [
+            'type'   => (string) $icon->type,
+            'path'   => (string) $icon->path,
+            'width'  => (float) $icon->width,
+            'height' => (float) $icon->height,
+        ];
+    }
+
+    /**
      * Lightweight presentation of a device for refreshing UI rows
      * after a create / update without re-fetching the whole list.
      */
@@ -2639,6 +2665,7 @@ class DevicesController extends BaseController
             'model'        => (string) $device->device_model,
             'sim'          => (string) $device->sim_number,
             'icon_color'   => $device->getStatusColor($st),
+            'icon'         => $this->deviceIconData($device),
             'status'       => $st,
             'status_group' => $this->groupStatus($st),
             'active'       => (bool) $device->active,

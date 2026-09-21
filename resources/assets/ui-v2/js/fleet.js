@@ -119,6 +119,20 @@
   var COLS_URL = "/ui/v2/api/fleet/columns";
   var columnsState = { available: [], selected: [], labels: {}, defs: {}, colors: {} };
 
+  /* Icono asignado al vehiculo. Si no tiene uno propio (o es del tipo
+     'arrow', que el mapa dibuja por estado), la flecha del color de estado:
+     misma regla que el monitoreo de grupo, para que un vehiculo se vea igual
+     en las dos pantallas. */
+  function deviceIconSrc(d) {
+    var icon = d.icon || {};
+
+    if (!icon.path || (icon.type || "arrow") === "arrow") {
+      return "/images/device_icons/estados/" + (d.icon_color || "gray") + ".png";
+    }
+
+    return icon.path.charAt(0) === "/" ? icon.path : "/" + icon.path;
+  }
+
   // Cómo se pinta cada columna: valor + alineación.
   var COL_RENDER = {
     name: function (d) {
@@ -128,9 +142,8 @@
       return (
         '<div class="tp-fleet__ident">' +
         '<span class="tp-fleet__ident-chip" style="background:' +
-        escapeHtml(hexToSoft(d.icon_color)) + ';color:' + escapeHtml(statusHex(d.icon_color)) + '">' +
-        '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' +
-        '<path d="M5 17H3v-6l2-5h9l3 5v6h-2"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/></svg>' +
+        escapeHtml(hexToSoft(d.icon_color)) + '">' +
+        '<img class="tp-fleet__ident-icon" src="' + escapeHtml(deviceIconSrc(d)) + '" alt="" loading="lazy">' +
         "</span>" +
         '<span class="tp-fleet__ident-text">' +
         '<button type="button" class="tp-fleet__ident-name" data-view="' + d.id + '" title="' + escapeHtml(d.name) + '">' +
