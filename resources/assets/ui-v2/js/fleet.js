@@ -61,7 +61,7 @@
 
   var STATUS_LABELS = {
     moving: "Moviendo",
-    idle: "Inactivo",
+    idle: "Ralentí",
     stopped: "Detenido",
     offline: "Offline",
   };

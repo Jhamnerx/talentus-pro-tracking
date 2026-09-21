@@ -285,7 +285,7 @@
       tbody.innerHTML = '<tr><td colspan="4" class="tp-text-muted tp-text-center">Sin datos.</td></tr>';
       return;
     }
-    var labels = { moving: "Moviendo", idle: "Inactivo", stopped: "Detenido", offline: "Sin datos" };
+    var labels = { moving: "Moviendo", idle: "Ralentí", stopped: "Detenido", offline: "Sin datos" };
     tbody.innerHTML = top
       .map(function (d, i) {
         var g = statusGroup(d.status);
