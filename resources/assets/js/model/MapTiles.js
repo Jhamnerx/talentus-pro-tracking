@@ -1230,11 +1230,17 @@ function MapTiles() {
 
         _this.addLayerCurrent();
 
-        _this.aircraft = new Aircraft();
-        _this.aircraft.setMap(_this.map);
+        // La capa de vuelos es opcional: el control solo se pinta con el
+        // permiso flights_info, y su clase vive en su propio fichero. Si ese
+        // fichero no esta en el bundle, esta linea se llevaba por delante el
+        // mapa entero con "Aircraft is not defined".
+        if (typeof Aircraft === 'function') {
+            _this.aircraft = new Aircraft();
+            _this.aircraft.setMap(_this.map);
 
-        if (app.settings.showAircraft) {
-            _this.aircraft.show();
+            if (app.settings.showAircraft) {
+                _this.aircraft.show();
+            }
         }
 
         _this.map.on('baselayerchange', function (e) {
@@ -1255,7 +1261,9 @@ function MapTiles() {
                 _this.disableTraffic();
             }
 
-            _this.aircraft.setMap(_this.map);
+            if (_this.aircraft) {
+                _this.aircraft.setMap(_this.map);
+            }
 
             app.changeSetting('map_id', map_id);
             app.saveSetting('map', _map.name);

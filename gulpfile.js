@@ -129,6 +129,7 @@ var scripts = {
     "resources/assets/js/model/geofence.js",
     "resources/assets/js/model/route.js",
     "resources/assets/js/model/event.js",
+    "resources/assets/js/model/aircraft.js",
     "resources/assets/js/model/MapTiles.js",
     "resources/assets/js/lib/socket.io.js",
 
