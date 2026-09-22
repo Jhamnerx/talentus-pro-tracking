@@ -378,10 +378,13 @@
     if (item.period) periodEl.value = String(item.period);
 
     function leerFechas() {
+      var fIso = window.tpDate ? tpDate.value(dateFrom) : dateFrom.value;
+      var tIso = window.tpDate ? tpDate.value(dateTo) : dateTo.value;
+
       range = {
-        from: dateFrom.value || range.from,
+        from: fIso || range.from,
         fromTime: timeFrom.value || "00:00",
-        to: dateTo.value || range.to,
+        to: tIso || range.to,
         toTime: timeTo.value || "00:00",
       };
       form._range = range;

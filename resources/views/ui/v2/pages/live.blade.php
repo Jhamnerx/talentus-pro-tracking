@@ -795,7 +795,7 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=26"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=27"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
     {{-- Acciones de llamada (modo modal global; se activa solo si existe #tp-ca-config) --}}

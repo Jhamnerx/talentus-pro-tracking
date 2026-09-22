@@ -501,7 +501,8 @@
   var applyBtn = $("#tp-dash-apply");
   if (applyBtn)
     applyBtn.addEventListener("click", function () {
-      var f = $("#tp-dash-from").value, t = $("#tp-dash-to").value;
+      var f = window.tpDate ? tpDate.value($("#tp-dash-from")) : $("#tp-dash-from").value;
+      var t = window.tpDate ? tpDate.value($("#tp-dash-to")) : $("#tp-dash-to").value;
       if (!f || !t) return;
       state.range = "custom"; state.from = f; state.to = t;
       $$("#tp-dash-range [data-range]").forEach(function (b) { b.classList.remove("is-active"); });

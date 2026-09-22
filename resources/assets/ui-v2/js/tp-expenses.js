@@ -120,7 +120,8 @@
     function showErr(m) { if (err) { err.textContent = m; err.style.display = "block"; } }
     if (err) err.style.display = "none";
     function v(sel) { var el = d.querySelector(sel); return el ? el.value : ""; }
-    var dateV = v("[data-x-date]");
+    // tpDate.value: el input visible muestra dd/mm/aaaa, el ISO va aparte
+    var dateV = window.tpDate ? tpDate.value(d.querySelector("[data-x-date]")) : v("[data-x-date]");
     var timeV = v("[data-x-time]") || "00:00";
     var payload = {
       device_id: v("[data-x-device]"),

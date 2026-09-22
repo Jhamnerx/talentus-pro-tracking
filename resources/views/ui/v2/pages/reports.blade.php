@@ -117,5 +117,5 @@
     @include('ui.v2.partials.services-config')
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-chips-select.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/reports.js') }}?v=13" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/reports.js') }}?v=14" defer></script>
 @endpush

@@ -248,6 +248,11 @@
     return !this.panel.hidden;
   };
 
+  /** El valor real (ISO aaaa-mm-dd). El input visible solo tiene el display. */
+  Dp.prototype.get = function () {
+    return this.hidden.value || "";
+  };
+
   Dp.prototype.set = function (iso) {
     this.hidden.value = iso || "";
     this.input.value = toDisplay(iso);
@@ -396,7 +401,20 @@
     (root || document).querySelectorAll('input[type="date"]').forEach(enhance);
   }
 
-  window.tpDate = { enhance: enhance, init: init };
+  /**
+   * Lee la fecha de un input en ISO, este realzado o no.
+   *
+   * Leer el .value del input a pelo devuelve el texto que se ve
+   * ("22/09/2026") en cuanto el datepicker lo realza, y eso acaba en el
+   * servidor. Todo el que lea una fecha desde JS deberia pasar por aqui.
+   */
+  function value(el) {
+    if (!el) return "";
+
+    return el._tpdp ? el._tpdp.get() : (el.value || "");
+  }
+
+  window.tpDate = { enhance: enhance, init: init, value: value };
 
   // Inputs date insertados por AJAX (modales) — mismo patrón que tp-select
   var mo = new MutationObserver(function (muts) {

@@ -68,5 +68,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/tp-expenses.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-expenses.js') }}?v=3" defer></script>
 @endpush

@@ -117,7 +117,7 @@
       if (mSel) mSel.disabled = !on;
     }
     function combine() {
-      var dv = (dateInput.value || "").trim();
+      var dv = (window.tpDate ? tpDate.value(dateInput) : dateInput.value || "").trim();
       hidden.value =
         toggle.checked && dv ? dv + " " + (hSel ? hSel.value : "00") + ":" + (mSel ? mSel.value : "00") : "";
     }
@@ -927,7 +927,9 @@
           method: "POST",
           json: {
             tipo: root.querySelector("[data-maint-tipo]").value,
-            fecha: root.querySelector("[data-maint-fecha]").value,
+            fecha: window.tpDate
+              ? tpDate.value(root.querySelector("[data-maint-fecha]"))
+              : root.querySelector("[data-maint-fecha]").value,
             motivo: motivo,
             notas: (root.querySelector("[data-maint-notas]").value || "").trim(),
           },

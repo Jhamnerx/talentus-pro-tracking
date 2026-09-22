@@ -394,7 +394,8 @@
     var err = d.querySelector("[data-ca-err]");
     function showErr(m) { if (err) { err.textContent = m; err.style.display = "block"; } }
     if (err) err.style.display = "none";
-    var dateV = (d.querySelector("[data-ca-date]").value || "").trim();
+    var dateV = (window.tpDate ? tpDate.value(d.querySelector("[data-ca-date]"))
+                                : d.querySelector("[data-ca-date]").value || "").trim();
     var hV = d.querySelector("[data-ca-h]").value || "00";
     var mV = d.querySelector("[data-ca-m]").value || "00";
     var payload = {

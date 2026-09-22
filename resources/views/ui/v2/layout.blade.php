@@ -114,7 +114,7 @@
     <script src="{{ asset('assets/ui/v2/js/lib/socket.io.js') }}" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-socket.js') }}?v=1" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=10" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=2" defer></script>
+    <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=3" defer></script>
     <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=5" defer></script>
     {{-- Ajustes de cuenta (modal con tabs; se abre desde el topbar) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=10" defer></script>
