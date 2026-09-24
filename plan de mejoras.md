@@ -20,6 +20,7 @@ actualización del núcleo a GPSWox 3.7.13 sobre Laravel 9.
 | Líneas añadidas / eliminadas                | +185.846 / −30.058        |
 | Migraciones de base de datos por aplicar    | 30                        |
 | Puntos del plan 8–15 entregados             | 6 de 6                    |
+| Funcionalidades entregadas (inventario §1.2)| 104, en 11 áreas          |
 | Pendientes (aplazados por decisión)         | 2 — vídeo a bordo y ERP   |
 
 **Fecha propuesta de salida a producción: martes 3 de noviembre de 2026**,
@@ -53,7 +54,172 @@ vehículo) se descartaron por decisión del cliente y siguen descartados.
 La especificación técnica original de cada punto se conserva íntegra en el
 **anexo** al final de este documento.
 
-### 1.2 · Cronología del proyecto
+### 1.2 · Inventario de funcionalidades entregadas
+
+Todo lo que sigue está en la rama y no en producción. Se agrupa por módulo, no
+por fecha; la cronología va en §1.3.
+
+#### Mapa y operación en vivo
+
+| Funcionalidad                                                           | Fecha  |
+| ----------------------------------------------------------------------- | ------ |
+| Mapa en vivo con panel lateral, tarjetas de vehículo y menú de acciones | jun    |
+| **Cambio de motor de mapas: MapLibre → Leaflet**, el mismo del sistema clásico | 29-jun |
+| Catálogo completo de capas base (Google, OSM, Carto, LocationIQ…)        | 29-jun |
+| Iconos reales de marcador por tipo, nombres, cola (tail) y agrupación    | 28-jun |
+| Filtro de estado con datos autoritativos del servidor                    | 28-jun |
+| Carga de todas las páginas de vehículos (se quitó el tope de 1.000)      | 28-jun |
+| Agrupación de la lista, «Sin grupo» siempre primero                      | jul    |
+| Widgets del vehículo: panel lateral + franja inferior configurable       | jun    |
+| Widgets de Objeto, Combustible (gráfico 24 h) y Comando GPRS             | 25-jul |
+| **Seguir**: ventana flotante con mini-mapa                               | 18-ago |
+| Preferencias de marcador aplicadas desde Ajustes                         | 24-jul |
+| Unidades sin transmitir señaladas en el mapa                             | 28-ago |
+| **Tiempo real por socket** y posiciones cada 5 s                         | 21-sep |
+
+#### Monitoreo de grupo — módulo nuevo
+
+| Funcionalidad                                                  | Fecha  |
+| -------------------------------------------------------------- | ------ |
+| Grilla de mini-mapas en vivo, uno por vehículo                  | 18-ago |
+| Tamaño de cuadrícula configurable de 2 a 32 celdas              | 20-sep |
+
+#### Flota
+
+| Funcionalidad                                                     | Fecha  |
+| ----------------------------------------------------------------- | ------ |
+| Cabecera, panel de filtros y tabla en tarjeta                      | 20-ago |
+| Columnas configurables (compartidas con la lista clásica)          | 19-ago |
+| Columnas de sensor con rangos de color                             | 20-ago |
+| Columna Dirección y refresco automático                            | 20-ago |
+| Estados Lookup como filtros                                        | 19-ago |
+| Icono asignado a cada vehículo en la lista                         | 20-sep |
+| Copiar sensores de un vehículo a otros (tres modos)                | 20-ago |
+
+#### Geocercas, POI y rutas
+
+| Funcionalidad                                                        | Fecha  |
+| -------------------------------------------------------------------- | ------ |
+| POI: CRUD nativo sobre el mapa, marcadores arrastrables, por grupos   | 28-jun |
+| Geocercas: dibujo de polígono y círculo, vértices editables           | 28-jun |
+| Límite de velocidad por **tipo y estado de vehículo** en la geocerca  | 28-jun |
+| **Geocerca de corredor** (línea con anchura)                          | 5-sep  |
+| CRUD de grupos de geocercas y de POI                                  | 19-ago |
+| Rutas: CRUD completo                                                  | 21-jul |
+| **Puntos de control, programaciones y reporte de adherencia**         | 5-sep  |
+| Hitos kilométricos como capa compartida                               | 21-jul |
+
+#### Alertas y eventos
+
+| Funcionalidad                                                      | Fecha  |
+| ------------------------------------------------------------------ | ------ |
+| Modal de alerta completo, 6 pestañas, en paridad con el clásico     | 29-jul |
+| Índice de reglas con menú de acciones                               | 29-jul |
+| Alertas del vehículo con periodo de vigencia                        | 19-ago |
+| Editar la alerta desde el menú del vehículo                         | 20-ago |
+| **Plantillas de alerta** sembradas al dar de alta un usuario (§14)  | 23-ago |
+| Tipo **«Alarma del equipo»** sobre el campo `alarm` de Traccar      | 22-ago |
+| Tipo **umbral sobre el valor de un sensor**                         | 19-sep |
+| Acción **«enviar reporte por correo»** con ventana del evento       | 5-sep  |
+| Operador «incluye» y comodín de protocolo en eventos                | 22-ago |
+| Página de Eventos con mapa, borrado masivo y filtro por fechas      | jun/ago|
+| Notificaciones en vivo: emergente, sonido y aviso de escritorio     | 22-jul |
+| Avisos del administrador (franjas y emergentes)                     | 19-ago |
+
+#### Reportes
+
+| Funcionalidad                                                       | Fecha  |
+| ------------------------------------------------------------------- | ------ |
+| Módulo rediseñado con pestañas y modal Generar/Guardar               | 22-jul |
+| Franja horaria como control de dos manijas                           | 22-jul |
+| Periodo que termina en 23:59 (día completo) y rangos rápidos         | 23-jul |
+| Corrección de un fallo heredado en `setPeriodTimeTo`                 | 22-jul |
+| El modal recupera la forma y las opciones del sistema clásico        | 26-ago |
+| **Cabecera y pie en todos los formatos** (§15)                       | 23-ago |
+| Periodo mostrado en la hora del usuario                              | ago    |
+| **Reporte de conducción**: eventos bruscos por cada 100 km (§12)     | 24-ago |
+| **Reporte de costo de operación** (§10)                              | 24-ago |
+| **Reporte de adherencia a ruta** (tipo 909)                          | 5-sep  |
+
+#### Tablero
+
+| Funcionalidad                                                   | Fecha  |
+| --------------------------------------------------------------- | ------ |
+| Tablero fusionado: flota, conducción y alertas                   | 25-jul |
+| Tarjetas de estado con anillo y leyenda                          | 25-jul |
+| Rango por zona horaria del usuario, con fuente única de fechas    | 25-jul |
+| Filtros de rango acelerados                                      | 25-jul |
+| Bloques que faltaban y kilometraje por selección                  | 19-ago |
+| **Ranking de conducción** con el mismo cálculo del reporte (§12)  | 24-ago |
+
+#### Vehículo: ficha y gestión
+
+| Funcionalidad                                                        | Fecha  |
+| -------------------------------------------------------------------- | ------ |
+| Modal del vehículo con todas las pestañas en paridad                  | jul    |
+| Pestañas Sensores, Usuarios, Servicios Web, Servicios, Gastos, Cámaras| jul    |
+| Iconos de sensor y selector en el mapeo de valores                    | 19-ago |
+| Historial de mantenimientos                                           | 19-ago |
+| Configurador del GPS en el alta, y **configuración remota por SMS**   | 19-ago |
+| Beacons                                                               | 19-ago |
+| Galería de medios del vehículo                                        | 19-ago |
+| **Listas de verificación** (plantillas y ejecución por servicio)      | 19-ago |
+| Estados de vehículo con etiqueta corta, color y cambiador rápido      | 29-jul |
+| Tipos de trayecto                                                     | 19-ago |
+| Bloqueo de motor: candado en la lista y comandos por plantilla        | 26-jul |
+| **Costo por kilómetro** del vehículo (§10)                            | 24-ago |
+| **Historial de cambios del vehículo** y más cobertura de auditoría (§8)| 24-ago |
+| Vídeo a bordo: canales por vehículo y visor gateado (hasta 6)         | 20-sep |
+
+#### Otros módulos migrados
+
+| Módulo                                                      | Fecha  |
+| ----------------------------------------------------------- | ------ |
+| Servicios / Mantenimiento                                    | 21-jul |
+| Enviar comando (hub completo)                                | 21-jul |
+| Gastos                                                       | 27-jul |
+| Reenvíos, y su asignación a grupos de objetos                | 27-jul |
+| Compartir (Sharing) + página pública con identidad v2        | 22-jul |
+| Conductores                                                  | 22-jul |
+| Tareas, conjuntos, importación CSV/XLS y asignación masiva   | 23-jul |
+| Chat y Acciones de llamada                                   | 25-jul |
+| Grupos de objetos                                            | 23-jul |
+| Ajustes de cuenta con todas las pestañas                     | 24-jul |
+| Cuenta: categorías de medios y credenciales secundarias      | 19-ago |
+| Cuenta: SMS de prueba y vaciado de la cola                   | 19-ago |
+| **Panel de cumplimiento regulatorio** (§11)                  | 23-ago |
+
+#### Plataforma y componentes propios
+
+| Funcionalidad                                                   | Fecha  |
+| --------------------------------------------------------------- | ------ |
+| Tema desmarcado y canal de compilación con Tailwind              | 26-jun |
+| `tp-select`: componente de selección propio                      | 22-jul |
+| `tp-datepicker`: calendario propio con salto a mes y año         | 22-jul |
+| `tp-socket`: capa de tiempo real                                 | 21-sep |
+| Selector de vehículos compartido por todas las pantallas         | 20-sep |
+| Modo claro y oscuro con tokens de diseño                         | jul    |
+| **Tema `admin-v2`** para el panel de administración              | 19-sep |
+| Preferencia de interfaz persistida por usuario                   | 18-ago |
+| Selector de idioma en la interfaz                                | 19-ago |
+| Login moderno con la paleta v2                                   | 18-ago |
+| Confirmación de correo por código único                          | 18-ago |
+| Control de acceso del rail en paridad con el menú clásico        | 23-jul |
+
+#### Núcleo, integraciones y datos
+
+| Funcionalidad                                                        | Fecha  |
+| -------------------------------------------------------------------- | ------ |
+| **Actualización a GPSWox 3.7.13 sobre Laravel 9** (fases A, B1–B11)   | 1–2-sep|
+| **2FA de Google** completo y middleware de teléfono                   | 2-sep  |
+| Proveedor de correo **Gmail (OAuth2)**                                | 2-sep  |
+| `Reply-To` configurable, igual para los cinco proveedores             | 27-ago |
+| Normalización de la celda GSM y `apply_network_data`                  | 28-ago |
+| **Índice en la cola de WiseTrack** (incidente en producción)          | 22-ago |
+| Combustible: rellenos y robos sobre la curva, varias series a la vez  | 19-sep |
+| Combustible: un reinicio del contador ya no borra el consumo          | 19-sep |
+
+### 1.3 · Cronología del proyecto
 
 | Periodo              | Hito                                                              | Commits |
 | -------------------- | ----------------------------------------------------------------- | ------- |
@@ -66,7 +232,7 @@ La especificación técnica original de cada punto se conserva íntegra en el
 | 5-sep                | Rutas con adherencia, geocerca de corredor, alerta por reporte     | 5       |
 | 19-sep → 22-sep      | Tema del panel admin, telemetría de combustible y estabilización   | 24      |
 
-### 1.3 · Actualización del núcleo (1–2 sep)
+### 1.4 · Actualización del núcleo (1–2 sep)
 
 El sistema pasó de GPSWox 3.7.x a **3.7.13 sobre Laravel 9** en doce fases
 documentadas (A, B1–B11): fusión de 40 archivos personalizados, consola y
@@ -74,7 +240,7 @@ reportes, alertas de expiración, entidades `Device` y `User`, rutas y
 configuración, JS del mapa, vistas, idiomas, 2FA de Google y proveedor de
 correo Gmail por OAuth2.
 
-### 1.4 · Estabilización (19–22 sep)
+### 1.5 · Estabilización (19–22 sep)
 
 Cuatro días de uso real destaparon **ocho defectos**, todos corregidos:
 
