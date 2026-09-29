@@ -222,9 +222,11 @@ Al final, añade:
 - **Las 8 cadenas sin traducir a propósito**. Ver §6.
 - **El decodificador de vídeo a bordo no está integrado**: la pestaña avisa
   de ello. Es lo previsto.
-- **Seis cuentas guardan un tema inválido** (`airpatrol`). Ya hay un respaldo
-  que sirve `light-green`, así que no deberías ver ninguna página sin
-  estilos. **Si la ves, eso sí es un fallo y hay que reportarlo.**
+- **El tema inválido `airpatrol` ya está corregido** (29-sep): seis cuentas
+  lo arrastraban y se normalizaron a `light-green`, y además hay un respaldo
+  que sirve un tema válido ante cualquier valor que no exista. No deberías
+  ver ninguna página sin estilos. **Si la ves, eso sí es un fallo y hay que
+  reportarlo**, con el usuario con el que entraste.
 
 ---
 

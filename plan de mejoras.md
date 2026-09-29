@@ -279,6 +279,7 @@ por el camino.
 | Puente de traducciones hacia el JS (no existía)   | `001af821` |
 | El JS de la v2, sin texto fijo (1.274 cadenas)    | `7b27df00`, `db4ae1d0` |
 | La página salía sin estilos con cuenta de manager | `34a5fc65` |
+| Las 6 cuentas con el tema inválido, normalizadas   | (dato)     |
 
 **`gulp sass-all`.** Fallaba con *Incompatible units: 'px' and 'vw'* porque
 node-sass intenta resolver `min(86vw, 340px)` él mismo. Lo grave no era el
@@ -338,8 +339,6 @@ sirve para cualquier valor inválido, no solo para este.
 
 **Lo que queda de esta tanda, no bloqueante:**
 
-- Las 6 cuentas siguen guardando `airpatrol` en la base. Ya no rompen nada,
-  pero conviene normalizarlas.
 - El puente son 43 KB en cada página (~8 KB comprimido) porque manda las 835
   claves siempre. Si molesta, se parte por página.
 - Unas 30 cadenas eran fragmentos de una concatenación (`"(máx"`,
