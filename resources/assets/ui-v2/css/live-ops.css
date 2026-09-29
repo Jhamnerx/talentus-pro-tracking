@@ -1215,12 +1215,19 @@ table.tp-lock-hist th {
   position: absolute;
   top: var(--sp-3);
   left: var(--sp-3);
+  /* Tope por la derecha: la columna de herramientas vive en esa esquina y la
+     pildora crecia por debajo de ella. 44px es el ancho del boton mas su
+     caja, y el doble de sp-3 son los dos margenes. */
+  right: calc(var(--sp-3) * 2 + 44px);
   z-index: 4;
   pointer-events: none;
 }
 .tp-live__map-stats {
   display: inline-flex;
   align-items: center;
+  /* Que la pildora se encoja en vez de desbordar su tope */
+  max-width: 100%;
+  overflow: hidden;
   gap: 14px;
   padding: 8px 14px;
   background: var(--surface-raised);
@@ -2809,4 +2816,34 @@ table.tp-lock-hist th {
 @media (prefers-reduced-motion: reduce) {
   .tp-dash__fill,
   .tp-dash__gauge > g { transition: none; }
+}
+
+/* ── Contadores: cabe menos, se dice menos ───────────────────────────
+   Antes la pildora crecia hasta meterse debajo de la columna de
+   herramientas del mapa. Ahora tiene tope por la derecha y, segun va
+   faltando sitio, suelta primero las palabras y luego se reparte. */
+@media (max-width: 1280px) {
+  .tp-live__map-stats {
+    gap: 10px;
+    padding: 7px 12px;
+  }
+  /* Sin el rotulo: el punto de color ya dice que estado es, y el
+     title/aria-label lo mantiene accesible */
+  .tp-live__map-stat > span:last-child {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .tp-live__map-overlay {
+    /* En movil la columna de herramientas se separa del borde: el tope
+       se recalcula para no dejar la pildora en un hilo */
+    right: calc(var(--sp-2) * 2 + 40px);
+    top: var(--sp-2);
+    left: var(--sp-2);
+  }
+  .tp-live__map-stats {
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
 }

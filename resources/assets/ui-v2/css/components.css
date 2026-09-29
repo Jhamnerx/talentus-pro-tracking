@@ -1810,3 +1810,80 @@ select.tp-input:disabled {
 [data-density="compact"] .tp-svc-table td {
   padding: 5px 12px;
 }
+
+/* ============================================================
+   Rail: se pliega solo en pantallas pequeñas
+   ------------------------------------------------------------
+   NO se toca data-rail ni el localStorage: solo se anulan aqui las reglas
+   del modo COMPLETO. Asi el usuario recupera su modo en cuanto vuelve a una
+   pantalla ancha, sin haber perdido su preferencia.
+   ============================================================ */
+@media (max-width: 1100px) {
+  /* 236px de menu se comen el mapa: solo iconos */
+  [data-rail="full"] .tp-app {
+    --rail-w: 56px;
+  }
+  [data-rail="full"] .tp-rail__item,
+  [data-rail="full"] .tp-rail__toggle,
+  [data-rail="full"] .tp-rail__logo {
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+  }
+  [data-rail="full"] .tp-rail__label,
+  [data-rail="full"] .tp-rail__logo-text {
+    display: none;
+  }
+  /* Al quedarse sin rotulo, el icono necesita su tooltip */
+  [data-rail="full"] .tp-rail .tp-has-tooltip[data-tooltip]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%) translateX(-4px);
+  }
+  [data-rail="full"] .tp-rail .tp-has-tooltip:hover::after,
+  [data-rail="full"] .tp-rail .tp-has-tooltip:focus-visible::after {
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@media (max-width: 640px) {
+  /* En movil ni siquiera caben los 56px: el rail sale del flujo y se
+     superpone cuando se pide. El boton de hamburguesa ya alterna
+     full/compact, asi que aqui "full" significa "mostrado". */
+  .tp-app {
+    --rail-w: 0px;
+  }
+  .tp-rail {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 236px;
+    transform: translateX(-100%);
+    transition: transform var(--dur-normal, 0.2s) var(--ease-out, ease);
+    z-index: 60;
+  }
+  [data-rail="full"] .tp-rail {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+  /* Abierto, vuelve a mostrar los rotulos: es un menu, no una tira */
+  [data-rail="full"] .tp-rail__label,
+  [data-rail="full"] .tp-rail__logo-text {
+    display: inline;
+    opacity: 1;
+    width: auto;
+  }
+  [data-rail="full"] .tp-rail__item,
+  [data-rail="full"] .tp-rail__toggle,
+  [data-rail="full"] .tp-rail__logo {
+    justify-content: flex-start;
+    padding: 0 var(--sp-3);
+    gap: var(--sp-3);
+  }
+  /* Con el menu desplegado los tooltips sobran */
+  [data-rail="full"] .tp-rail .tp-has-tooltip[data-tooltip]::after {
+    display: none;
+  }
+}

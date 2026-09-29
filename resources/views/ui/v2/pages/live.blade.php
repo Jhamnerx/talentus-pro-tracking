@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=65">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=66">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -447,17 +447,17 @@
             {{-- Map overlay: stats + actions --}}
             <div class="tp-live__map-overlay">
                 <div class="tp-live__map-stats" aria-live="polite">
-                    <span class="tp-live__map-stat">
+                    <span class="tp-live__map-stat" title="En movimiento" aria-label="En movimiento">
                         <span class="tp-dot tp-dot--moving"></span>
                         <strong id="tp-live-stat-moving">0</strong>
                         <span>en movimiento</span>
                     </span>
-                    <span class="tp-live__map-stat">
+                    <span class="tp-live__map-stat" title="En ralentí" aria-label="En ralentí">
                         <span class="tp-dot tp-dot--idle"></span>
                         <strong id="tp-live-stat-idle">0</strong>
                         <span>en ralentí</span>
                     </span>
-                    <span class="tp-live__map-stat">
+                    <span class="tp-live__map-stat" title="Desconectados" aria-label="Desconectados">
                         <span class="tp-dot tp-dot--offline"></span>
                         <strong id="tp-live-stat-offline">0</strong>
                         <span>desconectados</span>
