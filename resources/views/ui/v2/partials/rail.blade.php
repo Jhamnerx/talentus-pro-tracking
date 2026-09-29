@@ -139,8 +139,12 @@
 
         // En movil el rail se superpone: hay que avisar a quien lee la pagina
         // de que el boton abre y cierra, y mostrar el velo.
-        var navBtn = document.getElementById('tp-nav-toggle');
-        var scrim = document.getElementById('tp-nav-scrim');
+        //
+        // OJO con el orden: este <script> corre al parsearse y el rail va
+        // ANTES que el topbar y el velo en el layout, asi que aqui todavia no
+        // existen. Se resuelven cuando el DOM esta listo.
+        var navBtn = null;
+        var scrim = null;
         var movil = window.matchMedia('(max-width: 640px)');
 
         function sincroniza() {
@@ -153,8 +157,22 @@
         }
 
         if (toggle) toggle.addEventListener('click', alterna);
-        if (navBtn) navBtn.addEventListener('click', alterna);
-        if (scrim) scrim.addEventListener('click', function () { setMode('compact'); sincroniza(); });
+
+        function enganchaTopbar() {
+            navBtn = document.getElementById('tp-nav-toggle');
+            scrim = document.getElementById('tp-nav-scrim');
+
+            if (navBtn) navBtn.addEventListener('click', alterna);
+            if (scrim) scrim.addEventListener('click', function () { setMode('compact'); sincroniza(); });
+
+            sincroniza();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', enganchaTopbar);
+        } else {
+            enganchaTopbar();
+        }
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && abierto() && movil.matches) {
