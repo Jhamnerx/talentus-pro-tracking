@@ -31,7 +31,7 @@ class HistoryController extends BaseController
     public function index(Request $request)
     {
         if (! $this->user->perm('history', 'view')) {
-            abort(403, 'No tienes permiso para ver historial.');
+            abort(403, trans('ui.no_permission_history'));
         }
 
         return View::make('ui.v2.pages.history', [

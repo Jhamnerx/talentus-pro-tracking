@@ -32,7 +32,7 @@ class ReportsController extends BaseController
     public function index(Request $request)
     {
         if (! $this->user->perm('reports', 'view')) {
-            abort(403, 'No tienes permiso para ver reportes.');
+            abort(403, trans('ui.no_permission_reports'));
         }
 
         return View::make('ui.v2.pages.reports', [

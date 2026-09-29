@@ -133,7 +133,7 @@ class ExpensesController extends BaseController
 
         $item = DeviceExpense::userAccessible($this->user)->find((int) $id);
         if (! $item) {
-            return response()->json(['ok' => false, 'message' => 'Gasto no encontrado.'], 404);
+            return response()->json(['ok' => false, 'message' => trans('ui.expense_not_found')], 404);
         }
 
         try {
@@ -176,7 +176,7 @@ class ExpensesController extends BaseController
         // El vehículo debe pertenecer al usuario.
         $owns = $this->user->devices()->where('devices.id', (int) $data['device_id'])->exists();
         if (! $owns) {
-            $msg = new \Illuminate\Support\MessageBag(['device_id' => ['Vehículo no válido.']]);
+            $msg = new \Illuminate\Support\MessageBag(['device_id' => [trans('ui.invalid_vehicle')]]);
             throw new ValidationException($msg);
         }
 

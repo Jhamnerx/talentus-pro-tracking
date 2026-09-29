@@ -56,7 +56,7 @@ class EventsController extends BaseController
     public function index(Request $request)
     {
         if (! $this->user->perm('events', 'view')) {
-            abort(403, 'No tienes permiso para ver eventos.');
+            abort(403, trans('ui.no_permission_events'));
         }
 
         return View::make('ui.v2.pages.events', [

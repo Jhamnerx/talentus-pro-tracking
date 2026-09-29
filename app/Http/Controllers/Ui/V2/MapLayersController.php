@@ -149,14 +149,14 @@ class MapLayersController extends BaseController
         // 'edit' es el modo válido (perm() solo entiende view|edit|remove);
         // crear y editar POIs requieren permiso de edición.
         if (! $this->user->perm('poi', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission')], 403);
         }
 
         $item = null;
         if ($id) {
             $item = Poi::find((int) $id);
             if (! $item || ! $this->user->can('edit', $item)) {
-                return response()->json(['ok' => false, 'message' => 'POI no encontrado.'], 404);
+                return response()->json(['ok' => false, 'message' => trans('ui.poi_not_found')], 404);
             }
         }
 
@@ -190,7 +190,7 @@ class MapLayersController extends BaseController
     {
         $poi = Poi::find((int) $id);
         if (! $poi) {
-            return response()->json(['ok' => false, 'message' => 'POI no encontrado.'], 404);
+            return response()->json(['ok' => false, 'message' => trans('ui.poi_not_found')], 404);
         }
 
         try {
@@ -209,7 +209,7 @@ class MapLayersController extends BaseController
     {
         $poi = Poi::find((int) $id);
         if (! $poi) {
-            return response()->json(['ok' => false, 'message' => 'POI no encontrado.'], 404);
+            return response()->json(['ok' => false, 'message' => trans('ui.poi_not_found')], 404);
         }
 
         try {

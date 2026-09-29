@@ -33,7 +33,7 @@ class ForwardsController extends BaseController
         ],
         'macropoint' => [
             ['name' => 'username', 'label' => 'Usuario',    'type' => 'text',     'required' => true],
-            ['name' => 'password', 'label' => 'Contraseña', 'type' => 'password', 'required' => true],
+            ['name' => 'password', 'label' => trans('validation.attributes.password'), 'type' => 'password', 'required' => true],
             ['name' => 'mpid',     'label' => 'MPID',       'type' => 'text',     'required' => true],
         ],
     ];
@@ -111,7 +111,7 @@ class ForwardsController extends BaseController
 
         $item = Forward::userAccessible($this->user)->find((int) $id);
         if (! $item) {
-            return response()->json(['ok' => false, 'message' => 'Reenvío no encontrado.'], 404);
+            return response()->json(['ok' => false, 'message' => trans('ui.forward_not_found')], 404);
         }
 
         try {

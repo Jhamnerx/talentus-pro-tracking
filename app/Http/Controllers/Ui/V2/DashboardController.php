@@ -26,17 +26,17 @@ class DashboardController extends BaseController
 
     /** Categorías canónicas → etiqueta + color + si cuenta como riesgo de conducción. */
     private const CATEGORIES = [
-        'harsh_braking'      => ['label' => 'Frenado brusco',        'color' => '#ef4444', 'risk' => true],
-        'harsh_acceleration' => ['label' => 'Aceleración brusca',    'color' => '#f97316', 'risk' => true],
-        'harsh_turning'      => ['label' => 'Giro brusco',           'color' => '#eab308', 'risk' => true],
-        'overspeed'          => ['label' => 'Exceso de velocidad',   'color' => '#dc2626', 'risk' => true],
-        'sos'                => ['label' => 'SOS / Pánico',          'color' => '#b91c1c', 'risk' => true],
-        'jamming'            => ['label' => 'Interferencia (jammer)', 'color' => '#a21caf', 'risk' => true],
-        'power'              => ['label' => 'Batería / energía',      'color' => '#7c3aed', 'risk' => false],
+        'harsh_braking'      => ['label' => trans('front.alarm_hardBraking'),        'color' => '#ef4444', 'risk' => true],
+        'harsh_acceleration' => ['label' => trans('front.alarm_hardAcceleration'),    'color' => '#f97316', 'risk' => true],
+        'harsh_turning'      => ['label' => trans('front.alarm_hardCornering'),           'color' => '#eab308', 'risk' => true],
+        'overspeed'          => ['label' => trans('front.overspeed'),   'color' => '#dc2626', 'risk' => true],
+        'sos'                => ['label' => trans('ui.event_sos_panic'),          'color' => '#b91c1c', 'risk' => true],
+        'jamming'            => ['label' => trans('ui.event_jammer'), 'color' => '#a21caf', 'risk' => true],
+        'power'              => ['label' => trans('ui.event_power'),      'color' => '#7c3aed', 'risk' => false],
         'geofence'           => ['label' => 'Geocercas',             'color' => '#0ea5e9', 'risk' => false],
-        'idle'               => ['label' => 'Ralentí',               'color' => '#f59e0b', 'risk' => false],
-        'ignition'           => ['label' => 'Encendido / apagado',   'color' => '#64748b', 'risk' => false],
-        'offline'            => ['label' => 'Desconexión',           'color' => '#94a3b8', 'risk' => false],
+        'idle'               => ['label' => trans('front.idle'),               'color' => '#f59e0b', 'risk' => false],
+        'ignition'           => ['label' => trans('ui.event_ignition'),   'color' => '#64748b', 'risk' => false],
+        'offline'            => ['label' => trans('ui.event_disconnect'),           'color' => '#94a3b8', 'risk' => false],
         'fuel'               => ['label' => 'Combustible',           'color' => '#16a34a', 'risk' => false],
         'driver'             => ['label' => 'Conductor',             'color' => '#2563eb', 'risk' => false],
         'other'              => ['label' => 'Otros',                 'color' => '#cbd5e1', 'risk' => false],
@@ -45,7 +45,7 @@ class DashboardController extends BaseController
     public function index(Request $request)
     {
         if (! $this->user->perm('devices', 'view')) {
-            abort(403, 'No tienes permiso para ver el panel.');
+            abort(403, trans('ui.no_permission_dashboard'));
         }
 
         return View::make('ui.v2.pages.dashboard', [
@@ -350,23 +350,23 @@ class DashboardController extends BaseController
             'health' => [
                 'total' => $total,
                 'items' => [
-                    ['name' => 'En buen estado',    'value' => $health['good'],      'color' => '#10b981'],
-                    ['name' => 'Requieren atención', 'value' => $health['attention'], 'color' => '#f59e0b'],
-                    ['name' => 'En mal estado',      'value' => $health['bad'],       'color' => '#ef4444'],
+                    ['name' => trans('ui.health_good'),    'value' => $health['good'],      'color' => '#10b981'],
+                    ['name' => trans('ui.health_attention'), 'value' => $health['attention'], 'color' => '#f59e0b'],
+                    ['name' => trans('ui.health_bad'),      'value' => $health['bad'],       'color' => '#ef4444'],
                 ],
             ],
             'connection' => [
                 'total' => $total,
                 'items' => [
                     ['name' => 'Conectadas',    'value' => $conn['connected'],    'color' => '#10b981'],
-                    ['name' => 'No conectadas', 'value' => $conn['disconnected'], 'color' => '#cbd5e1'],
+                    ['name' => trans('ui.not_connected'), 'value' => $conn['disconnected'], 'color' => '#cbd5e1'],
                 ],
             ],
             'distribution' => [
-                ['name' => 'En movimiento', 'value' => $buckets['moving'],  'color' => '#10b981'],
+                ['name' => trans('front.move'), 'value' => $buckets['moving'],  'color' => '#10b981'],
                 ['name' => 'Inactivo',      'value' => $buckets['idle'],    'color' => '#f59e0b'],
                 ['name' => 'Detenido',      'value' => $buckets['stopped'], 'color' => '#3b82f6'],
-                ['name' => 'Sin datos',     'value' => $buckets['offline'], 'color' => '#a855f7'],
+                ['name' => trans('front.no_data'),     'value' => $buckets['offline'], 'color' => '#a855f7'],
             ],
             'topSpeed' => $top,
             'activity' => $hours,

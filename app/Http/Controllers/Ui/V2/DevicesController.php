@@ -34,7 +34,7 @@ class DevicesController extends BaseController
     public function live(Request $request)
     {
         if (! $this->user->perm('devices', 'view')) {
-            abort(403, 'No tienes permiso para ver dispositivos.');
+            abort(403, trans('ui.no_permission_devices'));
         }
 
         return View::make('ui.v2.pages.live', [
@@ -107,7 +107,7 @@ class DevicesController extends BaseController
         }
 
         return \Illuminate\Support\Facades\View::make('ui.v2.pages.monitor', [
-            'pageTitle' => 'Monitoreo de grupo',
+            'pageTitle' => trans('ui.group_monitor'),
             'mapConfig' => $this->buildMapConfig(),
         ]);
     }
@@ -118,7 +118,7 @@ class DevicesController extends BaseController
     public function fleet(Request $request)
     {
         if (! $this->user->perm('devices', 'view')) {
-            abort(403, 'No tienes permiso para ver la flota.');
+            abort(403, trans('ui.no_permission_fleet'));
         }
 
         return View::make('ui.v2.pages.fleet', [
@@ -1287,7 +1287,7 @@ class DevicesController extends BaseController
     public function form(Request $request, $id = null): JsonResponse
     {
         if (! $this->user->perm('devices', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission')], 403);
         }
 
         try {
@@ -1393,7 +1393,7 @@ class DevicesController extends BaseController
         }
 
         if (! $this->user->perm('devices', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso para crear vehículos.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission_create_vehicles')], 403);
         }
 
         try {
@@ -1429,7 +1429,7 @@ class DevicesController extends BaseController
     public function update(Request $request, $id): JsonResponse
     {
         if (! $this->user->perm('devices', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso para editar vehículos.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission_edit_vehicles')], 403);
         }
 
         try {
@@ -1767,7 +1767,7 @@ class DevicesController extends BaseController
 
             $config = \Tobuli\Entities\DeviceConfig::find($data['config_id']);
             if (! $config) {
-                return response()->json(['ok' => false, 'errors' => ['config_id' => ['Configuración no encontrada.']]], 422);
+                return response()->json(['ok' => false, 'errors' => ['config_id' => [trans('ui.config_not_found')]]], 422);
             }
 
             $manager = new \Tobuli\Helpers\SMS\SMSGatewayManager();
@@ -1802,7 +1802,7 @@ class DevicesController extends BaseController
     public function destroy(Request $request, $id): JsonResponse
     {
         if (! $this->user->perm('devices', 'remove')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso para eliminar vehículos.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission_delete_vehicles')], 403);
         }
 
         // Candado anti-borrado. DIVERGE del legacy a propósito: el legacy compara contra la
@@ -2044,7 +2044,7 @@ class DevicesController extends BaseController
     public function changeVehicleState(Request $request, $id): JsonResponse
     {
         if (! $this->user->perm('devices', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission')], 403);
         }
 
         $device = $this->user->devices()->find((int) $id);
@@ -2060,7 +2060,7 @@ class DevicesController extends BaseController
                 ->where('vehicle_type_id', $device->vehicle_type_id)
                 ->first();
             if (! $vs) {
-                return response()->json(['ok' => false, 'message' => 'Estado inválido para el tipo del vehículo.'], 422);
+                return response()->json(['ok' => false, 'message' => trans('ui.invalid_state_for_vehicle_type')], 422);
             }
         }
 
@@ -2463,7 +2463,7 @@ class DevicesController extends BaseController
         $this->cameraDevice((int) $id);
 
         if (! $this->user->perm('device_camera', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission')], 403);
         }
 
         $name = trim((string) $request->get('name'));
@@ -2491,7 +2491,7 @@ class DevicesController extends BaseController
         $this->cameraDevice((int) $camera->device_id);
 
         if (! $this->user->perm('device_camera', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission')], 403);
         }
 
         $name = trim((string) $request->get('name'));
@@ -2518,7 +2518,7 @@ class DevicesController extends BaseController
         $this->cameraDevice((int) $camera->device_id);
 
         if (! $this->user->perm('device_camera', 'remove') && ! $this->user->perm('device_camera', 'edit')) {
-            return response()->json(['ok' => false, 'message' => 'Sin permiso.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission')], 403);
         }
 
         $camera->delete();
@@ -2797,7 +2797,7 @@ class DevicesController extends BaseController
 
         $device = DeviceRepo::find((int) $id);
         if (! $device) {
-            return response()->json(['ok' => false, 'message' => 'Vehículo no encontrado.'], 404);
+            return response()->json(['ok' => false, 'message' => trans('ui.vehicle_not_found')], 404);
         }
 
         // Active widgets per user config (fallback to global settings) — mirrors Widgets/index.blade.
@@ -3198,25 +3198,25 @@ class DevicesController extends BaseController
     public function lockCommand(Request $request, $id): JsonResponse
     {
         if (! settings('plugins.locking_widget.status')) {
-            return response()->json(['ok' => false, 'message' => 'Función no habilitada.'], 403);
+            return response()->json(['ok' => false, 'message' => trans('ui.feature_not_enabled')], 403);
         }
         $device = DeviceRepo::find((int) $id);
         if (! $device) {
-            return response()->json(['ok' => false, 'message' => 'Vehículo no encontrado.'], 404);
+            return response()->json(['ok' => false, 'message' => trans('ui.vehicle_not_found')], 404);
         }
         $this->checkException('devices', 'show', $device);
 
         $type    = $request->input('type', 'gprs');
         $message = trim((string) $request->input('message', ''));
         if ($message === '') {
-            return response()->json(['ok' => false, 'message' => 'El comando está vacío.'], 422);
+            return response()->json(['ok' => false, 'message' => trans('ui.command_empty')], 422);
         }
 
         $svc = app(\Tobuli\Services\Commands\SendCommandService::class);
         try {
             if ($type === 'sms') {
                 if (! $this->user->canSendSMS() || empty($device->sim_number)) {
-                    return response()->json(['ok' => false, 'message' => 'SMS no disponible para este vehículo.'], 422);
+                    return response()->json(['ok' => false, 'message' => trans('ui.sms_not_available')], 422);
                 }
                 $result = $svc->sms($device, ['type' => 'custom', 'message' => $message], $this->user);
             } else {

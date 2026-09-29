@@ -21,7 +21,7 @@ class AlertsController extends BaseController
     public function index(Request $request)
     {
         if (! $this->user->perm('alerts', 'view')) {
-            abort(403, 'No tienes permiso para ver alertas.');
+            abort(403, trans('ui.no_permission_alerts'));
         }
 
         return View::make('ui.v2.pages.alerts', [
@@ -507,7 +507,7 @@ class AlertsController extends BaseController
         // Solo grupos que tienen algún device; el bucket 0 = "Sin grupo".
         $groups = [];
         if (! empty($used[0])) {
-            $groups[] = ['id' => 0, 'title' => 'Sin grupo'];
+            $groups[] = ['id' => 0, 'title' => trans('front.ungrouped')];
         }
         foreach ($titles as $gid => $title) {
             if (! empty($used[$gid])) {

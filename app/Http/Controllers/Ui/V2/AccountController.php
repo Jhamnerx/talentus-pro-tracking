@@ -60,7 +60,7 @@ class AccountController extends BaseController
             'app' => trans('front.sms_gateway_app'), 'plivo' => 'Plivo',
         ];
         if (settings('sms_gateway.enabled')) {
-            $requestMethods = ['server' => 'Server gateway'] + $requestMethods;
+            $requestMethods = ['server' => trans('ui.server_gateway')] + $requestMethods;
         }
 
         $widgets = (array) $u->getSettings('widgets');

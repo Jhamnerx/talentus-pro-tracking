@@ -72,7 +72,7 @@ class ShellController extends BaseController
                         'id'       => $d->id,
                         'label'    => $d->name ?: ($plate ?: $imei),
                         'subtitle' => trim(implode(' · ', array_filter([$plate, $imei]))),
-                        'meta'     => 'Vehículo',
+                        'meta'     => trans('ui.vehicle'),
                         'url'      => url('/ui/v2/live') . '?device=' . $d->id,
                     ];
                 }

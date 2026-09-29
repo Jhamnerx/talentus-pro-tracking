@@ -58,9 +58,9 @@ class CopilotController extends BaseController
                 'severity' => 'critical',
                 'category' => 'fleet_health',
                 'icon'     => 'alert',
-                'title'    => count($longOffline) . ' vehículo(s) sin reportar > 24h',
-                'detail'   => 'Posible falla de batería, fusible o módem GPS. Revisa: ' . implode(', ', array_slice(array_column($longOffline, 'name'), 0, 5)) . (count($longOffline) > 5 ? '…' : ''),
-                'action'   => ['label' => 'Ver en Fleet', 'url' => url('/ui/v2/fleet?status=offline')],
+                'title'    => trans('ui.cp_offline_title', ['count' => count($longOffline)]),
+                'detail'   => trans('ui.cp_offline_detail', ['names' => implode(', ', array_slice(array_column($longOffline, 'name'), 0, 5)) . (count($longOffline) > 5 ? '…' : '')]),
+                'action'   => ['label' => trans('ui.cp_open_fleet'), 'url' => url('/ui/v2/fleet?status=offline')],
                 'count'    => count($longOffline),
             ];
         }
@@ -69,9 +69,9 @@ class CopilotController extends BaseController
                 'severity' => 'warning',
                 'category' => 'efficiency',
                 'icon'     => 'idle',
-                'title'    => count($longIdle) . ' vehículo(s) en ralentí prolongado',
-                'detail'   => 'Consumen combustible sin avanzar. Revisa: ' . implode(', ', array_slice(array_column($longIdle, 'name'), 0, 5)) . (count($longIdle) > 5 ? '…' : ''),
-                'action'   => ['label' => 'Ver en Fleet', 'url' => url('/ui/v2/fleet?status=idle')],
+                'title'    => trans('ui.cp_idle_title', ['count' => count($longIdle)]),
+                'detail'   => trans('ui.cp_idle_detail', ['names' => implode(', ', array_slice(array_column($longIdle, 'name'), 0, 5)) . (count($longIdle) > 5 ? '…' : '')]),
+                'action'   => ['label' => trans('ui.cp_open_fleet'), 'url' => url('/ui/v2/fleet?status=idle')],
                 'count'    => count($longIdle),
             ];
         }
@@ -80,9 +80,9 @@ class CopilotController extends BaseController
                 'severity' => 'info',
                 'category' => 'data_quality',
                 'icon'     => 'gps',
-                'title'    => count($noFix) . ' vehículo(s) sin posición GPS válida',
-                'detail'   => 'Sin coordenadas reportadas. Verifica antena GPS en: ' . implode(', ', array_slice(array_column($noFix, 'name'), 0, 5)) . (count($noFix) > 5 ? '…' : ''),
-                'action'   => ['label' => 'Ver Live Ops', 'url' => url('/ui/v2/live')],
+                'title'    => trans('ui.cp_nofix_title', ['count' => count($noFix)]),
+                'detail'   => trans('ui.cp_nofix_detail', ['names' => implode(', ', array_slice(array_column($noFix, 'name'), 0, 5)) . (count($noFix) > 5 ? '…' : '')]),
+                'action'   => ['label' => trans('ui.cp_open_live_ops'), 'url' => url('/ui/v2/live')],
                 'count'    => count($noFix),
             ];
         }
@@ -119,9 +119,9 @@ class CopilotController extends BaseController
                     'severity' => 'critical',
                     'category' => 'safety',
                     'icon'     => 'sos',
-                    'title'    => $sosCount . ' alerta(s) SOS en 24h',
-                    'detail'   => 'Activaciones del botón de pánico. Revisa cada caso y contacta al conductor.',
-                    'action'   => ['label' => 'Ver alertas', 'url' => url('/ui/v2/alerts?type=sos')],
+                    'title'    => trans('ui.cp_sos_title', ['count' => $sosCount]),
+                    'detail'   => trans('ui.cp_sos_detail'),
+                    'action'   => ['label' => trans('ui.cp_open_alerts'), 'url' => url('/ui/v2/alerts?type=sos')],
                     'count'    => $sosCount,
                 ];
             }
@@ -130,9 +130,9 @@ class CopilotController extends BaseController
                     'severity' => 'warning',
                     'category' => 'safety',
                     'icon'     => 'speed',
-                    'title'    => $speedCount . ' exceso(s) de velocidad en 24h',
-                    'detail'   => 'Patrón recurrente. Considera capacitación o ajuste de límites por geocerca.',
-                    'action'   => ['label' => 'Ver alertas', 'url' => url('/ui/v2/alerts')],
+                    'title'    => trans('ui.cp_speed_title', ['count' => $speedCount]),
+                    'detail'   => trans('ui.cp_speed_detail'),
+                    'action'   => ['label' => trans('ui.cp_open_alerts'), 'url' => url('/ui/v2/alerts')],
                     'count'    => $speedCount,
                 ];
             }
@@ -152,9 +152,9 @@ class CopilotController extends BaseController
                         'severity' => 'warning',
                         'category' => 'pattern',
                         'icon'     => 'pattern',
-                        'title'    => 'Vehículo con eventos repetidos: ' . $name,
-                        'detail'   => $cnt . ' eventos en 24h en este vehículo. Investiga causa raíz.',
-                        'action'   => ['label' => 'Ver historial', 'url' => url('/ui/v2/history?device=' . $devId)],
+                        'title'    => trans('ui.cp_repeat_title', ['name' => $name]),
+                        'detail'   => trans('ui.cp_repeat_detail', ['count' => $cnt]),
+                        'action'   => ['label' => trans('ui.cp_open_history'), 'url' => url('/ui/v2/history?device=' . $devId)],
                         'count'    => (int) $cnt,
                     ];
                 }
@@ -167,9 +167,9 @@ class CopilotController extends BaseController
                 'severity' => 'info',
                 'category' => 'opportunity',
                 'icon'     => 'chart',
-                'title'    => 'Utilización de flota baja (' . $util . '%)',
-                'detail'   => 'Menos del 40% de tus vehículos están activos. Revisa asignaciones o disponibilidad.',
-                'action'   => ['label' => 'Ver dashboard', 'url' => url('/ui/v2/dashboard')],
+                'title'    => trans('ui.cp_util_title', ['percent' => $util]),
+                'detail'   => trans('ui.cp_util_detail'),
+                'action'   => ['label' => trans('ui.cp_open_dashboard'), 'url' => url('/ui/v2/dashboard')],
                 'count'    => 0,
             ];
         }
@@ -179,18 +179,18 @@ class CopilotController extends BaseController
                 'severity' => 'success',
                 'category' => 'all_clear',
                 'icon'     => 'check',
-                'title'    => '¡Todo en orden!',
-                'detail'   => 'No detecté anomalías significativas en las últimas 24 horas.',
+                'title'    => trans('ui.cp_all_clear_title'),
+                'detail'   => trans('ui.cp_all_clear_detail'),
                 'action'   => null,
                 'count'    => 0,
             ];
         }
 
         $suggestions = [
-            ['icon' => 'rocket', 'label' => 'Genera reporte de ayer',      'url' => url('/ui/v2/reports')],
-            ['icon' => 'map',    'label' => 'Revisa zonas activas',        'url' => url('/ui/v2/zones')],
-            ['icon' => 'eye',    'label' => 'Monitorea vehículos en vivo', 'url' => url('/ui/v2/live')],
-            ['icon' => 'bell',   'label' => 'Configura nuevas alertas',    'url' => url('/alerts/create')],
+            ['icon' => 'rocket', 'label' => trans('ui.cp_suggest_report'),      'url' => url('/ui/v2/reports')],
+            ['icon' => 'map',    'label' => trans('ui.cp_suggest_zones'),        'url' => url('/ui/v2/zones')],
+            ['icon' => 'eye',    'label' => trans('ui.cp_suggest_live'), 'url' => url('/ui/v2/live')],
+            ['icon' => 'bell',   'label' => trans('ui.cp_suggest_alerts'),    'url' => url('/alerts/create')],
         ];
 
         return response()->json([
@@ -220,16 +220,16 @@ class CopilotController extends BaseController
         $lower = mb_strtolower($q, 'UTF-8');
 
         $intents = [
-            ['match' => ['/(parad|deten|sin mov)/u'],          'reply' => 'Aquí tienes los vehículos detenidos.',           'action' => ['label' => 'Abrir Fleet (Detenidos)',     'url' => url('/ui/v2/fleet?status=stopped')]],
-            ['match' => ['/(en movim|circuland|activos?)/u'],  'reply' => 'Aquí tienes los vehículos en movimiento.',       'action' => ['label' => 'Abrir Fleet (En movimiento)', 'url' => url('/ui/v2/fleet?status=moving')]],
-            ['match' => ['/(ralent|idle)/u'],                  'reply' => 'Vehículos en ralentí.',                          'action' => ['label' => 'Abrir Fleet (Ralentí)',       'url' => url('/ui/v2/fleet?status=idle')]],
-            ['match' => ['/(offline|sin (señal|reportar|conexi))/u'], 'reply' => 'Vehículos sin señal recientes.',          'action' => ['label' => 'Abrir Fleet (Offline)',       'url' => url('/ui/v2/fleet?status=offline')]],
-            ['match' => ['/(velocid|exceso|veloc)/u'],         'reply' => 'Alertas de exceso de velocidad de las últimas 24h.', 'action' => ['label' => 'Abrir Alertas',           'url' => url('/ui/v2/alerts?type=overspeed')]],
-            ['match' => ['/(sos|panic|p[aá]nico)/u'],          'reply' => 'Alertas SOS activas.',                           'action' => ['label' => 'Abrir Alertas (SOS)',         'url' => url('/ui/v2/alerts?type=sos')]],
-            ['match' => ['/(reporte|informe)/u'],              'reply' => 'Te llevo al generador de reportes.',             'action' => ['label' => 'Abrir Reportes',              'url' => url('/ui/v2/reports')]],
-            ['match' => ['/(geocerca|zona)/u'],                'reply' => 'Tus zonas y geocercas.',                         'action' => ['label' => 'Abrir Zonas',                 'url' => url('/ui/v2/zones')]],
-            ['match' => ['/(historial|recorrido|replay|hoy|ayer)/u'], 'reply' => 'Te llevo al reproductor de recorridos.', 'action' => ['label' => 'Abrir History',               'url' => url('/ui/v2/history')]],
-            ['match' => ['/(dashboard|resumen|kpi)/u'],        'reply' => 'Aquí tienes el Command Center.',                 'action' => ['label' => 'Abrir Dashboard',             'url' => url('/ui/v2/dashboard')]],
+            ['match' => ['/(parad|deten|sin mov)/u'],          'reply' => trans('ui.cp_reply_stopped'),           'action' => ['label' => trans('ui.cp_action_fleet_stopped'),     'url' => url('/ui/v2/fleet?status=stopped')]],
+            ['match' => ['/(en movim|circuland|activos?)/u'],  'reply' => trans('ui.cp_reply_moving'),       'action' => ['label' => trans('ui.cp_action_fleet_moving'), 'url' => url('/ui/v2/fleet?status=moving')]],
+            ['match' => ['/(ralent|idle)/u'],                  'reply' => trans('ui.cp_reply_idle'),                          'action' => ['label' => trans('ui.cp_action_fleet_idle'),       'url' => url('/ui/v2/fleet?status=idle')]],
+            ['match' => ['/(offline|sin (señal|reportar|conexi))/u'], 'reply' => trans('ui.cp_reply_offline'),          'action' => ['label' => trans('ui.cp_action_fleet_offline'),       'url' => url('/ui/v2/fleet?status=offline')]],
+            ['match' => ['/(velocid|exceso|veloc)/u'],         'reply' => trans('ui.cp_reply_overspeed'), 'action' => ['label' => trans('ui.cp_action_alerts'),           'url' => url('/ui/v2/alerts?type=overspeed')]],
+            ['match' => ['/(sos|panic|p[aá]nico)/u'],          'reply' => trans('ui.cp_reply_sos'),                           'action' => ['label' => trans('ui.cp_action_alerts_sos'),         'url' => url('/ui/v2/alerts?type=sos')]],
+            ['match' => ['/(reporte|informe)/u'],              'reply' => trans('ui.cp_reply_reports'),             'action' => ['label' => trans('ui.cp_action_reports'),              'url' => url('/ui/v2/reports')]],
+            ['match' => ['/(geocerca|zona)/u'],                'reply' => trans('ui.cp_reply_zones'),                         'action' => ['label' => trans('ui.cp_action_zones'),                 'url' => url('/ui/v2/zones')]],
+            ['match' => ['/(historial|recorrido|replay|hoy|ayer)/u'], 'reply' => trans('ui.cp_reply_history'), 'action' => ['label' => trans('ui.cp_action_history'),               'url' => url('/ui/v2/history')]],
+            ['match' => ['/(dashboard|resumen|kpi)/u'],        'reply' => trans('ui.cp_reply_dashboard'),                 'action' => ['label' => trans('ui.cp_action_dashboard'),             'url' => url('/ui/v2/dashboard')]],
         ];
 
         foreach ($intents as $it) {
@@ -261,8 +261,8 @@ class CopilotController extends BaseController
                 $first = $hit->first();
                 return response()->json([
                     'ok'      => true,
-                    'reply'   => 'Encontré ' . $hit->count() . ' vehículo(s) que coinciden. Te llevo al primero: ' . $first->name . '.',
-                    'action'  => ['label' => 'Ver en Live Ops', 'url' => url('/ui/v2/live?device=' . $first->id)],
+                    'reply'   => trans('ui.cp_found', ['count' => $hit->count(), 'name' => $first->name]),
+                    'action'  => ['label' => trans('ui.cp_open_in_live_ops'), 'url' => url('/ui/v2/live?device=' . $first->id)],
                     'matches' => $hit->map(function ($d) {
                         return ['id' => $d->id, 'name' => $d->name, 'plate' => $d->plate_number];
                     })->all(),
@@ -274,8 +274,8 @@ class CopilotController extends BaseController
 
         return response()->json([
             'ok'     => true,
-            'reply'  => 'No entendí la pregunta exacta. Aquí tienes una búsqueda general.',
-            'action' => ['label' => 'Buscar en plataforma', 'url' => url('/ui/v2/live?q=' . urlencode($q))],
+            'reply'  => trans('ui.cp_not_understood'),
+            'action' => ['label' => trans('ui.cp_search_platform'), 'url' => url('/ui/v2/live?q=' . urlencode($q))],
             'query'  => $q,
         ]);
     }
