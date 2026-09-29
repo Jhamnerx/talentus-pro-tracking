@@ -1851,7 +1851,9 @@ select.tp-input:disabled {
   /* En movil ni siquiera caben los 56px: el rail sale del flujo y se
      superpone cuando se pide. El boton de hamburguesa ya alterna
      full/compact, asi que aqui "full" significa "mostrado". */
-  .tp-app {
+  /* [data-rail] iguala la especificidad de [data-rail="full"] .tp-app, que si
+     no gana y deja una columna vacia de 56px a la izquierda del mapa. */
+  [data-rail] .tp-app {
     --rail-w: 0px;
   }
   .tp-rail {
