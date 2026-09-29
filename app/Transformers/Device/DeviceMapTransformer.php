@@ -125,10 +125,6 @@ class DeviceMapTransformer extends DeviceTransformer
             'lng' => $entity->lng,
             'speed' => $entity->speed,
             'speed_text' => Formatter::speed()->human($entity->getSpeed()),
-            // Velocidad NUMERICA ya en la unidad del usuario. 'speed' va en la
-            // unidad de almacenamiento y el limite de la geocerca llega
-            // convertido: sin esto, el coloreado compararia km/h contra mph.
-            'speed_value' => round((float) Formatter::speed()->convert($entity->getSpeed()), 1),
             'course' => $entity->course,
             'altitude' => $entity->altitude,
             'time' => $entity->time,

@@ -811,7 +811,7 @@
     {{-- Galería de medios del vehículo (kebab) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-device-media.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-silent-devices.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=53"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=54"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=14"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>

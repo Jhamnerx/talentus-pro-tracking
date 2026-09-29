@@ -271,9 +271,12 @@
     var cfg = d.marker_colors;
     if (!cfg) return null;
 
-    // speed_value ya viene en la unidad del usuario, igual que el limite de
-    // la geocerca: comparar d.speed (unidad de almacenamiento) seria un error.
-    var v = parseFloat(d.speed_value);
+    // d.speed sale del accessor de Device, que es Formatter::speed()->format()
+    // sobre getSpeed(): ya viene en la unidad del usuario y ya aplica el
+    // sensor de velocidad ECM cuando el vehiculo lo tiene configurado. El
+    // limite de la geocerca llega en esa misma unidad, asi que se comparan
+    // entre si sin convertir nada.
+    var v = parseFloat(d.speed);
     if (isNaN(v)) return null;
 
     var def = markerDefaults();
