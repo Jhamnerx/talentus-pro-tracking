@@ -115,6 +115,8 @@
          Auto-enhancea todo select.tp-input / select.tp-select, incl. AJAX. --}}
     {{-- Tiempo real (avisos, chat, camaras). Va antes que todo lo demas para
          que cualquier script pueda suscribirse con tpSocket.on(). --}}
+    @include('ui.v2.partials.i18n')
+
     <script src="{{ asset('assets/ui/v2/js/lib/socket.io.js') }}" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-socket.js') }}?v=1" defer></script>
     <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=10" defer></script>
