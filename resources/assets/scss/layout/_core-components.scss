@@ -781,7 +781,9 @@ body.sign-in-layout {
 
   // el sidebar se comporta como drawer sobre el mapa
   .sidebar {
-    width: min(86vw, 340px);
+    // unquote(): node-sass intenta resolver min() el mismo y falla al mezclar
+    // vw con px. Asi llega tal cual al CSS y la resuelve el navegador.
+    width: unquote("min(86vw, 340px)");
 
     .sidebar-content {
       box-shadow: $ap-shadow-md;
