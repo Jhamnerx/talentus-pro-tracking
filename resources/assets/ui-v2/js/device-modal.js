@@ -222,7 +222,7 @@
         .fetchJSON(box.getAttribute("data-url"))
         .then(function (res) {
           if (!res.ok || !res.data || !res.data.ok) {
-            box.innerHTML = '<span class="tp-text-muted tp-text-sm">No se pudieron cargar los iconos.</span>';
+            box.innerHTML = '<span class="tp-text-muted tp-text-sm">' + tpT('ui.icons_load_failed') + '</span>';
             return;
           }
           var items = res.data.items || [];
@@ -237,7 +237,7 @@
                   );
                 })
                 .join("")
-            : '<span class="tp-text-muted tp-text-sm">Sin iconos en este grupo.</span>';
+            : '<span class="tp-text-muted tp-text-sm">' + tpT('ui.no_icons_in_group') + '</span>';
 
           // Los radios recién insertados siguen la regla del grupo visible
           var group = box.closest("[data-tp-icons-group]");
@@ -247,7 +247,7 @@
           });
         })
         .catch(function () {
-          box.innerHTML = '<span class="tp-text-muted tp-text-sm">No se pudieron cargar los iconos.</span>';
+          box.innerHTML = '<span class="tp-text-muted tp-text-sm">' + tpT('ui.icons_load_failed') + '</span>';
         });
     }
 
@@ -585,7 +585,7 @@
       var q = url + (url.indexOf("?") < 0 ? "?" : "&") + "s=" + encodeURIComponent(search) + "&page=" + page;
       tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
         if (!res.ok || !res.data) {
-          listEl.innerHTML = '<div class="tp-text-error" style="padding:10px 4px;font-size:13px;">No se pudo cargar la lista.</div>';
+          listEl.innerHTML = '<div class="tp-text-error" style="padding:10px 4px;font-size:13px;">' + tpT('ui.list_load_failed') + '</div>';
           return;
         }
         var rows = res.data.data || [];
@@ -595,7 +595,7 @@
         });
         listEl.innerHTML =
           rows.map(rowHtml).join("") ||
-          '<div class="tp-text-muted" style="padding:10px 4px;font-size:13px;">Sin resultados.</div>';
+          '<div class="tp-text-muted" style="padding:10px 4px;font-size:13px;">' + tpT('ui.no_results') + '</div>';
         renderPagination();
       });
     }
@@ -729,7 +729,7 @@
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-sensors-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
+          '<tr data-sensors-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -771,7 +771,7 @@
         var sid = del.getAttribute("data-sensor-del");
         tpModal
           .confirm({
-            title: "Eliminar sensor",
+            title: tpT('ui.delete_sensor'),
             message: tpT('ui.confirm_delete_sensor'),
             danger: true,
             confirmLabel: tpT('global.delete'),
@@ -785,7 +785,7 @@
                   tpModal.toast("Sensor eliminado.", "success");
                   reload();
                 } else {
-                  tpModal.toast((res.data && res.data.message) || "No se pudo eliminar.", "error");
+                  tpModal.toast((res.data && res.data.message) || tpT('ui.delete_failed'), "error");
                 }
               });
           });
@@ -824,7 +824,7 @@
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-services-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
+          '<tr data-services-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -864,7 +864,7 @@
         var sid = del.getAttribute("data-service-del");
         tpModal
           .confirm({
-            title: "Eliminar servicio",
+            title: tpT('ui.delete_service'),
             message: tpT('ui.confirm_delete_service'),
             danger: true,
             confirmLabel: tpT('global.delete'),
@@ -873,10 +873,10 @@
             if (!okGo) return;
             tpModal.fetchJSON(destroyUrl.replace("{id}", sid), { method: "DELETE" }).then(function (res) {
               if (res.ok && res.data && (res.data.ok || res.data.status)) {
-                tpModal.toast("Servicio eliminado.", "success");
+                tpModal.toast(tpT('ui.service_deleted'), "success");
                 reload();
               } else {
-                tpModal.toast("No se pudo eliminar.", "error");
+                tpModal.toast(tpT('ui.delete_failed'), "error");
               }
             });
           });
@@ -974,7 +974,7 @@
                 "<td>" + esc(m.motivo || "—") + "</td>" +
                 "<td>" + esc(m.notas || "—") + "</td>" +
                 '<td style="font-size:12px;">' + esc(m.user || "—") + "</td>" +
-                '<td title="' + (m.synced ? "Sincronizado" : "Pendiente de sincronizar") + '">' +
+                '<td title="' + (m.synced ? "Sincronizado" : tpT('ui.pending_sync')) + '">' +
                 (m.synced ? "✅" : "⏳") + "</td>" +
                 '<td style="text-align:center;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" ' +
                 'data-maint-del="' + m.id + '" style="color:#ef4444;">×</button></td>' +
@@ -984,7 +984,7 @@
             .join("");
         })
         .catch(function () {
-          empty("Error al cargar los datos.");
+          empty(tpT('ui.data_load_error'));
         });
     }
 
@@ -992,7 +992,7 @@
       var el = btn.currentTarget;
       var motivo = (root.querySelector("[data-maint-motivo]").value || "").trim();
       if (!motivo) {
-        tpModal.toast("El campo Motivo es obligatorio.", "warning");
+        tpModal.toast(tpT('ui.reason_required'), "warning");
         return;
       }
       el.disabled = true;
@@ -1020,13 +1020,13 @@
           var errs = (res.data && res.data.errors) || {};
           var first = Object.keys(errs)[0];
           tpModal.toast(
-            first ? [].concat(errs[first])[0] : (res.data && res.data.message) || "No se pudo guardar.",
+            first ? [].concat(errs[first])[0] : (res.data && res.data.message) || tpT('ui.save_failed'),
             "error",
           );
         })
         .catch(function () {
           el.disabled = false;
-          tpModal.toast("Error de red.", "error");
+          tpModal.toast(tpT('ui.network_error'), "error");
         });
     });
 
@@ -1034,7 +1034,7 @@
       var del = e.target.closest("[data-maint-del]");
       if (!del) return;
       tpModal
-        .confirm({ title: "Eliminar registro", message: tpT('ui.confirm_delete_history_record'), danger: true, confirmLabel: tpT('global.delete') })
+        .confirm({ title: tpT('ui.delete_record'), message: tpT('ui.confirm_delete_history_record'), danger: true, confirmLabel: tpT('global.delete') })
         .then(function (ok) {
           if (!ok) return;
           tpModal
@@ -1044,7 +1044,7 @@
                 tpModal.toast("Registro eliminado.", "success");
                 load();
               } else {
-                tpModal.toast("No se pudo eliminar.", "error");
+                tpModal.toast(tpT('ui.delete_failed'), "error");
               }
             });
         });
@@ -1074,7 +1074,7 @@
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-cameras-empty><td colspan="4" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
+          '<tr data-cameras-empty><td colspan="4" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -1114,7 +1114,7 @@
           "</label>" +
           '<label class="tp-form__field tp-form__field--checkbox">' +
           '<input type="checkbox" name="show_widget" value="1"' + (widget ? " checked" : "") + ">" +
-          '<span class="tp-form__label">Mostrar widget</span>' +
+          '<span class="tp-form__label">' + tpT('ui.show_widget') + '</span>' +
           "</label>" +
           "</div></form>",
         buttons: [
@@ -1140,7 +1140,7 @@
                     return;
                   }
                   if (!res.ok || !res.data || !res.data.ok) {
-                    tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+                    tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
                     return;
                   }
                   tpModal.toast(tpT('ui.camera_saved'), "success");
@@ -1177,7 +1177,7 @@
                 tpModal.toast(tpT('ui.camera_deleted'), "success");
                 reload();
               } else {
-                tpModal.toast("No se pudo eliminar.", "error");
+                tpModal.toast(tpT('ui.delete_failed'), "error");
               }
             });
           });
@@ -1226,7 +1226,7 @@
       });
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-expenses-empty><td colspan="6" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">Sin datos</td></tr>';
+          '<tr data-expenses-empty><td colspan="6" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -1265,7 +1265,7 @@
       var dateVal = item.date ? String(item.date).substring(0, 10) : "";
       var timeVal = item.date && String(item.date).length >= 16 ? String(item.date).substring(11, 16) : "";
       tpModal.open({
-        title: isEdit ? "Editar gasto" : "Nuevo gasto",
+        title: isEdit ? tpT('ui.edit_expense') : tpT('ui.new_expense'),
         static: true,
         body:
           '<form class="tp-form tp-expense-form">' +
@@ -1324,14 +1324,14 @@
                   tpModal.setBusy(dialog, false);
                   if (res.status === 422) {
                     tpModal.showFieldErrors(dialog, (res.data && res.data.errors) || {});
-                    tpModal.toast("Revisa los campos marcados.", "warning");
+                    tpModal.toast(tpT('ui.check_marked_fields'), "warning");
                     return;
                   }
                   if (!res.ok || !res.data || !res.data.ok) {
-                    tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+                    tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
                     return;
                   }
-                  tpModal.toast("Gasto guardado.", "success");
+                  tpModal.toast(tpT('ui.expense_saved'), "success");
                   tpModal.close(dialog);
                   reload();
                 });
@@ -1359,15 +1359,15 @@
       if (del) {
         var xid = del.getAttribute("data-expense-del");
         tpModal
-          .confirm({ title: "Eliminar gasto", message: tpT('ui.confirm_delete_expense'), danger: true, confirmLabel: tpT('global.delete') })
+          .confirm({ title: tpT('ui.delete_expense'), message: tpT('ui.confirm_delete_expense'), danger: true, confirmLabel: tpT('global.delete') })
           .then(function (okGo) {
             if (!okGo) return;
             tpModal.fetchJSON(cfg.destroy.replace("{id}", xid), { method: "DELETE" }).then(function (res) {
               if (res.ok && res.data && res.data.ok) {
-                tpModal.toast("Gasto eliminado.", "success");
+                tpModal.toast(tpT('ui.expense_deleted'), "success");
                 reload();
               } else {
-                tpModal.toast("No se pudo eliminar.", "error");
+                tpModal.toast(tpT('ui.delete_failed'), "error");
               }
             });
           });
@@ -1421,9 +1421,9 @@
       size: "sm",
       body:
         '<p class="tp-text-sm tp-text-muted" style="margin:0 0 12px;">' +
-        "Fichero CSV con las columnas <code>x</code> e <code>y</code> separadas por <code>;</code>." +
+        "" + tpT('ui.csv_with_columns') + " <code>x</code> e <code>y</code> " + tpT('ui.separated_by') + " <code>;</code>." +
         (cfg.calExample
-          ? ' <a href="' + cfg.calExample + '" target="_blank" rel="noopener">Ver ejemplo</a>.'
+          ? ' <a href="' + cfg.calExample + '" target="_blank" rel="noopener">' + tpT('ui.see_example') + '</a>.'
           : "") +
         "</p>" +
         '<label class="tp-form__field" style="margin-bottom:12px;">' +
@@ -1444,7 +1444,7 @@
             var fileEl = d.querySelector("[data-cal-file]");
             var append = d.querySelector("[data-cal-append]").checked;
             if (!fileEl.files || !fileEl.files[0]) {
-              tpModal.toast("Elige un fichero CSV.", "warning");
+              tpModal.toast(tpT('ui.pick_csv_file'), "warning");
               return false;
             }
 
@@ -1468,7 +1468,7 @@
                 }
                 if (!res.ok || !res.data || !res.data.ok) {
                   tpModal.toast(
-                    (res.data && res.data.message) || "No se pudo importar el fichero.",
+                    (res.data && res.data.message) || tpT('ui.file_import_failed'),
                     "error",
                   );
                   return;
@@ -1478,7 +1478,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(d, false);
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -1528,14 +1528,14 @@
         '<div class="tp-copy__modes">' +
         '<span class="tp-copy__title">' + tpT('ui.what_to_do_with_existing') + '</span>' +
         '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="keep" checked>' +
-        "<span>Conservarlo — solo se copia lo que falte</span></label>" +
+        "<span>" + tpT('ui.keep_it_copy_missing') + "</span></label>" +
         '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="replace">' +
-        "<span>Reemplazar los que coincidan en tipo y nombre</span></label>" +
+        "<span>" + tpT('ui.replace_matching_type_name') + "</span></label>" +
         '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="mirror">' +
         "<span>" + tpT('ui.make_identical_to_source') + "</span></label>" +
         '<p class="tp-text-xs tp-text-muted" style="margin:6px 0 0;">' +
-        "Dos sensores con el mismo nombre pero distinto tipo NO se consideran el mismo: " +
-        'con "Reemplazar" conviven los dos y el destino acaba con más sensores que el origen.</p>' +
+        tpT('ui.same_name_different_type_note') +
+        '' + tpT('ui.replace_keeps_both') + '</p>' +
         "</div>" +
         "</div>" +
         "</div>",
@@ -1556,7 +1556,7 @@
             });
 
             if (!sIds.length) {
-              tpModal.toast("Elige al menos un sensor.", "warning");
+              tpModal.toast(tpT('ui.pick_one_sensor'), "warning");
               return false;
             }
             if (!dIds.length) {
@@ -1577,16 +1577,16 @@
                 .then(function (res) {
                   tpModal.setBusy(d, false);
                   if (!res.ok || !res.data || !res.data.ok) {
-                    tpModal.toast((res.data && res.data.message) || "No se pudo copiar.", "error");
+                    tpModal.toast((res.data && res.data.message) || tpT('ui.copy_failed'), "error");
                     return;
                   }
 
                   var r = res.data;
                   var partes = [r.copied + " copiados"];
                   if (r.replaced) partes.push(r.replaced + " reemplazados");
-                  if (r.deleted) partes.push(r.deleted + " borrados del destino");
+                  if (r.deleted) partes.push(r.deleted + tpT('ui.deleted_from_target'));
                   if (r.skipped) partes.push(r.skipped + tpT('ui.already_existed'));
-                  if (r.denied) partes.push(r.denied + " sin permiso");
+                  if (r.denied) partes.push(r.denied + tpT('ui.no_permission_lower'));
 
                   tpModal.close(d);
                   tpModal.toast(partes.join(" · "), r.copied || r.replaced ? "success" : "warning");
@@ -1595,10 +1595,10 @@
                   // dos y el recuento no cuadra con el origen. Mejor decirlo.
                   if (r.collisions && r.collisions.length) {
                     tpModal.alert({
-                      title: "Nombres repetidos en el destino",
+                      title: tpT('ui.repeated_names_in_target'),
                       message:
                         tpT('ui.same_name_different_type') +
-                        "ahora hay dos de cada uno: " + r.collisions.join(", ") + ". " +
+                        tpT('ui.now_two_of_each') + r.collisions.join(", ") + ". " +
                         tpT('ui.repeat_copy_identical'),
                     });
                   }
@@ -1607,7 +1607,7 @@
                 })
                 .catch(function () {
                   tpModal.setBusy(d, false);
-                  tpModal.toast("Error de red.", "error");
+                  tpModal.toast(tpT('ui.network_error'), "error");
                 });
             }
 
@@ -1663,7 +1663,7 @@
           })
           .catch(function () {
             wrap.innerHTML =
-              '<p class="tp-text-sm tp-text-error" style="padding:8px;">No se pudo cargar la lista.</p>';
+              '<p class="tp-text-sm tp-text-error" style="padding:8px;">' + tpT('ui.list_load_failed') + '</p>';
           });
 
         if (search) {
@@ -1684,7 +1684,7 @@
     var isEdit = !!sensorId;
 
     var dlg = tpModal.open({
-      title: isEdit ? "Editar sensor" : "Nuevo sensor",
+      title: isEdit ? tpT('ui.edit_sensor') : tpT('ui.new_sensor'),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
@@ -1706,11 +1706,11 @@
                 tpModal.setBusy(dialog, false);
                 if (res.status === 422) {
                   tpModal.showFieldErrors(dialog, (res.data && res.data.errors) || {});
-                  tpModal.toast("Revisa los campos marcados.", "warning");
+                  tpModal.toast(tpT('ui.check_marked_fields'), "warning");
                   return;
                 }
                 if (!res.ok || !res.data || !res.data.ok) {
-                  tpModal.toast((res.data && res.data.message) || "No se pudo guardar el sensor.", "error");
+                  tpModal.toast((res.data && res.data.message) || tpT('ui.sensor_save_failed'), "error");
                   return;
                 }
                 tpModal.toast(isEdit ? "Sensor actualizado." : "Sensor creado.", "success");
@@ -1719,7 +1719,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(dialog, false);
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -1733,7 +1733,7 @@
       if (!bodyEl) return;
       if (!res.ok || !res.data || !res.data.ok) {
         bodyEl.innerHTML =
-          '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar el formulario.</div>';
+          '<div class="tp-text-center tp-text-error" style="padding:24px;">' + tpT('ui.form_load_failed') + '</div>';
         return;
       }
       bodyEl.innerHTML = res.data.html;
@@ -2020,9 +2020,9 @@
             if (out) out.value = res.data.formatted == null ? "—" : res.data.formatted;
           } else if (res.status === 422) {
             tpModal.showFieldErrors(dlg, (res.data && res.data.errors) || {});
-            tpModal.toast("Revisa los campos marcados.", "warning");
+            tpModal.toast(tpT('ui.check_marked_fields'), "warning");
           } else {
-            tpModal.toast((res.data && res.data.message) || "No se pudo previsualizar.", "error");
+            tpModal.toast((res.data && res.data.message) || tpT('ui.preview_failed'), "error");
           }
         });
       }
@@ -2089,11 +2089,11 @@
                 })
                 .join("") +
               "</div>"
-            : '<p class="tp-text-muted tp-text-sm" style="margin:0;">No hay iconos de sensor cargados. ' +
-              "El administrador puede subirlos en el panel de administración.</p>";
+            : '<p class="tp-text-muted tp-text-sm" style="margin:0;">' + tpT('ui.no_sensor_icons') + ' ' +
+              "" + tpT('ui.admin_can_upload_them') + "</p>";
 
           tpModal.open({
-            title: "Icono del valor mapeado",
+            title: tpT('ui.mapped_value_icon'),
             size: "sm",
             body: grid,
             buttons: [
@@ -2345,7 +2345,7 @@
     opts = opts || {};
     var isEdit = !!opts.id;
     if (isEdit && !CFG.canEdit) {
-      tpModal.toast && tpModal.toast("Sin permiso para editar.", "error");
+      tpModal.toast && tpModal.toast(tpT('ui.no_permission_edit'), "error");
       return;
     }
     if (!isEdit && !CFG.canCreate) {
@@ -2366,7 +2366,7 @@
     };
 
     var dlg = tpModal.open({
-      title: (opts.kind === "beacon" ? (isEdit ? "Editar beacon" : "Nuevo beacon") : (isEdit ? tpT('ui.edit_vehicle') : tpT('ui.new_vehicle'))),
+      title: (opts.kind === "beacon" ? (isEdit ? tpT('ui.edit_beacon') : tpT('ui.new_beacon')) : (isEdit ? tpT('ui.edit_vehicle') : tpT('ui.new_vehicle'))),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
@@ -2395,14 +2395,14 @@
                     dialog,
                     (res.data && res.data.errors) || {},
                   );
-                  tpModal.toast("Revisa los campos marcados.", "warning");
+                  tpModal.toast(tpT('ui.check_marked_fields'), "warning");
                   return;
                 }
                 if (!res.ok || !res.data || !res.data.ok) {
                   tpModal.toast(
                     (res.data && res.data.message) ||
                       (isEdit
-                        ? "No se pudo guardar."
+                        ? tpT('ui.save_failed')
                         : tpT('ui.vehicle_create_failed')),
                     "error",
                   );
@@ -2421,7 +2421,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(dialog, false);
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -2472,7 +2472,7 @@
         if (bodyEl) {
           bodyEl.innerHTML =
             '<div class="tp-text-center tp-text-error" style="padding:24px;">' +
-            "No se pudo cargar el formulario." +
+            tpT('ui.form_load_failed') +
             '<div class="tp-text-xs tp-text-muted" style="margin-top:6px;">' +
             ((e && e.message) ? String(e.message) : "") + "</div></div>";
         }

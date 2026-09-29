@@ -83,10 +83,10 @@
     ["2", tpT('front.yesterday')],
     ["3", tpT('ui.before_2_days')],
     ["4", tpT('ui.before_3_days')],
-    ["5", "Esta semana"],
-    ["6", "La semana pasada"],
-    ["7", "Este mes"],
-    ["8", "El mes pasado"],
+    ["5", tpT('ui.this_week')],
+    ["6", tpT('ui.last_week')],
+    ["7", tpT('ui.this_month')],
+    ["8", tpT('ui.last_month')],
   ];
 
   /**
@@ -194,7 +194,7 @@
       buildModal(dlg, out[0], out[1]);
     }).catch(function () {
       var b = dlg.querySelector(".tp-modal__body");
-      if (b) b.innerHTML = '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar.</div>';
+      if (b) b.innerHTML = '<div class="tp-text-center tp-text-error" style="padding:24px;">' + tpT('ui.load_failed') + '</div>';
     });
 
     return dlg;
@@ -286,12 +286,12 @@
       '<div class="tp-form__field" data-rep-field="devices"><span class="tp-form__label">Dispositivos</span><div data-rep-devices></div></div>' +
       "</div>" +
       ROW +
-      '<div class="tp-form__field"><span class="tp-form__label">Fecha desde</span>' +
+      '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.date_from') + '</span>' +
       fechaHora("from", range.from, range.fromTime) + "</div>" +
       '<div class="tp-form__field" data-rep-field="geofences"><span class="tp-form__label">Geocercas</span><div data-rep-geofences></div></div>' +
       "</div>" +
       ROW +
-      '<div class="tp-form__field"><span class="tp-form__label">Fecha hasta</span>' +
+      '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.date_to') + '</span>' +
       fechaHora("to", range.to, range.toTime) + "</div>" +
       // Filtro de días y franja horaria: no lo tiene el legacy, pero es lo
       // que permite "solo lunes a viernes de 08:00 a 18:00". Plegado.
@@ -335,8 +335,8 @@
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;min-height:36px;">' +
       '<label class="tp-choice" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="skip_blank_results" value="1"' + (item.skip_blank_results ? " checked" : "") + "><span>" + tpT('ui.skip_empty_results') + "</span></label>" +
-      '<label class="tp-choice" data-rep-field="zones_instead" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="zones_instead" value="1"' + (item.zones_instead ? " checked" : "") + "><span>Zonas en vez de direcciones</span></label>" +
-      '<label class="tp-choice" data-rep-field="show_addresses" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="show_addresses" value="1"' + (item.show_addresses ? " checked" : "") + "><span>Mostrar direcciones</span></label>" +
+      '<label class="tp-choice" data-rep-field="zones_instead" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="zones_instead" value="1"' + (item.zones_instead ? " checked" : "") + "><span>" + tpT('ui.zones_instead_of_addresses') + "</span></label>" +
+      '<label class="tp-choice" data-rep-field="show_addresses" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="show_addresses" value="1"' + (item.show_addresses ? " checked" : "") + "><span>" + tpT('ui.show_addresses') + "</span></label>" +
       "</div></div>" +
       "</div>" +
       HR +
@@ -447,7 +447,7 @@
       items: meta.devices || [],
       groups: groupTitles,
       selected: item.device_ids || [],
-      placeholder: "Seleccionar dispositivos…",
+      placeholder: tpT('ui.select_devices_ellipsis'),
       host: dlg,
     });
     form._geofences = chipsSelect({
@@ -456,7 +456,7 @@
         return { id: g.id, name: g.name };
       }),
       selected: item.geofence_ids || [],
-      placeholder: "Seleccionar geocercas…",
+      placeholder: tpT('ui.select_geofences_ellipsis'),
       host: dlg,
     });
     form._metas = chipsSelect({
@@ -465,7 +465,7 @@
         return { id: m.value, name: m.label };
       }),
       selected: item.metas || [],
-      placeholder: "Seleccionar metas…",
+      placeholder: tpT('ui.select_goals_ellipsis'),
       host: dlg,
     });
 
@@ -691,7 +691,7 @@
     });
 
     bloque.style.opacity = on ? "" : "0.55";
-    bloque.title = on ? "" : "No aplica a este tipo de reporte";
+    bloque.title = on ? "" : tpT('ui.not_for_this_report');
   }
 
   function applyType(form, meta, typeId, item) {
@@ -922,11 +922,11 @@
           var errors = (res.data && res.data.errors) || {};
           tpModal.showFieldErrors(dialog, errors);
           var first = Object.keys(errors)[0];
-          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.", "warning");
+          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+          tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
         tpModal.toast("Reporte guardado.", "success");
@@ -935,7 +935,7 @@
       })
       .catch(function () {
         tpModal.setBusy(dialog, false);
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -986,7 +986,7 @@
       "&page=" + state.saved.page + "&per_page=" + state.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        savedRows.innerHTML = '<tr><td colspan="7" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+        savedRows.innerHTML = '<tr><td colspan="7" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
         return;
       }
       state.saved.last = res.data.last || 1;
@@ -1014,7 +1014,7 @@
               '<td class="tp-svc-table__actions">' + kebab(acts) + "</td></tr>"
             );
           }).join("")
-        : '<tr><td colspan="7" class="tp-svc-table__empty">Sin datos</td></tr>';
+        : '<tr><td colspan="7" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       updatePager("saved");
     });
   }
@@ -1024,7 +1024,7 @@
       "&page=" + state.logs.page + "&per_page=" + state.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        logsRows.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+        logsRows.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
         return;
       }
       state.logs.last = res.data.last || 1;
@@ -1050,7 +1050,7 @@
               '<td class="tp-svc-table__actions">' + kebab(acts) + "</td></tr>"
             );
           }).join("")
-        : '<tr><td colspan="6" class="tp-svc-table__empty">Sin datos</td></tr>';
+        : '<tr><td colspan="6" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       updatePager("logs");
     });
   }
@@ -1135,14 +1135,14 @@
     var del = e.target.closest("[data-rep-del]");
     if (del) {
       var rid = del.getAttribute("data-rep-del");
-      tpModal.confirm({ title: "Eliminar reporte", message: tpT('ui.confirm_delete_report_def'), danger: true, confirmLabel: tpT('global.delete') })
+      tpModal.confirm({ title: tpT('ui.delete_report'), message: tpT('ui.confirm_delete_report_def'), danger: true, confirmLabel: tpT('global.delete') })
         .then(function (okGo) {
           if (!okGo) return;
           tpModal.fetchJSON(URLS.destroy.replace("{id}", rid), { method: "DELETE" }).then(function (res) {
             if (res.ok && res.data && res.data.ok) {
               tpModal.toast("Eliminado.", "success");
               loadSaved();
-            } else tpModal.toast("No se pudo eliminar.", "error");
+            } else tpModal.toast(tpT('ui.delete_failed'), "error");
           });
         });
       return;
@@ -1161,14 +1161,14 @@
     var del = e.target.closest("[data-log-del]");
     if (del) {
       var lid = del.getAttribute("data-log-del");
-      tpModal.confirm({ title: "Eliminar log", message: tpT('ui.confirm_delete_sent_report'), danger: true, confirmLabel: tpT('global.delete') })
+      tpModal.confirm({ title: tpT('ui.delete_log'), message: tpT('ui.confirm_delete_sent_report'), danger: true, confirmLabel: tpT('global.delete') })
         .then(function (okGo) {
           if (!okGo) return;
           tpModal.fetchJSON(URLS.logDestroy.replace("{id}", lid), { method: "DELETE" }).then(function (res) {
             if (res.ok && res.data && res.data.ok) {
               tpModal.toast("Eliminado.", "success");
               loadLogs();
-            } else tpModal.toast("No se pudo eliminar.", "error");
+            } else tpModal.toast(tpT('ui.delete_failed'), "error");
           });
         });
       return;
@@ -1197,7 +1197,7 @@
 
   /* ── Init ── */
   loadMeta().then(function (meta) {
-    var html = '<option value="">Todos los tipos</option>';
+    var html = '<option value="">' + tpT('ui.all_types') + '</option>';
     (meta.templates || []).forEach(function (t) {
       html += '<option value="' + t.id + '">' + esc(t.title) + "</option>";
     });

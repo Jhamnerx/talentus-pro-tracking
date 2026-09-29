@@ -91,9 +91,9 @@
 
   /* ----- estado del device (mismas claves que Live) ----- */
   var STATUS_LABELS = {
-    online: "En movimiento",
-    excessive_speed: "Exceso de velocidad",
-    engine: "Motor encendido",
+    online: tpT('front.move'),
+    excessive_speed: tpT('front.overspeed'),
+    engine: tpT('ui.engine_on'),
     ack: tpT('front.stopped'),
     stop: tpT('front.stopped'),
     idle: tpT('front.idle'),
@@ -281,7 +281,7 @@
     }
 
     if (pista) {
-      pista.textContent = "Elige hasta " + state.size +
+      pista.textContent = tpT('ui.pick_up_to') + state.size +
         tpT('ui.monitor_grid_note');
     }
   }
@@ -327,14 +327,14 @@
     state.slots.forEach(function (id, idx) {
       if (id && idx !== slot && idx < state.size) used[id] = 1;
     });
-    var groupsMap = { 0: "Sin grupo" };
+    var groupsMap = { 0: tpT('front.ungrouped') };
     (state.groups || []).forEach(function (g) {
       groupsMap[g.id] = g.title;
     });
 
     var dlg = tpModal.open({
       title: tpT('ui.select_vehicle'),
-      sub: "Celda " + (slot + 1) + " · agrupados por grupo de objetos",
+      sub: "Celda " + (slot + 1) + tpT('ui.grouped_by_object_group'),
       size: "md",
       body:
         '<input type="search" class="tp-input" data-mp-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off" style="margin-bottom:10px;">' +
@@ -364,7 +364,7 @@
         var gid = d.group_id || 0;
         if (gid !== lastG) {
           lastG = gid;
-          html += '<div class="tp-mon__pickgroup">' + esc(groupsMap[gid] || "Sin grupo") + "</div>";
+          html += '<div class="tp-mon__pickgroup">' + esc(groupsMap[gid] || tpT('front.ungrouped')) + "</div>";
         }
         var isUsed = !!used[d.id];
         html +=
@@ -372,13 +372,13 @@
           '<span class="tp-mon__pickdot" style="background:' + statusTone(d) + '"></span>' +
           '<img class="tp-mon__pickicon" src="' + esc(thumbSrc(d)) + '" alt="">' +
           '<span class="tp-mon__pickname">' + esc(d.name || "#" + d.id) + "</span>" +
-          '<span class="tp-mon__pickstate">' + (isUsed ? "En uso" : esc(STATUS_LABELS[d.online] || d.online || "")) + "</span>" +
+          '<span class="tp-mon__pickstate">' + (isUsed ? tpT('ui.in_use') : esc(STATUS_LABELS[d.online] || d.online || "")) + "</span>" +
           "</button>";
         shown++;
       });
       listEl.innerHTML = shown
         ? html
-        : '<div class="tp-text-muted tp-text-sm" style="padding:14px;">Sin resultados.</div>';
+        : '<div class="tp-text-muted tp-text-sm" style="padding:14px;">' + tpT('ui.no_results') + '</div>';
     }
     render();
 

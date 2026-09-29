@@ -115,7 +115,7 @@
     var list = getRecents();
     if (!list.length) {
       recentsGroup.innerHTML =
-        '<div class="tp-cmdk__group-title">Recientes</div><div class="tp-cmdk__empty">Sin elementos recientes.</div>';
+        '<div class="tp-cmdk__group-title">Recientes</div><div class="tp-cmdk__empty">' + tpT('ui.no_recent_items') + '</div>';
       return;
     }
     var html = '<div class="tp-cmdk__group-title">Recientes</div>';
@@ -173,7 +173,7 @@
       .catch(function (err) {
         if (err && err.name === "AbortError") return;
         renderResults(q, { results: [], total: 0 });
-        status.textContent = "Error al buscar";
+        status.textContent = tpT('ui.search_error');
       });
   }
 
@@ -184,7 +184,7 @@
     resultsTitle.textContent = "Resultados (" + total + ")";
     if (!results.length) {
       resultsList.innerHTML =
-        '<div class="tp-cmdk__empty">Sin resultados para "' +
+        '<div class="tp-cmdk__empty">' + tpT('ui.no_results_for') + '' +
         escapeHtml(q) +
         '"</div>';
     } else {

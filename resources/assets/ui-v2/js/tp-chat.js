@@ -148,7 +148,7 @@
     inputEl.value = "";
     post(URLS.send.replace("{id}", state.chatId), { message: text }).then(function (res) {
       if (res && res.ok) { pollMessages(); loadConversations(); }
-      else { inputEl.value = text; if (window.tpModal) tpModal.toast("No se pudo enviar.", "error"); }
+      else { inputEl.value = text; if (window.tpModal) tpModal.toast(tpT('ui.send_failed'), "error"); }
     }).catch(function () { inputEl.value = text; });
   });
 

@@ -365,11 +365,11 @@
       '<div class="tp-scope tp-form"><div class="tp-form__grid">' +
       '<div class="tp-form__field"><span class="tp-form__label">' + tpT('front.event') + '</span>' +
       '<input class="tp-input" value="' + esc((evTitle(ev)) + " · " + (ev.device_name || "")) + '" readonly></div>' +
-      '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Tipo de respuesta</span>' +
+      '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('ui.response_type') + '</span>' +
       '<select class="tp-input" data-ca-resp>' +
       RESP_TYPES.map(function (t) { return '<option value="' + esc(t.type) + '">' + esc(t.title) + "</option>"; }).join("") +
       "</select></div>" +
-      '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Fecha de llamada</span>' +
+      '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('ui.call_date') + '</span>' +
       '<div style="display:flex;gap:8px;align-items:center;">' +
       '<input type="date" class="tp-input" data-ca-date value="' + np.date + '" style="flex:1;min-width:0;">' +
       '<select class="tp-input" data-ca-h style="width:74px;">' + hourOptions(np.h) + "</select>" +
@@ -404,8 +404,8 @@
       called_at: dateV ? dateV + " " + hV + ":" + mV : "",
       remarks: d.querySelector("[data-ca-notes]").value.trim(),
     };
-    if (!dateV) return showErr("La fecha de llamada es obligatoria.");
-    if (!payload.remarks) return showErr("Las notas son obligatorias.");
+    if (!dateV) return showErr(tpT('ui.call_date_required'));
+    if (!payload.remarks) return showErr(tpT('ui.notes_required'));
     tpModal.setBusy(d, true);
     tpModal
       .fetchJSON(CA_STORE_URL, { method: "POST", json: payload })
@@ -414,9 +414,9 @@
         if (res.status === 422) {
           var errors = (res.data && res.data.errors) || {};
           var first = Object.keys(errors)[0];
-          return showErr(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.");
+          return showErr(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'));
         }
-        if (!res.ok || !res.data || !res.data.ok) return showErr("No se pudo registrar.");
+        if (!res.ok || !res.data || !res.data.ok) return showErr(tpT('ui.register_failed'));
         // Update optimista: marca el evento como atendido y re-pinta su fila,
         // así el badge "Atendido" aparece al instante (sin recargar).
         ev.attended = true;
@@ -428,7 +428,7 @@
         tpModal.close(d);
         tpModal.toast("Evento atendido.", "success");
       })
-      .catch(function () { tpModal.setBusy(d, false); showErr("Error de red."); });
+      .catch(function () { tpModal.setBusy(d, false); showErr(tpT('ui.network_error')); });
   }
   function selectEvent(id) {
     var ev = state.byId[id];
@@ -485,7 +485,7 @@
     if (!CAN_REMOVE) return;
     tpModal
       .confirm({
-        title: id ? "Eliminar evento" : "Borrar todos los eventos",
+        title: id ? tpT('ui.delete_event') : tpT('ui.delete_all_events'),
         message: id
           ? tpT('ui.confirm_delete_event_hard')
           : tpT('ui.confirm_delete_all_events'),
@@ -498,7 +498,7 @@
           .fetchJSON(DESTROY_URL + "/" + (id || "all"), { method: "DELETE" })
           .then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              tpModal.toast("No se pudo eliminar.", "error");
+              tpModal.toast(tpT('ui.delete_failed'), "error");
               return;
             }
             tpModal.toast(id ? "Evento eliminado." : "Eventos eliminados.", "success");
@@ -507,7 +507,7 @@
             }
             load(true);
           })
-          .catch(function () { tpModal.toast("Error de red.", "error"); });
+          .catch(function () { tpModal.toast(tpT('ui.network_error'), "error"); });
       });
   }
 
@@ -546,7 +546,7 @@
         state.offset = res && res.offset != null ? res.offset : state.offset + rows.length;
         state.hasMore = !!(res && res.has_more);
         if (reset && !state.events.length) {
-          listEl.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:12px;">Sin eventos en el rango seleccionado.</div>';
+          listEl.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:12px;">' + tpT('ui.no_events_in_range') + '</div>';
         } else {
           appendRows(rows);
         }
@@ -556,7 +556,7 @@
       })
       .catch(function () {
         state.loading = false;
-        if (statusEl) statusEl.textContent = "Error al cargar";
+        if (statusEl) statusEl.textContent = tpT('ui.load_error');
       });
   }
 
@@ -565,7 +565,7 @@
     if (!typeSel || !EVENT_TYPES.length) return;
     var cur = typeSel.value;
     typeSel.innerHTML =
-      '<option value="">Todos los tipos</option>' +
+      '<option value="">' + tpT('ui.all_types') + '</option>' +
       EVENT_TYPES.map(function (t) {
         return '<option value="' + esc(t.type) + '"' + (t.type === cur ? " selected" : "") + ">" + esc(t.title) + "</option>";
       }).join("");
@@ -624,7 +624,7 @@
         }
         if (statusEl) statusEl.textContent = state.events.length + " eventos" + (state.hasMore ? " (+)" : "");
         if (state.riskOn) loadRisk();
-        if (window.tpModal && window.tpModal.toast) window.tpModal.toast(fresh.length + " evento(s) nuevo(s)", crit ? "warning" : "info");
+        if (window.tpModal && window.tpModal.toast) window.tpModal.toast(fresh.length + tpT('ui.new_events_count'), crit ? "warning" : "info");
       })
       .catch(function () {});
   }
@@ -632,7 +632,7 @@
   /* ── #6 Exportar CSV (eventos cargados) ── */
   function csvCell(v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function exportCsv() {
-    if (!state.events.length) { if (window.tpModal) tpModal.toast("No hay eventos para exportar.", "warning"); return; }
+    if (!state.events.length) { if (window.tpModal) tpModal.toast(tpT('ui.no_events_to_export'), "warning"); return; }
     var head = [tpT('front.event'), tpT('ui.vehicle'), tpT('front.date'), "Latitud", "Longitud", "Atendido"];
     var lines = [head.join(",")];
     state.events.forEach(function (ev) {
@@ -677,7 +677,7 @@
         if (state.riskOn) g.addTo(state.map);
         if (legendNote) legendNote.textContent = pts.length + " eventos" + (res && res.capped ? tpT('ui.max_open') + res.cap + ")" : "");
       })
-      .catch(function () { if (legendNote) legendNote.textContent = "Error al cargar"; });
+      .catch(function () { if (legendNote) legendNote.textContent = tpT('ui.load_error'); });
   }
   function toggleRisk() {
     state.riskOn = !state.riskOn;

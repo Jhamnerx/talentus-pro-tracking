@@ -47,7 +47,7 @@
     };
 
     tpModal.open({
-      title: isEdit ? "Editar plantilla" : "Nueva plantilla",
+      title: isEdit ? tpT('ui.edit_template') : tpT('ui.new_template'),
       size: "md",
       body:
         '<div class="tp-form">' +
@@ -74,7 +74,7 @@
           onClick: function (d) {
             var name = (d.querySelector("[data-tpl-name]").value || "").trim();
             if (!name) {
-              tpModal.toast("El nombre es obligatorio.", "warning");
+              tpModal.toast(tpT('ui.name_required'), "warning");
               return false;
             }
 
@@ -103,7 +103,7 @@
                   tpModal.toast("Plantilla guardada.", "success");
                   tpModal.close(d);
                   if (typeof afterSave === "function") afterSave();
-                } else fail(res, "No se pudo guardar.");
+                } else fail(res, tpT('ui.save_failed'));
               });
             return false;
           },
@@ -139,7 +139,7 @@
         function load() {
           tpModal.fetchJSON(BASE + "/checklist-templates").then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              host.innerHTML = '<div class="tp-text-muted tp-text-sm">No disponible.</div>';
+              host.innerHTML = '<div class="tp-text-muted tp-text-sm">' + tpT('ui.not_available') + '</div>';
               return;
             }
             types = res.data.types || [];
@@ -149,14 +149,14 @@
             host.innerHTML =
               (res.data.can_edit
                 ? '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
-                  '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-tpl-new>＋ Nueva plantilla</button></div>'
+                  '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-tpl-new>' + tpT('ui.new_template_plus') + '</button></div>'
                 : "") +
               (items.length
                 ? items
                     .map(function (t) {
                       return (
                         '<div class="tp-acc-row"><span><b>' + esc(t.name) + "</b><br>" +
-                        '<span class="tp-text-xs tp-text-muted">' + esc(t.type_label) + " · " + t.rows.length + " actividad(es)</span></span>" +
+                        '<span class="tp-text-xs tp-text-muted">' + esc(t.type_label) + " · " + t.rows.length + " " + tpT('ui.activities_count') + "</span></span>" +
                         (res.data.can_edit
                           ? '<span class="tp-row" style="gap:6px;">' +
                             '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-edit="' + t.id + '">' + tpT('global.edit') + '</button>' +
@@ -184,7 +184,7 @@
           var rm = e.target.closest("[data-tpl-rm]");
           if (rm) {
             tpModal
-              .confirm({ title: "Eliminar plantilla", message: tpT('ui.confirm_delete_template_activities'), danger: true, confirmLabel: tpT('global.delete') })
+              .confirm({ title: tpT('ui.delete_template'), message: tpT('ui.confirm_delete_template_activities'), danger: true, confirmLabel: tpT('global.delete') })
               .then(function (ok) {
                 if (!ok) return;
                 tpModal
@@ -193,7 +193,7 @@
                     if (res.ok && res.data && res.data.ok) {
                       tpModal.toast("Plantilla eliminada.", "success");
                       load();
-                    } else fail(res, "No se pudo eliminar.");
+                    } else fail(res, tpT('ui.delete_failed'));
                   });
               });
           }
@@ -219,7 +219,7 @@
         function load() {
           tpModal.fetchJSON(BASE + "/services/" + serviceId + "/checklists").then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              host.innerHTML = '<div class="tp-text-muted tp-text-sm">No disponible.</div>';
+              host.innerHTML = '<div class="tp-text-muted tp-text-sm">' + tpT('ui.not_available') + '</div>';
               return;
             }
             var d = res.data;
@@ -300,7 +300,7 @@
               .then(function (res) {
                 if (res.ok && res.data && res.data.ok) load();
                 else {
-                  fail(res, "No se pudo actualizar.");
+                  fail(res, tpT('ui.update_failed'));
                   chk.checked = !chk.checked;
                 }
               });
@@ -314,7 +314,7 @@
                 json: { outcome: out.value },
               })
               .then(function (res) {
-                if (!res.ok || !res.data || !res.data.ok) fail(res, "No se pudo guardar el resultado.");
+                if (!res.ok || !res.data || !res.data.ok) fail(res, tpT('ui.result_save_failed'));
               });
           }
 
@@ -328,7 +328,7 @@
                 if (res.ok && res.data && res.data.ok) {
                   tpModal.toast("Foto subida.", "success");
                   load();
-                } else fail(res, "No se pudo subir la foto.");
+                } else fail(res, tpT('ui.photo_upload_failed'));
               });
           }
         });
@@ -340,19 +340,19 @@
               .fetchJSON(BASE + "/services/" + serviceId + "/checklists", { method: "POST", json: { template_id: sel.value } })
               .then(function (res) {
                 if (res.ok && res.data && res.data.ok) load();
-                else fail(res, "No se pudo crear.");
+                else fail(res, tpT('ui.create_failed'));
               });
           }
 
           var rm = e.target.closest("[data-chk-rm]");
           if (rm) {
             return tpModal
-              .confirm({ title: "Eliminar lista", message: tpT('ui.confirm_delete_checklist'), danger: true, confirmLabel: tpT('global.delete') })
+              .confirm({ title: tpT('ui.delete_list'), message: tpT('ui.confirm_delete_checklist'), danger: true, confirmLabel: tpT('global.delete') })
               .then(function (ok) {
                 if (!ok) return;
                 tpModal.fetchJSON(BASE + "/checklists/" + rm.getAttribute("data-chk-rm"), { method: "DELETE" }).then(function (res) {
                   if (res.ok && res.data && res.data.ok) load();
-                  else fail(res, "No se pudo eliminar.");
+                  else fail(res, tpT('ui.delete_failed'));
                 });
               });
           }
@@ -366,9 +366,9 @@
               body:
                 '<div class="tp-form"><label class="tp-form__field"><span class="tp-form__label">Notas</span>' +
                 '<textarea class="tp-input" rows="3" data-sign-notes></textarea></label>' +
-                '<label class="tp-form__field"><span class="tp-form__label">Firma (nombre de quien revisa)</span>' +
+                '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.signature_reviewer') + '</span>' +
                 '<input type="text" class="tp-input" data-sign-value></label>' +
-                '<small class="tp-form__hint">No se puede firmar si quedan actividades sin completar.</small></div>',
+                '<small class="tp-form__hint">' + tpT('ui.cannot_sign_incomplete') + '</small></div>',
               buttons: [
                 { label: tpT('global.cancel'), variant: "ghost", close: true },
                 {
@@ -389,7 +389,7 @@
                           tpModal.toast("Lista firmada.", "success");
                           tpModal.close(d);
                           load();
-                        } else fail(res, "No se pudo firmar.");
+                        } else fail(res, tpT('ui.sign_failed'));
                       });
                     return false;
                   },

@@ -196,7 +196,7 @@
   /* ---------- Editar metadatos (name/color/group) ---------- */
   function openEdit(r) {
     var groupOpts =
-      '<option value="0">' + esc(T("ungrouped", "Sin grupo")) + "</option>" +
+      '<option value="0">' + esc(T("ungrouped", tpT('front.ungrouped'))) + "</option>" +
       state.groups
         .map(function (g) {
           return '<option value="' + g.id + '"' + (String(r.group_id || 0) === String(g.id) ? " selected" : "") + ">" + esc(g.title) + "</option>";
@@ -225,7 +225,7 @@
             var f = dlg.querySelector("[data-rt-form]");
             var name = (f.querySelector('[name="name"]').value || "").trim();
             if (!name) {
-              tpModal.toast(T("name_required", "El nombre es obligatorio."), "warning");
+              tpModal.toast(T("name_required", tpT('ui.name_required')), "warning");
               return false;
             }
             var payload = {
@@ -241,7 +241,7 @@
                 tpModal.toast(T("route_updated", "Ruta actualizada."), "success");
                 tpModal.close(dlg);
                 load();
-              } else tpModal.toast((res.data && res.data.message) || T("could_not_save", "No se pudo guardar."), "error");
+              } else tpModal.toast((res.data && res.data.message) || T("could_not_save", tpT('ui.save_failed')), "error");
             });
             return false;
           },
@@ -376,7 +376,7 @@
           onClick: function (dlg, btn) {
             var input = dlg.querySelector("[data-imp-file]");
             if (!input.files || !input.files.length) {
-              tpModal.toast(T("select_file", "Selecciona un archivo."), "warning");
+              tpModal.toast(T("select_file", tpT('ui.pick_a_file_dot')), "warning");
               return false;
             }
             var fd = new FormData();
@@ -400,14 +400,14 @@
                   tpModal.toast(
                     (errs && errs.file && (Array.isArray(errs.file) ? errs.file[0] : errs.file)) ||
                       (res.data && res.data.message) ||
-                      T("import_failed", "No se pudo importar."),
+                      T("import_failed", tpT('ui.import_failed')),
                     "error",
                   );
                 }
               })
               .catch(function () {
                 btn.disabled = false;
-                tpModal.toast(T("network_error", "Error de red."), "error");
+                tpModal.toast(T("network_error", tpT('ui.network_error')), "error");
               });
             return false;
           },

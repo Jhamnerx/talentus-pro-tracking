@@ -131,7 +131,7 @@
   }
 
   function openForm(item) {
-    var rutaOpts = '<option value="">Selecciona…</option>' + state.routes.map(function (r) {
+    var rutaOpts = '<option value="">' + tpT('ui.select_ellipsis') + '</option>' + state.routes.map(function (r) {
       return '<option value="' + r.id + '"' + (item && item.route_id === r.id ? " selected" : "") + ">" + esc(r.name) + "</option>";
     }).join("");
 
@@ -145,14 +145,14 @@
 
     var body =
       '<div class="tp-scope" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-      field("Nombre *", '<input type="text" class="tp-input" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
+      field(tpT('ui.name_required_field'), '<input type="text" class="tp-input" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
       field("Ruta *", '<select class="tp-input" data-x-route style="width:100%;">' + rutaOpts + "</select>") +
       field(tpT('ui.days_required'), '<div class="tp-rsch__days">' + diasHtml + "</div>", true) +
-      field("Salida de ida *", '<input type="time" class="tp-input" data-x-start value="' + (item ? esc(item.start_time) : "07:00") + '" style="width:100%;">') +
-      field("Salida de vuelta", '<input type="time" class="tp-input" data-x-return value="' + (item && item.return_start_time ? esc(item.return_start_time) : "") + '" style="width:100%;">' +
+      field(tpT('ui.outbound_departure_required'), '<input type="time" class="tp-input" data-x-start value="' + (item ? esc(item.start_time) : "07:00") + '" style="width:100%;">') +
+      field(tpT('ui.return_departure'), '<input type="time" class="tp-input" data-x-return value="' + (item && item.return_start_time ? esc(item.return_start_time) : "") + '" style="width:100%;">' +
         '<span class="tp-field__hint">' + tpT('ui.empty_means_one_way') + '</span>') +
-      field("Tolerancia de adelanto (min) *", '<input type="number" min="0" class="tp-input" data-x-early value="' + (item ? item.tolerance_early : 5) + '" style="width:100%;">') +
-      field("Tolerancia de retraso (min) *", '<input type="number" min="0" class="tp-input" data-x-late value="' + (item ? item.tolerance_late : 10) + '" style="width:100%;">') +
+      field(tpT('ui.tolerance_early_required'), '<input type="number" min="0" class="tp-input" data-x-early value="' + (item ? item.tolerance_early : 5) + '" style="width:100%;">') +
+      field(tpT('ui.tolerance_late_required'), '<input type="number" min="0" class="tp-input" data-x-late value="' + (item ? item.tolerance_late : 10) + '" style="width:100%;">') +
       field(tpT('ui.vehicles'), '<div data-x-devices></div>', true) +
       field("", '<label class="tp-rsch__check"><input type="checkbox" data-x-active' + (!item || item.active ? " checked" : "") + "> Activa</label>", true) +
       '<div data-x-err style="grid-column:1/-1;display:none;color:#ef4444;font-size:13px;"></div></div>';
@@ -205,12 +205,12 @@
       active: d.querySelector("[data-x-active]").checked ? 1 : 0,
     };
 
-    if (!payload.name) return showErr("El nombre es obligatorio.");
-    if (!payload.route_id) return showErr("Selecciona una ruta.");
+    if (!payload.name) return showErr(tpT('ui.name_required'));
+    if (!payload.route_id) return showErr(tpT('ui.pick_a_route'));
     if (!dias.length) return showErr(tpT('ui.pick_at_least_one_day'));
-    if (!payload.start_time) return showErr("Falta la hora de salida de ida.");
+    if (!payload.start_time) return showErr(tpT('ui.outbound_time_missing'));
     if (payload.return_start_time && payload.return_start_time <= payload.start_time) {
-      return showErr("La salida de vuelta tiene que ser posterior a la de ida.");
+      return showErr(tpT('ui.return_after_outbound'));
     }
 
     tpModal.setBusy(d, true);
@@ -220,12 +220,12 @@
     tpModal.fetchJSON(url, { method: item ? "PUT" : "POST", json: payload })
       .then(function (res) {
         tpModal.setBusy(d, false);
-        if (res.status === 422) return showErr("Revisa los campos obligatorios.");
-        if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || "No se pudo guardar.");
+        if (res.status === 422) return showErr(tpT('ui.check_required_fields'));
+        if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || tpT('ui.save_failed'));
         tpModal.close(d);
         load();
       })
-      .catch(function () { tpModal.setBusy(d, false); showErr("Error de red."); });
+      .catch(function () { tpModal.setBusy(d, false); showErr(tpT('ui.network_error')); });
   }
 
   function del(id) {
@@ -238,7 +238,7 @@
       if (!ok) return;
       tpModal.fetchJSON(URLS.item.replace("{id}", id), { method: "DELETE" }).then(function (res) {
         if (res.ok && res.data && res.data.ok) load();
-        else tpModal.toast("No se pudo eliminar.", "error");
+        else tpModal.toast(tpT('ui.delete_failed'), "error");
       });
     });
   }
@@ -271,7 +271,7 @@
     // reordenar o borrar sin que el JS tenga que repasar las filas.
     return '<div class="tp-rsch__cp" data-cp-row>' +
       '<span class="tp-rsch__cpnum" aria-hidden="true"></span>' +
-      '<select class="tp-input" data-cp-geofence aria-label="Geocerca del punto">' + opts + "</select>" +
+      '<select class="tp-input" data-cp-geofence aria-label="' + tpT('ui.point_geofence') + '">' + opts + "</select>" +
       '<input type="number" min="0" class="tp-input" data-cp-offset placeholder="0" aria-label="Minutos desde la salida" value="' +
         (punto ? punto.planned_offset : "") + '">' +
       '<input type="number" min="0" class="tp-input" data-cp-early placeholder="—" aria-label="Tolerancia de adelanto, en minutos" value="' +
@@ -291,14 +291,14 @@
   function openCheckpoints(routeId) {
     tpModal.fetchJSON(URLS.checkpoints.replace("{id}", routeId), { method: "GET" }).then(function (res) {
       var d = (res && res.data) || {};
-      if (!d.ok) return tpModal.toast("No se pudieron cargar los puntos.", "error");
+      if (!d.ok) return tpModal.toast(tpT('ui.points_load_failed'), "error");
 
       var geofences = d.geofences || [];
 
       var body = '<div class="tp-scope tp-rsch__cps">' +
-        '<p class="tp-text-muted">Cada punto de control es una geocerca y el vehículo tiene que pasar por ellos en el orden de la lista. ' +
-        '<strong>Min.</strong> son los minutos desde la salida; <strong>Antes</strong> y <strong>' + tpT('ui.after') + '</strong> son la tolerancia en minutos ' +
-        '(en blanco, se usa la de la programación).</p>' +
+        '<p class="tp-text-muted">' + tpT('ui.checkpoints_help') + ' ' +
+        '<strong>Min.</strong> ' + tpT('ui.are_minutes_from_departure') + ' <strong>Antes</strong> y <strong>' + tpT('ui.after') + '</strong> ' + tpT('ui.are_tolerance_minutes') + ' ' +
+        '' + tpT('ui.blank_uses_schedule') + '</p>' +
         SENTIDOS.map(function (s) {
           var filas = (d.checkpoints[s.key] || []).map(function (p) { return cpRow(geofences, p); }).join("");
           return '<section data-cp-dir="' + s.key + '">' +
@@ -312,7 +312,7 @@
         '<div data-x-err style="display:none;color:#ef4444;font-size:13px;"></div></div>';
 
       var dlg = tpModal.open({
-        title: "Puntos de control — " + (d.route ? d.route.name : ""),
+        title: tpT('ui.checkpoints_dash') + (d.route ? d.route.name : ""),
         size: "lg",
         body: body,
         buttons: [
@@ -386,11 +386,11 @@
     tpModal.fetchJSON(URLS.checkpoints.replace("{id}", routeId), { method: "PUT", json: payload })
       .then(function (res) {
         tpModal.setBusy(el, false);
-        if (!res.ok || !res.data || !res.data.ok) return showErr("No se pudo guardar.");
+        if (!res.ok || !res.data || !res.data.ok) return showErr(tpT('ui.save_failed'));
         tpModal.close(el);
-        tpModal.toast("Puntos de control guardados.", "success");
+        tpModal.toast(tpT('ui.checkpoints_saved'), "success");
       })
-      .catch(function () { tpModal.setBusy(el, false); showErr("Error de red."); });
+      .catch(function () { tpModal.setBusy(el, false); showErr(tpT('ui.network_error')); });
   }
 
   /* ---------- Cumplimiento ---------- */
@@ -428,7 +428,7 @@
         " · " + esc(v.date) + " " + esc(v.start) +
       "</summary>" +
       '<table class="tp-svc-table"><thead><tr>' +
-        "<th>#</th><th>Punto de control</th><th>Previsto</th><th>Real</th>" +
+        "<th>#</th><th>" + tpT('ui.checkpoint') + "</th><th>Previsto</th><th>Real</th>" +
         '<th style="text-align:right;">' + tpT('ui.detour_min') + '</th><th>' + tpT('front.status') + '</th>' +
       "</tr></thead><tbody>" + puntos + "</tbody></table></details>";
   }
@@ -439,7 +439,7 @@
     var caja = $("tp-rsch-adherence");
 
     if (!desde || !hasta) {
-      caja.innerHTML = '<p class="tp-svc-table__empty">Elige el rango de fechas.</p>';
+      caja.innerHTML = '<p class="tp-svc-table__empty">' + tpT('ui.pick_date_range') + '</p>';
       return;
     }
 
@@ -456,13 +456,13 @@
       var d = (res && res.data) || {};
 
       if (!d.ok) {
-        caja.innerHTML = '<p class="tp-svc-table__empty">No se pudo calcular.</p>';
+        caja.innerHTML = '<p class="tp-svc-table__empty">' + tpT('ui.calculation_failed') + '</p>';
         return;
       }
 
       caja.innerHTML = (d.items || []).length
         ? d.items.map(vueltaHtml).join("")
-        : '<p class="tp-svc-table__empty">Sin vueltas en el rango.</p>';
+        : '<p class="tp-svc-table__empty">' + tpT('ui.no_laps_in_range') + '</p>';
     });
   }
 

@@ -41,7 +41,7 @@
       '<div class="tp-form">' +
       '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.vehicle') + '</span>' +
       '<select class="tp-input" data-dc-device>' + opts(devs, deviceId) + "</select></label>" +
-      '<label class="tp-form__field"><span class="tp-form__label">Marca del GPS</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.gps_brand') + '</span>' +
       '<select class="tp-input" data-dc-config>' + opts(cfgs, null) + "</select></label>" +
       '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.apn_config') + '</span>' +
       '<select class="tp-input" data-dc-apn>' + opts(apns, null) + "</select></label>" +
@@ -91,20 +91,20 @@
               .then(function (res) {
                 tpModal.setBusy(d, false);
                 if (res.ok && res.data && res.data.ok) {
-                  tpModal.toast("Comandos enviados al equipo.", "success");
+                  tpModal.toast(tpT('ui.commands_sent_to_unit'), "success");
                   tpModal.close(d);
                   return;
                 }
                 var errs = (res.data && res.data.errors) || {};
                 var first = Object.keys(errs)[0];
                 tpModal.toast(
-                  first ? [].concat(errs[first])[0] : (res.data && res.data.message) || "No se pudo enviar.",
+                  first ? [].concat(errs[first])[0] : (res.data && res.data.message) || tpT('ui.send_failed'),
                   "error",
                 );
               })
               .catch(function () {
                 tpModal.setBusy(d, false);
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -133,7 +133,7 @@
 
         tpModal.fetchJSON(BASE + "/meta").then(function (res) {
           if (!res.ok || !res.data || !res.data.ok) {
-            body.innerHTML = '<div class="tp-text-muted tp-text-sm">No tienes permiso para configurar equipos.</div>';
+            body.innerHTML = '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_permission_configure_units') + '</div>';
             return;
           }
           META = res.data;

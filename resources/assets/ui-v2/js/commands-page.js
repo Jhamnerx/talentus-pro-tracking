@@ -490,11 +490,11 @@
       // Uso en el widget de bloqueo de motor (solo GPRS). El equipo elige la
       // plantilla adaptada a su TIPO de dispositivo.
       (type === "gprs"
-        ? '<div class="tp-field"><label class="tp-label">Uso en bloqueo de motor</label>' +
+        ? '<div class="tp-field"><label class="tp-label">' + tpT('ui.use_in_engine_lock') + '</label>' +
           '<select name="lock_action" class="tp-input" data-no-ts="1">' +
           '<option value="">' + tpT('ui.none_m') + '</option>' +
-          '<option value="block"' + (item && item.lock_action === "block" ? " selected" : "") + ">Cortar (bloquear)</option>" +
-          '<option value="unblock"' + (item && item.lock_action === "unblock" ? " selected" : "") + ">Restablecer (desbloquear)</option>" +
+          '<option value="block"' + (item && item.lock_action === "block" ? " selected" : "") + ">" + tpT('ui.cut_block') + "</option>" +
+          '<option value="unblock"' + (item && item.lock_action === "unblock" ? " selected" : "") + ">" + tpT('ui.restore_unblock') + "</option>" +
           "</select></div>"
         : "") +
       '<div class="rounded-lg bg-sky-50 text-sky-800 dark:bg-sky-900/30 dark:text-sky-200 px-3 py-2.5 text-[12.5px] leading-relaxed">' +

@@ -52,7 +52,7 @@
       items.forEach(function (e) { state.byId[e.id] = e; });
       $("tp-exp-rows").innerHTML = items.length
         ? items.map(rowHtml).join("")
-        : '<tr><td colspan="8" class="tp-svc-table__empty">Sin gastos.</td></tr>';
+        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('ui.no_expenses') + '</td></tr>';
       $("tp-exp-range").textContent = tpT('ui.page_short') + (d.page || 1) + " / " + (d.pages || 1);
       $("tp-exp-total").textContent = (d.total || 0) + " gastos";
     });
@@ -80,7 +80,7 @@
   }
 
   function openForm(item) {
-    var devOpts = '<option value="">Selecciona…</option>' + state.devices.map(function (d) {
+    var devOpts = '<option value="">' + tpT('ui.select_ellipsis') + '</option>' + state.devices.map(function (d) {
       return '<option value="' + d.id + '"' + (item && item.device_id === d.id ? " selected" : "") + ">" + esc(d.name) + "</option>";
     }).join("");
     var typeOpts = '<option value="">—</option>' + state.types.map(function (t) {
@@ -93,8 +93,8 @@
     var body =
       '<div class="tp-scope" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
       field(tpT('ui.vehicle_required'), '<select class="tp-input" data-x-device style="width:100%;">' + devOpts + "</select>") +
-      field("Nombre *", '<input type="text" class="tp-input" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
-      field("Fecha *", '<input type="date" class="tp-input" data-x-date value="' + dPart + '" style="width:100%;">') +
+      field(tpT('ui.name_required_field'), '<input type="text" class="tp-input" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
+      field(tpT('ui.date_required_field'), '<input type="date" class="tp-input" data-x-date value="' + dPart + '" style="width:100%;">') +
       field(tpT('front.hour'), '<input type="time" class="tp-input" data-x-time value="' + tPart + '" style="width:100%;">') +
       field(tpT('front.type'), '<select class="tp-input" data-x-type style="width:100%;">' + typeOpts + "</select>") +
       field("Cantidad *", '<input type="number" step="any" class="tp-input" data-x-qty value="' + (item ? esc(item.quantity) : "") + '" style="width:100%;">') +
@@ -105,7 +105,7 @@
       '<div data-x-err style="grid-column:1/-1;display:none;color:#ef4444;font-size:13px;"></div></div>';
 
     tpModal.open({
-      title: item ? "Editar gasto" : "Nuevo gasto",
+      title: item ? tpT('ui.edit_expense') : tpT('ui.new_expense'),
       size: "md",
       body: body,
       buttons: [
@@ -135,9 +135,9 @@
       additional: v("[data-x-notes]"),
     };
     if (!payload.device_id) return showErr(tpT('ui.select_a_vehicle_dot'));
-    if (!payload.name) return showErr("El nombre es obligatorio.");
-    if (!payload.date) return showErr("La fecha es obligatoria.");
-    if (payload.quantity === "" || payload.unit_cost === "") return showErr("Cantidad y costo unitario son obligatorios.");
+    if (!payload.name) return showErr(tpT('ui.name_required'));
+    if (!payload.date) return showErr(tpT('ui.date_is_required'));
+    if (payload.quantity === "" || payload.unit_cost === "") return showErr(tpT('ui.qty_and_unit_cost_required'));
 
     tpModal.setBusy(d, true);
     var url = item ? URLS.item.replace("{id}", item.id) : URLS.store;
@@ -145,25 +145,25 @@
       .fetchJSON(url, { method: item ? "PUT" : "POST", json: payload })
       .then(function (res) {
         tpModal.setBusy(d, false);
-        if (res.status === 422) return showErr("Revisa los campos obligatorios.");
-        if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || "No se pudo guardar.");
+        if (res.status === 422) return showErr(tpT('ui.check_required_fields'));
+        if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || tpT('ui.save_failed'));
         tpModal.close(d);
         load();
       })
       .catch(function () {
         tpModal.setBusy(d, false);
-        showErr("Error de red.");
+        showErr(tpT('ui.network_error'));
       });
   }
 
   function del(id) {
     tpModal
-      .confirm({ title: "Eliminar gasto", message: tpT('ui.confirm_delete_expense'), confirmLabel: tpT('global.delete'), danger: true })
+      .confirm({ title: tpT('ui.delete_expense'), message: tpT('ui.confirm_delete_expense'), confirmLabel: tpT('global.delete'), danger: true })
       .then(function (ok) {
         if (!ok) return;
         tpModal.fetchJSON(URLS.item.replace("{id}", id), { method: "DELETE" }).then(function (res) {
           if (res.ok && res.data && res.data.ok) load();
-          else tpModal.toast("No se pudo eliminar.", "error");
+          else tpModal.toast(tpT('ui.delete_failed'), "error");
         });
       });
   }

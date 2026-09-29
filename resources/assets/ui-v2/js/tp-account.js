@@ -49,21 +49,21 @@
     return (
       '<form class="tp-form tp-acc-form" data-acc-tab="locale">' +
       '<div class="tp-form__grid tp-form__grid--2">' +
-      field("Unidad de distancia", sel("unit_of_distance", LS.units_of_distance, L.unit_of_distance)) +
-      field("Unidad de capacidad", sel("unit_of_capacity", LS.units_of_capacity, L.unit_of_capacity)) +
-      field("Unidad de altitud", sel("unit_of_altitude", LS.units_of_altitude, L.unit_of_altitude)) +
+      field(tpT('ui.distance_unit'), sel("unit_of_distance", LS.units_of_distance, L.unit_of_distance)) +
+      field(tpT('ui.capacity_unit'), sel("unit_of_capacity", LS.units_of_capacity, L.unit_of_capacity)) +
+      field(tpT('ui.altitude_unit'), sel("unit_of_altitude", LS.units_of_altitude, L.unit_of_altitude)) +
       field(tpT('ui.duration_format'), sel("duration_format", LS.duration_formats, L.duration_format)) +
-      field("Formato de fecha", sel("date_format", LS.date_formats, L.date_format)) +
-      field("Formato de hora", sel("time_format", LS.time_formats, L.time_format)) +
-      field("Inicio de semana", sel("week_start_day", LS.week_start_days, L.week_start_day)) +
-      field("Zona horaria", sel("timezone_id", LS.timezones, L.timezone_id)) +
+      field(tpT('ui.date_format'), sel("date_format", LS.date_formats, L.date_format)) +
+      field(tpT('ui.time_format'), sel("time_format", LS.time_formats, L.time_format)) +
+      field(tpT('ui.week_start'), sel("week_start_day", LS.week_start_days, L.week_start_day)) +
+      field(tpT('ui.timezone'), sel("timezone_id", LS.timezones, L.timezone_id)) +
       '<div class="tp-col-2" style="border-top:1px solid var(--border-default,#e9eef5);margin-top:4px;padding-top:10px;">' +
-      field("Horario de verano", sel("dst_type", LS.dst_types, D.type), false, false) +
+      field(tpT('ui.daylight_saving'), sel("dst_type", LS.dst_types, D.type), false, false) +
       '<div data-acc-dst="automatic" style="display:none;margin-top:8px;">' +
       field(tpT('front.country'), sel("dst_country_id", LS.dst_countries, D.country_id), false, false) + "</div>" +
       '<div data-acc-dst="exact" style="display:none;margin-top:8px;"><div class="tp-form__grid tp-form__grid--2">' +
-      field("Desde (mm-dd hh:ii)", '<input type="text" name="date_from" value="' + esc(D.date_from) + '" data-tp-field>') +
-      field("Hasta (mm-dd hh:ii)", '<input type="text" name="date_to" value="' + esc(D.date_to) + '" data-tp-field>') +
+      field(tpT('ui.from_mmddhhii'), '<input type="text" name="date_from" value="' + esc(D.date_from) + '" data-tp-field>') +
+      field(tpT('ui.to_mmddhhii'), '<input type="text" name="date_to" value="' + esc(D.date_to) + '" data-tp-field>') +
       "</div></div>" +
       '<div data-acc-dst="other" style="display:none;margin-top:8px;">' +
       '<div style="display:grid;grid-template-columns:2fr 1fr 2fr 1fr;gap:8px;margin-bottom:8px;">' +
@@ -91,19 +91,19 @@
       '<div data-acc-sms="get post" data-acc-sms-authblock>' + field("Usuario", '<input type="text" name="username" value="' + esc(S.username) + '"' + dis + " data-tp-field>") + "</div>" +
       '<div data-acc-sms="get post" data-acc-sms-authblock>' + field(tpT('attr.password'), '<input type="password" name="password" autocomplete="new-password"' + dis + " data-tp-field>") + "</div>" +
       '<div class="tp-col-2" data-acc-sms="get post">' + field("Cabeceras", '<textarea name="custom_headers" rows="2"' + dis + " data-tp-field>" + esc(S.custom_headers) + "</textarea>", false, false) +
-      '<small class="tp-form__hint">Lista separada por punto y coma (p. ej. Accept: text/plain; Accept-Language: en-US;)</small></div>' +
-      '<div class="tp-col-2" data-acc-sms="get post">' + field("URL del gateway", '<textarea name="sms_gateway_url" rows="2"' + dis + " data-tp-field>" + esc(S.url) + "</textarea>", false, false) + "</div>" +
+      '<small class="tp-form__hint">' + tpT('ui.semicolon_list_help') + '</small></div>' +
+      '<div class="tp-col-2" data-acc-sms="get post">' + field(tpT('ui.gateway_url'), '<textarea name="sms_gateway_url" rows="2"' + dis + " data-tp-field>" + esc(S.url) + "</textarea>", false, false) + "</div>" +
       '<div data-acc-sms="plivo">' + field("Auth ID", '<input type="text" name="auth_id" value="' + esc(S.auth_id) + '"' + dis + " data-tp-field>") + "</div>" +
       '<div data-acc-sms="plivo">' + field("Auth Token", '<input type="text" name="auth_token" value="' + esc(S.auth_token) + '"' + dis + " data-tp-field>") + "</div>" +
       '<div data-acc-sms="plivo">' + field(tpT('ui.sender_phone'), '<input type="text" name="senders_phone" value="' + esc(S.senders_phone) + '"' + dis + " data-tp-field>") + "</div>" +
       "</div>" +
       '<div class="tp-col-2" style="margin-top:10px;padding:10px 12px;background:var(--brand-bg-subtle,#eef3fb);border-radius:8px;font-size:12px;color:var(--fg-secondary,#475569);">' +
       "Variables: %NUMBER%, %MESSAGE%. Ejemplo: http://SMS_GATEWAY/sendsms.php?username=USER&password=PASS&number=%NUMBER%&message=%MESSAGE%" +
-      '<div data-acc-sms="app" style="margin-top:6px;">SMS en cola: <b>' + S.queue_count + "</b></div></div>" +
+      '<div data-acc-sms="app" style="margin-top:6px;">' + tpT('ui.sms_in_queue') + ' <b>' + S.queue_count + "</b></div></div>" +
       // Acciones del gateway (paridad legacy: "Enviar SMS de prueba" y "Vaciar cola")
       (META.caps.edit_sms
         ? '<div class="tp-row" style="gap:8px;margin-top:12px;flex-wrap:wrap;">' +
-          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-test>Enviar SMS de prueba</button>' +
+          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-test>' + tpT('ui.send_test_sms') + '</button>' +
           '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-clear>Vaciar cola</button></div>'
         : "") +
       "</form>"
@@ -116,7 +116,7 @@
     var W = META.widgets;
     return (
       '<form class="tp-form tp-acc-form" data-acc-tab="widgets">' +
-      '<label class="tp-acc-check" style="margin-bottom:10px;"><input type="checkbox" class="tp-choice-input" name="widgets_default" value="1"' + (W.default ? " checked" : "") + " data-acc-wdefault> Widgets por defecto</label>" +
+      '<label class="tp-acc-check" style="margin-bottom:10px;"><input type="checkbox" class="tp-choice-input" name="widgets_default" value="1"' + (W.default ? " checked" : "") + " data-acc-wdefault> " + tpT('ui.default_widgets') + "</label>" +
       '<div data-acc-wbody' + (W.default ? ' style="opacity:.5;pointer-events:none;"' : "") + ">" +
       '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="widgets_status" value="1"' + (W.status ? " checked" : "") + "> Habilitar widgets</label>" +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
@@ -136,7 +136,7 @@
     return (
       '<form class="tp-form tp-acc-form" data-acc-tab="dashboard">' +
       '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="dashboard_enabled" value="1"' + (D.enabled ? " checked" : "") + "> Habilitar tablero</label>" +
-      '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-muted,#94a3b8);margin-bottom:8px;">Widgets del tablero</div>' +
+      '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-muted,#94a3b8);margin-bottom:8px;">' + tpT('ui.dashboard_widgets') + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       D.blocks
         .map(function (b) {
@@ -167,14 +167,14 @@
       field(tpT('ui.name'), '<input type="text" name="client[first_name]" value="' + esc(C.first_name) + '"' + dis + " data-tp-field>") +
       field("Apellido", '<input type="text" name="client[last_name]" value="' + esc(C.last_name) + '"' + dis + " data-tp-field>") +
       field(tpT('ui.personal_code'), '<input type="text" name="client[personal_code]" value="' + esc(C.personal_code) + '"' + dis + " data-tp-field>") +
-      field("Fecha de nacimiento", '<input type="date" name="client[birth_date]" value="' + esc(C.birth_date) + '"' + dis + ">") +
+      field(tpT('ui.birth_date'), '<input type="date" name="client[birth_date]" value="' + esc(C.birth_date) + '"' + dis + ">") +
       field(tpT('front.address'), '<input type="text" name="client[address]" value="' + esc(C.address) + '"' + dis + " data-tp-field>", false, true) +
       "</div>" +
       '<div class="tp-acc-legend" style="margin-top:12px;">Empresa</div>' +
       '<div class="tp-form__grid tp-form__grid--2">' +
       field(tpT('ui.name'), '<input type="text" name="company[name]" value="' + esc(K.name) + '"' + dis + " data-tp-field>", false, true) +
       field(tpT('ui.registration_code'), '<input type="text" name="company[registration_code]" value="' + esc(K.registration_code) + '"' + dis + " data-tp-field>") +
-      field("N° de IVA / RUC", '<input type="text" name="company[vat_number]" value="' + esc(K.vat_number) + '"' + dis + " data-tp-field>") +
+      field(tpT('ui.vat_number'), '<input type="text" name="company[vat_number]" value="' + esc(K.vat_number) + '"' + dis + " data-tp-field>") +
       field(tpT('front.address'), '<input type="text" name="company[address]" value="' + esc(K.address) + '"' + dis + " data-tp-field>", false, true) +
       "</div></form>"
     );
@@ -186,7 +186,7 @@
     var M = META.map;
     return (
       '<form class="tp-form tp-acc-form" data-acc-tab="map">' +
-      '<label class="tp-acc-toggle"><span><b>Mostrar velocidad en el marcador</b><small>' + tpT('ui.show_speed_help') + '</small></span>' +
+      '<label class="tp-acc-toggle"><span><b>' + tpT('ui.show_speed_on_marker') + '</b><small>' + tpT('ui.show_speed_help') + '</small></span>' +
       '<input type="checkbox" class="tp-choice-input" name="show_speed" value="1"' + (M.show_speed ? " checked" : "") + "></label>" +
       '<label class="tp-acc-toggle"><span><b>' + tpT('ui.color_label_by_status') + '</b><small>' + tpT('ui.color_label_by_status_help') + '</small></span>' +
       '<input type="checkbox" class="tp-choice-input" name="status_color" value="1"' + (M.status_color ? " checked" : "") + "></label>" +
@@ -201,7 +201,7 @@
     return (
       '<div class="tp-acc-crud" data-acc-crud="' + key + '">' +
       '<div class="tp-acc-crud__head">' +
-      '<input type="search" class="tp-input" data-acc-crud-search placeholder="Buscar…" style="max-width:240px;">' +
+      '<input type="search" class="tp-input" data-acc-crud-search placeholder="' + tpT('ui.search_ellipsis') + '" style="max-width:240px;">' +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-acc-crud-add>+ ' + esc(addLabel) + "</button>" +
       "</div>" +
       '<div class="tp-acc-crud__wrap"><table class="tp-svc-table"><thead><tr>' +
@@ -224,7 +224,7 @@
       var url = cfg.listUrl + (cfg.listUrl.indexOf("?") >= 0 ? "&" : "?") + "s=" + encodeURIComponent(q) + "&per_page=100";
       tpModal.fetchJSON(url, { method: "GET" }).then(function (res) {
         if (!res.ok || !res.data || !res.data.ok) {
-          rowsEl.innerHTML = '<tr><td colspan="' + colspan + '" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+          rowsEl.innerHTML = '<tr><td colspan="' + colspan + '" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
           return;
         }
         var items = res.data.items || [];
@@ -242,7 +242,7 @@
                 ).replace("<tr>", '<tr data-acc-item="' + esc(JSON.stringify(r)) + '">');
               })
               .join("")
-          : '<tr><td colspan="' + colspan + '" class="tp-svc-table__empty">Sin datos</td></tr>';
+          : '<tr><td colspan="' + colspan + '" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       });
     }
 
@@ -271,7 +271,7 @@
               if (res.ok && res.data && res.data.ok) {
                 tpModal.toast("Eliminado.", "success");
                 load();
-              } else tpModal.toast("No se pudo eliminar.", "error");
+              } else tpModal.toast(tpT('ui.delete_failed'), "error");
             });
           });
       }
@@ -313,11 +313,11 @@
         if (res.status === 422) {
           var errors = (res.data && res.data.errors) || {};
           var first = Object.keys(errors)[0];
-          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.", "warning");
+          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+          tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
         tpModal.toast("Guardado.", "success");
@@ -326,7 +326,7 @@
       })
       .catch(function () {
         tpModal.setBusy(dlg, false);
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -380,7 +380,7 @@
       itemUrl: function (id) { return API + "/device-groups/" + id; },
       cols: [tpT('ui.title'), tpT('ui.vehicles')],
       row: function (r) { return "<td>" + esc(r.title) + "</td><td>" + (r.count || 0) + "</td>"; },
-      delTitle: "Eliminar grupo",
+      delTitle: tpT('ui.delete_group'),
       delMsg: tpT('ui.confirm_delete_group'),
       form: function (row, onSaved) {
         var isEdit = !!(row && row.id);
@@ -410,7 +410,7 @@
             "</div>";
 
           crudDialog(
-            isEdit ? "Editar grupo" : "Nuevo grupo",
+            isEdit ? tpT('ui.edit_group') : tpT('ui.new_group'),
             body,
             function (d) {
               var title = d.querySelector('[name="g_title"]').value.trim();
@@ -451,12 +451,12 @@
       row: function (r) {
         return "<td>" + esc(r.name) + "</td><td>" + esc(r.rfid || "–") + "</td><td>" + esc(r.phone || "–") + "</td><td>" + esc(r.email || "–") + "</td>";
       },
-      delTitle: "Eliminar conductor",
+      delTitle: tpT('ui.delete_driver'),
       delMsg: tpT('ui.confirm_delete_driver'),
       form: function (row, onSaved) {
         var isEdit = !!(row && row.id);
         crudDialog(
-          isEdit ? "Editar conductor" : "Nuevo conductor",
+          isEdit ? tpT('ui.edit_driver') : tpT('ui.new_driver'),
           '<div class="tp-form"><div class="tp-form__grid tp-form__grid--2">' +
             field(tpT('ui.name'), '<input type="text" name="d_name" value="' + esc(row ? row.name : "") + '" data-tp-field>', true, true) +
             field("RFID", '<input type="text" name="d_rfid" value="' + esc(row ? row.rfid : "") + '" data-tp-field>') +
@@ -466,7 +466,7 @@
             "</div></div>",
           function (d) {
             var name = d.querySelector('[name="d_name"]').value.trim();
-            if (!name) { tpModal.toast("El nombre es obligatorio.", "warning"); return; }
+            if (!name) { tpModal.toast(tpT('ui.name_required'), "warning"); return; }
             var payload = {
               name: name,
               rfid: d.querySelector('[name="d_rfid"]').value.trim(),
@@ -523,13 +523,13 @@
           '<div class="tp-form">' +
             field(tpT('ui.name'), '<input type="text" name="vt_name" value="' + esc(row ? row.name : "") + '" data-tp-field>', true) +
             '<div class="tp-form__field"><span class="tp-form__label">' + tpT('front.vehicle_states') + '</span>' +
-            '<small class="tp-form__hint" style="display:block;margin:-2px 0 6px;">Nombre · label corto (badge) · color</small>' +
+            '<small class="tp-form__hint" style="display:block;margin:-2px 0 6px;">' + tpT('ui.name_badge_color') + '</small>' +
             '<div data-states-wrap>' + stateRows + "</div>" +
             '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-add-state style="margin-top:6px;">' + tpT('ui.add_state_plus') + '</button>' +
             "</div></div>",
           function (d) {
             var name = d.querySelector('[name="vt_name"]').value.trim();
-            if (!name) { tpModal.toast("El nombre es obligatorio.", "warning"); return; }
+            if (!name) { tpModal.toast(tpT('ui.name_required'), "warning"); return; }
             var payload = { name: name, edit_state: {}, add_state: [] };
             Array.prototype.forEach.call(d.querySelectorAll("[data-state-row]"), function (rowEl) {
               var nm = (rowEl.querySelector("[data-st-name]").value || "").trim();
@@ -591,7 +591,7 @@
           "<td>" + (r.conditions ? r.conditions.length : 0) + "</td>"
         );
       },
-      delTitle: "Eliminar evento",
+      delTitle: tpT('ui.delete_event'),
       delMsg: tpT('ui.confirm_delete_event'),
       form: function (row, onSaved) {
         var isEdit = !!(row && row.id);
@@ -607,7 +607,7 @@
           );
         }
         crudDialog(
-          isEdit ? "Editar evento" : "Nuevo evento",
+          isEdit ? tpT('ui.edit_event') : tpT('ui.new_event'),
           '<div class="tp-form">' +
             field("Protocolo", '<select class="tp-input" name="ce_protocol">' + options(meta.protocols, row ? row.protocol : "") + "</select>", true) +
             field("Mensaje", '<input type="text" name="ce_message" value="' + esc(row ? row.message : "") + '" data-tp-field>', true) +
@@ -619,7 +619,7 @@
           function (d) {
             var message = d.querySelector('[name="ce_message"]').value.trim();
             var protocol = d.querySelector('[name="ce_protocol"]').value;
-            if (!protocol || !message) { tpModal.toast("Protocolo y mensaje son obligatorios.", "warning"); return; }
+            if (!protocol || !message) { tpModal.toast(tpT('ui.protocol_message_required'), "warning"); return; }
             var conditions = [];
             Array.prototype.forEach.call(d.querySelectorAll(".tp-acc-cond"), function (c) {
               var tag = c.querySelector("[data-c-tag]").value.trim();
@@ -659,12 +659,12 @@
       itemUrl: function (id) { return base + "/" + id + "?type=" + type; },
       cols: [tpT('ui.title'), "Mensaje"],
       row: function (r) { return "<td>" + esc(r.title) + "</td><td>" + esc(r.message) + "</td>"; },
-      delTitle: "Eliminar plantilla",
+      delTitle: tpT('ui.delete_template'),
       delMsg: tpT('ui.confirm_delete_template'),
       form: function (row, onSaved) {
         var isEdit = !!(row && row.id);
         crudDialog(
-          isEdit ? "Editar plantilla" : "Nueva plantilla",
+          isEdit ? tpT('ui.edit_template') : tpT('ui.new_template'),
           '<div class="tp-form">' +
             field(tpT('ui.title'), '<input type="text" name="t_title" value="' + esc(row ? row.title : "") + '" data-tp-field>', true) +
             field("Mensaje", '<textarea name="t_message" rows="3" data-tp-field>' + esc(row ? row.message : "") + "</textarea>", true) +
@@ -745,7 +745,7 @@
                   } else {
                     var errs = (res.data && res.data.errors) || {};
                     var first = Object.keys(errs)[0];
-                    tpModal.toast(first ? [].concat(errs[first])[0] : "No se pudo guardar.", "error");
+                    tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
                   }
                 });
               return false;
@@ -772,7 +772,7 @@
                 if (res.ok && res.data && res.data.ok) {
                   tpModal.toast("Eliminada.", "success");
                   load();
-                } else tpModal.toast("No se pudo eliminar.", "error");
+                } else tpModal.toast(tpT('ui.delete_failed'), "error");
               });
           });
     });
@@ -784,9 +784,9 @@
   function tabSecondary() {
     return (
       '<div class="tp-acc-crud" data-acc-sec>' +
-      '<div class="tp-text-muted tp-text-sm" style="margin-bottom:8px;">Logins adicionales para tu cuenta (opcionalmente de solo lectura).</div>' +
+      '<div class="tp-text-muted tp-text-sm" style="margin-bottom:8px;">' + tpT('ui.extra_logins_help') + '</div>' +
       '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
-      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sec-add>＋ Nueva credencial</button></div>' +
+      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sec-add>' + tpT('ui.new_credential_plus') + '</button></div>' +
       '<div data-sec-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div></div>'
     );
   }
@@ -800,7 +800,7 @@
               .map(function (i) {
                 return (
                   '<div class="tp-acc-row"><span>' + esc(i.email) +
-                  (i.readonly ? ' <span class="tp-text-xs tp-text-muted">(solo lectura)</span>' : "") + "</span>" +
+                  (i.readonly ? ' <span class="tp-text-xs tp-text-muted">' + tpT('ui.read_only_paren') + '</span>' : "") + "</span>" +
                   '<span class="tp-row" style="gap:6px;">' +
                   '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sec-edit="' + i.id + '" data-email="' + esc(i.email) + '" data-ro="' + (i.readonly ? 1 : 0) + '">' + tpT('global.edit') + '</button>' +
                   '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sec-del="' + i.id + '" style="color:#ef4444;">' + tpT('global.delete') + '</button>' +
@@ -808,23 +808,23 @@
                 );
               })
               .join("")
-          : '<div class="tp-text-muted tp-text-sm">Sin credenciales secundarias.</div>';
+          : '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_secondary_credentials') + '</div>';
       });
     }
     function form(id, email, ro) {
       var isEdit = !!id;
       tpModal.open({
-        title: isEdit ? "Editar credencial" : "Nueva credencial",
+        title: isEdit ? tpT('ui.edit_credential') : tpT('ui.new_credential'),
         size: "sm",
         body:
           '<div class="tp-form">' +
           '<div class="tp-form__field"><span class="tp-form__label">Email</span>' +
           '<input type="email" data-sec-email value="' + esc(email || "") + '" data-tp-field></div>' +
-          '<label class="tp-checkbox" style="margin:6px 0;"><input type="checkbox" data-sec-ro' + (ro ? " checked" : "") + "> <span>Solo lectura</span></label>" +
+          '<label class="tp-checkbox" style="margin:6px 0;"><input type="checkbox" data-sec-ro' + (ro ? " checked" : "") + "> <span>" + tpT('ui.read_only') + "</span></label>" +
           '<label class="tp-checkbox" style="margin:6px 0;"><input type="checkbox" data-sec-gen' + (isEdit ? "" : " checked") + "> <span>" + tpT('ui.generate_password_and_email') + "</span></label>" +
           '<div class="tp-form__field" data-sec-pwrap hidden><span class="tp-form__label">' + tpT('attr.password') + '</span>' +
           '<input type="password" data-sec-pass autocomplete="new-password" data-tp-field></div>' +
-          (isEdit ? "" : '<label class="tp-checkbox"><input type="checkbox" data-sec-notify checked> <span>Avisar por email de la cuenta creada</span></label>') +
+          (isEdit ? "" : '<label class="tp-checkbox"><input type="checkbox" data-sec-notify checked> <span>' + tpT('ui.notify_account_by_email') + '</span></label>') +
           "</div>",
         buttons: [
           { label: tpT('global.cancel'), variant: "ghost", close: true },
@@ -856,7 +856,7 @@
                   }
                   var errs = (res.data && res.data.errors) || {};
                   var first = Object.keys(errs)[0];
-                  tpModal.toast(first ? [].concat(errs[first])[0] : "No se pudo guardar.", "error");
+                  tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
                 });
               return false;
             },
@@ -882,7 +882,7 @@
       var del = e.target.closest("[data-sec-del]");
       if (del)
         tpModal
-          .confirm({ title: "Eliminar credencial", message: tpT('ui.confirm_delete_subaccount'), danger: true, confirmLabel: tpT('global.delete') })
+          .confirm({ title: tpT('ui.delete_credential'), message: tpT('ui.confirm_delete_subaccount'), danger: true, confirmLabel: tpT('global.delete') })
           .then(function (ok) {
             if (!ok) return;
             tpModal
@@ -891,7 +891,7 @@
                 if (res.ok && res.data && res.data.ok) {
                   tpModal.toast("Eliminada.", "success");
                   load();
-                } else tpModal.toast("No se pudo eliminar.", "error");
+                } else tpModal.toast(tpT('ui.delete_failed'), "error");
               });
           });
     });
@@ -905,8 +905,8 @@
     { key: "vtypes", label: tpT('ui.vehicle_types'), build: tabVehicleTypes, wire: wireVehicleTypes },
     { key: "events", label: tpT('front.events'), build: tabEvents, wire: wireEvents, cap: "view_custom_events" },
     { key: "sms", label: "SMS gateway", build: tabSms, save: "sms", cap: "view_sms" },
-    { key: "tpl_sms", label: "Plantillas de SMS", build: function () { return tabTemplates("sms"); }, wire: function (p) { wireTemplates(p, "sms"); }, cap: "view_sms_templates" },
-    { key: "tpl_gprs", label: "Plantillas de GPRS", build: function () { return tabTemplates("gprs"); }, wire: function (p) { wireTemplates(p, "gprs"); }, cap: "view_gprs_templates" },
+    { key: "tpl_sms", label: tpT('ui.sms_templates'), build: function () { return tabTemplates("sms"); }, wire: function (p) { wireTemplates(p, "sms"); }, cap: "view_sms_templates" },
+    { key: "tpl_gprs", label: tpT('ui.gprs_templates'), build: function () { return tabTemplates("gprs"); }, wire: function (p) { wireTemplates(p, "gprs"); }, cap: "view_gprs_templates" },
     { key: "widgets", label: "Widgets", build: tabWidgets, save: "widgets" },
     { key: "dashboard", label: "Tablero", build: tabDashboard, save: "dashboard" },
     { key: "client", label: "Cliente", build: tabClient, save: "client", cap: "view_client" },
@@ -925,7 +925,7 @@
 
   function open(initialTab) {
     var dlg = tpModal.open({
-      title: "Ajustes de cuenta",
+      title: tpT('ui.account_settings'),
       size: "xl",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:32px;">Cargando…</div>',
@@ -935,7 +935,7 @@
     tpModal.fetchJSON(BASE + "/meta", { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
         var b = dlg.querySelector(".tp-modal__body");
-        if (b) b.innerHTML = '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar.</div>';
+        if (b) b.innerHTML = '<div class="tp-text-center tp-text-error" style="padding:24px;">' + tpT('ui.load_failed') + '</div>';
         return;
       }
       META = res.data;
@@ -1012,7 +1012,7 @@
           if (el.name) cur[el.name] = el.type === "checkbox" ? (el.checked ? 1 : 0) : el.value;
         });
         tpModal.open({
-          title: "Enviar SMS de prueba",
+          title: tpT('ui.send_test_sms'),
           size: "sm",
           body:
             '<div class="tp-form"><div class="tp-form__field"><span class="tp-form__label">' + tpT('attr.phone') + '</span>' +
@@ -1034,7 +1034,7 @@
                 tpModal.fetchJSON(BASE + "/sms/test", { method: "POST", json: payload }).then(function (res) {
                   tpModal.setBusy(d, false);
                   if (res.ok && res.data && res.data.ok) {
-                    tpModal.toast("SMS de prueba enviado.", "success");
+                    tpModal.toast(tpT('ui.test_sms_sent'), "success");
                     tpModal.close(d);
                     return;
                   }
@@ -1042,10 +1042,10 @@
                   var warn = (res.data && res.data.warnings) || [];
                   var first = Object.keys(errs)[0];
                   tpModal.toast(
-                    warn.length ? String(warn[0]) : first ? [].concat(errs[first])[0] : "No se pudo enviar.",
+                    warn.length ? String(warn[0]) : first ? [].concat(errs[first])[0] : tpT('ui.send_failed'),
                     "error",
                   );
-                }).catch(function () { tpModal.setBusy(d, false); tpModal.toast("Error de red.", "error"); });
+                }).catch(function () { tpModal.setBusy(d, false); tpModal.toast(tpT('ui.network_error'), "error"); });
                 return false;
               },
             },
@@ -1060,7 +1060,7 @@
             if (!ok) return;
             tpModal.fetchJSON(BASE + "/sms/queue", { method: "POST", json: {} }).then(function (res) {
               if (res.ok && res.data && res.data.ok) tpModal.toast("Cola vaciada.", "success");
-              else tpModal.toast("No se pudo vaciar.", "error");
+              else tpModal.toast(tpT('ui.empty_failed'), "error");
             });
           });
       });
@@ -1136,11 +1136,11 @@
         if (res.status === 422) {
           var errors = (res.data && res.data.errors) || {};
           var first = Object.keys(errors)[0];
-          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.", "warning");
+          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+          tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
         tpModal.toast("Cambios guardados.", "success");
@@ -1148,7 +1148,7 @@
       })
       .catch(function () {
         tpModal.setBusy(dlg, false);
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -1205,7 +1205,7 @@
 
         tpModal.fetchJSON(LANG_URL).then(function (res) {
           if (!res.ok || !res.data || !res.data.ok) {
-            host.innerHTML = '<div class="tp-text-muted tp-text-sm">No se pudo cargar.</div>';
+            host.innerHTML = '<div class="tp-text-muted tp-text-sm">' + tpT('ui.load_failed') + '</div>';
             return;
           }
           var cur = res.data.current;
@@ -1237,7 +1237,7 @@
                 return;
               }
               tpModal.setBusy(dialog, false);
-              tpModal.toast("No se pudo cambiar el idioma.", "error");
+              tpModal.toast(tpT('ui.language_change_failed'), "error");
             });
         });
       },
@@ -1326,7 +1326,7 @@
                   var errs = (res.data && res.data.errors) || {};
                   tpModal.showFieldErrors(d, errs);
                   tpModal.toast(
-                    errs.code || errs.id || "No se pudo confirmar.",
+                    errs.code || errs.id || tpT('ui.confirm_failed'),
                     "error",
                   );
                   return;
@@ -1337,7 +1337,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(d, false);
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -1354,7 +1354,7 @@
           .then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
               var errs = (res.data && res.data.errors) || {};
-              tpModal.toast(errs.id || "No se pudo reenviar.", "warning");
+              tpModal.toast(errs.id || tpT('ui.resend_failed'), "warning");
               resend.disabled = false;
               return;
             }
@@ -1366,7 +1366,7 @@
           })
           .catch(function () {
             resend.disabled = false;
-            tpModal.toast("Error de red.", "error");
+            tpModal.toast(tpT('ui.network_error'), "error");
           });
       });
   }

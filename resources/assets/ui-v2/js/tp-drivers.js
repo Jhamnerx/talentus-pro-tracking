@@ -38,7 +38,7 @@
     var isEdit = !!id;
 
     var dlg = tpModal.open({
-      title: isEdit ? "Editar conductor" : "Nuevo conductor",
+      title: isEdit ? tpT('ui.edit_driver') : tpT('ui.new_driver'),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
@@ -61,7 +61,7 @@
       if (!bodyEl) return;
       if (!res.ok || !res.data || !res.data.ok) {
         bodyEl.innerHTML =
-          '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar el formulario.</div>';
+          '<div class="tp-text-center tp-text-error" style="padding:24px;">' + tpT('ui.form_load_failed') + '</div>';
         return;
       }
       bodyEl.innerHTML = buildFormHtml(res.data);
@@ -84,7 +84,7 @@
       '<div class="tp-form__field tp-col-2">' +
       '<span class="tp-form__label">Dispositivos</span>' +
       '<div data-drv-chips tabindex="0" class="tp-input" style="height:auto;min-height:36px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:4px 34px 4px 8px;cursor:pointer;position:relative;">' +
-      '<span data-drv-placeholder style="color:var(--fg-muted,#94a3b8);font-size:13px;padding-left:4px;">Seleccionar dispositivos…</span>' +
+      '<span data-drv-placeholder style="color:var(--fg-muted,#94a3b8);font-size:13px;padding-left:4px;">' + tpT('ui.select_devices_ellipsis') + '</span>' +
       '<svg style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#64748b;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' +
       "</div></div>" +
       // Establecer como actual
@@ -208,7 +208,7 @@
           '<label style="display:flex;align-items:center;gap:9px;padding:7px 10px;background:var(--surface-sunken,#f8fafc);cursor:pointer;">' +
           '<input type="checkbox" class="tp-choice-input" data-drv-gchk="' + gid + '">' +
           '<span style="font-size:13px;font-weight:600;color:var(--fg-secondary,#475569);">' +
-          esc(groupTitles[gid] || "Sin grupo") + "</span>" +
+          esc(groupTitles[gid] || tpT('front.ungrouped')) + "</span>" +
           '<span style="font-size:11px;color:var(--fg-muted,#94a3b8);">(' + byGroup[gid].length + ")</span>" +
           "</label>" +
           '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:6px 10px;">' +
@@ -230,10 +230,10 @@
         '<input type="search" data-drv-panel-search placeholder="Búsqueda" autocomplete="off" ' +
         'style="width:100%;height:30px;padding:0 10px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;font-size:13px;background:var(--surface-sunken,#f8fafc);" value="' + esc(q) + '">' +
         "</div>" +
-        (sections || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>') +
+        (sections || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.no_results') + '</div>') +
         '<div style="position:sticky;bottom:0;background:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 4px;border-top:1px solid var(--border-default,#eef2f7);z-index:1;">' +
         '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">' +
-        '<input type="checkbox" class="tp-choice-input" data-drv-selall> Seleccionar todo</label>' +
+        '<input type="checkbox" class="tp-choice-input" data-drv-selall> ' + tpT('ui.select_all_n') + '</label>' +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-drv-close>' + tpT('global.close') + '</button>' +
         "</div>";
 
@@ -412,20 +412,20 @@
           var errors = (res.data && res.data.errors) || {};
           tpModal.showFieldErrors(dialog, errors);
           var first = Object.keys(errors)[0];
-          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.", "warning");
+          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+          tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
-        tpModal.toast(id ? "Conductor actualizado." : "Conductor creado.", "success");
+        tpModal.toast(id ? tpT('ui.driver_updated') : tpT('ui.driver_created'), "success");
         tpModal.close(dialog);
         if (typeof onSaved === "function") onSaved();
       })
       .catch(function () {
         tpModal.setBusy(dialog, false);
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -472,7 +472,7 @@
       "&per_page=" + state.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        rowsEl.innerHTML = '<tr><td colspan="8" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+        rowsEl.innerHTML = '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
         return;
       }
       state.last = res.data.last || 1;
@@ -495,7 +495,7 @@
               );
             })
             .join("")
-        : '<tr><td colspan="8" class="tp-svc-table__empty">Sin datos</td></tr>';
+        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0;
       var to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;
@@ -549,7 +549,7 @@
       var did = del.getAttribute("data-drv-del");
       tpModal
         .confirm({
-          title: "Eliminar conductor",
+          title: tpT('ui.delete_driver'),
           message: tpT('ui.confirm_delete_driver'),
           danger: true,
           confirmLabel: tpT('global.delete'),
@@ -558,10 +558,10 @@
           if (!okGo) return;
           tpModal.fetchJSON(URLS.item.replace("{id}", did), { method: "DELETE" }).then(function (res) {
             if (res.ok && res.data && res.data.ok) {
-              tpModal.toast("Conductor eliminado.", "success");
+              tpModal.toast(tpT('ui.driver_deleted'), "success");
               load();
             } else {
-              tpModal.toast("No se pudo eliminar.", "error");
+              tpModal.toast(tpT('ui.delete_failed'), "error");
             }
           });
         });

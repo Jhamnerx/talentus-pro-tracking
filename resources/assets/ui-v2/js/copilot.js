@@ -195,7 +195,7 @@
       .then(function (j) {
         typing.remove();
         if (!j || !j.ok) {
-          appendBubble("bot", "Hubo un problema procesando tu pregunta.");
+          appendBubble("bot", tpT('ui.question_processing_error'));
           return;
         }
         var html = escapeHtml(j.reply);

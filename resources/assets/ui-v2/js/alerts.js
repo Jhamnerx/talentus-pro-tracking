@@ -55,33 +55,33 @@
 
   var TYPE_LABELS = {
     sos: "SOS",
-    overspeed: "Exceso de velocidad",
-    geofence_overspeed: "Exceso en geocerca",
-    zone_in: "Entrada a zona",
-    zone_out: "Salida de zona",
+    overspeed: tpT('front.overspeed'),
+    geofence_overspeed: tpT('ui.geofence_overspeed'),
+    zone_in: tpT('ui.zone_entry_alt'),
+    zone_out: tpT('ui.zone_exit_alt'),
     idle_duration: tpT('ui.long_idle'),
     stop_duration: "Detenido prolongado",
     offline_duration: "Offline prolongado",
     move_duration: "Movimiento prolongado",
-    move_start: "Inicio de movimiento",
-    ignition_on: "Motor encendido",
-    ignition_off: "Motor apagado",
-    fuel_fill: "Recarga de combustible",
-    fuel_theft: "Robo de combustible",
+    move_start: tpT('ui.movement_start'),
+    ignition_on: tpT('ui.engine_on'),
+    ignition_off: tpT('ui.engine_off'),
+    fuel_fill: tpT('ui.refuel'),
+    fuel_theft: tpT('ui.fuel_theft'),
     driver: tpT('front.driver'),
-    driver_authorized: "Conductor autorizado",
-    driver_unauthorized: "Conductor no autorizado",
-    expiring_device: "Dispositivo por expirar",
+    driver_authorized: tpT('ui.authorized_driver'),
+    driver_unauthorized: tpT('ui.unauthorized_driver'),
+    expiring_device: tpT('ui.device_about_to_expire'),
     expired_device: "Dispositivo expirado",
-    expiring_sim: "SIM por expirar",
+    expiring_sim: tpT('ui.sim_about_to_expire'),
     expired_sim: "SIM expirada",
-    expiring_user: "Usuario por expirar",
+    expiring_user: tpT('ui.user_about_to_expire'),
     expired_user: "Usuario expirado",
     unplugged: "Desconectado",
     plugged_in: "Conectado",
-    ghost_speed: "Velocidad fantasma",
-    jump_from_stop: "Salto desde parado",
-    task_new: "Nueva tarea",
+    ghost_speed: tpT('ui.ghost_speed'),
+    jump_from_stop: tpT('ui.jump_from_stop'),
+    task_new: tpT('ui.new_task'),
     task_complete: "Tarea completa",
     task_failed: "Tarea fallida",
     custom: "Evento personalizado",
@@ -140,7 +140,7 @@
         r.id +
         '">' +
         ICON_COPY +
-        " Guardar como plantilla</button>";
+        " " + tpT('ui.save_as_template') + "</button>";
     if (CAN_REMOVE)
       items +=
         '<button type="button" role="menuitem" class="is-danger" data-act="delete" data-id="' +
@@ -176,7 +176,7 @@
     if (!rules.length) {
       tbody.innerHTML =
         '<tr><td colspan="7" class="tp-svc-table__empty">' +
-        (state.rules.length ? "Sin coincidencias." : tpT('ui.no_alert_rules_yet')) +
+        (state.rules.length ? tpT('ui.no_matches') : tpT('ui.no_alert_rules_yet')) +
         "</td></tr>";
       return;
     }
@@ -487,7 +487,7 @@
     if (!items.length) {
       body =
         '<div class="tp-text-muted tp-text-sm" style="padding:10px;">' +
-        esc(opts.empty || "Sin elementos.") +
+        esc(opts.empty || tpT('ui.no_items')) +
         "</div>";
     } else {
       body = items
@@ -510,7 +510,7 @@
       '">' +
       '<div class="tp-picklist__bar">' +
       (searchable
-        ? '<input type="search" class="tp-input tp-input--sm tp-picklist__search" placeholder="Buscar…">'
+        ? '<input type="search" class="tp-input tp-input--sm tp-picklist__search" placeholder="' + tpT('ui.search_ellipsis') + '">'
         : "<span></span>") +
       '<button type="button" class="tp-picklist__act" data-pick="all">' + tpT('front.all') + '</button>' +
       '<button type="button" class="tp-picklist__act" data-pick="none">' + tpT('ui.none_m') + '</button>' +
@@ -676,7 +676,7 @@
             (gs === "all" ? " checked" : "") +
             (gs === "some" ? ' data-indet="1"' : "") +
             "> <span>" +
-            esc(groupsMap[d.group_id] || "Sin grupo") +
+            esc(groupsMap[d.group_id] || tpT('front.ungrouped')) +
             "</span></label>" +
             "</div>";
         }
@@ -785,7 +785,7 @@
   /* ---------- schedule grid ---------- */
   function scheduleGridHtml(schedules) {
     if (!schedules || !schedules.length)
-      return '<div class="tp-text-muted tp-text-sm">Sin datos de horario.</div>';
+      return '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_schedule_data') + '</div>';
 
     var items = schedules[0].items || [];
     var hours =
@@ -842,7 +842,7 @@
     var quick =
       '<div class="tp-sched__quick">' +
       '<button type="button" data-sched-set="workdays">' + tpT('ui.working_days') + '</button>' +
-      '<button type="button" data-sched-set="weekend">Fin de semana</button>' +
+      '<button type="button" data-sched-set="weekend">' + tpT('ui.weekend') + '</button>' +
       '<button type="button" data-sched-set="always">' + tpT('global.always') + '</button>' +
       '<button type="button" data-sched-set="clear">' + tpT('global.clear') + '</button>' +
       "</div>";
@@ -1152,7 +1152,7 @@
         })
         .catch(function () {
           typeSel.innerHTML =
-            '<option value="">No se pudieron cargar los comandos</option>';
+            '<option value="">' + tpT('ui.commands_load_failed') + '</option>';
         });
     }
 
@@ -1191,9 +1191,9 @@
       '<input type="search" class="tp-input tp-input--sm" data-dev-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off">' +
       "</div>" +
       '<div class="tp-devbox__acts">' +
-      '<button type="button" class="tp-devbox__link" data-dev-all>Seleccionar todos</button>' +
+      '<button type="button" class="tp-devbox__link" data-dev-all>' + tpT('ui.select_all_m') + '</button>' +
       '<span class="tp-devbox__sep">|</span>' +
-      '<button type="button" class="tp-devbox__link" data-dev-none>Quitar todos</button>' +
+      '<button type="button" class="tp-devbox__link" data-dev-none>' + tpT('ui.remove_all') + '</button>' +
       "</div>" +
       "</div>" +
       '<div class="tp-devbox__banner" data-dev-banner hidden><b>' + tpT('ui.all_vehicles') + '</b> ' + tpT('ui.selected_will_include_later') + '</div>' +
@@ -1210,7 +1210,7 @@
       '<select class="tp-input" name="type" id="tp-alert-type">' +
       buildTypeOptions(meta.types, first && first.key) +
       "</select>" +
-      '<div class="tp-field__hint">Define el evento que dispara la alerta.</div></div>' +
+      '<div class="tp-field__hint">' + tpT('ui.define_trigger_event') + '</div></div>' +
       '<div id="tp-alert-type-fields">' +
       renderTypeFields(first) +
       "</div>"
@@ -1220,17 +1220,17 @@
   function panelGeofences(meta) {
     var gf = meta.geofences || [];
     var zones =
-      '<label class="tp-checkbox"><input type="checkbox" data-zone="1"> <span>Entrada a la zona</span></label>' +
-      '<label class="tp-checkbox"><input type="checkbox" data-zone="2"> <span>Salida de la zona</span></label>';
+      '<label class="tp-checkbox"><input type="checkbox" data-zone="1"> <span>' + tpT('ui.zone_entry') + '</span></label>' +
+      '<label class="tp-checkbox"><input type="checkbox" data-zone="2"> <span>' + tpT('ui.zone_exit') + '</span></label>';
     return (
       '<div class="tp-field"><label class="tp-field__label">Sentido</label>' +
       '<div class="tp-row" style="gap:18px;flex-wrap:wrap;">' +
       zones +
       "</div>" +
-      '<div class="tp-field__hint">Aplica a las alertas basadas en geocercas (entrada / salida).</div></div>' +
+      '<div class="tp-field__hint">' + tpT('ui.applies_to_geofence_alerts') + '</div></div>' +
       '<div class="tp-field"><label class="tp-field__label">Geocercas</label>' +
       picklistHtml("tp-alert-zones", gf, {
-        empty: "No tienes geocercas creadas.",
+        empty: tpT('ui.no_geofences_created'),
       }) +
       "</div>"
     );
@@ -1238,7 +1238,7 @@
 
   function panelSchedule(meta) {
     return (
-      '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-sched-toggle"> <span>Restringir por horario</span></label>' +
+      '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-sched-toggle"> <span>' + tpT('ui.restrict_by_schedule') + '</span></label>' +
       '<div class="tp-field__hint" style="margin-bottom:10px;">' + tpT('ui.schedule_paint_help') + '</div>' +
       '<div id="tp-alert-sched" hidden>' +
       scheduleGridHtml(meta.schedules) +
@@ -1248,7 +1248,7 @@
 
   function panelCommand() {
     return (
-      '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-cmd-active"> <span>Enviar comando al dispararse</span></label>' +
+      '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-cmd-active"> <span>' + tpT('ui.send_command_on_trigger') + '</span></label>' +
       '<div class="tp-field__hint" style="margin-bottom:10px;">' + tpT('ui.command_sent_on_condition') + '</div>' +
       '<div id="tp-alert-cmd-body" hidden>' +
       '<div class="tp-field"><label class="tp-field__label">Comando</label>' +
@@ -1262,8 +1262,8 @@
     return (
       '<form id="tp-alert-form" autocomplete="off">' +
       '<div class="tp-alert-head">' +
-      '<div class="tp-field tp-alert-head__name"><label class="tp-field__label">Nombre *</label>' +
-      '<input class="tp-input" type="text" name="name" maxlength="80" required placeholder="Ej. Exceso de velocidad — flota norte"></div>' +
+      '<div class="tp-field tp-alert-head__name"><label class="tp-field__label">' + tpT('ui.name_required_field') + '</label>' +
+      '<input class="tp-input" type="text" name="name" maxlength="80" required placeholder="' + tpT('ui.alert_name_example') + '"></div>' +
       '<label class="tp-checkbox tp-alert-head__active"><input type="checkbox" name="active" checked> <span>Activa</span></label>' +
       "</div>" +
       '<div id="tp-alert-tabs"></div>' +
@@ -1452,7 +1452,7 @@
     var isEdit = !!id;
 
     var modal = window.tpModal.open({
-      title: isEdit ? "Editar regla de alerta" : "Nueva regla de alerta",
+      title: isEdit ? tpT('ui.edit_alert_rule') : tpT('ui.new_alert_rule'),
       sub: tpT('ui.alert_wizard_steps'),
       size: "xl",
       // Restyle scopeado (alerts.css .tp-alert-modal) — no afecta otros modales.
@@ -1461,14 +1461,14 @@
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: isEdit ? "Guardar cambios" : "Crear alerta",
+          label: isEdit ? tpT('ui.save_changes') : tpT('ui.create_alert'),
           variant: "primary",
           close: false,
           onClick: function (dlg) {
             if (!metaRef) return false;
             var data = readForm(dlg, metaRef);
             if (!data.name) {
-              window.tpModal.toast("Ponle un nombre a la regla.", "warning");
+              window.tpModal.toast(tpT('ui.name_the_rule'), "warning");
               return false;
             }
             var url = isEdit ? BASE + "/" + encodeURIComponent(id) : STORE_URL;
@@ -1484,7 +1484,7 @@
                   var first = Object.keys(errs)[0];
                   var msg = first
                     ? [].concat(errs[first])[0]
-                    : "Revisa los campos marcados.";
+                    : tpT('ui.check_marked_fields');
                   window.tpModal.toast(msg, "warning");
                   return;
                 }
@@ -1492,14 +1492,14 @@
                   window.tpModal.toast(
                     (res.data && res.data.message) ||
                       (isEdit
-                        ? "No se pudo guardar."
-                        : "No se pudo crear la alerta."),
+                        ? tpT('ui.save_failed')
+                        : tpT('ui.alert_create_failed')),
                     "error",
                   );
                   return;
                 }
                 window.tpModal.toast(
-                  isEdit ? "Cambios guardados." : "Alerta creada.",
+                  isEdit ? "Cambios guardados." : tpT('ui.alert_created'),
                   "success",
                 );
                 window.tpModal.close(dlg);
@@ -1507,7 +1507,7 @@
               })
               .catch(function () {
                 window.tpModal.setBusy(dlg, false);
-                window.tpModal.toast("Error de red.", "error");
+                window.tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -1554,7 +1554,7 @@
       .then(function (res) {
         if (btn) btn.disabled = false;
         if (!res.ok || !res.data || !res.data.ok) {
-          window.tpModal.toast("No se pudo cambiar el estado.", "error");
+          window.tpModal.toast(tpT('ui.state_change_failed'), "error");
           return;
         }
         window.tpModal.toast(
@@ -1565,7 +1565,7 @@
       })
       .catch(function () {
         if (btn) btn.disabled = false;
-        window.tpModal.toast("Error de red.", "error");
+        window.tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -1590,7 +1590,7 @@
       .then(function (res) {
         var planes = (res.data && res.data.plans) || [];
         var opciones =
-          '<option value="">Todos los planes</option>' +
+          '<option value="">' + tpT('ui.all_plans') + '</option>' +
           planes
             .map(function (p) {
               return '<option value="' + p.id + '">' + esc(p.title) + "</option>";
@@ -1598,11 +1598,11 @@
             .join("");
 
         window.tpModal.open({
-          title: "Guardar como plantilla",
+          title: tpT('ui.save_as_template'),
           size: "sm",
           body:
             '<p class="tp-text-sm tp-text-muted" style="margin:0 0 12px;">' + tpT('ui.will_be_saved') + ' <b>' +
-            esc(regla ? regla.name : "esta regla") +
+            esc(regla ? regla.name : tpT('ui.this_rule')) +
             "</b> " + tpT('ui.as_template_note') + "</p>" +
             '<label class="tp-form__field" style="margin-bottom:10px;">' +
             '<span class="tp-form__label">Aplicar a</span>' +
@@ -1629,7 +1629,7 @@
                   .then(function (r) {
                     window.tpModal.setBusy(d, false);
                     if (!r.ok || !r.data || !r.data.ok) {
-                      window.tpModal.toast("No se pudo guardar la plantilla.", "error");
+                      window.tpModal.toast(tpT('ui.template_save_failed'), "error");
                       return;
                     }
                     window.tpModal.close(d);
@@ -1637,7 +1637,7 @@
                   })
                   .catch(function () {
                     window.tpModal.setBusy(d, false);
-                    window.tpModal.toast("Error de red.", "error");
+                    window.tpModal.toast(tpT('ui.network_error'), "error");
                   });
                 return false;
               },
@@ -1646,13 +1646,13 @@
         });
       })
       .catch(function () {
-        window.tpModal.toast("No se pudo cargar la lista de planes.", "error");
+        window.tpModal.toast(tpT('ui.plans_load_failed'), "error");
       });
   }
 
   function openTemplates() {
     var dlg = window.tpModal.open({
-      title: "Plantillas de alerta",
+      title: tpT('ui.alert_templates'),
       size: "lg",
       body: '<div data-tpl-list><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
@@ -1670,14 +1670,14 @@
             }
 
             host.innerHTML =
-              '<p class="tp-text-xs tp-text-muted" style="margin:0 0 10px;">Los clientes que se den de alta reciben las plantillas activas de su plan. Las alertas ya creadas no se tocan.</p>' +
+              '<p class="tp-text-xs tp-text-muted" style="margin:0 0 10px;">' + tpT('ui.plan_templates_note') + '</p>' +
               items
                 .map(function (t) {
                   return (
                     '<div class="tp-acc-row"><span><b>' + esc(t.name) + "</b>" +
                     (t.active ? "" : ' <span class="tp-text-xs tp-text-muted">(inactiva)</span>') +
                     '<br><span class="tp-text-xs tp-text-muted">' +
-                    esc(t.type) + " · " + esc(t.plan || "todos los planes") +
+                    esc(t.type) + " · " + esc(t.plan || tpT('ui.all_plans_lower')) +
                     (t.description ? " · " + esc(t.description) : "") +
                     "</span></span>" +
                     '<span class="tp-acc-row__actions">' +
@@ -1710,9 +1710,9 @@
           if (del) {
             window.tpModal
               .confirm({
-                title: "Eliminar plantilla",
+                title: tpT('ui.delete_template'),
                 message:
-                  "Deja de sembrarse a los clientes nuevos. Las alertas ya creadas NO se tocan.",
+                  tpT('ui.stop_seeding_new_clients'),
                 danger: true,
                 confirmLabel: tpT('global.delete'),
               })
@@ -1734,7 +1734,7 @@
     if (!CAN_REMOVE) return;
     window.tpModal
       .confirm({
-        title: "Eliminar regla",
+        title: tpT('ui.delete_rule'),
         message: tpT('ui.confirm_delete_rule'),
         danger: true,
         confirmLabel: tpT('global.delete'),
@@ -1745,14 +1745,14 @@
           .fetchJSON(BASE + "/" + encodeURIComponent(id), { method: "DELETE" })
           .then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              window.tpModal.toast("No se pudo eliminar.", "error");
+              window.tpModal.toast(tpT('ui.delete_failed'), "error");
               return;
             }
             window.tpModal.toast("Regla eliminada.", "success");
             load();
           })
           .catch(function () {
-            window.tpModal.toast("Error de red.", "error");
+            window.tpModal.toast(tpT('ui.network_error'), "error");
           });
       });
   }

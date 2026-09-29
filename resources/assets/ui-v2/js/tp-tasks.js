@@ -281,7 +281,7 @@
     if (meta.task_sets) {
       extra +=
         '<div class="tp-form__field' + (isEdit ? "" : " tp-col-2") + '">' +
-        '<span class="tp-form__label">Conjunto de tareas</span>' +
+        '<span class="tp-form__label">' + tpT('ui.task_set') + '</span>' +
         selectHtml("task_set_id", meta.task_sets, item.task_set_id, "—") +
         "</div>";
     } else if (isEdit) {
@@ -311,7 +311,7 @@
       "</label>" +
       // N° factura | Prioridad
       '<label class="tp-form__field">' +
-      '<span class="tp-form__label">N° de factura</span>' +
+      '<span class="tp-form__label">' + tpT('ui.invoice_number') + '</span>' +
       '<input type="text" name="invoice_number" maxlength="100" value="' + esc(item.invoice_number || "") + '" data-tp-field>' +
       "</label>" +
       '<div class="tp-form__field">' +
@@ -343,7 +343,7 @@
     var isEdit = !!id;
 
     var dlg = tpModal.open({
-      title: isEdit ? "Editar tarea" : "Nueva tarea",
+      title: isEdit ? tpT('ui.edit_task') : tpT('ui.new_task'),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
@@ -366,7 +366,7 @@
       if (!bodyEl) return;
       if (!res.ok || !res.data || !res.data.ok) {
         bodyEl.innerHTML =
-          '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar el formulario.</div>';
+          '<div class="tp-text-center tp-text-error" style="padding:24px;">' + tpT('ui.form_load_failed') + '</div>';
         return;
       }
       bodyEl.innerHTML = buildFormHtml(res.data, isEdit);
@@ -414,7 +414,7 @@
           close: false,
           onClick: function (dialog) {
             if (!dirty || !marker) {
-              tpModal.toast("Ubica el punto en el mapa antes de aplicar.", "warning");
+              tpModal.toast(tpT('ui.place_point_before_apply'), "warning");
               return false;
             }
             var pos = marker.getLatLng();
@@ -455,7 +455,7 @@
     }
 
     if (!window.L) {
-      mapEl.innerHTML = '<div class="tp-text-center tp-text-muted" style="padding:24px;">No se pudo cargar el mapa.</div>';
+      mapEl.innerHTML = '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.map_load_failed') + '</div>';
     } else {
       setTimeout(function () {
         map = L.map(mapEl).setView(has ? [lat, lng] : DEFAULT_CENTER, has ? 16 : 11);
@@ -571,13 +571,13 @@
           tpModal.showFieldErrors(dialog, errors);
           var first = Object.keys(errors)[0];
           tpModal.toast(
-            first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.",
+            first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'),
             "warning",
           );
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+          tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
         tpModal.toast(id ? "Tarea actualizada." : "Tarea creada.", "success");
@@ -586,7 +586,7 @@
       })
       .catch(function () {
         tpModal.setBusy(dialog, false);
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -660,7 +660,7 @@
       "&per_page=" + state.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        rowsEl.innerHTML = '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+        rowsEl.innerHTML = '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
         return;
       }
       state.last = res.data.last || 1;
@@ -686,7 +686,7 @@
               );
             })
             .join("")
-        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">Sin datos</td></tr>';
+        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0;
       var to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;
@@ -728,7 +728,7 @@
         body:
           '<div class="tp-form">' +
           '<p style="font-size:13px;color:var(--fg-secondary,#475569);margin:0 0 10px;">' +
-          ids.length + " tarea(s) seleccionada(s) se reasignarán al vehículo elegido.</p>" +
+          ids.length + " " + tpT('ui.tasks_will_be_reassigned') + "</p>" +
           '<div class="tp-form__field tp-form__field--required">' +
           '<span class="tp-form__label">' + tpT('ui.vehicle') + '</span>' +
           selectHtml(
@@ -758,7 +758,7 @@
                 .then(function (res) {
                   tpModal.setBusy(dialog, false);
                   if (!res.ok || !res.data || !res.data.ok) {
-                    tpModal.toast("No se pudo asignar.", "error");
+                    tpModal.toast(tpT('ui.assign_failed'), "error");
                     return;
                   }
                   tpModal.toast((res.data.assigned || 0) + " tarea(s) asignadas.", "success");
@@ -768,7 +768,7 @@
                 })
                 .catch(function () {
                   tpModal.setBusy(dialog, false);
-                  tpModal.toast("Error de red.", "error");
+                  tpModal.toast(tpT('ui.network_error'), "error");
                 });
               return false;
             },
@@ -825,7 +825,7 @@
     var fileInput = dialog.querySelector("[data-imp-file]");
     var file = fileInput.files && fileInput.files[0];
     if (!file) {
-      box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">Selecciona un archivo primero.</div>';
+      box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.pick_file_first') + '</div>';
       return;
     }
     box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">Leyendo columnas…</div>';
@@ -833,7 +833,7 @@
     fd.append("file", file);
     tpModal.fetchJSON(URLS.impFields, { method: "POST", body: fd }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">No se pudieron leer las columnas del archivo.</div>';
+        box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.file_columns_unreadable') + '</div>';
         return;
       }
       renderImportMap(box, res.data);
@@ -868,7 +868,7 @@
             var fileInput = dialog.querySelector("[data-imp-file]");
             var file = fileInput.files && fileInput.files[0];
             if (!file) {
-              tpModal.toast("Selecciona un archivo.", "warning");
+              tpModal.toast(tpT('ui.pick_a_file_dot'), "warning");
               return false;
             }
             var fd = new FormData();
@@ -887,7 +887,7 @@
                   var errors = (res.data && res.data.errors) || {};
                   var first = Object.keys(errors)[0];
                   tpModal.toast(
-                    first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "No se pudo importar.",
+                    first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.import_failed'),
                     "error",
                   );
                   return;
@@ -898,7 +898,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(dialog, false);
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -948,7 +948,7 @@
       "&per_page=" + setsState.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        setsRows.innerHTML = '<tr><td colspan="3" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+        setsRows.innerHTML = '<tr><td colspan="3" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
         return;
       }
       setsState.last = res.data.last || 1;
@@ -966,7 +966,7 @@
               );
             })
             .join("")
-        : '<tr><td colspan="3" class="tp-svc-table__empty">Sin datos</td></tr>';
+        : '<tr><td colspan="3" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       var from = setsState.total ? (setsState.page - 1) * setsState.per + 1 : 0;
       var to = Math.min(setsState.page * setsState.per, setsState.total);
       setsRange.textContent = from + "–" + to + " / " + setsState.total;
@@ -977,7 +977,7 @@
 
   function openSetForm(id, currentTitle) {
     tpModal.open({
-      title: id ? "Editar conjunto" : "Nuevo conjunto",
+      title: id ? tpT('ui.edit_set') : tpT('ui.new_set'),
       static: true,
       body:
         '<div class="tp-form">' +
@@ -1004,7 +1004,7 @@
               .then(function (res) {
                 tpModal.setBusy(dialog, false);
                 if (!res.ok || !res.data || !res.data.ok) {
-                  tpModal.toast("No se pudo guardar.", "error");
+                  tpModal.toast(tpT('ui.save_failed'), "error");
                   return;
                 }
                 tpModal.toast(id ? "Conjunto actualizado." : "Conjunto creado.", "success");
@@ -1013,7 +1013,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(dialog, false);
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -1033,7 +1033,7 @@
       var sid = del.getAttribute("data-set-del");
       tpModal
         .confirm({
-          title: "Eliminar conjunto",
+          title: tpT('ui.delete_set'),
           message: tpT('ui.confirm_delete_task_set'),
           danger: true,
           confirmLabel: tpT('global.delete'),
@@ -1045,7 +1045,7 @@
               tpModal.toast("Conjunto eliminado.", "success");
               loadSets();
             } else {
-              tpModal.toast("No se pudo eliminar.", "error");
+              tpModal.toast(tpT('ui.delete_failed'), "error");
             }
           });
         });
@@ -1083,7 +1083,7 @@
       el.style.display = el.getAttribute("data-tsk-only") === tab ? "" : "none";
     });
     updateAssign();
-    searchEl.placeholder = tab === "sets" ? "Buscar conjunto…" : "Buscar…";
+    searchEl.placeholder = tab === "sets" ? tpT('ui.search_set') : tpT('ui.search_ellipsis');
     if (tab === "sets" && !setsState.loaded) loadSets();
   }
 
@@ -1179,7 +1179,7 @@
       var tid = del.getAttribute("data-tsk-del");
       tpModal
         .confirm({
-          title: "Eliminar tarea",
+          title: tpT('ui.delete_task'),
           message: tpT('ui.confirm_delete_task'),
           danger: true,
           confirmLabel: tpT('global.delete'),
@@ -1191,7 +1191,7 @@
               tpModal.toast("Tarea eliminada.", "success");
               load();
             } else {
-              tpModal.toast("No se pudo eliminar.", "error");
+              tpModal.toast(tpT('ui.delete_failed'), "error");
             }
           });
         });

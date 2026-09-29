@@ -244,7 +244,7 @@
       var col = !!S.collapsed.un;
       html +=
         '<div class="tp-rgrp">' +
-        groupHeadHtml("un", T("ungrouped", "Sin grupo"), ung.length, false, col) +
+        groupHeadHtml("un", T("ungrouped", tpT('front.ungrouped')), ung.length, false, col) +
         '<div class="tp-rgrp__body"' +
         (col ? " hidden" : "") +
         ">" +
@@ -322,7 +322,7 @@
   function groupSelectHtml(r) {
     var opts =
       '<option value="0">' +
-      esc(T("ungrouped", "Sin grupo")) +
+      esc(T("ungrouped", tpT('front.ungrouped'))) +
       "</option>" +
       S.groups
         .map(function (gr) {
@@ -345,7 +345,7 @@
       "</select>" +
       (S.canGroups
         ? '<button type="button" class="tp-btn tp-btn--accent tp-btn--icon" data-route-group-new title="' +
-          esc(T("add_group", "Nuevo grupo")) +
+          esc(T("add_group", tpT('ui.new_group'))) +
           '"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>'
         : "") +
       "</div></div>"
@@ -402,7 +402,7 @@
     var f = dialog.querySelector("#tp-route-form");
     var name = (f.querySelector('[name="name"]').value || "").trim();
     if (!name) {
-      window.tpModal && tpModal.toast && tpModal.toast(T("name_required", "El nombre es obligatorio."), "warning");
+      window.tpModal && tpModal.toast && tpModal.toast(T("name_required", tpT('ui.name_required')), "warning");
       return null;
     }
     return {
@@ -538,11 +538,11 @@
       })
       .catch(function () {
         if (btn) btn.disabled = false;
-        tpModal.toast && tpModal.toast(T("network_error", "Error de red."), "error");
+        tpModal.toast && tpModal.toast(T("network_error", tpT('ui.network_error')), "error");
       });
   }
   function showError(res) {
-    var msg = T("could_not_save", "No se pudo guardar.");
+    var msg = T("could_not_save", tpT('ui.save_failed'));
     if (res && res.data) {
       if (res.data.errors) {
         var k = Object.keys(res.data.errors)[0];
@@ -625,7 +625,7 @@
       '<div class="tp-field"><div class="tp-rgroup-form__bar"><label class="tp-field__label" style="margin:0;">' +
       esc(T("routes", "Rutas")) +
       '</label><div class="tp-rgroup-form__sel"><button type="button" class="tp-linkbtn" data-grp-all>' +
-      esc(T("select_all", "Seleccionar todo")) +
+      esc(T("select_all", tpT('ui.select_all_n'))) +
       '</button><button type="button" class="tp-linkbtn" data-grp-none>' +
       esc(T("deselect_all", "Deseleccionar todo")) +
       "</button></div></div>" +
@@ -672,7 +672,7 @@
               })
               .catch(function () {
                 btn.disabled = false;
-                tpModal.toast && tpModal.toast(T("network_error", "Error de red."), "error");
+                tpModal.toast && tpModal.toast(T("network_error", tpT('ui.network_error')), "error");
               });
             return false;
           },
@@ -733,7 +733,7 @@
     if (!window.tpModal) return;
     tpModal
       .confirm({
-        title: T("delete_group", "Eliminar grupo"),
+        title: T("delete_group", tpT('ui.delete_group')),
         message: T("delete_group_confirm", tpT('ui.confirm_delete_route_group')),
         confirmLabel: T("delete", "Eliminar"),
         danger: true,
@@ -885,7 +885,7 @@
           onClick: function (dialog, btn) {
             var input = dialog.querySelector("[data-imp-file]");
             if (!input.files || !input.files.length) {
-              tpModal.toast && tpModal.toast(T("select_file", "Selecciona un archivo."), "warning");
+              tpModal.toast && tpModal.toast(T("select_file", tpT('ui.pick_a_file_dot')), "warning");
               return false;
             }
             var fd = new FormData();
@@ -914,14 +914,14 @@
                     tpModal.toast(
                       (errs && errs.file && (Array.isArray(errs.file) ? errs.file[0] : errs.file)) ||
                         (res.data && res.data.message) ||
-                        T("import_failed", "No se pudo importar."),
+                        T("import_failed", tpT('ui.import_failed')),
                       "error",
                     );
                 }
               })
               .catch(function () {
                 btn.disabled = false;
-                tpModal.toast && tpModal.toast(T("network_error", "Error de red."), "error");
+                tpModal.toast && tpModal.toast(T("network_error", tpT('ui.network_error')), "error");
               });
             return false;
           },

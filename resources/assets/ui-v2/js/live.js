@@ -634,11 +634,11 @@
                     tpModal.toast && tpModal.toast("Widgets actualizados.", "success");
                     tpModal.close(dialog);
                     if (state.selectedId) loadDrawerWidgets(state.selectedId);
-                  } else tpModal.toast && tpModal.toast("No se pudo guardar.", "error");
+                  } else tpModal.toast && tpModal.toast(tpT('ui.save_failed'), "error");
                 })
                 .catch(function () {
                   btn.disabled = false;
-                  tpModal.toast && tpModal.toast("Error de red.", "error");
+                  tpModal.toast && tpModal.toast(tpT('ui.network_error'), "error");
                 });
               return false;
             },
@@ -665,9 +665,9 @@
   // Popup de device (conciso, con dirección perezosa)
   // -----------------------------------------------------------
   var STATUS_LABELS = {
-    online: "En movimiento",
-    excessive_speed: "Exceso de velocidad",
-    engine: "Motor encendido",
+    online: tpT('front.move'),
+    excessive_speed: tpT('front.overspeed'),
+    engine: tpT('ui.engine_on'),
     ack: tpT('front.stopped'),
     stop: tpT('front.stopped'),
     idle: tpT('front.idle'),
@@ -729,7 +729,7 @@
       '</dd><dt>' + tpT('front.location') + '</dt><dd data-pop-addr class="' +
       (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
       '">Cargando…</dd></dl>' +
-      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>Ver detalles</button></div>';
+      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>' + tpT('ui.see_details') + '</button></div>';
     if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
     state.popup.setLatLng([parseFloat(d.lat), parseFloat(d.lng)]).setContent(html).openOn(state.map);
     var el = state.popup.getElement();
@@ -1030,7 +1030,7 @@
     // Esferas pequeñas: solo las que el vehiculo reporta
     var chicas = "";
     if (dash.rpm) {
-      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">RPM MOTOR</div>' +
+      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">' + tpT('ui.engine_rpm') + '</div>' +
         esfera(G_CHICA, apagado ? 0 : dash.rpm.value, dash.rpm.max, String(dash.rpm.value), "rpm",
                dash.rpm.value >= dash.rpm.max * 0.75 ? "bad" : "info") + "</div>";
     }
@@ -1052,7 +1052,7 @@
       testigo("Motor", "MOTOR", t.engine, ICONOS.motor) +
       testigo(tpT('ui.ignition'), tpT('ui.ignition_upper'), t.ignition, ICONOS.ignicion) +
       testigo("Puerta", "PUERTA", t.door, ICONOS.puerta) +
-      testigo("Bloqueo de motor", "BLOQUEO", t.blocked, ICONOS.bloqueo) +
+      testigo(tpT('ui.engine_lock'), "BLOQUEO", t.blocked, ICONOS.bloqueo) +
       (dash.volt != null
         ? '<span class="tp-dash__tell" data-on="1" title="' + tpT('ui.external_battery') + '">' + ICONOS.bateria +
           '<span class="tp-dash__tell-label">' + esc(dash.volt.value + " " + (dash.volt.unit || "v")) + "</span></span>"
@@ -1129,7 +1129,7 @@
     var cur = vstateData.states.filter(function (s) { return s.id === vstateData.current; })[0];
     el.innerHTML = cur
       ? vehicleStateBadge(cur, "font-size:12px;padding:3px 12px;")
-      : '<span class="tp-text-xs tp-text-muted">Sin estado</span>';
+      : '<span class="tp-text-xs tp-text-muted">' + tpT('ui.no_state') + '</span>';
   }
   function openVStateModal() {
     if (!window.tpModal || !vstateData.states.length) return;
@@ -1142,12 +1142,12 @@
       })
       .join("");
     var dlg = tpModal.open({
-      title: "Cambiar estado",
+      title: tpT('ui.change_state'),
       size: "sm",
       body:
         '<div class="tp-scope"><div class="tp-vs-choices">' + chips +
         '<button type="button" class="tp-vs-choice' + (!vstateData.current ? " is-active" : "") +
-        '" data-vs="0"><span class="tp-vs-dot" style="background:#cbd5e1;"></span>Sin estado</button></div></div>',
+        '" data-vs="0"><span class="tp-vs-dot" style="background:#cbd5e1;"></span>' + tpT('ui.no_state') + '</button></div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
     });
     dlg.addEventListener("click", function (e) {
@@ -1161,7 +1161,7 @@
       .fetchJSON(vsBase(vstateData.deviceId) + "/vehicle-state", { method: "POST", json: { vehicle_state_id: stateId } })
       .then(function (res) {
         tpModal.setBusy(dlg, false);
-        if (!res.ok || !res.data || !res.data.ok) { tpModal.toast("No se pudo cambiar el estado.", "error"); return; }
+        if (!res.ok || !res.data || !res.data.ok) { tpModal.toast(tpT('ui.state_change_failed'), "error"); return; }
         vstateData.current = stateId > 0 ? stateId : null;
         renderVStateBadge();
         // Re-pinta la fila y el marcador con el nuevo estado.
@@ -1173,9 +1173,9 @@
           refreshMarkerIcon(d.id);
         }
         tpModal.close(dlg);
-        tpModal.toast("Estado actualizado.", "success");
+        tpModal.toast(tpT('ui.state_updated'), "success");
       })
-      .catch(function () { tpModal.setBusy(dlg, false); tpModal.toast("Error de red.", "error"); });
+      .catch(function () { tpModal.setBusy(dlg, false); tpModal.toast(tpT('ui.network_error'), "error"); });
   }
 
   // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
@@ -1499,7 +1499,7 @@
       .then(function (res) {
         tpModal.setBusy(dlg, false);
         if (!res || !res.ok) {
-          tpModal.toast && tpModal.toast("No se pudo aplicar el filtro.", "error");
+          tpModal.toast && tpModal.toast(tpT('ui.filter_failed'), "error");
           return;
         }
         state.advFilter.ids = res.filtered ? new Set((res.ids || []).map(Number)) : null;
@@ -1511,7 +1511,7 @@
       })
       .catch(function () {
         tpModal.setBusy(dlg, false);
-        tpModal.toast && tpModal.toast("Error de red.", "error");
+        tpModal.toast && tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -1538,8 +1538,8 @@
     var body =
       '<p style="margin:0 0 10px;">' +
       (isOn
-        ? "Se enviará el comando para <b>cortar</b> el motor del vehículo."
-        : "Se enviará el comando para <b>restablecer</b> el motor del vehículo.") +
+        ? "" + tpT('ui.command_will_be_sent_for') + " <b>cortar</b> " + tpT('ui.the_vehicle_engine') + ""
+        : "" + tpT('ui.command_will_be_sent_for') + " <b>restablecer</b> " + tpT('ui.the_vehicle_engine') + "") +
       "</p>" +
       '<label class="tp-field__label">' + tpT('ui.sending') + '</label>' +
       '<select class="tp-input" data-lock-type style="width:100%;margin:4px 0 10px;"><option value="gprs">GPRS</option>' +
@@ -1553,7 +1553,7 @@
       '" style="width:100%;margin-top:4px;">' +
       '<div data-lock-err role="alert" style="display:none;margin-top:10px;padding:8px 10px;border-radius:8px;font-size:13px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.35);"></div>';
     var dlg = tpModal.open({
-      title: isOn ? "Cortar motor" : "Restablecer motor",
+      title: isOn ? tpT('ui.cut_engine') : tpT('ui.restore_engine'),
       size: "sm",
       body: body,
       buttons: [
@@ -1573,7 +1573,7 @@
               }
             }
             if (!cmd) {
-              showErr("Elige una plantilla o escribe el comando a enviar.");
+              showErr(tpT('ui.pick_template_or_write'));
               return false;
             }
             if (err) err.style.display = "none";
@@ -1583,7 +1583,7 @@
               .then(function (res) {
                 tpModal.setBusy(dlg, false);
                 if (!res.ok || !res.data || !res.data.ok) {
-                  showErr((res.data && res.data.message) || "No se pudo enviar el comando.");
+                  showErr((res.data && res.data.message) || tpT('ui.command_send_failed'));
                   return;
                 }
                 tpModal.toast((res.data && res.data.message) || "Comando enviado.", "success");
@@ -1650,12 +1650,12 @@
     if (!card || !window.tpModal) return;
     var url = card.getAttribute("data-history-url");
     var dlg = tpModal.open({
-      title: "Historial de bloqueo",
+      title: tpT('ui.lock_history'),
       size: "md",
       body:
         '<div style="margin-bottom:10px;"><select class="tp-input" data-lock-period style="width:auto;">' +
         '<option value="today">' + tpT('front.today') + '</option><option value="yesterday">' + tpT('front.yesterday') + '</option>' +
-        '<option value="this_week">Esta semana</option><option value="last_week">Semana pasada</option></select></div>' +
+        '<option value="this_week">' + tpT('ui.this_week') + '</option><option value="last_week">Semana pasada</option></select></div>' +
         '<div data-lock-hist><div class="tp-text-muted" style="padding:12px;">Cargando…</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
     });
@@ -1671,12 +1671,12 @@
         })
         .then(function (res) {
           if (!res || !res.ok) {
-            box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">No se pudo cargar.</div>';
+            box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">' + tpT('ui.load_failed') + '</div>';
             return;
           }
           var items = res.items || [];
           if (!items.length) {
-            box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Sin registros en el periodo.</div>';
+            box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">' + tpT('ui.no_records_in_period') + '</div>';
             return;
           }
           box.innerHTML =
@@ -1709,7 +1709,7 @@
             "</tbody></table>";
         })
         .catch(function () {
-          box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Error de red.</div>';
+          box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">' + tpT('ui.network_error') + '</div>';
         });
     }
     var sel = dlg.querySelector("[data-lock-period]");
@@ -1765,7 +1765,7 @@
     rulerState.pts = [];
     rulerRedraw();
     if (rulerState.on && window.tpModal)
-      tpModal.toast("Haz clic en el mapa para medir. Vuelve a Herramientas → Regla para salir.", "info");
+      tpModal.toast(tpT('ui.ruler_help'), "info");
   }
   function placeToolMarker(ll) {
     if (!state.map) return;
@@ -1776,7 +1776,7 @@
   function toolShowPoint() {
     if (!window.tpModal) return;
     tpModal.open({
-      title: "Mostrar punto",
+      title: tpT('ui.show_point'),
       size: "sm",
       body:
         '<div class="tp-scope"><label class="tp-field__label">Latitud</label>' +
@@ -1848,7 +1848,7 @@
               .catch(function () {
                 tpModal.setBusy(d, false);
                 if (err) {
-                  err.textContent = "Error de red.";
+                  err.textContent = tpT('ui.network_error');
                   err.style.display = "block";
                 }
               });
@@ -1863,7 +1863,7 @@
   window.tpLiveTools = { ruler: rulerToggle, showPoint: toolShowPoint, searchAddress: toolSearchAddress };
 
   function groupTitle(gid) {
-    if (!gid) return "Sin grupo";
+    if (!gid) return tpT('front.ungrouped');
     for (var i = 0; i < state.groups.length; i++)
       if (state.groups[i].id === gid) return state.groups[i].title;
     return tpT('front.group') + gid;
@@ -1898,7 +1898,7 @@
         '<span class="tp-lock-ico ' +
         (d.blocked ? "tp-lock-ico--on" : "tp-lock-ico--off") +
         '" title="' +
-        (d.blocked ? "Motor bloqueado" : "Motor desbloqueado") +
+        (d.blocked ? tpT('ui.engine_blocked') : tpT('ui.engine_unblocked')) +
         '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>';
     }
     // Motor (paridad legacy detect_engine): solo si hay detección de ignición
@@ -1910,7 +1910,7 @@
         '<span class="tp-eng-ico ' +
         (d.engine_status ? "tp-eng-ico--on" : "tp-eng-ico--off") +
         '" title="' +
-        (d.engine_status ? "Motor encendido" : "Motor apagado") +
+        (d.engine_status ? tpT('ui.engine_on') : tpT('ui.engine_off')) +
         '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></span>';
     }
     // Badge de estado de vehículo (tipo con estados: VACÍO/CARGADO…) con su color.
@@ -1928,7 +1928,7 @@
       '"' +
       (accent ? ' style="--tp-accent:' + accent + '"' : "") +
       ' role="option">' +
-      '<label class="tp-live__row-active" title="Mostrar en el mapa"><input type="checkbox" data-id="' +
+      '<label class="tp-live__row-active" title="' + tpT('ui.show_on_map') + '"><input type="checkbox" data-id="' +
       d.id +
       '"' +
       (active ? " checked" : "") +
@@ -1997,7 +1997,7 @@
         if (CAN_GROUPS) {
           var items =
             '<button type="button" role="menuitem" data-dg-new="1">' +
-            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Agregar nuevo</button>';
+            '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> ' + tpT('ui.add_new') + '</button>';
           if (g !== 0) {
             items +=
               '<button type="button" role="menuitem" data-dg-edit="' + g + '">' +
@@ -2085,7 +2085,7 @@
     if (!window.tpModal) return;
 
     var dlg = tpModal.open({
-      title: "Historial de cambios",
+      title: tpT('ui.change_history'),
       size: "xl",
       body: '<div data-hist><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
@@ -2096,7 +2096,7 @@
           .fetchJSON("/ui/v2/api/devices/" + id + "/changes", { method: "GET" })
           .then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              host.innerHTML = '<p class="tp-text-sm tp-text-error">No se pudo cargar.</p>';
+              host.innerHTML = '<p class="tp-text-sm tp-text-error">' + tpT('ui.load_failed') + '</p>';
               return;
             }
 
@@ -2141,7 +2141,7 @@
               "</tbody></table></div>";
           })
           .catch(function () {
-            host.innerHTML = '<p class="tp-text-sm tp-text-error">Error de red.</p>';
+            host.innerHTML = '<p class="tp-text-sm tp-text-error">' + tpT('ui.network_error') + '</p>';
           });
       },
     });
@@ -2270,7 +2270,7 @@
     var built = buildRowMenu(id);
     rowMenu.innerHTML = "";
     if (built) rowMenu.appendChild(built);
-    else rowMenu.innerHTML = '<div class="tp-row-menu__loading">Sin acciones.</div>';
+    else rowMenu.innerHTML = '<div class="tp-row-menu__loading">' + tpT('ui.no_actions') + '</div>';
 
     situarRowMenu(btn);
 
@@ -2367,7 +2367,7 @@
       });
 
       var dlg = tpModal.open({
-        title: "Grupos de objetos",
+        title: tpT('ui.object_groups'),
         size: "lg",
         static: true,
         body:
@@ -2384,7 +2384,7 @@
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
           '<input type="search" data-dgm-search placeholder="' + tpT('front.search') + '" autocomplete="off">' +
           "</span>" +
-          '<button type="button" class="tp-link-action" data-dgm-all>Seleccionar todo</button>' +
+          '<button type="button" class="tp-link-action" data-dgm-all>' + tpT('ui.select_all_n') + '</button>' +
           '<span class="tp-group-box__sep">|</span>' +
           '<button type="button" class="tp-link-action" data-dgm-none>Deseleccionar todo</button>' +
           "</div>" +
@@ -2422,16 +2422,16 @@
                   if (!res.ok || !res.data || !res.data.ok) {
                     var errors = (res.data && res.data.errors) || {};
                     var first = Object.keys(errors)[0];
-                    tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "No se pudo guardar.", "error");
+                    tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.save_failed'), "error");
                     return;
                   }
-                  tpModal.toast(isEdit ? "Grupo actualizado." : "Grupo creado.", "success");
+                  tpModal.toast(isEdit ? tpT('ui.group_updated') : tpT('ui.group_created'), "success");
                   tpModal.close(dialog);
                   fetchDevices(true);
                 })
                 .catch(function () {
                   tpModal.setBusy(dialog, false);
-                  tpModal.toast("Error de red.", "error");
+                  tpModal.toast(tpT('ui.network_error'), "error");
                 });
               return false;
             },
@@ -2480,7 +2480,7 @@
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>' +
           '<input type="checkbox" class="tp-choice-input" data-dgm-gchk="' + gid + '">' +
           '<span style="font-size:14px;font-weight:700;color:var(--fg-primary,#0f172a);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
-          esc(groupTitles[gid] || "Sin grupo") + "</span>" +
+          esc(groupTitles[gid] || tpT('front.ungrouped')) + "</span>" +
           "</div>" +
           '<div data-dgm-body style="display:' + (isOpen ? "grid" : "none") +
           ';grid-template-columns:1fr 1fr;gap:0 24px;border-top:1px solid var(--border-default,#e9eef5);padding:5px 14px 9px;">' +
@@ -2538,7 +2538,7 @@
         });
         list.innerHTML =
           secs.map(sectionHtml).join("") ||
-          '<div style="padding:12px 4px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>';
+          '<div style="padding:12px 4px;font-size:13px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.no_results') + '</div>';
         renderPager(pages);
         syncGroupChecks();
       }
@@ -2607,7 +2607,7 @@
   function delDeviceGroup(groupId) {
     tpModal
       .confirm({
-        title: "Eliminar grupo",
+        title: tpT('ui.delete_group'),
         message: tpT('ui.confirm_delete_group_vehicles'),
         danger: true,
         confirmLabel: tpT('global.delete'),
@@ -2616,10 +2616,10 @@
         if (!okGo) return;
         tpModal.fetchJSON(GROUPS_BASE + "/" + groupId, { method: "DELETE" }).then(function (res) {
           if (res.ok && res.data && res.data.ok) {
-            tpModal.toast("Grupo eliminado.", "success");
+            tpModal.toast(tpT('ui.group_deleted'), "success");
             fetchDevices(true);
           } else {
-            tpModal.toast("No se pudo eliminar.", "error");
+            tpModal.toast(tpT('ui.delete_failed'), "error");
           }
         });
       });
@@ -2748,7 +2748,7 @@
     }
     page(1)
       .catch(function (e) {
-        if (e.name !== "AbortError" && statusText) statusText.textContent = "Error al cargar";
+        if (e.name !== "AbortError" && statusText) statusText.textContent = tpT('ui.load_error');
       })
       .finally(function () {
         inFlight = null;
@@ -3072,7 +3072,7 @@
         // tpModal.confirm devuelve una Promise; no acepta onConfirm.
         tpModal
           .confirm({
-            title: "Eliminar imagen",
+            title: tpT('ui.delete_image'),
             message: tpT('ui.confirm_delete_vehicle_image'),
             confirmLabel: tpT('global.delete'),
             danger: true,
@@ -3083,14 +3083,14 @@
               .fetchJSON(box.getAttribute("data-destroy"), { method: "DELETE" })
               .then(function (res) {
                 if (!res.ok || !res.data || !res.data.ok) {
-                  tpModal.toast("No se pudo eliminar la imagen.", "error");
+                  tpModal.toast(tpT('ui.image_delete_failed'), "error");
                   return;
                 }
                 tpModal.toast("Imagen eliminada.", "success");
                 if (state.selectedId) loadDrawerWidgets(state.selectedId);
               })
               .catch(function () {
-                tpModal.toast("Error de red.", "error");
+                tpModal.toast(tpT('ui.network_error'), "error");
               });
           });
       }
@@ -3115,7 +3115,7 @@
             return;
           }
           if (!res.ok || !res.data || !res.data.ok) {
-            tpModal.toast("No se pudo subir la imagen.", "error");
+            tpModal.toast(tpT('ui.image_upload_failed'), "error");
             return;
           }
           tpModal.toast("Imagen actualizada.", "success");
@@ -3123,7 +3123,7 @@
         })
         .catch(function () {
           file.value = "";
-          tpModal.toast("Error de red.", "error");
+          tpModal.toast(tpT('ui.network_error'), "error");
         });
     });
 
@@ -3149,13 +3149,13 @@
         })
         .then(function (res) {
           if (!res.ok || !res.data || !res.data.ok) {
-            tpModal.toast("No se pudo enviar la plantilla.", "error");
+            tpModal.toast(tpT('ui.template_send_failed'), "error");
             return;
           }
           tpModal.toast("Plantilla enviada.", "success");
         })
         .catch(function () {
-          tpModal.toast("Error de red.", "error");
+          tpModal.toast(tpT('ui.network_error'), "error");
         });
     });
 

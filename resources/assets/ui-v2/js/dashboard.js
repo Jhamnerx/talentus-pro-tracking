@@ -83,7 +83,7 @@
           labelLine: { show: false },
           data: hasData
             ? items.map(function (d) { return { name: d.name, value: d.value, itemStyle: { color: d.color } }; })
-            : [{ name: "Sin datos", value: 1, itemStyle: { color: cssVar("--surface-sunken", "#e2e8f0") }, tooltip: { show: false } }],
+            : [{ name: tpT('front.no_data'), value: 1, itemStyle: { color: cssVar("--surface-sunken", "#e2e8f0") }, tooltip: { show: false } }],
         }],
       });
     }
@@ -195,7 +195,7 @@
     var hint = $("#tp-rank-hint");
     if (hint) {
       hint.textContent = r.indice != null
-        ? r.indice + " eventos/100 km en la flota"
+        ? r.indice + tpT('ui.events_per_100km')
         : tpT('ui.no_mileage_in_period');
     }
 
@@ -235,7 +235,7 @@
     var host = $("#tp-dash-tasks");
     if (!host) return;
     if (!items || !items.length) {
-      host.innerHTML = '<li class="tp-text-muted tp-text-sm">Sin tareas.</li>';
+      host.innerHTML = '<li class="tp-text-muted tp-text-sm">' + tpT('ui.no_tasks') + '</li>';
       return;
     }
     host.innerHTML = items
@@ -282,10 +282,10 @@
     var tbody = $("#tp-dash-top-table tbody");
     if (!tbody) return;
     if (!top || !top.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="tp-text-muted tp-text-center">Sin datos.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="tp-text-muted tp-text-center">' + tpT('ui.no_data_dot') + '</td></tr>';
       return;
     }
-    var labels = { moving: "Moviendo", idle: tpT('front.idle'), stopped: tpT('front.stopped'), offline: "Sin datos" };
+    var labels = { moving: "Moviendo", idle: tpT('front.idle'), stopped: tpT('front.stopped'), offline: tpT('front.no_data') };
     tbody.innerHTML = top
       .map(function (d, i) {
         var g = statusGroup(d.status);
@@ -437,7 +437,7 @@
               var item = p.overview[i];
               if (!item || !item.url) return;
               row.style.cursor = "pointer";
-              row.title = "Ver en Flota";
+              row.title = tpT('ui.see_in_fleet');
               row.addEventListener("click", function () { location.href = item.url; });
             });
           }

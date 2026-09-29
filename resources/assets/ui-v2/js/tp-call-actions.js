@@ -89,7 +89,7 @@
 
     tpModal.fetchJSON(URLS.meta + (isEdit ? "?id=" + id : ""), { method: "GET" }).then(function (res) {
       var body = dlg.querySelector(".tp-modal__body");
-      if (!res.ok || !res.data || !res.data.ok) { body.innerHTML = '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar.</div>'; return; }
+      if (!res.ok || !res.data || !res.data.ok) { body.innerHTML = '<div class="tp-text-center tp-text-error" style="padding:24px;">' + tpT('ui.load_failed') + '</div>'; return; }
       var m = res.data, item = m.item || {};
       var dt = splitDT(item.called_at);
       body.innerHTML =
@@ -98,10 +98,10 @@
         '<select class="tp-input" name="device_id"' + (isEdit ? " disabled" : "") + ">" + options(m.devices, item.device_id, tpT('ui.select_vehicle_ellipsis')) + "</select></div>" +
         '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('front.event') + '</span>' +
         '<select class="tp-input" name="event_id">' + options(item.events || [], item.event_id, tpT('ui.select_a_vehicle_first')) + "</select>" +
-        '<small class="tp-form__hint">Solo eventos con alerta pueden registrarse.</small></div>' +
-        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Tipo de respuesta</span>' +
+        '<small class="tp-form__hint">' + tpT('ui.only_alert_events') + '</small></div>' +
+        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('ui.response_type') + '</span>' +
         '<select class="tp-input" name="response_type">' + options(m.responseTypes, item.response_type) + "</select></div>" +
-        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Fecha de llamada</span>' +
+        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('ui.call_date') + '</span>' +
         '<div style="display:flex;gap:8px;align-items:center;">' +
         '<input type="date" class="tp-input" name="called_at_date" value="' + esc(dt.date) + '" style="flex:1;min-width:0;">' +
         '<select class="tp-input" name="called_at_h" style="width:74px;">' + hourOptions(dt.h) + "</select>" +
@@ -120,7 +120,7 @@
         if (window.tpSelect && tpSelect.refresh) try { tpSelect.refresh(evSel); } catch (e) {}
         tpModal.fetchJSON(URLS.events + "?device_id=" + devSel.value, { method: "GET" }).then(function (r) {
           var evs = r.ok && r.data && r.data.ok ? r.data.events : [];
-          evSel.innerHTML = options(evs, "", evs.length ? "Seleccionar evento…" : "Sin eventos recientes");
+          evSel.innerHTML = options(evs, "", evs.length ? tpT('ui.select_event_ellipsis') : tpT('ui.no_recent_events'));
           if (window.tpSelect && tpSelect.refresh) try { tpSelect.refresh(evSel); } catch (e) {}
         });
       });
@@ -161,9 +161,9 @@
       called_at: dv ? dv + " " + hv + ":" + mv : "",
       remarks: form.querySelector('[name="remarks"]').value.trim(),
     };
-    if (!payload.event_id) { tpModal.toast("Selecciona un evento.", "warning"); return; }
-    if (!dv) { tpModal.toast("La fecha de llamada es obligatoria.", "warning"); return; }
-    if (!payload.remarks) { tpModal.toast("Las notas son obligatorias.", "warning"); return; }
+    if (!payload.event_id) { tpModal.toast(tpT('ui.pick_an_event'), "warning"); return; }
+    if (!dv) { tpModal.toast(tpT('ui.call_date_required'), "warning"); return; }
+    if (!payload.remarks) { tpModal.toast(tpT('ui.notes_required'), "warning"); return; }
 
     var url = id ? URLS.item.replace("{id}", id) : URLS.store;
     tpModal.setBusy(dlg, true);
@@ -172,14 +172,14 @@
       if (res.status === 422) {
         var errors = (res.data && res.data.errors) || {};
         var first = Object.keys(errors)[0];
-        tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.", "warning");
+        tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
         return;
       }
-      if (!res.ok || !res.data || !res.data.ok) { tpModal.toast("No se pudo guardar.", "error"); return; }
+      if (!res.ok || !res.data || !res.data.ok) { tpModal.toast(tpT('ui.save_failed'), "error"); return; }
       tpModal.toast(id ? "Actualizado." : "Registrado.", "success");
       tpModal.close(dlg);
       if (onSaved) onSaved();
-    }).catch(function () { tpModal.setBusy(dlg, false); tpModal.toast("Error de red.", "error"); });
+    }).catch(function () { tpModal.setBusy(dlg, false); tpModal.toast(tpT('ui.network_error'), "error"); });
   }
 
   /* ================= Página ================= */
@@ -216,7 +216,7 @@
     var q = URLS.list + "?s=" + encodeURIComponent(state.s) + "&device_id=" + encodeURIComponent(state.device_id) +
       "&response_type=" + encodeURIComponent(state.response_type) + "&page=" + state.page + "&per_page=" + state.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
-      if (!res.ok || !res.data || !res.data.ok) { rowsEl.innerHTML = '<tr><td colspan="7" class="tp-svc-table__empty">No se pudo cargar.</td></tr>'; return; }
+      if (!res.ok || !res.data || !res.data.ok) { rowsEl.innerHTML = '<tr><td colspan="7" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>'; return; }
       state.last = res.data.last || 1; state.total = res.data.total || 0;
       var items = res.data.items || [];
       rowsEl.innerHTML = items.length ? items.map(function (r) {
@@ -226,7 +226,7 @@
           '<td title="' + esc(r.remarks) + '" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.remarks || "–") + "</td>" +
           "<td>" + esc(r.user || "–") + "</td>" +
           '<td class="tp-svc-table__actions">' + kebab(r) + "</td></tr>";
-      }).join("") : '<tr><td colspan="7" class="tp-svc-table__empty">Sin datos</td></tr>';
+      }).join("") : '<tr><td colspan="7" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0, to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;
       prevBtn.disabled = state.page <= 1; nextBtn.disabled = state.page >= state.last;
@@ -250,7 +250,7 @@
         if (!go) return;
         tpModal.fetchJSON(URLS.item.replace("{id}", del.getAttribute("data-ca-del")), { method: "DELETE" }).then(function (res) {
           if (res.ok && res.data && res.data.ok) { tpModal.toast("Eliminado.", "success"); load(); }
-          else tpModal.toast("No se pudo eliminar.", "error");
+          else tpModal.toast(tpT('ui.delete_failed'), "error");
         });
       });
     }

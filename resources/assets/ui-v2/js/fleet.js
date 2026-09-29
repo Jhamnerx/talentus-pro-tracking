@@ -269,7 +269,7 @@
     var SORTABLE = { name: "name", status: "status", plate_number: "plate", speed: "speed" };
 
     thead.innerHTML =
-      '<th class="tp-fleet__th-check"><input type="checkbox" id="tp-fleet-check-all" aria-label="Seleccionar todo"></th>' +
+      '<th class="tp-fleet__th-check"><input type="checkbox" id="tp-fleet-check-all" aria-label="' + tpT('ui.select_all_n') + '"></th>' +
       columnsState.selected
         .map(function (f) {
           var sort = SORTABLE[f] ? ' data-sort="' + SORTABLE[f] + '"' : "";
@@ -381,7 +381,7 @@
     columnsState.selected.forEach(function (f) { chosen[f] = true; });
 
     tpModal.open({
-      title: "Columnas de la lista",
+      title: tpT('ui.list_columns'),
       size: "md",
       body:
         '<div class="tp-colpick">' +
@@ -401,7 +401,7 @@
               // Solo los sensores numéricos admiten tramos de color
               (c.numeric
                 ? '<button type="button" class="tp-colpick__ranges' + (hasRanges ? " is-set" : "") +
-                  '" data-ranges="' + escapeHtml(c.field) + '" title="Colores por rango">🎨</button>'
+                  '" data-ranges="' + escapeHtml(c.field) + '" title="' + tpT('ui.colors_by_range') + '">🎨</button>'
                 : "") +
               "</label>"
             );
@@ -435,7 +435,7 @@
               cols.push(c.getAttribute("data-col"));
             });
             if (!cols.length) {
-              tpModal.toast("Elige al menos una columna.", "warning");
+              tpModal.toast(tpT('ui.pick_one_column'), "warning");
               return false;
             }
             // Solo los rangos de las columnas que quedan activas
@@ -454,7 +454,7 @@
                   renderHead();
                   render();
                 } else {
-                  tpModal.toast("No se pudo guardar.", "error");
+                  tpModal.toast(tpT('ui.save_failed'), "error");
                 }
               });
             return false;
@@ -541,7 +541,7 @@
     var items = sortItems(state.items);
     if (!items.length) {
       $tbody.innerHTML =
-        '<tr><td colspan="' + (columnsState.selected.length + 2) + '" class="tp-text-muted tp-text-center" style="padding:32px;">Sin resultados.</td></tr>';
+        '<tr><td colspan="' + (columnsState.selected.length + 2) + '" class="tp-text-muted tp-text-center" style="padding:32px;">' + tpT('ui.no_results') + '</td></tr>';
     } else {
       var html = "";
       for (var i = 0; i < items.length; i++) {
@@ -562,7 +562,7 @@
           '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
           "</button>" +
           '<div class="tp-fleet__kebab-menu" role="menu" hidden>' +
-          '<button type="button" role="menuitem" data-view="' + d.id + '">Ver en el mapa</button>' +
+          '<button type="button" role="menuitem" data-view="' + d.id + '">' + tpT('ui.see_on_map') + '</button>' +
           '<button type="button" role="menuitem" data-edit="' + d.id + '">' + tpT('global.edit') + '</button>' +
           '<button type="button" role="menuitem" data-history="' + d.id + '">Historial</button>' +
           "</div></div></td>" +
@@ -589,7 +589,7 @@
     $count.textContent =
       state.total > 0
         ? state.total.toLocaleString() + " dispositivos"
-        : "Sin dispositivos";
+        : tpT('ui.no_devices');
     $page.textContent =
       tpT('ui.page') + state.page + " / " + Math.max(1, state.pages);
     $prev.disabled = state.page <= 1 || state.loading;
@@ -855,7 +855,7 @@
       tpT('front.model'),
       "SIM",
       "km/h",
-      "Motor (h)",
+      tpT('ui.engine_h'),
       tpT('ui.last_movement_js'),
       "Expira",
     ];

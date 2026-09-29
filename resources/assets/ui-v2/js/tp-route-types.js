@@ -29,7 +29,7 @@
     var isEdit = !!(item && item.id);
 
     tpModal.open({
-      title: isEdit ? "Editar periodo" : "Nuevo periodo",
+      title: isEdit ? tpT('ui.edit_period') : tpT('ui.new_period'),
       size: "sm",
       body:
         '<div class="tp-form">' +
@@ -62,7 +62,7 @@
               ended_at: toApi(d.querySelector("[data-rt-to]").value),
             };
             if (!payload.started_at || !payload.ended_at) {
-              tpModal.toast("Indica el periodo completo.", "warning");
+              tpModal.toast(tpT('ui.indicates_full_period'), "warning");
               return false;
             }
 
@@ -80,7 +80,7 @@
                 }
                 var errs = (res.data && res.data.errors) || {};
                 var first = Object.keys(errs)[0];
-                tpModal.toast(first ? [].concat(errs[first])[0] : "No se pudo guardar.", "error");
+                tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
               });
             return false;
           },
@@ -93,7 +93,7 @@
     if (!window.tpModal) return;
 
     tpModal.open({
-      title: "Tipos de trayecto" + (deviceName ? " · " + deviceName : ""),
+      title: tpT('ui.trip_types') + (deviceName ? " · " + deviceName : ""),
       size: "md",
       body: '<div data-rt-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
@@ -104,7 +104,7 @@
         function load() {
           tpModal.fetchJSON(BASE + "/devices/" + deviceId + "/route-types").then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              host.innerHTML = '<div class="tp-text-muted tp-text-sm">No se pudo cargar.</div>';
+              host.innerHTML = '<div class="tp-text-muted tp-text-sm">' + tpT('ui.load_failed') + '</div>';
               return;
             }
             types = res.data.types || [];
@@ -112,7 +112,7 @@
 
             host.innerHTML =
               '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
-              '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-rt-add>＋ Nuevo periodo</button></div>' +
+              '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-rt-add>' + tpT('ui.new_period_plus') + '</button></div>' +
               (items.length
                 ? items
                     .map(function (r) {
@@ -127,7 +127,7 @@
                       );
                     })
                     .join("")
-                : '<div class="tp-text-muted tp-text-sm">Sin periodos definidos.</div>');
+                : '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_periods_defined') + '</div>');
 
             host.__items = items;
           });
@@ -148,7 +148,7 @@
           var del = e.target.closest("[data-rt-del]");
           if (del) {
             tpModal
-              .confirm({ title: "Eliminar periodo", message: tpT('ui.confirm_delete_period'), danger: true, confirmLabel: tpT('global.delete') })
+              .confirm({ title: tpT('ui.delete_period'), message: tpT('ui.confirm_delete_period'), danger: true, confirmLabel: tpT('global.delete') })
               .then(function (ok) {
                 if (!ok) return;
                 tpModal
@@ -157,7 +157,7 @@
                     if (res.ok && res.data && res.data.ok) {
                       tpModal.toast("Eliminado.", "success");
                       load();
-                    } else tpModal.toast("No se pudo eliminar.", "error");
+                    } else tpModal.toast(tpT('ui.delete_failed'), "error");
                   });
               });
           }

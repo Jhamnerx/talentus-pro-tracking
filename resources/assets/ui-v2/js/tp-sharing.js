@@ -35,7 +35,7 @@
     var isEdit = !!id;
 
     var dlg = tpModal.open({
-      title: isEdit ? "Editar compartir" : tpT('ui.share_vehicles'),
+      title: isEdit ? tpT('ui.edit_share') : tpT('ui.share_vehicles'),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
@@ -59,7 +59,7 @@
       if (!bodyEl) return;
       if (!res.ok || !res.data || !res.data.ok) {
         bodyEl.innerHTML =
-          '<div class="tp-text-center tp-text-error" style="padding:24px;">No se pudo cargar el formulario.</div>';
+          '<div class="tp-text-center tp-text-error" style="padding:24px;">' + tpT('ui.form_load_failed') + '</div>';
         return;
       }
       bodyEl.innerHTML = buildFormHtml(res.data, opts);
@@ -83,7 +83,7 @@
       "</label>" +
       // Expira por
       '<div class="tp-form__field">' +
-      '<span class="tp-form__label">Expira por</span>' +
+      '<span class="tp-form__label">' + tpT('ui.expires_by') + '</span>' +
       '<div style="display:flex;gap:18px;align-items:center;">' +
       shxRadio("none", tpT('front.none'), by === "none") +
       shxRadio("duration", tpT('ui.duration'), by === "duration") +
@@ -122,7 +122,7 @@
       '<label class="tp-form__field tp-form__field--checkbox">' +
       '<input type="checkbox" name="delete_after_expiration" value="1"' +
       (item.delete_after_expiration ? " checked" : "") + ">" +
-      '<span class="tp-form__label">Eliminar al expirar</span>' +
+      '<span class="tp-form__label">' + tpT('ui.delete_on_expiry') + '</span>' +
       "</label>" +
       // Devices
       '<div class="tp-form__field">' +
@@ -133,7 +133,7 @@
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
       '<input type="search" data-sh-search placeholder="' + tpT('front.search') + '" autocomplete="off">' +
       "</span>" +
-      '<button type="button" class="tp-link-action" data-sh-all>Seleccionar todo</button>' +
+      '<button type="button" class="tp-link-action" data-sh-all>' + tpT('ui.select_all_n') + '</button>' +
       '<span class="tp-group-box__sep">|</span>' +
       '<button type="button" class="tp-link-action" data-sh-none>Deseleccionar todo</button>' +
       "</div>" +
@@ -236,7 +236,7 @@
     var listEl = form.querySelector("[data-sh-list]");
     var html = "";
     Object.keys(byGroup).forEach(function (gid) {
-      var title = groups[gid] || "Sin grupo";
+      var title = groups[gid] || tpT('front.ungrouped');
       html +=
         '<div data-sh-group="' + gid + '" style="border-bottom:1px solid var(--border-default,#eef2f7);">' +
         '<div style="display:flex;align-items:center;gap:9px;padding:7px 4px;background:var(--surface-sunken,#f8fafc);border-radius:8px;">' +
@@ -394,20 +394,20 @@
           var errors = (res.data && res.data.errors) || {};
           tpModal.showFieldErrors(dialog, errors);
           var first = Object.keys(errors)[0];
-          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : "Revisa los campos.", "warning");
+          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
+          tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
-        tpModal.toast(id ? "Compartir actualizado." : "Link de compartir creado.", "success");
+        tpModal.toast(id ? "Compartir actualizado." : tpT('ui.share_link_created'), "success");
         tpModal.close(dialog);
         if (typeof opts.onSaved === "function") opts.onSaved(res.data.item);
       })
       .catch(function () {
         tpModal.setBusy(dialog, false);
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
       });
   }
 
@@ -486,14 +486,14 @@
         "&per_page=" + state.per;
       tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
         if (!res.ok || !res.data || !res.data.ok) {
-          rowsEl.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">No se pudo cargar.</td></tr>';
+          rowsEl.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
           return;
         }
         state.last = res.data.last || 1;
         state.total = res.data.total || 0;
         var items = res.data.items || [];
         if (!items.length) {
-          rowsEl.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">Sin datos</td></tr>';
+          rowsEl.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
         } else {
           rowsEl.innerHTML = items
             .map(function (r) {
@@ -584,7 +584,7 @@
         var sid = del.getAttribute("data-sh-del");
         tpModal
           .confirm({
-            title: "Eliminar compartir",
+            title: tpT('ui.delete_share'),
             message: tpT('ui.confirm_delete_share_link'),
             danger: true,
             confirmLabel: tpT('global.delete'),
@@ -596,7 +596,7 @@
                 tpModal.toast("Eliminado.", "success");
                 load();
               } else {
-                tpModal.toast("No se pudo eliminar.", "error");
+                tpModal.toast(tpT('ui.delete_failed'), "error");
               }
             });
           });

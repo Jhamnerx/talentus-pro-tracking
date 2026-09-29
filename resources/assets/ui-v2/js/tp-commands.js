@@ -105,7 +105,7 @@
       '<div class="flex items-center gap-3 px-1 pb-1.5">' +
       '<input type="text" class="tp-input" style="height:32px;" data-cmd-search placeholder="' +
       esc(T("search", "Buscar")) + '…" autocomplete="off">' +
-      '<button type="button" class="' + UI.linkBtn + ' whitespace-nowrap" data-cmd-all>' + esc(T("select_all", "Seleccionar todo")) + "</button>" +
+      '<button type="button" class="' + UI.linkBtn + ' whitespace-nowrap" data-cmd-all>' + esc(T("select_all", tpT('ui.select_all_n'))) + "</button>" +
       '<button type="button" class="' + UI.linkBtn + ' whitespace-nowrap" data-cmd-none>' + esc(T("deselect_all", "Deseleccionar todo")) + "</button>" +
       "</div>" +
       '<div class="max-h-52 overflow-y-auto" data-cmd-devices></div>' +

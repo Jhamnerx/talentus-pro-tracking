@@ -115,7 +115,7 @@
     var list = state.devices.filter(function (d) { return !q || (d.name + " " + (d.plate || "")).toLowerCase().indexOf(q) !== -1; }).slice(0, 200);
     comboMenu.innerHTML = list.length ? list.map(function (d) {
       return '<button type="button" class="tp-combo__item' + (state.deviceId === d.id ? " is-active" : "") + '" data-id="' + d.id + '"><span class="tp-combo__item-name">' + esc(d.name) + "</span>" + (d.plate ? '<span class="tp-combo__item-plate">' + esc(d.plate) + "</span>" : "") + "</button>";
-    }).join("") : '<div class="tp-combo__empty">' + esc(T("no_data", "Sin datos")) + '</div>';
+    }).join("") : '<div class="tp-combo__empty">' + esc(T("no_data", tpT('front.no_data'))) + '</div>';
   }
   function selDevice(id, name) { state.deviceId = id; state.deviceName = name; combo.setAttribute("data-value", id); comboInput.value = name; comboMenu.hidden = true; comboInput.setAttribute("aria-expanded", "false"); }
   if (comboInput) {
@@ -642,7 +642,7 @@
   }
   function renderTimeline() {
     var host = $("#tp-hist-timeline");
-    if (!state.timeline.length) { host.innerHTML = '<div class="tp-hist__side-empty"><span class="tp-text-muted tp-text-sm">' + esc(T("no_data", "Sin datos")) + "</span></div>"; return; }
+    if (!state.timeline.length) { host.innerHTML = '<div class="tp-hist__side-empty"><span class="tp-text-muted tp-text-sm">' + esc(T("no_data", tpT('front.no_data'))) + "</span></div>"; return; }
     var sum = state.summary || {};
     // Fila de la CABECERA (fechas junto al riel de puntos)
     function hRow(label, value) {
@@ -1073,7 +1073,7 @@
           // El tail y el recorrido cambian: recargar el tramo mostrado.
           if (typeof load === "function") load();
         } else if (window.tpModal) {
-          tpModal.toast(j && j.error === "forbidden" ? "Sin permiso para eliminar." : "No se pudieron eliminar.", "error");
+          tpModal.toast(j && j.error === "forbidden" ? tpT('ui.no_permission_delete') : tpT('ui.could_not_delete_them'), "error");
         }
       })
       .catch(function () {});
@@ -1193,7 +1193,7 @@
         state.positions = b.positions || []; state.timeline = b.timeline || []; state.summary = b.summary || {}; state.sensors = b.sensors || [];
         buildSegments();
         clearAll();
-        if (!state.positions.length) { renderTimeline(); $("#tp-hist-summary").hidden = true; $("#tp-hist-bottom").hidden = true; toast(T("no_data", "Sin datos"), "info"); return; }
+        if (!state.positions.length) { renderTimeline(); $("#tp-hist-summary").hidden = true; $("#tp-hist-bottom").hidden = true; toast(T("no_data", tpT('front.no_data')), "info"); return; }
         $("#tp-hist-download").disabled = false; $("#tp-hist-clear").disabled = false;
         renderSensorTabs();
         buildRoute(); buildMarkers(); renderTimeline(); renderSummary(); setupGraphView(); updateLegend();
@@ -1201,7 +1201,7 @@
         if (state.routeGroup) state.map.fitBounds(state.routeGroup.getBounds(), { padding: [40, 40] });
         loadDataLog(1);
       })
-      .catch(function (e) { $("#tp-hist-loading").hidden = true; toast("Error al cargar: " + (e.message || e), "error"); });
+      .catch(function (e) { $("#tp-hist-loading").hidden = true; toast(tpT('ui.load_error_colon') + (e.message || e), "error"); });
   }
   function buildSegments() {
     state.segments = []; var dIdx = 0;

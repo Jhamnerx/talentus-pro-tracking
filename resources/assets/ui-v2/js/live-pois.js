@@ -102,7 +102,7 @@
             it.lng = ll.lng;
           }
         } else {
-          tpModal.toast && tpModal.toast("No se pudo mover el POI.", "error");
+          tpModal.toast && tpModal.toast(tpT('ui.poi_move_failed'), "error");
           load(true);
         }
       })
@@ -140,11 +140,11 @@
     var url = id ? BASE + "/" + id + "/form" : BASE + "/form";
     tpModal.fetchJSON(url, { method: "GET" }).then(function (res) {
       if (!res || !res.ok || !res.data || !res.data.ok) {
-        tpModal.toast && tpModal.toast("No se pudo cargar el formulario.", "error");
+        tpModal.toast && tpModal.toast(tpT('ui.form_load_failed'), "error");
         return;
       }
       tpModal.open({
-        title: id ? "Editar POI" : "Nuevo POI",
+        title: id ? tpT('ui.edit_poi') : tpT('ui.new_poi'),
         size: "md",
         body: res.data.html,
         buttons: [
@@ -163,7 +163,7 @@
               };
               var name = val('[name="name"]').trim();
               if (!name) {
-                tpModal.toast && tpModal.toast("El nombre es obligatorio.", "warning");
+                tpModal.toast && tpModal.toast(tpT('ui.name_required'), "warning");
                 return false;
               }
               var payload = {
@@ -182,11 +182,11 @@
                     tpModal.toast && tpModal.toast(id ? "POI actualizado." : "POI creado.", "success");
                     tpModal.close(dialog);
                     load(true);
-                  } else tpModal.toast && tpModal.toast("No se pudo guardar.", "error");
+                  } else tpModal.toast && tpModal.toast(tpT('ui.save_failed'), "error");
                 })
                 .catch(function () {
                   btn.disabled = false;
-                  tpModal.toast && tpModal.toast("Error de red.", "error");
+                  tpModal.toast && tpModal.toast(tpT('ui.network_error'), "error");
                 });
               return false;
             },
@@ -203,12 +203,12 @@
         if (r && r.ok && r.data && r.data.ok) {
           tpModal.toast && tpModal.toast("POI eliminado.", "success");
           load(true);
-        } else tpModal.toast && tpModal.toast("No se pudo eliminar.", "error");
+        } else tpModal.toast && tpModal.toast(tpT('ui.delete_failed'), "error");
       });
     };
     if (tpModal.confirm)
       tpModal
-        .confirm({ title: "Eliminar POI", message: tpT('ui.confirm_delete_poi'), confirmLabel: tpT('global.delete'), danger: true })
+        .confirm({ title: tpT('ui.delete_poi'), message: tpT('ui.confirm_delete_poi'), confirmLabel: tpT('global.delete'), danger: true })
         .then(function (ok) {
           if (ok) doDel();
         });
@@ -233,7 +233,7 @@
     setVisible(true);
     S.placeMode = true;
     m.getContainer().style.cursor = "crosshair";
-    window.tpModal && tpModal.toast && tpModal.toast("Haz clic en el mapa para ubicar el POI.", "info");
+    window.tpModal && tpModal.toast && tpModal.toast(tpT('ui.click_map_to_place_poi'), "info");
   }
 
   function setVisible(on) {
@@ -257,7 +257,7 @@
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
 
   function groupTitle(gid) {
-    if (!gid) return "Sin grupo";
+    if (!gid) return tpT('front.ungrouped');
     for (var i = 0; i < S.groups.length; i++) if (S.groups[i].id === gid) return S.groups[i].title;
     return tpT('front.group') + gid;
   }
@@ -266,7 +266,7 @@
     if (!sel) return;
     var cur = sel.value;
     sel.innerHTML =
-      '<option value="">Todos los grupos</option>' +
+      '<option value="">' + tpT('ui.all_groups') + '</option>' +
       S.groups.map(function (g) { return '<option value="' + g.id + '">' + esc(g.title) + "</option>"; }).join("");
     sel.value = cur;
   }
@@ -295,7 +295,7 @@
       .fetchJSON(BASE + "/" + p.id + "/toggle", { method: "POST", json: { active: on ? 1 : 0 } })
       .then(function (res) {
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast("No se pudo cambiar la visibilidad.", "error");
+          tpModal.toast(tpT('ui.visibility_change_failed'), "error");
           renderList();
           return;
         }
@@ -303,7 +303,7 @@
         renderMarkers();
       })
       .catch(function () {
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
         renderList();
       });
   }
@@ -320,7 +320,7 @@
       export_single: "Exportar seleccionados",
       export_active: "Exportar activos",
       export_inactive: "Exportar inactivos",
-      export_groups: "Exportar por grupos",
+      export_groups: tpT('ui.export_by_groups'),
     };
     var opt = function (obj) {
       return Object.keys(obj).map(function (k) { return '<option value="' + k + '">' + esc(obj[k]) + "</option>"; }).join("");
@@ -334,11 +334,11 @@
       body:
         '<div class="tp-field"><label class="tp-field__label">Formato</label><select class="tp-input" data-exp-format>' + opt(formats) + "</select></div>" +
         '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.export_type') + '</label><select class="tp-input" data-exp-type>' + opt(types) + "</select></div>" +
-        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">POIs</label><div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin POIs.</div>') + "</div></div>" +
+        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">POIs</label><div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_pois') + '</div>') + "</div></div>" +
         '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">' + tpT('front.groups') + '</label><div class="tp-zexp-list">' +
         ((S.groups || []).map(function (g) {
           return '<label class="tp-zexp-item"><input type="checkbox" data-exp-group value="' + g.id + '"><span>' + esc(g.title) + "</span></label>";
-        }).join("") || '<div class="tp-text-muted tp-text-sm">Sin grupos.</div>') + "</div></div>",
+        }).join("") || '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_groups') + '</div>') + "</div></div>",
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost" },
         {
@@ -409,9 +409,9 @@
       body:
         '<div class="tp-field"><label class="tp-field__label">Archivo</label>' +
         '<input type="file" class="tp-input" data-imp-file accept=".csv,.gexp,.kml"></div>' +
-        '<div class="tp-field"><label class="tp-field__label">Icono por defecto</label>' +
+        '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.default_icon') + '</label>' +
         '<select class="tp-input" data-imp-icon>' + icons + "</select></div>" +
-        '<div class="tp-field__hint">Formatos: CSV, GEXP o KML.</div>',
+        '<div class="tp-field__hint">' + tpT('ui.formats_csv_gexp_kml') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost" },
         {
@@ -421,8 +421,8 @@
           onClick: function (dlg, btn) {
             var f = dlg.querySelector("[data-imp-file]").files[0];
             var iconSel = dlg.querySelector("[data-imp-icon]");
-            if (!f) { tpModal.toast("Elige un archivo.", "warning"); return false; }
-            if (!iconSel || !iconSel.value) { tpModal.toast("Elige un icono por defecto.", "warning"); return false; }
+            if (!f) { tpModal.toast(tpT('ui.pick_a_file'), "warning"); return false; }
+            if (!iconSel || !iconSel.value) { tpModal.toast(tpT('ui.pick_default_icon'), "warning"); return false; }
             var fd = new FormData();
             fd.append("file", f);
             fd.append("map_icon_id", iconSel.value);
@@ -436,10 +436,10 @@
                   tpModal.close(dlg);
                   load(true);
                 } else {
-                  tpModal.toast((r.data && (r.data.message || r.data.error)) || "No se pudo importar.", "error");
+                  tpModal.toast((r.data && (r.data.message || r.data.error)) || tpT('ui.import_failed'), "error");
                 }
               })
-              .catch(function () { btn.disabled = false; tpModal.toast("Error de red.", "error"); });
+              .catch(function () { btn.disabled = false; tpModal.toast(tpT('ui.network_error'), "error"); });
             return false;
           },
         },
@@ -581,7 +581,7 @@
       grpManage.addEventListener("click", function () {
         if (!window.tpGroups) return;
         tpGroups.open({
-          title: "Grupos de POIs",
+          title: tpT('ui.poi_groups'),
           base: root.getAttribute("data-poi-groups-url") || "/ui/v2/api/poi-groups",
           itemsKey: "pois",
           itemsLabel: "POIs",

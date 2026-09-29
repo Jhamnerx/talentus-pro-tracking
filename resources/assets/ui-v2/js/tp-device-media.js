@@ -183,8 +183,8 @@
 
             tpModal
               .confirm({
-                title: "Eliminar archivos",
-                message: tpT('ui.will_be_deleted') + refs.length + " archivo(s) del almacenamiento. No se puede deshacer.",
+                title: tpT('ui.delete_files'),
+                message: tpT('ui.will_be_deleted') + refs.length + tpT('ui.files_from_storage'),
                 danger: true,
                 confirmLabel: tpT('global.delete'),
               })
@@ -197,7 +197,7 @@
                       tpModal.toast("Eliminados " + (res.data.deleted || 0) + " archivo(s).", "success");
                       load();
                     } else {
-                      tpModal.toast("No se pudieron eliminar.", "error");
+                      tpModal.toast(tpT('ui.could_not_delete_them'), "error");
                     }
                   });
               });
@@ -225,7 +225,7 @@
       if (abierta) {
         abierta.recarga();
       } else if (window.tpModal) {
-        tpModal.toast("Hay una foto nueva de c\u00e1mara.", "info");
+        tpModal.toast(tpT('ui.new_camera_photo'), "info");
       }
     });
   }

@@ -94,7 +94,7 @@
         if (!ok) return;
         tpModal.fetchJSON(BASE + "/" + id, { method: "DELETE" }).then(function (res) {
           if (res.ok && res.data && res.data.ok) openList();
-          else tpModal.toast("No se pudo eliminar.", "error");
+          else tpModal.toast(tpT('ui.delete_failed'), "error");
         });
       });
   }
@@ -114,7 +114,7 @@
     var isEdit = !!item;
     var payload = (item && item.payload) || {};
     var typeOpts =
-      '<option value="">— Selecciona —</option>' +
+      '<option value="">' + tpT('ui.select_dash') + '</option>' +
       TYPES.map(function (t) {
         return '<option value="' + esc(t.type) + '"' + (item && item.type === t.type ? " selected" : "") + ">" + esc(t.title) + "</option>";
       }).join("");
@@ -130,7 +130,7 @@
       "<div data-fwd-fields></div>" +
       (TYPES.length
         ? ""
-        : '<p style="color:#ef4444;font-size:13px;">' + tpT('ui.no_forward_types_enabled') + ' <code>ENABLE_FORWARD_CUSTOM</code> / <code>ENABLE_FORWARD_PEGASUS</code> / <code>ENABLE_FORWARD_MACROPOINT</code> en el .env.</p>') +
+        : '<p style="color:#ef4444;font-size:13px;">' + tpT('ui.no_forward_types_enabled') + ' <code>ENABLE_FORWARD_CUSTOM</code> / <code>ENABLE_FORWARD_PEGASUS</code> / <code>ENABLE_FORWARD_MACROPOINT</code> ' + tpT('ui.in_the_env') + '</p>') +
       '<div data-fwd-err style="display:none;margin-top:10px;color:#ef4444;font-size:13px;"></div></div>';
 
     var dlg = tpModal.open({
@@ -173,7 +173,7 @@
     var type = (d.querySelector("[data-fwd-type]") || {}).value || (item && item.type) || "";
     var title = ((d.querySelector("[data-fwd-title]") || {}).value || "").trim();
     if (!title) return showErr(tpT('ui.title_required'));
-    if (!type) return showErr("Selecciona un tipo.");
+    if (!type) return showErr(tpT('ui.pick_a_type'));
 
     var payload = { active: d.querySelector("[data-fwd-active]").checked ? 1 : 0, title: title, type: type };
     Array.prototype.forEach.call(d.querySelectorAll("[data-fwd-field]"), function (i) {
@@ -186,14 +186,14 @@
       .fetchJSON(url, { method: item ? "PUT" : "POST", json: payload })
       .then(function (res) {
         tpModal.setBusy(d, false);
-        if (res.status === 422) return showErr("Revisa los campos obligatorios.");
-        if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || "No se pudo guardar.");
+        if (res.status === 422) return showErr(tpT('ui.check_required_fields'));
+        if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || tpT('ui.save_failed'));
         tpModal.close(d);
         openList();
       })
       .catch(function () {
         tpModal.setBusy(d, false);
-        showErr("Error de red.");
+        showErr(tpT('ui.network_error'));
       });
   }
 

@@ -191,7 +191,7 @@
         return (
           '<div class="tp-poi-row" data-id="' +
           g.id +
-          '" role="option"><input type="checkbox" class="tp-zone-row__vis" data-z-vis title="Mostrar en el mapa"' +
+          '" role="option"><input type="checkbox" class="tp-zone-row__vis" data-z-vis title="' + tpT('ui.show_on_map') + '"' +
           (g.active ? " checked" : "") +
           '><span class="tp-zone-row__swatch" style="background:' +
           (g.polygon_color || "#1e88e5") +
@@ -217,7 +217,7 @@
     if (!sel) return;
     var cur = sel.value;
     sel.innerHTML =
-      '<option value="">Todos los grupos</option>' +
+      '<option value="">' + tpT('ui.all_groups') + '</option>' +
       S.groups
         .map(function (g) {
           return '<option value="' + g.id + '">' + esc(g.title) + "</option>";
@@ -274,8 +274,8 @@
       (canEdit
         ? '<div class="tp-poi-popup__actions"><button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-edit>' + tpT('global.edit') + '</button>' +
           (g.type === "polygon"
-            ? '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-shape>Editar forma</button>'
-            : '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-shape>Editar forma</button>') +
+            ? '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-shape>' + tpT('ui.edit_shape') + '</button>'
+            : '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-shape>' + tpT('ui.edit_shape') + '</button>') +
           '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-z-del>' + tpT('global.delete') + '</button></div>'
         : "") +
       "</div>";
@@ -389,7 +389,7 @@
   // ----- Modal de metadatos (crear con geometría dada, o editar) -----
   function metaBody(g, geometry) {
     var groupOpts =
-      '<option value="0">Sin grupo</option>' +
+      '<option value="0">' + tpT('front.ungrouped') + '</option>' +
       S.groups
         .map(function (gr) {
           return (
@@ -431,7 +431,7 @@
           '"></div>'
         : "") +
       (isLine
-        ? '<div class="tp-field"><label class="tp-field__label">Distancia al eje (m)</label>' +
+        ? '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.distance_to_axis_m') + '</label>' +
           '<input type="number" name="radius" class="tp-input" min="1" value="' +
           (g && g.radius ? Math.round(g.radius) : 100) +
           '"><small class="tp-field__hint">' + tpT('ui.corridor_width_help') + '</small></div>'
@@ -448,7 +448,7 @@
     var f = dialog.querySelector("#tp-zone-form");
     var name = (f.querySelector('[name="name"]').value || "").trim();
     if (!name) {
-      window.tpModal.toast && tpModal.toast("El nombre es obligatorio.", "warning");
+      window.tpModal.toast && tpModal.toast(tpT('ui.name_required'), "warning");
       return null;
     }
     var payload = {
@@ -477,7 +477,7 @@
   function openCreateModal(geometry) {
     if (!window.tpModal) return;
     tpModal.open({
-      title: "Nueva geocerca",
+      title: tpT('ui.new_geofence'),
       size: "md",
       body: metaBody(null, geometry),
       buttons: [
@@ -500,11 +500,11 @@
                   tpModal.toast && tpModal.toast("Geocerca creada.", "success");
                   tpModal.close(dialog);
                   load(true);
-                } else tpModal.toast && tpModal.toast("No se pudo crear.", "error");
+                } else tpModal.toast && tpModal.toast(tpT('ui.create_failed'), "error");
               })
               .catch(function () {
                 btn.disabled = false;
-                tpModal.toast && tpModal.toast("Error de red.", "error");
+                tpModal.toast && tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -515,7 +515,7 @@
   function openMetaModal(g) {
     if (!window.tpModal) return;
     tpModal.open({
-      title: "Editar geocerca",
+      title: tpT('ui.edit_geofence'),
       size: "md",
       body: metaBody(g, null),
       buttons: [
@@ -547,11 +547,11 @@
                   tpModal.toast && tpModal.toast("Geocerca actualizada.", "success");
                   tpModal.close(dialog);
                   load(true);
-                } else tpModal.toast && tpModal.toast("No se pudo guardar.", "error");
+                } else tpModal.toast && tpModal.toast(tpT('ui.save_failed'), "error");
               })
               .catch(function () {
                 btn.disabled = false;
-                tpModal.toast && tpModal.toast("Error de red.", "error");
+                tpModal.toast && tpModal.toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -567,12 +567,12 @@
         if (r && r.ok && r.data && r.data.ok) {
           tpModal.toast && tpModal.toast("Geocerca eliminada.", "success");
           load(true);
-        } else tpModal.toast && tpModal.toast("No se pudo eliminar.", "error");
+        } else tpModal.toast && tpModal.toast(tpT('ui.delete_failed'), "error");
       });
     };
     if (tpModal.confirm)
       tpModal
-        .confirm({ title: "Eliminar geocerca", message: tpT('ui.confirm_delete_geofence'), confirmLabel: tpT('global.delete'), danger: true })
+        .confirm({ title: tpT('ui.delete_geofence'), message: tpT('ui.confirm_delete_geofence'), confirmLabel: tpT('global.delete'), danger: true })
         .then(function (ok) {
           if (ok) doDel();
         });
@@ -709,7 +709,7 @@
         return;
       }
       if (geometry.type === "line" && geometry.polygon.length < 2) {
-        tpModal && tpModal.toast && tpModal.toast("Un corredor necesita al menos 2 puntos.", "warning");
+        tpModal && tpModal.toast && tpModal.toast(tpT('ui.corridor_needs_2_points'), "warning");
         return;
       }
       openCreateModal(geometry); // ← formulario: nombre, color, grupo, velocidad, límites
@@ -743,7 +743,7 @@
     }
     if (geometry.type === "line") {
       if (geometry.polygon.length < 2) {
-        tpModal && tpModal.toast && tpModal.toast("Un corredor necesita al menos 2 puntos.", "warning");
+        tpModal && tpModal.toast && tpModal.toast(tpT('ui.corridor_needs_2_points'), "warning");
         return;
       }
       geometry.radius = S.editRadius;
@@ -759,7 +759,7 @@
       if (r && r.ok && r.data && r.data.ok) {
         tpModal.toast && tpModal.toast("Forma actualizada.", "success");
         load(true);
-      } else tpModal.toast && tpModal.toast("No se pudo actualizar la forma.", "error");
+      } else tpModal.toast && tpModal.toast(tpT('ui.shape_update_failed'), "error");
     });
   }
   function cancelDraw() {
@@ -772,7 +772,7 @@
   function startCreateChooser() {
     if (!window.tpModal) return;
     var dlg = tpModal.open({
-      title: "Nueva geocerca",
+      title: tpT('ui.new_geofence'),
       size: "sm",
       body:
         '<p style="margin:0 0 12px;font-size:14px;">' + tpT('ui.which_shape_to_draw') + '</p>' +
@@ -849,7 +849,7 @@
       .fetchJSON(BASE + "/" + g.id + "/toggle", { method: "POST", json: { active: on ? 1 : 0 } })
       .then(function (res) {
         if (!res.ok || !res.data || !res.data.ok) {
-          tpModal.toast("No se pudo cambiar la visibilidad.", "error");
+          tpModal.toast(tpT('ui.visibility_change_failed'), "error");
           renderList();
           return;
         }
@@ -857,7 +857,7 @@
         renderLayers();
       })
       .catch(function () {
-        tpModal.toast("Error de red.", "error");
+        tpModal.toast(tpT('ui.network_error'), "error");
         renderList();
       });
   }
@@ -877,7 +877,7 @@
       export_single: "Exportar seleccionadas",
       export_active: "Exportar activas",
       export_inactive: "Exportar inactivas",
-      export_groups: "Exportar por grupos",
+      export_groups: tpT('ui.export_by_groups'),
     };
     var opts = Object.keys(types)
       .map(function (k) { return '<option value="' + k + '">' + esc(types[k]) + "</option>"; })
@@ -894,14 +894,14 @@
         '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.export_type') + '</label>' +
         '<select class="tp-input" data-exp-type>' + opts + "</select></div>" +
         '<div class="tp-field" data-exp-wrap><label class="tp-field__label">Geocercas</label>' +
-        '<div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin geocercas.</div>') + "</div></div>" +
+        '<div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_geofences') + '</div>') + "</div></div>" +
         '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">' + tpT('front.groups') + '</label>' +
         '<div class="tp-zexp-list">' +
         ((S.groups || []).map(function (g) {
           return '<label class="tp-zexp-item"><input type="checkbox" data-exp-group value="' + g.id + '"><span>' + esc(g.title) + "</span></label>";
-        }).join("") || '<div class="tp-text-muted tp-text-sm">Sin grupos.</div>') +
+        }).join("") || '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_groups') + '</div>') +
         "</div></div>" +
-        '<div class="tp-field__hint">Formato GEXP (el del legacy).</div>',
+        '<div class="tp-field__hint">' + tpT('ui.gexp_format_note') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost" },
         {
@@ -969,7 +969,7 @@
       body:
         '<div class="tp-field"><label class="tp-field__label">Archivo</label>' +
         '<input type="file" class="tp-input" data-imp-file accept=".csv,.gexp,.kml,.json,.geojson"></div>' +
-        '<div class="tp-field__hint">Formatos: KML, GeoJSON, JSON o GEXP.</div>',
+        '<div class="tp-field__hint">' + tpT('ui.formats_kml_geojson') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost" },
         {
@@ -978,7 +978,7 @@
           close: false,
           onClick: function (dlg, btn) {
             var f = dlg.querySelector("[data-imp-file]").files[0];
-            if (!f) { tpModal.toast("Elige un archivo.", "warning"); return false; }
+            if (!f) { tpModal.toast(tpT('ui.pick_a_file'), "warning"); return false; }
             var fd = new FormData();
             fd.append("file", f);
             btn.disabled = true;
@@ -991,10 +991,10 @@
                   tpModal.close(dlg);
                   load(true);
                 } else {
-                  tpModal.toast((r.data && (r.data.message || r.data.error)) || "No se pudo importar.", "error");
+                  tpModal.toast((r.data && (r.data.message || r.data.error)) || tpT('ui.import_failed'), "error");
                 }
               })
-              .catch(function () { btn.disabled = false; tpModal.toast("Error de red.", "error"); });
+              .catch(function () { btn.disabled = false; tpModal.toast(tpT('ui.network_error'), "error"); });
             return false;
           },
         },
@@ -1042,7 +1042,7 @@
       grpManage.addEventListener("click", function () {
         if (!window.tpGroups) return;
         tpGroups.open({
-          title: "Grupos de geocercas",
+          title: tpT('ui.geofence_groups'),
           base: root.getAttribute("data-zone-groups-url") || "/ui/v2/api/zone-groups",
           itemsKey: "geofences",
           itemsLabel: "Geocercas",

@@ -47,15 +47,15 @@
       '<div class="tp-field"><div class="tp-rgroup-form__bar">' +
       '<label class="tp-field__label" style="margin:0;">' + esc(cfg.itemsLabel || "Elementos") + "</label>" +
       '<div class="tp-rgroup-form__sel">' +
-      '<button type="button" class="tp-linkbtn" data-grp-all>Seleccionar todo</button>' +
+      '<button type="button" class="tp-linkbtn" data-grp-all>' + tpT('ui.select_all_n') + '</button>' +
       '<button type="button" class="tp-linkbtn" data-grp-none>Deseleccionar todo</button>' +
       "</div></div>" +
-      '<div class="tp-input-wrap tp-mt-2"><input type="text" class="tp-input tp-input--sm" data-grp-search placeholder="Buscar…"></div>' +
+      '<div class="tp-input-wrap tp-mt-2"><input type="text" class="tp-input tp-input--sm" data-grp-search placeholder="' + tpT('ui.search_ellipsis') + '"></div>' +
       '<div class="tp-rgroup-list" data-grp-list></div></div>' +
       "</div>";
 
     tpModal.open({
-      title: isEdit ? "Editar grupo" : "Nuevo grupo",
+      title: isEdit ? tpT('ui.edit_group') : tpT('ui.new_group'),
       size: "md",
       body: body,
       buttons: [
@@ -93,12 +93,12 @@
                 } else {
                   var errs = (res.data && res.data.errors) || {};
                   var first = Object.keys(errs)[0];
-                  toast(first ? [].concat(errs[first])[0] : "No se pudo guardar.", "error");
+                  toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
                 }
               })
               .catch(function () {
                 btn.disabled = false;
-                toast("Error de red.", "error");
+                toast(tpT('ui.network_error'), "error");
               });
             return false;
           },
@@ -183,7 +183,7 @@
 
           host.innerHTML =
             '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
-            '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-grp-add>＋ Nuevo grupo</button></div>' +
+            '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-grp-add>' + tpT('ui.new_group_plus') + '</button></div>' +
             rows;
         };
         render();
@@ -211,8 +211,8 @@
             var did = del.getAttribute("data-grp-del");
             tpModal
               .confirm({
-                title: "Eliminar grupo",
-                message: "Se elimina el grupo. Los elementos que contiene NO se borran: quedan sin grupo.",
+                title: tpT('ui.delete_group'),
+                message: tpT('ui.delete_group_note'),
                 danger: true,
                 confirmLabel: tpT('global.delete'),
               })
@@ -220,10 +220,10 @@
                 if (!ok) return;
                 tpModal.fetchJSON(cfg.base + "/" + did, { method: "DELETE" }).then(function (res) {
                   if (res && res.ok && res.data && res.data.ok) {
-                    toast("Grupo eliminado.", "success");
+                    toast(tpT('ui.group_deleted'), "success");
                     reload();
                   } else {
-                    toast("No se pudo eliminar.", "error");
+                    toast(tpT('ui.delete_failed'), "error");
                   }
                 });
               });

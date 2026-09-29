@@ -112,7 +112,7 @@
       '<option value="720">12 h</option><option value="1440">24 h</option>' +
       '<option value="4320">' + tpT('ui.days_3') + '</option><option value="10080">' + tpT('ui.days_7') + '</option>' +
       "</select></label>" +
-      '<button type="button" class="tp-btn tp-btn--primary tp-btn--sm" data-sd-draw>Dibujar zona</button>' +
+      '<button type="button" class="tp-btn tp-btn--primary tp-btn--sm" data-sd-draw>' + tpT('ui.draw_zone') + '</button>' +
       '<span style="margin-left:auto; display:flex; gap:6px;">' +
       '<button type="button" class="tp-btn tp-btn--outline tp-btn--sm" data-sd-csv hidden>CSV</button>' +
       '<button type="button" class="tp-btn tp-btn--outline tp-btn--sm" data-sd-xlsx hidden>XLSX</button>' +
@@ -127,7 +127,7 @@
     if (!window.tpModal) return;
 
     dialog = tpModal.open({
-      title: "Unidades sin transmitir",
+      title: tpT('ui.silent_units'),
       size: "lg",
       body: bodyHtml(),
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
@@ -194,7 +194,7 @@
       })
       .then(pintar)
       .catch(function () {
-        caja.innerHTML = '<p class="tp-text-sm" style="color:var(--danger-500);">No se pudo consultar.</p>';
+        caja.innerHTML = '<p class="tp-text-sm" style="color:var(--danger-500);">' + tpT('ui.query_failed') + '</p>';
       });
   }
 
@@ -213,16 +213,16 @@
     }
 
     if (!items.length) {
-      caja.innerHTML = '<p class="tp-text-sm">No hay unidades sin transmitir en esa zona.</p>';
+      caja.innerHTML = '<p class="tp-text-sm">' + tpT('ui.no_silent_units_in_zone') + '</p>';
       return;
     }
 
     var html =
-      '<p class="tp-text-sm"><strong>' + res.total + "</strong> unidades sin transmitir " +
-      '<span class="tp-text-muted">(desde ' + esc(res.corte) + ")</span></p>";
+      '<p class="tp-text-sm"><strong>' + res.total + "</strong> " + tpT('ui.silent_units_lower') + " " +
+      '<span class="tp-text-muted">' + tpT('ui.from_open') + ' ' + esc(res.corte) + ")</span></p>";
 
     if (res.acotado) {
-      html += '<p class="tp-text-xs tp-text-muted">Se muestran las primeras ' + items.length + " de " + res.total + ".</p>";
+      html += '<p class="tp-text-xs tp-text-muted">' + tpT('ui.showing_first') + ' ' + items.length + " de " + res.total + ".</p>";
     }
 
     html +=

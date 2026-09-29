@@ -59,7 +59,7 @@
       "padding:4px 34px 4px 8px;cursor:pointer;position:relative;";
     box.innerHTML =
       '<span data-cs-ph style="color:var(--fg-muted,#94a3b8);font-size:13px;padding-left:4px;">' +
-      esc(opts.placeholder || "Seleccionar…") + "</span>" +
+      esc(opts.placeholder || tpT('ui.select_ellipsis_m')) + "</span>" +
       '<svg style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#64748b;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
     opts.mount.appendChild(box);
 
@@ -145,7 +145,7 @@
           body +=
             '<div style="border:1px solid var(--border-default,#eef2f7);border-radius:10px;margin:0 4px 8px;overflow:hidden;">' +
             '<div style="padding:6px 10px;background:var(--surface-sunken,#f8fafc);font-size:12px;font-weight:600;color:var(--fg-secondary,#475569);">' +
-            esc(groups[gid] || "Sin grupo") + "</div>" +
+            esc(groups[gid] || tpT('front.ungrouped')) + "</div>" +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px;padding:4px 6px;">' + r + "</div></div>";
         });
       } else {
@@ -165,10 +165,10 @@
         // que la busqueda deja a la vista, no sobre toda la flota, que es lo
         // que se espera al haber filtrado antes.
         '<div style="display:flex;gap:6px;margin-top:6px;">' +
-        '<button type="button" data-cs-all style="' + BTN + '">Seleccionar todo</button>' +
+        '<button type="button" data-cs-all style="' + BTN + '">' + tpT('ui.select_all_n') + '</button>' +
         '<button type="button" data-cs-none style="' + BTN + '">Deseleccionar todo</button>' +
         "</div></div>" +
-        (body || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>') +
+        (body || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.no_results') + '</div>') +
         '<div style="position:sticky;bottom:0;background:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 4px;border-top:1px solid var(--border-default,#eef2f7);z-index:1;">' +
         '<span style="display:flex;gap:4px;align-items:center;">' + paginacionHtml(paginas) + "</span>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cs-close>' + tpT('global.close') + '</button></div>';

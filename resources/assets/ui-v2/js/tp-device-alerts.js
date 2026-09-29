@@ -33,11 +33,11 @@
       body:
         '<div class="tp-form">' +
         '<label class="tp-choice" style="margin-bottom:6px;">' +
-        '<input type="checkbox" class="tp-choice-input" data-da-en-from' + (hasFrom ? " checked" : "") + "> <span>Activa desde</span></label>" +
+        '<input type="checkbox" class="tp-choice-input" data-da-en-from' + (hasFrom ? " checked" : "") + "> <span>" + tpT('ui.active_from') + "</span></label>" +
         '<div class="tp-form__field"><input type="datetime-local" class="tp-input" data-da-from value="' +
         esc(toInput(alert.active_from)) + '"' + (hasFrom ? "" : " disabled") + "></div>" +
         '<label class="tp-choice" style="margin:10px 0 6px;">' +
-        '<input type="checkbox" class="tp-choice-input" data-da-en-to' + (hasTo ? " checked" : "") + "> <span>Activa hasta</span></label>" +
+        '<input type="checkbox" class="tp-choice-input" data-da-en-to' + (hasTo ? " checked" : "") + "> <span>" + tpT('ui.active_until') + "</span></label>" +
         '<div class="tp-form__field"><input type="datetime-local" class="tp-input" data-da-to value="' +
         esc(toInput(alert.active_to)) + '"' + (hasTo ? "" : " disabled") + "></div>" +
         '<small class="tp-form__hint" style="margin-top:8px;display:block;">' + tpT('ui.no_dates_alert_always') + '</small>' +
@@ -68,7 +68,7 @@
                 }
                 var errs = (res.data && res.data.errors) || {};
                 var first = Object.keys(errs)[0];
-                tpModal.toast(first ? [].concat(errs[first])[0] : "No se pudo guardar.", "error");
+                tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
               });
             return false;
           },
@@ -100,7 +100,7 @@
         function load() {
           tpModal.fetchJSON(BASE + "/" + deviceId + "/alerts").then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              host.innerHTML = '<div class="tp-text-muted tp-text-sm">No se pudo cargar.</div>';
+              host.innerHTML = '<div class="tp-text-muted tp-text-sm">' + tpT('ui.load_failed') + '</div>';
               return;
             }
             var items = res.data.items || [];
@@ -126,7 +126,7 @@
                       '<span class="tp-acc-row__actions">' +
                       (canEdit
                         ? '<a class="tp-btn tp-btn--ghost tp-btn--sm" href="' +
-                          esc(editUrl) + a.id + '">Editar alerta</a>'
+                          esc(editUrl) + a.id + '">' + tpT('ui.edit_alert') + '</a>'
                         : "") +
                       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-da-edit="' + a.id + '">Vigencia</button>' +
                       "</span></div>"

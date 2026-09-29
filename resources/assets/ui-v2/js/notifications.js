@@ -92,7 +92,7 @@
 
     if (!filtered.length) {
       list.innerHTML =
-        '<div class="tp-tray__empty"><div class="tp-text-muted">No hay notificaciones para este filtro.</div></div>';
+        '<div class="tp-tray__empty"><div class="tp-text-muted">' + tpT('ui.no_notifications_for_filter') + '</div></div>';
       return;
     }
 
