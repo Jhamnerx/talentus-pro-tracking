@@ -2552,3 +2552,261 @@ table.tp-lock-hist th {
 .tp-dw__webhook .tp-input {
   width: 100%;
 }
+
+/* ============================================================
+   Tablero del vehiculo (drawer)
+   ------------------------------------------------------------
+   Paleta Tailwind slate + acentos, con sus propios tokens para que el
+   modo claro no sea el oscuro invertido: sobre blanco los acentos bajan
+   un escalon (500 -> 600) para no quedarse por debajo de 3:1.
+
+   El reflujo iba con @container, que es lo correcto (mide el panel, no la
+   ventana), pero clean-css 4.2.1 SE COME las at-rules que no conoce y la
+   regla desaparecia del CSS compilado sin avisar. Hasta que se actualice
+   el minificador va con media query, sobre un corte que este fichero ya
+   usa. El drawer mide 380 px, asi que las dos esferas caben; el apilado
+   es para movil, donde a ancho completo se leen mucho mejor.
+   ============================================================ */
+.tp-dash {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  /* Oscuro (el tema por defecto de la v2) */
+  --dash-bg: #0f172a;      /* slate-900 */
+  --dash-bg2: #020617;     /* slate-950 */
+  --dash-line: #1e293b;    /* slate-800 */
+  --dash-fg: #f1f5f9;      /* slate-100 */
+  --dash-fg2: #cbd5e1;     /* slate-300 */
+  --dash-fg3: #94a3b8;     /* slate-400 */
+  --dash-off: #64748b;     /* slate-500 */
+  --dash-track: #1e293b;
+  --dash-ok: #10b981;      /* emerald-500 */
+  --dash-warn: #f59e0b;    /* amber-500 */
+  --dash-bad: #ef4444;     /* red-500 */
+  --dash-info: #3b82f6;    /* blue-500 */
+  --dash-zone: #c4b5fd;    /* violet-300 */
+  --dash-zone-bg: rgba(139, 92, 246, 0.14);
+  --dash-zone-line: rgba(139, 92, 246, 0.4);
+}
+[data-theme="light"] .tp-dash {
+  --dash-bg: #ffffff;
+  --dash-bg2: #f8fafc;     /* slate-50 */
+  --dash-line: #e2e8f0;    /* slate-200 */
+  --dash-fg: #0f172a;      /* slate-900 */
+  --dash-fg2: #334155;     /* slate-700 */
+  --dash-fg3: #64748b;     /* slate-500 */
+  --dash-off: #94a3b8;     /* slate-400 */
+  --dash-track: #e2e8f0;
+  --dash-ok: #059669;      /* emerald-600 */
+  --dash-warn: #d97706;    /* amber-600 */
+  --dash-bad: #dc2626;     /* red-600 */
+  --dash-info: #2563eb;    /* blue-600 */
+  --dash-zone: #5b21b6;    /* violet-800 */
+  --dash-zone-bg: #f5f3ff; /* violet-50 */
+  --dash-zone-line: #ddd6fe;
+}
+
+.tp-dash__main,
+.tp-dash__small,
+.tp-dash__tells,
+.tp-dash__stat {
+  background: var(--dash-bg);
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+}
+.tp-dash__main {
+  padding: 12px 12px 10px;
+}
+
+/* ── Esferas ─────────────────────────────────────────────── */
+.tp-dash__gauge {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* El nivel elige el color; el SVG solo lo consume */
+  --g: var(--dash-ok);
+}
+.tp-dash__gauge[data-level="warn"] { --g: var(--dash-warn); }
+.tp-dash__gauge[data-level="bad"]  { --g: var(--dash-bad); }
+.tp-dash__gauge[data-level="info"] { --g: var(--dash-info); }
+.tp-dash__gauge[data-level="off"]  { --g: var(--dash-off); }
+
+.tp-dash__track {
+  fill: none;
+  stroke: var(--dash-track);
+  stroke-width: 16;
+  stroke-linecap: round;
+}
+.tp-dash__fill {
+  fill: none;
+  stroke: var(--g);
+  stroke-width: 16;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.45s ease-out, stroke 0.3s ease;
+}
+.tp-dash__needle {
+  stroke: var(--g);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.tp-dash__gauge > g {
+  transition: transform 0.45s ease-out;
+}
+.tp-dash__hub {
+  fill: var(--dash-bg);
+  stroke: var(--g);
+  stroke-width: 3;
+}
+.tp-dash__read {
+  fill: var(--dash-fg);
+  font-family: var(--font-sans);
+  font-size: 58px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.tp-dash__unit {
+  fill: var(--dash-fg3);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* Esferas pequeñas: trazo y cifra mas finos */
+.tp-dash__small .tp-dash__track,
+.tp-dash__small .tp-dash__fill { stroke-width: 10; }
+.tp-dash__small .tp-dash__needle { stroke-width: 2.5; }
+.tp-dash__small .tp-dash__hub { stroke-width: 2.5; }
+.tp-dash__small .tp-dash__read { font-size: 30px; }
+
+/* ── Limite de la geocerca ───────────────────────────────── */
+.tp-dash__zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--dash-zone-bg);
+  border: 1px solid var(--dash-zone-line);
+  color: var(--dash-zone);
+  font-size: 12.5px;
+}
+.tp-dash__zone svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.tp-dash__zone span {
+  flex-grow: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-dash__zone strong { font-variant-numeric: tabular-nums; }
+.tp-dash__zone[data-over="1"] {
+  background: color-mix(in srgb, var(--dash-bad) 14%, transparent);
+  border-color: color-mix(in srgb, var(--dash-bad) 45%, transparent);
+  color: var(--dash-bad);
+}
+
+/* ── Fila de esferas pequeñas ────────────────────────────── */
+.tp-dash__row {
+  display: flex;
+  gap: 10px;
+}
+.tp-dash__small {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 10px 10px 6px;
+}
+.tp-dash__small-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--dash-fg3);
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+/* ── Testigos ────────────────────────────────────────────── */
+.tp-dash__tells {
+  display: flex;
+  gap: 6px;
+  padding: 10px 8px;
+  justify-content: space-around;
+}
+.tp-dash__tell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--dash-off);
+}
+.tp-dash__tell[data-on="1"] { color: var(--dash-ok); }
+.tp-dash__tell svg { width: 20px; height: 20px; }
+.tp-dash__tell-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── Cifras de contexto ──────────────────────────────────── */
+.tp-dash__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.tp-dash__stat { padding: 10px; }
+.tp-dash__stat-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dash-fg3);
+}
+.tp-dash__stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--dash-fg);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-dash__stat-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dash-fg3);
+}
+
+/* ── Reflujo, medido sobre el PANEL ──────────────────────── */
+@media (max-width: 640px) {
+  /* En movil, dos esferas lado a lado se quedan en nada: pasan a fila
+     horizontal, con la aguja a la izquierda y la cifra grande al lado. */
+  .tp-dash__row { flex-direction: column; }
+  .tp-dash__small {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+  .tp-dash__small .tp-dash__gauge { width: 88px; flex: 0 0 auto; }
+  .tp-dash__small-label {
+    order: 2;
+    text-align: left;
+    margin: 0;
+    flex-grow: 1;
+  }
+  /* Sin etiqueta: el nombre queda en el title y en el aria-label */
+  .tp-dash__tell-label { display: none; }
+  .tp-dash__tell[data-on] svg { width: 22px; height: 22px; }
+  .tp-dash__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-dash__fill,
+  .tp-dash__gauge > g { transition: none; }
+}

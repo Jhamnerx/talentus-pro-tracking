@@ -917,6 +917,166 @@
       s = sec % 60;
     return h + ":" + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
   }
+  /* ============================================================
+     Tablero del vehiculo (drawer)
+     ------------------------------------------------------------
+     La aguja de velocidad se mueve con el feed (cada 5 s). El resto de
+     lecturas llegan del endpoint de widgets al abrir el panel y se guardan
+     en dashData, para no volver a pedirlas en cada refresco.
+
+     Un indicador cuyo sensor no existe NO se dibuja: el tablero se arma con
+     lo que cada vehiculo reporta de verdad, sin agujas a cero que confundan.
+     ============================================================ */
+
+  var dashData = {};   // id -> bloque 'dashboard' del endpoint
+
+  // Geometria de las esferas (media circunferencia).
+  var G_GRANDE = { w: 380, h: 196, cx: 190, cy: 158, arco: "M 44 158 A 146 146 0 0 1 336 158", largo: 458.7, aguja: 66 };
+  var G_CHICA  = { w: 164, h: 104, cx: 82,  cy: 84,  arco: "M 20 84 A 62 62 0 0 1 144 84",     largo: 194.8, aguja: 34 };
+
+  function pct(v, max) {
+    if (!max || isNaN(v)) return 0;
+    return Math.max(0, Math.min(1, v / max));
+  }
+
+  /** Una esfera con aguja. `nivel` elige el color desde el CSS (ok/warn/bad). */
+  function esfera(g, valor, max, texto, sub, nivel, clase) {
+    var f = pct(valor, max);
+
+    return (
+      '<svg class="tp-dash__gauge ' + (clase || "") + '" data-level="' + (nivel || "ok") + '"' +
+      ' viewBox="0 0 ' + g.w + " " + g.h + '" preserveAspectRatio="xMidYMid meet" role="img"' +
+      ' aria-label="' + esc(sub) + ": " + esc(texto) + '">' +
+      '<path class="tp-dash__track" d="' + g.arco + '"></path>' +
+      '<path class="tp-dash__fill" d="' + g.arco + '" stroke-dasharray="' + (f * g.largo).toFixed(1) + " " + g.largo + '"></path>' +
+      '<g transform="rotate(' + (f * 180).toFixed(1) + " " + g.cx + " " + g.cy + ')">' +
+      '<line class="tp-dash__needle" x1="' + g.cx + '" y1="' + g.cy + '" x2="' + g.aguja + '" y2="' + g.cy + '"></line>' +
+      "</g>" +
+      '<circle class="tp-dash__hub" cx="' + g.cx + '" cy="' + g.cy + '" r="' + (g === G_GRANDE ? 9 : 6) + '"></circle>' +
+      '<text class="tp-dash__read" x="' + g.cx + '" y="' + (g === G_GRANDE ? 128 : 66) + '" text-anchor="middle">' + esc(texto) + "</text>" +
+      (g === G_GRANDE
+        ? '<text class="tp-dash__unit" x="' + g.cx + '" y="148" text-anchor="middle">' + esc(sub) + "</text>"
+        : "") +
+      "</svg>"
+    );
+  }
+
+  function testigo(nombre, etiqueta, encendido, icono) {
+    // null = el vehiculo no lleva ese sensor: no se dibuja el testigo
+    if (encendido === null || encendido === undefined) return "";
+
+    return (
+      '<span class="tp-dash__tell" data-on="' + (encendido ? "1" : "0") + '" title="' + esc(nombre) + '">' +
+      icono +
+      '<span class="tp-dash__tell-label">' + esc(etiqueta) + "</span>" +
+      "</span>"
+    );
+  }
+
+  var ICONOS = {
+    motor: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 10h2l2-3h4l2 3h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2l-2 2h-4l-2-2H6a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2z"/></svg>',
+    ignicion: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>',
+    puerta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v18H5V6l9-3z"/><path d="M14 3h5v18h-5"/><circle cx="11" cy="12" r="1"/></svg>',
+    bloqueo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    bateria: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 11v2M10 11v2"/></svg>',
+    satelite: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20a8 8 0 0 0-8-8"/><path d="M12 20a12 12 0 0 0-12-12" opacity="0.45"/><circle cx="19" cy="17" r="2"/></svg>',
+  };
+
+  function celda(etiqueta, valor, unidad) {
+    if (valor === null || valor === undefined || valor === "") return "";
+
+    return (
+      '<div class="tp-dash__stat">' +
+      '<div class="tp-dash__stat-label">' + esc(etiqueta) + "</div>" +
+      '<div class="tp-dash__stat-value">' + esc(String(valor).trim()) +
+      (unidad ? ' <span class="tp-dash__stat-unit">' + esc(unidad) + "</span>" : "") +
+      "</div></div>"
+    );
+  }
+
+  function renderDashboard(d) {
+    var box = document.getElementById("tp-drawer-dash");
+    if (!box || !d) return;
+
+    var dash = dashData[d.id] || {};
+    var apagado = classify(d) === "offline";
+
+    // d.speed ya viene en la unidad del usuario y con el sensor ECM aplicado
+    var v = parseFloat(d.speed) || 0;
+    var max = dash.speed_max || 140;
+    var nivel = apagado ? "off" : v >= max * 0.85 ? "bad" : v >= max * 0.6 ? "warn" : "ok";
+
+    var html = '<div class="tp-dash__main">' +
+      esfera(G_GRANDE, apagado ? 0 : v, max, apagado ? "0" : String(Math.round(v)),
+             dash.speed_unit || "km/h", nivel, "tp-dash__gauge--big");
+
+    // Limite de la geocerca, si el vehiculo esta dentro de una
+    var gf = !apagado && window.tpLiveZones && tpLiveZones.limitFor
+      ? tpLiveZones.limitFor(d.lat, d.lng, d.vehicle_type_id, d.vehicle_state_id)
+      : null;
+
+    if (gf && gf.limit) {
+      var dif = Math.round(v - gf.limit);
+      html +=
+        '<div class="tp-dash__zone" data-over="' + (dif >= 0 ? "1" : "0") + '">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' +
+        "<span>" + esc(gf.zoneName || "Zona") + " · límite " + gf.limit + "</span>" +
+        '<strong>' + (dif >= 0 ? "+" : "") + dif + "</strong>" +
+        "</div>";
+    }
+
+    html += "</div>";
+
+    // Esferas pequeñas: solo las que el vehiculo reporta
+    var chicas = "";
+    if (dash.rpm) {
+      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">RPM MOTOR</div>' +
+        esfera(G_CHICA, apagado ? 0 : dash.rpm.value, dash.rpm.max, String(dash.rpm.value), "rpm",
+               dash.rpm.value >= dash.rpm.max * 0.75 ? "bad" : "info") + "</div>";
+    }
+    if (dash.fuel) {
+      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">COMBUSTIBLE</div>' +
+        esfera(G_CHICA, dash.fuel.value, 100, dash.fuel.value + (dash.fuel.unit === "%" ? "%" : ""), "combustible",
+               dash.fuel.value <= 15 ? "bad" : dash.fuel.value <= 30 ? "warn" : "ok") + "</div>";
+    }
+    if (dash.temp) {
+      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">TEMPERATURA</div>' +
+        esfera(G_CHICA, dash.temp.value, 120, dash.temp.value + "°", "temperatura",
+               dash.temp.value >= 95 ? "bad" : dash.temp.value >= 80 ? "warn" : "ok") + "</div>";
+    }
+    if (chicas) html += '<div class="tp-dash__row">' + chicas + "</div>";
+
+    // Testigos
+    var t = dash.telltales || {};
+    var tells =
+      testigo("Motor", "MOTOR", t.engine, ICONOS.motor) +
+      testigo("Ignición", "IGNICIÓN", t.ignition, ICONOS.ignicion) +
+      testigo("Puerta", "PUERTA", t.door, ICONOS.puerta) +
+      testigo("Bloqueo de motor", "BLOQUEO", t.blocked, ICONOS.bloqueo) +
+      (dash.volt != null
+        ? '<span class="tp-dash__tell" data-on="1" title="Batería externa">' + ICONOS.bateria +
+          '<span class="tp-dash__tell-label">' + esc(dash.volt.value + " " + (dash.volt.unit || "v")) + "</span></span>"
+        : "") +
+      (dash.satellites != null
+        ? '<span class="tp-dash__tell" data-on="' + (apagado ? "0" : "1") + '" title="Satélites">' + ICONOS.satelite +
+          '<span class="tp-dash__tell-label">' + (apagado ? "—" : Math.round(dash.satellites)) + " SAT</span></span>"
+        : "");
+
+    if (tells) html += '<div class="tp-dash__tells">' + tells + "</div>";
+
+    // Cifras de contexto: las cuatro de siempre mas odometro y horometro
+    var stats =
+      celda("Odómetro", dash.odometer, null) +
+      celda("Horómetro", dash.engine_hours, null) +
+      celda("Rumbo", d.course != null ? Math.round(d.course) + "°" : null, null) +
+      celda("Detenido", fmtDuration(d.stop_duration_sec), null) +
+      celda("Distancia", d.total_distance, "km");
+
+    if (stats) html += '<div class="tp-dash__stats">' + stats + "</div>";
+
+    box.innerHTML = html;
+  }
+
   function fillDrawer(d) {
     setText("tp-drawer-name", d.name || "#" + d.id);
     setText("tp-drawer-plate", d.plate_number || d.imei || "—");
@@ -925,10 +1085,7 @@
       var st = classify(d);
       dot.className = "tp-dot tp-dot--" + (st === "moving" ? "moving" : st === "idle" ? "idle" : "offline");
     }
-    setText("tp-drawer-speed", d.speed_text ? d.speed_text.replace(/[^\d.,]/g, "") : Math.round(parseFloat(d.speed) || 0));
-    setText("tp-drawer-course", d.course != null ? Math.round(d.course) : "—");
-    setText("tp-drawer-stop", fmtDuration(d.stop_duration_sec));
-    setText("tp-drawer-distance", d.total_distance != null ? d.total_distance : "—");
+    renderDashboard(d);
     // El resto de la ficha (última señal, coordenadas, altitud, motor, imei,
     // modelo, sim) se muestra unificada en el widget "Objeto" (device-widgets.blade).
     var sr = document.getElementById("tp-drawer-status-row");
@@ -1036,6 +1193,14 @@
       })
       .then(function (res) {
         if (state.selectedId != id) return;
+
+        // Lecturas del tablero: se guardan y se repinta ya, sin esperar al
+        // siguiente refresco del feed.
+        if (res && res.dashboard) {
+          dashData[id] = res.dashboard;
+          if (state.index[id]) renderDashboard(state.index[id]);
+        }
+
         var sideHtml = "",
           bottomHtml = "";
         if (res && res.ok && res.html) {
@@ -2629,6 +2794,12 @@
         renderList();
         renderMarkers();
         updateFollows();
+
+        // El drawer no se refrescaba con el sondeo: si lo tenias abierto, la
+        // velocidad se quedaba congelada en el momento de abrirlo.
+        if (state.selectedId && state.index[state.selectedId]) {
+          fillDrawer(state.index[state.selectedId]);
+        }
       })
       .catch(function () {});
   }

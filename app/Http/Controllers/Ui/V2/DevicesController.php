@@ -2621,6 +2621,117 @@ class DevicesController extends BaseController
     }
 
     /**
+     * Lecturas del tablero del vehiculo.
+     *
+     * Cada indicador sale de un sensor y se omite (null) si el vehiculo no lo
+     * tiene: el tablero se arma con lo que cada equipo reporta de verdad, sin
+     * dejar huecos con agujas a cero que nadie puede interpretar.
+     *
+     * La velocidad NO esta aqui: viene del feed del mapa, que ya la refresca
+     * cada 5 s y ya aplica el sensor ECM cuando toca.
+     */
+    protected function dashboardData($device): array
+    {
+        $traccar = $device->traccar;
+
+        // Valor numerico del primer sensor de ese tipo, o null.
+        $valor = function (string $tipo) use ($device, $traccar) {
+            if (! $traccar) {
+                return null;
+            }
+
+            $sensor = $device->getSensorByType($tipo);
+
+            if (! $sensor) {
+                return null;
+            }
+
+            try {
+                $v = $sensor->getValueCurrent($traccar)->getValue();
+            } catch (\Throwable $e) {
+                return null;
+            }
+
+            return is_numeric($v) ? (float) $v : null;
+        };
+
+        // Un sensor de encendido/apagado: true, false, o null si no lo lleva.
+        $flag = function (string $tipo) use ($device, $traccar) {
+            if (! $traccar || ! $device->getSensorByType($tipo)) {
+                return null;
+            }
+
+            try {
+                return (bool) $device->getSensorByType($tipo)->getValueCurrent($traccar)->getValue();
+            } catch (\Throwable $e) {
+                return null;
+            }
+        };
+
+        // Texto ya formateado por el sensor (respeta su unidad configurada).
+        $texto = function (string $tipo) use ($device, $traccar) {
+            if (! $traccar) {
+                return null;
+            }
+
+            $sensor = $device->getSensorByType($tipo);
+
+            if (! $sensor) {
+                return null;
+            }
+
+            try {
+                return (string) $sensor->getValueCurrent($traccar)->getFormatted();
+            } catch (\Throwable $e) {
+                return null;
+            }
+        };
+
+        $unidad = function (string $tipo) use ($device) {
+            $s = $device->getSensorByType($tipo);
+
+            return $s && $s->unit_of_measurement ? (string) $s->unit_of_measurement : null;
+        };
+
+        $rpm = $valor('tachometer');
+        $fuel = $valor('fuel_tank');
+        $temp = $valor('temperature');
+        $volt = $valor('battery_external');
+
+        return [
+            // Escala del velocimetro. NO se usa max_speed a secas: ese campo es
+            // el umbral de la alerta de exceso, no la punta del vehiculo, y con
+            // un umbral de 60 la aguja se clavaba en cuanto se pasaba. Se toma
+            // ese umbral con holgura, redondeado a 20, y nunca por debajo de 140.
+            'speed_max' => (int) max(140, ceil(((float) $device->max_speed * 1.3) / 20) * 20),
+            'speed_unit' => \Formatter::speed()->getUnit(),
+
+            'rpm'  => $rpm === null ? null : ['value' => round($rpm), 'max' => 4000],
+            'fuel' => $fuel === null ? null : ['value' => round($fuel, 1), 'unit' => $unidad('fuel_tank') ?: '%'],
+            'temp' => $temp === null ? null : ['value' => round($temp, 1), 'unit' => $unidad('temperature') ?: '\u00b0'],
+            'volt' => $volt === null ? null : ['value' => round($volt, 1), 'unit' => $unidad('battery_external') ?: 'v'],
+
+            'satellites' => $valor('satellites'),
+
+            // Odometro y horometro se muestran como CIFRA DE CONTEXTO, no como
+            // aguja, asi que se toma el texto ya formateado por el sensor. Con
+            // el valor crudo se perdia su unidad: un horometro salia con 237.536
+            // "horas" (27 años) porque el sensor lo reporta en otra escala.
+            'engine_hours' => $texto('engine_hours'),
+            'odometer'     => $texto('odometer'),
+
+            // Testigos. null = el vehiculo no lleva ese sensor, y entonces el
+            // testigo NO se dibuja (distinto de dibujarlo apagado).
+            'telltales' => [
+                'engine'   => $flag('engine') ?? $flag('ignition'),
+                'ignition' => $flag('ignition'),
+                'door'     => $flag('door'),
+                'blocked'  => $flag('blocked'),
+            ],
+        ];
+    }
+
+    /**
      * Icono asignado al vehiculo, como lo resuelve el mapa.
      *
      * El accessor Device::icon ya aplica el icono por estado cuando el set
@@ -2832,6 +2943,13 @@ class DevicesController extends BaseController
             $data['sensors'] = $rows;
         }
 
+        // ── Tablero del vehiculo ──────────────────────────────────────
+        // Va SIEMPRE (no depende de los widgets activos del usuario): lo pinta
+        // el propio drawer, no la tira de widgets. Aqui van NUMEROS, porque el
+        // bloque 'sensors' de arriba solo da texto ya formateado y una aguja
+        // necesita el valor.
+        $data['dashboard'] = $this->dashboardData($device);
+
         if ($has('image')) {
             // Un ARRAY, no la url suelta: con `null` el @isset del blade era
             // falso y el widget no se pintaba nunca sin foto (ni el aviso
@@ -2997,7 +3115,15 @@ class DevicesController extends BaseController
 
         $html = View::make('ui.v2.partials.device-widgets', $data)->render();
 
-        return response()->json(['ok' => true, 'id' => (int) $device->id, 'html' => $html]);
+        // El tablero va aparte del html: lo dibuja el drawer en el cliente para
+        // poder mover la aguja de velocidad en cada refresco (cada 5 s) sin
+        // volver a pedir todo el bloque de widgets.
+        return response()->json([
+            'ok'        => true,
+            'id'        => (int) $device->id,
+            'html'      => $html,
+            'dashboard' => $data['dashboard'] ?? null,
+        ]);
     }
 
     // NOTA: el menú de acciones del kebab ya NO usa AJAX. Es un TEMPLATE

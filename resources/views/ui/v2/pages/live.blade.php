@@ -4,7 +4,7 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=64">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=65">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
@@ -722,29 +722,10 @@
                 {{-- Status chip --}}
                 <div class="tp-mb-4" id="tp-drawer-status-row"></div>
 
-                {{-- KPI cluster --}}
-                <div class="tp-grid tp-grid-2 tp-mb-5">
-                    <div class="tp-kpi tp-kpi--sm">
-                        <div class="tp-kpi__label">Velocidad</div>
-                        <div class="tp-kpi__value" id="tp-drawer-speed">—</div>
-                        <div class="tp-text-xs tp-text-muted">km/h</div>
-                    </div>
-                    <div class="tp-kpi tp-kpi--sm">
-                        <div class="tp-kpi__label">Rumbo</div>
-                        <div class="tp-kpi__value" id="tp-drawer-course">—</div>
-                        <div class="tp-text-xs tp-text-muted">grados</div>
-                    </div>
-                    <div class="tp-kpi tp-kpi--sm">
-                        <div class="tp-kpi__label">Detenido</div>
-                        <div class="tp-kpi__value" id="tp-drawer-stop">—</div>
-                        <div class="tp-text-xs tp-text-muted">tiempo</div>
-                    </div>
-                    <div class="tp-kpi tp-kpi--sm">
-                        <div class="tp-kpi__label">Distancia</div>
-                        <div class="tp-kpi__value" id="tp-drawer-distance">—</div>
-                        <div class="tp-text-xs tp-text-muted">km totales</div>
-                    </div>
-                </div>
+                {{-- Tablero del vehiculo: lo dibuja live.js (renderDashboard).
+                     Las agujas se mueven con cada refresco del feed; el resto
+                     de lecturas llegan del endpoint de widgets. --}}
+                <div class="tp-dash" id="tp-drawer-dash"></div>
 
                 {{-- La telemetría/ficha se muestra unificada en el widget "Objeto"
                      (device-widgets.blade → device_info), no en un bloque fijo aparte. --}}
@@ -811,7 +792,7 @@
     {{-- Galería de medios del vehículo (kebab) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-device-media.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-silent-devices.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=54"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=55"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=14"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>
