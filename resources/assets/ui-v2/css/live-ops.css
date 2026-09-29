@@ -2847,3 +2847,21 @@ table.tp-lock-hist th {
     font-size: 11px;
   }
 }
+
+/* ── Lista de vehiculos en movil ─────────────────────────────────────
+   Bajo 900px el panel se desliza sobre el mapa. El tirador tiene que
+   verse SIEMPRE que el panel este fuera (antes solo aparecia tras
+   colapsarlo a mano, cosa imposible si ya estaba fuera de pantalla). */
+@media (max-width: 900px) {
+  .tp-live__filters-handle {
+    /* Por delante del panel, para poder cerrarlo tambien desde el */
+    z-index: 8;
+  }
+  /* Con la lista abierta, el tirador viaja con ella y apunta al reves */
+  .tp-live[data-mobile-filters="true"] .tp-live__filters-handle {
+    left: min(85vw, 320px);
+  }
+  .tp-live[data-mobile-filters="true"] .tp-live__filters-handle svg {
+    transform: scaleX(-1);
+  }
+}

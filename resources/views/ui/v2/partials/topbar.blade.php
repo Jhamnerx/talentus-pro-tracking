@@ -10,6 +10,17 @@
 
 <header class="tp-topbar">
 
+    {{-- Menu (solo movil). El boton de plegar vive DENTRO del rail, asi que
+         cuando el rail sale de pantalla se va con el: hace falta uno aqui,
+         que el topbar siempre esta a la vista. --}}
+    <button class="tp-topbar__nav" id="tp-nav-toggle" type="button" aria-label="Abrir menú"
+        aria-controls="tp-rail" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" aria-hidden="true">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+        </svg>
+    </button>
+
     <div class="tp-topbar__brand">
         <a href="{{ url('/ui/v2/live') }}" class="tp-row" style="text-decoration:none; color:inherit; gap:8px;">
             <span class="tp-rail__logo" style="width:26px; height:26px; font-size:12px;">{{ $brandInit }}</span>

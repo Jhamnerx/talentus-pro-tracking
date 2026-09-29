@@ -1887,3 +1887,44 @@ select.tp-input:disabled {
     display: none;
   }
 }
+
+/* ── Navegacion en movil: boton de menu y velo ───────────────────────
+   El boton de plegar vive dentro del rail; cuando el rail sale de
+   pantalla se va con el, asi que el topbar lleva el suyo. */
+.tp-topbar__nav {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  margin-right: var(--sp-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  color: var(--fg-secondary);
+  cursor: pointer;
+}
+.tp-topbar__nav:hover {
+  background: var(--surface-sunken);
+  color: var(--fg-primary);
+}
+.tp-nav-scrim {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .tp-topbar__nav {
+    display: flex;
+  }
+  .tp-nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--surface-scrim);
+    z-index: 55;
+  }
+  .tp-nav-scrim[hidden] {
+    display: none;
+  }
+}

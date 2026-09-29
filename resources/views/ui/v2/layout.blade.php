@@ -38,7 +38,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=3" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=27" />
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=28" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=3" />
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=6" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
@@ -88,6 +88,10 @@
 
         @include('ui.v2.partials.rail', ['active' => $rail])
         @include('ui.v2.partials.topbar')
+
+        {{-- Velo del menu en movil: cierra tocando fuera. Solo existe como
+             capa visible bajo 640px (ver components.css). --}}
+        <div class="tp-nav-scrim" id="tp-nav-scrim" hidden></div>
 
         <main class="tp-workspace @yield('workspace-class')" id="tp-workspace">
             @yield('workspace')

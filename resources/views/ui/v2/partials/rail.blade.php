@@ -44,7 +44,7 @@
     });
 @endphp
 
-<aside class="tp-rail" aria-label="Navegación principal">
+<aside class="tp-rail" id="tp-rail" aria-label="Navegación principal">
     {{-- Toggle de modo (completo / compacto) --}}
     <button class="tp-rail__toggle" id="tp-rail-toggle" type="button" title="Expandir / colapsar menú"
         aria-label="Expandir o colapsar menú">
@@ -129,10 +129,51 @@
             document.documentElement.setAttribute('data-rail', mode);
             try { localStorage.setItem('tp_rail', mode); } catch (e) {}
         }
-        if (toggle) toggle.addEventListener('click', function () {
-            var cur = document.documentElement.getAttribute('data-rail') === 'full' ? 'full' : 'compact';
-            setMode(cur === 'full' ? 'compact' : 'full');
+        function abierto() {
+            return document.documentElement.getAttribute('data-rail') === 'full';
+        }
+        function alterna() {
+            setMode(abierto() ? 'compact' : 'full');
+            sincroniza();
+        }
+
+        // En movil el rail se superpone: hay que avisar a quien lee la pagina
+        // de que el boton abre y cierra, y mostrar el velo.
+        var navBtn = document.getElementById('tp-nav-toggle');
+        var scrim = document.getElementById('tp-nav-scrim');
+        var movil = window.matchMedia('(max-width: 640px)');
+
+        function sincroniza() {
+            var on = abierto();
+            if (navBtn) {
+                navBtn.setAttribute('aria-expanded', on ? 'true' : 'false');
+                navBtn.setAttribute('aria-label', on ? 'Cerrar menú' : 'Abrir menú');
+            }
+            if (scrim) scrim.hidden = !(on && movil.matches);
+        }
+
+        if (toggle) toggle.addEventListener('click', alterna);
+        if (navBtn) navBtn.addEventListener('click', alterna);
+        if (scrim) scrim.addEventListener('click', function () { setMode('compact'); sincroniza(); });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && abierto() && movil.matches) {
+                setMode('compact');
+                sincroniza();
+            }
         });
+
+        // Al pasar de movil a escritorio (o al reves) el velo puede quedarse
+        // colgado: se recalcula con el cambio de medida.
+        if (movil.addEventListener) movil.addEventListener('change', sincroniza);
+
+        // En movil se arranca con el menu cerrado aunque la preferencia
+        // guardada sea "full": si no, tapa la pantalla al entrar.
+        if (movil.matches && abierto()) {
+            document.documentElement.setAttribute('data-rail', 'compact');
+        }
+
+        sincroniza();
         // Ítems pendientes de migrar: avisan en vez de navegar.
         document.querySelectorAll('[data-rail-pending]').forEach(function (a) {
             a.addEventListener('click', function (e) {

@@ -3190,18 +3190,49 @@
     // Colapsar / expandir el panel izquierdo (lista de elementos)
     var fCollapse = document.getElementById("tp-live-filters-collapse");
     var fExpand = document.getElementById("tp-live-filters-expand");
-    if (fCollapse)
-      fCollapse.addEventListener("click", function () {
-        root.setAttribute("data-filters-collapsed", "true");
-        if (fExpand) fExpand.hidden = false;
-        setTimeout(function () { state.map && state.map.invalidateSize(); }, 250);
-      });
-    if (fExpand)
-      fExpand.addEventListener("click", function () {
-        root.removeAttribute("data-filters-collapsed");
-        fExpand.hidden = true;
-        setTimeout(function () { state.map && state.map.invalidateSize(); }, 250);
-      });
+    // Bajo 900px la lista NO se colapsa: sale y entra deslizandose sobre el
+    // mapa (data-mobile-filters). Esa regla CSS existia desde siempre pero
+    // nada la activaba, asi que en movil no habia forma de ver la lista.
+    var movilLista = window.matchMedia("(max-width: 900px)");
+
+    function sincronizaTirador() {
+      if (!fExpand) return;
+
+      fExpand.hidden = movilLista.matches
+        ? root.getAttribute("data-mobile-filters") === "true"
+        : !root.hasAttribute("data-filters-collapsed");
+    }
+
+    function cierraLista() {
+      if (movilLista.matches) root.removeAttribute("data-mobile-filters");
+      else root.setAttribute("data-filters-collapsed", "true");
+
+      sincronizaTirador();
+      setTimeout(function () { state.map && state.map.invalidateSize(); }, 250);
+    }
+
+    function abreLista() {
+      if (movilLista.matches) root.setAttribute("data-mobile-filters", "true");
+      else root.removeAttribute("data-filters-collapsed");
+
+      sincronizaTirador();
+      setTimeout(function () { state.map && state.map.invalidateSize(); }, 250);
+    }
+
+    if (fCollapse) fCollapse.addEventListener("click", cierraLista);
+    if (fExpand) fExpand.addEventListener("click", abreLista);
+
+    // Al cruzar el corte, el tirador puede quedarse en el estado que no toca
+    if (movilLista.addEventListener) movilLista.addEventListener("change", sincronizaTirador);
+
+    // Con la lista abierta sobre el mapa, Esc la cierra
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && movilLista.matches && root.getAttribute("data-mobile-filters") === "true") {
+        cierraLista();
+      }
+    });
+
+    sincronizaTirador();
 
     var dc = document.getElementById("tp-drawer-close");
     if (dc)
