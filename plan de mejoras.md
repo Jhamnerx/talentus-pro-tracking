@@ -1,7 +1,7 @@
 # Plan de implementación y salida a producción
 
 **Plataforma de Rastreo · Talentus Technology**
-Estado a **24 de septiembre de 2026** · rama `nuevo-tema`
+Estado a **29 de septiembre de 2026** · rama `nuevo-tema`
 
 ---
 
@@ -14,19 +14,21 @@ actualización del núcleo a GPSWox 3.7.13 sobre Laravel 9.
 
 | Concepto                                    | Cifra                     |
 | ------------------------------------------- | ------------------------- |
-| Periodo de trabajo                          | 31-may → 22-sep-2026      |
-| Commits por delante de producción           | 279                       |
+| Periodo de trabajo                          | 31-may → 29-sep-2026      |
+| Commits por delante de producción           | 289                       |
 | Ficheros tocados                            | 1.045                     |
 | Líneas añadidas / eliminadas                | +185.846 / −30.058        |
-| Migraciones de base de datos por aplicar    | 30                        |
+| Migraciones de base de datos por aplicar    | 31                        |
 | Puntos del plan 8–15 entregados             | 6 de 6                    |
 | Funcionalidades entregadas (inventario §1.2)| 104, en 11 áreas          |
 | Pendientes (aplazados por decisión)         | 2 — vídeo a bordo y ERP   |
 
-**Fecha propuesta de salida a producción: martes 3 de noviembre de 2026**,
-precedida de cinco semanas repartidas en consolidación, pruebas y piloto.
+**Fecha propuesta de salida a producción: martes 10 de noviembre de 2026.**
+La anterior era el 3; se corre una semana porque entre el 28 y el 29 de
+septiembre entraron tres funcionalidades nuevas (§1.6) después de la fecha de
+congelación, por decisión expresa de dirección.
 
-El mayor riesgo operativo **hoy** no es técnico: hay **222 commits sin subir al
+El mayor riesgo operativo **hoy** no es técnico: hay **232 commits sin subir al
 repositorio remoto**. Todo ese trabajo existe en una sola máquina. Resolverlo
 es lo primero del calendario y no admite espera.
 
@@ -263,6 +265,34 @@ pruebas manual y sistemática.
 
 ---
 
+### 1.6 · Entregado tras la fecha de congelación (28–29 sep)
+
+Tres funcionalidades pedidas después del 28-sep, la fecha en que el plan
+proponía congelar. Entraron por decisión de dirección, a cambio de correr la
+salida una semana.
+
+| Funcionalidad                                                        | Fecha  | Commit     |
+| -------------------------------------------------------------------- | ------ | ---------- |
+| Marcador coloreado por velocidad y por límite de geocerca             | 28-sep | `c3b69ae8` |
+| **Tablero del vehículo** con agujas, adaptado a los sensores de cada equipo | 29-sep | `d356bff7` |
+| Navegación en móvil: menú, lista de vehículos y panel lateral         | 29-sep | `44c47a00` |
+
+Y cinco correcciones que salieron al construirlas:
+
+| Qué fallaba                                                  | Alcance    | Commit     |
+| ------------------------------------------------------------ | ---------- | ---------- |
+| En móvil solo se veía el mapa: ni menú ni lista de vehículos  | Bloqueante | `44c47a00` |
+| `shell.css` ocultaba el rail bajo 767 px con `display:none`   | Bloqueante | `f5f85868` |
+| El botón de menú no enganchaba: el topbar aún no existía      | Bloqueante | `a2dc7bc3` |
+| El panel lateral no se refrescaba: la velocidad se congelaba  | Alto       | `d356bff7` |
+| Los contadores del mapa quedaban bajo las herramientas        | Medio      | `1e395f9c` |
+
+Las tres bloqueantes eran **anteriores** a este trabajo: la navegación móvil
+nunca había funcionado. La regla `data-mobile-filters` existía en el CSS desde
+el principio y nada la activaba.
+
+---
+
 ## 2 · Qué falta
 
 ### 2.1 · Aplazado por decisión del cliente
@@ -283,11 +313,28 @@ Ninguno de los dos bloquea la salida a producción.
 
 | Qué                                                        | Por qué importa                                        |
 | ---------------------------------------------------------- | ------------------------------------------------------ |
-| **222 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina               |
+| **232 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina               |
 | **Sin suite de pruebas automáticas**                       | Cada regresión se detecta a mano o en producción       |
 | `gulp sass-all` roto en `admin-v2.scss`                    | Impide recompilar los 25 temas de color restantes      |
 | Traducción de la v2 incompleta (36 de 51 vistas con `trans`)| Al cambiar a inglés la interfaz queda a medias         |
-| Cola de difusión sin worker                                | Los avisos emergentes no llegan si nadie procesa la cola|
+| Cola de difusión sin worker (24 trabajos esperando)        | Los avisos emergentes no llegan si nadie procesa la cola|
+| **`clean-css` 4.2.1 descarta las at-rules que no conoce**  | Toda `@container` desaparece del CSS compilado sin avisar |
+| **Ocho cortes responsive distintos** entre hojas de estilo | 640, 720, 760, 767, 900, 960, 1100… las casi-coincidencias ya causaron un fallo real |
+
+Las dos últimas se descubrieron el 29-sep y merecen una nota.
+
+**El minificador se come las container queries.** Comprobado: entra
+`@container x (max-width:1px){.a{color:red}}` y sale vacío. Cualquiera que
+escriba una container query verá cómo desaparece en producción sin ningún
+aviso. Hoy no hay ninguna viva, así que no rompe nada, pero es una trampa
+puesta para el siguiente que lo intente. Se arregla actualizando
+`gulp-clean-css` (3.10 → 4.x, que trae clean-css 5).
+
+**Los cortes responsive no cuadran entre ficheros.** `shell.css` ocultaba el
+rail a 767 px mientras `components.css` mostraba el botón de menú a 640: entre
+esos dos anchos no había ni rail ni forma de abrirlo. Ya está corregido, pero
+la causa de fondo —ocho breakpoints sueltos, con parejas a 6 px de distancia—
+sigue ahí. Conviene fijarlos como tokens antes de que vuelva a pasar.
 
 ---
 
@@ -334,17 +381,19 @@ real sin obligar a nadie, y es la mejor red de seguridad del despliegue.
 
 ## 4 · Fases de pruebas
 
-### Fase 0 · Consolidación — lun 28-sep a vie 2-oct
+### Fase 0 · Consolidación — lun 5-oct a vie 9-oct
 
 | Tarea                                                  | Criterio de salida                        |
 | ------------------------------------------------------ | ----------------------------------------- |
-| Subir los 222 commits al remoto                        | `origin/nuevo-tema` al día                |
+| Subir los 232 commits al remoto                        | `origin/nuevo-tema` al día                |
 | Congelar funcionalidades nuevas                        | Solo correcciones a partir de aquí        |
 | Reparar `gulp sass-all`                                | Los 26 temas compilan                     |
+| Actualizar `gulp-clean-css` (deja de comerse `@container`) | Una container query de prueba sobrevive al build |
+| Fijar los cortes responsive como tokens                | Un solo listado de breakpoints, sin parejas a 6 px |
 | Levantar preproducción con copia de datos reales       | Entorno accesible al equipo               |
 | Inventario de las 30 migraciones y su tiempo           | Duración medida de la ventana             |
 
-### Fase 1 · Pruebas sistemáticas — lun 5-oct a vie 16-oct
+### Fase 1 · Pruebas sistemáticas — lun 12-oct a vie 23-oct
 
 Recorrido **módulo por módulo** con lista de verificación escrita. Cada módulo
 se prueba en las dos combinaciones que ya han demostrado dar problemas: **tema
@@ -364,7 +413,7 @@ claro y oscuro**, y **los dos idiomas**.
 **Criterio de salida:** cero defectos bloqueantes abiertos; los de severidad
 media, documentados y aceptados.
 
-### Fase 2 · Piloto en producción — lun 19-oct a vie 30-oct
+### Fase 2 · Piloto en producción — lun 26-oct a vie 6-nov
 
 Un grupo reducido de usuarios reales trabaja en la v2 sobre datos de
 producción, con la interfaz clásica como salida de emergencia.
@@ -377,12 +426,12 @@ producción, con la interfaz clásica como salida de emergencia.
 **Criterio de salida:** una semana completa sin incidencias bloqueantes y sin
 peticiones de volver a la interfaz clásica por fallos.
 
-### Fase 3 · Salida — martes 3-nov-2026
+### Fase 3 · Salida — martes 10-nov-2026
 
 Ventana la noche del **lunes 2 al martes 3**. Martes, no viernes: deja cuatro
 días hábiles por delante para atender lo que salga.
 
-### Fase 4 · Estabilización — 3-nov a 13-nov
+### Fase 4 · Estabilización — 10-nov a 20-nov
 
 Atención prioritaria a incidencias y seguimiento de los indicadores del
 despliegue.
@@ -393,11 +442,11 @@ despliegue.
 
 | Fase                       | Desde      | Hasta      | Duración  |
 | -------------------------- | ---------- | ---------- | --------- |
-| 0 · Consolidación          | lun 28-sep | vie 2-oct  | 1 semana  |
-| 1 · Pruebas sistemáticas   | lun 5-oct  | vie 16-oct | 2 semanas |
-| 2 · Piloto en producción   | lun 19-oct | vie 30-oct | 2 semanas |
-| 3 · **Salida a producción**| **mar 3-nov** | —       | 1 noche   |
-| 4 · Estabilización         | mar 3-nov  | vie 13-nov | 1,5 sem.  |
+| 0 · Consolidación          | lun 5-oct  | vie 9-oct  | 1 semana  |
+| 1 · Pruebas sistemáticas   | lun 12-oct | vie 23-oct | 2 semanas |
+| 2 · Piloto en producción   | lun 26-oct | vie 6-nov  | 2 semanas |
+| 3 · **Salida a producción**| **mar 10-nov** | —      | 1 noche   |
+| 4 · Estabilización         | mar 10-nov | vie 20-nov | 1,5 sem.  |
 
 **El calendario asume dedicación continua y que la Fase 1 no destapa un defecto
 estructural.** Si la Fase 1 encuentra algo de fondo, la fecha se mueve: es
@@ -409,7 +458,7 @@ preferible mover la fecha que salir con un defecto conocido.
 
 | Riesgo                                                   | Impacto | Mitigación                                                        |
 | -------------------------------------------------------- | ------- | ----------------------------------------------------------------- |
-| Los 222 commits viven en una sola máquina                 | Crítico | Fase 0, primer día                                                |
+| Los 232 commits viven en una sola máquina                 | Crítico | Fase 0, primer día                                                |
 | Migraciones lentas sobre tablas grandes                   | Alto    | Ensayo en preproducción con datos reales (3.1.3)                  |
 | Regresión no detectada por falta de pruebas automáticas   | Alto    | Fase 1 sistemática + piloto con vuelta atrás por usuario          |
 | Laravel 9 exige PHP 8.0+ en el servidor                   | Alto    | Verificar antes de la ventana; bloquea el despliegue              |
