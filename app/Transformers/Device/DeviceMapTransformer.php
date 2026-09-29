@@ -30,6 +30,32 @@ class DeviceMapTransformer extends DeviceTransformer
         }];
     }
 
+    /**
+     * Config de color de marcador de la unidad, o null si no lo usa.
+     *
+     * Solo se incluye lo que difiere de los valores por defecto: si el
+     * vehiculo no define rangos propios, el navegador usa los de la pagina.
+     */
+    protected function markerColors(Device $entity): ?array
+    {
+        if (! $entity->marker_colors_enabled) {
+            return null;
+        }
+
+        $rangos = json_decode((string) ($entity->marker_speed_ranges ?? ''), true);
+
+        return array_filter([
+            'ranges' => is_array($rangos) && $rangos ? $rangos : null,
+            'margin' => $entity->marker_geofence_margin !== null
+                ? (int) $entity->marker_geofence_margin
+                : null,
+            'near'   => $entity->marker_geofence_near_color ?: null,
+            'over'   => $entity->marker_geofence_over_color ?: null,
+        ], function ($v) {
+            return $v !== null;
+        });
+    }
+
     public function transform(Device $entity)
     {
         // Si los sensores no están cargados, los cargamos explícitamente
@@ -86,10 +112,23 @@ class DeviceMapTransformer extends DeviceTransformer
                 'label' => (string) ($entity->vehicleState->label ?: $entity->vehicleState->name),
                 'color' => (string) ($entity->vehicleState->color ?: '#64748b'),
             ] : null,
+            // Color del marcador por velocidad. Solo viaja si la unidad lo
+            // tiene activado, para no engordar el feed de 1.400 vehiculos con
+            // una config que casi nadie personaliza; los valores por defecto
+            // los manda la pagina una sola vez (mapConfig.markerColors).
+            'marker_colors' => $this->markerColors($entity),
+            // Tipo y estado de vehiculo: el navegador los necesita para
+            // resolver el limite de la geocerca, que puede diferenciarlos.
+            'vehicle_type_id'  => $entity->vehicle_type_id ? (int) $entity->vehicle_type_id : null,
+            'vehicle_state_id' => $entity->vehicle_state_id ? (int) $entity->vehicle_state_id : null,
             'lat' => $entity->lat,
             'lng' => $entity->lng,
             'speed' => $entity->speed,
             'speed_text' => Formatter::speed()->human($entity->getSpeed()),
+            // Velocidad NUMERICA ya en la unidad del usuario. 'speed' va en la
+            // unidad de almacenamiento y el limite de la geocerca llega
+            // convertido: sin esto, el coloreado compararia km/h contra mph.
+            'speed_value' => round((float) Formatter::speed()->convert($entity->getSpeed()), 1),
             'course' => $entity->course,
             'altitude' => $entity->altitude,
             'time' => $entity->time,

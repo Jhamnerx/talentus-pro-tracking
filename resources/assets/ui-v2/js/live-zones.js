@@ -1075,7 +1075,159 @@
   }
 
   // ----- API para live.js -----
+
+  /* ============================================================
+     Limite de velocidad vigente en un punto
+     ------------------------------------------------------------
+     Lo usa el coloreado del marcador en el mapa. Se resuelve AQUI, en el
+     navegador, porque este modulo ya tiene las geocercas con su geometria y
+     su limite: preguntarselo al servidor por cada vehiculo y cada refresco
+     serian cientos de consultas espaciales por segundo.
+
+     Con geocercas solapadas gana la de MENOR area, que es la misma regla que
+     aplican las alertas y los reportes (Geofence::pickBySpeedLimitPriority).
+     ============================================================ */
+
+  var TIERRA_M = 111320; // metros por grado de latitud
+
+  function metrosEntre(aLat, aLng, bLat, bLng) {
+    var dLat = (bLat - aLat) * TIERRA_M;
+    var dLng = (bLng - aLng) * TIERRA_M * Math.cos((aLat * Math.PI) / 180);
+    return Math.sqrt(dLat * dLat + dLng * dLng);
+  }
+
+  // Distancia de un punto al segmento AB, en metros.
+  function metrosASegmento(pLat, pLng, aLat, aLng, bLat, bLng) {
+    var cos = Math.cos((aLat * Math.PI) / 180);
+    var px = pLng * cos, py = pLat;
+    var ax = aLng * cos, ay = aLat;
+    var bx = bLng * cos, by = bLat;
+
+    var dx = bx - ax, dy = by - ay;
+    var largo = dx * dx + dy * dy;
+
+    var t = largo ? ((px - ax) * dx + (py - ay) * dy) / largo : 0;
+    t = Math.max(0, Math.min(1, t));
+
+    var cx = ax + t * dx, cy = ay + t * dy;
+
+    return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) * TIERRA_M;
+  }
+
+  // Punto en poligono por lanzamiento de rayo.
+  function dentroDelPoligono(pLat, pLng, pts) {
+    var dentro = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      var yi = pts[i].lat, xi = pts[i].lng;
+      var yj = pts[j].lat, xj = pts[j].lng;
+
+      if ((yi > pLat) !== (yj > pLat) &&
+          pLng < ((xj - xi) * (pLat - yi)) / (yj - yi) + xi) {
+        dentro = !dentro;
+      }
+    }
+    return dentro;
+  }
+
+  // Area aproximada, solo para comparar cual geocerca es mas pequeña.
+  function areaAprox(g) {
+    if (g.type === "circle") {
+      var r = Number(g.radius) || 0;
+      return Math.PI * r * r;
+    }
+
+    var pts = normCoords(g.coordinates);
+
+    if (g.type === "line") {
+      var largo = 0;
+      for (var i = 1; i < pts.length; i++) {
+        largo += metrosEntre(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
+      }
+      return largo * 2 * (Number(g.radius) || 0);
+    }
+
+    if (pts.length < 3) return Infinity;
+
+    // Shoelace sobre grados, corregido por la latitud media
+    var cos = Math.cos((pts[0].lat * Math.PI) / 180);
+    var suma = 0;
+    for (var k = 0, l = pts.length - 1; k < pts.length; l = k++) {
+      suma += (pts[l].lng * cos) * pts[k].lat - (pts[k].lng * cos) * pts[l].lat;
+    }
+    return Math.abs(suma / 2) * TIERRA_M * TIERRA_M;
+  }
+
+  function contieneElPunto(g, lat, lng) {
+    if (g.type === "circle") {
+      var c = parseLatLng(g.center);
+      if (!c || !g.radius) return false;
+      return metrosEntre(lat, lng, c.lat, c.lng) <= Number(g.radius);
+    }
+
+    var pts = normCoords(g.coordinates);
+
+    if (g.type === "line") {
+      if (pts.length < 2 || !g.radius) return false;
+      var r = Number(g.radius);
+      for (var i = 1; i < pts.length; i++) {
+        if (metrosASegmento(lat, lng, pts[i - 1].lat, pts[i - 1].lng,
+                            pts[i].lat, pts[i].lng) <= r) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    return pts.length >= 3 && dentroDelPoligono(lat, lng, pts);
+  }
+
+  /**
+   * Limite que aplica a ese vehiculo en ese punto, o null si no hay ninguno.
+   *
+   * Tres niveles, los mismos que Geofence::speedLimitFor: limite exacto del
+   * tipo + estado, limite por defecto del tipo, y el limite general de la
+   * geocerca.
+   *
+   * @return {{limit:number, zoneId:number, zoneName:string}|null}
+   */
+  function limiteEnPunto(lat, lng, tipoId, estadoId) {
+    if (lat == null || lng == null || !S.items || !S.items.length) return null;
+
+    lat = +lat;
+    lng = +lng;
+    if (isNaN(lat) || isNaN(lng)) return null;
+
+    var mejor = null;
+
+    S.items.forEach(function (g) {
+      if (!contieneElPunto(g, lat, lng)) return;
+
+      var limite = null;
+      var vsl = g.vehicle_speed_limits || {};
+
+      if (tipoId && vsl[tipoId]) {
+        // 0 es la clave del limite por defecto del tipo (estado nulo)
+        var porTipo = vsl[tipoId];
+        limite = (estadoId && porTipo[estadoId] != null) ? porTipo[estadoId] : porTipo[0];
+      }
+
+      if (limite == null) limite = g.speed_limit;
+      if (limite == null) return;
+
+      var area = areaAprox(g);
+      if (!mejor || area < mejor.area) {
+        mejor = { limit: +limite, zoneId: g.id, zoneName: g.name, area: area };
+      }
+    });
+
+    if (!mejor) return null;
+
+    return { limit: mejor.limit, zoneId: mejor.zoneId, zoneName: mejor.zoneName };
+  }
+
   window.tpLiveZones = {
+    /** Limite de velocidad vigente en un punto (para el color del marcador). */
+    limitFor: limiteEnPunto,
     activate: function () {
       wire();
       bindDrawCreated();

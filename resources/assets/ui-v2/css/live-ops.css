@@ -136,6 +136,38 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
   transition: filter var(--dur-fast, 0.15s) var(--ease-out, ease);
 }
+/* ── Color por velocidad ──────────────────────────────────────────────
+   El halo va DETRAS del icono: el marcador no tiene position propia (lo
+   posiciona Leaflet con transform), asi que el halo se centra por su
+   cuenta y el <img> se eleva con z-index para no quedar tapado. */
+.tp-lmarker__halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  opacity: 0.45;
+  /* El difuminado evita el borde duro del circulo sobre el mapa */
+  filter: blur(2px);
+  pointer-events: none;
+  z-index: 0;
+}
+.tp-lmarker--colored img {
+  position: relative;
+  z-index: 1;
+}
+/* La etiqueta coloreada lleva el color en linea (viene del rango); aqui solo
+   se asegura que el texto se lea sobre cualquier tono. */
+.tp-lmarker--colored .tp-lmarker__name {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+}
+.tp-lmarker--colored .tp-lmarker__speed {
+  color: inherit;
+  opacity: 0.9;
+}
+
 /* Device seleccionado: sombra/halo que lo hace resaltar (como el legacy) */
 .tp-lmarker--selected {
   z-index: 1000 !important;

@@ -916,3 +916,15 @@
 .tp-form.tp-report-form .tp-form__field > div > .tp-input {
   min-height: 38px;
 }
+
+/* ── Color del marcador por velocidad ─────────────────────────────────
+   Con el interruptor apagado el bloque se atenua pero SIGUE enviandose:
+   deshabilitar los campos los dejaria fuera del submit y se perderia lo
+   configurado al volver a activarlo. */
+.tp-markercolors[data-on="0"] .tp-markercolors__body {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.tp-markercolors .tp-routecolors__opt-head {
+  gap: 8px;
+}

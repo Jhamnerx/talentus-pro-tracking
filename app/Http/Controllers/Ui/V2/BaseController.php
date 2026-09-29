@@ -90,6 +90,11 @@ abstract class BaseController extends Controller
             'openmaptilesUrl'  => settings('main_settings.openmaptiles_url'),
             'googleQueryParam' => '',
             'locale'           => app()->getLocale(),
+            // Color del marcador por velocidad: los valores por defecto van
+            // aqui una sola vez, y cada vehiculo solo manda lo que cambie.
+            // Los limites ya llegan en la unidad del usuario (el feed de zonas
+            // los convierte), asi que estos rangos van en la misma unidad.
+            'markerColors'     => (array) config('tobuli.marker_speed_colors', []),
             // Toggles de capas (mismo store que el legacy → user->map_controls)
             'toggles'          => [
                 'devices'   => $tg('m_objects', 'showDevice'),

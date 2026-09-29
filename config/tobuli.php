@@ -158,6 +158,53 @@ return [
     'prev_position_device_object' => env('PREV_POSITION_DEVICE_OBJECT', false),
     'apply_network_data' => env('APPLY_NETWORK_DATA', true),
     'overwrite_invalid'  => env('OVERWRITE_INVALID', true),
+    'gnss_glitch' => [
+        'enabled'              => env('GNSS_GLITCH_ENABLED', true),
+        'enforce'              => env('GNSS_GLITCH_ENFORCE', false), // false = modo sombra
+        'max_age_seconds'      => env('GNSS_GLITCH_MAX_AGE', 30),
+        'alt_min_jump_m'       => env('GNSS_GLITCH_ALT_MIN_JUMP', 40),
+        'alt_max_rate_ms'      => env('GNSS_GLITCH_ALT_MAX_RATE', 20),
+        'alt_stationary_speed_kph'  => env('GNSS_GLITCH_ALT_STATIONARY_SPEED', 3),
+        'alt_stationary_max_dist_m' => env('GNSS_GLITCH_ALT_STATIONARY_DIST', 10),
+        'accel_max_kph_s'      => env('GNSS_GLITCH_ACCEL_MAX', 10),
+        'accel_min_speed_kph'  => env('GNSS_GLITCH_ACCEL_MIN_SPEED', 25),
+        'tele_min_distance_m'  => env('GNSS_GLITCH_TELE_MIN_DIST', 50),
+        'tele_speed_factor'    => env('GNSS_GLITCH_TELE_FACTOR', 2),
+        'tele_speed_margin'    => env('GNSS_GLITCH_TELE_MARGIN', 40),
+    ],
+    'overspeed_tracking_max_gap' => env('OVERSPEED_TRACKING_MAX_GAP', 300),
+
+    /*
+     * Eventos nativos de exceso de velocidad en geocerca reportados por el propio
+     * equipo Teltonika (AVL IDs "Manual Geofence Speeding event"). Por ahora solo
+     * en modo sombra: se registran en el log 'validaciones_tecnicas' comparando
+     * la duración nativa (hardware) contra la calculada por checkOverspeedDuration()
+     * (por intervalo de posiciones), sin disparar ni modificar alertas todavía.
+     *
+     * - FTC927 (plataforma FT): AVL 157 = flag start(1)/stop(0), AVL 155 = ID de
+     *   geocerca (valor + 1).
+     * - Familia FMB/FMC/FMU/FMM (Codec8 clásico, incl. FMC920): cada geocerca tiene
+     *   su propio AVL ID dedicado (zone_avl_map), con valor 0-3 por evento:
+     *   0=salió, 1=entró, 2=fin de exceso, 3=inicio de exceso.
+     */
+    'native_geofence_speed' => [
+        'enabled' => env('NATIVE_GEOFENCE_SPEED_ENABLED', true),
+        // Modelos cuyo device_model coincide (substring, case-insensitive) con "ftc"
+        // usan el esquema AVL 155(id)+157(flag). El resto usa zone_avl_map (FMx clásico).
+        'ftc_model_match' => 'ftc',
+        'zone_avl_map' => [
+            155 => 1,  156 => 2,  157 => 3,  158 => 4,  159 => 5,
+            61  => 6,  62  => 7,  63  => 8,  64  => 9,  65  => 10,
+            70  => 11, 88  => 12, 91  => 13, 92  => 14, 93  => 15,
+            94  => 16, 95  => 17, 96  => 18, 97  => 19, 98  => 20,
+            99  => 21, 153 => 22, 154 => 23, 190 => 24, 191 => 25,
+            192 => 26, 193 => 27, 194 => 28, 195 => 29, 196 => 30,
+            197 => 31, 198 => 32, 208 => 33, 209 => 34, 216 => 35,
+            217 => 36, 218 => 37, 219 => 38, 220 => 39, 221 => 40,
+            222 => 41, 223 => 42, 224 => 43, 225 => 44, 226 => 45,
+            227 => 46, 228 => 47, 229 => 48, 230 => 49, 231 => 50,
+        ],
+    ],
     'device_sidebar_query' => env('DEVICE_SIDEBAR_QUERY', true),
     'entityloader_store_query' => env('ENTITYLOADER_STORE_QUERY', false),
     'alerts_throw_user_device' => env('ALERTS_THROW_USER_DEVICE', true),
@@ -269,6 +316,34 @@ return [
         'load_calibration',
         'speed_ecm',
     ],
+    /*
+    |--------------------------------------------------------------------------
+    | Color del marcador por velocidad
+    |--------------------------------------------------------------------------
+    |
+    | Valores por defecto cuando el vehiculo no define los suyos. Se activa
+    | por unidad (devices.marker_colors_enabled).
+    |
+    | 'ranges'   : [{from, to, color}], con to = null en el ultimo tramo.
+    | 'geofence' : dentro de una geocerca CON limite manda esto y no los
+    |              rangos. 'margin' son los km/h antes del limite en los que
+    |              ya se avisa; 'near' es ese aviso y 'over' el exceso.
+    |
+    */
+    'marker_speed_colors' => [
+        'ranges' => [
+            ['from' => 0,  'to' => 40,   'color' => '#22c55e'],
+            ['from' => 40, 'to' => 60,   'color' => '#eab308'],
+            ['from' => 60, 'to' => 90,   'color' => '#f97316'],
+            ['from' => 90, 'to' => null, 'color' => '#ef4444'],
+        ],
+        'geofence' => [
+            'margin' => 5,
+            'near'   => '#a855f7',
+            'over'   => '#dc2626',
+        ],
+    ],
+
     'listview_fields' => [
         'name' => [
             'field' => 'name',

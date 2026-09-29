@@ -4,8 +4,8 @@
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=63">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=13">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=64">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -795,7 +795,7 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=27"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=28"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
     {{-- Acciones de llamada (modo modal global; se activa solo si existe #tp-ca-config) --}}
@@ -811,9 +811,9 @@
     {{-- Galería de medios del vehículo (kebab) --}}
     <script src="{{ asset('assets/ui/v2/js/tp-device-media.js') }}?v=3"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-silent-devices.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=52"></script>
+    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=53"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=13"></script>
+    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=14"></script>
     <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>
     <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=10"></script>
     <script>

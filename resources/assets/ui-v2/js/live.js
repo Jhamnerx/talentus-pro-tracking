@@ -234,6 +234,68 @@
     if (/^https?:\/\//.test(p) || p.charAt(0) === "/") return p;
     return "/" + p;
   }
+  /* ============================================================
+     Color del marcador segun la velocidad
+     ------------------------------------------------------------
+     Se activa por unidad (modal del vehiculo -> Cola). Con la unidad dentro
+     de una geocerca CON limite mandan los dos colores de geocerca; fuera, o
+     si la geocerca no define limite, mandan los rangos de velocidad.
+
+     Precedencia:
+       1. en geocerca y por encima del limite   -> color "excedido"
+       2. en geocerca y a <= margen del limite  -> color "proximo"
+       3. resto                                 -> rango de velocidad
+     ============================================================ */
+
+  function markerDefaults() {
+    var d = (MAP_CFG && MAP_CFG.markerColors) || {};
+    return {
+      ranges: d.ranges || [],
+      geofence: d.geofence || {},
+    };
+  }
+
+  function colorDeRango(rangos, v) {
+    for (var i = 0; i < rangos.length; i++) {
+      var r = rangos[i];
+      var desde = r.from == null ? -Infinity : +r.from;
+      var hasta = r.to == null ? Infinity : +r.to;
+      // Tramo abierto por arriba: [desde, hasta)
+      if (v >= desde && v < hasta) return r.color || null;
+    }
+    // Por encima del ultimo tramo cerrado, el ultimo color definido
+    return rangos.length ? rangos[rangos.length - 1].color || null : null;
+  }
+
+  function markerColor(d) {
+    var cfg = d.marker_colors;
+    if (!cfg) return null;
+
+    // speed_value ya viene en la unidad del usuario, igual que el limite de
+    // la geocerca: comparar d.speed (unidad de almacenamiento) seria un error.
+    var v = parseFloat(d.speed_value);
+    if (isNaN(v)) return null;
+
+    var def = markerDefaults();
+
+    var gf = window.tpLiveZones && tpLiveZones.limitFor
+      ? tpLiveZones.limitFor(d.lat, d.lng, d.vehicle_type_id, d.vehicle_state_id)
+      : null;
+
+    if (gf && gf.limit) {
+      var margen = cfg.margin != null ? +cfg.margin : (+def.geofence.margin || 0);
+
+      if (v >= gf.limit) {
+        return cfg.over || def.geofence.over || null;
+      }
+      if (margen > 0 && v >= gf.limit - margen) {
+        return cfg.near || def.geofence.near || null;
+      }
+    }
+
+    return colorDeRango(cfg.ranges || def.ranges, v);
+  }
+
   function deviceIcon(d) {
     var icon = d.icon || {};
     var type = icon.type || "arrow";
@@ -267,12 +329,24 @@
     // y un badge de velocidad (visible con .tp-show-speed).
     var grp = classify(d);
     var spd = d.speed_text || (Math.round(parseFloat(d.speed) || 0) + " km/h");
+
+    // Color por velocidad: tiñe la etiqueta y pone un halo detras del icono.
+    // El halo va como hermano del <img> y no lo tapa (z-index en el CSS).
+    var col = markerColor(d);
+    var estiloNombre = col
+      ? ' style="background:' + col + ';border-color:' + col + ';color:#fff;"'
+      : "";
+    var halo = col
+      ? '<span class="tp-lmarker__halo" style="background:' + col + ';"></span>'
+      : "";
+
     var html =
-      '<span class="tp-lmarker__name tp-lmarker__name--' + grp + '">' +
+      '<span class="tp-lmarker__name tp-lmarker__name--' + grp + '"' + estiloNombre + ">" +
       esc(d.name || "") +
       vehicleStateBadge(d.vehicle_state, "vertical-align:middle;margin-left:4px;") +
       '<span class="tp-lmarker__speed">' + esc(spd) + "</span>" +
       "</span>" +
+      halo +
       '<img src="' +
       src +
       '" width="' +
@@ -284,7 +358,8 @@
       '" draggable="false">';
     return L.divIcon({
       html: html,
-      className: "tp-lmarker" + (selected ? " tp-lmarker--selected" : ""),
+      className: "tp-lmarker" + (selected ? " tp-lmarker--selected" : "") +
+        (col ? " tp-lmarker--colored" : ""),
       iconSize: [w, h],
       iconAnchor: anchorBottom ? [w / 2, h] : [w / 2, h / 2],
     });

@@ -5,7 +5,7 @@
 
 @push('head')
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=7">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=13">
+    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
     {{-- Kebab compartido + modales de Servicios (tab Servicios del modal device) --}}
     <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
 @endpush
@@ -209,7 +209,7 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=27"></script>
+    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=28"></script>
     <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
     <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=11" defer></script>
     <script>

@@ -276,21 +276,25 @@
   }
 
   // --------------------------------------------------------------------------
-  // ── Colores del recorrido (trips / single / speed / sensor) ─────────
-  function wireRouteColors(scope) {
-    var root = scope.querySelector("[data-tp-routecolors]");
-    if (!root) return;
+  // ── Editor de rangos de velocidad ───────────────────────────────────
+  // Lo comparten los colores del recorrido y los del marcador: misma tabla de
+  // tramos contiguos, misma barra y los mismos botones de añadir/restaurar.
+  //
+  //   root      contenedor con [data-rc-json] / [data-rc-rows] / [data-rc-bar]
+  //   defaults  rangos a los que vuelve el boton de restaurar
+  //   onEdit    se llama cuando el usuario toca algo (el recorrido lo usa para
+  //             marcar su modo "por velocidad")
+  function wireSpeedRanges(root, opts) {
+    opts = opts || {};
+
     var jsonInput = root.querySelector("[data-rc-json]");
     var rowsEl = root.querySelector("[data-rc-rows]");
     var barEl = root.querySelector("[data-rc-bar]");
-    var DEFAULTS = [
-      { from: 0, to: 40, color: "#22d3ee" },
-      { from: 40, to: 60, color: "#3b82f6" },
-      { from: 60, to: 90, color: "#6366f1" },
-      { from: 90, to: 120, color: "#a855f7" },
-      { from: 120, to: null, color: "#ef4444" },
-    ];
+    if (!jsonInput || !rowsEl) return null;
+
+    var DEFAULTS = opts.defaults || [];
     var ranges;
+
     try {
       ranges = JSON.parse(jsonInput.value || "[]");
     } catch (e) {
@@ -298,8 +302,12 @@
     }
     if (!ranges.length) ranges = DEFAULTS.slice();
 
+    function avisa() {
+      if (typeof opts.onEdit === "function") opts.onEdit();
+    }
+
     function normalize() {
-      // contiguos y ascendentes; el último siempre abierto (to = null)
+      // contiguos y ascendentes; el ultimo siempre abierto (to = null)
       ranges.sort(function (a, b) {
         return (a.from || 0) - (b.from || 0);
       });
@@ -315,12 +323,14 @@
         }
       });
     }
+
     function sync() {
       normalize();
       jsonInput.value = JSON.stringify(ranges);
       renderRows();
       renderBar();
     }
+
     function renderRows() {
       rowsEl.innerHTML = ranges
         .map(function (r, i) {
@@ -341,6 +351,7 @@
         })
         .join("");
     }
+
     function renderBar() {
       if (!barEl) return;
       var maxB = ranges.length > 1 ? ranges[ranges.length - 1].from : 100;
@@ -363,28 +374,30 @@
       var i = parseInt(row.getAttribute("data-idx"), 10);
       if (e.target.hasAttribute("data-rc-to")) ranges[i].to = parseFloat(e.target.value);
       if (e.target.hasAttribute("data-rc-color")) ranges[i].color = e.target.value;
+      avisa();
       sync();
     });
+
     rowsEl.addEventListener("click", function (e) {
       var del = e.target.closest("[data-rc-del]");
       if (!del) return;
       e.preventDefault();
       var i = parseInt(del.closest("[data-idx]").getAttribute("data-idx"), 10);
       ranges.splice(i, 1);
+      avisa();
       sync();
     });
+
     var addBtn = root.querySelector("[data-rc-add]");
     if (addBtn)
       addBtn.addEventListener("click", function (e) {
         e.preventDefault();
         var lastFrom = ranges.length > 1 ? ranges[ranges.length - 1].from : 0;
         ranges.splice(ranges.length - 1, 0, { from: lastFrom, to: lastFrom + 20, color: "#94a3b8" });
-        // seleccionar "por velocidad" al editar rangos
-        var radio = root.querySelector('input[name="route_color_type"][value="speed"]');
-        if (radio) radio.checked = true;
-        markActive();
+        avisa();
         sync();
       });
+
     var resetBtn = root.querySelector("[data-rc-reset]");
     if (resetBtn)
       resetBtn.addEventListener("click", function (e) {
@@ -395,7 +408,40 @@
         sync();
       });
 
-    // Swatches rápidos del modo "único"
+    sync();
+
+    return { sync: sync };
+  }
+
+  // --------------------------------------------------------------------------
+  // ── Colores del recorrido (trips / single / speed / sensor) ─────────
+  function wireRouteColors(scope) {
+    var root = scope.querySelector("[data-tp-routecolors]");
+    if (!root) return;
+
+    // Atenuar los paneles de los modos no seleccionados
+    function markActive() {
+      var checked = root.querySelector('input[name="route_color_type"]:checked');
+      root.setAttribute("data-active", checked ? checked.value : "trips");
+    }
+
+    // Tocar los rangos implica elegir el modo "por velocidad"
+    wireSpeedRanges(root, {
+      defaults: [
+        { from: 0, to: 40, color: "#22d3ee" },
+        { from: 40, to: 60, color: "#3b82f6" },
+        { from: 60, to: 90, color: "#6366f1" },
+        { from: 90, to: 120, color: "#a855f7" },
+        { from: 120, to: null, color: "#ef4444" },
+      ],
+      onEdit: function () {
+        var radio = root.querySelector('input[name="route_color_type"][value="speed"]');
+        if (radio) radio.checked = true;
+        markActive();
+      },
+    });
+
+    // Swatches rapidos del modo "unico"
     Array.prototype.forEach.call(root.querySelectorAll("[data-rc-swatch]"), function (sw) {
       sw.addEventListener("click", function (e) {
         e.preventDefault();
@@ -407,16 +453,44 @@
       });
     });
 
-    // Atenuar los paneles de modos no seleccionados
-    function markActive() {
-      var checked = root.querySelector('input[name="route_color_type"]:checked');
-      root.setAttribute("data-active", checked ? checked.value : "trips");
-    }
     Array.prototype.forEach.call(root.querySelectorAll('input[name="route_color_type"]'), function (r) {
       r.addEventListener("change", markActive);
     });
+
     markActive();
-    sync();
+  }
+
+  // --------------------------------------------------------------------------
+  // ── Colores del marcador por velocidad ──────────────────────────────
+  // Reusa el editor de rangos. Lo propio de aqui es el interruptor por unidad
+  // y los dos colores de geocerca (acercarse al limite y superarlo), que solo
+  // aplican dentro de una geocerca CON limite.
+  function wireMarkerColors(scope) {
+    var root = scope.querySelector("[data-tp-markercolors]");
+    if (!root) return;
+
+    var sw = root.querySelector("[data-mc-enabled]");
+
+    // Los rangos por defecto los sirve el servidor en el propio marcado, para
+    // no tener la tabla escrita en dos sitios (aqui y en config/tobuli.php).
+    var porDefecto = [];
+    try {
+      porDefecto = JSON.parse(root.getAttribute("data-mc-defaults") || "[]");
+    } catch (e) {
+      porDefecto = [];
+    }
+
+    wireSpeedRanges(root, { defaults: porDefecto });
+
+    // Con el interruptor apagado el bloque se atenua, pero NO se deshabilitan
+    // los campos: si se deshabilitaran no viajarian en el submit y se perderia
+    // lo configurado al volver a activarlo.
+    function refresca() {
+      root.setAttribute("data-on", sw && sw.checked ? "1" : "0");
+    }
+
+    if (sw) sw.addEventListener("change", refresca);
+    refresca();
   }
 
   // --------------------------------------------------------------------------
@@ -2374,6 +2448,7 @@
           ["ignitionEngine", wireIgnitionEngine],
           ["fuelLabels", wireFuelLabels],
           ["routeColors", wireRouteColors],
+          ["markerColors", wireMarkerColors],
           ["usersTab", wireUsersTab],
           ["sensorsTab", wireSensorsTab],
           ["servicesTab", wireServicesTab],
