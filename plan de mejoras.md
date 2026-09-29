@@ -15,7 +15,7 @@ actualización del núcleo a GPSWox 3.7.13 sobre Laravel 9.
 | Concepto                                    | Cifra                     |
 | ------------------------------------------- | ------------------------- |
 | Periodo de trabajo                          | 31-may → 29-sep-2026      |
-| Commits por delante de producción           | 289                       |
+| Commits por delante de producción           | 298                       |
 | Ficheros tocados                            | 1.045                     |
 | Líneas añadidas / eliminadas                | +185.846 / −30.058        |
 | Migraciones de base de datos por aplicar    | 31                        |
@@ -28,7 +28,7 @@ La anterior era el 3; se corre una semana porque entre el 28 y el 29 de
 septiembre entraron tres funcionalidades nuevas (§1.6) después de la fecha de
 congelación, por decisión expresa de dirección.
 
-El mayor riesgo operativo **hoy** no es técnico: hay **232 commits sin subir al
+El mayor riesgo operativo **hoy** no es técnico: hay **241 commits sin subir al
 repositorio remoto**. Todo ese trabajo existe en una sola máquina. Resolverlo
 es lo primero del calendario y no admite espera.
 
@@ -265,6 +265,93 @@ pruebas manual y sistemática.
 
 ---
 
+### 1.7 · Deuda saldada el 29 de septiembre (tarde)
+
+Tres cosas que el propio plan señalaba como deuda, más un fallo que apareció
+por el camino.
+
+| Qué                                              | Commit     |
+| ------------------------------------------------ | ---------- |
+| `gulp sass-all` vuelve a compilar los 32 temas   | `4575f61f` |
+| 24 claves de traducción que no resolvían          | `67aa02de` |
+| Las 51 vistas de la v2, sin texto fijo            | `ccd4f223` |
+| Los 12 controladores de la v2, sin texto fijo     | `e97087b0` |
+| Puente de traducciones hacia el JS (no existía)   | `001af821` |
+| El JS de la v2, sin texto fijo (1.274 cadenas)    | `7b27df00`, `db4ae1d0` |
+| La página salía sin estilos con cuenta de manager | `34a5fc65` |
+
+**`gulp sass-all`.** Fallaba con *Incompatible units: 'px' and 'vw'* porque
+node-sass intenta resolver `min(86vw, 340px)` él mismo. Lo grave no era el
+error sino dónde estaba: `admin-v2.scss` es el primero por orden alfabético,
+así que la tarea moría ahí y **no se recompilaba ningún tema**. Todo el CSS
+de `public/assets/css/` estaba viejo, no solo el de admin. Se comprobó que la
+reconstrucción no pierde reglas comparando la salida cruda contra la
+minificada de la misma fuente: las únicas diferencias son del minificador y
+son intencionadas (comillas de `[attr=val]`, fusión de longhands en atajos,
+descarte del `filter` de IE). De paso aparecieron dos temas,
+`dark-tropical-blue` y `light-tropical-blue`, con fuente commiteada y CSS que
+nunca se había generado.
+
+**La traducción.** Era el punto más grande. Estado anterior: 36 de 51 vistas
+usaban `trans()`, y el resto —más los controladores y **todo** el
+JavaScript— llevaba el castellano escrito a pelo.
+
+| Capa            | Cadenas | Resultado |
+| --------------- | ------- | --------- |
+| Claves rotas    | 24      | 427/427 resuelven en es y en en |
+| Vistas Blade    | 106     | 0 literales fijos en las 51 vistas |
+| Controladores   | 93      | 0 literales fijos en los 12 |
+| JavaScript      | 1.274   | 0 literales fijos en los 35 ficheros |
+
+Dos decisiones de fondo:
+
+- Las cadenas propias viven en `resources/lang/{es,en}/ui.php` (835 claves) y
+  no en `front.php`, que viene del upstream de GPSWox. Hay además un motivo
+  de producto: **la v2 dice «vehículo» donde el legacy dice «dispositivo»**
+  (47 contra 8 en las vistas; 111 contra 43 en los ficheros de idioma).
+  Reusar `front.all_devices` habría revertido esa terminología.
+- Donde el texto ya coincidía se reusa la clave del legacy, que está
+  traducida a 40 idiomas. Son 149 claves de `front`, `global` y
+  `validation.attributes`.
+
+El JS necesitaba una pieza que **no existía**: un puente de traducciones. El
+legacy sí lo tiene (`Frontend/Layouts/partials/trans.blade.php`), y esa
+ausencia es justo la razón por la que el texto acabó incrustado en las
+plantillas HTML que el JS construye. Ahora `partials/i18n.blade.php` publica
+`window.tpLang` y un ayudante `tpT()`.
+
+Por el camino apareció infraestructura a medias: seis ficheros
+(`live-routes`, `history`, `commands-page`, `tp-commands`, `routes-table`,
+`tp-services`) ya llamaban a `T(clave, "respaldo")` con 153 claves planas,
+pero **nadie rellenaba `window.tpI18n`**, así que siempre devolvían el
+castellano. Se rellena desde el puente y 122 de esas 153 resuelven sin tocar
+esos ficheros.
+
+**El fallo de estilos.** Al entrar con una cuenta de manager la página pedía
+`/assets/css/airpatrol.css`, que da 404, y salía entera sin CSS. `airpatrol`
+no es un tema de este repositorio: no tiene fuente SCSS, nunca tuvo CSS, y
+tampoco figura en `config('tobuli.template_colors')`, así que el selector del
+panel de admin ni lo muestra para poder corregirlo. Son 6 cuentas que lo
+arrastran de una instalación anterior. `Appearance::getTemplateColor()`
+resuelve ahora en cascada y devuelve el primer tema cuyo `.css` exista;
+sirve para cualquier valor inválido, no solo para este.
+
+**Lo que queda de esta tanda, no bloqueante:**
+
+- Las 6 cuentas siguen guardando `airpatrol` en la base. Ya no rompen nada,
+  pero conviene normalizarlas.
+- El puente son 43 KB en cada página (~8 KB comprimido) porque manda las 835
+  claves siempre. Si molesta, se parte por página.
+- Unas 30 cadenas eran fragmentos de una concatenación (`"(máx"`,
+  `"· límite"`). Se traducen como fragmento, que funciona pero no deja
+  reordenar la frase. Pasarlas a marcadores exige reescribir cada sitio, como
+  ya se hizo en `CopilotController`.
+- El Co-Pilot reconoce la **pregunta** del usuario con expresiones regulares
+  en castellano (`/(ralent|idle)/u`). Eso no es texto que se muestre sino
+  reconocimiento de entrada; hacerlo multiidioma es otro trabajo.
+
+---
+
 ### 1.6 · Entregado tras la fecha de congelación (28–29 sep)
 
 Tres funcionalidades pedidas después del 28-sep, la fecha en que el plan
@@ -313,10 +400,10 @@ Ninguno de los dos bloquea la salida a producción.
 
 | Qué                                                        | Por qué importa                                        |
 | ---------------------------------------------------------- | ------------------------------------------------------ |
-| **232 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina               |
+| **241 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina               |
 | **Sin suite de pruebas automáticas**                       | Cada regresión se detecta a mano o en producción       |
-| `gulp sass-all` roto en `admin-v2.scss`                    | Impide recompilar los 25 temas de color restantes      |
-| Traducción de la v2 incompleta (36 de 51 vistas con `trans`)| Al cambiar a inglés la interfaz queda a medias         |
+| ~~`gulp sass-all` roto~~ · **resuelto el 29-sep**          | Los 32 temas vuelven a compilar (`4575f61f`)           |
+| ~~Traducción de la v2 incompleta~~ · **resuelta el 29-sep**| Vistas, controladores y JS pasan por `trans()`         |
 | Cola de difusión sin worker (24 trabajos esperando)        | Los avisos emergentes no llegan si nadie procesa la cola|
 | **`clean-css` 4.2.1 descarta las at-rules que no conoce**  | Toda `@container` desaparece del CSS compilado sin avisar |
 | **Ocho cortes responsive distintos** entre hojas de estilo | 640, 720, 760, 767, 900, 960, 1100… las casi-coincidencias ya causaron un fallo real |
@@ -385,9 +472,9 @@ real sin obligar a nadie, y es la mejor red de seguridad del despliegue.
 
 | Tarea                                                  | Criterio de salida                        |
 | ------------------------------------------------------ | ----------------------------------------- |
-| Subir los 232 commits al remoto                        | `origin/nuevo-tema` al día                |
+| Subir los 241 commits al remoto                        | `origin/nuevo-tema` al día                |
 | Congelar funcionalidades nuevas                        | Solo correcciones a partir de aquí        |
-| Reparar `gulp sass-all`                                | Los 26 temas compilan                     |
+| ~~Reparar `gulp sass-all`~~ · hecho el 29-sep          | Los 32 temas compilan (`4575f61f`)        |
 | Actualizar `gulp-clean-css` (deja de comerse `@container`) | Una container query de prueba sobrevive al build |
 | Fijar los cortes responsive como tokens                | Un solo listado de breakpoints, sin parejas a 6 px |
 | Levantar preproducción con copia de datos reales       | Entorno accesible al equipo               |
@@ -458,12 +545,12 @@ preferible mover la fecha que salir con un defecto conocido.
 
 | Riesgo                                                   | Impacto | Mitigación                                                        |
 | -------------------------------------------------------- | ------- | ----------------------------------------------------------------- |
-| Los 232 commits viven en una sola máquina                 | Crítico | Fase 0, primer día                                                |
+| Los 241 commits viven en una sola máquina                 | Crítico | Fase 0, primer día                                                |
 | Migraciones lentas sobre tablas grandes                   | Alto    | Ensayo en preproducción con datos reales (3.1.3)                  |
 | Regresión no detectada por falta de pruebas automáticas   | Alto    | Fase 1 sistemática + piloto con vuelta atrás por usuario          |
 | Laravel 9 exige PHP 8.0+ en el servidor                   | Alto    | Verificar antes de la ventana; bloquea el despliegue              |
 | Posiciones en tablas por dispositivo (1.400+ vehículos)   | Medio   | No se tocan en esta entrega; solo verificar tras migrar           |
-| Traducción de la v2 incompleta                            | Bajo    | Aceptable si el piloto es en castellano; documentar la limitación |
+| ~~Traducción de la v2 incompleta~~ · resuelta el 29-sep    | —       | Vistas, controladores y JS pasan por `trans()` (§1.7)             |
 
 ---
 
