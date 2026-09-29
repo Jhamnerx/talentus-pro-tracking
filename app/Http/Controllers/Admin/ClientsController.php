@@ -121,13 +121,18 @@ class ClientsController extends BaseController
         $input = array_merge(['limit' => 25], request()->input());
         $sort = $input['sorting'] ?? ['sort_by' => 'email', 'sort' => 'asc'];
 
+        // Los selects de filtro envian '' para "Todos": no deben filtrar.
+        $filters = array_filter((array)($input['filter'] ?? []), function ($value) {
+            return !is_null($value) && $value !== '';
+        });
+
         $items = User::userAccessible($this->user)
             ->withCount('subusers')
             ->withCount('devices')
             ->with('manager:id,email')
             ->with('billing_plan:id,title')
             ->search($input['search_phrase'] ?? '')
-            ->filter($input['filter'] ?? [])
+            ->filter($filters)
             ->when(!empty($input['search_device']), function (Builder $query) use ($input) {
                 $query->whereHas('devices', function (Builder $query) use ($input) {
                     $query->where('devices.imei', 'LIKE', '%' . $input['search_device'] . '%');
