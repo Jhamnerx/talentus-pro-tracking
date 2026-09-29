@@ -176,7 +176,7 @@
                         <th>SIM</th>
                         <th class="tp-text-right" data-sort="speed">km/h</th>
                         <th class="tp-text-right">Motor (h)</th>
-                        <th>último movimiento</th>
+                        <th>{{ trans('ui.last_movement') }}</th>
                         <th>Expira</th>
                         <th class="tp-fleet__th-actions"></th>
                     </tr>

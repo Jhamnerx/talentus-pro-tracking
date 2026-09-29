@@ -25,7 +25,7 @@
             <div class="tp-mon__sizes">
                 <span class="tp-mon__sizeslabel">Celdas</span>
                 <div class="tp-segmented" id="tp-mon-sizes" role="tablist"
-                    aria-label="Tamaño de la cuadrícula"></div>
+                    aria-label="{{ trans('ui.grid_size') }}"></div>
             </div>
         </header>
 

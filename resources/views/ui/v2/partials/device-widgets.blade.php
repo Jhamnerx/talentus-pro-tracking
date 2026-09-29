@@ -19,8 +19,8 @@
             <h4 class="tp-h6 tp-mb-3">Objeto</h4>
             <dl class="tp-defs">
                 <dt>Estado</dt><dd>{{ $device_info['status_text'] ?? '—' }}</dd>
-                <dt>Dirección</dt><dd>{{ $device_info['address'] ?? '—' }}</dd>
-                <dt>Última señal</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
+                <dt>{{ trans('front.address') }}</dt><dd>{{ $device_info['address'] ?? '—' }}</dd>
+                <dt>{{ trans('ui.last_signal') }}</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
                 <dt>Coordenadas</dt><dd class="tp-text-mono">{{ $device_info['coords'] ?? '—' }}</dd>
                 <dt>Altitud</dt><dd>{{ $device_info['altitude'] ?? '—' }}</dd>
                 <dt>Motor</dt><dd>{{ $device_info['engine'] ?? '—' }}</dd>
@@ -42,7 +42,7 @@
                 <dl class="tp-defs">
                     <dt>Nombre</dt><dd>{{ $driver->name ?? '—' }}</dd>
                     <dt>RFID</dt><dd>{{ $driver->rfid ?? '—' }}</dd>
-                    <dt>Teléfono</dt><dd>{{ $driver->phone ?? '—' }}</dd>
+                    <dt>{{ trans('validation.attributes.phone') }}</dt><dd>{{ $driver->phone ?? '—' }}</dd>
                     <dt>Email</dt><dd>{{ $driver->email ?? '—' }}</dd>
                 </dl>
             @else
@@ -54,16 +54,16 @@
     {{-- Ubicación --}}
     @isset($location)
         <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">Ubicación</h4>
+            <h4 class="tp-h6 tp-mb-3">{{ trans('front.location') }}</h4>
             @if ($location)
                 <dl class="tp-defs">
                     <dt>Ciudad</dt><dd>{{ $location['city'] ?? '—' }}</dd>
-                    <dt>Vía</dt><dd>{{ $location['road'] ?? '—' }}</dd>
-                    <dt>País</dt><dd>{{ $location['country'] ?? '—' }}</dd>
-                    <dt>Dirección</dt><dd>{{ $location['address'] ?? '—' }}</dd>
+                    <dt>{{ trans('ui.street') }}</dt><dd>{{ $location['road'] ?? '—' }}</dd>
+                    <dt>{{ trans('front.country') }}</dt><dd>{{ $location['country'] ?? '—' }}</dd>
+                    <dt>{{ trans('front.address') }}</dt><dd>{{ $location['address'] ?? '—' }}</dd>
                 </dl>
             @else
-                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin dirección disponible.</p>
+                <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_address_available') }}</p>
             @endif
         </section>
     @endisset
@@ -285,7 +285,7 @@
                             <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z" />
                             <circle cx="12" cy="13" r="3" />
                         </svg>
-                        <span>Cámara</span>
+                        <span>{{ trans('ui.camera') }}</span>
                     </span>
                 </h4>
                 <div class="tp-dw__card-body">
@@ -341,7 +341,7 @@
                                     'max'    => $f['max'] ?? null,
                                 ]) !!}</script>
                             @else
-                                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin datos en las últimas 24 h.</p>
+                                <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_data_last_24h') }}</p>
                             @endif
                         </div>
                     @endforeach
@@ -431,7 +431,7 @@
             <div class="tp-dw__card-body tp-dw__card-body--center">
                 <div class="tp-stack" style="gap:8px;">
                     <a class="tp-btn tp-btn--secondary tp-btn--block" href="{{ $video_live_url }}" target="_blank" rel="noopener">En vivo</a>
-                    <a class="tp-btn tp-btn--ghost tp-btn--block" href="{{ $video_playback_url }}" target="_blank" rel="noopener">Reproducción</a>
+                    <a class="tp-btn tp-btn--ghost tp-btn--block" href="{{ $video_playback_url }}" target="_blank" rel="noopener">{{ trans('front.playback') }}</a>
                 </div>
             </div>
         </section>

@@ -23,7 +23,7 @@
                 <span class="tp-search">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></svg>
-                    <input type="search" id="tp-chat-search" placeholder="Buscar vehículo…" autocomplete="off">
+                    <input type="search" id="tp-chat-search" placeholder="{{ trans('ui.search_vehicle') }}" autocomplete="off">
                 </span>
             </header>
             <ul class="tp-chat__convs" id="tp-chat-convs">
@@ -38,7 +38,7 @@
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
-                <p>Selecciona un vehículo para ver la conversación.</p>
+                <p>{{ trans('ui.select_vehicle_for_chat') }}</p>
             </div>
 
             <div class="tp-chat__conv" id="tp-chat-conv" hidden>

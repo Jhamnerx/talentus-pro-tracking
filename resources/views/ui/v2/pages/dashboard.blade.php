@@ -16,7 +16,7 @@
         <header class="tp-dash__head">
             <div>
                 <h1 class="tp-h4 tp-mb-0">Panel de control</h1>
-                <p class="tp-text-muted tp-mb-0">Flota, conducción y alertas.</p>
+                <p class="tp-text-muted tp-mb-0">{{ trans('ui.dashboard_subtitle') }}</p>
             </div>
             {{-- Toolbar de rango (estilo Wialon: Hoy / Ayer / Semana / Mes) --}}
             <div class="tp-dash__range" id="tp-dash-range">
@@ -82,7 +82,7 @@
 
             <article class="tp-widget tp-widget--span-4" data-widget="connection">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Estado de conexión</h3>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.connection_status') }}</h3>
                     <span class="tp-widget__tag">En vivo</span>
                 </header>
                 <div class="tp-widget__body">
@@ -109,7 +109,7 @@
             {{-- Fila 2 · Conducción (analítica propia) + Notificaciones --}}
             <article class="tp-widget tp-widget--span-8" data-widget="driving">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Conducción y comportamiento</h3>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.driving_and_behaviour') }}</h3>
                     <span class="tp-widget__hint" id="tp-driving-range">—</span>
                 </header>
                 <div class="tp-widget__body">
@@ -120,9 +120,9 @@
                                  eventos por 100 km y va al revés: dos números
                                  con el mismo nombre no se pueden leer. --}}
                             <div class="tp-eco" id="tp-eco"
-                                title="Puntuación de 0 a 100 sobre los eventos de riesgo por vehículo en el período. Más alto es mejor.">
+                                title="{{ trans('ui.score_help') }}">
                                 <div class="tp-eco__value" data-eco-value>—</div>
-                                <div class="tp-eco__label">Puntuación<br>de flota</div>
+                                <div class="tp-eco__label">{{ trans('ui.score') }}<br>de flota</div>
                             </div>
                             <div class="tp-driving__risk">
                                 <span class="tp-driving__risk-val" data-risk-events>—</span>
@@ -161,7 +161,7 @@
 
             <article class="tp-widget tp-widget--span-4" data-widget="notifications">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Últimas notificaciones</h3>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.latest_notifications') }}</h3>
                 </header>
                 <div class="tp-widget__body">
                     <ul class="tp-notes" id="tp-dash-notes">
@@ -181,7 +181,7 @@
 
             <article class="tp-widget tp-widget--span-6" data-widget="toprisk">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Top vehículos con eventos de riesgo</h3>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.top_risk_vehicles') }}</h3>
                 </header>
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-toprisk"></div></div>
             </article>
@@ -192,17 +192,17 @@
             @if (Auth::user()->perm('reports', 'view'))
                 <article class="tp-widget tp-widget--span-12" data-widget="ranking">
                     <header class="tp-widget__head">
-                        <h3 class="tp-h6 tp-mb-0">Ranking de conducción</h3>
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('ui.driving_ranking') }}</h3>
                         <span class="tp-widget__hint" id="tp-rank-hint">—</span>
                     </header>
                     <div class="tp-widget__body">
                         <div class="tp-rank">
                             <div class="tp-rank__col">
-                                <div class="tp-widget__subhead">Mejor conducción</div>
+                                <div class="tp-widget__subhead">{{ trans('ui.best_driving') }}</div>
                                 <div class="tp-barlist" id="tp-dash-rank-best"></div>
                             </div>
                             <div class="tp-rank__col">
-                                <div class="tp-widget__subhead">Peor conducción</div>
+                                <div class="tp-widget__subhead">{{ trans('ui.worst_driving') }}</div>
                                 <div class="tp-barlist" id="tp-dash-rank-worst"></div>
                             </div>
                         </div>
@@ -224,7 +224,7 @@
             @if (Auth::user()->perm('tasks', 'view'))
                 <article class="tp-widget tp-widget--span-6" data-widget="tasks">
                     <header class="tp-widget__head">
-                        <h3 class="tp-h6 tp-mb-0">Últimas tareas</h3>
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('front.latest_tasks') }}</h3>
                         <a href="{{ url('/ui/v2/tasks') }}" class="tp-link tp-text-sm">Ver tareas →</a>
                     </header>
                     <div class="tp-widget__body">
@@ -239,7 +239,7 @@
             <article class="tp-widget tp-widget--span-6" data-widget="mileage">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">Unidades con mayor kilometraje</h3>
-                    <span class="tp-widget__hint" id="tp-dash-mileage-hint">En el período</span>
+                    <span class="tp-widget__hint" id="tp-dash-mileage-hint">{{ trans('ui.in_the_period') }}</span>
                 </header>
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-mileage"></div></div>
             </article>
@@ -262,7 +262,7 @@
             {{-- Fila 5 · Actividad 24h --}}
             <article class="tp-widget tp-widget--span-12" data-widget="activity">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Actividad últimas 24h</h3>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.activity_last_24h') }}</h3>
                     <span class="tp-widget__hint">Movimientos por hora</span>
                 </header>
                 <div class="tp-widget__body"><div class="tp-chart" id="tp-chart-activity" style="height:240px;"></div></div>

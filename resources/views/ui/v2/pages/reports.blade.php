@@ -64,7 +64,7 @@
                             <th>{{ trans('front.format') }}</th>
                             <th>{{ trans('front.devices') }}</th>
                             <th>{{ trans('front.geofences') }}</th>
-                            <th>Programación</th>
+                            <th>{{ trans('ui.scheduling') }}</th>
                             <th class="tp-svc-table__actions"></th>
                         </tr>
                     </thead>
@@ -81,7 +81,7 @@
                             <th>{{ trans('validation.attributes.name') }}</th>
                             <th>{{ trans('front.type') }}</th>
                             <th>{{ trans('front.format') }}</th>
-                            <th>Tamaño</th>
+                            <th>{{ trans('front.file_size') }}</th>
                             <th>{{ trans('global.is_send') }}</th>
                             <th class="tp-svc-table__actions"></th>
                         </tr>

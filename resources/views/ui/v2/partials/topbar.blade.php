@@ -13,7 +13,7 @@
     {{-- Menu (solo movil). El boton de plegar vive DENTRO del rail, asi que
          cuando el rail sale de pantalla se va con el: hace falta uno aqui,
          que el topbar siempre esta a la vista. --}}
-    <button class="tp-topbar__nav" id="tp-nav-toggle" type="button" aria-label="Abrir menú"
+    <button class="tp-topbar__nav" id="tp-nav-toggle" type="button" aria-label="{{ trans('ui.open_menu') }}"
         aria-controls="tp-rail" aria-expanded="false">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" aria-hidden="true">
@@ -35,7 +35,7 @@
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
         </svg>
-        <span class="tp-topbar__search-placeholder">Buscar vehículo, geocerca, POI…</span>
+        <span class="tp-topbar__search-placeholder">{{ trans('ui.search_placeholder') }}</span>
         <span class="tp-topbar__kbd"><kbd>Ctrl</kbd><kbd>K</kbd></span>
     </button>
 
@@ -69,7 +69,7 @@
                 <button class="tp-menu__item" role="menuitem" data-tp-tool="address">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-                    Buscar dirección
+                    {{ trans('front.show_address') }}
                 </button>
                 {{-- Unidades sin transmitir: mismo gate que ver los vehiculos
                      en el mapa, porque no enseña nada que el usuario no
@@ -87,7 +87,7 @@
                         data-forwards-url="{{ route('ui.v2.api.forwards') }}">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
-                        Reenvíos
+                        {{ trans('front.forwards') }}
                     </button>
                 @endif
             </div>
@@ -150,7 +150,7 @@
 
     {{-- User menu --}}
     <button class="tp-topbar__user" id="tp-user-btn" aria-haspopup="menu" aria-expanded="false"
-        aria-label="Menú de usuario">
+        aria-label="{{ trans('ui.user_menu') }}">
         <div class="tp-avatar">{{ $userInit }}</div>
     </button>
 
@@ -173,7 +173,7 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
-            Cambiar contraseña
+            {{ trans('front.change_password') }}
         </button>
         @if (empty($user->email_active))
             {{-- Email sin confirmar → modal de código único (tp-account.js).
@@ -215,7 +215,7 @@
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />
             </svg>
-            Volver a UI clásica
+            {{ trans('ui.back_to_classic_ui') }}
         </a>
         <hr class="tp-divider" />
         <a class="tp-menu__item tp-menu__item--danger" href="{{ url('logout') }}" role="menuitem">
@@ -225,7 +225,7 @@
                 <polyline points="16 17 21 12 16 7" />
                 <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-            Cerrar sesión
+            {{ trans('front.logout') }}
         </a>
     </div>
 

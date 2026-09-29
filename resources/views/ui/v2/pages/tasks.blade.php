@@ -48,7 +48,7 @@
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 <span data-tsk-only="tasks" style="display:inline-flex;">
                     <select class="tp-input" id="tp-tasks-device" style="width: 210px">
-                        <option value="">Todos los vehículos</option>
+                        <option value="">{{ trans('ui.all_vehicles') }}</option>
                     </select>
                 </span>
                 <span data-tsk-only="tasks" style="display:inline-flex;">

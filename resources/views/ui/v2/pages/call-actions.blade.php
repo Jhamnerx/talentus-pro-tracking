@@ -32,7 +32,7 @@
             </h2>
             <div class="tp-maint__tools" style="display:flex; gap:10px; align-items:center;">
                 <input type="text" class="tp-input" id="tp-ca-search" placeholder="{{ trans('front.search') }}…" autocomplete="off">
-                <select class="tp-input" id="tp-ca-device" style="width:200px"><option value="">Todos los vehículos</option></select>
+                <select class="tp-input" id="tp-ca-device" style="width:200px"><option value="">{{ trans('ui.all_vehicles') }}</option></select>
                 <select class="tp-input" id="tp-ca-response" style="width:170px"><option value="">Toda respuesta</option></select>
                 <button type="button" class="tp-btn tp-btn--accent" id="tp-ca-add">＋</button>
             </div>

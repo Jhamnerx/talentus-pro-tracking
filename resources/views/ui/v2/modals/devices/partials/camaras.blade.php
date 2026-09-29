@@ -11,7 +11,7 @@
 
 @if (!$isEdit)
     <div class="tp-form__placeholder">
-        Guarda el vehículo primero; después podrás registrar cámaras desde esta pestaña.
+        {{ trans('ui.save_vehicle_first_cameras') }}
     </div>
 @else
     @php

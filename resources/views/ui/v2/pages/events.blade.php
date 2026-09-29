@@ -35,11 +35,11 @@
                 <h3 class="tp-h6" style="margin:0;">Eventos</h3>
                 <select class="tp-input" style="width:100%" id="tp-events-hours">
                     <option value="0" selected>Todos</option>
-                    <option value="1">Última hora</option>
-                    <option value="6">Últimas 6 horas</option>
-                    <option value="24">Últimas 24 horas</option>
-                    <option value="72">Últimos 3 días</option>
-                    <option value="168">Últimos 7 días</option>
+                    <option value="1">{{ trans('front.last_hour') }}</option>
+                    <option value="6">{{ trans('ui.last_6_hours') }}</option>
+                    <option value="24">{{ trans('ui.last_24_hours') }}</option>
+                    <option value="72">{{ trans('ui.last_3_days') }}</option>
+                    <option value="168">{{ trans('ui.last_7_days') }}</option>
                 </select>
                 {{-- Rango absoluto (paridad EventModalHelper: date_from/date_to).
                      Si se rellena, tiene prioridad sobre la ventana relativa. --}}
@@ -56,7 +56,7 @@
                     <option value="">Todos los tipos</option>
                 </select>
                 <select class="tp-input" style="width:100%" id="tp-events-device">
-                    <option value="">Todos los vehículos</option>
+                    <option value="">{{ trans('ui.all_vehicles') }}</option>
                     @foreach ($devices ?? [] as $d)
                         <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>
                     @endforeach
@@ -176,7 +176,7 @@
             <div class="tp-events__legend" id="tp-ev-legend" hidden>
                 <div class="tp-events__legend-title">Mapa de riesgo</div>
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
-                        style="background:#ef4444"></span> Crítico</div>
+                        style="background:#ef4444"></span> {{ trans('admin.status_critico') }}</div>
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
                         style="background:#f59e0b"></span> Advertencia</div>
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"

@@ -153,7 +153,7 @@
                 {{-- Timeline (viajes/paradas/eventos) --}}
                 <div class="tp-hist__timeline" id="tp-hist-timeline">
                     <div class="tp-hist__side-empty" id="tp-hist-tl-empty">
-                        <span class="tp-text-muted tp-text-sm">Selecciona vehículo y fecha, luego pulsa
+                        <span class="tp-text-muted tp-text-sm">{{ trans('ui.select_vehicle_and_date') }}
                             <strong>Mostrar historial</strong>.</span>
                     </div>
                 </div>

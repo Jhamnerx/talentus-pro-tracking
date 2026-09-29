@@ -55,7 +55,7 @@
     </label>
 
     <label class="tp-form__field">
-        <span class="tp-form__label">Longitud (0–10 últimos puntos)</span>
+        <span class="tp-form__label">{{ trans('ui.tail_length') }}</span>
         <input type="number" min="0" max="10" step="1" name="tail_length" value="{{ $tailLength }}"
             data-tp-field>
     </label>
@@ -74,7 +74,7 @@
     {{-- Único (single) --}}
     <label class="tp-routecolors__opt">
         <input type="radio" name="route_color_type" value="single" {{ $rcType === 'single' ? 'checked' : '' }}>
-        <span>Único</span>
+        <span>{{ trans('ui.unique') }}</span>
         <span class="tp-routecolors__opt-body" data-rc-panel="single">
             <input type="color" name="route_color" value="{{ $rcSingle }}" class="tp-routecolors__hex" data-rc-single>
             <span class="tp-routecolors__swatches">
@@ -91,7 +91,7 @@
         <span class="tp-routecolors__opt-head">
             <input type="radio" name="route_color_type" value="speed" {{ $rcType === 'speed' ? 'checked' : '' }}>
             <span>Por velocidad</span>
-            <button type="button" class="tp-routecolors__add" data-rc-add title="Añadir rango">+</button>
+            <button type="button" class="tp-routecolors__add" data-rc-add title="{{ trans('ui.add_range') }}">+</button>
             <button type="button" class="tp-routecolors__reset" data-rc-reset title="Restaurar rangos por defecto">↺</button>
         </span>
         <span class="tp-routecolors__opt-body tp-routecolors__opt-body--block" data-rc-panel="speed">
@@ -140,8 +140,7 @@
     </label>
 
     <div class="tp-text-xs tp-text-muted" style="margin:0 0 10px 24px;">
-        Tiñe la etiqueta del vehiculo y pone un halo detras del icono en el mapa.
-        Dentro de una geocerca con limite mandan los dos colores de abajo; fuera, los rangos.
+        {{ trans('ui.marker_color_help') }}
     </div>
 
     <div class="tp-markercolors__body">
@@ -149,7 +148,7 @@
         <div class="tp-routecolors__opt tp-routecolors__opt--block">
             <span class="tp-routecolors__opt-head">
                 <span>Rangos de velocidad ({{ $unidadVel }})</span>
-                <button type="button" class="tp-routecolors__add" data-rc-add title="Añadir rango">+</button>
+                <button type="button" class="tp-routecolors__add" data-rc-add title="{{ trans('ui.add_range') }}">+</button>
                 <button type="button" class="tp-routecolors__reset" data-rc-reset
                     title="Restaurar rangos por defecto">↺</button>
             </span>

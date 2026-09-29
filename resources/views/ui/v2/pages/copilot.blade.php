@@ -22,8 +22,7 @@
             </div>
             <div class="tp-copilot__hero-text">
                 <h1 class="tp-h4 tp-mb-1">Co-Pilot IA</h1>
-                <p class="tp-text-muted tp-mb-0">Tu copiloto operativo: detecta anomalías, propone acciones y responde
-                    preguntas en lenguaje natural.</p>
+                <p class="tp-text-muted tp-mb-0">{{ trans('ui.copilot_intro') }}</p>
             </div>
             <div class="tp-copilot__hero-meta" id="cp-meta">
                 <span class="tp-text-muted tp-text-xs">Analizando…</span>
@@ -41,12 +40,12 @@
                     </svg>
                 </div>
                 <input type="text" class="tp-copilot__ask-input" id="cp-q"
-                    placeholder="Pregúntame algo… ej. «vehículos parados», «excesos de velocidad», «ABC-123»"
+                    placeholder="{{ trans('ui.copilot_placeholder') }}"
                     autocomplete="off" maxlength="200">
                 <button class="tp-btn tp-btn--primary tp-btn--sm" id="cp-go" type="button">Preguntar</button>
             </form>
 
-            <div class="tp-copilot__suggestions" id="cp-quickq" aria-label="Sugerencias rápidas">
+            <div class="tp-copilot__suggestions" id="cp-quickq" aria-label="{{ trans('ui.quick_suggestions') }}">
                 <button class="tp-copilot__chip" type="button" data-q="vehículos parados">Parados</button>
                 <button class="tp-copilot__chip" type="button" data-q="excesos de velocidad">Excesos velocidad</button>
                 <button class="tp-copilot__chip" type="button" data-q="vehículos offline">Offline</button>
@@ -61,7 +60,7 @@
         {{-- ===== KPIs ===== --}}
         <section class="tp-copilot__kpis" id="cp-kpis" hidden>
             <div class="tp-copilot__kpi"><span>Flota total</span><strong id="kpi-total">—</strong></div>
-            <div class="tp-copilot__kpi"><span>Utilización</span><strong id="kpi-util">—</strong></div>
+            <div class="tp-copilot__kpi"><span>{{ trans('ui.utilization') }}</span><strong id="kpi-util">—</strong></div>
             <div class="tp-copilot__kpi"><span>Eventos 24h</span><strong id="kpi-evt">—</strong></div>
             <div class="tp-copilot__kpi"><span>Insights</span><strong id="kpi-ins">—</strong></div>
         </section>
@@ -79,14 +78,14 @@
                 </button>
             </header>
             <div class="tp-copilot__insights" id="cp-insights">
-                <div class="tp-text-muted tp-text-center" style="padding:32px;">Analizando tu operación…</div>
+                <div class="tp-text-muted tp-text-center" style="padding:32px;">{{ trans('ui.analyzing_operation') }}</div>
             </div>
         </section>
 
         {{-- ===== SUGGESTIONS ===== --}}
         <section class="tp-copilot__panel">
             <header class="tp-copilot__panel-head">
-                <h2 class="tp-h6 tp-mb-0">Próximas acciones</h2>
+                <h2 class="tp-h6 tp-mb-0">{{ trans('ui.next_actions') }}</h2>
             </header>
             <div class="tp-copilot__shortcuts" id="cp-shortcuts">
                 <div class="tp-text-muted tp-text-center" style="padding:24px; grid-column:1/-1;">—</div>
@@ -95,8 +94,7 @@
 
         <footer class="tp-copilot__foot">
             <span class="tp-text-muted tp-text-xs">
-                Co-Pilot opera con heurísticas deterministas sobre tus propios datos.
-                No envía información a servicios externos.
+                {{ trans('ui.copilot_privacy') }}
             </span>
         </footer>
     </div>

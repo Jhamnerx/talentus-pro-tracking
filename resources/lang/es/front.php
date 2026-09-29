@@ -623,7 +623,7 @@ return [
     'last_event_time' => 'Hora del último evento',
     'last_event_title' => 'Título del último evento',
     'last_event_type' => 'Último tipo de evento',
-    'last_hour' => 'Ultima hora',
+    'last_hour' => 'Última hora',
     'last_location' => 'Ultima ubicación',
     'last_month' => 'El mes pasado',
     'last_points' => 'últimos puntos',

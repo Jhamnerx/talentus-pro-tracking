@@ -12,7 +12,7 @@
 
 @if (!$isEditDev)
     <div class="tp-form__placeholder">
-        Guarda el vehículo primero; después podrás registrar mantenimientos y suspensiones.
+        {{ trans('ui.save_vehicle_first_maintenance') }}
     </div>
 @else
     @php
@@ -32,8 +32,8 @@
                 <span class="tp-form__label">{{ trans('validation.attributes.type') }}</span>
                 <select class="tp-input" data-maint-tipo>
                     <option value="mantenimiento">Mantenimiento</option>
-                    <option value="suspension">Suspensión</option>
-                    <option value="reactivacion">Reactivación</option>
+                    <option value="suspension">{{ trans('ui.suspension') }}</option>
+                    <option value="reactivacion">{{ trans('ui.reactivation') }}</option>
                 </select>
             </label>
             <label class="tp-form__field">
@@ -44,7 +44,7 @@
             <label class="tp-form__field tp-col-2">
                 <span class="tp-form__label">Motivo <span style="color:#ef4444;">*</span></span>
                 <input type="text" class="tp-input" data-maint-motivo maxlength="500"
-                    placeholder="Ej: Reactivación luego de 6 meses suspendido">
+                    placeholder="{{ trans('ui.reactivation_example') }}">
             </label>
             <label class="tp-form__field tp-col-2">
                 <span class="tp-form__label">Notas adicionales</span>

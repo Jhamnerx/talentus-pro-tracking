@@ -131,7 +131,7 @@
                     <div class="tp-row" style="gap:6px;align-items:center;">
                         @if (!empty($canCreate))
                             <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button"
-                                id="tp-live-create-device" title="Nuevo vehículo" aria-label="Nuevo vehículo">
+                                id="tp-live-create-device" title="{{ trans('ui.new_vehicle') }}" aria-label="{{ trans('ui.new_vehicle') }}">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <path d="M12 5v14M5 12h14" />
@@ -151,7 +151,7 @@
                              (Objects/tabs/objects.blade → @if plugins.object_listview.status && perm devices view). --}}
                         @if (settings('plugins.object_listview.status') && Auth::user()->perm('devices', 'view'))
                         <a class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" href="{{ route('ui.v2.fleet') }}"
-                            id="tp-live-listview" title="Ver lista de vehículos" aria-label="Ver lista de vehículos">
+                            id="tp-live-listview" title="{{ trans('ui.view_vehicle_list') }}" aria-label="{{ trans('ui.view_vehicle_list') }}">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
@@ -199,9 +199,9 @@
                                 class="tp-segmented__text">Movimiento</span></span>
                         <span class="tp-segmented__count" data-count="moving">0</span>
                     </button>
-                    <button class="tp-segmented__item" data-filter="idle" type="button" title="Ralentí">
+                    <button class="tp-segmented__item" data-filter="idle" type="button" title="{{ trans('front.idle') }}">
                         <span class="tp-segmented__label"><span class="tp-dot tp-dot--idle"></span><span
-                                class="tp-segmented__text">Ralentí</span></span>
+                                class="tp-segmented__text">{{ trans('front.idle') }}</span></span>
                         <span class="tp-segmented__count" data-count="idle">0</span>
                     </button>
                     <button class="tp-segmented__item" data-filter="offline" type="button" title="Desconectado">
@@ -214,7 +214,7 @@
 
             {{-- Virtualized list --}}
             <div class="tp-live__list-wrap">
-                <div class="tp-live__list" id="tp-live-list" role="listbox" aria-label="Lista de vehículos">
+                <div class="tp-live__list" id="tp-live-list" role="listbox" aria-label="{{ trans('front.object_listview') }}">
                     {{-- Skeleton --}}
                     <div class="tp-live__skeleton">
                         @for ($i = 0; $i < 8; $i++)
@@ -335,8 +335,8 @@
                     <div class="tp-segmented tp-segmented--full tp-mt-3" role="tablist" id="tp-zones-type-filter">
                         <button class="tp-segmented__item" data-ztype="all" aria-selected="true"
                             type="button">Todas</button>
-                        <button class="tp-segmented__item" data-ztype="polygon" type="button">Polígonos</button>
-                        <button class="tp-segmented__item" data-ztype="circle" type="button">Círculos</button>
+                        <button class="tp-segmented__item" data-ztype="polygon" type="button">{{ trans('ui.polygons') }}</button>
+                        <button class="tp-segmented__item" data-ztype="circle" type="button">{{ trans('ui.circles') }}</button>
                     </div>
                     <div class="tp-mt-3 tp-row" style="gap:6px;align-items:center;">
                         <select id="tp-zones-group" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;">
@@ -433,7 +433,7 @@
 
         {{-- COLLAPSED FILTERS HANDLE (when filters panel is hidden) --}}
         <button class="tp-live__filters-handle" id="tp-live-filters-expand" type="button" hidden title="Mostrar lista"
-            aria-label="Mostrar lista de vehículos">
+            aria-label="{{ trans('ui.show_vehicle_list') }}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m9 18 6-6-6-6" />
@@ -452,10 +452,10 @@
                         <strong id="tp-live-stat-moving">0</strong>
                         <span>en movimiento</span>
                     </span>
-                    <span class="tp-live__map-stat" title="En ralentí" aria-label="En ralentí">
+                    <span class="tp-live__map-stat" title="{{ trans('ui.idling') }}" aria-label="{{ trans('ui.idling') }}">
                         <span class="tp-dot tp-dot--idle"></span>
                         <strong id="tp-live-stat-idle">0</strong>
-                        <span>en ralentí</span>
+                        <span>{{ trans('ui.idle_lowercase') }}</span>
                     </span>
                     <span class="tp-live__map-stat" title="Desconectados" aria-label="Desconectados">
                         <span class="tp-dot tp-dot--offline"></span>
@@ -517,7 +517,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-autofollow"
-                    title="Seguimiento automático de la flota" aria-label="Seguimiento automático" aria-pressed="false"
+                    title="{{ trans('ui.fleet_autofollow') }}" aria-label="{{ trans('ui.autofollow') }}" aria-pressed="false"
                     type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -531,8 +531,8 @@
                 {{-- Geolocalización del navegador: gateada por el addon igual que el legacy
                      (Frontend/Layouts/loged.blade.php → @if config('addon.html_geolocation')). --}}
                 @if (config('addon.html_geolocation'))
-                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-geolocate" title="Mi ubicación"
-                    aria-label="Mi ubicación" type="button">
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-geolocate" title="{{ trans('front.html_geolocation') }}"
+                    aria-label="{{ trans('front.html_geolocation') }}" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="9" />
@@ -549,7 +549,7 @@
 
                 {{-- Layer toggles --}}
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-cluster"
-                    data-toggle="cluster" title="Agrupar vehículos cercanos" aria-label="Agrupar vehículos"
+                    data-toggle="cluster" title="{{ trans('ui.cluster_nearby_vehicles') }}" aria-label="{{ trans('ui.cluster_vehicles') }}"
                     aria-pressed="false" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -559,7 +559,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-devices"
-                    data-toggle="devices" title="Mostrar vehículos" aria-label="Mostrar vehículos" aria-pressed="true"
+                    data-toggle="devices" title="{{ trans('ui.show_vehicles') }}" aria-label="{{ trans('ui.show_vehicles') }}" aria-pressed="true"
                     type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -607,7 +607,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-names"
-                    data-toggle="names" title="Mostrar nombres" aria-label="Mostrar nombres sobre los vehículos"
+                    data-toggle="names" title="Mostrar nombres" aria-label="{{ trans('ui.show_vehicle_names') }}"
                     aria-pressed="false" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -626,7 +626,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-traffic"
-                    data-toggle="traffic" title="Mostrar tráfico en vivo" aria-label="Mostrar tráfico"
+                    data-toggle="traffic" title="{{ trans('ui.show_live_traffic') }}" aria-label="{{ trans('front.show_traffic') }}"
                     aria-pressed="false" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -704,7 +704,7 @@
                      widget Objeto. --}}
                 <div class="tp-drawer-vstate" id="tp-drawer-vstate" hidden>
                     <div class="tp-drawer-vstate__info">
-                        <span class="tp-drawer-vstate__caption">Estado del vehículo</span>
+                        <span class="tp-drawer-vstate__caption">{{ trans('front.vehicle_state') }}</span>
                         <div class="tp-drawer-vstate__badge" id="tp-drawer-vstate-badge"></div>
                     </div>
                     <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm tp-drawer-vstate__btn"

@@ -12,7 +12,7 @@
 
 @if (!$isEdit)
     <div class="tp-form__placeholder">
-        Guarda el vehículo primero; después podrás registrar servicios desde esta pestaña.
+        {{ trans('ui.save_vehicle_first_services') }}
     </div>
 @else
     <div data-tp-services-tab data-device-id="{{ (int) $item->id }}"

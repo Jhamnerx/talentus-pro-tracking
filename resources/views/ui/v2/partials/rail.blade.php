@@ -44,10 +44,10 @@
     });
 @endphp
 
-<aside class="tp-rail" id="tp-rail" aria-label="Navegación principal">
+<aside class="tp-rail" id="tp-rail" aria-label="{{ trans('ui.main_navigation') }}">
     {{-- Toggle de modo (completo / compacto) --}}
-    <button class="tp-rail__toggle" id="tp-rail-toggle" type="button" title="Expandir / colapsar menú"
-        aria-label="Expandir o colapsar menú">
+    <button class="tp-rail__toggle" id="tp-rail-toggle" type="button" title="{{ trans('ui.toggle_menu') }}"
+        aria-label="{{ trans('ui.toggle_menu_aria') }}">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 6h18M3 12h18M3 18h18" />
@@ -115,9 +115,9 @@
             <span class="tp-rail__label">Idioma · {{ strtoupper($curLang) }}</span>
         </a>
         <a href="{{ route('ui.v2.legacy') }}" class="tp-rail__item tp-has-tooltip"
-            data-tooltip="Versión anterior" aria-label="Cambiar a la versión anterior">
+            data-tooltip="Versión anterior" aria-label="{{ trans('front.switch_to_old_version') }}">
             <span class="tp-rail__icon">@include('ui.v2.partials.icons', ['name' => 'back'])</span>
-            <span class="tp-rail__label">Versión anterior</span>
+            <span class="tp-rail__label">{{ trans('ui.previous_version') }}</span>
         </a>
     </div>
 </aside>

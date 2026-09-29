@@ -10,11 +10,11 @@
 
 @if (empty($webservices))
     <div class="tp-form__placeholder">
-        No tienes permiso de edición sobre ningún servicio web.
+        {{ trans('ui.no_webservice_edit_permission') }}
     </div>
 @else
     <p class="tp-form__hint" style="margin: 0 0 12px;">
-        Activa los servicios a los que este vehículo debe reportar posiciones.
+        {{ trans('ui.webservices_help') }}
     </p>
 
     <div class="tp-form__grid tp-form__grid--2">
