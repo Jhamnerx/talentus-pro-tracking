@@ -1847,7 +1847,7 @@ select.tp-input:disabled {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   /* En movil ni siquiera caben los 56px: el rail sale del flujo y se
      superpone cuando se pide. El boton de hamburguesa ya alterna
      full/compact, asi que aqui "full" significa "mostrado". */
@@ -1855,6 +1855,12 @@ select.tp-input:disabled {
      no gana y deja una columna vacia de 56px a la izquierda del mapa. */
   [data-rail] .tp-app {
     --rail-w: 0px;
+  }
+  /* shell.css hace .tp-rail{display:none} bajo 767px y se carga DESPUES,
+     asi que hay que ganarle por especificidad, no por orden: [data-rail]
+     siempre esta puesto en <html>, y (0,1,1) le gana a (0,0,1). */
+  [data-rail] .tp-rail {
+    display: flex;
   }
   .tp-rail {
     position: fixed;
@@ -1915,7 +1921,7 @@ select.tp-input:disabled {
   display: none;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .tp-topbar__nav {
     display: flex;
   }

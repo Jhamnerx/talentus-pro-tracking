@@ -145,7 +145,7 @@
         // existen. Se resuelven cuando el DOM esta listo.
         var navBtn = null;
         var scrim = null;
-        var movil = window.matchMedia('(max-width: 640px)');
+        var movil = window.matchMedia('(max-width: 767px)');
 
         function sincroniza() {
             var on = abierto();
