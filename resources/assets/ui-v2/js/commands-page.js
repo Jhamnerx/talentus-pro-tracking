@@ -277,12 +277,12 @@
     var body =
       '<div>' +
       line(T("device", "Dispositivo"), esc(r.device || "—")) +
-      line(T("connection", "Conexión"), esc(r.connection)) +
+      line(T("connection", tpT('ui.connection')), esc(r.connection)) +
       line(T("command", "Comando"), esc(r.command)) +
       line(T("status", "Estado"), logBadge(r.status)) +
       line(T("date", "Fecha"), esc(r.date)) +
       (showUser && r.user ? line(T("user", "Usuario"), esc(r.user)) : "") +
-      line(T("parameters", "Parámetros"), mono(r.parameters)) +
+      line(T("parameters", tpT('ui.parameters')), mono(r.parameters)) +
       line(T("response", "Respuesta"), mono(r.response)) +
       "</div>";
     tpModal.open({
@@ -492,7 +492,7 @@
       (type === "gprs"
         ? '<div class="tp-field"><label class="tp-label">Uso en bloqueo de motor</label>' +
           '<select name="lock_action" class="tp-input" data-no-ts="1">' +
-          '<option value="">Ninguno</option>' +
+          '<option value="">' + tpT('ui.none_m') + '</option>' +
           '<option value="block"' + (item && item.lock_action === "block" ? " selected" : "") + ">Cortar (bloquear)</option>" +
           '<option value="unblock"' + (item && item.lock_action === "unblock" ? " selected" : "") + ">Restablecer (desbloquear)</option>" +
           "</select></div>"

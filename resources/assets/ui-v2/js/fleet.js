@@ -61,8 +61,8 @@
 
   var STATUS_LABELS = {
     moving: "Moviendo",
-    idle: "Ralentí",
-    stopped: "Detenido",
+    idle: tpT('front.idle'),
+    stopped: tpT('front.stopped'),
     offline: "Offline",
   };
 
@@ -165,7 +165,7 @@
       return escapeHtml(d.time || "—");
     },
     active: function (d) {
-      return d.active ? "Sí" : "No";
+      return d.active ? tpT('ui.yes') : "No";
     },
     plate_number: function (d) {
       return escapeHtml(d.plate || "—");
@@ -332,16 +332,16 @@
       size: "sm",
       body:
         '<div class="tp-ranges">' +
-        '<p class="tp-text-sm tp-text-muted" style="margin:0 0 10px;">La celda toma el color del último tramo que contenga el valor.</p>' +
+        '<p class="tp-text-sm tp-text-muted" style="margin:0 0 10px;">' + tpT('ui.cell_color_from_range') + '</p>' +
         '<div data-ranges-list>' +
         (current.length ? current.map(rangeRowHtml).join("") : rangeRowHtml(null)) +
         "</div>" +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-range-add style="margin-top:8px;">＋ Añadir tramo</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-range-add style="margin-top:8px;">' + tpT('ui.add_range_plus') + '</button>' +
         "</div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Aplicar",
+          label: tpT('global.apply'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -356,7 +356,7 @@
 
             columnsState.colors[field] = ranges;
             tpModal.close(d);
-            tpModal.toast("Se aplicarán al guardar las columnas.", "success");
+            tpModal.toast(tpT('ui.applied_on_save_columns'), "success");
             return false;
           },
         },
@@ -386,10 +386,10 @@
       body:
         '<div class="tp-colpick">' +
         '<div class="tp-colpick__head">' +
-        '<span class="tp-colpick__hint">Se comparte con la vista de lista clásica.</span>' +
+        '<span class="tp-colpick__hint">' + tpT('ui.shared_with_classic_list') + '</span>' +
         '<span class="tp-colpick__bulk">' +
-        '<button type="button" class="tp-linkbtn" data-col-all>Todas</button>' +
-        '<button type="button" class="tp-linkbtn" data-col-none>Ninguna</button>' +
+        '<button type="button" class="tp-linkbtn" data-col-all>' + tpT('ui.all_f') + '</button>' +
+        '<button type="button" class="tp-linkbtn" data-col-none>' + tpT('front.none') + '</button>' +
         "</span></div>" +
         '<div class="tp-colpick__grid">' +
         columnsState.available
@@ -424,9 +424,9 @@
         });
       },
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -563,7 +563,7 @@
           "</button>" +
           '<div class="tp-fleet__kebab-menu" role="menu" hidden>' +
           '<button type="button" role="menuitem" data-view="' + d.id + '">Ver en el mapa</button>' +
-          '<button type="button" role="menuitem" data-edit="' + d.id + '">Editar</button>' +
+          '<button type="button" role="menuitem" data-edit="' + d.id + '">' + tpT('global.edit') + '</button>' +
           '<button type="button" role="menuitem" data-history="' + d.id + '">Historial</button>' +
           "</div></div></td>" +
           "</tr>";
@@ -591,7 +591,7 @@
         ? state.total.toLocaleString() + " dispositivos"
         : "Sin dispositivos";
     $page.textContent =
-      "Página " + state.page + " / " + Math.max(1, state.pages);
+      tpT('ui.page') + state.page + " / " + Math.max(1, state.pages);
     $prev.disabled = state.page <= 1 || state.loading;
     $next.disabled = state.page >= state.pages || state.loading;
 
@@ -848,15 +848,15 @@
   $exp.addEventListener("click", function () {
     var headers = [
       "ID",
-      "Nombre",
-      "Estado",
-      "Placa",
+      tpT('ui.name'),
+      tpT('front.status'),
+      tpT('ui.plate'),
       "IMEI",
-      "Modelo",
+      tpT('front.model'),
       "SIM",
       "km/h",
       "Motor (h)",
-      "Último movimiento",
+      tpT('ui.last_movement_js'),
       "Expira",
     ];
     var lines = [headers.join(",")];

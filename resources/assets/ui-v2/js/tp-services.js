@@ -73,7 +73,7 @@
       ICON_EDIT + " " + esc(T("edit")) + "</button>" +
       (window.TP_CHECKLISTS_ON
         ? '<button type="button" role="menuitem" data-svc-act="checklists" data-id="' +
-          row.id + '" data-name="' + esc(row.name) + '">☑ ' + esc(T("checklists", "Listas de verificación")) + "</button>"
+          row.id + '" data-name="' + esc(row.name) + '">☑ ' + esc(T("checklists", tpT('ui.checklists'))) + "</button>"
         : "") +
       '<button type="button" role="menuitem" class="is-danger" data-svc-act="del" data-id="' +
       row.id + '" data-device="' + row.device_id + '" data-name="' + esc(row.name) + '">' +

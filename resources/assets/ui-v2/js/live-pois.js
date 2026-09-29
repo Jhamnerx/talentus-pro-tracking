@@ -121,8 +121,8 @@
       esc(p.name || "POI") +
       "</span></div>" +
       (S.canEdit
-        ? '<div class="tp-poi-popup__actions"><button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-p-edit>Editar</button>' +
-          '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-p-del>Eliminar</button></div>'
+        ? '<div class="tp-poi-popup__actions"><button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-p-edit>' + tpT('global.edit') + '</button>' +
+          '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-p-del>' + tpT('global.delete') + '</button></div>'
         : "") +
       "</div>";
     if (!popup) popup = L.popup({ className: "tp-dev-popup-wrap", maxWidth: 240, offset: [0, -8] });
@@ -148,9 +148,9 @@
         size: "md",
         body: res.data.html,
         buttons: [
-          { label: "Cancelar", variant: "ghost" },
+          { label: tpT('global.cancel'), variant: "ghost" },
           {
-            label: "Guardar",
+            label: tpT('global.save'),
             variant: "primary",
             close: false,
             onClick: function (dialog, btn) {
@@ -208,7 +208,7 @@
     };
     if (tpModal.confirm)
       tpModal
-        .confirm({ title: "Eliminar POI", message: "¿Eliminar este POI?", confirmLabel: "Eliminar", danger: true })
+        .confirm({ title: "Eliminar POI", message: tpT('ui.confirm_delete_poi'), confirmLabel: tpT('global.delete'), danger: true })
         .then(function (ok) {
           if (ok) doDel();
         });
@@ -259,7 +259,7 @@
   function groupTitle(gid) {
     if (!gid) return "Sin grupo";
     for (var i = 0; i < S.groups.length; i++) if (S.groups[i].id === gid) return S.groups[i].title;
-    return "Grupo " + gid;
+    return tpT('front.group') + gid;
   }
   function fillGroupSelect() {
     var sel = document.getElementById("tp-pois-group");
@@ -333,16 +333,16 @@
       size: "md",
       body:
         '<div class="tp-field"><label class="tp-field__label">Formato</label><select class="tp-input" data-exp-format>' + opt(formats) + "</select></div>" +
-        '<div class="tp-field"><label class="tp-field__label">Tipo de exportación</label><select class="tp-input" data-exp-type>' + opt(types) + "</select></div>" +
+        '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.export_type') + '</label><select class="tp-input" data-exp-type>' + opt(types) + "</select></div>" +
         '<div class="tp-field" data-exp-wrap><label class="tp-field__label">POIs</label><div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin POIs.</div>') + "</div></div>" +
-        '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">Grupos</label><div class="tp-zexp-list">' +
+        '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">' + tpT('front.groups') + '</label><div class="tp-zexp-list">' +
         ((S.groups || []).map(function (g) {
           return '<label class="tp-zexp-item"><input type="checkbox" data-exp-group value="' + g.id + '"><span>' + esc(g.title) + "</span></label>";
         }).join("") || '<div class="tp-text-muted tp-text-sm">Sin grupos.</div>') + "</div></div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost" },
+        { label: tpT('global.cancel'), variant: "ghost" },
         {
-          label: "Exportar",
+          label: tpT('front.export'),
           variant: "primary",
           close: false,
           onClick: function (dlg) {
@@ -413,9 +413,9 @@
         '<select class="tp-input" data-imp-icon>' + icons + "</select></div>" +
         '<div class="tp-field__hint">Formatos: CSV, GEXP o KML.</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost" },
+        { label: tpT('global.cancel'), variant: "ghost" },
         {
-          label: "Importar",
+          label: tpT('front.import'),
           variant: "primary",
           close: false,
           onClick: function (dlg, btn) {

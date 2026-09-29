@@ -27,10 +27,10 @@
     var state = { page: 1, pages: 1, canRemove: false, selected: {}, categories: [], category: "" };
 
     tpModal.open({
-      title: "Galería" + (deviceName ? " · " + deviceName : ""),
+      title: tpT('ui.gallery') + (deviceName ? " · " + deviceName : ""),
       size: "lg",
       body: '<div data-media-root><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var root = dialog.querySelector("[data-media-root]");
 
@@ -46,7 +46,7 @@
 
           tpModal.fetchJSON(BASE + "/" + deviceId + "/media?" + qs.toString()).then(function (res) {
             if (!res.ok || !res.data || !res.data.ok) {
-              root.innerHTML = '<div class="tp-text-muted tp-text-sm">No se pudo cargar la galería.</div>';
+              root.innerHTML = '<div class="tp-text-muted tp-text-sm">' + tpT('ui.gallery_load_failed') + '</div>';
               return;
             }
             var d = res.data;
@@ -60,7 +60,7 @@
               '<span class="tp-row" style="gap:6px;align-items:center;">' +
               (state.categories.length
                 ? '<select class="tp-input tp-input--sm" data-media-cat style="width:auto;">' +
-                  '<option value="">Todas las categorías</option>' +
+                  '<option value="">' + tpT('ui.all_categories') + '</option>' +
                   state.categories
                     .map(function (c) {
                       return '<option value="' + c.id + '"' + (String(state.category) === String(c.id) ? " selected" : "") + ">" + esc(c.title) + "</option>";
@@ -70,7 +70,7 @@
                 : "") +
               '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-zip disabled>Descargar ZIP</button>' +
               (state.canRemove
-                ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-del style="color:#ef4444;" disabled>Eliminar</button>'
+                ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-del style="color:#ef4444;" disabled>' + tpT('global.delete') + '</button>'
                 : "") +
               "</span></div>";
 
@@ -98,14 +98,14 @@
                   })
                   .join("") +
                 "</div>"
-              : '<div class="tp-text-muted tp-text-sm" style="padding:18px 0;">Este vehículo todavía no tiene fotos ni vídeos.</div>';
+              : '<div class="tp-text-muted tp-text-sm" style="padding:18px 0;">' + tpT('ui.vehicle_has_no_media') + '</div>';
 
             var pager =
               state.pages > 1
                 ? '<div class="tp-row" style="justify-content:center;gap:8px;margin-top:12px;">' +
-                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-prev' + (state.page <= 1 ? " disabled" : "") + ">Anterior</button>" +
+                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-prev' + (state.page <= 1 ? " disabled" : "") + ">" + tpT('front.previous') + "</button>" +
                   '<span class="tp-text-sm tp-text-muted" style="align-self:center;">' + state.page + " / " + state.pages + "</span>" +
-                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-next' + (state.page >= state.pages ? " disabled" : "") + ">Siguiente</button>" +
+                  '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-next' + (state.page >= state.pages ? " disabled" : "") + ">" + tpT('front.next') + "</button>" +
                   "</div>"
                 : "";
 
@@ -184,9 +184,9 @@
             tpModal
               .confirm({
                 title: "Eliminar archivos",
-                message: "Se eliminarán " + refs.length + " archivo(s) del almacenamiento. No se puede deshacer.",
+                message: tpT('ui.will_be_deleted') + refs.length + " archivo(s) del almacenamiento. No se puede deshacer.",
                 danger: true,
-                confirmLabel: "Eliminar",
+                confirmLabel: tpT('global.delete'),
               })
               .then(function (ok) {
                 if (!ok) return;

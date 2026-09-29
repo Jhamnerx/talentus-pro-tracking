@@ -102,15 +102,15 @@
       '<div class="tp-row" style="gap:10px; align-items:flex-end; flex-wrap:wrap;">' +
       '<label class="tp-form__field" style="min-width:150px;"><span class="tp-form__label">Forma</span>' +
       '<select class="tp-input" data-sd-shape>' +
-      '<option value="polygon">Polígono</option>' +
-      '<option value="circle">Círculo</option>' +
+      '<option value="polygon">' + tpT('ui.polygon') + '</option>' +
+      '<option value="circle">' + tpT('ui.circle') + '</option>' +
       "</select></label>" +
-      '<label class="tp-form__field" style="min-width:180px;"><span class="tp-form__label">Sin transmitir hace más de</span>' +
+      '<label class="tp-form__field" style="min-width:180px;"><span class="tp-form__label">' + tpT('ui.not_transmitting_over') + '</span>' +
       '<select class="tp-input" data-sd-minutes>' +
       '<option value="30">30 min</option><option value="60">1 h</option>' +
       '<option value="120" selected>2 h</option><option value="360">6 h</option>' +
       '<option value="720">12 h</option><option value="1440">24 h</option>' +
-      '<option value="4320">3 días</option><option value="10080">7 días</option>' +
+      '<option value="4320">' + tpT('ui.days_3') + '</option><option value="10080">' + tpT('ui.days_7') + '</option>' +
       "</select></label>" +
       '<button type="button" class="tp-btn tp-btn--primary tp-btn--sm" data-sd-draw>Dibujar zona</button>' +
       '<span style="margin-left:auto; display:flex; gap:6px;">' +
@@ -118,7 +118,7 @@
       '<button type="button" class="tp-btn tp-btn--outline tp-btn--sm" data-sd-xlsx hidden>XLSX</button>' +
       "</span></div>" +
       '<div data-sd-result style="margin-top:14px;">' +
-      '<p class="tp-text-muted tp-text-sm">Dibuja una zona en el mapa para ver qué unidades llevan sin transmitir dentro de ella.</p>' +
+      '<p class="tp-text-muted tp-text-sm">' + tpT('ui.draw_zone_silent_help') + '</p>' +
       "</div></div>"
     );
   }
@@ -130,7 +130,7 @@
       title: "Unidades sin transmitir",
       size: "lg",
       body: bodyHtml(),
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (d) {
         dialog = d;
 
@@ -208,7 +208,7 @@
     dialog.querySelector("[data-sd-xlsx]").hidden = !items.length;
 
     if (!res) {
-      caja.innerHTML = '<p class="tp-text-muted tp-text-sm">Dibuja una zona en el mapa para ver qué unidades llevan sin transmitir dentro de ella.</p>';
+      caja.innerHTML = '<p class="tp-text-muted tp-text-sm">' + tpT('ui.draw_zone_silent_help') + '</p>';
       return;
     }
 
@@ -227,7 +227,7 @@
 
     html +=
       '<div style="overflow:auto; max-height:52vh;"><table class="tp-table"><thead><tr>' +
-      "<th>Nombre</th><th>Placa</th><th>IMEI</th><th>Coordenadas</th><th>Usuarios</th><th>Última transmisión</th>" +
+      "<th>" + tpT('ui.name') + "</th><th>" + tpT('ui.plate') + "</th><th>IMEI</th><th>Coordenadas</th><th>Usuarios</th><th>" + tpT('ui.last_transmission') + "</th>" +
       "</tr></thead><tbody>";
 
     items.forEach(function (i) {
@@ -240,7 +240,7 @@
         "<td>" + esc(i.users) + "</td>" +
         "<td>" + (i.last_at
           ? esc(i.last_at) + ' <span class="tp-text-muted">(' + esc(i.silent_for) + ")</span>"
-          : '<span class="tp-text-muted">Nunca transmitió</span>') +
+          : '<span class="tp-text-muted">' + tpT('ui.never_transmitted') + '</span>') +
         "</td></tr>";
     });
 

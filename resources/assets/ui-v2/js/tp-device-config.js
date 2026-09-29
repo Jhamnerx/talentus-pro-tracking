@@ -31,29 +31,29 @@
     var apns = META.apns || [];
 
     if (!devs.length) {
-      return '<div class="tp-text-muted tp-text-sm">Ningún vehículo tiene número de SIM registrado, que es lo que se necesita para enviarle comandos.</div>';
+      return '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_vehicle_has_sim') + '</div>';
     }
     if (!cfgs.length) {
-      return '<div class="tp-text-muted tp-text-sm">El administrador todavía no ha dado de alta marcas de GPS configurables.</div>';
+      return '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_gps_brands_configured') + '</div>';
     }
 
     return (
       '<div class="tp-form">' +
-      '<label class="tp-form__field"><span class="tp-form__label">Vehículo</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.vehicle') + '</span>' +
       '<select class="tp-input" data-dc-device>' + opts(devs, deviceId) + "</select></label>" +
       '<label class="tp-form__field"><span class="tp-form__label">Marca del GPS</span>' +
       '<select class="tp-input" data-dc-config>' + opts(cfgs, null) + "</select></label>" +
-      '<label class="tp-form__field"><span class="tp-form__label">Configuración APN</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.apn_config') + '</span>' +
       '<select class="tp-input" data-dc-apn>' + opts(apns, null) + "</select></label>" +
       '<label class="tp-form__field"><span class="tp-form__label">APN</span>' +
       '<input type="text" class="tp-input" data-dc-apn-name></label>' +
       '<div class="tp-form__grid tp-form__grid--2">' +
       '<label class="tp-form__field"><span class="tp-form__label">Usuario</span>' +
       '<input type="text" class="tp-input" data-dc-apn-user></label>' +
-      '<label class="tp-form__field"><span class="tp-form__label">Contraseña</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('attr.password') + '</span>' +
       '<input type="text" class="tp-input" data-dc-apn-pass></label>' +
       "</div>" +
-      '<small class="tp-form__hint">Se enviarán SMS al equipo con los comandos de la marca elegida. Puede tardar unos minutos en aplicarse.</small>' +
+      '<small class="tp-form__hint">' + tpT('ui.apn_sms_note') + '</small>' +
       "</div>"
     );
   }
@@ -66,9 +66,9 @@
       size: "md",
       body: '<div class="tp-text-muted tp-text-sm">Cargando…</div>',
       buttons: [
-        { label: "Cerrar", variant: "ghost", close: true },
+        { label: tpT('global.close'), variant: "ghost", close: true },
         {
-          label: "Enviar configuración",
+          label: tpT('ui.send_config'),
           variant: "primary",
           close: false,
           onClick: function (d) {

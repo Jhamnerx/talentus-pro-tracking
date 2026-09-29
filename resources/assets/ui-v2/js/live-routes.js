@@ -441,7 +441,7 @@
       '<div class="tp-routes-form__hint" data-rf-hint>' +
       esc(
         mode === "create"
-          ? T("route_draw_hint2", "Dibuja la ruta en el mapa: clic para añadir puntos, doble clic para terminar.")
+          ? T("route_draw_hint2", tpT('ui.draw_route_help'))
           : T("route_edit_hint", "Arrastra los puntos del mapa para ajustar la ruta."),
       ) +
       "</div>";
@@ -517,7 +517,7 @@
     }
     var coords = coordsFromLayer(S.draft);
     if (coords.length < 2) {
-      tpModal.toast && tpModal.toast(T("route_min_points", "Añade al menos 2 puntos."), "warning");
+      tpModal.toast && tpModal.toast(T("route_min_points", tpT('ui.add_at_least_2_points')), "warning");
       return;
     }
     payload.coordinates = coords;
@@ -569,7 +569,7 @@
       tpModal
         .confirm({
           title: T("delete_route", "Eliminar ruta"),
-          message: T("delete_route_confirm", "¿Eliminar esta ruta?"),
+          message: T("delete_route_confirm", tpT('ui.confirm_delete_route')),
           confirmLabel: T("delete", "Eliminar"),
           danger: true,
         })
@@ -616,9 +616,9 @@
     var body =
       '<div class="tp-rgroup-form">' +
       '<div class="tp-field"><label class="tp-field__label">' +
-      esc(T("title", "Título")) +
+      esc(T("title", tpT('ui.title'))) +
       '</label><input type="text" class="tp-input" data-grp-title placeholder="' +
-      esc(T("insert_title", "Insertar título…")) +
+      esc(T("insert_title", tpT('ui.insert_title'))) +
       '" value="' +
       esc(isEdit ? group.title : "") +
       '"></div>' +
@@ -648,7 +648,7 @@
           onClick: function (dialog, btn) {
             var title = (dialog.querySelector("[data-grp-title]").value || "").trim();
             if (!title) {
-              tpModal.toast && tpModal.toast(T("title_required", "El título es obligatorio."), "warning");
+              tpModal.toast && tpModal.toast(T("title_required", tpT('ui.title_required')), "warning");
               return false;
             }
             var ids = [];
@@ -734,7 +734,7 @@
     tpModal
       .confirm({
         title: T("delete_group", "Eliminar grupo"),
-        message: T("delete_group_confirm", "¿Eliminar el grupo? Las rutas quedarán sin grupo."),
+        message: T("delete_group_confirm", tpT('ui.confirm_delete_route_group')),
         confirmLabel: T("delete", "Eliminar"),
         danger: true,
       })
@@ -788,7 +788,7 @@
       opt(formats, "csv") +
       "</select></div>" +
       '<div class="tp-field"><label class="tp-field__label">' +
-      esc(T("export_type_label", "Tipo de exportación")) +
+      esc(T("export_type_label", tpT('ui.export_type'))) +
       '</label><select class="tp-input" data-exp-type>' +
       opt(types, "export_single") +
       "</select></div>" +

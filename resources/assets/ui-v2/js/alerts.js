@@ -59,7 +59,7 @@
     geofence_overspeed: "Exceso en geocerca",
     zone_in: "Entrada a zona",
     zone_out: "Salida de zona",
-    idle_duration: "Ralentí prolongado",
+    idle_duration: tpT('ui.long_idle'),
     stop_duration: "Detenido prolongado",
     offline_duration: "Offline prolongado",
     move_duration: "Movimiento prolongado",
@@ -68,7 +68,7 @@
     ignition_off: "Motor apagado",
     fuel_fill: "Recarga de combustible",
     fuel_theft: "Robo de combustible",
-    driver: "Conductor",
+    driver: tpT('front.driver'),
     driver_authorized: "Conductor autorizado",
     driver_unauthorized: "Conductor no autorizado",
     expiring_device: "Dispositivo por expirar",
@@ -85,14 +85,14 @@
     task_complete: "Tarea completa",
     task_failed: "Tarea fallida",
     custom: "Evento personalizado",
-    distance: "Distancia",
-    time_duration: "Duración temporal",
+    distance: tpT('front.distance'),
+    time_duration: tpT('ui.temporary_duration'),
   };
 
   // Localized, human labels for notification channels (badges de la tabla).
   var CHAN_LABEL = {
-    color: "Color",
-    silent: "Anti-repetición",
+    color: tpT('ui.color'),
+    silent: tpT('ui.anti_repeat'),
     sound: "Sonido",
     popup: "Popup",
     auto_hide: "Auto-ocultar",
@@ -130,7 +130,7 @@
         '">' +
         ICON_POWER +
         " " +
-        (r.active ? "Desactivar" : "Activar") +
+        (r.active ? tpT('ui.deactivate') : tpT('ui.activate')) +
         "</button>";
     // Guardar como plantilla: se captura ESTA alerta ya configurada, para
     // sembrarla despues a los clientes que se den de alta.
@@ -176,7 +176,7 @@
     if (!rules.length) {
       tbody.innerHTML =
         '<tr><td colspan="7" class="tp-svc-table__empty">' +
-        (state.rules.length ? "Sin coincidencias." : "Aún no hay reglas de alerta.") +
+        (state.rules.length ? "Sin coincidencias." : tpT('ui.no_alert_rules_yet')) +
         "</td></tr>";
       return;
     }
@@ -184,10 +184,10 @@
     var html = "";
     rules.forEach(function (r) {
       var scope = r.all
-        ? "Todos"
+        ? tpT('front.all')
         : (r.devices_count || 0) +
           " " +
-          ((r.devices_count || 0) === 1 ? "vehículo" : "vehículos");
+          ((r.devices_count || 0) === 1 ? tpT('ui.vehicle_lower') : tpT('ui.vehicles_lower'));
 
       var chans = (r.channels || []).filter(function (c) {
         return c !== "auto_hide";
@@ -206,7 +206,7 @@
 
       var sched = r.schedule
         ? '<span class="tp-alerts__rule-type">Restringido</span>'
-        : '<span class="tp-text-muted tp-text-sm">Siempre</span>';
+        : '<span class="tp-text-muted tp-text-sm">' + tpT('global.always') + '</span>';
 
       var toggle = CAN_EDIT
         ? '<button type="button" class="tp-alert-toggle' +
@@ -214,7 +214,7 @@
           '" data-toggle-rule="' +
           r.id +
           '" title="' +
-          (r.active ? "Desactivar" : "Activar") +
+          (r.active ? tpT('ui.deactivate') : tpT('ui.activate')) +
           '"></button>'
         : '<span class="tp-alert-toggle' + (r.active ? " is-on" : "") + '"></span>';
 
@@ -425,7 +425,7 @@
   // Per-type attribute fields (from AlertModalHelper). { name,type,title,value,options? }
   function renderTypeFields(typeObj) {
     if (!typeObj || !typeObj.fields || !typeObj.fields.length) {
-      return '<div class="tp-text-muted tp-text-sm">Este tipo no requiere configuración adicional.</div>';
+      return '<div class="tp-text-muted tp-text-sm">' + tpT('ui.type_needs_no_config') + '</div>';
     }
     var html = '<div class="tp-grid-2">';
     typeObj.fields.forEach(function (f) {
@@ -512,8 +512,8 @@
       (searchable
         ? '<input type="search" class="tp-input tp-input--sm tp-picklist__search" placeholder="Buscar…">'
         : "<span></span>") +
-      '<button type="button" class="tp-picklist__act" data-pick="all">Todos</button>' +
-      '<button type="button" class="tp-picklist__act" data-pick="none">Ninguno</button>' +
+      '<button type="button" class="tp-picklist__act" data-pick="all">' + tpT('front.all') + '</button>' +
+      '<button type="button" class="tp-picklist__act" data-pick="none">' + tpT('ui.none_m') + '</button>' +
       '<span class="tp-picklist__count">0</span>' +
       "</div>" +
       '<div class="tp-picklist__list">' +
@@ -693,7 +693,7 @@
       });
       if (!slice.length)
         html =
-          '<div class="tp-text-muted tp-text-sm" style="padding:14px;">Sin vehículos.</div>';
+          '<div class="tp-text-muted tp-text-sm" style="padding:14px;">' + tpT('ui.no_vehicles') + '</div>';
       listEl.innerHTML = html;
       listEl.querySelectorAll("[data-dev-group][data-indet]").forEach(function (cb) {
         cb.indeterminate = true;
@@ -841,10 +841,10 @@
 
     var quick =
       '<div class="tp-sched__quick">' +
-      '<button type="button" data-sched-set="workdays">Días hábiles</button>' +
+      '<button type="button" data-sched-set="workdays">' + tpT('ui.working_days') + '</button>' +
       '<button type="button" data-sched-set="weekend">Fin de semana</button>' +
-      '<button type="button" data-sched-set="always">Siempre</button>' +
-      '<button type="button" data-sched-set="clear">Limpiar</button>' +
+      '<button type="button" data-sched-set="always">' + tpT('global.always') + '</button>' +
+      '<button type="button" data-sched-set="clear">' + tpT('global.clear') + '</button>' +
       "</div>";
 
     return '<div class="tp-sched__scroll">' + hours + rows + "</div>" + quick;
@@ -1029,13 +1029,13 @@
 
     return (
       '<div class="tp-notif__report">' +
-      '<label>Reporte<select class="tp-input tp-input--sm" data-no-ts="1" data-report-type>' +
+      '<label>' + tpT('front.report') + '<select class="tp-input tp-input--sm" data-no-ts="1" data-report-type>' +
       '<option value="">—</option>' + tipos + "</select></label>" +
       '<label>Formato<select class="tp-input tp-input--sm" data-no-ts="1" data-report-format>' +
       formatos + "</select></label>" +
       '<label>Min. antes<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-before value="' +
       esc(it.report_minutes_before == null ? 15 : it.report_minutes_before) + '"></label>' +
-      '<label>Min. después<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-after value="' +
+      '<label>' + tpT('ui.min_after') + '<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-after value="' +
       esc(it.report_minutes_after == null ? 15 : it.report_minutes_after) + '"></label>' +
       "</div>"
     );
@@ -1044,7 +1044,7 @@
   function panelNotifications(meta) {
     var list = meta.notifications || [];
     if (!list.length)
-      return '<div class="tp-text-muted tp-text-sm">No hay canales de notificación disponibles.</div>';
+      return '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_notification_channels') + '</div>';
     return list
       .map(function (n) {
         return (
@@ -1131,7 +1131,7 @@
           dlg._alertCmds = cmds;
           if (!cmds.length) {
             typeSel.innerHTML =
-              '<option value="">Sin comandos disponibles para los vehículos elegidos</option>';
+              '<option value="">' + tpT('ui.no_commands_for_vehicles') + '</option>';
             fieldsWrap.innerHTML = "";
             return;
           }
@@ -1188,7 +1188,7 @@
       '<div class="tp-devbox__bar">' +
       '<div class="tp-devbox__search">' +
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>' +
-      '<input type="search" class="tp-input tp-input--sm" data-dev-search placeholder="Buscar vehículo…" autocomplete="off">' +
+      '<input type="search" class="tp-input tp-input--sm" data-dev-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off">' +
       "</div>" +
       '<div class="tp-devbox__acts">' +
       '<button type="button" class="tp-devbox__link" data-dev-all>Seleccionar todos</button>' +
@@ -1196,7 +1196,7 @@
       '<button type="button" class="tp-devbox__link" data-dev-none>Quitar todos</button>' +
       "</div>" +
       "</div>" +
-      '<div class="tp-devbox__banner" data-dev-banner hidden><b>Todos los vehículos</b> seleccionados — se incluirán también los que agregues después.</div>' +
+      '<div class="tp-devbox__banner" data-dev-banner hidden><b>' + tpT('ui.all_vehicles') + '</b> ' + tpT('ui.selected_will_include_later') + '</div>' +
       '<div class="tp-devbox__list" data-dev-list></div>' +
       '<div class="tp-devbox__foot"><span class="tp-devbox__count" data-dev-count>0 seleccionados</span><div class="tp-devbox__pager" data-dev-pager></div></div>' +
       "</div>"
@@ -1239,7 +1239,7 @@
   function panelSchedule(meta) {
     return (
       '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-sched-toggle"> <span>Restringir por horario</span></label>' +
-      '<div class="tp-field__hint" style="margin-bottom:10px;">Si se activa, la alerta solo se dispara dentro de las franjas marcadas. Arrastra para pintar; toca la inicial del día para todo el día.</div>' +
+      '<div class="tp-field__hint" style="margin-bottom:10px;">' + tpT('ui.schedule_paint_help') + '</div>' +
       '<div id="tp-alert-sched" hidden>' +
       scheduleGridHtml(meta.schedules) +
       "</div>"
@@ -1249,10 +1249,10 @@
   function panelCommand() {
     return (
       '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-cmd-active"> <span>Enviar comando al dispararse</span></label>' +
-      '<div class="tp-field__hint" style="margin-bottom:10px;">Se enviará a los vehículos de la alerta cuando se cumpla la condición.</div>' +
+      '<div class="tp-field__hint" style="margin-bottom:10px;">' + tpT('ui.command_sent_on_condition') + '</div>' +
       '<div id="tp-alert-cmd-body" hidden>' +
       '<div class="tp-field"><label class="tp-field__label">Comando</label>' +
-      '<select class="tp-input" data-no-ts="1" id="tp-alert-cmd-type"><option value="">Selecciona vehículos primero…</option></select></div>' +
+      '<select class="tp-input" data-no-ts="1" id="tp-alert-cmd-type"><option value="">' + tpT('ui.select_vehicles_first') + '</option></select></div>' +
       '<div id="tp-alert-cmd-fields"></div>' +
       "</div>"
     );
@@ -1274,8 +1274,8 @@
   function mountAlertTabs(modal, meta) {
     var holder = modal.querySelector("#tp-alert-tabs");
     var tabs = [
-      { key: "devices", label: "Vehículos", html: panelDevices(meta) },
-      { key: "type", label: "Tipo", html: panelType(meta) },
+      { key: "devices", label: tpT('ui.vehicles'), html: panelDevices(meta) },
+      { key: "type", label: tpT('front.type'), html: panelType(meta) },
       { key: "geofences", label: "Geocercas", html: panelGeofences(meta) },
       { key: "schedule", label: "Horario", html: panelSchedule(meta) },
       { key: "notifs", label: "Notificaciones", html: panelNotifications(meta) },
@@ -1453,13 +1453,13 @@
 
     var modal = window.tpModal.open({
       title: isEdit ? "Editar regla de alerta" : "Nueva regla de alerta",
-      sub: "Vehículos, disparador, geocercas, horario, notificaciones y comando.",
+      sub: tpT('ui.alert_wizard_steps'),
       size: "xl",
       // Restyle scopeado (alerts.css .tp-alert-modal) — no afecta otros modales.
       className: "tp-alert-modal",
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
           label: isEdit ? "Guardar cambios" : "Crear alerta",
           variant: "primary",
@@ -1540,7 +1540,7 @@
       .catch(function () {
         var body = modal.querySelector("[data-tp-body]");
         body.innerHTML =
-          '<div class="tp-text-center" style="padding:24px; color:var(--status-alert,#ef4444);">No se pudo cargar el catálogo de la alerta.</div>';
+          '<div class="tp-text-center" style="padding:24px; color:var(--status-alert,#ef4444);">' + tpT('ui.alert_catalog_load_failed') + '</div>';
       });
   }
 
@@ -1601,19 +1601,19 @@
           title: "Guardar como plantilla",
           size: "sm",
           body:
-            '<p class="tp-text-sm tp-text-muted" style="margin:0 0 12px;">Se guardará <b>' +
+            '<p class="tp-text-sm tp-text-muted" style="margin:0 0 12px;">' + tpT('ui.will_be_saved') + ' <b>' +
             esc(regla ? regla.name : "esta regla") +
-            "</b> como plantilla. A partir de ahora, los clientes que se den de alta la recibirán ya creada.</p>" +
+            "</b> " + tpT('ui.as_template_note') + "</p>" +
             '<label class="tp-form__field" style="margin-bottom:10px;">' +
             '<span class="tp-form__label">Aplicar a</span>' +
             '<select class="tp-input" data-tpl-plan>' + opciones + "</select></label>" +
             '<label class="tp-form__field">' +
             '<span class="tp-form__label">Nota (opcional)</span>' +
-            '<input type="text" class="tp-input" data-tpl-desc placeholder="Para qué sirve"></label>',
+            '<input type="text" class="tp-input" data-tpl-desc placeholder="' + tpT('ui.what_is_it_for') + '"></label>',
           buttons: [
-            { label: "Cancelar", variant: "ghost", close: true },
+            { label: tpT('global.cancel'), variant: "ghost", close: true },
             {
-              label: "Guardar",
+              label: tpT('global.save'),
               variant: "primary",
               close: false,
               onClick: function (d) {
@@ -1655,7 +1655,7 @@
       title: "Plantillas de alerta",
       size: "lg",
       body: '<div data-tpl-list><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (d) {
         var host = d.querySelector("[data-tpl-list]");
 
@@ -1665,7 +1665,7 @@
 
             if (!items.length) {
               host.innerHTML =
-                '<p class="tp-text-sm tp-text-muted">Todavía no hay plantillas. Se crean desde el menú de una regla, con "Guardar como plantilla".</p>';
+                '<p class="tp-text-sm tp-text-muted">' + tpT('ui.no_templates_yet_long') + '</p>';
               return;
             }
 
@@ -1683,9 +1683,9 @@
                     '<span class="tp-acc-row__actions">' +
                     '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-toggle="' + t.id +
                     '" data-active="' + (t.active ? 1 : 0) + '">' +
-                    (t.active ? "Desactivar" : "Activar") + "</button>" +
+                    (t.active ? tpT('ui.deactivate') : tpT('ui.activate')) + "</button>" +
                     '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-del="' + t.id +
-                    '">Eliminar</button></span></div>'
+                    '">' + tpT('global.delete') + '</button></span></div>'
                   );
                 })
                 .join("");
@@ -1714,7 +1714,7 @@
                 message:
                   "Deja de sembrarse a los clientes nuevos. Las alertas ya creadas NO se tocan.",
                 danger: true,
-                confirmLabel: "Eliminar",
+                confirmLabel: tpT('global.delete'),
               })
               .then(function (ok) {
                 if (!ok) return;
@@ -1735,9 +1735,9 @@
     window.tpModal
       .confirm({
         title: "Eliminar regla",
-        message: "Esta acción no se puede deshacer. ¿Eliminar la regla?",
+        message: tpT('ui.confirm_delete_rule'),
         danger: true,
-        confirmLabel: "Eliminar",
+        confirmLabel: tpT('global.delete'),
       })
       .then(function (ok) {
         if (!ok) return;

@@ -43,9 +43,9 @@
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -77,7 +77,7 @@
       '<div class="tp-form__grid tp-form__grid--2">' +
       // Nombre
       '<label class="tp-form__field tp-form__field--required tp-col-2">' +
-      '<span class="tp-form__label">Nombre</span>' +
+      '<span class="tp-form__label">' + tpT('ui.name') + '</span>' +
       '<input type="text" name="name" maxlength="120" value="' + esc(item.name || "") + '" data-tp-field>' +
       "</label>" +
       // Dispositivos (chips multiselect)
@@ -104,7 +104,7 @@
         })
         .join("") +
       "</select></div>" +
-      '<small class="tp-form__hint">Marca la casilla para fijar este conductor como actual del vehículo elegido.</small>' +
+      '<small class="tp-form__hint">' + tpT('ui.set_current_driver_help') + '</small>' +
       "</div>" +
       // RFID
       '<label class="tp-form__field tp-col-2">' +
@@ -117,12 +117,12 @@
       '<input type="text" name="email" maxlength="120" value="' + esc(item.email || "") + '" data-tp-field>' +
       "</label>" +
       '<label class="tp-form__field">' +
-      '<span class="tp-form__label">Teléfono</span>' +
+      '<span class="tp-form__label">' + tpT('attr.phone') + '</span>' +
       '<input type="text" name="phone" maxlength="40" value="' + esc(item.phone || "") + '" data-tp-field>' +
       "</label>" +
       // Descripción
       '<label class="tp-form__field tp-col-2">' +
-      '<span class="tp-form__label">Descripción</span>' +
+      '<span class="tp-form__label">' + tpT('attr.description') + '</span>' +
       '<textarea name="description" rows="2" maxlength="500" data-tp-field>' + esc(item.description || "") + "</textarea>" +
       "</label>" +
       "</div></form>"
@@ -234,7 +234,7 @@
         '<div style="position:sticky;bottom:0;background:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 4px;border-top:1px solid var(--border-default,#eef2f7);z-index:1;">' +
         '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;">' +
         '<input type="checkbox" class="tp-choice-input" data-drv-selall> Seleccionar todo</label>' +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-drv-close>Cerrar</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-drv-close>' + tpT('global.close') + '</button>' +
         "</div>";
 
       syncPanelChecks();
@@ -448,11 +448,11 @@
     if (canEdit)
       items +=
         '<button type="button" role="menuitem" data-drv-edit="' + row.id + '">' +
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>';
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
     if (canRemove)
       items +=
         '<button type="button" role="menuitem" class="is-danger" data-drv-del="' + row.id + '">' +
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
     if (!items) return "";
     return (
       '<div class="tp-svc-kebab">' +
@@ -550,9 +550,9 @@
       tpModal
         .confirm({
           title: "Eliminar conductor",
-          message: "¿Eliminar este conductor?",
+          message: tpT('ui.confirm_delete_driver'),
           danger: true,
-          confirmLabel: "Eliminar",
+          confirmLabel: tpT('global.delete'),
         })
         .then(function (okGo) {
           if (!okGo) return;

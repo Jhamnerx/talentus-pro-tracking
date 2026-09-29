@@ -139,7 +139,7 @@
 
   function loadInsights() {
     $("#cp-insights").innerHTML =
-      '<div class="tp-text-muted tp-text-center" style="padding:32px;">Analizando tu operación…</div>';
+      '<div class="tp-text-muted tp-text-center" style="padding:32px;">' + tpT('ui.analyzing_operation') + '</div>';
     return fetch(INSIGHTS_URL, {
       credentials: "same-origin",
       headers: { Accept: "application/json" },
@@ -211,7 +211,7 @@
       })
       .catch(function () {
         typing.remove();
-        appendBubble("bot", "Sin conexión con el servidor.");
+        appendBubble("bot", tpT('ui.no_server_connection'));
       });
   }
 

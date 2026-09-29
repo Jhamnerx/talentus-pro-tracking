@@ -259,7 +259,7 @@
     tpModal
       .confirm({
         title: T("delete_route", "Eliminar ruta"),
-        message: '"' + r.name + '" — ' + T("delete_route_confirm", "¿Eliminar esta ruta?"),
+        message: '"' + r.name + '" — ' + T("delete_route_confirm", tpT('ui.confirm_delete_route')),
         confirmLabel: T("delete", "Eliminar"),
         danger: true,
       })
@@ -296,7 +296,7 @@
     var body =
       '<div class="tp-poi-form">' +
       '<div class="tp-field"><label class="tp-field__label">' + esc(T("format", "Formato")) + '</label><select class="tp-input" data-exp-format>' + opt(formats, "csv") + "</select></div>" +
-      '<div class="tp-field"><label class="tp-field__label">' + esc(T("export_type_label", "Tipo de exportación")) + '</label><select class="tp-input" data-exp-type>' + opt(types, "export_single") + "</select></div>" +
+      '<div class="tp-field"><label class="tp-field__label">' + esc(T("export_type_label", tpT('ui.export_type'))) + '</label><select class="tp-input" data-exp-type>' + opt(types, "export_single") + "</select></div>" +
       '<div class="tp-field" data-exp-wrap><label class="tp-field__label">' + esc(T("routes", "Rutas")) + '</label><div class="tp-rgroup-list">' + checks + "</div></div></div>";
     tpModal.open({
       title: T("export", "Exportar"),

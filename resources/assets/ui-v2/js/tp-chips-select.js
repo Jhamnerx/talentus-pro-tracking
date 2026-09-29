@@ -171,7 +171,7 @@
         (body || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">Sin resultados.</div>') +
         '<div style="position:sticky;bottom:0;background:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 4px;border-top:1px solid var(--border-default,#eef2f7);z-index:1;">' +
         '<span style="display:flex;gap:4px;align-items:center;">' + paginacionHtml(paginas) + "</span>" +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cs-close>Cerrar</button></div>';
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cs-close>' + tpT('global.close') + '</button></div>';
 
       var buscador = panel.querySelector("[data-cs-search]");
       if (buscador) buscador.value = q;

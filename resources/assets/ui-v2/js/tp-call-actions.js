@@ -77,13 +77,13 @@
   function openForm(id, onSaved, presetDeviceId) {
     var isEdit = !!id;
     var dlg = tpModal.open({
-      title: isEdit ? "Editar acción de llamada" : "Nueva acción de llamada",
+      title: isEdit ? tpT('ui.edit_call_action') : tpT('ui.new_call_action'),
       size: "md",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
-        { label: "Guardar", variant: "primary", close: false, onClick: function (d) { submit(d, id, onSaved); return false; } },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
+        { label: tpT('global.save'), variant: "primary", close: false, onClick: function (d) { submit(d, id, onSaved); return false; } },
       ],
     });
 
@@ -94,10 +94,10 @@
       var dt = splitDT(item.called_at);
       body.innerHTML =
         '<form class="tp-form tp-ca-form"><div class="tp-form__grid">' +
-        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Vehículo</span>' +
-        '<select class="tp-input" name="device_id"' + (isEdit ? " disabled" : "") + ">" + options(m.devices, item.device_id, "Seleccionar vehículo…") + "</select></div>" +
-        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Evento</span>' +
-        '<select class="tp-input" name="event_id">' + options(item.events || [], item.event_id, "Selecciona un vehículo primero…") + "</select>" +
+        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('ui.vehicle') + '</span>' +
+        '<select class="tp-input" name="device_id"' + (isEdit ? " disabled" : "") + ">" + options(m.devices, item.device_id, tpT('ui.select_vehicle_ellipsis')) + "</select></div>" +
+        '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('front.event') + '</span>' +
+        '<select class="tp-input" name="event_id">' + options(item.events || [], item.event_id, tpT('ui.select_a_vehicle_first')) + "</select>" +
         '<small class="tp-form__hint">Solo eventos con alerta pueden registrarse.</small></div>' +
         '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Tipo de respuesta</span>' +
         '<select class="tp-input" name="response_type">' + options(m.responseTypes, item.response_type) + "</select></div>" +
@@ -201,8 +201,8 @@
 
   function kebab(r) {
     var items = "";
-    if (canEdit) items += '<button type="button" role="menuitem" data-ca-edit="' + r.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>';
-    if (canRemove) items += '<button type="button" role="menuitem" class="is-danger" data-ca-del="' + r.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+    if (canEdit) items += '<button type="button" role="menuitem" data-ca-edit="' + r.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
+    if (canRemove) items += '<button type="button" role="menuitem" class="is-danger" data-ca-del="' + r.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
     if (!items) return "";
     return '<div class="tp-svc-kebab"><button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button><div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>";
   }
@@ -246,7 +246,7 @@
     if (ed) { openForm(ed.getAttribute("data-ca-edit"), load); return; }
     var del = e.target.closest("[data-ca-del]");
     if (del) {
-      tpModal.confirm({ title: "Eliminar", message: "¿Eliminar esta acción de llamada?", danger: true, confirmLabel: "Eliminar" }).then(function (go) {
+      tpModal.confirm({ title: tpT('global.delete'), message: tpT('ui.confirm_delete_call_action'), danger: true, confirmLabel: tpT('global.delete') }).then(function (go) {
         if (!go) return;
         tpModal.fetchJSON(URLS.item.replace("{id}", del.getAttribute("data-ca-del")), { method: "DELETE" }).then(function (res) {
           if (res.ok && res.data && res.data.ok) { tpModal.toast("Eliminado.", "success"); load(); }
@@ -260,7 +260,7 @@
   tpModal.fetchJSON(URLS.meta, { method: "GET" }).then(function (res) {
     if (!res.ok || !res.data || !res.data.ok) return;
     META = res.data;
-    deviceSel.innerHTML = '<option value="">Todos los vehículos</option>' + options(META.devices, "");
+    deviceSel.innerHTML = '<option value="">' + tpT('ui.all_vehicles') + '</option>' + options(META.devices, "");
     respSel.innerHTML = '<option value="">Toda respuesta</option>' + options(META.responseTypes, "");
     ["tp-ca-device", "tp-ca-response"].forEach(function (idc) {
       var el = document.getElementById(idc);

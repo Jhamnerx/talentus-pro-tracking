@@ -94,9 +94,9 @@
     online: "En movimiento",
     excessive_speed: "Exceso de velocidad",
     engine: "Motor encendido",
-    ack: "Detenido",
-    stop: "Detenido",
-    idle: "Ralentí",
+    ack: tpT('front.stopped'),
+    stop: tpT('front.stopped'),
+    idle: tpT('front.idle'),
     blocked: "Bloqueado",
     offline: "Desconectado",
     expired: "Expirado",
@@ -212,7 +212,7 @@
       '<span class="tp-mon__dot" data-c-dot></span>' +
       '<span class="tp-mon__name" title="' + esc(d.name) + '">' + esc(d.name || "#" + id) + "</span>" +
       '<span class="tp-mon__pill" data-c-pill>—</span>' +
-      '<button type="button" class="tp-mon__clear" data-clear="' + i + '" title="Quitar vehículo">×</button>' +
+      '<button type="button" class="tp-mon__clear" data-clear="' + i + '" title="' + tpT('ui.remove_vehicle') + '">×</button>' +
       "</div>" +
       '<div class="tp-mon__map"></div>' +
       '<div class="tp-mon__cellfoot"><span data-c-speed>—</span><span data-c-time></span></div>';
@@ -276,13 +276,13 @@
       cajaTam.innerHTML = LAYOUTS.map(function (l) {
         return '<button type="button" class="tp-segmented__item" data-size="' + l.n + '"' +
           (l.n === state.size ? ' aria-selected="true"' : "") +
-          ' title="' + l.n + " vehículos, hasta " + l.cols + ' columnas">' + l.n + "</button>";
+          ' title="' + l.n + tpT('ui.vehicles_up_to') + l.cols + ' columnas">' + l.n + "</button>";
       }).join("");
     }
 
     if (pista) {
       pista.textContent = "Elige hasta " + state.size +
-        " vehículos — cada celda los sigue en vivo. El tamaño y la selección se recuerdan en este navegador.";
+        tpT('ui.monitor_grid_note');
     }
   }
 
@@ -333,13 +333,13 @@
     });
 
     var dlg = tpModal.open({
-      title: "Seleccionar vehículo",
+      title: tpT('ui.select_vehicle'),
       sub: "Celda " + (slot + 1) + " · agrupados por grupo de objetos",
       size: "md",
       body:
-        '<input type="search" class="tp-input" data-mp-search placeholder="Buscar vehículo…" autocomplete="off" style="margin-bottom:10px;">' +
+        '<input type="search" class="tp-input" data-mp-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off" style="margin-bottom:10px;">' +
         '<div class="tp-mon__picklist" data-mp-list></div>',
-      buttons: [{ label: "Cancelar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.cancel'), variant: "ghost", close: true }],
     });
 
     var listEl = dlg.querySelector("[data-mp-list]");

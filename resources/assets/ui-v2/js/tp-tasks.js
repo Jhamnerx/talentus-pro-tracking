@@ -172,13 +172,13 @@
       '<div class="tp-form__field tp-col-2">' +
       '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:6px;">' +
       '<input type="checkbox" class="tp-choice-input" name="' + kind + '_ac" value="1"' +
-      (item[kind + "_ac"] ? " checked" : "") + "> Cambio automático de estado</label>" +
+      (item[kind + "_ac"] ? " checked" : "") + "> " + tpT('ui.auto_state_change') + "</label>" +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
       '<label class="tp-form__field"><span class="tp-form__label">Radio (m)</span>' +
       '<input type="text" name="' + kind + '_ac_radius" value="' + esc(String(pick("radius", ""))) + '" data-tp-field></label>' +
-      '<label class="tp-form__field"><span class="tp-form__label">Duración (s)</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.duration_s') + '</span>' +
       '<input type="text" name="' + kind + '_ac_duration" value="' + esc(String(pick("duration", ""))) + '" data-tp-field></label>' +
-      '<div class="tp-form__field"><span class="tp-form__label">Estado</span>' +
+      '<div class="tp-form__field"><span class="tp-form__label">' + tpT('front.status') + '</span>' +
       selectHtml(kind + "_ac_status", meta.statuses || [], pick("status", "")) + "</div>" +
       "</div></div>"
     );
@@ -274,7 +274,7 @@
     if (isEdit) {
       extra +=
         '<div class="tp-form__field">' +
-        '<span class="tp-form__label">Estado</span>' +
+        '<span class="tp-form__label">' + tpT('front.status') + '</span>' +
         selectHtml("status", meta.statuses || [], item.status) +
         "</div>";
     }
@@ -293,19 +293,19 @@
       '<div class="tp-form__grid tp-form__grid--2">' +
       // Vehículo
       '<div class="tp-form__field tp-form__field--required tp-col-2">' +
-      '<span class="tp-form__label">Vehículo</span>' +
+      '<span class="tp-form__label">' + tpT('ui.vehicle') + '</span>' +
       selectHtml(
         "device_id",
         (meta.devices || []).map(function (d) {
           return { id: d.id, title: d.name };
         }),
         item.device_id,
-        "Seleccionar vehículo…",
+        tpT('ui.select_vehicle_ellipsis'),
       ) +
       "</div>" +
       // Título
       '<label class="tp-form__field tp-form__field--required tp-col-2">' +
-      '<span class="tp-form__label">Título</span>' +
+      '<span class="tp-form__label">' + tpT('ui.title') + '</span>' +
       '<input type="text" name="title" maxlength="255" value="' + esc(item.title || "") +
       '" placeholder="Título de la tarea…" data-tp-field>' +
       "</label>" +
@@ -320,14 +320,14 @@
       "</div>" +
       extra +
       sectionTitleHtml("Recogida") +
-      addressFieldHtml("pickup", "Dirección de recogida", item) +
-      dtFieldHtml("pickup_from", "Desde", item.pickup_time_from, "08:00") +
-      dtFieldHtml("pickup_to", "Hasta", item.pickup_time_to, "12:00") +
+      addressFieldHtml("pickup", tpT('ui.pickup_address'), item) +
+      dtFieldHtml("pickup_from", tpT('front.from'), item.pickup_time_from, "08:00") +
+      dtFieldHtml("pickup_to", tpT('global.to'), item.pickup_time_to, "12:00") +
       acBlockHtml("pickup", item, meta) +
       sectionTitleHtml("Entrega") +
-      addressFieldHtml("delivery", "Dirección de entrega", item) +
-      dtFieldHtml("delivery_from", "Desde", item.delivery_time_from, "12:00") +
-      dtFieldHtml("delivery_to", "Hasta", item.delivery_time_to, "17:00") +
+      addressFieldHtml("delivery", tpT('ui.delivery_address'), item) +
+      dtFieldHtml("delivery_from", tpT('front.from'), item.delivery_time_from, "12:00") +
+      dtFieldHtml("delivery_to", tpT('global.to'), item.delivery_time_to, "17:00") +
       acBlockHtml("delivery", item, meta) +
       // Comentario
       '<label class="tp-form__field tp-col-2">' +
@@ -348,9 +348,9 @@
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -394,7 +394,7 @@
     var marker = null;
 
     var dlg = tpModal.open({
-      title: "Dirección",
+      title: tpT('front.address'),
       size: "lg",
       static: true,
       body:
@@ -404,12 +404,12 @@
         esc(addrInput.value || "") + '" data-tp-field>' +
         "</div>" +
         '<div data-adr-map style="height:360px;border-radius:12px;overflow:hidden;border:1px solid var(--border-default,#e2e8f0);"></div>' +
-        '<small class="tp-form__hint" style="display:block;margin-top:8px;">Busca una dirección o haz click en el mapa para ubicar el punto; luego pulsa Aplicar.</small>' +
+        '<small class="tp-form__hint" style="display:block;margin-top:8px;">' + tpT('ui.locate_point_help') + '</small>' +
         "</div>",
       buttons: [
-        { label: "Cerrar", variant: "ghost", close: true },
+        { label: tpT('global.close'), variant: "ghost", close: true },
         {
-          label: "Aplicar",
+          label: tpT('global.apply'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -436,7 +436,7 @@
       tpModal.fetchJSON(URLS.adrSearch + "?q=" + encodeURIComponent(q), { method: "GET" }).then(function (res) {
         var loc = res.data && res.data.status == 1 ? res.data.location : null;
         if (!loc || loc.lat == null) {
-          tpModal.toast((res.data && res.data.error) || "No se encontró la dirección.", "warning");
+          tpModal.toast((res.data && res.data.error) || tpT('ui.address_not_found'), "warning");
           return;
         }
         dirty = true;
@@ -520,7 +520,7 @@
     for (var i = 0; i < kinds.length; i++) {
       if (val(form, kinds[i] + "_address") && !val(form, kinds[i] + "_address_lat")) {
         tpModal.toast(
-          "Ubica la dirección de " + (kinds[i] === "pickup" ? "recogida" : "entrega") + " con el botón del mapa.",
+          tpT('ui.locate_the_address_of') + (kinds[i] === "pickup" ? "recogida" : "entrega") + tpT('ui.with_the_map_button'),
           "warning",
         );
         return;
@@ -631,7 +631,7 @@
     if (canEdit)
       items +=
         '<button type="button" role="menuitem" data-tsk-edit="' + row.id + '">' +
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>';
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
     if (row.signature_url)
       items +=
         '<button type="button" role="menuitem" data-tsk-sig="' + esc(row.signature_url) + '">' +
@@ -639,7 +639,7 @@
     if (canRemove)
       items +=
         '<button type="button" role="menuitem" class="is-danger" data-tsk-del="' + row.id + '">' +
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
     if (!items) return "";
     return (
       '<div class="tp-svc-kebab">' +
@@ -730,26 +730,26 @@
           '<p style="font-size:13px;color:var(--fg-secondary,#475569);margin:0 0 10px;">' +
           ids.length + " tarea(s) seleccionada(s) se reasignarán al vehículo elegido.</p>" +
           '<div class="tp-form__field tp-form__field--required">' +
-          '<span class="tp-form__label">Vehículo</span>' +
+          '<span class="tp-form__label">' + tpT('ui.vehicle') + '</span>' +
           selectHtml(
             "assign_device_id",
             (meta.devices || []).map(function (d) {
               return { id: d.id, title: d.name };
             }),
             "",
-            "Seleccionar vehículo…",
+            tpT('ui.select_vehicle_ellipsis'),
           ) +
           "</div></div>",
         buttons: [
-          { label: "Cancelar", variant: "ghost", close: true },
+          { label: tpT('global.cancel'), variant: "ghost", close: true },
           {
-            label: "Guardar",
+            label: tpT('global.save'),
             variant: "primary",
             close: false,
             onClick: function (dialog) {
               var deviceId = dialog.querySelector('[name="assign_device_id"]').value;
               if (!deviceId) {
-                tpModal.toast("Selecciona un vehículo.", "warning");
+                tpModal.toast(tpT('ui.select_a_vehicle_dot'), "warning");
                 return false;
               }
               tpModal.setBusy(dialog, true);
@@ -859,9 +859,9 @@
         '<div data-imp-fields style="display:none;"></div>' +
         "</div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Importar",
+          label: tpT('front.import'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -892,7 +892,7 @@
                   );
                   return;
                 }
-                tpModal.toast("Importación completada.", "success");
+                tpModal.toast(tpT('ui.import_completed'), "success");
                 tpModal.close(dialog);
                 load();
               })
@@ -924,11 +924,11 @@
     if (canEdit)
       items +=
         '<button type="button" role="menuitem" data-set-edit="' + row.id + '" data-title="' + esc(row.title) + '">' +
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>';
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
     if (canRemove)
       items +=
         '<button type="button" role="menuitem" class="is-danger" data-set-del="' + row.id + '">' +
-        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+        '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
     if (!items) return "";
     return (
       '<div class="tp-svc-kebab">' +
@@ -982,19 +982,19 @@
       body:
         '<div class="tp-form">' +
         '<label class="tp-form__field tp-form__field--required">' +
-        '<span class="tp-form__label">Título</span>' +
+        '<span class="tp-form__label">' + tpT('ui.title') + '</span>' +
         '<input type="text" name="set_title" maxlength="150" value="' + esc(currentTitle || "") + '" data-tp-field>' +
         "</label></div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
             var title = dialog.querySelector('[name="set_title"]').value.trim();
             if (!title) {
-              tpModal.toast("El título es obligatorio.", "warning");
+              tpModal.toast(tpT('ui.title_required'), "warning");
               return false;
             }
             var url = id ? URLS.setItem.replace("{id}", id) : URLS.sets;
@@ -1034,9 +1034,9 @@
       tpModal
         .confirm({
           title: "Eliminar conjunto",
-          message: "¿Eliminar este conjunto de tareas?",
+          message: tpT('ui.confirm_delete_task_set'),
           danger: true,
-          confirmLabel: "Eliminar",
+          confirmLabel: tpT('global.delete'),
         })
         .then(function (okGo) {
           if (!okGo) return;
@@ -1180,9 +1180,9 @@
       tpModal
         .confirm({
           title: "Eliminar tarea",
-          message: "¿Eliminar esta tarea?",
+          message: tpT('ui.confirm_delete_task'),
           danger: true,
-          confirmLabel: "Eliminar",
+          confirmLabel: tpT('global.delete'),
         })
         .then(function (okGo) {
           if (!okGo) return;
@@ -1203,7 +1203,7 @@
     if (!res.ok || !res.data || !res.data.ok) return;
     metaCache = res.data;
     deviceSel.innerHTML =
-      '<option value="">Todos los vehículos</option>' +
+      '<option value="">' + tpT('ui.all_vehicles') + '</option>' +
       (res.data.devices || [])
         .map(function (d) {
           return '<option value="' + d.id + '">' + esc(d.name) + "</option>";

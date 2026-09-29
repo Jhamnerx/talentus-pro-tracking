@@ -35,14 +35,14 @@
     var isEdit = !!id;
 
     var dlg = tpModal.open({
-      title: isEdit ? "Editar compartir" : "Compartir vehículos",
+      title: isEdit ? "Editar compartir" : tpT('ui.share_vehicles'),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -79,20 +79,20 @@
       // Activo
       '<label class="tp-form__field tp-form__field--checkbox">' +
       '<input type="checkbox" name="active" value="1"' + (item.active !== false ? " checked" : "") + ">" +
-      '<span class="tp-form__label">Activo</span>' +
+      '<span class="tp-form__label">' + tpT('attr.active') + '</span>' +
       "</label>" +
       // Expira por
       '<div class="tp-form__field">' +
       '<span class="tp-form__label">Expira por</span>' +
       '<div style="display:flex;gap:18px;align-items:center;">' +
-      shxRadio("none", "Ninguna", by === "none") +
-      shxRadio("duration", "Duración", by === "duration") +
-      shxRadio("date", "Fecha", by === "date") +
+      shxRadio("none", tpT('front.none'), by === "none") +
+      shxRadio("duration", tpT('ui.duration'), by === "duration") +
+      shxRadio("date", tpT('front.date'), by === "date") +
       "</div></div>" +
       // Duración (condicional)
       '<div data-shx-block="duration" style="display:none;">' +
       '<label class="tp-form__field">' +
-      '<span class="tp-form__label">Duración</span>' +
+      '<span class="tp-form__label">' + tpT('ui.duration') + '</span>' +
       '<select class="tp-input" style="width:100%" name="duration">' +
       (meta.durations || [])
         .map(function (d) {
@@ -103,19 +103,19 @@
       // Fecha (condicional): fecha + hora
       '<div data-shx-block="date" style="display:none;">' +
       '<div class="tp-form__field">' +
-      '<span class="tp-form__label">Fecha de expiración</span>' +
+      '<span class="tp-form__label">' + tpT('ui.expiry_date') + '</span>' +
       '<div style="display:flex;gap:8px;">' +
       '<input type="date" name="expiration_date" value="' + esc(item.expiration_date || "") + '" style="flex:1;" data-tp-field>' +
       '<input type="time" data-sh-exptime value="' + esc(item.expiration_time || "") + '" style="width:104px;">' +
       "</div></div></div>" +
       // Nombre
       '<label class="tp-form__field">' +
-      '<span class="tp-form__label">Nombre</span>' +
+      '<span class="tp-form__label">' + tpT('ui.name') + '</span>' +
       '<input type="text" name="name" maxlength="120" value="' + esc(item.name || "") + '" data-tp-field>' +
       "</label>" +
       // Descripción
       '<label class="tp-form__field">' +
-      '<span class="tp-form__label">Descripción</span>' +
+      '<span class="tp-form__label">' + tpT('attr.description') + '</span>' +
       '<textarea name="description" rows="2" maxlength="500" data-tp-field>' + esc(item.description || "") + "</textarea>" +
       "</label>" +
       // Eliminar al expirar
@@ -126,12 +126,12 @@
       "</label>" +
       // Devices
       '<div class="tp-form__field">' +
-      '<span class="tp-form__label">Vehículos</span>' +
+      '<span class="tp-form__label">' + tpT('ui.vehicles') + '</span>' +
       '<div class="tp-group-box" data-sh-devices>' +
       '<div class="tp-group-box__head">' +
       '<span class="tp-search">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
-      '<input type="search" data-sh-search placeholder="Búsqueda" autocomplete="off">' +
+      '<input type="search" data-sh-search placeholder="' + tpT('front.search') + '" autocomplete="off">' +
       "</span>" +
       '<button type="button" class="tp-link-action" data-sh-all>Seleccionar todo</button>' +
       '<span class="tp-group-box__sep">|</span>' +
@@ -146,7 +146,7 @@
       '<input type="checkbox" name="send_email" value="1" id="tp-sh-email-chk">' +
       '<input type="text" name="email" placeholder="usuario@ejemplo.com" data-enable="tp-sh-email-chk" disabled data-tp-field>' +
       "</div>" +
-      '<small class="tp-form__hint">Para varios correos sepáralos con punto y coma, ej.: user@example.com;user1@example.com</small>' +
+      '<small class="tp-form__hint">' + tpT('ui.several_emails_help') + '</small>' +
       "</div>" +
       // SMS: mismo par casilla + campo que el correo. Solo se pinta si el
       // usuario puede enviar SMS (meta.can_sms), como el legacy.
@@ -157,7 +157,7 @@
           '<input type="checkbox" name="send_sms" value="1" id="tp-sh-sms-chk">' +
           '<input type="text" name="sms" placeholder="+51999999999" data-enable="tp-sh-sms-chk" disabled data-tp-field>' +
           "</div>" +
-          '<small class="tp-form__hint">Para varios números sepáralos con punto y coma.</small>' +
+          '<small class="tp-form__hint">' + tpT('ui.several_numbers_help') + '</small>' +
           "</div>"
         : "") +
       "</div></form>";
@@ -260,7 +260,7 @@
           .join("") +
         "</div></div>";
     });
-    listEl.innerHTML = html || '<div class="tp-text-muted" style="padding:10px;font-size:13px;">Sin vehículos.</div>';
+    listEl.innerHTML = html || '<div class="tp-text-muted" style="padding:10px;font-size:13px;">' + tpT('ui.no_vehicles') + '</div>';
 
     syncGroupChecks();
 
@@ -346,7 +346,7 @@
     var selected = form._shSelected || {};
     var ids = Object.keys(selected);
     if (!ids.length) {
-      tpModal.toast("Selecciona al menos un vehículo.", "warning");
+      tpModal.toast(tpT('ui.select_at_least_one_vehicle'), "warning");
       return;
     }
 
@@ -460,14 +460,14 @@
       if (canEdit)
         items +=
           '<button type="button" role="menuitem" data-sh-edit="' + row.id + '">' +
-          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>';
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
       items +=
         '<button type="button" role="menuitem" data-sh-preview="' + esc(row.link) + '">' +
         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Vista previa</button>';
       if (canRemove)
         items +=
           '<button type="button" role="menuitem" class="is-danger" data-sh-del="' + row.id + '">' +
-          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
       return (
         '<div class="tp-svc-kebab">' +
         '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
@@ -499,11 +499,11 @@
             .map(function (r) {
               return (
                 "<tr>" +
-                "<td>" + badge(r.active ? "Activo" : "Inactivo", r.active ? "ok" : "off") + "</td>" +
+                "<td>" + badge(r.active ? tpT('attr.active') : tpT('attr.inactive'), r.active ? "ok" : "off") + "</td>" +
                 "<td>" + esc(r.name) + "</td>" +
                 '<td><a href="' + esc(r.link) + '" target="_blank" rel="noopener" style="color:var(--brand-500,#2e63d9);text-decoration:none;">' +
                 esc(r.link) + "</a></td>" +
-                "<td>" + badge(r.expired ? "Sí" : "No", r.expired ? "bad" : "ok") + "</td>" +
+                "<td>" + badge(r.expired ? tpT('ui.yes') : "No", r.expired ? "bad" : "ok") + "</td>" +
                 "<td>" + (r.expiration_date ? esc(r.expiration_date) : "–") + "</td>" +
                 '<td class="tp-svc-table__actions">' + kebab(r) + "</td>" +
                 "</tr>"
@@ -522,7 +522,7 @@
     // Filtro por device (catálogo del meta)
     tpModal.fetchJSON(API.meta, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok || !deviceSel) return;
-      var html = '<option value="">Todos los vehículos</option>';
+      var html = '<option value="">' + tpT('ui.all_vehicles') + '</option>';
       (res.data.devices || []).forEach(function (d) {
         html += '<option value="' + d.id + '"' + (String(state.deviceId) === String(d.id) ? " selected" : "") + ">" + esc(d.name) + "</option>";
       });
@@ -585,9 +585,9 @@
         tpModal
           .confirm({
             title: "Eliminar compartir",
-            message: "¿Eliminar este link de compartir? Quien lo tenga dejará de ver los vehículos.",
+            message: tpT('ui.confirm_delete_share_link'),
             danger: true,
-            confirmLabel: "Eliminar",
+            confirmLabel: tpT('global.delete'),
           })
           .then(function (okGo) {
             if (!okGo) return;

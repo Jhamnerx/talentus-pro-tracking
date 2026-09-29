@@ -46,7 +46,7 @@
               var s = summary(f);
               return (
                 '<div class="tp-fwd__row">' +
-                '<span class="tp-fwd-badge tp-fwd-badge--' + (f.active ? "on" : "off") + '">' + (f.active ? "Activo" : "Inactivo") + "</span>" +
+                '<span class="tp-fwd-badge tp-fwd-badge--' + (f.active ? "on" : "off") + '">' + (f.active ? tpT('attr.active') : tpT('attr.inactive')) + "</span>" +
                 '<div class="tp-fwd__main"><div class="tp-fwd__title">' + esc(f.title) + "</div>" +
                 '<div class="tp-fwd__meta"><span class="tp-fwd-type">' + esc(f.type) + "</span>" + (s ? " · " + esc(s) : "") + "</div></div>" +
                 '<div class="tp-fwd__actions">' +
@@ -56,14 +56,14 @@
               );
             })
             .join("")
-        : '<div class="tp-fwd__empty">Aún no hay reenvíos. Pulsa “Agregar” para crear uno.</div>';
+        : '<div class="tp-fwd__empty">' + tpT('ui.no_forwards_yet') + '</div>';
 
       var body =
         '<div class="tp-scope tp-fwd">' +
         '<div class="tp-fwd__head">' +
-        '<p class="tp-fwd__hint">Reenvía las posiciones de tus vehículos a un sistema externo en tiempo real.</p>' +
+        '<p class="tp-fwd__hint">' + tpT('ui.forwards_intro') + '</p>' +
         '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-fwd-add>' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Agregar</button></div>' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> ' + tpT('global.add') + '</button></div>' +
         '<div class="tp-fwd__list">' + rows + "</div></div>";
 
       if (listDlg && listDlg.isConnected) {
@@ -71,10 +71,10 @@
         if (b) b.innerHTML = body;
       } else {
         listDlg = tpModal.open({
-          title: "Reenvíos",
+          title: tpT('front.forwards'),
           size: "md",
           body: body,
-          buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+          buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
         });
         listDlg.addEventListener("click", function (e) {
           if (e.target.closest("[data-fwd-add]")) return openForm(null);
@@ -89,7 +89,7 @@
 
   function doDelete(id) {
     tpModal
-      .confirm({ title: "Eliminar reenvío", message: "¿Eliminar este reenvío?", confirmLabel: "Eliminar", danger: true })
+      .confirm({ title: tpT('ui.delete_forward'), message: tpT('ui.confirm_delete_forward'), confirmLabel: tpT('global.delete'), danger: true })
       .then(function (ok) {
         if (!ok) return;
         tpModal.fetchJSON(BASE + "/" + id, { method: "DELETE" }).then(function (res) {
@@ -122,25 +122,25 @@
     var body =
       '<div class="tp-scope">' +
       '<label class="tp-check" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><input type="checkbox" data-fwd-active' +
-      (!item || item.active ? " checked" : "") + "> Activo</label>" +
-      '<div class="tp-field"><label class="tp-field__label">Título *</label><input type="text" class="tp-input" data-fwd-title value="' +
+      (!item || item.active ? " checked" : "") + "> " + tpT('attr.active') + "</label>" +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.title_required_field') + '</label><input type="text" class="tp-input" data-fwd-title value="' +
       (item ? esc(item.title) : "") + '" style="width:100%;"></div>' +
       '<div class="tp-field"><label class="tp-field__label">Tipo *</label><select class="tp-input" data-no-ts="1" data-fwd-type style="width:100%;"' +
       (isEdit ? " disabled" : "") + ">" + typeOpts + "</select></div>" +
       "<div data-fwd-fields></div>" +
       (TYPES.length
         ? ""
-        : '<p style="color:#ef4444;font-size:13px;">No hay tipos de reenvío habilitados. Activa <code>ENABLE_FORWARD_CUSTOM</code> / <code>ENABLE_FORWARD_PEGASUS</code> / <code>ENABLE_FORWARD_MACROPOINT</code> en el .env.</p>') +
+        : '<p style="color:#ef4444;font-size:13px;">' + tpT('ui.no_forward_types_enabled') + ' <code>ENABLE_FORWARD_CUSTOM</code> / <code>ENABLE_FORWARD_PEGASUS</code> / <code>ENABLE_FORWARD_MACROPOINT</code> en el .env.</p>') +
       '<div data-fwd-err style="display:none;margin-top:10px;color:#ef4444;font-size:13px;"></div></div>';
 
     var dlg = tpModal.open({
-      title: isEdit ? "Editar reenvío" : "Nuevo reenvío",
+      title: isEdit ? tpT('ui.edit_forward') : tpT('ui.new_forward'),
       size: "sm",
       body: body,
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -172,7 +172,7 @@
     if (err) err.style.display = "none";
     var type = (d.querySelector("[data-fwd-type]") || {}).value || (item && item.type) || "";
     var title = ((d.querySelector("[data-fwd-title]") || {}).value || "").trim();
-    if (!title) return showErr("El título es obligatorio.");
+    if (!title) return showErr(tpT('ui.title_required'));
     if (!type) return showErr("Selecciona un tipo.");
 
     var payload = { active: d.querySelector("[data-fwd-active]").checked ? 1 : 0, title: title, type: type };

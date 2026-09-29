@@ -60,7 +60,7 @@
               "</li>"
             );
           }).join("")
-        : '<li class="tp-chat__empty">Sin vehículos con chat.</li>';
+        : '<li class="tp-chat__empty">' + tpT('ui.no_vehicles_with_chat') + '</li>';
     });
   }
 

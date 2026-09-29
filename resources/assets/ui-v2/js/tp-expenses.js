@@ -53,7 +53,7 @@
       $("tp-exp-rows").innerHTML = items.length
         ? items.map(rowHtml).join("")
         : '<tr><td colspan="8" class="tp-svc-table__empty">Sin gastos.</td></tr>';
-      $("tp-exp-range").textContent = "Pág " + (d.page || 1) + " / " + (d.pages || 1);
+      $("tp-exp-range").textContent = tpT('ui.page_short') + (d.page || 1) + " / " + (d.pages || 1);
       $("tp-exp-total").textContent = (d.total || 0) + " gastos";
     });
   }
@@ -69,8 +69,8 @@
       '<td style="text-align:right;font-weight:600;">' + num(e.total) + "</td>" +
       "<td>" + esc((e.date || "").slice(0, 16)) + "</td>" +
       '<td class="tp-svc-table__actions" style="white-space:nowrap;text-align:right;">' +
-      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-exp-edit="' + e.id + '">Editar</button> ' +
-      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-exp-del="' + e.id + '">Eliminar</button></td></tr>'
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-exp-edit="' + e.id + '">' + tpT('global.edit') + '</button> ' +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-exp-del="' + e.id + '">' + tpT('global.delete') + '</button></td></tr>'
     );
   }
 
@@ -92,11 +92,11 @@
 
     var body =
       '<div class="tp-scope" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-      field("Vehículo *", '<select class="tp-input" data-x-device style="width:100%;">' + devOpts + "</select>") +
+      field(tpT('ui.vehicle_required'), '<select class="tp-input" data-x-device style="width:100%;">' + devOpts + "</select>") +
       field("Nombre *", '<input type="text" class="tp-input" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
       field("Fecha *", '<input type="date" class="tp-input" data-x-date value="' + dPart + '" style="width:100%;">') +
-      field("Hora", '<input type="time" class="tp-input" data-x-time value="' + tPart + '" style="width:100%;">') +
-      field("Tipo", '<select class="tp-input" data-x-type style="width:100%;">' + typeOpts + "</select>") +
+      field(tpT('front.hour'), '<input type="time" class="tp-input" data-x-time value="' + tPart + '" style="width:100%;">') +
+      field(tpT('front.type'), '<select class="tp-input" data-x-type style="width:100%;">' + typeOpts + "</select>") +
       field("Cantidad *", '<input type="number" step="any" class="tp-input" data-x-qty value="' + (item ? esc(item.quantity) : "") + '" style="width:100%;">') +
       field("Costo unitario *", '<input type="number" step="any" class="tp-input" data-x-cost value="' + (item ? esc(item.unit_cost) : "") + '" style="width:100%;">') +
       field("Proveedor", '<input type="text" class="tp-input" data-x-supplier value="' + (item ? esc(item.supplier) : "") + '" style="width:100%;">') +
@@ -109,8 +109,8 @@
       size: "md",
       body: body,
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
-        { label: "Guardar", variant: "primary", close: false, onClick: function (d) { save(d, item); return false; } },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
+        { label: tpT('global.save'), variant: "primary", close: false, onClick: function (d) { save(d, item); return false; } },
       ],
     });
   }
@@ -134,7 +134,7 @@
       buyer: v("[data-x-buyer]"),
       additional: v("[data-x-notes]"),
     };
-    if (!payload.device_id) return showErr("Selecciona un vehículo.");
+    if (!payload.device_id) return showErr(tpT('ui.select_a_vehicle_dot'));
     if (!payload.name) return showErr("El nombre es obligatorio.");
     if (!payload.date) return showErr("La fecha es obligatoria.");
     if (payload.quantity === "" || payload.unit_cost === "") return showErr("Cantidad y costo unitario son obligatorios.");
@@ -158,7 +158,7 @@
 
   function del(id) {
     tpModal
-      .confirm({ title: "Eliminar gasto", message: "¿Eliminar este gasto?", confirmLabel: "Eliminar", danger: true })
+      .confirm({ title: "Eliminar gasto", message: tpT('ui.confirm_delete_expense'), confirmLabel: tpT('global.delete'), danger: true })
       .then(function (ok) {
         if (!ok) return;
         tpModal.fetchJSON(URLS.item.replace("{id}", id), { method: "DELETE" }).then(function (res) {

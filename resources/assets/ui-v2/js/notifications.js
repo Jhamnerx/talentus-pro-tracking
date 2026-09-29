@@ -201,7 +201,7 @@
       refreshBadge();
       window.tpToast &&
         window.tpToast({
-          title: "Notificaciones marcadas como leídas",
+          title: tpT('ui.notifications_marked_read'),
           variant: "success",
           duration: 2000,
         });

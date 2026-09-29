@@ -33,7 +33,7 @@
       size: "sm",
       body:
         '<div class="tp-form">' +
-        '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
+        '<label class="tp-form__field"><span class="tp-form__label">' + tpT('front.type') + '</span>' +
         '<select class="tp-input" data-rt-type>' +
         types
           .map(function (t) {
@@ -44,15 +44,15 @@
           })
           .join("") +
         "</select></label>" +
-        '<label class="tp-form__field"><span class="tp-form__label">Desde</span>' +
+        '<label class="tp-form__field"><span class="tp-form__label">' + tpT('front.from') + '</span>' +
         '<input type="datetime-local" class="tp-input" data-rt-from value="' + esc(toInput(item && item.started_at)) + '"></label>' +
-        '<label class="tp-form__field"><span class="tp-form__label">Hasta</span>' +
+        '<label class="tp-form__field"><span class="tp-form__label">' + tpT('global.to') + '</span>' +
         '<input type="datetime-local" class="tp-input" data-rt-to value="' + esc(toInput(item && item.ended_at)) + '"></label>' +
         "</div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -96,7 +96,7 @@
       title: "Tipos de trayecto" + (deviceName ? " · " + deviceName : ""),
       size: "md",
       body: '<div data-rt-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-rt-index]");
         var types = [];
@@ -121,8 +121,8 @@
                         "<b>" + esc(r.type_label) + "</b> · " + esc(r.started_at) + " → " + esc(r.ended_at) +
                         "</span>" +
                         '<span class="tp-row" style="gap:6px;">' +
-                        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rt-edit="' + r.id + '">Editar</button>' +
-                        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rt-del="' + r.id + '" style="color:#ef4444;">Eliminar</button>' +
+                        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rt-edit="' + r.id + '">' + tpT('global.edit') + '</button>' +
+                        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rt-del="' + r.id + '" style="color:#ef4444;">' + tpT('global.delete') + '</button>' +
                         "</span></div>"
                       );
                     })
@@ -148,7 +148,7 @@
           var del = e.target.closest("[data-rt-del]");
           if (del) {
             tpModal
-              .confirm({ title: "Eliminar periodo", message: "¿Eliminar este periodo?", danger: true, confirmLabel: "Eliminar" })
+              .confirm({ title: "Eliminar periodo", message: tpT('ui.confirm_delete_period'), danger: true, confirmLabel: tpT('global.delete') })
               .then(function (ok) {
                 if (!ok) return;
                 tpModal

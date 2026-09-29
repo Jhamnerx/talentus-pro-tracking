@@ -79,10 +79,10 @@
   // el mismo calculo de fechas que momentCalendar() de helper.js.
   var PERIODOS = [
     ["", "Personalizado"],
-    ["1", "Hoy"],
-    ["2", "Ayer"],
-    ["3", "Antes de 2 días"],
-    ["4", "Antes de 3 días"],
+    ["1", tpT('front.today')],
+    ["2", tpT('front.yesterday')],
+    ["3", tpT('ui.before_2_days')],
+    ["4", tpT('ui.before_3_days')],
     ["5", "Esta semana"],
     ["6", "La semana pasada"],
     ["7", "Este mes"],
@@ -140,7 +140,7 @@
     var isEdit = !!id;
 
     var dlg = tpModal.open({
-      title: "Reporte",
+      title: tpT('front.report'),
       size: "xl",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
@@ -158,7 +158,7 @@
           },
         },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "outline",
           close: false,
           onClick: function (dialog) {
@@ -171,7 +171,7 @@
           // arrastrar lo anterior. Se reabre el modal en vez de resetear
           // campo por campo: asi no se queda ninguno a medias -ni el id, que
           // es lo que convertia un alta en una edicion silenciosa-.
-          label: "Nuevo",
+          label: tpT('front.new'),
           variant: "ghost",
           close: false,
           onClick: function (dialog) {
@@ -180,7 +180,7 @@
             return false;
           },
         },
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
       ],
     });
 
@@ -221,7 +221,7 @@
     });
 
     var DAY_PILLS = [
-      [1, "Lun"], [2, "Mar"], [3, "Mié"], [4, "Jue"], [5, "Vie"], [6, "Sáb"], [7, "Dom"],
+      [1, "Lun"], [2, "Mar"], [3, tpT('ui.wed_short')], [4, "Jue"], [5, "Vie"], [6, tpT('ui.sat_short')], [7, "Dom"],
     ];
 
     var HR = '<hr style="border:0;border-top:1px solid var(--border-default,#eef2f7);margin:16px 0;">';
@@ -258,10 +258,10 @@
       //    Fecha desde|Geocercas, Fecha hasta|control de días. Antes Título,
       //    Tipo y Formato iban apilados a la izquierda y el periodo ocupaba
       //    toda la derecha, que no se parecía a lo que el operador conoce.
-      '<label class="tp-form__field" style="margin-bottom:12px;"><span class="tp-form__label">Título</span>' +
+      '<label class="tp-form__field" style="margin-bottom:12px;"><span class="tp-form__label">' + tpT('ui.title') + '</span>' +
       '<input type="text" name="title" maxlength="120" value="' + esc(item.title || "") + '" data-tp-field></label>' +
       ROW +
-      '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('front.type') + '</span>' +
       '<select class="tp-input" style="width:100%" name="type" data-tp-field>' +
       (meta.templates || []).map(function (t) {
         return '<option value="' + t.id + '"' + (String(item.type) === String(t.id) ? " selected" : "") + ">" + esc(t.title) + "</option>";
@@ -296,7 +296,7 @@
       // Filtro de días y franja horaria: no lo tiene el legacy, pero es lo
       // que permite "solo lunes a viernes de 08:00 a 18:00". Plegado.
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
-      '<button type="button" data-rep-days-toggle style="appearance:none;border:1px solid var(--border-default,#cbd5e1);background:var(--surface-raised,#fff);border-radius:8px;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:12.5px;font-weight:600;padding:8px;">Controlar días y horas ▾</button>' +
+      '<button type="button" data-rep-days-toggle style="appearance:none;border:1px solid var(--border-default,#cbd5e1);background:var(--surface-raised,#fff);border-radius:8px;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:12.5px;font-weight:600;padding:8px;">' + tpT('ui.control_days_hours') + '</button>' +
       '<div data-rep-days hidden style="margin-top:10px;">' +
       '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">' +
       DAY_PILLS.map(function (d) {
@@ -321,7 +321,7 @@
       // Parámetros dinámicos por tipo
       '<div data-rep-extra class="tp-form__grid tp-form__grid--2" style="margin-top:12px;display:none;"></div>' +
       '<div class="tp-form__grid tp-form__grid--2" style="margin-top:12px;">' +
-      '<div class="tp-form__field" data-rep-field="speed_limit"><span class="tp-form__label">Límite de velocidad</span>' +
+      '<div class="tp-form__field" data-rep-field="speed_limit"><span class="tp-form__label">' + tpT('ui.speed_limit') + '</span>' +
       '<input type="text" name="speed_limit" placeholder="60" value="' + esc(item.speed_limit || "") + '" data-tp-field></div>' +
       '<div class="tp-form__field" data-rep-field="stops"><span class="tp-form__label">Paradas</span>' +
       '<select class="tp-input" style="width:100%" name="stops">' +
@@ -334,7 +334,7 @@
       '<div class="tp-form__field" data-rep-field="metas"><span class="tp-form__label">Metas</span><div data-rep-metas></div></div>' +
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;min-height:36px;">' +
-      '<label class="tp-choice" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="skip_blank_results" value="1"' + (item.skip_blank_results ? " checked" : "") + "><span>Omitir resultados vacíos</span></label>" +
+      '<label class="tp-choice" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="skip_blank_results" value="1"' + (item.skip_blank_results ? " checked" : "") + "><span>" + tpT('ui.skip_empty_results') + "</span></label>" +
       '<label class="tp-choice" data-rep-field="zones_instead" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="zones_instead" value="1"' + (item.zones_instead ? " checked" : "") + "><span>Zonas en vez de direcciones</span></label>" +
       '<label class="tp-choice" data-rep-field="show_addresses" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="show_addresses" value="1"' + (item.show_addresses ? " checked" : "") + "><span>Mostrar direcciones</span></label>" +
       "</div></div>" +
@@ -351,14 +351,14 @@
       (meta.showFtp
         ? '<div class="tp-form__field" style="margin-top:8px;"><span class="tp-form__label">Enviar a FTP</span>' +
           '<input type="text" name="send_to_ftp" value="' + esc(item.ftp || "") + '" placeholder="ftp://usuario:contraseña@host:puerto">' +
-          '<small class="tp-form__hint">URL del servidor FTP (paridad legacy). Vacío = no enviar.</small></div>'
+          '<small class="tp-form__hint">' + tpT('ui.ftp_url_help') + '</small></div>'
         : "") +
       "</div>" +
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
       schedRow("daily", "Diario", item.daily, item.daily_time, "") +
-      schedRow("weekly", "Semanal", item.weekly, item.weekly_time, daySelect("weekly_day", DAY_PILLS, item.weekly_day, "Día de semana…")) +
-      schedRow("monthly", "Mensual", item.monthly, item.monthly_time, daySelect("monthly_day", null, item.monthly_day, "Día del mes…")) +
+      schedRow("weekly", "Semanal", item.weekly, item.weekly_time, daySelect("weekly_day", DAY_PILLS, item.weekly_day, tpT('ui.weekday_select'))) +
+      schedRow("monthly", "Mensual", item.monthly, item.monthly_time, daySelect("monthly_day", null, item.monthly_day, tpT('ui.monthday_select'))) +
       "</div></div>" +
       "</div></form>";
 
@@ -999,10 +999,10 @@
               '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Abrir</button>';
             if (canCreate)
               acts += '<button type="button" role="menuitem" data-rep-edit="' + r.id + '">' +
-                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>';
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
             if (canRemove)
               acts += '<button type="button" role="menuitem" class="is-danger" data-rep-del="' + r.id + '">' +
-                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
             return (
               '<tr data-rep-row="' + r.id + '" data-format="' + esc(r.format.toLowerCase()) + '" style="cursor:pointer;">' +
               "<td>" + esc(r.title || "–") + "</td>" +
@@ -1033,13 +1033,13 @@
       logsRows.innerHTML = items.length
         ? items.map(function (r) {
             var badge = r.is_send
-              ? '<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#dcfce7;color:#15803d;">Sí</span>'
+              ? '<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#dcfce7;color:#15803d;">' + tpT('ui.yes') + '</span>'
               : '<span style="display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:600;background:#f1f5f9;color:#64748b;">No</span>';
             var acts = '<button type="button" role="menuitem" data-log-dl="' + esc(r.download) + '">' +
               '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> Descargar</button>';
             if (canRemove)
               acts += '<button type="button" role="menuitem" class="is-danger" data-log-del="' + r.id + '">' +
-                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+                '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
             return (
               '<tr data-log-row="' + esc(r.download) + '" style="cursor:pointer;">' +
               "<td>" + esc(r.title || "–") + "</td>" +
@@ -1135,7 +1135,7 @@
     var del = e.target.closest("[data-rep-del]");
     if (del) {
       var rid = del.getAttribute("data-rep-del");
-      tpModal.confirm({ title: "Eliminar reporte", message: "¿Eliminar esta definición de reporte?", danger: true, confirmLabel: "Eliminar" })
+      tpModal.confirm({ title: "Eliminar reporte", message: tpT('ui.confirm_delete_report_def'), danger: true, confirmLabel: tpT('global.delete') })
         .then(function (okGo) {
           if (!okGo) return;
           tpModal.fetchJSON(URLS.destroy.replace("{id}", rid), { method: "DELETE" }).then(function (res) {
@@ -1161,7 +1161,7 @@
     var del = e.target.closest("[data-log-del]");
     if (del) {
       var lid = del.getAttribute("data-log-del");
-      tpModal.confirm({ title: "Eliminar log", message: "¿Eliminar este reporte enviado?", danger: true, confirmLabel: "Eliminar" })
+      tpModal.confirm({ title: "Eliminar log", message: tpT('ui.confirm_delete_sent_report'), danger: true, confirmLabel: tpT('global.delete') })
         .then(function (okGo) {
           if (!okGo) return;
           tpModal.fetchJSON(URLS.logDestroy.replace("{id}", lid), { method: "DELETE" }).then(function (res) {

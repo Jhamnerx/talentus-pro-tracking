@@ -40,12 +40,12 @@
         '<input type="checkbox" class="tp-choice-input" data-da-en-to' + (hasTo ? " checked" : "") + "> <span>Activa hasta</span></label>" +
         '<div class="tp-form__field"><input type="datetime-local" class="tp-input" data-da-to value="' +
         esc(toInput(alert.active_to)) + '"' + (hasTo ? "" : " disabled") + "></div>" +
-        '<small class="tp-form__hint" style="margin-top:8px;display:block;">Sin fechas, la alerta rige siempre para este vehículo.</small>' +
+        '<small class="tp-form__hint" style="margin-top:8px;display:block;">' + tpT('ui.no_dates_alert_always') + '</small>' +
         "</div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -90,10 +90,10 @@
     if (!window.tpModal) return;
 
     tpModal.open({
-      title: "Alertas del vehículo" + (deviceName ? " · " + deviceName : ""),
+      title: tpT('ui.vehicle_alerts') + (deviceName ? " · " + deviceName : ""),
       size: "md",
       body: '<div data-da-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-da-index]");
 
@@ -117,7 +117,7 @@
                         : "Siempre activa";
                     // El legacy tambien indica a cuantos vehiculos aplica.
                     var alcance =
-                      a.devices > 1 ? " · " + a.devices + " vehículos" : a.devices === 1 ? " · 1 vehículo" : "";
+                      a.devices > 1 ? " · " + a.devices + tpT('ui.vehicles_lower') : a.devices === 1 ? tpT('ui.dot_one_vehicle') : "";
                     return (
                       '<div class="tp-acc-row"><span>' +
                       "<b>" + esc(a.name) + "</b>" +
@@ -133,7 +133,7 @@
                     );
                   })
                   .join("")
-              : '<div class="tp-text-muted tp-text-sm">Este vehículo no está en ninguna alerta.</div>';
+              : '<div class="tp-text-muted tp-text-sm">' + tpT('ui.vehicle_in_no_alert') + '</div>';
           });
         }
         load();

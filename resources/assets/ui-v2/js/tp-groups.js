@@ -41,7 +41,7 @@
 
     var body =
       '<div class="tp-rgroup-form">' +
-      '<div class="tp-field"><label class="tp-field__label">Título</label>' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.title') + '</label>' +
       '<input type="text" class="tp-input" data-grp-title placeholder="Insertar título…" value="' +
       esc(isEdit ? group.title : "") + '"></div>' +
       '<div class="tp-field"><div class="tp-rgroup-form__bar">' +
@@ -59,15 +59,15 @@
       size: "md",
       body: body,
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog, btn) {
             var title = (dialog.querySelector("[data-grp-title]").value || "").trim();
             if (!title) {
-              toast("El título es obligatorio.", "warning");
+              toast(tpT('ui.title_required'), "warning");
               return false;
             }
             var ids = [];
@@ -152,10 +152,10 @@
     if (!window.tpModal) return;
 
     var dlg = tpModal.open({
-      title: cfg.title || "Grupos",
+      title: cfg.title || tpT('front.groups'),
       size: "md",
       body: '<div data-grp-index></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-grp-index]");
 
@@ -173,13 +173,13 @@
                     '<div class="tp-acc-row"><span>' + esc(g.title) +
                     ' <span class="tp-text-xs tp-text-muted">(' + counts(g.id) + ")</span></span>" +
                     '<span class="tp-row" style="gap:6px;">' +
-                    '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-edit="' + g.id + '">Editar</button>' +
-                    '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-del="' + g.id + '" style="color:#ef4444;">Eliminar</button>' +
+                    '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-edit="' + g.id + '">' + tpT('global.edit') + '</button>' +
+                    '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-del="' + g.id + '" style="color:#ef4444;">' + tpT('global.delete') + '</button>' +
                     "</span></div>"
                   );
                 })
                 .join("")
-            : '<div class="tp-text-muted tp-text-sm">Todavía no hay grupos.</div>';
+            : '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_groups_yet') + '</div>';
 
           host.innerHTML =
             '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
@@ -214,7 +214,7 @@
                 title: "Eliminar grupo",
                 message: "Se elimina el grupo. Los elementos que contiene NO se borran: quedan sin grupo.",
                 danger: true,
-                confirmLabel: "Eliminar",
+                confirmLabel: tpT('global.delete'),
               })
               .then(function (ok) {
                 if (!ok) return;

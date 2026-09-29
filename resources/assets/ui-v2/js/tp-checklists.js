@@ -51,9 +51,9 @@
       size: "md",
       body:
         '<div class="tp-form">' +
-        '<label class="tp-form__field"><span class="tp-form__label">Nombre</span>' +
+        '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.name') + '</span>' +
         '<input type="text" class="tp-input" data-tpl-name value="' + esc(item ? item.name : "") + '"></label>' +
-        '<label class="tp-form__field"><span class="tp-form__label">Tipo</span>' +
+        '<label class="tp-form__field"><span class="tp-form__label">' + tpT('front.type') + '</span>' +
         '<select class="tp-input" data-tpl-type>' +
         types
           .map(function (t) {
@@ -63,12 +63,12 @@
         "</select></label>" +
         '<div class="tp-form__field"><span class="tp-form__label">Actividades</span>' +
         '<div data-tpl-rows>' + (rows.length ? rows.map(function (r) { return rowHtml(r.id, r.activity); }).join("") : rowHtml(null, "")) + "</div>" +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-add style="align-self:flex-start;">＋ Añadir actividad</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-add style="align-self:flex-start;">' + tpT('ui.add_activity_plus') + '</button>' +
         "</div></div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -89,7 +89,7 @@
             });
 
             if (!Object.keys(existing).length && !news.length) {
-              tpModal.toast("Añade al menos una actividad.", "warning");
+              tpModal.toast(tpT('ui.add_at_least_one_activity'), "warning");
               return false;
             }
 
@@ -128,10 +128,10 @@
     if (!window.tpModal) return;
 
     tpModal.open({
-      title: "Plantillas de listas de verificación",
+      title: tpT('ui.checklist_templates'),
       size: "md",
       body: '<div data-tpl-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-tpl-index]");
         var types = [];
@@ -159,14 +159,14 @@
                         '<span class="tp-text-xs tp-text-muted">' + esc(t.type_label) + " · " + t.rows.length + " actividad(es)</span></span>" +
                         (res.data.can_edit
                           ? '<span class="tp-row" style="gap:6px;">' +
-                            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-edit="' + t.id + '">Editar</button>' +
-                            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-rm="' + t.id + '" style="color:#ef4444;">Eliminar</button></span>'
+                            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-edit="' + t.id + '">' + tpT('global.edit') + '</button>' +
+                            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-rm="' + t.id + '" style="color:#ef4444;">' + tpT('global.delete') + '</button></span>'
                           : "") +
                         "</div>"
                       );
                     })
                     .join("")
-                : '<div class="tp-text-muted tp-text-sm">Todavía no hay plantillas.</div>');
+                : '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_templates_yet') + '</div>');
           });
         }
         load();
@@ -184,7 +184,7 @@
           var rm = e.target.closest("[data-tpl-rm]");
           if (rm) {
             tpModal
-              .confirm({ title: "Eliminar plantilla", message: "¿Eliminar esta plantilla y sus actividades?", danger: true, confirmLabel: "Eliminar" })
+              .confirm({ title: "Eliminar plantilla", message: tpT('ui.confirm_delete_template_activities'), danger: true, confirmLabel: tpT('global.delete') })
               .then(function (ok) {
                 if (!ok) return;
                 tpModal
@@ -208,10 +208,10 @@
     if (!window.tpModal) return;
 
     tpModal.open({
-      title: "Listas de verificación" + (serviceName ? " · " + serviceName : ""),
+      title: tpT('ui.checklists') + (serviceName ? " · " + serviceName : ""),
       size: "lg",
       body: '<div data-chk-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-chk-index]");
         var meta = { outcomes: [], imageOptional: false, canEdit: false };
@@ -233,7 +233,7 @@
                     return '<option value="' + t.id + '">' + esc(t.name) + " (" + esc(t.type_label) + ")</option>";
                   }).join("") +
                   "</select>" +
-                  '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-chk-add>＋ Añadir</button></div>'
+                  '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-chk-add>' + tpT('ui.add_plus') + '</button></div>'
                 : "";
 
             var body = (d.items || []).length
@@ -246,7 +246,7 @@
                         ? '<span class="tp-text-xs" style="color:#16a34a;">Firmada ' + esc(c.completed_at || "") + "</span>"
                         : '<span class="tp-row" style="gap:6px;">' +
                           '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-sign="' + c.id + '">Firmar</button>' +
-                          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-rm="' + c.id + '" style="color:#ef4444;">Eliminar</button></span>') +
+                          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-rm="' + c.id + '" style="color:#ef4444;">' + tpT('global.delete') + '</button></span>') +
                       "</header>" +
                       '<ul class="tp-chk__rows">' +
                       c.rows
@@ -282,7 +282,7 @@
                     );
                   })
                   .join("")
-              : '<div class="tp-text-muted tp-text-sm">Este servicio no tiene listas de verificación.</div>';
+              : '<div class="tp-text-muted tp-text-sm">' + tpT('ui.service_has_no_checklists') + '</div>';
 
             host.innerHTML = head + body;
           });
@@ -347,7 +347,7 @@
           var rm = e.target.closest("[data-chk-rm]");
           if (rm) {
             return tpModal
-              .confirm({ title: "Eliminar lista", message: "¿Eliminar esta lista de verificación?", danger: true, confirmLabel: "Eliminar" })
+              .confirm({ title: "Eliminar lista", message: tpT('ui.confirm_delete_checklist'), danger: true, confirmLabel: tpT('global.delete') })
               .then(function (ok) {
                 if (!ok) return;
                 tpModal.fetchJSON(BASE + "/checklists/" + rm.getAttribute("data-chk-rm"), { method: "DELETE" }).then(function (res) {
@@ -370,7 +370,7 @@
                 '<input type="text" class="tp-input" data-sign-value></label>' +
                 '<small class="tp-form__hint">No se puede firmar si quedan actividades sin completar.</small></div>',
               buttons: [
-                { label: "Cancelar", variant: "ghost", close: true },
+                { label: tpT('global.cancel'), variant: "ghost", close: true },
                 {
                   label: "Firmar",
                   variant: "primary",

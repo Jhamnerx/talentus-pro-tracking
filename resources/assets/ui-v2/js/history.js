@@ -345,7 +345,7 @@
       '<div class="tp-hist-pt">' +
       '<div class="tp-hist-pt__bar"><span class="tp-hist-pt__baric"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span></div>' +
       '<dl class="tp-hist-pt__defs">' +
-      (CFG.addrOn ? ptRow(T("address", "Dirección"), '<span data-addr>…</span>') : "") +
+      (CFG.addrOn ? ptRow(T("address", tpT('front.address')), '<span data-addr>…</span>') : "") +
       ptRow(T("street_view", "Vista de calle"), '<a href="' + sv + '" target="_blank" rel="noopener">' + T("preview", "Ver") + "</a>") +
       ptRow(T("latitude", "Latitud"), p.lat + "&deg;") +
       ptRow(T("longitude", "Longitud"), p.lng + "&deg;") +
@@ -354,7 +354,7 @@
       ptRow(T("time", "Hora"), esc(fmtTime(p.t))) +
       '<span data-pt-extra></span>' +
       "</dl>" +
-      '<button type="button" class="tp-hist-pt__more" data-pt-more title="Ver todos los parámetros"><span></span><span></span><span></span></button>' +
+      '<button type="button" class="tp-hist-pt__more" data-pt-more title="' + tpT('ui.see_all_parameters') + '"><span></span><span></span><span></span></button>' +
       "</div>";
     if (state.pointPopup) state.map.closePopup(state.pointPopup);
     state.pointPopup = L.popup({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }).setLatLng(ll).setContent(html).openOn(state.map);
@@ -452,23 +452,23 @@
     if (it.status === S_DRIVE) {
       r += ptRow(T("start", "Inicio"), esc(it.from)) + ptRow(T("end", "Fin"), esc(it.to));
       r += ptRow(T("driver", "Conductor"), esc(it.driver || "-"));
-      if (it.top_speed != null) r += ptRow(T("top_speed", "Velocidad máxima"), it.top_speed + " " + (gUnitSpeed() || "km/h"));
+      if (it.top_speed != null) r += ptRow(T("top_speed", tpT('ui.max_speed')), it.top_speed + " " + (gUnitSpeed() || "km/h"));
       if (it.distance != null) r += ptRow(T("route_length", "Longitud de ruta"), it.distance + " km");
-      r += ptRow(T("duration", "Duración"), esc(it.duration || "-"));
+      r += ptRow(T("duration", tpT('ui.duration')), esc(it.duration || "-"));
       if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
       if (it.engine_hours != null) r += ptRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
     } else if (it.status === S_STOP) {
       r += ptRow(T("start", "Inicio"), esc(it.from)) + ptRow(T("end", "Fin"), esc(it.to));
       r += ptRow(T("driver", "Conductor"), esc(it.driver || "-"));
-      r += ptRow(T("duration", "Duración"), esc(it.duration || "-"));
+      r += ptRow(T("duration", tpT('ui.duration')), esc(it.duration || "-"));
       if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
       if (it.engine_hours != null) r += ptRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
     } else if (it.status === S_START || it.status === S_END) {
       r += ptRow(T("driver", "Conductor"), esc(tripDriver() || "-"));
       r += ptRow(T("route_length", "Longitud de ruta"), esc(sum.distance || "-"));
-      r += ptRow(T("move_duration", "Duración de movimiento"), esc(sum.move_duration || "-"));
-      r += ptRow(T("stop_duration", "Duración de estacionado"), esc(sum.stop_duration || "-"));
-      r += ptRow(T("top_speed", "Velocidad máxima"), esc(sum.top_speed || "-"));
+      r += ptRow(T("move_duration", tpT('ui.moving_duration')), esc(sum.move_duration || "-"));
+      r += ptRow(T("stop_duration", tpT('ui.parked_duration')), esc(sum.stop_duration || "-"));
+      r += ptRow(T("top_speed", tpT('ui.max_speed')), esc(sum.top_speed || "-"));
       if (sum.fuel) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", esc(sum.fuel));
       if (sum.engine_hours) r += ptRow(T("engine_hours", "Horas del motor"), esc(sum.engine_hours));
     } else {
@@ -583,7 +583,7 @@
     state.timeline.forEach(function (it) {
       if (it.status !== S_EVENT || it.lat == null) return;
       var m = L.marker([it.lat, it.lng], { icon: eventIcon() });
-      m.bindPopup('<div class="tp-hist-pt"><div class="tp-hist-pt__title">' + esc(it.message || "Evento") + "</div><dl class=\"tp-hist-pt__defs\"><dt>Hora</dt><dd>" + esc(fmtTime(it.from)) + "</dd></dl></div>");
+      m.bindPopup('<div class="tp-hist-pt"><div class="tp-hist-pt__title">' + esc(it.message || tpT('front.event')) + "</div><dl class=\"tp-hist-pt__defs\"><dt>" + tpT('front.hour') + "</dt><dd>" + esc(fmtTime(it.from)) + "</dd></dl></div>");
       m.on("click", function () { if (it.start_idx != null) moveCursor(it.start_idx); });
       evG.addLayer(m);
     });
@@ -591,8 +591,8 @@
   }
   function stopPopup(it, n) {
     return '<div class="tp-hist-pt"><div class="tp-hist-pt__title">Parada ' + n + "</div><dl class=\"tp-hist-pt__defs\">" +
-      "<dt>Desde</dt><dd>" + esc(fmtTime(it.from)) + "</dd><dt>Hasta</dt><dd>" + esc(fmtTime(it.to)) + "</dd>" +
-      (it.duration ? "<dt>Duración</dt><dd>" + esc(it.duration) + "</dd>" : "") + "</dl></div>";
+      "<dt>" + tpT('front.from') + "</dt><dd>" + esc(fmtTime(it.from)) + "</dd><dt>" + tpT('global.to') + "</dt><dd>" + esc(fmtTime(it.to)) + "</dd>" +
+      (it.duration ? "<dt>" + tpT('ui.duration') + "</dt><dd>" + esc(it.duration) + "</dd>" : "") + "</dl></div>";
   }
   function badge(cls, label) { return L.divIcon({ className: "tp-hist-ldiv", html: '<span class="tp-hist-badge ' + cls + '">' + esc(label) + "</span>", iconSize: [24, 24], iconAnchor: [12, 12] }); }
   function eventIcon() {
@@ -620,7 +620,7 @@
     pause: '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>',
   };
   function statusMeta(st) {
-    if (st === S_DRIVE) return { cls: "drive", sym: "D", color: "#16a34a", label: T("drive", "Conducción"), railed: true };
+    if (st === S_DRIVE) return { cls: "drive", sym: "D", color: "#16a34a", label: T("drive", tpT('ui.driving')), railed: true };
     if (st === S_STOP) return { cls: "stop", sym: TL_ICONS.pause, color: "#ef4444", label: T("stop", "Estacionado"), railed: true };
     if (st === S_START) return { cls: "start", sym: TL_ICONS.start, color: "#64748b", label: T("trip_start", "Inicio del viaje") };
     if (st === S_END) return { cls: "end", sym: TL_ICONS.end, color: "#64748b", label: T("trip_end", "Fin del viaje") };
@@ -657,9 +657,9 @@
         // Totales del recorrido (como la referencia)
         rows += tlRow(T("driver", "Conductor"), tripDriver());
         rows += tlRow(T("route_length", "Longitud de ruta"), sum.distance);
-        rows += tlRow(T("move_duration", "Duración de movimiento"), sum.move_duration, true);
-        rows += tlRow(T("stop_duration", "Duración de estacionado"), sum.stop_duration, true);
-        rows += tlRow(T("top_speed", "Velocidad máxima"), sum.top_speed, true);
+        rows += tlRow(T("move_duration", tpT('ui.moving_duration')), sum.move_duration, true);
+        rows += tlRow(T("stop_duration", tpT('ui.parked_duration')), sum.stop_duration, true);
+        rows += tlRow(T("top_speed", tpT('ui.max_speed')), sum.top_speed, true);
         rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", sum.fuel, true);
         rows += tlRow(T("engine_hours", "Horas del motor"), sum.engine_hours, true);
       } else if (it.status === S_STOP) {
@@ -667,16 +667,16 @@
         rows += tlRow(T("driver", "Conductor"), it.driver);
         rows += tlRow(T("speed", "Velocidad"), "0 " + (gUnitSpeed() || "km/h"));
         rows += tlRow(T("altitude", "Altitud"), startPos && startPos.alt != null ? Math.round(startPos.alt) + " m" : "0 m", true);
-        rows += tlRow(T("duration", "Duración"), it.duration, true);
+        rows += tlRow(T("duration", tpT('ui.duration')), it.duration, true);
         if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel(), true);
         if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours), true);
         sub = "";
       } else if (it.status === S_DRIVE) {
         headRows = hRow(T("drive_start", "Inicio del viaje"), it.from) + hRow(T("drive_end", "Fin de viaje"), it.to);
         rows += tlRow(T("driver", "Conductor"), it.driver);
-        rows += tlRow(T("top_speed", "Velocidad máxima"), it.top_speed != null ? it.top_speed + " " + (gUnitSpeed() || "km/h") : null);
+        rows += tlRow(T("top_speed", tpT('ui.max_speed')), it.top_speed != null ? it.top_speed + " " + (gUnitSpeed() || "km/h") : null);
         rows += tlRow(T("route_length", "Longitud de ruta"), it.distance != null ? it.distance + " km" : null, true);
-        rows += tlRow(T("duration", "Duración"), it.duration, true);
+        rows += tlRow(T("duration", tpT('ui.duration')), it.duration, true);
         if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel(), true);
         if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours), true);
         sub = "";
@@ -709,7 +709,7 @@
         (it.status === S_DRIVE ? '<button type="button" class="tp-hist-tl__play" title="Reproducir viaje">▶</button>' : "") +
         "</div>" +
         '<div class="tp-hist-tl__box">' + rows +
-        (hasExtra ? '<button type="button" class="tp-hist-tl__more" title="Ver más información" aria-expanded="false"><span></span><span></span><span></span></button>' : "") +
+        (hasExtra ? '<button type="button" class="tp-hist-tl__more" title="' + tpT('ui.see_more_info') + '" aria-expanded="false"><span></span><span></span><span></span></button>' : "") +
         "</div></div>"
       );
     }).join("");
@@ -889,7 +889,7 @@
     if (!host) return;
     var list = state.sensors && state.sensors.length
       ? state.sensors
-      : [{ id: "speed", name: "Velocidad", sufix: "km/h" }, { id: "altitude", name: "Altitud", sufix: "m" }];
+      : [{ id: "speed", name: tpT('front.speed'), sufix: "km/h" }, { id: "altitude", name: "Altitud", sufix: "m" }];
     state.sensorList = list;
     var ok = list.some(function (s) { return s.id === state.sensor; });
     if (!ok) state.sensor = list[0].id;
@@ -1015,7 +1015,7 @@
 
   /* ===== OVERLAYS ===== */
   function buildGeofences(items) { var g = L.layerGroup(); (items || []).forEach(function (z) { var color = z.polygon_color || "#1e88e5", style = { color: color, weight: 2, fillColor: color, fillOpacity: .12 }, layer = null; if (z.type === "circle" && z.center && z.radius) { var c = z.center, lat = c.lat != null ? c.lat : c.y, lng = c.lng != null ? c.lng : c.x; if (typeof c === "string") { var pp = c.split(","); lat = parseFloat(pp[0]); lng = parseFloat(pp[1]); } layer = L.circle([lat, lng], Object.assign({ radius: Number(z.radius) }, style)); } else if (z.coordinates && z.coordinates.length >= 3) { layer = L.polygon(z.coordinates.map(function (pt) { return [pt.lat != null ? pt.lat : pt.y, pt.lng != null ? pt.lng : pt.x]; }), style); } if (layer) { if (z.name) layer.bindTooltip(z.name); g.addLayer(layer); } }); return g; }
-  function buildRoutes(items) { var g = L.layerGroup(); (items || []).forEach(function (r) { var pts = (r.coordinates || []).map(function (c) { return [c[1], c[0]]; }); if (pts.length < 2) return; L.polyline(pts, { color: r.color || "#7c3aed", weight: 5, opacity: .8, dashArray: "6 6" }).bindTooltip(r.name || "Ruta").addTo(g); }); return g; }
+  function buildRoutes(items) { var g = L.layerGroup(); (items || []).forEach(function (r) { var pts = (r.coordinates || []).map(function (c) { return [c[1], c[0]]; }); if (pts.length < 2) return; L.polyline(pts, { color: r.color || "#7c3aed", weight: 5, opacity: .8, dashArray: "6 6" }).bindTooltip(r.name || tpT('front.route')).addTo(g); }); return g; }
   function buildPois(items) { var g = L.layerGroup(); (items || []).forEach(function (p) { if (p.lat == null || p.lng == null) return; var icon = p.icon && p.icon.path ? L.icon({ iconUrl: assetPath(p.icon.path), iconSize: [p.icon.width || 24, p.icon.height || 24] }) : L.divIcon({ className: "tp-hist-ldiv", html: '<span class="tp-hist-evpin" style="background:#7c3aed"></span>', iconSize: [14, 14], iconAnchor: [7, 7] }); L.marker([p.lat, p.lng], { icon: icon }).bindTooltip(p.name || "POI").addTo(g); }); return g; }
   function setOverlay(kind, on) {
     state.display[kind] = on; var ov = state.overlays[kind];
@@ -1055,7 +1055,7 @@
   function deleteSelectedPositions() {
     var ids = selectedPositionIds();
     if (!ids.length || !state.deviceId) return;
-    if (!window.confirm(T("do_delete", "¿Eliminar los registros seleccionados?"))) return;
+    if (!window.confirm(T("do_delete", tpT('ui.confirm_delete_selected')))) return;
     fetch(CFG.positionsDestroyUrl, {
       method: "DELETE",
       credentials: "same-origin",
@@ -1102,12 +1102,12 @@
             : "";
           return "<tr>" + selCell + cols.map(function (c) {
             var v = m[c.key];
-            if (c.key === "valid") v = v ? "sí" : "no";
+            if (c.key === "valid") v = v ? tpT('ui.yes_lower') : "no";
             return "<td>" + esc(v == null || v === "" ? "—" : v) + "</td>";
           }).join("") + "</tr>";
         }).join("");
         syncDeleteButton();
-        $("#tp-hist-datalog-info").textContent = T("page", "Página") + " " + j.page + " / " + j.last + " · " + (j.total || 0);
+        $("#tp-hist-datalog-info").textContent = T("page", tpT('ui.page')) + " " + j.page + " / " + j.last + " · " + (j.total || 0);
         $("#tp-hist-datalog-prev").disabled = j.page <= 1;
         $("#tp-hist-datalog-next").disabled = j.page >= j.last;
         updateFooterVar();
@@ -1153,7 +1153,7 @@
       show_invalid: $("#tp-hist-invalid").checked ? "true" : "false",
       format: format,
     });
-    toast(T("generating_export", "Generando exportación") + " " + format.toUpperCase() + "…", "info");
+    toast(T("generating_export", tpT('ui.generating_export')) + " " + format.toUpperCase() + "…", "info");
     fetch(CFG.exportUrl + "?" + qs.toString(), {
       credentials: "same-origin",
       headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
@@ -1162,9 +1162,9 @@
       .then(function (res) {
         if (res && res.download) window.location.href = res.download;
         else if (res && res.error) toast(res.error, "warning");
-        else toast(T("export_failed", "No se pudo generar la exportación"), "warning");
+        else toast(T("export_failed", tpT('ui.export_failed')), "warning");
       })
-      .catch(function () { toast(T("export_failed", "No se pudo generar la exportación"), "error"); });
+      .catch(function () { toast(T("export_failed", tpT('ui.export_failed')), "error"); });
   }
 
   /* ===== CARGA ===== */
@@ -1172,7 +1172,7 @@
   function apiTo() { return state.range.toDate + " " + state.range.toTime + ":59"; }
   function load() {
     var id = combo.getAttribute("data-value");
-    if (!id) { toast(T("select_device", "Selecciona un vehículo"), "warning"); comboInput.focus(); return; }
+    if (!id) { toast(T("select_device", tpT('ui.select_a_vehicle')), "warning"); comboInput.focus(); return; }
     if (!state.range) { toast(T("select_date", "Selecciona una fecha"), "warning"); openDatePick(); return; }
     pause(); state.deviceId = parseInt(id, 10);
     $("#tp-hist-loading").hidden = false;

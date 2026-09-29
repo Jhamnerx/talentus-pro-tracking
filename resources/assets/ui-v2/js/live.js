@@ -443,7 +443,7 @@
       var cg = ensureCluster();
       if (!cg) {
         state.toggles.cluster = false;
-        window.tpModal && tpModal.toast && tpModal.toast("Agrupación no disponible.", "warning");
+        window.tpModal && tpModal.toast && tpModal.toast(tpT('ui.clustering_unavailable'), "warning");
         return;
       }
       m.removeLayer(state.deviceLayer);
@@ -587,7 +587,7 @@
           });
           if (pts.length < 2) return;
           L.polyline(pts, { color: rt.color || "#7c3aed", weight: 3, opacity: 0.85 })
-            .bindTooltip(rt.name || "Ruta")
+            .bindTooltip(rt.name || tpT('front.route'))
             .addTo(state.routesLayer);
         });
         if (state.toggles.routes) state.routesLayer.addTo(m);
@@ -600,7 +600,7 @@
     if (!configUrl || !window.tpModal) return;
     tpModal.fetchJSON(configUrl, { method: "GET" }).then(function (res) {
       if (!res || !res.ok || !res.data || !res.data.ok) {
-        tpModal.toast && tpModal.toast("No se pudo cargar la configuración.", "error");
+        tpModal.toast && tpModal.toast(tpT('ui.config_load_failed'), "error");
         return;
       }
       var dlg = tpModal.open({
@@ -608,9 +608,9 @@
         size: "lg",
         body: res.data.html,
         buttons: [
-          { label: "Cancelar", variant: "ghost" },
+          { label: tpT('global.cancel'), variant: "ghost" },
           {
-            label: "Guardar",
+            label: tpT('global.save'),
             variant: "primary",
             close: false,
             onClick: function (dialog, btn) {
@@ -668,9 +668,9 @@
     online: "En movimiento",
     excessive_speed: "Exceso de velocidad",
     engine: "Motor encendido",
-    ack: "Detenido",
-    stop: "Detenido",
-    idle: "Ralentí",
+    ack: tpT('front.stopped'),
+    stop: tpT('front.stopped'),
+    idle: tpT('front.idle'),
     blocked: "Bloqueado",
     offline: "Desconectado",
     expired: "Expirado",
@@ -721,12 +721,12 @@
       '<div class="tp-dev-popup__status">' +
       esc(STATUS_LABELS[d.online] || d.online || "—") +
       "</div><dl class=\"tp-dev-popup__defs\">" +
-      (d.plate_number ? "<dt>Placa</dt><dd>" + esc(d.plate_number) + "</dd>" : "") +
-      "<dt>Velocidad</dt><dd>" +
+      (d.plate_number ? "<dt>" + tpT('ui.plate') + "</dt><dd>" + esc(d.plate_number) + "</dd>" : "") +
+      "<dt>" + tpT('front.speed') + "</dt><dd>" +
       esc(speed) +
-      "</dd><dt>Hora</dt><dd>" +
+      "</dd><dt>" + tpT('front.hour') + "</dt><dd>" +
       esc(d.time || "—") +
-      '</dd><dt>Ubicación</dt><dd data-pop-addr class="' +
+      '</dd><dt>' + tpT('front.location') + '</dt><dd data-pop-addr class="' +
       (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
       '">Cargando…</dd></dl>' +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>Ver detalles</button></div>';
@@ -1020,7 +1020,7 @@
       html +=
         '<div class="tp-dash__zone" data-over="' + (dif >= 0 ? "1" : "0") + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>' +
-        "<span>" + esc(gf.zoneName || "Zona") + " · límite " + gf.limit + "</span>" +
+        "<span>" + esc(gf.zoneName || tpT('ui.zone')) + tpT('ui.dot_limit') + gf.limit + "</span>" +
         '<strong>' + (dif >= 0 ? "+" : "") + dif + "</strong>" +
         "</div>";
     }
@@ -1050,11 +1050,11 @@
     var t = dash.telltales || {};
     var tells =
       testigo("Motor", "MOTOR", t.engine, ICONOS.motor) +
-      testigo("Ignición", "IGNICIÓN", t.ignition, ICONOS.ignicion) +
+      testigo(tpT('ui.ignition'), tpT('ui.ignition_upper'), t.ignition, ICONOS.ignicion) +
       testigo("Puerta", "PUERTA", t.door, ICONOS.puerta) +
       testigo("Bloqueo de motor", "BLOQUEO", t.blocked, ICONOS.bloqueo) +
       (dash.volt != null
-        ? '<span class="tp-dash__tell" data-on="1" title="Batería externa">' + ICONOS.bateria +
+        ? '<span class="tp-dash__tell" data-on="1" title="' + tpT('ui.external_battery') + '">' + ICONOS.bateria +
           '<span class="tp-dash__tell-label">' + esc(dash.volt.value + " " + (dash.volt.unit || "v")) + "</span></span>"
         : "") +
       (dash.satellites != null
@@ -1066,11 +1066,11 @@
 
     // Cifras de contexto: las cuatro de siempre mas odometro y horometro
     var stats =
-      celda("Odómetro", dash.odometer, null) +
-      celda("Horómetro", dash.engine_hours, null) +
+      celda(tpT('ui.odometer'), dash.odometer, null) +
+      celda(tpT('ui.hour_meter'), dash.engine_hours, null) +
       celda("Rumbo", d.course != null ? Math.round(d.course) + "°" : null, null) +
-      celda("Detenido", fmtDuration(d.stop_duration_sec), null) +
-      celda("Distancia", d.total_distance, "km");
+      celda(tpT('front.stopped'), fmtDuration(d.stop_duration_sec), null) +
+      celda(tpT('front.distance'), d.total_distance, "km");
 
     if (stats) html += '<div class="tp-dash__stats">' + stats + "</div>";
 
@@ -1148,7 +1148,7 @@
         '<div class="tp-scope"><div class="tp-vs-choices">' + chips +
         '<button type="button" class="tp-vs-choice' + (!vstateData.current ? " is-active" : "") +
         '" data-vs="0"><span class="tp-vs-dot" style="background:#cbd5e1;"></span>Sin estado</button></div></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
     });
     dlg.addEventListener("click", function (e) {
       var b = e.target.closest("[data-vs]");
@@ -1416,15 +1416,15 @@
       '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" data-f-map' +
       (af.map ? " checked" : "") +
       "> " + esc(L2.filter_map || "Mapa") + "</label></div>" +
-      '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">' + esc(L2.status || "Estado") + "</div>" +
+      '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">' + esc(L2.status || tpT('front.status')) + "</div>" +
       '<div style="max-height:190px;overflow:auto;border:1px solid var(--border-default);border-radius:8px;padding:6px 10px;">' +
       statusRows + "</div>" +
       '<div style="font-size:12px;font-weight:600;margin:12px 0 4px;">' +
-      esc(L2.last_connection || "Última conexión") + " (" + esc(L2.minutes || "min") + ")</div>" +
+      esc(L2.last_connection || tpT('ui.last_connection')) + " (" + esc(L2.minutes || "min") + ")</div>" +
       '<div style="display:flex;gap:8px;">' +
-      '<input type="number" min="0" class="tp-input" data-f-online placeholder="' + esc(L2.from || "Desde") +
+      '<input type="number" min="0" class="tp-input" data-f-online placeholder="' + esc(L2.from || tpT('front.from')) +
       '" value="' + (af.online != null ? af.online : "") + '" style="width:50%;">' +
-      '<input type="number" min="0" class="tp-input" data-f-offline placeholder="' + esc(L2.to || "Hasta") +
+      '<input type="number" min="0" class="tp-input" data-f-offline placeholder="' + esc(L2.to || tpT('global.to')) +
       '" value="' + (af.offline != null ? af.offline : "") + '" style="width:50%;"></div></div>';
     tpModal.open({
       title: L2.title || "Filtro",
@@ -1432,7 +1432,7 @@
       body: body,
       buttons: [
         {
-          label: L2.clear || "Limpiar",
+          label: L2.clear || tpT('global.clear'),
           variant: "ghost",
           close: false,
           onClick: function (dlg) {
@@ -1441,9 +1441,9 @@
             return false;
           },
         },
-        { label: L2.cancel || "Cancelar", variant: "ghost", close: true },
+        { label: L2.cancel || tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: L2.apply || "Aplicar",
+          label: L2.apply || tpT('global.apply'),
           variant: "primary",
           close: false,
           onClick: function (dlg) {
@@ -1541,7 +1541,7 @@
         ? "Se enviará el comando para <b>cortar</b> el motor del vehículo."
         : "Se enviará el comando para <b>restablecer</b> el motor del vehículo.") +
       "</p>" +
-      '<label class="tp-field__label">Envío</label>' +
+      '<label class="tp-field__label">' + tpT('ui.sending') + '</label>' +
       '<select class="tp-input" data-lock-type style="width:100%;margin:4px 0 10px;"><option value="gprs">GPRS</option>' +
       (canSms ? '<option value="sms">SMS</option>' : "") +
       "</select>" +
@@ -1557,7 +1557,7 @@
       size: "sm",
       body: body,
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
           label: isOn ? "Cortar" : "Restablecer",
           variant: isOn ? "danger" : "primary",
@@ -1591,7 +1591,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(dlg, false);
-                showErr("Error de red. Inténtalo de nuevo.");
+                showErr(tpT('ui.network_error_retry'));
               });
             return false;
           },
@@ -1654,10 +1654,10 @@
       size: "md",
       body:
         '<div style="margin-bottom:10px;"><select class="tp-input" data-lock-period style="width:auto;">' +
-        '<option value="today">Hoy</option><option value="yesterday">Ayer</option>' +
+        '<option value="today">' + tpT('front.today') + '</option><option value="yesterday">' + tpT('front.yesterday') + '</option>' +
         '<option value="this_week">Esta semana</option><option value="last_week">Semana pasada</option></select></div>' +
         '<div data-lock-hist><div class="tp-text-muted" style="padding:12px;">Cargando…</div></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
     });
     function load(period) {
       var box = dlg.querySelector("[data-lock-hist]");
@@ -1680,7 +1680,7 @@
             return;
           }
           box.innerHTML =
-            '<table class="tp-lock-hist"><thead><tr><th>Inicio</th><th>Duración</th><th>Ubicación</th></tr></thead><tbody>' +
+            '<table class="tp-lock-hist"><thead><tr><th>' + tpT('ui.start') + '</th><th>' + tpT('ui.duration') + '</th><th>' + tpT('front.location') + '</th></tr></thead><tbody>' +
             items
               .map(function (it) {
                 var loc =
@@ -1785,7 +1785,7 @@
         '<input type="text" class="tp-input" data-pt-lng placeholder="-79.02080" style="width:100%;margin-top:4px;">' +
         '<div data-pt-err style="display:none;margin-top:10px;color:#ef4444;font-size:13px;"></div></div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
           label: "Mostrar",
           variant: "primary",
@@ -1796,7 +1796,7 @@
             var err = dlg.querySelector("[data-pt-err]");
             if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
               if (err) {
-                err.textContent = "Coordenadas inválidas.";
+                err.textContent = tpT('ui.invalid_coordinates');
                 err.style.display = "block";
               }
               return false;
@@ -1812,16 +1812,16 @@
   function toolSearchAddress(url) {
     if (!window.tpModal || !url) return;
     var dlg = tpModal.open({
-      title: "Buscar dirección",
+      title: tpT('ui.search_address'),
       size: "sm",
       body:
-        '<div class="tp-scope"><label class="tp-field__label">Dirección</label>' +
-        '<input type="text" class="tp-input" data-adr-q placeholder="Av. España 123, Trujillo" style="width:100%;margin-top:4px;">' +
+        '<div class="tp-scope"><label class="tp-field__label">' + tpT('front.address') + '</label>' +
+        '<input type="text" class="tp-input" data-adr-q placeholder="' + tpT('ui.address_example') + '" style="width:100%;margin-top:4px;">' +
         '<div data-adr-err style="display:none;margin-top:10px;color:#ef4444;font-size:13px;"></div></div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Buscar",
+          label: tpT('ui.search_verb'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -1837,7 +1837,7 @@
                 var loc = res.data && res.data.status == 1 ? res.data.location : null;
                 if (!loc || loc.lat == null) {
                   if (err) {
-                    err.textContent = (res.data && res.data.error) || "No se encontró la dirección.";
+                    err.textContent = (res.data && res.data.error) || tpT('ui.address_not_found');
                     err.style.display = "block";
                   }
                   return;
@@ -1866,7 +1866,7 @@
     if (!gid) return "Sin grupo";
     for (var i = 0; i < state.groups.length; i++)
       if (state.groups[i].id === gid) return state.groups[i].title;
-    return "Grupo " + gid;
+    return tpT('front.group') + gid;
   }
   // Badge del estado de vehículo (label corto + color). Compartido por la fila
   // del rail, la etiqueta del marcador y el drawer. vs = {name,label,color}.
@@ -2001,9 +2001,9 @@
           if (g !== 0) {
             items +=
               '<button type="button" role="menuitem" data-dg-edit="' + g + '">' +
-              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> Editar</button>' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>' +
               '<button type="button" role="menuitem" class="is-danger" data-dg-del="' + g + '">' +
-              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> Eliminar</button>';
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
           }
           tools =
             '<div class="tp-svc-kebab" style="margin-left:auto;">' +
@@ -2088,7 +2088,7 @@
       title: "Historial de cambios",
       size: "xl",
       body: '<div data-hist><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
-      buttons: [{ label: "Cerrar", variant: "ghost", close: true }],
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (d) {
         var host = d.querySelector("[data-hist]");
 
@@ -2104,7 +2104,7 @@
 
             if (!items.length) {
               host.innerHTML =
-                '<p class="tp-text-sm tp-text-muted">Sin cambios registrados para este vehículo.</p>';
+                '<p class="tp-text-sm tp-text-muted">' + tpT('ui.no_changes_for_vehicle') + '</p>';
               return;
             }
 
@@ -2112,7 +2112,7 @@
 
             host.innerHTML =
               '<div style="max-height:62vh;overflow:auto;"><table class="tp-table"><thead><tr>' +
-              "<th>Cuándo</th><th>Qué</th><th>Acción</th><th>Quién</th><th>Cambios</th>" +
+              "<th>" + tpT('ui.when') + "</th><th>" + tpT('ui.what') + "</th><th>" + tpT('ui.action') + "</th><th>" + tpT('ui.who') + "</th><th>Cambios</th>" +
               "</tr></thead><tbody>" +
               items
                 .map(function (it) {
@@ -2217,11 +2217,11 @@
         // Pendiente: reproducción en vivo y grabaciones (decoder JT808/Howen).
         if (window.tpModal) {
           tpModal.open({
-            title: "Vídeo a bordo",
+            title: tpT('ui.onboard_video'),
             size: "sm",
             body:
-              '<p class="tp-text-sm" style="margin:0 0 8px;">Este equipo reporta con un protocolo de vídeo compatible.</p>' +
-              '<p class="tp-text-sm tp-text-muted" style="margin:0;">La reproducción en vivo y las grabaciones se habilitarán con la integración del decoder.</p>',
+              '<p class="tp-text-sm" style="margin:0 0 8px;">' + tpT('ui.video_protocol_note') + '</p>' +
+              '<p class="tp-text-sm tp-text-muted" style="margin:0;">' + tpT('ui.video_decoder_note') + '</p>',
             buttons: [{ label: "Entendido", variant: "primary", close: true }],
           });
         }
@@ -2264,7 +2264,7 @@
       } else if (act === "call_action") {
         if (window.tpCallActions) tpCallActions.open(id);
       } else if (act === "pending" && window.tpModal && tpModal.toast)
-        tpModal.toast("Función disponible próximamente.", "info");
+        tpModal.toast(tpT('ui.feature_coming_soon'), "info");
     });
     // Clonado del template: síncrono e instantáneo, sin petición.
     var built = buildRowMenu(id);
@@ -2321,9 +2321,9 @@
             );
           })
           .join("")
-      : '<span class="tp-text-muted" style="font-size:12.5px;">No tienes reenvíos creados. Créalos en Herramientas → Reenvíos.</span>';
+      : '<span class="tp-text-muted" style="font-size:12.5px;">' + tpT('ui.no_forwards_created') + '</span>';
     return (
-      '<div class="tp-form__field" style="margin-bottom:12px;"><span class="tp-form__label">Reenvíos</span>' +
+      '<div class="tp-form__field" style="margin-bottom:12px;"><span class="tp-form__label">' + tpT('front.forwards') + '</span>' +
       '<div style="border:1px solid var(--border-default,#e2e8f0);border-radius:10px;padding:6px 12px;background:var(--surface-raised,#fff);">' +
       rows +
       "</div></div>"
@@ -2373,16 +2373,16 @@
         body:
           '<div class="tp-form">' +
           '<label class="tp-form__field" style="margin-bottom:12px;">' +
-          '<span class="tp-form__label">Título</span>' +
+          '<span class="tp-form__label">' + tpT('ui.title') + '</span>' +
           '<input type="text" data-dgm-title maxlength="100" value="' + esc((info && info.title) || "") + '" data-tp-field>' +
           "</label>" +
           forwardsFieldHtml(info) +
-          '<div class="tp-form__field"><span class="tp-form__label">Vehículos</span>' +
+          '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.vehicles') + '</span>' +
           '<div class="tp-group-box" data-dgm-box>' +
           '<div class="tp-group-box__head" style="margin-bottom:0;">' +
           '<span class="tp-search">' +
           '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>' +
-          '<input type="search" data-dgm-search placeholder="Búsqueda" autocomplete="off">' +
+          '<input type="search" data-dgm-search placeholder="' + tpT('front.search') + '" autocomplete="off">' +
           "</span>" +
           '<button type="button" class="tp-link-action" data-dgm-all>Seleccionar todo</button>' +
           '<span class="tp-group-box__sep">|</span>' +
@@ -2393,15 +2393,15 @@
           '<div class="tp-pagination" data-dgm-pager></div>' +
           "</div></div></div>",
         buttons: [
-          { label: "Cancelar", variant: "ghost", close: true },
+          { label: tpT('global.cancel'), variant: "ghost", close: true },
           {
-            label: "Guardar",
+            label: tpT('global.save'),
             variant: "primary",
             close: false,
             onClick: function (dialog) {
               var title = dialog.querySelector("[data-dgm-title]").value.trim();
               if (!title) {
-                tpModal.toast("El título es obligatorio.", "warning");
+                tpModal.toast(tpT('ui.title_required'), "warning");
                 return false;
               }
               var ids = Object.keys(selected).map(Number);
@@ -2608,9 +2608,9 @@
     tpModal
       .confirm({
         title: "Eliminar grupo",
-        message: "¿Eliminar este grupo? Los vehículos quedarán sin grupo.",
+        message: tpT('ui.confirm_delete_group_vehicles'),
         danger: true,
-        confirmLabel: "Eliminar",
+        confirmLabel: tpT('global.delete'),
       })
       .then(function (okGo) {
         if (!okGo) return;
@@ -2743,7 +2743,7 @@
             return page(pg.current_page + 1);
           }
           if (statusText)
-            statusText.textContent = (total || acc.length) + " vehículos · " + new Date().toLocaleTimeString();
+            statusText.textContent = (total || acc.length) + tpT('ui.vehicles_dot') + new Date().toLocaleTimeString();
         });
     }
     page(1)
@@ -2927,7 +2927,7 @@
     if (geo)
       geo.addEventListener("click", function () {
         if (!navigator.geolocation) {
-          window.tpModal && tpModal.toast && tpModal.toast("Tu navegador no soporta geolocalización.", "warning");
+          window.tpModal && tpModal.toast && tpModal.toast(tpT('ui.geolocation_unsupported'), "warning");
           return;
         }
         navigator.geolocation.getCurrentPosition(
@@ -2948,9 +2948,9 @@
             var msg =
               err && err.code === 1
                 ? location.protocol !== "https:"
-                  ? "La ubicación requiere HTTPS (el sitio está en HTTP)."
-                  : "Permiso de ubicación denegado."
-                : "No se pudo obtener tu ubicación.";
+                  ? tpT('ui.geolocation_needs_https')
+                  : tpT('ui.geolocation_denied')
+                : tpT('ui.geolocation_failed');
             window.tpModal && tpModal.toast && tpModal.toast(msg, "warning");
           },
           { enableHighAccuracy: true, timeout: 8000 },
@@ -3073,8 +3073,8 @@
         tpModal
           .confirm({
             title: "Eliminar imagen",
-            message: "¿Eliminar la imagen de este vehículo?",
-            confirmLabel: "Eliminar",
+            message: tpT('ui.confirm_delete_vehicle_image'),
+            confirmLabel: tpT('global.delete'),
             danger: true,
           })
           .then(function (ok) {
@@ -3111,7 +3111,7 @@
           if (res.status === 422) {
             var errs = (res.data && res.data.errors) || {};
             var first = Object.keys(errs)[0];
-            tpModal.toast(first ? [].concat(errs[first])[0] : "Imagen no válida.", "error");
+            tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.invalid_image'), "error");
             return;
           }
           if (!res.ok || !res.data || !res.data.ok) {

@@ -204,11 +204,11 @@
         size: "sm",
         body:
           '<p style="margin:0; font-size:14px; line-height:1.5;">' +
-          escapeHtml(opts.message || "¿Continuar?") +
+          escapeHtml(opts.message || tpT('ui.continue_question')) +
           "</p>",
         buttons: [
           {
-            label: opts.cancelLabel || "Cancelar",
+            label: opts.cancelLabel || tpT('global.cancel'),
             variant: "ghost",
             onClick: function () {
               done = true;
@@ -216,7 +216,7 @@
             },
           },
           {
-            label: opts.confirmLabel || "Aceptar",
+            label: opts.confirmLabel || tpT('ui.accept'),
             variant: opts.danger ? "danger" : "primary",
             onClick: function () {
               done = true;

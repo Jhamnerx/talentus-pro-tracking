@@ -186,8 +186,8 @@
       .map(function (g) {
         var meta =
           g.type === "circle"
-            ? "Círculo · " + (g.radius ? Math.round(g.radius) + " m" : "—")
-            : "Polígono · " + (g.coordinates || []).length + " pts";
+            ? tpT('ui.circle_dot') + (g.radius ? Math.round(g.radius) + " m" : "—")
+            : tpT('ui.polygon_dot') + (g.coordinates || []).length + " pts";
         return (
           '<div class="tp-poi-row" data-id="' +
           g.id +
@@ -266,17 +266,17 @@
       esc(g.name || "Geocerca") +
       '</span></div><div class="tp-dev-popup__status">' +
       (g.type === "circle"
-        ? "Círculo · " + (g.radius ? Math.round(g.radius) + " m" : "—")
+        ? tpT('ui.circle_dot') + (g.radius ? Math.round(g.radius) + " m" : "—")
         : g.type === "line"
           ? "Corredor · " + (g.coordinates || []).length + " pts · ±" + Math.round(g.radius || 0) + " m"
-          : "Polígono · " + (g.coordinates || []).length + " pts") +
+          : tpT('ui.polygon_dot') + (g.coordinates || []).length + " pts") +
       "</div>" +
       (canEdit
-        ? '<div class="tp-poi-popup__actions"><button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-edit>Editar</button>' +
+        ? '<div class="tp-poi-popup__actions"><button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-edit>' + tpT('global.edit') + '</button>' +
           (g.type === "polygon"
             ? '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-shape>Editar forma</button>'
             : '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-z-shape>Editar forma</button>') +
-          '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-z-del>Eliminar</button></div>'
+          '<button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-z-del>' + tpT('global.delete') + '</button></div>'
         : "") +
       "</div>";
     if (!popup) popup = L.popup({ className: "tp-dev-popup-wrap", maxWidth: 280 });
@@ -298,7 +298,7 @@
       return pre[t] && pre[t][s] != null ? pre[t][s] : "";
     };
     var html =
-      '<div class="tp-field"><label class="tp-field__label">Límite por tipo de vehículo (km/h)</label><div class="tp-zone-vsl">';
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.limit_by_vehicle_type') + '</label><div class="tp-zone-vsl">';
     S.vehicleTypes.forEach(function (vt) {
       if (!vt.states || !vt.states.length) {
         html +=
@@ -407,19 +407,19 @@
     var isLine = (geometry && geometry.type === "line") || (g && g.type === "line");
     return (
       '<form id="tp-zone-form" class="tp-poi-form">' +
-      '<div class="tp-field"><label class="tp-field__label">Nombre</label><input type="text" name="name" class="tp-input" value="' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.name') + '</label><input type="text" name="name" class="tp-input" value="' +
       esc(g ? g.name : "") +
       '"></div>' +
-      '<div class="tp-field"><label class="tp-field__label">Color</label><input type="color" name="polygon_color" class="tp-input" value="' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.color') + '</label><input type="color" name="polygon_color" class="tp-input" value="' +
       ((g && g.polygon_color) || "#1e88e5") +
       '" style="height:38px;padding:4px;"></div>' +
-      '<div class="tp-field"><label class="tp-field__label">Grupo</label><select name="group_id" class="tp-input">' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('front.group') + '</label><select name="group_id" class="tp-input">' +
       groupOpts +
       "</select></div>" +
       // Geocerca móvil: sigue al vehículo elegido (plugin moving_geofence).
       (S.movingPlugin
-        ? '<div class="tp-field"><label class="tp-field__label">Vehículo (geocerca móvil)</label>' +
-          '<select name="device_id" class="tp-input"><option value="">Sin vehículo</option>' +
+        ? '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.vehicle_moving_geofence') + '</label>' +
+          '<select name="device_id" class="tp-input"><option value="">' + tpT('ui.no_vehicle') + '</option>' +
           S.devices.map(function (d) {
             return '<option value="' + d.id + '"' + (g && String(g.device_id || "") === String(d.id) ? " selected" : "") + ">" + esc(d.name) + "</option>";
           }).join("") +
@@ -434,9 +434,9 @@
         ? '<div class="tp-field"><label class="tp-field__label">Distancia al eje (m)</label>' +
           '<input type="number" name="radius" class="tp-input" min="1" value="' +
           (g && g.radius ? Math.round(g.radius) : 100) +
-          '"><small class="tp-field__hint">Cuánto se puede separar el vehículo de la línea antes de contar como fuera.</small></div>'
+          '"><small class="tp-field__hint">' + tpT('ui.corridor_width_help') + '</small></div>'
         : "") +
-      '<div class="tp-field"><label class="tp-field__label">Límite de velocidad (km/h)</label><input type="number" name="speed_limit" class="tp-input" min="0" value="' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.speed_limit_kmh') + '</label><input type="number" name="speed_limit" class="tp-input" min="0" value="' +
       (g && g.speed_limit != null ? g.speed_limit : "") +
       '"></div>' +
       vslMatrixHtml(g) +
@@ -481,7 +481,7 @@
       size: "md",
       body: metaBody(null, geometry),
       buttons: [
-        { label: "Cancelar", variant: "ghost" },
+        { label: tpT('global.cancel'), variant: "ghost" },
         {
           label: "Crear",
           variant: "primary",
@@ -519,9 +519,9 @@
       size: "md",
       body: metaBody(g, null),
       buttons: [
-        { label: "Cancelar", variant: "ghost" },
+        { label: tpT('global.cancel'), variant: "ghost" },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog, btn) {
@@ -572,7 +572,7 @@
     };
     if (tpModal.confirm)
       tpModal
-        .confirm({ title: "Eliminar geocerca", message: "¿Eliminar esta geocerca?", confirmLabel: "Eliminar", danger: true })
+        .confirm({ title: "Eliminar geocerca", message: tpT('ui.confirm_delete_geofence'), confirmLabel: tpT('global.delete'), danger: true })
         .then(function (ok) {
           if (ok) doDel();
         });
@@ -587,12 +587,12 @@
     var hint = "",
       mid = "";
     if (mode === "edit") {
-      hint = "Arrastra los vértices o el punto medio para ajustar, luego «Guardar».";
-      mid = '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-save>Guardar</button>';
+      hint = tpT('ui.drag_vertices_help');
+      mid = '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-save>' + tpT('global.save') + '</button>';
     } else if (mode === "circle") {
-      hint = "Clic y arrastra en el mapa para definir el círculo.";
+      hint = tpT('ui.click_drag_circle');
     } else {
-      hint = "Clic para añadir vértices · doble clic o «Terminar».";
+      hint = tpT('ui.click_add_vertices');
       mid = '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-finish>Terminar</button>';
     }
     S.bar.innerHTML =
@@ -600,7 +600,7 @@
       hint +
       "</span>" +
       mid +
-      '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zd-cancel>Cancelar</button>';
+      '<button type="button" class="tp-btn tp-btn--sm tp-btn--ghost" data-zd-cancel>' + tpT('global.cancel') + '</button>';
     (root.querySelector(".tp-live__map-area") || document.body).appendChild(S.bar);
     var save = S.bar.querySelector("[data-zd-save]");
     if (save) save.addEventListener("click", finishEditShape);
@@ -666,7 +666,7 @@
     }
     window.tpModal &&
       tpModal.toast &&
-      tpModal.toast("Doble clic en el mapa para terminar el polígono.", "info");
+      tpModal.toast(tpT('ui.double_click_finish_polygon'), "info");
   }
   // CREAR: dibujar con leaflet-draw; al terminar abre el modal de datos.
   function startCreate(type) {
@@ -705,7 +705,7 @@
       }
       hideBar();
       if (geometry.type === "polygon" && geometry.polygon.length < 3) {
-        tpModal && tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
+        tpModal && tpModal.toast && tpModal.toast(tpT('ui.add_at_least_3_vertices'), "warning");
         return;
       }
       if (geometry.type === "line" && geometry.polygon.length < 2) {
@@ -738,7 +738,7 @@
     if (!S.draft) return;
     var geometry = geometryFromLayer(S.draft);
     if (geometry.type === "polygon" && geometry.polygon.length < 3) {
-      tpModal && tpModal.toast && tpModal.toast("Añade al menos 3 vértices.", "warning");
+      tpModal && tpModal.toast && tpModal.toast(tpT('ui.add_at_least_3_vertices'), "warning");
       return;
     }
     if (geometry.type === "line") {
@@ -775,11 +775,11 @@
       title: "Nueva geocerca",
       size: "sm",
       body:
-        '<p style="margin:0 0 12px;font-size:14px;">¿Qué tipo quieres dibujar?</p>' +
-        '<div class="tp-row" style="gap:8px;"><button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="polygon">Polígono</button>' +
-        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="circle">Círculo</button>' +
+        '<p style="margin:0 0 12px;font-size:14px;">' + tpT('ui.which_shape_to_draw') + '</p>' +
+        '<div class="tp-row" style="gap:8px;"><button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="polygon">' + tpT('ui.polygon') + '</button>' +
+        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="circle">' + tpT('ui.circle') + '</button>' +
         '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="line">Corredor</button></div>',
-      buttons: [{ label: "Cancelar", variant: "ghost" }],
+      buttons: [{ label: tpT('global.cancel'), variant: "ghost" }],
     });
     if (dlg)
       dlg.querySelectorAll("[data-zc]").forEach(function (b) {
@@ -891,11 +891,11 @@
       title: "Exportar geocercas",
       size: "md",
       body:
-        '<div class="tp-field"><label class="tp-field__label">Tipo de exportación</label>' +
+        '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.export_type') + '</label>' +
         '<select class="tp-input" data-exp-type>' + opts + "</select></div>" +
         '<div class="tp-field" data-exp-wrap><label class="tp-field__label">Geocercas</label>' +
         '<div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">Sin geocercas.</div>') + "</div></div>" +
-        '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">Grupos</label>' +
+        '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">' + tpT('front.groups') + '</label>' +
         '<div class="tp-zexp-list">' +
         ((S.groups || []).map(function (g) {
           return '<label class="tp-zexp-item"><input type="checkbox" data-exp-group value="' + g.id + '"><span>' + esc(g.title) + "</span></label>";
@@ -903,9 +903,9 @@
         "</div></div>" +
         '<div class="tp-field__hint">Formato GEXP (el del legacy).</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost" },
+        { label: tpT('global.cancel'), variant: "ghost" },
         {
-          label: "Exportar",
+          label: tpT('front.export'),
           variant: "primary",
           close: false,
           onClick: function (dlg) {
@@ -971,9 +971,9 @@
         '<input type="file" class="tp-input" data-imp-file accept=".csv,.gexp,.kml,.json,.geojson"></div>' +
         '<div class="tp-field__hint">Formatos: KML, GeoJSON, JSON o GEXP.</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost" },
+        { label: tpT('global.cancel'), variant: "ghost" },
         {
-          label: "Importar",
+          label: tpT('front.import'),
           variant: "primary",
           close: false,
           onClick: function (dlg, btn) {

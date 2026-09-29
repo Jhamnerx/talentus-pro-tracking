@@ -67,7 +67,7 @@
     state.roundStates = d.round_states || {};
     state.pointStates = d.point_states || {};
 
-    fillSelect($("tp-rsch-filter-device"), state.devices, "Todos");
+    fillSelect($("tp-rsch-filter-device"), state.devices, tpT('front.all'));
     load();
   });
 
@@ -79,9 +79,9 @@
 
   function rowHtml(s) {
     var acciones = canEdit
-      ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rsch-edit="' + s.id + '">Editar</button> ' +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rsch-cp="' + s.route_id + '">Puntos</button> ' +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rsch-del="' + s.id + '">Eliminar</button>'
+      ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rsch-edit="' + s.id + '">' + tpT('global.edit') + '</button> ' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rsch-cp="' + s.route_id + '">' + tpT('front.points') + '</button> ' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-rsch-del="' + s.id + '">' + tpT('global.delete') + '</button>'
       : "";
 
     return "<tr>" +
@@ -92,7 +92,7 @@
       "<td>" + esc(s.return_start_time || "—") + "</td>" +
       "<td>" + s.devices.length + "</td>" +
       '<td><span class="tp-pill ' + (s.active ? "tp-pill--ok" : "tp-pill--off") + '">' +
-        (s.active ? "Sí" : "No") + "</span></td>" +
+        (s.active ? tpT('ui.yes') : "No") + "</span></td>" +
       '<td class="tp-svc-table__actions" style="white-space:nowrap;text-align:right;">' + acciones + "</td>" +
       "</tr>";
   }
@@ -109,15 +109,15 @@
 
       $("tp-rsch-rows").innerHTML = items.length
         ? items.map(rowHtml).join("")
-        : '<tr><td colspan="8" class="tp-svc-table__empty">Todavía no hay programaciones.</td></tr>';
+        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('ui.no_schedules_yet') + '</td></tr>';
 
-      $("tp-rsch-range").textContent = "Pág " + (d.page || 1) + " / " + (d.pages || 1);
+      $("tp-rsch-range").textContent = tpT('ui.page_short') + (d.page || 1) + " / " + (d.pages || 1);
       $("tp-rsch-total").textContent = (d.total || 0) + " programaciones";
 
       // El filtro de la otra pestaña se alimenta de lo mismo
       fillSelect($("tp-rsch-filter-schedule"), items.map(function (i) {
         return { id: i.id, name: i.name };
-      }), "Todas");
+      }), tpT('ui.all_f'));
     });
   }
 
@@ -147,23 +147,23 @@
       '<div class="tp-scope" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
       field("Nombre *", '<input type="text" class="tp-input" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
       field("Ruta *", '<select class="tp-input" data-x-route style="width:100%;">' + rutaOpts + "</select>") +
-      field("Días *", '<div class="tp-rsch__days">' + diasHtml + "</div>", true) +
+      field(tpT('ui.days_required'), '<div class="tp-rsch__days">' + diasHtml + "</div>", true) +
       field("Salida de ida *", '<input type="time" class="tp-input" data-x-start value="' + (item ? esc(item.start_time) : "07:00") + '" style="width:100%;">') +
       field("Salida de vuelta", '<input type="time" class="tp-input" data-x-return value="' + (item && item.return_start_time ? esc(item.return_start_time) : "") + '" style="width:100%;">' +
-        '<span class="tp-field__hint">Vacío = solo ida.</span>') +
+        '<span class="tp-field__hint">' + tpT('ui.empty_means_one_way') + '</span>') +
       field("Tolerancia de adelanto (min) *", '<input type="number" min="0" class="tp-input" data-x-early value="' + (item ? item.tolerance_early : 5) + '" style="width:100%;">') +
       field("Tolerancia de retraso (min) *", '<input type="number" min="0" class="tp-input" data-x-late value="' + (item ? item.tolerance_late : 10) + '" style="width:100%;">') +
-      field("Vehículos", '<div data-x-devices></div>', true) +
+      field(tpT('ui.vehicles'), '<div data-x-devices></div>', true) +
       field("", '<label class="tp-rsch__check"><input type="checkbox" data-x-active' + (!item || item.active ? " checked" : "") + "> Activa</label>", true) +
       '<div data-x-err style="grid-column:1/-1;display:none;color:#ef4444;font-size:13px;"></div></div>';
 
     var dlg = tpModal.open({
-      title: item ? "Editar programación" : "Nueva programación",
+      title: item ? tpT('ui.edit_schedule') : tpT('ui.new_schedule'),
       size: "md",
       body: body,
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
-        { label: "Guardar", variant: "primary", close: false, onClick: function (d) { save(d, item); return false; } },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
+        { label: tpT('global.save'), variant: "primary", close: false, onClick: function (d) { save(d, item); return false; } },
       ],
     });
 
@@ -175,7 +175,7 @@
         mount: dlg.querySelector("[data-x-devices]"),
         items: state.devices || [],
         selected: elegidos,
-        placeholder: "Seleccionar vehículos…",
+        placeholder: tpT('ui.select_vehicles_ellipsis'),
         host: dlg,
       });
     }
@@ -207,7 +207,7 @@
 
     if (!payload.name) return showErr("El nombre es obligatorio.");
     if (!payload.route_id) return showErr("Selecciona una ruta.");
-    if (!dias.length) return showErr("Elige al menos un día.");
+    if (!dias.length) return showErr(tpT('ui.pick_at_least_one_day'));
     if (!payload.start_time) return showErr("Falta la hora de salida de ida.");
     if (payload.return_start_time && payload.return_start_time <= payload.start_time) {
       return showErr("La salida de vuelta tiene que ser posterior a la de ida.");
@@ -230,9 +230,9 @@
 
   function del(id) {
     tpModal.confirm({
-      title: "Eliminar programación",
-      message: "¿Eliminar esta programación? Los puntos de control de la ruta se conservan.",
-      confirmLabel: "Eliminar",
+      title: tpT('ui.delete_schedule'),
+      message: tpT('ui.confirm_delete_schedule'),
+      confirmLabel: tpT('global.delete'),
       danger: true,
     }).then(function (ok) {
       if (!ok) return;
@@ -257,7 +257,7 @@
       "<span>Geocerca</span>" +
       "<span>Min.</span>" +
       "<span>Antes</span>" +
-      "<span>Después</span>" +
+      "<span>" + tpT('ui.after') + "</span>" +
       "<span>Etiqueta</span>" +
       "<span></span>" +
     "</div>";
@@ -297,7 +297,7 @@
 
       var body = '<div class="tp-scope tp-rsch__cps">' +
         '<p class="tp-text-muted">Cada punto de control es una geocerca y el vehículo tiene que pasar por ellos en el orden de la lista. ' +
-        '<strong>Min.</strong> son los minutos desde la salida; <strong>Antes</strong> y <strong>Después</strong> son la tolerancia en minutos ' +
+        '<strong>Min.</strong> son los minutos desde la salida; <strong>Antes</strong> y <strong>' + tpT('ui.after') + '</strong> son la tolerancia en minutos ' +
         '(en blanco, se usa la de la programación).</p>' +
         SENTIDOS.map(function (s) {
           var filas = (d.checkpoints[s.key] || []).map(function (p) { return cpRow(geofences, p); }).join("");
@@ -305,8 +305,8 @@
             "<h4>" + s.label + "</h4>" +
             CP_CABECERA +
             '<div data-cp-list>' + filas + "</div>" +
-            '<p class="tp-rsch__cpempty">Sin puntos todavía en este sentido.</p>' +
-            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cp-add>＋ Añadir punto</button>' +
+            '<p class="tp-rsch__cpempty">' + tpT('ui.no_points_this_way') + '</p>' +
+            '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-cp-add>' + tpT('ui.add_point_plus') + '</button>' +
             "</section>";
         }).join("") +
         '<div data-x-err style="display:none;color:#ef4444;font-size:13px;"></div></div>';
@@ -316,8 +316,8 @@
         size: "lg",
         body: body,
         buttons: [
-          { label: "Cancelar", variant: "ghost", close: true },
-          { label: "Guardar", variant: "primary", close: false, onClick: function (el) { saveCheckpoints(el, routeId); return false; } },
+          { label: tpT('global.cancel'), variant: "ghost", close: true },
+          { label: tpT('global.save'), variant: "primary", close: false, onClick: function (el) { saveCheckpoints(el, routeId); return false; } },
         ],
       });
 
@@ -429,7 +429,7 @@
       "</summary>" +
       '<table class="tp-svc-table"><thead><tr>' +
         "<th>#</th><th>Punto de control</th><th>Previsto</th><th>Real</th>" +
-        '<th style="text-align:right;">Desvío (min)</th><th>Estado</th>' +
+        '<th style="text-align:right;">' + tpT('ui.detour_min') + '</th><th>' + tpT('front.status') + '</th>' +
       "</tr></thead><tbody>" + puntos + "</tbody></table></details>";
   }
 

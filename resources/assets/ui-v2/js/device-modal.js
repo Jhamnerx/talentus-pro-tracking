@@ -772,9 +772,9 @@
         tpModal
           .confirm({
             title: "Eliminar sensor",
-            message: "¿Eliminar este sensor? Esta acción no se puede deshacer.",
+            message: tpT('ui.confirm_delete_sensor'),
             danger: true,
-            confirmLabel: "Eliminar",
+            confirmLabel: tpT('global.delete'),
           })
           .then(function (okGo) {
             if (!okGo) return;
@@ -865,9 +865,9 @@
         tpModal
           .confirm({
             title: "Eliminar servicio",
-            message: "¿Eliminar este servicio?",
+            message: tpT('ui.confirm_delete_service'),
             danger: true,
-            confirmLabel: "Eliminar",
+            confirmLabel: tpT('global.delete'),
           })
           .then(function (okGo) {
             if (!okGo) return;
@@ -947,8 +947,8 @@
 
     var BADGES = {
       mantenimiento: { label: "Mantenimiento", color: "#3b82f6" },
-      suspension: { label: "Suspensión", color: "#ef4444" },
-      reactivacion: { label: "Reactivación", color: "#22c55e" },
+      suspension: { label: tpT('ui.suspension'), color: "#ef4444" },
+      reactivacion: { label: tpT('ui.reactivation'), color: "#22c55e" },
     };
 
     function empty(msg) {
@@ -962,7 +962,7 @@
         .fetchJSON(cfg.list)
         .then(function (res) {
           var items = (res.data && res.data.items) || [];
-          if (!items.length) return empty("Sin registros aún.");
+          if (!items.length) return empty(tpT('ui.no_records_yet'));
 
           rowsEl.innerHTML = items
             .map(function (m) {
@@ -1034,7 +1034,7 @@
       var del = e.target.closest("[data-maint-del]");
       if (!del) return;
       tpModal
-        .confirm({ title: "Eliminar registro", message: "¿Eliminar este registro del historial?", danger: true, confirmLabel: "Eliminar" })
+        .confirm({ title: "Eliminar registro", message: tpT('ui.confirm_delete_history_record'), danger: true, confirmLabel: tpT('global.delete') })
         .then(function (ok) {
           if (!ok) return;
           tpModal
@@ -1082,7 +1082,7 @@
           return (
             '<tr data-camera-id="' + c.id + '">' +
             "<td>" + esc(c.name) + "</td>" +
-            "<td>" + (c.show_widget ? "Sí" : "No") + "</td>" +
+            "<td>" + (c.show_widget ? tpT('ui.yes') : "No") + "</td>" +
             "<td>" + esc(c.ftp_username || "") + "</td>" +
             '<td style="text-align:right;">' +
             kebabCell("data-camera-edit", "data-camera-del", c.id,
@@ -1102,14 +1102,14 @@
     function openForm(id, name, widget) {
       var isEdit = !!id;
       tpModal.open({
-        title: isEdit ? "Editar cámara" : "Nueva cámara",
+        title: isEdit ? tpT('ui.edit_camera') : tpT('ui.new_camera'),
         size: "sm",
         static: true,
         body:
           '<form class="tp-form tp-camera-form">' +
           '<div class="tp-form__grid">' +
           '<label class="tp-form__field tp-form__field--required">' +
-          '<span class="tp-form__label">Nombre</span>' +
+          '<span class="tp-form__label">' + tpT('ui.name') + '</span>' +
           '<input type="text" name="name" value="' + esc(name || "") + '" data-tp-field>' +
           "</label>" +
           '<label class="tp-form__field tp-form__field--checkbox">' +
@@ -1118,9 +1118,9 @@
           "</label>" +
           "</div></form>",
         buttons: [
-          { label: "Cancelar", variant: "ghost", close: true },
+          { label: tpT('global.cancel'), variant: "ghost", close: true },
           {
-            label: "Guardar",
+            label: tpT('global.save'),
             variant: "primary",
             close: false,
             onClick: function (dialog) {
@@ -1143,7 +1143,7 @@
                     tpModal.toast((res.data && res.data.message) || "No se pudo guardar.", "error");
                     return;
                   }
-                  tpModal.toast("Cámara guardada.", "success");
+                  tpModal.toast(tpT('ui.camera_saved'), "success");
                   tpModal.close(dialog);
                   reload();
                 });
@@ -1169,12 +1169,12 @@
       if (del) {
         var cid = del.getAttribute("data-camera-del");
         tpModal
-          .confirm({ title: "Eliminar cámara", message: "¿Eliminar esta cámara?", danger: true, confirmLabel: "Eliminar" })
+          .confirm({ title: tpT('ui.delete_camera'), message: tpT('ui.confirm_delete_camera'), danger: true, confirmLabel: tpT('global.delete') })
           .then(function (okGo) {
             if (!okGo) return;
             tpModal.fetchJSON(cfg.destroy.replace("{id}", cid), { method: "DELETE" }).then(function (res) {
               if (res.ok && res.data && res.data.ok) {
-                tpModal.toast("Cámara eliminada.", "success");
+                tpModal.toast(tpT('ui.camera_deleted'), "success");
                 reload();
               } else {
                 tpModal.toast("No se pudo eliminar.", "error");
@@ -1271,17 +1271,17 @@
           '<form class="tp-form tp-expense-form">' +
           '<div class="tp-form__grid tp-form__grid--2">' +
           '<label class="tp-form__field tp-form__field--required tp-col-2">' +
-          '<span class="tp-form__label">Nombre</span>' +
+          '<span class="tp-form__label">' + tpT('ui.name') + '</span>' +
           '<input type="text" name="name" value="' + esc(item.name || "") + '" data-tp-field></label>' +
           '<label class="tp-form__field tp-form__field--required">' +
-          '<span class="tp-form__label">Fecha</span>' +
+          '<span class="tp-form__label">' + tpT('front.date') + '</span>' +
           '<div style="display:flex;gap:8px;">' +
           // el input date lo mejora tp-datepicker (name pasa al hidden ISO)
           '<input type="date" name="date" value="' + esc(dateVal) + '" style="flex:1;" data-tp-field>' +
           '<input type="time" data-exp-time value="' + esc(timeVal) + '" style="width:104px;">' +
           "</div></label>" +
           '<label class="tp-form__field tp-form__field--required">' +
-          '<span class="tp-form__label">Tipo</span>' +
+          '<span class="tp-form__label">' + tpT('front.type') + '</span>' +
           '<select class="tp-input" style="width:100%" name="type_id" data-tp-field>' + typeOptions(item.type_id) + "</select></label>" +
           '<label class="tp-form__field tp-form__field--required">' +
           '<span class="tp-form__label">Cantidad</span>' +
@@ -1300,9 +1300,9 @@
           '<textarea name="additional" rows="3" data-tp-field>' + esc(item.additional || "") + "</textarea></label>" +
           "</div></form>",
         buttons: [
-          { label: "Cancelar", variant: "ghost", close: true },
+          { label: tpT('global.cancel'), variant: "ghost", close: true },
           {
-            label: "Guardar",
+            label: tpT('global.save'),
             variant: "primary",
             close: false,
             onClick: function (dialog) {
@@ -1359,7 +1359,7 @@
       if (del) {
         var xid = del.getAttribute("data-expense-del");
         tpModal
-          .confirm({ title: "Eliminar gasto", message: "¿Eliminar este gasto?", danger: true, confirmLabel: "Eliminar" })
+          .confirm({ title: "Eliminar gasto", message: tpT('ui.confirm_delete_expense'), danger: true, confirmLabel: tpT('global.delete') })
           .then(function (okGo) {
             if (!okGo) return;
             tpModal.fetchJSON(cfg.destroy.replace("{id}", xid), { method: "DELETE" }).then(function (res) {
@@ -1432,12 +1432,12 @@
         "</label>" +
         '<label class="tp-choice">' +
         '<input type="checkbox" class="tp-choice-input" data-cal-append>' +
-        "<span>Añadir a los valores actuales (si no, los reemplaza)</span>" +
+        "<span>" + tpT('ui.add_to_current_values') + "</span>" +
         "</label>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Importar",
+          label: tpT('front.import'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -1461,7 +1461,7 @@
                   var errs = (res.data && res.data.errors) || {};
                   var first = Object.keys(errs)[0];
                   tpModal.toast(
-                    first ? [].concat(errs[first])[0] : "El fichero no es válido.",
+                    first ? [].concat(errs[first])[0] : tpT('ui.invalid_file'),
                     "error",
                   );
                   return;
@@ -1496,7 +1496,7 @@
    */
   function openSensorsCopy(cfg, sensors, onDone) {
     if (!sensors || !sensors.length) {
-      tpModal.toast("Este vehículo no tiene sensores que copiar.", "warning");
+      tpModal.toast(tpT('ui.no_sensors_to_copy'), "warning");
       return;
     }
 
@@ -1511,7 +1511,7 @@
       .join("");
 
     var dlg = tpModal.open({
-      title: "Copiar sensores a otros vehículos",
+      title: tpT('ui.copy_sensors_to_vehicles'),
       size: "lg",
       body:
         '<div class="tp-copy">' +
@@ -1520,19 +1520,19 @@
         '<div class="tp-copy__list">' + sensorRows + "</div>" +
         "</div>" +
         '<div class="tp-copy__col">' +
-        '<h4 class="tp-copy__title">Vehículos destino</h4>' +
-        '<input type="search" class="tp-input tp-input--sm" data-cp-search placeholder="Buscar vehículo…" autocomplete="off">' +
+        '<h4 class="tp-copy__title">' + tpT('ui.target_vehicles') + '</h4>' +
+        '<input type="search" class="tp-input tp-input--sm" data-cp-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off">' +
         '<div class="tp-copy__list" data-cp-devices>' +
         '<p class="tp-text-sm tp-text-muted" style="padding:8px;">Cargando…</p>' +
         "</div>" +
         '<div class="tp-copy__modes">' +
-        '<span class="tp-copy__title">Qué hacer con lo que el destino ya tiene</span>' +
+        '<span class="tp-copy__title">' + tpT('ui.what_to_do_with_existing') + '</span>' +
         '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="keep" checked>' +
         "<span>Conservarlo — solo se copia lo que falte</span></label>" +
         '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="replace">' +
         "<span>Reemplazar los que coincidan en tipo y nombre</span></label>" +
         '<label class="tp-copy__row"><input type="radio" name="tp-cp-mode" value="mirror">' +
-        "<span>Dejarlo igual al origen — borra los demás sensores del destino</span></label>" +
+        "<span>" + tpT('ui.make_identical_to_source') + "</span></label>" +
         '<p class="tp-text-xs tp-text-muted" style="margin:6px 0 0;">' +
         "Dos sensores con el mismo nombre pero distinto tipo NO se consideran el mismo: " +
         'con "Reemplazar" conviven los dos y el destino acaba con más sensores que el origen.</p>' +
@@ -1540,9 +1540,9 @@
         "</div>" +
         "</div>",
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Copiar",
+          label: tpT('ui.copy'),
           variant: "primary",
           close: false,
           onClick: function (d) {
@@ -1560,7 +1560,7 @@
               return false;
             }
             if (!dIds.length) {
-              tpModal.toast("Elige al menos un vehículo destino.", "warning");
+              tpModal.toast(tpT('ui.pick_one_target_vehicle'), "warning");
               return false;
             }
 
@@ -1585,7 +1585,7 @@
                   var partes = [r.copied + " copiados"];
                   if (r.replaced) partes.push(r.replaced + " reemplazados");
                   if (r.deleted) partes.push(r.deleted + " borrados del destino");
-                  if (r.skipped) partes.push(r.skipped + " ya existían");
+                  if (r.skipped) partes.push(r.skipped + tpT('ui.already_existed'));
                   if (r.denied) partes.push(r.denied + " sin permiso");
 
                   tpModal.close(d);
@@ -1597,9 +1597,9 @@
                     tpModal.alert({
                       title: "Nombres repetidos en el destino",
                       message:
-                        "El destino ya tenía estos sensores con el mismo nombre pero distinto tipo, así que " +
+                        tpT('ui.same_name_different_type') +
                         "ahora hay dos de cada uno: " + r.collisions.join(", ") + ". " +
-                        'Si querías que quedara igual al origen, repite la copia con "Dejarlo igual al origen".',
+                        tpT('ui.repeat_copy_identical'),
                     });
                   }
 
@@ -1615,11 +1615,11 @@
             if (mode === "mirror") {
               tpModal
                 .confirm({
-                  title: "Reemplazar la configuración del destino",
+                  title: tpT('ui.replace_target_config'),
                   message:
-                    "Se borrarán los sensores que los vehículos destino tengan y no estén en esta copia. " +
-                    "Esta acción no se puede deshacer.",
-                  confirmLabel: "Sí, dejarlo igual",
+                    tpT('ui.will_delete_target_sensors') +
+                    tpT('ui.cannot_be_undone'),
+                  confirmLabel: tpT('ui.yes_make_identical'),
                   danger: true,
                 })
                 .then(function (ok) {
@@ -1645,7 +1645,7 @@
             var items = (res.data && res.data.items) || [];
             if (!items.length) {
               wrap.innerHTML =
-                '<p class="tp-text-sm tp-text-muted" style="padding:8px;">No hay otros vehículos que puedas editar.</p>';
+                '<p class="tp-text-sm tp-text-muted" style="padding:8px;">' + tpT('ui.no_other_editable_vehicles') + '</p>';
               return;
             }
             wrap.innerHTML = items
@@ -1689,9 +1689,9 @@
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -2098,7 +2098,7 @@
             body: grid,
             buttons: [
               { label: "Quitar icono", variant: "ghost", close: true, onClick: function () { resolve({ id: "", url: "" }); } },
-              { label: "Cancelar", variant: "ghost", close: true },
+              { label: tpT('global.cancel'), variant: "ghost", close: true },
             ],
             onMount: function (d) {
               d.addEventListener("click", function (e) {
@@ -2252,12 +2252,12 @@
   function confirmDelete(editDialog, id, onDeleted) {
     var needPass = !!CFG.objectDeletePass;
     var body =
-      '<p style="margin:0;">¿Eliminar este vehículo? Esta acción no se puede deshacer.</p>' +
+      '<p style="margin:0;">' + tpT('ui.confirm_delete_vehicle') + '</p>' +
       (needPass
         ? '<div class="tp-field" style="margin-top:12px;">' +
-          '<label class="tp-field__label">Confirma con tu contraseña de acceso *</label>' +
+          '<label class="tp-field__label">' + tpT('ui.confirm_with_login_password') + '</label>' +
           '<input type="password" class="tp-input" data-del-pass autocomplete="off" style="width:100%;">' +
-          '<span class="tp-field__hint" style="display:block;margin-top:4px;font-size:12px;opacity:.7;">La contraseña con la que inicias sesión.</span></div>'
+          '<span class="tp-field__hint" style="display:block;margin-top:4px;font-size:12px;opacity:.7;">' + tpT('ui.login_password_hint') + '</span></div>'
         : "") +
       // Error inline (el toast queda detrás del modal apilado, no se ve).
       '<div data-del-error role="alert" style="display:none;margin-top:10px;padding:8px 10px;border-radius:8px;font-size:13px;background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.35);"></div>';
@@ -2282,13 +2282,13 @@
     }
 
     tpModal.open({
-      title: "Eliminar vehículo",
+      title: tpT('ui.delete_vehicle'),
       size: "sm",
       body: body,
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Eliminar",
+          label: tpT('global.delete'),
           variant: "danger",
           close: false,
           onClick: function (dlg2) {
@@ -2297,7 +2297,7 @@
               ? ((dlg2.querySelector("[data-del-pass]") || {}).value || "").trim()
               : "";
             if (needPass && !pass) {
-              showErr(dlg2, "Ingresa tu contraseña de acceso.");
+              showErr(dlg2, tpT('ui.enter_login_password'));
               focusPass(dlg2);
               return false;
             }
@@ -2310,15 +2310,15 @@
               .then(function (res) {
                 tpModal.setBusy(dlg2, false);
                 if (res.status === 422) {
-                  showErr(dlg2, (res.data && res.data.message) || "Contraseña incorrecta.");
+                  showErr(dlg2, (res.data && res.data.message) || tpT('ui.wrong_password'));
                   focusPass(dlg2);
                   return;
                 }
                 if (!res.ok || !res.data || !res.data.ok) {
-                  showErr(dlg2, (res.data && res.data.message) || "No se pudo eliminar el vehículo.");
+                  showErr(dlg2, (res.data && res.data.message) || tpT('ui.vehicle_delete_failed'));
                   return;
                 }
-                tpModal.toast("Vehículo eliminado.", "success");
+                tpModal.toast(tpT('ui.vehicle_deleted'), "success");
                 tpModal.close(dlg2);
                 if (editDialog) tpModal.close(editDialog);
                 if (typeof onDeleted === "function") {
@@ -2329,7 +2329,7 @@
               })
               .catch(function () {
                 tpModal.setBusy(dlg2, false);
-                showErr(dlg2, "Error de red. Inténtalo de nuevo.");
+                showErr(dlg2, tpT('ui.network_error_retry'));
               });
             return false;
           },
@@ -2350,13 +2350,13 @@
     }
     if (!isEdit && !CFG.canCreate) {
       tpModal.toast &&
-        tpModal.toast("Sin permiso para crear vehículos.", "error");
+        tpModal.toast(tpT('ui.no_permission_create_vehicles'), "error");
       return;
     }
 
     // Botón Eliminar (izquierda) solo al editar y con permiso devices.remove.
     var deleteBtn = {
-      label: "Eliminar",
+      label: tpT('global.delete'),
       variant: "danger",
       close: false,
       onClick: function (dialog) {
@@ -2366,14 +2366,14 @@
     };
 
     var dlg = tpModal.open({
-      title: (opts.kind === "beacon" ? (isEdit ? "Editar beacon" : "Nuevo beacon") : (isEdit ? "Editar vehículo" : "Nuevo vehículo")),
+      title: (opts.kind === "beacon" ? (isEdit ? "Editar beacon" : "Nuevo beacon") : (isEdit ? tpT('ui.edit_vehicle') : tpT('ui.new_vehicle'))),
       size: "lg",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: (isEdit && CFG.canRemove ? [deleteBtn] : []).concat([
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Guardar",
+          label: tpT('global.save'),
           variant: "primary",
           close: false,
           onClick: function (dialog) {
@@ -2403,13 +2403,13 @@
                     (res.data && res.data.message) ||
                       (isEdit
                         ? "No se pudo guardar."
-                        : "No se pudo crear el vehículo."),
+                        : tpT('ui.vehicle_create_failed')),
                     "error",
                   );
                   return;
                 }
                 tpModal.toast(
-                  isEdit ? "Vehículo actualizado." : "Vehículo creado.",
+                  isEdit ? tpT('ui.vehicle_updated') : tpT('ui.vehicle_created'),
                   "success",
                 );
                 tpModal.close(dialog);

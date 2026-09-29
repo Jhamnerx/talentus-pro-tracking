@@ -165,7 +165,7 @@
     var el = document.getElementById(id);
     if (!el) return;
     if (!rows || !rows.length) {
-      el.innerHTML = emptyState("Sin datos en el período.");
+      el.innerHTML = emptyState(tpT('ui.no_data_in_period'));
       return;
     }
     var max = rows.reduce(function (m, r) { return Math.max(m, opts.value(r)); }, 0) || 1;
@@ -196,7 +196,7 @@
     if (hint) {
       hint.textContent = r.indice != null
         ? r.indice + " eventos/100 km en la flota"
-        : "Sin kilometraje en el período";
+        : tpT('ui.no_mileage_in_period');
     }
 
     var peorMax = (r.peores || []).reduce(function (m, x) { return Math.max(m, x.index); }, 0) || 1;
@@ -220,11 +220,11 @@
     var foot = $("#tp-rank-foot");
     if (foot) {
       var partes = [
-        "Índice: eventos ponderados (choque ×10, exceso ×2, resto ×1) por cada 100 km.",
-        "Medidos " + fmt(r.cubiertos) + " de " + fmt(r.flota) + " vehículos con kilometraje en el período.",
+        tpT('ui.risk_index_help'),
+        "Medidos " + fmt(r.cubiertos) + " de " + fmt(r.flota) + tpT('ui.vehicles_with_mileage'),
       ];
       if (r.acotado) {
-        partes.push("En flotas grandes el ranking se calcula sobre los vehículos con incidencias y los de actividad más reciente.");
+        partes.push(tpT('ui.large_fleet_ranking_note'));
       }
       foot.textContent = partes.join(" ");
     }
@@ -259,7 +259,7 @@
     var el = document.getElementById("tp-dash-notes");
     if (!el) return;
     if (!rows || !rows.length) {
-      el.innerHTML = '<li class="tp-text-muted tp-text-sm">No hay información en el período.</li>';
+      el.innerHTML = '<li class="tp-text-muted tp-text-sm">' + tpT('ui.no_info_in_period') + '</li>';
       return;
     }
     el.innerHTML = rows
@@ -285,7 +285,7 @@
       tbody.innerHTML = '<tr><td colspan="4" class="tp-text-muted tp-text-center">Sin datos.</td></tr>';
       return;
     }
-    var labels = { moving: "Moviendo", idle: "Ralentí", stopped: "Detenido", offline: "Sin datos" };
+    var labels = { moving: "Moviendo", idle: tpT('front.idle'), stopped: tpT('front.stopped'), offline: "Sin datos" };
     tbody.innerHTML = top
       .map(function (d, i) {
         var g = statusGroup(d.status);
@@ -332,7 +332,7 @@
     try {
       fn();
     } catch (e) {
-      console.warn("[dashboard] render '" + name + "' falló:", e);
+      console.warn("[dashboard] render '" + name + tpT('ui.failed_colon'), e);
     }
   }
 
@@ -451,9 +451,9 @@
         if ("mileage_sampled" in p) {
           var hint = $("#tp-dash-mileage-hint");
           if (hint) {
-            hint.textContent = p.mileage_sampled ? "En el período · muestra" : "En el período";
+            hint.textContent = p.mileage_sampled ? tpT('ui.in_period_showing') : tpT('ui.in_the_period');
             hint.title = p.mileage_sampled
-              ? "Se calcula sobre los vehículos con actividad más reciente. Elige vehículos en Ajustes → Tablero para un cálculo exacto."
+              ? tpT('ui.recent_activity_note')
               : "";
           }
         }

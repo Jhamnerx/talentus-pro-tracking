@@ -177,11 +177,11 @@
         },
       },
       51: { name: "Google Normal", factory: g("m", LANG_TAG) },
-      53: { name: "Google Híbrido", factory: g("y", LANG_TAG) },
-      54: { name: "Google Satélite", factory: g("s", LANG_TAG) },
+      53: { name: tpT('ui.map_google_hybrid'), factory: g("y", LANG_TAG) },
+      54: { name: tpT('ui.map_google_satellite'), factory: g("s", LANG_TAG) },
       55: { name: "Google Terreno", factory: g("p", LANG_TAG) },
-      56: { name: "Google Tráfico Híbrido", factory: g("y,traffic", LANG_TAG) },
-      57: { name: "Google Tráfico", factory: g("m,traffic", LANG_TAG) },
+      56: { name: tpT('ui.map_google_traffic_hybrid'), factory: g("y,traffic", LANG_TAG) },
+      57: { name: tpT('ui.map_google_traffic'), factory: g("m,traffic", LANG_TAG) },
       70: {
         name: "Carto",
         factory: function () {

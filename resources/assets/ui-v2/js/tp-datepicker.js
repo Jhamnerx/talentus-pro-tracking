@@ -335,8 +335,8 @@
 
     html +=
       '<div class="' + C.foot + '">' +
-      '<button type="button" class="' + C.link + '" data-dp-clear>Borrar</button>' +
-      '<button type="button" class="' + C.link + '" data-dp-today>Hoy</button>' +
+      '<button type="button" class="' + C.link + '" data-dp-clear>' + tpT('ui.clear_verb') + '</button>' +
+      '<button type="button" class="' + C.link + '" data-dp-today>' + tpT('front.today') + '</button>' +
       "</div>";
 
     this.panel.innerHTML = html;

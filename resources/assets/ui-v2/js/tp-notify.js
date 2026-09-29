@@ -122,7 +122,7 @@
       var body = [];
       if (ev.device && ev.device.name) body.push(ev.device.name);
       if (ev.geofence && ev.geofence.name) body.push(ev.geofence.name);
-      var n = new Notification(ev.message || "Evento", {
+      var n = new Notification(ev.message || tpT('front.event'), {
         body: body.join(" · "),
         icon: "/assets/images/marker-icon-2x.png",
       });

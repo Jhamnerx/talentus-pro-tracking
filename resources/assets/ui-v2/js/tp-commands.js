@@ -73,7 +73,7 @@
       // tp-cmd-form: separación uniforme (gap) entre secciones del modal
       '<div class="tp-cmd tp-cmd-form">' +
       // Conexión: radios (estilo referencia)
-      '<div><label class="' + UI.label + '">' + esc(T("connection", "Conexión")) + "</label>" +
+      '<div><label class="' + UI.label + '">' + esc(T("connection", tpT('ui.connection'))) + "</label>" +
       '<div class="tp-choice-row">' +
       '<label class="' + UI.radio + '"><input type="radio" class="' + UI.chk + '" name="cmd_conn" value="gprs" checked><span>' +
       esc(T("gprs", "GPRS")) + "</span></label>" +
@@ -83,7 +83,7 @@
       // Auto-send when online (solo GPRS): encola si el device está desconectado
       '<label class="' + UI.radio + '" data-cmd-autowrap>' +
       '<input type="checkbox" class="' + UI.chk + '" data-cmd-auto><span>' +
-      esc(T("auto_send_when_online", "Enviar automáticamente al conectarse")) +
+      esc(T("auto_send_when_online", tpT('ui.send_on_connect'))) +
       "</span></label>" +
       '<div data-cmd-alert class="hidden mb-3 rounded-lg px-3 py-2.5 text-[13px]"></div>' +
       // Dispositivos: dropdown multi-select con chips (estilo referencia)
@@ -225,7 +225,7 @@
         if (!S.meta.sms_gateway) {
           showAlert(dlg, "warn", T("sms_gateway_disabled", "SMS Gateway deshabilitado."));
         } else if (!devicesFor().length) {
-          showAlert(dlg, "warn", T("no_devices_sim", "No hay dispositivos con número SIM."));
+          showAlert(dlg, "warn", T("no_devices_sim", tpT('ui.no_devices_with_sim')));
         }
         hint.hidden = true;
       } else {
@@ -356,7 +356,7 @@
       tpModal
         .confirm({
           title: T("send_command", "Enviar comando"),
-          message: T("are_you_sure", "¿Estás seguro?"),
+          message: T("are_you_sure", tpT('ui.are_you_sure')),
           confirmLabel: T("send", "Enviar"),
           cancelLabel: T("cancel", "Cancelar"),
         })
@@ -446,7 +446,7 @@
           '<span class="flex-1 min-w-0 truncate text-[13px] text-slate-700 dark:text-slate-200">' + esc(name) + "</span>" +
           resultBadge("queued") +
           '<span class="max-w-[45%] text-[12px] text-slate-500 dark:text-slate-400 break-words">' +
-          esc(T("queued_for_online", "Se enviará cuando el dispositivo se conecte.")) + "</span></div>";
+          esc(T("queued_for_online", tpT('ui.will_send_on_connect'))) + "</span></div>";
       });
       box.innerHTML =
         '<details class="rounded-lg border border-solid border-slate-200 dark:border-slate-600 overflow-hidden" open>' +

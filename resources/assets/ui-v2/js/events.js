@@ -244,7 +244,7 @@
   // ── Lista ──────────────────────────────────────────────────
   function rowHtml(ev) {
     var hasGeo = ev.lat != null && ev.lng != null;
-    var addr = geoCache[ev.id] != null ? esc(geoCache[ev.id]) : hasGeo ? "…" : "sin ubicación";
+    var addr = geoCache[ev.id] != null ? esc(geoCache[ev.id]) : hasGeo ? "…" : tpT('ui.no_location_lower');
     return (
       '<button type="button" class="tp-events__row" data-id="' +
       ev.id +
@@ -293,11 +293,11 @@
       sevClass(ev.severity) +
       '">' +
       esc(evTitle(ev)) +
-      '</div><dl class="tp-ev-popup__defs"><dt>Hora</dt><dd>' +
+      '</div><dl class="tp-ev-popup__defs"><dt>' + tpT('front.hour') + '</dt><dd>' +
       esc(ev.time) +
       "</dd>" +
-      (ADDR_ON ? "<dt>Ubicación</dt><dd data-ev-addr>" + esc(addr) + "</dd>" : "") +
-      (ev.speed != null ? "<dt>Velocidad</dt><dd>" + Math.round(ev.speed) + " km/h</dd>" : "") +
+      (ADDR_ON ? "<dt>" + tpT('front.location') + "</dt><dd data-ev-addr>" + esc(addr) + "</dd>" : "") +
+      (ev.speed != null ? "<dt>" + tpT('front.speed') + "</dt><dd>" + Math.round(ev.speed) + " km/h</dd>" : "") +
       "<dt>Coordenadas</dt><dd>" +
       parseFloat(ev.lat).toFixed(5) +
       ", " +
@@ -320,7 +320,7 @@
         : "") +
       // "Eliminar": paridad legacy events.destroy (perm events.clean → remove).
       (CAN_REMOVE
-        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ev-del="' + ev.id + '" style="flex:0 0 auto;color:#ef4444;">Eliminar</button>'
+        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ev-del="' + ev.id + '" style="flex:0 0 auto;color:#ef4444;">' + tpT('global.delete') + '</button>'
         : "") +
       "</div></div>"
     );
@@ -363,7 +363,7 @@
     var np = nowParts();
     var body =
       '<div class="tp-scope tp-form"><div class="tp-form__grid">' +
-      '<div class="tp-form__field"><span class="tp-form__label">Evento</span>' +
+      '<div class="tp-form__field"><span class="tp-form__label">' + tpT('front.event') + '</span>' +
       '<input class="tp-input" value="' + esc((evTitle(ev)) + " · " + (ev.device_name || "")) + '" readonly></div>' +
       '<div class="tp-form__field tp-form__field--required"><span class="tp-form__label">Tipo de respuesta</span>' +
       '<select class="tp-input" data-ca-resp>' +
@@ -384,7 +384,7 @@
       size: "md",
       body: body,
       buttons: [
-        { label: "Cancelar", variant: "ghost", close: true },
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
         { label: "Registrar", variant: "primary", close: false, onClick: function (d) { submitAttend(d, ev); return false; } },
       ],
     });
@@ -439,7 +439,7 @@
     var now = listEl.querySelector('.tp-events__row[data-id="' + id + '"]');
     if (now) now.setAttribute("aria-selected", "true");
     if (ev.lat == null || ev.lng == null || !state.map) {
-      if (window.tpModal && window.tpModal.toast) window.tpModal.toast("Este evento no tiene ubicación.", "warning");
+      if (window.tpModal && window.tpModal.toast) window.tpModal.toast(tpT('ui.event_has_no_location'), "warning");
       return;
     }
     if (hintEl) hintEl.hidden = true;
@@ -487,10 +487,10 @@
       .confirm({
         title: id ? "Eliminar evento" : "Borrar todos los eventos",
         message: id
-          ? "¿Eliminar este evento? No se puede deshacer."
-          : "Se borrarán TODOS tus eventos. Esta acción no se puede deshacer.",
+          ? tpT('ui.confirm_delete_event_hard')
+          : tpT('ui.confirm_delete_all_events'),
         danger: true,
-        confirmLabel: "Eliminar",
+        confirmLabel: tpT('global.delete'),
       })
       .then(function (ok) {
         if (!ok) return;
@@ -523,7 +523,7 @@
       state.selectedId = null;
       listEl.innerHTML = "";
     }
-    if (statusEl) statusEl.textContent = reset ? "Cargando…" : "Cargando más…";
+    if (statusEl) statusEl.textContent = reset ? "Cargando…" : tpT('ui.loading_more');
     var hours = hoursSel ? hoursSel.value : 0;
     var type = typeSel ? typeSel.value : "";
     var deviceId = deviceSel ? deviceSel.value : "";
@@ -633,7 +633,7 @@
   function csvCell(v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function exportCsv() {
     if (!state.events.length) { if (window.tpModal) tpModal.toast("No hay eventos para exportar.", "warning"); return; }
-    var head = ["Evento", "Vehiculo", "Fecha", "Latitud", "Longitud", "Atendido"];
+    var head = [tpT('front.event'), tpT('ui.vehicle'), tpT('front.date'), "Latitud", "Longitud", "Atendido"];
     var lines = [head.join(",")];
     state.events.forEach(function (ev) {
       lines.push([evTitle(ev), ev.device_name || "", ev.time || "", ev.lat != null ? ev.lat : "", ev.lng != null ? ev.lng : "", ev.attended ? "Si" : "No"].map(csvCell).join(","));
@@ -669,13 +669,13 @@
             .bindPopup(
               '<div class="tp-ev-popup"><div class="tp-ev-popup__title">' + esc(p.device_name || "") + "</div>" +
               '<div class="tp-ev-popup__type tp-ev-popup__type--' + sevClass(p.severity) + '">' + esc(evTitle(p)) + "</div>" +
-              '<dl class="tp-ev-popup__defs"><dt>Hora</dt><dd>' + esc(p.time) + "</dd><dt>Coordenadas</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
+              '<dl class="tp-ev-popup__defs"><dt>' + tpT('front.hour') + '</dt><dd>' + esc(p.time) + "</dd><dt>Coordenadas</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
             )
             .addTo(g);
         });
         state.riskLayer = g;
         if (state.riskOn) g.addTo(state.map);
-        if (legendNote) legendNote.textContent = pts.length + " eventos" + (res && res.capped ? " (máx " + res.cap + ")" : "");
+        if (legendNote) legendNote.textContent = pts.length + " eventos" + (res && res.capped ? tpT('ui.max_open') + res.cap + ")" : "");
       })
       .catch(function () { if (legendNote) legendNote.textContent = "Error al cargar"; });
   }
@@ -850,7 +850,7 @@
         return [c[1], c[0]];
       });
       if (pts.length < 2) return;
-      L.polyline(pts, { color: r.color || "#7c3aed", weight: 5, opacity: 0.85, dashArray: "6 6" }).bindTooltip(r.name || "Ruta").addTo(g);
+      L.polyline(pts, { color: r.color || "#7c3aed", weight: 5, opacity: 0.85, dashArray: "6 6" }).bindTooltip(r.name || tpT('front.route')).addTo(g);
     });
     return g;
   }
