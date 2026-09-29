@@ -259,6 +259,7 @@ return [
     'delivery' => 'Entrega',
     'demo' => 'Demo',
     'demo_acc' => 'No se pueden cambiar las opciones en la cuenta demo.',
+    'format' => 'Formato',
     'departure_time' => 'Hora de salida',
     'descending' => 'Descendiendo',
     'deselect_all' => 'Deseleccionar todo',

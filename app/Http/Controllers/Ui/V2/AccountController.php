@@ -290,7 +290,7 @@ class AccountController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
     }
 
@@ -319,7 +319,7 @@ class AccountController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
     }
 
@@ -343,7 +343,7 @@ class AccountController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
     }
 
@@ -593,7 +593,7 @@ class AccountController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         } catch (\Throwable $e) {
             return response()->json(['ok' => false, 'message' => $e->getMessage()], $this->statusFor($e));
         }
@@ -620,7 +620,7 @@ class AccountController extends BaseController
             $this->assertNotDemo();
             SmsEventQueueRepo::deletewhere(['user_id' => $this->user->id]);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
 
         return response()->json(['ok' => true]);
@@ -671,7 +671,7 @@ class AccountController extends BaseController
         } catch (ValidationException $e) {
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
     }
 
@@ -692,7 +692,7 @@ class AccountController extends BaseController
 
             return response()->json(['ok' => true]);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
     }
 
@@ -743,7 +743,7 @@ class AccountController extends BaseController
 
             return response()->json(['ok' => true]);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
     }
 
@@ -762,7 +762,7 @@ class AccountController extends BaseController
 
             return response()->json(['ok' => true]);
         } catch (DemoAccountException $e) {
-            return response()->json(['ok' => false, 'message' => trans('front.demo_account')], 403);
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
         }
     }
 

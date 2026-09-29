@@ -106,6 +106,7 @@ return [
     'change_subscription' => 'Change membership',
     'limited_acc' => 'You have limited account.',
     'demo_acc' => 'You can\'t change demo account options.',
+    'format' => 'Format',
     'server' => 'Server',
     'server_eu' => 'EU',
     'server_us' => 'USA',
