@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="{{ Appearance::getSetting('server_description') }}">
 <link rel="shortcut icon" href="{{ Appearance::getAssetFileUrl('favicon') }}" type="image/x-icon">
-<link rel="stylesheet" href="{{ asset_resource('assets/css/'.Appearance::getSetting('template_color').'.css') }}">
+<link rel="stylesheet" href="{{ asset_resource('assets/css/'.Appearance::getTemplateColor().'.css') }}">
 @if (Language::dir() == 'rtl')
     <link rel="stylesheet" href="{{ asset_resource('assets/css/rtl.css') }}">
 @endif
