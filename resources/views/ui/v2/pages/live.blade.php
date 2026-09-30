@@ -1,6 +1,11 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? trans('front.map'))
+@section('title', $pageTitle ?? match (request('panel')) {
+    'zones'  => trans('front.geofences'),
+    'pois'   => trans('front.poi'),
+    'routes' => trans('front.routes'),
+    default  => trans('front.map'),
+})
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')

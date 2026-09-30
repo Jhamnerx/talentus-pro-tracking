@@ -688,7 +688,7 @@ return [
         'ignition_duration_longer_than' => 'Duración del encendido mayor a',
         'tasks' => 'Tareas',
         'columns' => 'Columnas',
-        'called_at' => 'Parar en',
+        'called_at' => 'Llamado el',
         'alert_type' => 'Tipo de alerta',
         'response' => 'Respuesta',
         'remarks' => 'Observaciones',

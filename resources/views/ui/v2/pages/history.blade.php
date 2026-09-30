@@ -174,10 +174,13 @@
                 {{-- Cards resumen flotantes (Tailwind) --}}
                 <div class="tp-history__summary" id="tp-hist-summary" hidden>
                     @php
+                        // unit = '' donde el valor YA viene con unidad desde la API
+                        // (pasa por Formatter). Solo vavg se calcula aqui en el
+                        // cliente y llega en crudo, asi que conserva la suya.
                         $sumCards = [
-                            ['id' => 'dist', 'label' => trans('front.distance'), 'unit' => 'km'],
+                            ['id' => 'dist', 'label' => trans('front.distance'), 'unit' => ''],
                             ['id' => 'dur', 'label' => trans('front.duration'), 'unit' => ''],
-                            ['id' => 'vmax', 'label' => trans('front.max_speed'), 'unit' => 'km/h'],
+                            ['id' => 'vmax', 'label' => trans('front.max_speed'), 'unit' => ''],
                             ['id' => 'vavg', 'label' => trans('front.average_speed'), 'unit' => 'km/h'],
                             ['id' => 'drives', 'label' => trans('front.trips'), 'unit' => ''],
                             ['id' => 'stops', 'label' => trans('front.stops'), 'unit' => ''],

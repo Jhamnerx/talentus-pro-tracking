@@ -658,6 +658,7 @@ return [
     'pick_date'                          => 'Seleccionar fecha',
     'pick_date_range'                    => 'Elige el rango de fechas.',
     'pick_default_icon'                  => 'Elige un icono por defecto.',
+    'pick_devices_and_command'           => 'Selecciona dispositivos y comando.',
     'pick_event_for_map'                 => 'Selecciona un evento para verlo en el mapa',
     'pick_file_first'                    => 'Selecciona un archivo primero.',
     'pick_one_column'                    => 'Elige al menos una columna.',

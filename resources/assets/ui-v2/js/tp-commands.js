@@ -218,7 +218,7 @@
             );
           })
           .join("") ||
-        '<div class="px-3 py-2.5 text-[13px] text-slate-400 dark:text-slate-500">' + esc(T("not_found", "Sin resultados")) + "</div>";
+        '<div class="px-3 py-2.5 text-[13px] text-slate-400 dark:text-slate-500">' + esc(tpT('ui.no_results_plain')) + "</div>";
 
       var hint = dlg.querySelector("[data-cmd-devhint]");
       if (S.conn === "sms") {
@@ -350,7 +350,7 @@
 
     function confirmSend(dlg) {
       if (!selectedIds().length || !dlg.querySelector("[data-cmd-type]").value) {
-        showAlert(dlg, "error", T("not_found", "Selecciona dispositivos y comando."));
+        showAlert(dlg, "error", tpT('ui.pick_devices_and_command'));
         return;
       }
       tpModal

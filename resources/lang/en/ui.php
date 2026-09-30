@@ -657,6 +657,7 @@ return [
     'pick_date'                          => 'Pick date',
     'pick_date_range'                    => 'Pick the date range.',
     'pick_default_icon'                  => 'Pick a default icon.',
+    'pick_devices_and_command'           => 'Select devices and command.',
     'pick_event_for_map'                 => 'Pick an event to see it on the map',
     'pick_file_first'                    => 'Pick a file first.',
     'pick_one_column'                    => 'Pick at least one column.',
