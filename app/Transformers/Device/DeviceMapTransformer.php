@@ -101,7 +101,11 @@ class DeviceMapTransformer extends DeviceTransformer
             'tail_color' => $tailColor,
             'icon_color' => $entity->getStatusColor($status),
             'icon_colors' => $entity->icon_colors,
+            // 'active'  = pivote  -> se dibuja en MI mapa (la casilla del sidebar)
+            // 'enabled' = device  -> el equipo esta de alta. El legacy, cuando
+            //   esta de baja, escribe "Desactivado" y NO muestra fecha.
             'active' => $entity->pivot ? (bool)$entity->pivot->active : null,
+            'enabled' => (bool) $entity->active,
             'group_id' => $entity->pivot ? (int)$entity->pivot->group_id : 0,
             'online' => $status,
             'blocked' => $blockedState,

@@ -1882,13 +1882,17 @@
     var status = classify(d);
     var speedNum = Math.round(parseFloat(d.speed) || 0);
     var speedTxt = d.speed_text || speedNum + " km/h";
+    // Dos cosas distintas, y conviene no mezclarlas:
+    //   active  = casilla del sidebar -> se dibuja en MI mapa
+    //   enabled = el equipo esta de alta (devices.active)
     var active = d.active !== false;
+    var enabled = d.enabled !== false;
     // 2ª línea = fecha de transmisión / estado (paridad legacy Device::time):
     // el backend ya resuelve "Desactivado" / "No conectado" / SIM|plan vencido /
     // fecha formateada. Solo falta pintarlo (antes mostrábamos la placa).
     var ts = Math.max(parseInt(d.timestamp, 10) || 0, parseInt(d.acktimestamp, 10) || 0);
     var metaTxt = d.time || d.plate_number || d.imei || "";
-    var metaIsStatus = active === false || ts === 0; // muestra estado, no fecha
+    var metaIsStatus = !enabled || active === false || ts === 0; // estado, no fecha
     // Acento lateral con el color de estado real del device (getStatusColor).
     var accent = d.icon_color || "";
     // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
@@ -1925,6 +1929,7 @@
       // como en el legacy, pero marcado: si no, la unica pista es la casilla
       // y con cientos de filas no se ve.
       (active ? "" : " is-map-hidden") +
+      (enabled ? "" : " is-disabled") +
       '" data-id="' +
       d.id +
       '" data-status="' +
@@ -1957,7 +1962,10 @@
       '">' +
       esc(speedTxt) +
       '</span><span class="tp-live__row-time">' +
-      fmtTimeAgo(d.acktimestamp || d.timestamp) +
+      // De baja: el legacy escribe "Desactivado" en la 2ª linea y NO muestra
+      // la ultima transmision. Aqui igual, o se leerian dos cosas que se
+      // contradicen (desactivado + "hace 3 dias").
+      (enabled ? fmtTimeAgo(d.acktimestamp || d.timestamp) : "") +
       "</span></div>" +
       '<button type="button" class="tp-live__row-menu" data-id="' +
       d.id +

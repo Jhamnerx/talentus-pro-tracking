@@ -2879,6 +2879,15 @@ table.tp-lock-hist th {
    pista que el checkbox, y con cientos de filas eso no se ve, asi que
    aqui la fila va atenuada y con una marca al lado del nombre.
    ------------------------------------------------------------------ */
+/* Equipo DE BAJA (devices.active = 0). El legacy escribe "Desactivado" en
+   la 2a linea y no muestra fecha; eso ya lo resuelve
+   .tp-live__row-meta--status. Aqui solo se apaga el punto de estado: en
+   verde o amarillo daria a entender que el equipo sigue reportando. */
+.tp-live__row.is-disabled .tp-live__row-dot {
+  background: var(--fg-disabled);
+  box-shadow: none;
+}
+
 .tp-live__row.is-map-hidden .tp-live__row-main,
 .tp-live__row.is-map-hidden .tp-live__row-end {
   opacity: 0.55;
