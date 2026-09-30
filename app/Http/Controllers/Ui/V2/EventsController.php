@@ -138,9 +138,10 @@ class EventsController extends BaseController
             $query->where('device_id', $deviceId);
         }
         if ($q !== '') {
-            $query->where(function ($w) use ($q) {
-                $w->where('message', 'like', '%' . $q . '%');
-            });
+            // scope search() de la entidad, que respeta Event::$searchable
+            // ('message' y 'device.name'). Buscando solo en message no se
+            // encontraba nada por nombre de vehiculo, al reves que el legacy.
+            $query->search($q);
         }
 
         // Paginación por offset (scroll infinito): pedimos uno extra para saber si hay más.
