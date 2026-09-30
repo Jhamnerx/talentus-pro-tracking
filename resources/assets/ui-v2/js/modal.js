@@ -311,6 +311,18 @@
         err.textContent = msg;
         var holder = input.closest(".tp-field") || input.parentNode;
         holder.appendChild(err);
+
+        // El aviso desaparece en cuanto se corrige el campo. Antes seguia
+        // visible hasta el siguiente envio, asi que parecia que el
+        // formulario no se enteraba de lo que acababas de escribir.
+        var limpia = function () {
+          input.classList.remove("is-invalid");
+          if (err.parentNode) err.parentNode.removeChild(err);
+          input.removeEventListener("input", limpia);
+          input.removeEventListener("change", limpia);
+        };
+        input.addEventListener("input", limpia);
+        input.addEventListener("change", limpia);
       }
     });
   }

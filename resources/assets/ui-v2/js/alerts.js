@@ -171,7 +171,8 @@
       );
     });
     if (count)
-      count.textContent = rules.length + (rules.length === 1 ? " regla" : " reglas");
+      count.textContent = tpT(rules.length === 1 ? 'ui.rules_count_one' : 'ui.rules_count',
+        { count: rules.length });
 
     if (!rules.length) {
       tbody.innerHTML =
@@ -252,7 +253,14 @@
 
   /* ----- Load ----- */
   function load() {
-    if (state.loading) return Promise.resolve();
+    // Si ya hay una carga en vuelo NO se descarta la nueva: se encola. Antes
+    // se devolvia una promesa vacia, asi que al crear una regla mientras
+    // corria la carga inicial la tabla (y el contador) se quedaban con los
+    // datos viejos hasta recargar la pagina a mano.
+    if (state.loading) {
+      state.reloadPendiente = true;
+      return Promise.resolve();
+    }
     state.loading = true;
     return fetch(DATA_URL, {
       credentials: "same-origin",
@@ -263,6 +271,10 @@
       })
       .then(function (p) {
         state.loading = false;
+        if (state.reloadPendiente) {
+          state.reloadPendiente = false;
+          return load();
+        }
         if (!p || !p.ok) return;
         state.rules = p.rules || [];
         renderTable();
@@ -1499,7 +1511,7 @@
                   return;
                 }
                 window.tpModal.toast(
-                  isEdit ? "Cambios guardados." : tpT('ui.alert_created'),
+                  isEdit ? tpT('ui.changes_saved') : tpT('ui.alert_created'),
                   "success",
                 );
                 window.tpModal.close(dlg);

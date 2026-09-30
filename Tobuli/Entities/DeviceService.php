@@ -127,8 +127,19 @@ class DeviceService extends AbstractEntity implements DisplayInterface
             case 'odometer':
             case 'engine_hours':
                 $sensor = $this->getSensor();
+                $unidad = $sensor ? trim((string) $sensor->unit_of_measurement) : '';
 
-                return round($left) . $sensor->unit_of_measurement;
+                // La unidad la define cada sensor, y 534 de los 1.427
+                // odometros la tienen vacia: la columna mezclaba "1391Km" con
+                // "70274" a secas. Si el sensor no la trae, se usa la unidad
+                // configurada por el usuario.
+                if ($unidad === '') {
+                    $unidad = $this->expiration_by === 'engine_hours'
+                        ? 'h'
+                        : \Formatter::distance()->getUnit();
+                }
+
+                return round($left) . $unidad;
 
             default:
                 return '-';

@@ -228,7 +228,7 @@ class CopilotController extends BaseController
             ['match' => ['/(en movim|circuland|activos?)/u'],  'reply' => trans('ui.cp_reply_moving'),       'action' => ['label' => trans('ui.cp_action_fleet_moving'), 'url' => url('/ui/v2/fleet?status=moving')]],
             ['match' => ['/(ralent|idle)/u'],                  'reply' => trans('ui.cp_reply_idle'),                          'action' => ['label' => trans('ui.cp_action_fleet_idle'),       'url' => url('/ui/v2/fleet?status=idle')]],
             ['match' => ['/(offline|sin (señal|reportar|conexi))/u'], 'reply' => trans('ui.cp_reply_offline'),          'action' => ['label' => trans('ui.cp_action_fleet_offline'),       'url' => url('/ui/v2/fleet?status=offline')]],
-            ['match' => ['/(velocid|exceso|veloc)/u'],         'reply' => trans('ui.cp_reply_overspeed'), 'action' => ['label' => trans('ui.cp_action_alerts'),           'url' => url('/ui/v2/alerts?type=overspeed')]],
+            ['match' => ['/(velocid|exceso|veloc)/u'],         'reply' => trans('ui.cp_reply_overspeed'), 'action' => ['label' => trans('ui.cp_action_events'),           'url' => url('/ui/v2/events?type=overspeed')]],
             ['match' => ['/(sos|panic|p[aá]nico)/u'],          'reply' => trans('ui.cp_reply_sos'),                           'action' => ['label' => trans('ui.cp_action_alerts_sos'),         'url' => url('/ui/v2/alerts?type=sos')]],
             ['match' => ['/(reporte|informe)/u'],              'reply' => trans('ui.cp_reply_reports'),             'action' => ['label' => trans('ui.cp_action_reports'),              'url' => url('/ui/v2/reports')]],
             ['match' => ['/(geocerca|zona)/u'],                'reply' => trans('ui.cp_reply_zones'),                         'action' => ['label' => trans('ui.cp_action_zones'),                 'url' => url('/ui/v2/zones')]],
@@ -239,10 +239,22 @@ class CopilotController extends BaseController
         foreach ($intents as $it) {
             foreach ($it['match'] as $rx) {
                 if (preg_match($rx, $lower)) {
+                    $accion = $it['action'];
+
+                    // "historial del T6G-611" llevaba al historial SIN el
+                    // vehiculo, asi que habia que volver a elegirlo a mano.
+                    // Si la pregunta nombra uno, se pasa en la URL.
+                    if (strpos($accion['url'], '/ui/v2/history') !== false) {
+                        $encontrado = $this->buscaVehiculo($q);
+                        if ($encontrado) {
+                            $accion['url'] .= '?device=' . $encontrado->id;
+                        }
+                    }
+
                     return response()->json([
                         'ok'     => true,
                         'reply'  => $it['reply'],
-                        'action' => $it['action'],
+                        'action' => $accion,
                         'query'  => $q,
                     ]);
                 }
@@ -282,5 +294,43 @@ class CopilotController extends BaseController
             'action' => ['label' => trans('ui.cp_search_platform'), 'url' => url('/ui/v2/live?q=' . urlencode($q))],
             'query'  => $q,
         ]);
+    }
+
+    /**
+     * Primer vehiculo del usuario que casa con el texto de la pregunta.
+     * Se usa para enriquecer el enlace de una intencion (p. ej. historial).
+     */
+    private function buscaVehiculo(string $q)
+    {
+        // Por PALABRAS, no por la frase entera: "historial del T6G-611"
+        // nunca casaria con el nombre de un vehiculo. Se prueban de mas
+        // larga a mas corta, que la placa suele ser el token mas especifico.
+        $palabras = preg_split('/[^A-Za-z0-9-]+/u', $q, -1, PREG_SPLIT_NO_EMPTY);
+        $palabras = array_filter($palabras, function ($p) {
+            return mb_strlen($p) >= 4;
+        });
+        usort($palabras, function ($a, $b) {
+            return mb_strlen($b) <=> mb_strlen($a);
+        });
+
+        try {
+            foreach ($palabras as $palabra) {
+                $term = '%' . $palabra . '%';
+                $encontrado = $this->user->devices()
+                    ->where(function ($w) use ($term) {
+                        $w->where('name', 'like', $term)
+                            ->orWhere('imei', 'like', $term)
+                            ->orWhere('plate_number', 'like', $term);
+                    })
+                    ->first(['devices.id', 'devices.name']);
+
+                if ($encontrado) {
+                    return $encontrado;
+                }
+            }
+        } catch (\Throwable $e) {
+        }
+
+        return null;
     }
 }
