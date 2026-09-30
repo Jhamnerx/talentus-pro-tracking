@@ -505,6 +505,7 @@ return [
     'marker_color_help'                  => 'Tiñe la etiqueta del vehículo y pone un halo detrás del icono en el mapa. Dentro de una geocerca con límite mandan los dos colores de abajo; fuera, los rangos.',
     'max_open'                           => '(máx',
     'max_speed'                          => 'Velocidad máxima',
+    'measured_of_fleet'                  => 'Medidos :medidos de :flota vehículos con kilometraje en el período.',
     'media_categories'                   => 'Categorías de medios',
     'min_after'                          => 'Min. después',
     'monitor_grid_note'                  => 'vehículos — cada celda los sigue en vivo. El tamaño y la selección se recuerdan en este navegador.',

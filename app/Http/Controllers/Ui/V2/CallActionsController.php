@@ -208,9 +208,18 @@ class CallActionsController extends BaseController
         // SIEMPRE el usuario autenticado (paridad legacy CallActionsController:120,
         // que lo fuerza) — antes se aceptaba user_id del cliente (suplantación).
         $data['user_id']   = $this->user->id;
-        $data['called_at'] = empty($data['called_at'])
+        // Una fecha ilegible (o vacia con hora puesta) se convertia en el
+        // epoch y quedaba guardada como "1970-01-01 05:00:00". Si no cae en
+        // un año razonable, se guarda null.
+        $called = empty($data['called_at'])
             ? null
             : \Formatter::time()->reverse($data['called_at']);
+
+        if ($called && (int) date('Y', strtotime($called)) < 2000) {
+            $called = null;
+        }
+
+        $data['called_at'] = $called;
 
         // Whitelist: el payload iba crudo a create()/update() (mass-assignment
         // de cualquier atributo fillable). Solo las claves del formulario.

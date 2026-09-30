@@ -35,6 +35,13 @@
   var canRemove = root ? root.getAttribute("data-can-remove") === "1" : false;
   var META = null;
 
+  /** Una fecha anterior al 2000 es un epoch guardado por error: no se pinta. */
+  function fechaOEmpty(v) {
+    if (!v) return "–";
+    var a = parseInt(String(v).slice(0, 4), 10);
+    return a && a >= 2000 ? v : "–";
+  }
+
   function esc(s) { return tpModal.escapeHtml(s); }
   function options(list, sel, ph) {
     return (ph ? '<option value="">' + esc(ph) + "</option>" : "") +
@@ -222,7 +229,7 @@
       rowsEl.innerHTML = items.length ? items.map(function (r) {
         return "<tr><td>" + esc(r.device || "–") + "</td>" +
           '<td title="' + esc(r.event) + '" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.event || "–") + "</td>" +
-          "<td>" + respChip(r) + "</td><td>" + esc(r.called_at || "–") + "</td>" +
+          "<td>" + respChip(r) + "</td><td>" + esc(fechaOEmpty(r.called_at)) + "</td>" +
           '<td title="' + esc(r.remarks) + '" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.remarks || "–") + "</td>" +
           "<td>" + esc(r.user || "–") + "</td>" +
           '<td class="tp-svc-table__actions">' + kebab(r) + "</td></tr>";

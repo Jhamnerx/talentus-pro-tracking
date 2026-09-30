@@ -58,8 +58,22 @@
    * @param {Object} opts
    * @returns {HTMLDialogElement}
    */
+  var _ultimaApertura = { titulo: null, t: 0 };
+
   function open(opts) {
     opts = opts || {};
+
+    // Doble clic impaciente: los modales que cargan por AJAX tardan un par
+    // de segundos y sin indicador es facil pulsar dos veces. Cada pulsacion
+    // abria su propio dialogo, el segundo encima del primero, y al cerrarlo
+    // parecia que el boton "no habia funcionado". Se ignora la repeticion.
+    var titulo = String(opts.title || "");
+    var ahora = Date.now();
+    if (titulo && titulo === _ultimaApertura.titulo && ahora - _ultimaApertura.t < 600) {
+      return null;
+    }
+    _ultimaApertura = { titulo: titulo, t: ahora };
+
     var dlg = document.createElement("dialog");
     dlg.className =
       "tp-modal" +

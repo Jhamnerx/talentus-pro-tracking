@@ -195,7 +195,7 @@
     var hint = $("#tp-rank-hint");
     if (hint) {
       hint.textContent = r.indice != null
-        ? r.indice + tpT('ui.events_per_100km')
+        ? r.indice + " " + tpT('ui.events_per_100km')
         : tpT('ui.no_mileage_in_period');
     }
 
@@ -221,7 +221,7 @@
     if (foot) {
       var partes = [
         tpT('ui.risk_index_help'),
-        "Medidos " + fmt(r.cubiertos) + " de " + fmt(r.flota) + tpT('ui.vehicles_with_mileage'),
+        tpT('ui.measured_of_fleet', { medidos: fmt(r.cubiertos), flota: fmt(r.flota) }),
       ];
       if (r.acotado) {
         partes.push(tpT('ui.large_fleet_ranking_note'));

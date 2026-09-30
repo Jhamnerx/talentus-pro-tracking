@@ -2743,7 +2743,7 @@
             return page(pg.current_page + 1);
           }
           if (statusText)
-            statusText.textContent = (total || acc.length) + tpT('ui.vehicles_dot') + new Date().toLocaleTimeString();
+            statusText.textContent = (total || acc.length) + " " + tpT('ui.vehicles_dot') + " " + new Date().toLocaleTimeString();
         });
     }
     page(1)

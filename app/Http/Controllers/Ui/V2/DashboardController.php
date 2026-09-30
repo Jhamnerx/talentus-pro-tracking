@@ -98,11 +98,11 @@ class DashboardController extends BaseController
             $out = array_merge(
                 $out,
                 ['range' => $range, 'from' => substr($from, 0, 10), 'to' => substr($to, 0, 10)],
-                $this->drivingAnalytics($from, $days),
+                $this->drivingAnalytics($from, $to, $days),
                 [
                     'mileage'         => $this->mileageTop($from, $to),
                     'mileage_sampled' => $this->mileageSampled,
-                    'notifications'   => $this->latestNotifications($from),
+                    'notifications'   => $this->latestNotifications($from, $to),
                     'latest_tasks'    => $this->latestTasks(),
                 ],
             );
@@ -249,7 +249,12 @@ class DashboardController extends BaseController
         if ($reqFrom && $reqTo) {
             $from = date('Y-m-d 00:00:00', $reqFrom);
             $to   = date('Y-m-d 23:59:59', $reqTo);
-            $days = max(1, (int) ceil(($reqTo - $reqFrom) / 86400));
+
+            // Dias INCLUSIVOS, contados sobre las fechas ya normalizadas. Con
+            // los timestamps crudos, un "01/03 -> 31/03" sin hora daba 30 y
+            // el ultimo dia se caia del eje de la grafica.
+            $days = max(1, (int) floor((strtotime(date('Y-m-d', $reqTo))
+                - strtotime(date('Y-m-d', $reqFrom))) / 86400) + 1);
 
             return [$range, $from, $to, $days];
         }
@@ -434,11 +439,11 @@ class DashboardController extends BaseController
     }
 
     /** Últimas notificaciones (eventos) del período. */
-    private function latestNotifications(string $from): array
+    private function latestNotifications(string $from, string $to): array
     {
         $rows = DB::table('events')
             ->join('devices', 'devices.id', '=', 'events.device_id')
-            ->where('events.time', '>=', $from)
+            ->whereBetween('events.time', [$from, $to])
             ->tap(function ($q) { $this->scopeEvents($q, 'events.'); })
             ->orderByDesc('events.time')
             ->limit(12)
@@ -496,13 +501,13 @@ class DashboardController extends BaseController
         });
     }
 
-    private function drivingAnalytics(string $from, int $days): array
+    private function drivingAnalytics(string $from, string $to, int $days): array
     {
         // 1) Eventos nativos por tipo + 2) custom por mensaje → clasificar
         $catCounts = array_fill_keys(array_keys(self::categories()), 0);
 
         $byType = DB::table('events')
-            ->where('time', '>=', $from)
+            ->whereBetween('time', [$from, $to])
             ->tap(function ($q) { $this->scopeEvents($q); })
             ->where('type', '!=', 'custom')
             ->select('type', DB::raw('COUNT(*) c'))
@@ -512,7 +517,7 @@ class DashboardController extends BaseController
         }
 
         $byMsg = DB::table('events')
-            ->where('time', '>=', $from)
+            ->whereBetween('time', [$from, $to])
             ->tap(function ($q) { $this->scopeEvents($q); })
             ->where('type', 'custom')
             ->select('message', DB::raw('COUNT(*) c'))
@@ -553,7 +558,7 @@ class DashboardController extends BaseController
             + $driving['harsh_turning'] + $driving['overspeed'] + $catCounts['sos'];
 
         $vehiclesWithData = (int) DB::table('events')
-            ->where('time', '>=', $from)
+            ->whereBetween('time', [$from, $to])
             ->tap(function ($q) { $this->scopeEvents($q); })
             ->distinct()->count('device_id');
 
@@ -562,10 +567,10 @@ class DashboardController extends BaseController
 
         // Top vehículos con más eventos de riesgo (frenado/aceleración/giro/
         // exceso/SOS) en el período. Se filtra en PHP por message/type.
-        $topRisk = $this->topRiskDevices($from);
+        $topRisk = $this->topRiskDevices($from, $to);
 
         // Tendencia diaria de eventos de riesgo (para mini-gráfico)
-        $trend = $this->riskTrend($from, $days);
+        $trend = $this->riskTrend($from, $to, $days);
 
         return [
             'driving'    => $driving,
@@ -580,13 +585,13 @@ class DashboardController extends BaseController
     }
 
     /** Top 5 dispositivos por eventos de riesgo en el período. */
-    private function topRiskDevices(string $from): array
+    private function topRiskDevices(string $from, string $to): array
     {
         // Conjunto de mensajes/tipos de riesgo, clasificados en PHP tras un
         // group by (device_id, type, message) acotado al período.
         $rows = DB::table('events')
             ->join('devices', 'devices.id', '=', 'events.device_id')
-            ->where('events.time', '>=', $from)
+            ->whereBetween('events.time', [$from, $to])
             ->tap(function ($q) { $this->scopeEvents($q, 'events.'); })
             ->select('events.device_id', 'devices.name', 'events.type', 'events.message', DB::raw('COUNT(*) c'))
             ->groupBy('events.device_id', 'devices.name', 'events.type', 'events.message')
@@ -612,10 +617,10 @@ class DashboardController extends BaseController
     }
 
     /** Serie diaria de eventos de riesgo. */
-    private function riskTrend(string $from, int $days): array
+    private function riskTrend(string $from, string $to, int $days): array
     {
         $rows = DB::table('events')
-            ->where('time', '>=', $from)
+            ->whereBetween('time', [$from, $to])
             ->tap(function ($q) { $this->scopeEvents($q); })
             ->select(DB::raw('DATE(time) d'), 'type', 'message', DB::raw('COUNT(*) c'))
             ->groupBy(DB::raw('DATE(time)'), 'type', 'message')
@@ -630,14 +635,21 @@ class DashboardController extends BaseController
             $perDay[$r->d] = ($perDay[$r->d] ?? 0) + (int) $r->c;
         }
 
-        // Rellena todos los días del rango (máx ~90 puntos visibles)
+        // Rellena todos los días del rango (máx ~90 puntos visibles).
+        //
+        // El eje se construye DESDE $from hacia delante. Antes se construia
+        // hacia atras desde HOY (strtotime("-{$i} days")), asi que con un
+        // rango de marzo la consulta traia los eventos correctos pero la
+        // grafica dibujaba septiembre: eje equivocado y linea plana en 0.
         $points = [];
-        $step = $days > 90 ? 7 : 1; // en 1 año, agrupa por semana visualmente
-        for ($i = $days - 1; $i >= 0; $i -= $step) {
-            $d = date('Y-m-d', strtotime("-{$i} days"));
+        $step  = $days > 90 ? 7 : 1; // en 1 año, agrupa por semana visualmente
+        $base  = strtotime(date('Y-m-d', strtotime($from)));
+
+        for ($i = 0; $i < $days; $i += $step) {
+            $d   = date('Y-m-d', strtotime("+{$i} days", $base));
             $sum = 0;
-            for ($j = 0; $j < $step; $j++) {
-                $dd = date('Y-m-d', strtotime("-" . ($i - $j) . " days"));
+            for ($j = 0; $j < $step && ($i + $j) < $days; $j++) {
+                $dd = date('Y-m-d', strtotime('+' . ($i + $j) . ' days', $base));
                 $sum += $perDay[$dd] ?? 0;
             }
             $points[] = ['date' => $d, 'count' => $sum];

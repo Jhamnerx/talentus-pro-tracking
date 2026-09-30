@@ -734,3 +734,25 @@
   font-size: 11.5px;
   color: var(--fg-muted, #94a3b8);
 }
+
+/* ------------------------------------------------------------------
+   Modo oscuro.
+
+   El titulo usa --brand-800 (#0e2157), que en claro es un azul marino
+   de marca y en oscuro queda casi invisible sobre el fondo. Lo mismo
+   los chips de rango, que heredaban color claro.
+   ------------------------------------------------------------------ */
+[data-theme="dark"] .tp-dash__head h1 {
+  color: var(--fg-primary);
+}
+
+[data-theme="dark"] .tp-dash__range button,
+[data-theme="dark"] .tp-dash__chip {
+  color: var(--fg-secondary);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .tp-dash__range button[aria-pressed="true"],
+[data-theme="dark"] .tp-dash__chip.is-active {
+  color: var(--fg-on-brand);
+}

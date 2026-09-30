@@ -504,6 +504,7 @@ return [
     'marker_color_help'                  => 'Tints the vehicle label and puts a halo behind the map icon. Inside a geofence with a limit the two colours below take over; outside it, the ranges apply.',
     'max_open'                           => '(max',
     'max_speed'                          => 'Top speed',
+    'measured_of_fleet'                  => 'Measured :medidos of :flota vehicles with mileage in the period.',
     'media_categories'                   => 'Media categories',
     'min_after'                          => 'Min. after',
     'monitor_grid_note'                  => 'vehicles — each cell follows them live. The size and the selection are remembered in this browser.',
