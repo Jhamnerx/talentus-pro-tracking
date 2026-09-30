@@ -66,8 +66,24 @@ Comprobado en Chrome como admin sobre `http://talentus-pro-tracking.test`, repit
 | 26 | Corregido | `c4a986a2` | El controlador pasaba SIEMPRE `pageTitle`, asi que el `??` de la vista nunca se evaluaba |
 | 27 | Corregido | `bf699586` | Se ignora la apertura repetida del mismo modal en menos de 600 ms |
 
-**Pendiente de tu decision:** el #8 (paridad de recuentos) sigue necesitando
-exponer la casilla de visibilidad en la v2 antes de poder filtrar.
+**#8 · Cerrado** (`fdc77d29`). Correccion de lo que dije antes: la v2 **si**
+expone la casilla de visibilidad (`.tp-live__row-active`, con
+`persistActive()` contra el mismo `/devices/change_active` del legacy); me
+equivoque al buscarla. Lo que faltaba era la paridad del conjunto: el legacy
+usa el mismo endpoint en dos modos — `full=1` aplica solo `wasConnected()`
+(la lista) y sin `full` añade `visible()` (el mapa). La v2 no aplicaba
+`wasConnected()` en live.
+
+| Vista | Antes | Ahora | Legacy |
+| ----- | ----- | ----- | ------ |
+| live (lista) | 1429 | **1411** | 1411 (`full=1`) |
+| marcadores pintados | 1410 | **1410** | 1410 |
+| Flota | 1411 | 1411 | — |
+
+Los 18 que nunca conectaron siguen accesibles en Flota con el filtro "Nunca
+conectado". Los ocultos se listan, como en el legacy, pero ahora ademas van
+atenuados y con un icono de ojo tachado: la casilla sola no se ve entre
+cientos de filas.
 
 **Anotado:** el puente de traducciones pesa ya ~54 KB por pagina (1.106
 claves). Si molesta, se parte por pagina.
