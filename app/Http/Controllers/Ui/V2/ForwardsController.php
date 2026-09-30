@@ -21,22 +21,36 @@ use Tobuli\Services\ForwardService;
  */
 class ForwardsController extends BaseController
 {
-    /** Campos de configuración por tipo (paridad con los Form de cada conexión). */
-    private const TYPE_FIELDS = [
-        'custom' => [
-            ['name' => 'ip',   'label' => 'IP',     'type' => 'text',   'required' => true],
-            ['name' => 'port', 'label' => 'Puerto', 'type' => 'number', 'required' => true],
-        ],
-        'pegasus' => [
-            ['name' => 'domain', 'label' => 'Dominio', 'type' => 'text', 'required' => true, 'help' => 'https://{dominio}.peginstances.com/receivers/json'],
-            ['name' => 'token',  'label' => 'Token',   'type' => 'text', 'required' => true],
-        ],
-        'macropoint' => [
-            ['name' => 'username', 'label' => 'Usuario',    'type' => 'text',     'required' => true],
-            ['name' => 'password', 'label' => trans('validation.attributes.password'), 'type' => 'password', 'required' => true],
-            ['name' => 'mpid',     'label' => 'MPID',       'type' => 'text',     'required' => true],
-        ],
-    ];
+    /**
+     * Campos de configuración por tipo (paridad con los Form de cada conexión).
+     *
+     * Metodo y no const: las etiquetas pasan por trans(), y PHP no admite
+     * llamadas a funcion en una expresion constante (fatal al cargar la
+     * clase, que php -l no ve).
+     */
+    private static function typeFields(): array
+    {
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        return $cache = [
+            'custom' => [
+                ['name' => 'ip',   'label' => 'IP',                  'type' => 'text',   'required' => true],
+                ['name' => 'port', 'label' => trans('ui.port'),      'type' => 'number', 'required' => true],
+            ],
+            'pegasus' => [
+                ['name' => 'domain', 'label' => trans('ui.domain'), 'type' => 'text', 'required' => true, 'help' => 'https://{dominio}.peginstances.com/receivers/json'],
+                ['name' => 'token',  'label' => trans('ui.token'),  'type' => 'text', 'required' => true],
+            ],
+            'macropoint' => [
+                ['name' => 'username', 'label' => trans('ui.username'),                 'type' => 'text',     'required' => true],
+                ['name' => 'password', 'label' => trans('validation.attributes.password'), 'type' => 'password', 'required' => true],
+                ['name' => 'mpid',     'label' => 'MPID',                                'type' => 'text',     'required' => true],
+            ],
+        ];
+    }
 
     private ForwardService $service;
 
@@ -77,13 +91,13 @@ class ForwardsController extends BaseController
         $enabled = [];
         foreach ((new ForwardsManager())->getEnabledList() as $conn) {
             $type = $conn::getType();
-            if (! isset(self::TYPE_FIELDS[$type])) {
+            if (! isset(self::typeFields()[$type])) {
                 continue;
             }
             $enabled[] = [
                 'type'   => $type,
                 'title'  => $conn::getTitle(),
-                'fields' => self::TYPE_FIELDS[$type],
+                'fields' => self::typeFields()[$type],
             ];
         }
 

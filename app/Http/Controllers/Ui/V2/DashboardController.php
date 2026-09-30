@@ -24,23 +24,38 @@ class DashboardController extends BaseController
     /** Cache por request de las alertas compartidas (ver sharedAlertIds). */
     private ?array $sharedAlertIds = null;
 
-    /** Categorías canónicas → etiqueta + color + si cuenta como riesgo de conducción. */
-    private const CATEGORIES = [
-        'harsh_braking'      => ['label' => trans('front.alarm_hardBraking'),        'color' => '#ef4444', 'risk' => true],
-        'harsh_acceleration' => ['label' => trans('front.alarm_hardAcceleration'),    'color' => '#f97316', 'risk' => true],
-        'harsh_turning'      => ['label' => trans('front.alarm_hardCornering'),           'color' => '#eab308', 'risk' => true],
-        'overspeed'          => ['label' => trans('front.overspeed'),   'color' => '#dc2626', 'risk' => true],
-        'sos'                => ['label' => trans('ui.event_sos_panic'),          'color' => '#b91c1c', 'risk' => true],
-        'jamming'            => ['label' => trans('ui.event_jammer'), 'color' => '#a21caf', 'risk' => true],
-        'power'              => ['label' => trans('ui.event_power'),      'color' => '#7c3aed', 'risk' => false],
-        'geofence'           => ['label' => 'Geocercas',             'color' => '#0ea5e9', 'risk' => false],
-        'idle'               => ['label' => trans('front.idle'),               'color' => '#f59e0b', 'risk' => false],
-        'ignition'           => ['label' => trans('ui.event_ignition'),   'color' => '#64748b', 'risk' => false],
-        'offline'            => ['label' => trans('ui.event_disconnect'),           'color' => '#94a3b8', 'risk' => false],
-        'fuel'               => ['label' => 'Combustible',           'color' => '#16a34a', 'risk' => false],
-        'driver'             => ['label' => 'Conductor',             'color' => '#2563eb', 'risk' => false],
-        'other'              => ['label' => 'Otros',                 'color' => '#cbd5e1', 'risk' => false],
-    ];
+    /**
+     * Categorías canónicas → etiqueta + color + si cuenta como riesgo.
+     *
+     * Es un metodo y no una const a proposito: las etiquetas pasan por
+     * trans(), y PHP no admite llamadas a funcion en una expresion
+     * constante (fatal al cargar la clase, no lo ve php -l).
+     */
+    private static function categories(): array
+    {
+        // memoizado: se usa dentro de bucles y son 14 trans() por llamada
+        static $cache = null;
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        return $cache = [
+            'harsh_braking'      => ['label' => trans('front.alarm_hardBraking'),     'color' => '#ef4444', 'risk' => true],
+            'harsh_acceleration' => ['label' => trans('front.alarm_hardAcceleration'), 'color' => '#f97316', 'risk' => true],
+            'harsh_turning'      => ['label' => trans('front.alarm_hardCornering'),    'color' => '#eab308', 'risk' => true],
+            'overspeed'          => ['label' => trans('front.overspeed'),              'color' => '#dc2626', 'risk' => true],
+            'sos'                => ['label' => trans('ui.event_sos_panic'),           'color' => '#b91c1c', 'risk' => true],
+            'jamming'            => ['label' => trans('ui.event_jammer'),              'color' => '#a21caf', 'risk' => true],
+            'power'              => ['label' => trans('ui.event_power'),               'color' => '#7c3aed', 'risk' => false],
+            'geofence'           => ['label' => trans('front.geofences'),              'color' => '#0ea5e9', 'risk' => false],
+            'idle'               => ['label' => trans('front.idle'),                   'color' => '#f59e0b', 'risk' => false],
+            'ignition'           => ['label' => trans('ui.event_ignition'),            'color' => '#64748b', 'risk' => false],
+            'offline'            => ['label' => trans('ui.event_disconnect'),          'color' => '#94a3b8', 'risk' => false],
+            'fuel'               => ['label' => trans('ui.fuel'),                      'color' => '#16a34a', 'risk' => false],
+            'driver'             => ['label' => trans('front.driver'),                 'color' => '#2563eb', 'risk' => false],
+            'other'              => ['label' => trans('ui.others'),                    'color' => '#cbd5e1', 'risk' => false],
+        ];
+    }
 
     public function index(Request $request)
     {
@@ -434,10 +449,10 @@ class DashboardController extends BaseController
             $cat = $this->classify($r->type, (string) $r->message);
             $out[] = [
                 'device'  => (string) $r->name,
-                'message' => $r->message ?: (self::CATEGORIES[$cat]['label'] ?? $r->type),
+                'message' => $r->message ?: (self::categories()[$cat]['label'] ?? $r->type),
                 // UTC → TZ del usuario (la lista mostraba hora de servidor)
                 'time'    => $r->time ? \Formatter::time()->convert($r->time) : '',
-                'color'   => self::CATEGORIES[$cat]['color'] ?? '#cbd5e1',
+                'color'   => self::categories()[$cat]['color'] ?? '#cbd5e1',
             ];
         }
 
@@ -484,7 +499,7 @@ class DashboardController extends BaseController
     private function drivingAnalytics(string $from, int $days): array
     {
         // 1) Eventos nativos por tipo + 2) custom por mensaje → clasificar
-        $catCounts = array_fill_keys(array_keys(self::CATEGORIES), 0);
+        $catCounts = array_fill_keys(array_keys(self::categories()), 0);
 
         $byType = DB::table('events')
             ->where('time', '>=', $from)
@@ -517,7 +532,7 @@ class DashboardController extends BaseController
         // Desglose por categoría (todas las que tienen datos), ordenado
         $byCategory = [];
         $totalEvents = 0;
-        foreach (self::CATEGORIES as $key => $meta) {
+        foreach (self::categories() as $key => $meta) {
             $totalEvents += $catCounts[$key];
             if ($catCounts[$key] > 0) {
                 $byCategory[] = [
@@ -580,7 +595,7 @@ class DashboardController extends BaseController
         $byDevice = [];
         foreach ($rows as $r) {
             $cat = $this->classify($r->type, (string) $r->message);
-            if (empty(self::CATEGORIES[$cat]['risk'])) {
+            if (empty(self::categories()[$cat]['risk'])) {
                 continue;
             }
             $id = (int) $r->device_id;
@@ -609,7 +624,7 @@ class DashboardController extends BaseController
         $perDay = [];
         foreach ($rows as $r) {
             $cat = $this->classify($r->type, (string) $r->message);
-            if (empty(self::CATEGORIES[$cat]['risk'])) {
+            if (empty(self::categories()[$cat]['risk'])) {
                 continue;
             }
             $perDay[$r->d] = ($perDay[$r->d] ?? 0) + (int) $r->c;
