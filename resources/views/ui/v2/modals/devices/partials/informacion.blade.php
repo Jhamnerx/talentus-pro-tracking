@@ -315,7 +315,7 @@
         </div>
 
         <div class="tp-form__field">
-            <span class="tp-form__label">Protocolo</span>
+            <span class="tp-form__label">{{ trans('front.protocol') }}</span>
             <div style="display: flex; gap: 18px; align-items: center; height: 36px;">
                 <label class="tp-choice" style="margin: 0;">
                     <input type="radio" class="tp-choice-input" name="forward[protocol]" data-enable="tp-dev-forward" value="TCP"

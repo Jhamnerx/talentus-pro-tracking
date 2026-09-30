@@ -25,7 +25,7 @@ class AlertsController extends BaseController
         }
 
         return View::make('ui.v2.pages.alerts', [
-            'pageTitle' => 'Alertas',
+            'pageTitle' => trans('front.alerts'),
             'canEdit'   => $this->user->perm('alerts', 'edit'),
             'canCreate' => $this->user->perm('alerts', 'edit'),
             'canRemove' => $this->user->perm('alerts', 'remove'),

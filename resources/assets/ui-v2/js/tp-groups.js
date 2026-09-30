@@ -87,7 +87,7 @@
               .then(function (res) {
                 btn.disabled = false;
                 if (res && res.ok && res.data && res.data.ok) {
-                  toast("Cambios guardados.", "success");
+                  toast(tpT('ui.changes_saved'), "success");
                   tpModal.close(dialog);
                   if (typeof afterSave === "function") afterSave();
                 } else {

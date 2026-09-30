@@ -200,7 +200,7 @@
     return new Promise(function (resolve) {
       var done = false;
       open({
-        title: opts.title || "Confirmar",
+        title: opts.title || tpT('global.confirm'),
         size: "sm",
         body:
           '<p style="margin:0; font-size:14px; line-height:1.5;">' +

@@ -4,8 +4,8 @@
 @section('rail-active', 'sharing')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -84,6 +84,6 @@
 @push('scripts')
     {{-- tp-services aporta el toggle global del kebab (.tp-svc-kebab) --}}
     @include('ui.v2.partials.services-config')
-    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=4" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-sharing.js') }}" defer></script>
 @endpush

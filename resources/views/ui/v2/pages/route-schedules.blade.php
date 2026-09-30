@@ -4,8 +4,8 @@
 @section('rail-active', 'route_schedules')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/route-schedules.css') }}?v=2">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/route-schedules.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -124,6 +124,6 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/tp-chips-select.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-route-schedules.js') }}?v=3" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-chips-select.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-route-schedules.js') }}" defer></script>
 @endpush

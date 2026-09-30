@@ -4,10 +4,10 @@
 @section('rail-active', 'fleet')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/fleet.css') }}?v=7">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/fleet.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
     {{-- Kebab compartido + modales de Servicios (tab Servicios del modal device) --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -168,11 +168,11 @@
                     <tr>
                         <th class="tp-fleet__th-check"><input type="checkbox" id="tp-fleet-check-all"
                                 aria-label="{{ trans('ui.select_all_m') }}"></th>
-                        <th data-sort="name">Dispositivo</th>
-                        <th data-sort="status">Estado</th>
-                        <th data-sort="plate">Placa</th>
+                        <th data-sort="name">{{ trans('front.device') }}</th>
+                        <th data-sort="status">{{ trans('front.state') }}</th>
+                        <th data-sort="plate">{{ trans('ui.plate') }}</th>
                         <th>IMEI</th>
-                        <th>Modelo</th>
+                        <th>{{ trans('front.model') }}</th>
                         <th>SIM</th>
                         <th class="tp-text-right" data-sort="speed">km/h</th>
                         <th class="tp-text-right">{{ trans('ui.engine_h') }}</th>
@@ -191,8 +191,8 @@
 
         <footer class="tp-fleet__footer">
             <div class="tp-fleet__selection" id="tp-fleet-selection" hidden>
-                <span><strong id="tp-fleet-selection-count">0</strong> seleccionados</span>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-selection-clear">Limpiar</button>
+                <span><strong id="tp-fleet-selection-count">0</strong> {{ trans('ui.selected_plural') }}</span>
+                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-selection-clear">{{ trans('global.clear') }}</button>
             </div>
             {{-- "Por página" vive ahora en el panel de filtros, con el resto. --}}
             <nav class="tp-fleet__pager" aria-label="{{ trans('front.page') }}">
@@ -209,9 +209,9 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=28"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/fleet.js') }}?v=11" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/device-modal.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/fleet.js') }}" defer></script>
     <script>
         // Wire up the "+ Nuevo" button in the Fleet toolbar to the shared device modal.
         (function() {

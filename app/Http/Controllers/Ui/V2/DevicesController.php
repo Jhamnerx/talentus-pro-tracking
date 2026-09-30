@@ -37,8 +37,20 @@ class DevicesController extends BaseController
             abort(403, trans('ui.no_permission_devices'));
         }
 
+        // El titulo depende del panel con el que se entra: /ui/v2/zones y
+        // /ui/v2/live?panel=pois redirigen aqui, y decir "Mapa" en la pestaña
+        // no ayuda a distinguirlas. Se decide AQUI y no en la vista porque
+        // este metodo siempre pasa pageTitle, asi que un ?? en el blade nunca
+        // llegaria a evaluarse.
+        $titulo = match ($request->get('panel')) {
+            'zones'  => trans('front.geofences'),
+            'pois'   => trans('front.poi'),
+            'routes' => trans('front.routes'),
+            default  => trans('front.map'),
+        };
+
         return View::make('ui.v2.pages.live', [
-            'pageTitle'     => trans('front.map'),
+            'pageTitle'     => $titulo,
             'mapConfig'     => $this->buildMapConfig(),
             'canCreate'     => $this->user->perm('devices', 'edit'),
         ]);

@@ -712,7 +712,7 @@
       });
 
       var selCount = dlg._devAll ? devices.length : Object.keys(dlg._devSel).length;
-      countEl.textContent = selCount + " seleccionados";
+      countEl.textContent = selCount + " " + tpT('ui.selected_plural');
       bannerEl.hidden = !dlg._devAll;
 
       pagerEl.innerHTML =
@@ -1210,7 +1210,7 @@
       "</div>" +
       '<div class="tp-devbox__banner" data-dev-banner hidden><b>' + tpT('ui.all_vehicles') + '</b> ' + tpT('ui.selected_will_include_later') + '</div>' +
       '<div class="tp-devbox__list" data-dev-list></div>' +
-      '<div class="tp-devbox__foot"><span class="tp-devbox__count" data-dev-count>0 seleccionados</span><div class="tp-devbox__pager" data-dev-pager></div></div>' +
+      '<div class="tp-devbox__foot"><span class="tp-devbox__count" data-dev-count>0 ' + tpT('ui.selected_plural') + '</span><div class="tp-devbox__pager" data-dev-pager></div></div>' +
       "</div>"
     );
   }

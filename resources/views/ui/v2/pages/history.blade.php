@@ -4,7 +4,7 @@
 @section('rail-active', 'history')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/history.css') }}?v=19">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/history.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
@@ -140,7 +140,7 @@
                             </svg>
                         </button>
                         <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-hist-clear" type="button"
-                            title="Limpiar" disabled>
+                            title="{{ trans('global.clear') }}" disabled>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                 <path
@@ -380,7 +380,7 @@
                         <strong id="tp-hist-pb-speedval">0</strong>
                         <span id="tp-hist-pb-speedunit">kph</span>
                     </div>
-                    <div class="tp-hist__pb-circle tp-hist__pb-compass" title="Curso">
+                    <div class="tp-hist__pb-circle tp-hist__pb-compass" title="{{ trans('front.course') }}">
                         <svg viewBox="0 0 48 48" width="46" height="46">
                             <circle cx="24" cy="24" r="21" fill="#3b82f6" />
                             <circle cx="24" cy="24" r="21" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5" />
@@ -562,7 +562,7 @@
                         {{ trans('front.select_date') }}
                     </span>
                     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-datepick-close type="button"
-                        aria-label="Cerrar">
+                        aria-label="{{ trans('front.close') }}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 6 6 18M6 6l12 12" />
@@ -630,6 +630,6 @@
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/history.js') }}?v=29"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-basemaps.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/history.js') }}"></script>
 @endpush

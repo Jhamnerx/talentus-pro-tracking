@@ -583,8 +583,43 @@
     else doDel();
   }
 
+  /**
+   * leaflet-draw trae sus avisos en ingles ("Click to start drawing shape.")
+   * y se colaban con la interfaz en castellano. L.drawLocal es el unico
+   * punto de traduccion que ofrece la libreria.
+   */
+  function traduceLeafletDraw() {
+    if (!window.L || !L.drawLocal || L.drawLocal._tpTraducido) return;
+    var h = L.drawLocal.draw.handlers;
+    if (h.polygon && h.polygon.tooltip) {
+      h.polygon.tooltip.start = tpT('ui.draw_click_start');
+      h.polygon.tooltip.cont = tpT('ui.draw_click_continue');
+      h.polygon.tooltip.end = tpT('ui.draw_click_finish');
+    }
+    if (h.polyline && h.polyline.tooltip) {
+      h.polyline.tooltip.start = tpT('ui.draw_click_start');
+      h.polyline.tooltip.cont = tpT('ui.draw_click_continue');
+      h.polyline.tooltip.end = tpT('ui.draw_click_finish_line');
+    }
+    if (h.circle && h.circle.tooltip) {
+      h.circle.tooltip.start = tpT('ui.click_drag_circle');
+    }
+    if (h.simpleshape && h.simpleshape.tooltip) {
+      h.simpleshape.tooltip.end = tpT('ui.draw_release_to_finish');
+    }
+    if (L.drawLocal.edit && L.drawLocal.edit.handlers && L.drawLocal.edit.handlers.edit) {
+      var e = L.drawLocal.edit.handlers.edit.tooltip;
+      if (e) {
+        e.text = tpT('ui.drag_vertices_help');
+        e.subtext = "";
+      }
+    }
+    L.drawLocal._tpTraducido = true;
+  }
+
   // ----- Dibujo / edición de forma con leaflet-draw -----
   function showDrawBar(mode) {
+    traduceLeafletDraw();
     hideBar();
     S.bar = document.createElement("div");
     S.bar.className = "tp-zonedraw-bar";
@@ -597,7 +632,7 @@
       hint = tpT('ui.click_drag_circle');
     } else {
       hint = tpT('ui.click_add_vertices');
-      mid = '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-finish>Terminar</button>';
+      mid = '<button type="button" class="tp-btn tp-btn--sm tp-btn--accent" data-zd-finish>' + tpT('ui.finish') + '</button>';
     }
     S.bar.innerHTML =
       '<span class="tp-zonedraw-bar__hint">' +

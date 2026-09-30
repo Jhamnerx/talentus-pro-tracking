@@ -50,7 +50,7 @@
             </div>
 
             <div class="tp-cmdk__group" data-group="results" hidden>
-                <div class="tp-cmdk__group-title" data-group-title>Resultados</div>
+                <div class="tp-cmdk__group-title" data-group-title>{{ trans('front.results') }}</div>
                 <div data-results-list></div>
             </div>
         </div>

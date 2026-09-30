@@ -1,10 +1,10 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Eventos')
+@section('title', $pageTitle ?? trans('front.events'))
 @section('rail-active', 'events')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/events.css') }}?v=12">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/events.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
@@ -32,9 +32,9 @@
         {{-- LIST PANEL --}}
         <aside class="tp-events__list-panel">
             <header class="tp-events__head">
-                <h3 class="tp-h6" style="margin:0;">Eventos</h3>
+                <h3 class="tp-h6" style="margin:0;">{{ trans('front.driving_events') }}</h3>
                 <select class="tp-input" style="width:100%" id="tp-events-hours">
-                    <option value="0" selected>Todos</option>
+                    <option value="0" selected>{{ trans('front.all') }}</option>
                     <option value="1">{{ trans('front.last_hour') }}</option>
                     <option value="6">{{ trans('ui.last_6_hours') }}</option>
                     <option value="24">{{ trans('ui.last_24_hours') }}</option>
@@ -74,8 +74,8 @@
             <footer class="tp-events__foot">
                 <span class="tp-text-xs tp-text-muted" id="tp-events-status">—</span>
                 <div class="tp-row" style="gap:6px;">
-                    <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-export" type="button">Exportar</button>
-                    <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-refresh" type="button">Refrescar</button>
+                    <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-export" type="button">{{ trans('front.export') }}</button>
+                    <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-refresh" type="button">{{ trans('ui.refresh') }}</button>
                     @if (Auth::user()->perm('events', 'remove'))
                         <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-clear" type="button"
                             title="{{ trans('ui.delete_all_my_events') }}">{{ trans('ui.delete_all') }}</button>
@@ -92,7 +92,7 @@
             {{-- Controles de mapa --}}
             <div class="tp-events__map-controls">
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-fullscreen"
-                    title="Pantalla completa" aria-label="Pantalla completa">
+                    title="{{ trans('front.fullscreen') }}" aria-label="{{ trans('front.fullscreen') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 7V5a2 2 0 0 1 2-2h2" />
@@ -110,7 +110,7 @@
                     </svg>
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-zoom-in"
-                    title="Acercar" aria-label="Acercar">
+                    title="{{ trans('front.zoom_in') }}" aria-label="{{ trans('front.zoom_in') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 5v14" />
@@ -118,7 +118,7 @@
                     </svg>
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-zoom-out"
-                    title="Alejar" aria-label="Alejar">
+                    title="{{ trans('front.zoom_out') }}" aria-label="{{ trans('front.zoom_out') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 12h14" />
@@ -192,6 +192,6 @@
 
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/events.js') }}?v=23"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-basemaps.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/events.js') }}"></script>
 @endpush

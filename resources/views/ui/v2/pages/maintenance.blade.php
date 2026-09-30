@@ -4,7 +4,7 @@
 @section('rail-active', 'maintenance')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -29,7 +29,7 @@
                 {{-- Plantillas de listas de verificación (addon checklists) --}}
                 @if (config('addon.checklists') && Auth::user()->perm('checklist_template', 'view'))
                     <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-maint-checklist-templates"
-                        onclick="window.tpChecklists && tpChecklists.templates()">Plantillas</button>
+                        onclick="window.tpChecklists && tpChecklists.templates()">{{ trans('front.template_webhook') }}</button>
                 @endif
             </div>
         </header>
@@ -80,6 +80,6 @@
 @push('scripts')
     {{-- defer: modal.js (tpModal) se carga con defer en el layout — estos deben
          ejecutarse DESPUÉS (los defer corren en orden de aparición). --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/maintenance.js') }}?v=3" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/maintenance.js') }}" defer></script>
 @endpush

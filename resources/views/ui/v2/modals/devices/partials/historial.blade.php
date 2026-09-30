@@ -31,13 +31,13 @@
             <label class="tp-form__field">
                 <span class="tp-form__label">{{ trans('validation.attributes.type') }}</span>
                 <select class="tp-input" data-maint-tipo>
-                    <option value="mantenimiento">Mantenimiento</option>
+                    <option value="mantenimiento">{{ trans('front.maintenance') }}</option>
                     <option value="suspension">{{ trans('ui.suspension') }}</option>
                     <option value="reactivacion">{{ trans('ui.reactivation') }}</option>
                 </select>
             </label>
             <label class="tp-form__field">
-                <span class="tp-form__label">Fecha</span>
+                <span class="tp-form__label">{{ trans('front.date') }}</span>
                 <input type="date" class="tp-input" data-maint-fecha value="{{ date('Y-m-d') }}"
                     max="{{ date('Y-m-d') }}">
             </label>
@@ -63,10 +63,10 @@
                 <thead>
                     <tr>
                         <th style="width: 118px;">{{ trans('validation.attributes.type') }}</th>
-                        <th style="width: 92px;">Fecha</th>
+                        <th style="width: 92px;">{{ trans('front.date') }}</th>
                         <th>Motivo</th>
-                        <th>Notas</th>
-                        <th style="width: 150px;">Usuario</th>
+                        <th>{{ trans('validation.attributes.notes') }}</th>
+                        <th style="width: 150px;">{{ trans('ui.username') }}</th>
                         <th style="width: 70px;">Sync</th>
                         <th style="width: 44px;"></th>
                     </tr>

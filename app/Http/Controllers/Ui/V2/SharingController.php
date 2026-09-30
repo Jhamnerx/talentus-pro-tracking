@@ -41,7 +41,7 @@ class SharingController extends BaseController
         }
 
         return View::make('ui.v2.pages.sharing', [
-            'pageTitle' => 'Compartir',
+            'pageTitle' => trans('front.sharing'),
             'deviceId'  => (int) $request->get('device_id') ?: null,
             'canEdit'   => (bool) $this->user->perm('sharing', 'edit'),
             'canRemove' => (bool) $this->user->perm('sharing', 'remove'),

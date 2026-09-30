@@ -32,13 +32,13 @@
             @foreach ($tpTopBars as $topBar)
                 <div class="tp-adminbanner" id="tp-banner-{{ $topBar['id'] ?? '' }}">
                     <div class="tp-adminbanner__body">{!! $topBar['content'] ?? '' !!}</div>
-                    <button type="button" class="tp-adminbanner__close" aria-label="Cerrar">×</button>
+                    <button type="button" class="tp-adminbanner__close" aria-label="{{ trans('front.close') }}">×</button>
                 </div>
             @endforeach
             @foreach ($tpTopNotifications as $notification)
                 <div class="tp-adminbanner" id="tp-banner-{{ $notification->data['id'] ?? $notification->id }}">
                     <div class="tp-adminbanner__body">{!! $notification->data['title'] ?? '' !!}</div>
-                    <button type="button" class="tp-adminbanner__close" aria-label="Cerrar">×</button>
+                    <button type="button" class="tp-adminbanner__close" aria-label="{{ trans('front.close') }}">×</button>
                 </div>
             @endforeach
         </div>

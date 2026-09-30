@@ -356,9 +356,9 @@
       "</div>" +
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;flex-direction:column;gap:8px;">' +
-      schedRow("daily", "Diario", item.daily, item.daily_time, "") +
-      schedRow("weekly", "Semanal", item.weekly, item.weekly_time, daySelect("weekly_day", DAY_PILLS, item.weekly_day, tpT('ui.weekday_select'))) +
-      schedRow("monthly", "Mensual", item.monthly, item.monthly_time, daySelect("monthly_day", null, item.monthly_day, tpT('ui.monthday_select'))) +
+      schedRow("daily", tpT('front.daily'), item.daily, item.daily_time, "") +
+      schedRow("weekly", tpT('attr.weekly'), item.weekly, item.weekly_time, daySelect("weekly_day", DAY_PILLS, item.weekly_day, tpT('ui.weekday_select'))) +
+      schedRow("monthly", tpT('front.monthly'), item.monthly, item.monthly_time, daySelect("monthly_day", null, item.monthly_day, tpT('ui.monthday_select'))) +
       "</div></div>" +
       "</div></form>";
 

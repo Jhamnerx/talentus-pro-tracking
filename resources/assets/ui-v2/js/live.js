@@ -1049,7 +1049,7 @@
     // Testigos
     var t = dash.telltales || {};
     var tells =
-      testigo("Motor", "MOTOR", t.engine, ICONOS.motor) +
+      testigo(tpT('front.engine'), "MOTOR", t.engine, ICONOS.motor) +
       testigo(tpT('ui.ignition'), tpT('ui.ignition_upper'), t.ignition, ICONOS.ignicion) +
       testigo("Puerta", "PUERTA", t.door, ICONOS.puerta) +
       testigo(tpT('ui.engine_lock'), "BLOQUEO", t.blocked, ICONOS.bloqueo) +
@@ -1415,7 +1415,7 @@
       "> " + esc(L2.filter_sidebar || "Lista") + "</label>" +
       '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" data-f-map' +
       (af.map ? " checked" : "") +
-      "> " + esc(L2.filter_map || "Mapa") + "</label></div>" +
+      "> " + esc(L2.filter_map || tpT('front.map')) + "</label></div>" +
       '<div style="font-size:12px;font-weight:600;margin-bottom:4px;">' + esc(L2.status || tpT('front.status')) + "</div>" +
       '<div style="max-height:190px;overflow:auto;border:1px solid var(--border-default);border-radius:8px;padding:6px 10px;">' +
       statusRows + "</div>" +
@@ -1427,7 +1427,7 @@
       '<input type="number" min="0" class="tp-input" data-f-offline placeholder="' + esc(L2.to || tpT('global.to')) +
       '" value="' + (af.offline != null ? af.offline : "") + '" style="width:50%;"></div></div>';
     tpModal.open({
-      title: L2.title || "Filtro",
+      title: L2.title || tpT('attr.filter'),
       size: "sm",
       body: body,
       buttons: [

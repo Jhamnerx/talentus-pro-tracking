@@ -2774,17 +2774,19 @@ table.tp-lock-hist th {
   color: var(--dash-fg3);
 }
 .tp-dash__stat-value {
-  /* Sin nowrap: un odometro de 6 cifras o un horometro completo no caben
-     en la celda y salian cortados ("27116...", "934:2..."), que es peor
-     que ocupar dos lineas. */
-  font-size: 18px;
+  /* La cifra NO se parte: solo se permite romper por el espacio que separa
+     el numero de su unidad ("27116 Km" -> dos lineas). Con elipsis salia
+     "27116..." y con overflow-wrap:anywhere salia peor todavia, partido a
+     mitad de cifra ("237536." / "9"). */
+  font-size: 17px;
   line-height: 1.15;
   font-weight: 700;
   color: var(--dash-fg);
   margin-top: 2px;
   font-variant-numeric: tabular-nums;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 .tp-dash__stat-unit {
   font-size: 11px;

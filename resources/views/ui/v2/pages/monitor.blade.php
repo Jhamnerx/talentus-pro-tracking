@@ -1,10 +1,10 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Monitoreo de grupo')
+@section('title', $pageTitle ?? trans('ui.group_monitor'))
 @section('rail-active', 'monitor')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/monitor.css') }}?v=4">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/monitor.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 @endpush
 
@@ -36,6 +36,6 @@
 
 @push('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/monitor.js') }}?v=2" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-basemaps.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/monitor.js') }}" defer></script>
 @endpush

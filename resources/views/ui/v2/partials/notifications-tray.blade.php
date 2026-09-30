@@ -1,15 +1,15 @@
 {{-- Notifications tray (right drawer) --}}
-<div class="tp-tray" id="tp-notif-tray" role="dialog" aria-label="Notificaciones" hidden>
+<div class="tp-tray" id="tp-notif-tray" role="dialog" aria-label="{{ trans('front.notifications') }}" hidden>
     <div class="tp-tray__scrim" data-tray-close></div>
     <aside class="tp-tray__panel" role="document">
         <header class="tp-tray__head">
             <div>
-                <div class="tp-h6">Notificaciones</div>
+                <div class="tp-h6">{{ trans('front.notifications') }}</div>
                 <div class="tp-text-xs tp-text-muted">{{ trans('ui.recent_events_alerts') }}</div>
             </div>
             <div class="tp-row">
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-notif-mark-all">{{ trans('ui.mark_as_read') }}</button>
-                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-tray-close aria-label="Cerrar">
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-tray-close aria-label="{{ trans('front.close') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" />
@@ -21,9 +21,9 @@
 
         <div class="tp-tray__filters">
             <div class="tp-segmented">
-                <button class="tp-segmented__item" aria-selected="true" data-notif-filter="all">Todas</button>
+                <button class="tp-segmented__item" aria-selected="true" data-notif-filter="all">{{ trans('ui.all_f') }}</button>
                 <button class="tp-segmented__item" data-notif-filter="critical">{{ trans('ui.critical_plural_f') }}</button>
-                <button class="tp-segmented__item" data-notif-filter="alerts">Alertas</button>
+                <button class="tp-segmented__item" data-notif-filter="alerts">{{ trans('front.alerts') }}</button>
                 <button class="tp-segmented__item" data-notif-filter="system">Informativos</button>
             </div>
         </div>

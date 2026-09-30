@@ -4,8 +4,8 @@
 @section('rail-active', 'routes')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/routes-table.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/routes-table.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -96,5 +96,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/routes-table.js') }}?v=4" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/routes-table.js') }}" defer></script>
 @endpush

@@ -4,7 +4,7 @@
 @section('rail-active', 'chat')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/chat.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/chat.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -48,7 +48,7 @@
                 <div class="tp-chat__messages" id="tp-chat-messages"></div>
                 <form class="tp-chat__composer" id="tp-chat-composer">
                     <input type="text" id="tp-chat-input" placeholder="{{ trans('ui.write_a_message') }}" autocomplete="off">
-                    <button type="submit" class="tp-btn tp-btn--primary tp-btn--icon" aria-label="Enviar">
+                    <button type="submit" class="tp-btn tp-btn--primary tp-btn--icon" aria-label="{{ trans('front.send') }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>
                     </button>
@@ -59,5 +59,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/tp-chat.js') }}?v=2" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-chat.js') }}" defer></script>
 @endpush

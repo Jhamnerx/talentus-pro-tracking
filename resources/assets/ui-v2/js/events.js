@@ -639,7 +639,7 @@
   function csvCell(v) { v = String(v == null ? "" : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   function exportCsv() {
     if (!state.events.length) { if (window.tpModal) tpModal.toast(tpT('ui.no_events_to_export'), "warning"); return; }
-    var head = [tpT('front.event'), tpT('ui.vehicle'), tpT('front.date'), "Latitud", "Longitud", "Atendido"];
+    var head = [tpT('front.event'), tpT('ui.vehicle'), tpT('front.date'), tpT('front.latitude'), tpT('front.longitude'), "Atendido"];
     var lines = [head.join(",")];
     state.events.forEach(function (ev) {
       lines.push([evTitle(ev), ev.device_name || "", ev.time || "", ev.lat != null ? ev.lat : "", ev.lng != null ? ev.lng : "", ev.attended ? "Si" : "No"].map(csvCell).join(","));

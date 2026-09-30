@@ -11,21 +11,22 @@
 @php
     // Claves del legacy que la v2 reusa desde JS. Lista explicita: mandar
     // front.php entero serian ~1.500 claves en cada pagina.
-        $tpFront = [ 'add_schedule', 'add_service', 'address', 'all', 'altitude',
+            $tpFront = [ 'add_schedule', 'add_service', 'address', 'all', 'altitude',
         'attempts', 'auto_send_when_online', 'change_password', 'close',
         'command', 'command_schedule', 'command_sent', 'country', 'daily',
-        'date', 'day', 'deselect_all', 'device', 'devices', 'distance',
-        'do_delete', 'drive', 'drive_end', 'drive_start', 'driver', 'drivers',
-        'email_semicolon', 'end', 'engine_hours', 'event', 'events',
-        'exact_time', 'expiration_date', 'export', 'export_active',
-        'export_inactive', 'export_single', 'format', 'forwards', 'from',
-        'fuel_consumption', 'gprs', 'gprs_templates', 'group', 'groups',
-        'hour', 'hourly', 'idle', 'import', 'inactive', 'latitude', 'loading',
-        'location', 'logout', 'logs', 'longitude', 'minute', 'model', 'month',
-        'monthly', 'move', 'move_duration', 'new', 'next', 'no_data',
-        'no_routes', 'no_services', 'none', 'overspeed', 'playback', 'points',
-        'preview', 'previous', 'protocol', 'queued', 'queued_for_online',
-        'report', 'response', 'results', 'route', 'route_length', 'routes',
+        'date', 'day', 'delivery', 'deselect_all', 'device', 'devices',
+        'distance', 'do_delete', 'drive', 'drive_end', 'drive_start',
+        'driver', 'drivers', 'email_semicolon', 'end', 'engine',
+        'engine_hours', 'event', 'events', 'exact_time', 'expiration_date',
+        'export', 'export_active', 'export_inactive', 'export_single',
+        'format', 'forwards', 'from', 'fuel_consumption', 'gprs',
+        'gprs_templates', 'group', 'groups', 'hour', 'hourly', 'idle',
+        'import', 'inactive', 'latitude', 'loading', 'location', 'logout',
+        'logs', 'longitude', 'map', 'minute', 'model', 'month', 'monthly',
+        'move', 'move_duration', 'new', 'next', 'no_data', 'no_routes',
+        'no_services', 'none', 'overspeed', 'playback', 'points', 'preview',
+        'previous', 'protocol', 'queued', 'queued_for_online', 'report',
+        'response', 'results', 'route', 'route_length', 'routes',
         'rows_per_page', 'schedule', 'schedule_at', 'search', 'select_all',
         'select_date', 'select_device', 'send', 'send_command', 'sent',
         'service', 'services', 'show_traffic', 'sms', 'sms_gateway_disabled',
@@ -34,17 +35,18 @@
         'trip_start', 'type', 'ungrouped', 'vehicle_state', 'vehicle_states',
         'week', 'yesterday',
     ];
-        $tpGlobal = [ 'add', 'always', 'apply', 'cancel', 'clear', 'close',
-        'delete', 'edit', 'failed', 'no', 'not_found', 'save', 'to', 'user',
-        'yes',
+            $tpGlobal = [ 'add', 'always', 'apply', 'cancel', 'clear', 'close',
+        'confirm', 'delete', 'edit', 'failed', 'no', 'not_found', 'save',
+        'to', 'user', 'yes',
     ];
     // OJO: aqui NO se cogen 'title' ni 'name'. Son etiquetas de campo de
     // formulario y en es dicen "Titulo" (sin tilde) y "Nombres" (plural),
     // que no valen como rotulo generico: esos dos van en ui.*.
-        $tpAttr = [ 'active', 'adapted', 'current_engine_hours',
+            $tpAttr = [ 'active', 'adapted', 'buyer', 'current_engine_hours',
         'current_odometer', 'description', 'email', 'expiration_by', 'file',
-        'inactive', 'interval', 'last_service', 'message', 'name', 'password',
-        'phone', 'renew_after_expiration', 'trigger_event_left', 'weekly',
+        'filter', 'inactive', 'interval', 'last_name', 'last_service',
+        'message', 'name', 'notes', 'password', 'phone',
+        'renew_after_expiration', 'supplier', 'trigger_event_left', 'weekly',
     ];
 @endphp
 <script>

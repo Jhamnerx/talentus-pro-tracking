@@ -1,10 +1,10 @@
 @extends('ui.v2.layout')
 
-@section('title', 'Gastos')
+@section('title', $pageTitle ?? trans('front.expenses'))
 @section('rail-active', 'expenses')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -26,13 +26,13 @@
                         <path d="M6 12h.01M18 12h.01" />
                     </svg>
                 </span>
-                Gastos
+                {{ trans('front.expenses') }}
             </h2>
             <div class="tp-maint__tools" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                 <input type="text" class="tp-input" id="tp-exp-search" placeholder="{{ trans('ui.search_ellipsis') }}" autocomplete="off">
                 <select class="tp-input" id="tp-exp-device" style="width:200px"><option value="">{{ trans('ui.all_vehicles') }}</option></select>
-                <input type="date" class="tp-input" id="tp-exp-from" title="Desde">
-                <input type="date" class="tp-input" id="tp-exp-to" title="Hasta">
+                <input type="date" class="tp-input" id="tp-exp-from" title="{{ trans('front.from') }}">
+                <input type="date" class="tp-input" id="tp-exp-to" title="{{ trans('global.to') }}">
                 <button type="button" class="tp-btn tp-btn--accent" id="tp-exp-add">＋</button>
             </div>
         </header>
@@ -43,12 +43,12 @@
                     <thead>
                         <tr>
                             <th>{{ trans('ui.vehicle') }}</th>
-                            <th>Nombre</th>
-                            <th>Tipo</th>
-                            <th style="text-align:right;">Cantidad</th>
+                            <th>{{ trans('ui.name') }}</th>
+                            <th>{{ trans('front.type') }}</th>
+                            <th style="text-align:right;">{{ trans('global.quantity') }}</th>
                             <th style="text-align:right;">Costo unit.</th>
-                            <th style="text-align:right;">Total</th>
-                            <th>Fecha</th>
+                            <th style="text-align:right;">{{ trans('front.count') }}</th>
+                            <th>{{ trans('front.date') }}</th>
                             <th class="tp-svc-table__actions"></th>
                         </tr>
                     </thead>
@@ -68,5 +68,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/tp-expenses.js') }}?v=3" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-expenses.js') }}" defer></script>
 @endpush

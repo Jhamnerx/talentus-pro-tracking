@@ -4,8 +4,8 @@
 @section('rail-active', 'reports')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -39,7 +39,7 @@
         <div style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
             <button type="button" class="tp-rep-tab is-active" data-rep-tab="saved"
                 style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:600;">
-                Reportes generados</button>
+                {{ trans('ui.generated_reports') }}</button>
             <button type="button" class="tp-rep-tab" data-rep-tab="logs"
                 style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:500;">
                 {{ trans('ui.scheduled_logs') }}</button>
@@ -115,7 +115,7 @@
 @push('scripts')
     {{-- tp-services aporta el toggle global del kebab (.tp-svc-kebab) --}}
     @include('ui.v2.partials.services-config')
-    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-chips-select.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/reports.js') }}?v=14" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-chips-select.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/reports.js') }}" defer></script>
 @endpush

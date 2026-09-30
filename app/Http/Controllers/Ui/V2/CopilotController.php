@@ -16,7 +16,7 @@ class CopilotController extends BaseController
     public function index(Request $request)
     {
         return View::make('ui.v2.pages.copilot', [
-            'pageTitle' => 'Copiloto IA',
+            'pageTitle' => trans('ui.copilot_title'),
         ]);
     }
 

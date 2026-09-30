@@ -324,7 +324,7 @@
       dtFieldHtml("pickup_from", tpT('front.from'), item.pickup_time_from, "08:00") +
       dtFieldHtml("pickup_to", tpT('global.to'), item.pickup_time_to, "12:00") +
       acBlockHtml("pickup", item, meta) +
-      sectionTitleHtml("Entrega") +
+      sectionTitleHtml(tpT('front.delivery')) +
       addressFieldHtml("delivery", tpT('ui.delivery_address'), item) +
       dtFieldHtml("delivery_from", tpT('front.from'), item.delivery_time_from, "12:00") +
       dtFieldHtml("delivery_to", tpT('global.to'), item.delivery_time_to, "17:00") +

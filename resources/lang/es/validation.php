@@ -536,6 +536,7 @@ return [
     'wrong_captcha' => 'Captcha incorrecto',
     'zones_instead' => 'Zonas en lugar de direcciones',
     'attributes' => [
+        'days' => 'Días',
         'event' => 'Evento',
         'filter' => 'Filtro',
         'formula' => 'Fórmula',

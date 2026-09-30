@@ -99,9 +99,9 @@
       field(tpT('front.type'), '<select class="tp-input" data-x-type style="width:100%;">' + typeOpts + "</select>") +
       field("Cantidad *", '<input type="number" step="any" class="tp-input" data-x-qty value="' + (item ? esc(item.quantity) : "") + '" style="width:100%;">') +
       field("Costo unitario *", '<input type="number" step="any" class="tp-input" data-x-cost value="' + (item ? esc(item.unit_cost) : "") + '" style="width:100%;">') +
-      field("Proveedor", '<input type="text" class="tp-input" data-x-supplier value="' + (item ? esc(item.supplier) : "") + '" style="width:100%;">') +
-      field("Comprador", '<input type="text" class="tp-input" data-x-buyer value="' + (item ? esc(item.buyer) : "") + '" style="width:100%;">') +
-      field("Notas", '<textarea class="tp-input" data-x-notes rows="2" style="width:100%;">' + (item ? esc(item.additional) : "") + "</textarea>", true) +
+      field(tpT('attr.supplier'), '<input type="text" class="tp-input" data-x-supplier value="' + (item ? esc(item.supplier) : "") + '" style="width:100%;">') +
+      field(tpT('attr.buyer'), '<input type="text" class="tp-input" data-x-buyer value="' + (item ? esc(item.buyer) : "") + '" style="width:100%;">') +
+      field(tpT('attr.notes'), '<textarea class="tp-input" data-x-notes rows="2" style="width:100%;">' + (item ? esc(item.additional) : "") + "</textarea>", true) +
       '<div data-x-err style="grid-column:1/-1;display:none;color:#ef4444;font-size:13px;"></div></div>';
 
     tpModal.open({

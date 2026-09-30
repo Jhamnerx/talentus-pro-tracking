@@ -88,7 +88,7 @@
       field(tpT('ui.request_method'), '<select class="tp-input" name="request_method"' + dis + " data-acc-sms-method>" + options(LS.request_methods, S.request_method) + "</select>") +
       '<div data-acc-sms="post">' + field(tpT('ui.encoding'), '<select class="tp-input" name="encoding"' + dis + ">" + options(LS.encodings, S.encoding) + "</select>") + "</div>" +
       '<div data-acc-sms="get post">' + field(tpT('ui.authentication'), '<select class="tp-input" name="authentication"' + dis + " data-acc-sms-auth>" + options(LS.authentications, S.authentication) + "</select>") + "</div>" +
-      '<div data-acc-sms="get post" data-acc-sms-authblock>' + field("Usuario", '<input type="text" name="username" value="' + esc(S.username) + '"' + dis + " data-tp-field>") + "</div>" +
+      '<div data-acc-sms="get post" data-acc-sms-authblock>' + field(tpT('ui.username'), '<input type="text" name="username" value="' + esc(S.username) + '"' + dis + " data-tp-field>") + "</div>" +
       '<div data-acc-sms="get post" data-acc-sms-authblock>' + field(tpT('attr.password'), '<input type="password" name="password" autocomplete="new-password"' + dis + " data-tp-field>") + "</div>" +
       '<div class="tp-col-2" data-acc-sms="get post">' + field("Cabeceras", '<textarea name="custom_headers" rows="2"' + dis + " data-tp-field>" + esc(S.custom_headers) + "</textarea>", false, false) +
       '<small class="tp-form__hint">' + tpT('ui.semicolon_list_help') + '</small></div>' +
@@ -165,7 +165,7 @@
       '<div class="tp-acc-legend">Cliente</div>' +
       '<div class="tp-form__grid tp-form__grid--2">' +
       field(tpT('ui.name'), '<input type="text" name="client[first_name]" value="' + esc(C.first_name) + '"' + dis + " data-tp-field>") +
-      field("Apellido", '<input type="text" name="client[last_name]" value="' + esc(C.last_name) + '"' + dis + " data-tp-field>") +
+      field(tpT('attr.last_name'), '<input type="text" name="client[last_name]" value="' + esc(C.last_name) + '"' + dis + " data-tp-field>") +
       field(tpT('ui.personal_code'), '<input type="text" name="client[personal_code]" value="' + esc(C.personal_code) + '"' + dis + " data-tp-field>") +
       field(tpT('ui.birth_date'), '<input type="date" name="client[birth_date]" value="' + esc(C.birth_date) + '"' + dis + ">") +
       field(tpT('front.address'), '<input type="text" name="client[address]" value="' + esc(C.address) + '"' + dis + " data-tp-field>", false, true) +
@@ -571,7 +571,7 @@
     return !CE_META || CE_META.can_protocol !== false;
   }
   function ceCols() {
-    return ceShowProtocol() ? ["Mensaje", "Protocolo", "Condiciones"] : ["Mensaje", "Condiciones"];
+    return ceShowProtocol() ? ["Mensaje", tpT('front.protocol'), "Condiciones"] : ["Mensaje", "Condiciones"];
   }
   function tabEvents() {
     return crudPanel("events", tpT('ui.add_event'), ceCols());
@@ -609,8 +609,8 @@
         crudDialog(
           isEdit ? tpT('ui.edit_event') : tpT('ui.new_event'),
           '<div class="tp-form">' +
-            field("Protocolo", '<select class="tp-input" name="ce_protocol">' + options(meta.protocols, row ? row.protocol : "") + "</select>", true) +
-            field("Mensaje", '<input type="text" name="ce_message" value="' + esc(row ? row.message : "") + '" data-tp-field>', true) +
+            field(tpT('front.protocol'), '<select class="tp-input" name="ce_protocol">' + options(meta.protocols, row ? row.protocol : "") + "</select>", true) +
+            field(tpT('attr.message'), '<input type="text" name="ce_message" value="' + esc(row ? row.message : "") + '" data-tp-field>', true) +
             '<label class="tp-acc-check" style="margin:4px 0 8px;"><input type="checkbox" class="tp-choice-input" name="ce_always" value="1"' + (row && row.always ? " checked" : "") + "> " + tpT('global.always') + "</label>" +
             '<div class="tp-form__field"><span class="tp-form__label">Condiciones</span>' +
             '<div data-conds-wrap>' + conds.map(condRow).join("") + "</div>" +
@@ -667,7 +667,7 @@
           isEdit ? tpT('ui.edit_template') : tpT('ui.new_template'),
           '<div class="tp-form">' +
             field(tpT('ui.title'), '<input type="text" name="t_title" value="' + esc(row ? row.title : "") + '" data-tp-field>', true) +
-            field("Mensaje", '<textarea name="t_message" rows="3" data-tp-field>' + esc(row ? row.message : "") + "</textarea>", true) +
+            field(tpT('attr.message'), '<textarea name="t_message" rows="3" data-tp-field>' + esc(row ? row.message : "") + "</textarea>", true) +
             "</div>",
           function (d) {
             var title = d.querySelector('[name="t_title"]').value.trim();
@@ -1143,7 +1143,7 @@
           tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
-        tpModal.toast("Cambios guardados.", "success");
+        tpModal.toast(tpT('ui.changes_saved'), "success");
         if (tab.key === "map") setTimeout(function () { window.location.reload(); }, 700);
       })
       .catch(function () {

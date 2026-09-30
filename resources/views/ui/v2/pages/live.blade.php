@@ -1,17 +1,12 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? match (request('panel')) {
-    'zones'  => trans('front.geofences'),
-    'pois'   => trans('front.poi'),
-    'routes' => trans('front.routes'),
-    default  => trans('front.map'),
-})
+@section('title', $pageTitle ?? trans('front.map'))
 @section('rail-active', in_array(request('panel'), ['pois', 'zones']) ? request('panel') : 'live')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/live-ops.css') }}?v=67">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/live-ops.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
@@ -195,13 +190,13 @@
                 <div class="tp-segmented tp-segmented--full tp-segmented--grid2 tp-mt-3" role="tablist"
                     id="tp-live-status-filter">
                     <button class="tp-segmented__item" data-filter="all" aria-selected="true" type="button"
-                        title="Todos">
-                        <span class="tp-segmented__label">Todos</span>
+                        title="{{ trans('front.all') }}">
+                        <span class="tp-segmented__label">{{ trans('front.all') }}</span>
                         <span class="tp-segmented__count" data-count="all">0</span>
                     </button>
                     <button class="tp-segmented__item" data-filter="moving" type="button" title="{{ trans('front.move') }}">
                         <span class="tp-segmented__label"><span class="tp-dot tp-dot--moving"></span><span
-                                class="tp-segmented__text">Movimiento</span></span>
+                                class="tp-segmented__text">{{ trans('front.movement') }}</span></span>
                         <span class="tp-segmented__count" data-count="moving">0</span>
                     </button>
                     <button class="tp-segmented__item" data-filter="idle" type="button" title="{{ trans('front.idle') }}">
@@ -209,9 +204,9 @@
                                 class="tp-segmented__text">{{ trans('front.idle') }}</span></span>
                         <span class="tp-segmented__count" data-count="idle">0</span>
                     </button>
-                    <button class="tp-segmented__item" data-filter="offline" type="button" title="Desconectado">
+                    <button class="tp-segmented__item" data-filter="offline" type="button" title="{{ trans('front.disconnected') }}">
                         <span class="tp-segmented__label"><span class="tp-dot tp-dot--offline"></span><span
-                                class="tp-segmented__text">Desconectado</span></span>
+                                class="tp-segmented__text">{{ trans('front.disconnected') }}</span></span>
                         <span class="tp-segmented__count" data-count="offline">0</span>
                     </button>
                 </div>
@@ -249,7 +244,7 @@
                         <path d="M21 12a9 9 0 1 1-3.5-7.1" />
                         <path d="M21 4v5h-5" />
                     </svg>
-                    Refrescar
+                    {{ trans('ui.refresh') }}
                 </button>
             </footer>
             </div>{{-- /#tp-panel-objects --}}
@@ -302,10 +297,10 @@
                     {{-- Nativos: los <a> al legacy devolvían fragmentos de modal
                          sin layout (botones muertos). Ahora abren modales v2. --}}
                     <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
-                        onclick="window.tpLivePoisIO && tpLivePoisIO.exportModal()">Exportar</button>
+                        onclick="window.tpLivePoisIO && tpLivePoisIO.exportModal()">{{ trans('front.export') }}</button>
                     @if (Auth::user()->perm('poi', 'edit'))
                         <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
-                            onclick="window.tpLivePoisIO && tpLivePoisIO.importModal()">Importar</button>
+                            onclick="window.tpLivePoisIO && tpLivePoisIO.importModal()">{{ trans('front.import') }}</button>
                     @endif
                 </footer>
             </div>{{-- /#tp-panel-pois --}}
@@ -314,7 +309,7 @@
             <div class="tp-live__panel" id="tp-panel-zones" data-panel="zones" hidden>
                 <header class="tp-live__filters-head">
                     <div class="tp-row tp-row-between" style="width:100%;">
-                        <h3 class="tp-h6 tp-mb-0">Geocercas <span class="tp-text-muted tp-text-sm"
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('front.geofences') }} <span class="tp-text-muted tp-text-sm"
                                 id="tp-zones-count"></span></h3>
                         @if (auth()->user()->perm('geofences', 'edit'))
                             <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button" id="tp-zones-new"
@@ -339,7 +334,7 @@
                     </div>
                     <div class="tp-segmented tp-segmented--full tp-mt-3" role="tablist" id="tp-zones-type-filter">
                         <button class="tp-segmented__item" data-ztype="all" aria-selected="true"
-                            type="button">Todas</button>
+                            type="button">{{ trans('ui.all_f') }}</button>
                         <button class="tp-segmented__item" data-ztype="polygon" type="button">{{ trans('ui.polygons') }}</button>
                         <button class="tp-segmented__item" data-ztype="circle" type="button">{{ trans('ui.circles') }}</button>
                     </div>
@@ -362,10 +357,10 @@
                 </div>
                 <footer class="tp-live__filters-foot" style="gap:6px;">
                     <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
-                        onclick="window.tpLiveZonesIO && tpLiveZonesIO.exportModal()">Exportar</button>
+                        onclick="window.tpLiveZonesIO && tpLiveZonesIO.exportModal()">{{ trans('front.export') }}</button>
                     @if (Auth::user()->perm('geofences', 'edit'))
                         <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full"
-                            onclick="window.tpLiveZonesIO && tpLiveZonesIO.importModal()">Importar</button>
+                            onclick="window.tpLiveZonesIO && tpLiveZonesIO.importModal()">{{ trans('front.import') }}</button>
                     @endif
                 </footer>
             </div>{{-- /#tp-panel-zones --}}
@@ -473,7 +468,7 @@
             {{-- Map controls (top-right) --}}
             <div class="tp-live__map-controls">
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-fullscreen"
-                    title="Pantalla completa" aria-label="Pantalla completa" type="button">
+                    title="{{ trans('front.fullscreen') }}" aria-label="{{ trans('front.fullscreen') }}" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 7V5a2 2 0 0 1 2-2h2" />
@@ -493,16 +488,16 @@
 
                 <div class="tp-live__map-controls-divider" aria-hidden="true"></div>
 
-                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-zoom-in" title="Acercar"
-                    aria-label="Acercar" type="button">
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-zoom-in" title="{{ trans('front.zoom_in') }}"
+                    aria-label="{{ trans('front.zoom_in') }}" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 5v14" />
                         <path d="M5 12h14" />
                     </svg>
                 </button>
-                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-zoom-out" title="Alejar"
-                    aria-label="Alejar" type="button">
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-zoom-out" title="{{ trans('front.zoom_out') }}"
+                    aria-label="{{ trans('front.zoom_out') }}" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M5 12h14" />
@@ -693,7 +688,7 @@
                     </div>
                 </div>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-drawer-close" type="button"
-                    aria-label="Cerrar">
+                    aria-label="{{ trans('front.close') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 6 6 18" />
@@ -781,27 +776,27 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/device-modal.js') }}?v=28"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-basemaps.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-services.js') }}?v=4"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/device-modal.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-basemaps.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}"></script>
     {{-- Acciones de llamada (modo modal global; se activa solo si existe #tp-ca-config) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-call-actions.js') }}?v=4" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-sharing.js') }}?v=4"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-forwards.js') }}?v=2" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-call-actions.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-sharing.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-forwards.js') }}" defer></script>
     {{-- Tipos de trayecto por periodo (kebab del vehículo) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-route-types.js') }}?v=1"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-route-types.js') }}"></script>
     {{-- Alertas del vehículo con vigencia (kebab) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-device-alerts.js') }}?v=2"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-device-alerts.js') }}"></script>
     {{-- Configuración remota del GPS por SMS (kebab) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-device-config.js') }}?v=1"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-device-config.js') }}"></script>
     {{-- Galería de medios del vehículo (kebab) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-device-media.js') }}?v=3"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-silent-devices.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/live.js') }}?v=56"></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-groups.js') }}?v=1"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-zones.js') }}?v=14"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-pois.js') }}?v=8"></script>
-    <script src="{{ asset('assets/ui/v2/js/live-routes.js') }}?v=10"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-device-media.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-silent-devices.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/live.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-groups.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/live-zones.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/live-pois.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/live-routes.js') }}"></script>
     <script>
         // Wire up the "+ Nuevo" button to the shared device modal.
         (function() {

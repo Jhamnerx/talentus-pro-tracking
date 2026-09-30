@@ -4,8 +4,8 @@
 @section('rail-active', 'send_command')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/commands.css') }}?v=1">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/commands.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -167,5 +167,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/commands-page.js') }}?v=10" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/commands-page.js') }}" defer></script>
 @endpush

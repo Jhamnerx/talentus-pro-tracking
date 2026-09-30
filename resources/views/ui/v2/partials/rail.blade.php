@@ -106,7 +106,7 @@
         {{-- 'return' devuelve a esta misma pantalla: sin el, cambiar el idioma
              te sacaba de la v2 y te dejaba en el mapa legacy. --}}
         <a href="{{ route('my_account_settings.change_lang', ['lang' => $nextLang, 'return' => request()->getRequestUri()]) }}"
-            class="tp-rail__item tp-has-tooltip" data-tooltip="Cambiar idioma" aria-label="Cambiar idioma">
+            class="tp-rail__item tp-has-tooltip" data-tooltip="{{ trans('ui.change_language') }}" aria-label="Cambiar idioma">
             <span class="tp-rail__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10" />
@@ -115,7 +115,7 @@
             <span class="tp-rail__label">Idioma · {{ strtoupper($curLang) }}</span>
         </a>
         <a href="{{ route('ui.v2.legacy') }}" class="tp-rail__item tp-has-tooltip"
-            data-tooltip="Versión anterior" aria-label="{{ trans('front.switch_to_old_version') }}">
+            data-tooltip="{{ trans('ui.previous_version') }}" aria-label="{{ trans('front.switch_to_old_version') }}">
             <span class="tp-rail__icon">@include('ui.v2.partials.icons', ['name' => 'back'])</span>
             <span class="tp-rail__label">{{ trans('ui.previous_version') }}</span>
         </a>

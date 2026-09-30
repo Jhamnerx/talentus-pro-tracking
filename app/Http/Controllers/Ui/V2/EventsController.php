@@ -60,7 +60,7 @@ class EventsController extends BaseController
         }
 
         return View::make('ui.v2.pages.events', [
-            'pageTitle' => 'Eventos',
+            'pageTitle' => trans('front.events'),
             'mapConfig' => $this->buildMapConfig(),
             // Vehículos del usuario para el filtro (tp-select con búsqueda).
             'devices'   => $this->user->devices()->orderBy('devices.name')

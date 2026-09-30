@@ -4,7 +4,7 @@
 @section('rail-active', 'dashboard')
 
 @push('head')
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/dashboard.css') }}?v=7">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/dashboard.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--scroll')
@@ -20,14 +20,14 @@
             </div>
             {{-- Toolbar de rango (estilo Wialon: Hoy / Ayer / Semana / Mes) --}}
             <div class="tp-dash__range" id="tp-dash-range">
-                <button type="button" class="tp-dash__range-btn" data-range="today">Hoy</button>
-                <button type="button" class="tp-dash__range-btn" data-range="yesterday">Ayer</button>
-                <button type="button" class="tp-dash__range-btn is-active" data-range="week">Semana</button>
+                <button type="button" class="tp-dash__range-btn" data-range="today">{{ trans('front.today') }}</button>
+                <button type="button" class="tp-dash__range-btn" data-range="yesterday">{{ trans('front.yesterday') }}</button>
+                <button type="button" class="tp-dash__range-btn is-active" data-range="week">{{ trans('front.week') }}</button>
                 <button type="button" class="tp-dash__range-btn" data-range="month">Mes</button>
                 <span class="tp-dash__range-sep"></span>
-                <input type="date" class="tp-input tp-input--sm" id="tp-dash-from" title="Desde">
-                <input type="date" class="tp-input tp-input--sm" id="tp-dash-to" title="Hasta">
-                <button type="button" class="tp-btn tp-btn--primary tp-btn--sm" id="tp-dash-apply">Aplicar</button>
+                <input type="date" class="tp-input tp-input--sm" id="tp-dash-from" title="{{ trans('front.from') }}">
+                <input type="date" class="tp-input tp-input--sm" id="tp-dash-to" title="{{ trans('global.to') }}">
+                <button type="button" class="tp-btn tp-btn--primary tp-btn--sm" id="tp-dash-apply">{{ trans('global.apply') }}</button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-dash-refresh" title="Actualizar">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 11-3-6.7L21 8" />
@@ -252,7 +252,7 @@
                 <div class="tp-widget__body">
                     <table class="tp-table tp-table--sm" id="tp-dash-top-table">
                         <thead>
-                            <tr><th>#</th><th>Dispositivo</th><th>Estado</th><th class="tp-text-right">km/h</th></tr>
+                            <tr><th>#</th><th>{{ trans('front.device') }}</th><th>{{ trans('front.state') }}</th><th class="tp-text-right">km/h</th></tr>
                         </thead>
                         <tbody><tr><td colspan="4" class="tp-text-muted tp-text-center">Cargando…</td></tr></tbody>
                     </table>
@@ -274,5 +274,5 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
-    <script src="{{ asset('assets/ui/v2/js/dashboard.js') }}?v=11" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/dashboard.js') }}" defer></script>
 @endpush

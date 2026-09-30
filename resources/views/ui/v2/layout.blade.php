@@ -37,14 +37,14 @@
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tokens.css') }}?v=3" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/components.css') }}?v=30" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/shell.css') }}?v=3" />
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/modal.css') }}?v=6" />
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/tokens.css') }}" />
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/components.css') }}" />
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/shell.css') }}" />
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/modal.css') }}" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14" />
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}" />
     {{-- Tailwind (utilidades) — al final para ganar sobre la capa .tp-* --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/tailwind.css') }}?v=11" />
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/tailwind.css') }}" />
 
     <script>
         // Apply persisted theme/density before paint (no FOUC)
@@ -118,29 +118,29 @@
     @include('ui.v2.partials.i18n')
 
     <script src="{{ asset('assets/ui/v2/js/lib/socket.io.js') }}" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-socket.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-select.js') }}?v=10" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/tp-datepicker.js') }}?v=3" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/modal.js') }}?v=5" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-socket.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-select.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-datepicker.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/modal.js') }}" defer></script>
     {{-- Ajustes de cuenta (modal con tabs; se abre desde el topbar) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-account.js') }}?v=10" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-account.js') }}" defer></script>
     {{-- Enviar comando (modal compartido; se abre desde rail y kebab de Live) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-commands.js') }}?v=9" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-commands.js') }}" defer></script>
     {{-- Hitos kilométricos (capa Leaflet compartida por páginas con mapa) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-hitos.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/shell.js') }}?v=1" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/command-palette.js') }}?v=2" defer></script>
-    <script src="{{ asset('assets/ui/v2/js/notifications.js') }}?v=3" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-hitos.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/shell.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/command-palette.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/notifications.js') }}" defer></script>
     {{-- Eventos en vivo: popup + sonido + Notification API (paridad legacy) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-notify.js') }}?v=1" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-notify.js') }}" defer></script>
     {{-- Avisos del administrador (popups del legacy) --}}
-    <script src="{{ asset('assets/ui/v2/js/tp-admin-popups.js') }}?v=1" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-admin-popups.js') }}" defer></script>
     {{-- Listas de verificación (addon checklists): plantillas + ejecución por servicio --}}
     @if (config('addon.checklists'))
         <script>
             window.TP_CHECKLISTS_ON = true;
         </script>
-        <script src="{{ asset('assets/ui/v2/js/tp-checklists.js') }}?v=1" defer></script>
+        <script src="{{ asset_resource('assets/ui/v2/js/tp-checklists.js') }}" defer></script>
     @endif
 
     @stack('scripts')

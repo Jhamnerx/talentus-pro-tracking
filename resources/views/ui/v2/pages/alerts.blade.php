@@ -1,14 +1,14 @@
 @extends('ui.v2.layout')
 
-@section('title', $pageTitle ?? 'Alertas')
+@section('title', $pageTitle ?? trans('front.alerts'))
 @section('rail-active', 'alerts')
 
 @push('head')
     {{-- Tabla índice + kebab compartidos (mismo estilo que call-actions / maintenance) --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/services.css') }}?v=3">
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/alerts.css') }}?v=7">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/alerts.css') }}">
     {{-- Formularios del modal de la regla (.tp-form* / inputs) --}}
-    <link rel="stylesheet" href="{{ asset('assets/ui/v2/css/device-modal.css') }}?v=14">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -30,7 +30,7 @@
                         <path d="M13.73 21a2 2 0 01-3.46 0" />
                     </svg>
                 </span>
-                Alertas
+                {{ trans('front.alerts') }}
                 <span class="tp-text-muted tp-text-sm" id="tp-alerts-count"
                     style="margin-left:8px; font-weight:400;">—</span>
             </h2>
@@ -47,7 +47,7 @@
                     {{-- Las plantillas son cosa del administrador: sirven para sembrar
                          alertas a los clientes al darlos de alta. --}}
                     @if (isAdmin())
-                        <button type="button" class="tp-btn tp-btn--ghost" id="tp-alerts-templates">Plantillas</button>
+                        <button type="button" class="tp-btn tp-btn--ghost" id="tp-alerts-templates">{{ trans('front.template_webhook') }}</button>
                     @endif
                     <button type="button" class="tp-btn tp-btn--accent" id="tp-alerts-new">{{ trans('ui.new_rule_plus') }}</button>
                 @endif
@@ -59,12 +59,12 @@
                 <table class="tp-svc-table" id="tp-alerts-table">
                     <thead>
                         <tr>
-                            <th style="width:66px;">Estado</th>
-                            <th>Nombre</th>
-                            <th>Tipo</th>
+                            <th style="width:66px;">{{ trans('front.state') }}</th>
+                            <th>{{ trans('ui.name') }}</th>
+                            <th>{{ trans('front.type') }}</th>
                             <th>Alcance</th>
-                            <th>Notificaciones</th>
-                            <th>Horario</th>
+                            <th>{{ trans('front.notifications') }}</th>
+                            <th>{{ trans('front.schedule') }}</th>
                             <th class="tp-svc-table__actions"></th>
                         </tr>
                     </thead>
@@ -80,5 +80,5 @@
 @endsection
 
 @push('scripts')
-    <script src="{{ asset('assets/ui/v2/js/alerts.js') }}?v=8" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/alerts.js') }}" defer></script>
 @endpush

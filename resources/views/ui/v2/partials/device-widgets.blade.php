@@ -16,18 +16,18 @@
          Detenido/Distancia están arriba en las KPI del drawer (no se repiten aquí). --}}
     @isset($device_info)
         <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">Objeto</h4>
+            <h4 class="tp-h6 tp-mb-3">{{ trans('front.object') }}</h4>
             <dl class="tp-defs">
-                <dt>Estado</dt><dd>{{ $device_info['status_text'] ?? '—' }}</dd>
+                <dt>{{ trans('front.state') }}</dt><dd>{{ $device_info['status_text'] ?? '—' }}</dd>
                 <dt>{{ trans('front.address') }}</dt><dd>{{ $device_info['address'] ?? '—' }}</dd>
                 <dt>{{ trans('ui.last_signal') }}</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
-                <dt>Coordenadas</dt><dd class="tp-text-mono">{{ $device_info['coords'] ?? '—' }}</dd>
-                <dt>Altitud</dt><dd>{{ $device_info['altitude'] ?? '—' }}</dd>
-                <dt>Motor</dt><dd>{{ $device_info['engine'] ?? '—' }}</dd>
-                <dt>Conductor</dt><dd>{{ $device_info['driver'] ?? '—' }}</dd>
+                <dt>{{ trans('front.coordinates') }}</dt><dd class="tp-text-mono">{{ $device_info['coords'] ?? '—' }}</dd>
+                <dt>{{ trans('front.altitude') }}</dt><dd>{{ $device_info['altitude'] ?? '—' }}</dd>
+                <dt>{{ trans('front.engine') }}</dt><dd>{{ $device_info['engine'] ?? '—' }}</dd>
+                <dt>{{ trans('front.driver') }}</dt><dd>{{ $device_info['driver'] ?? '—' }}</dd>
                 @if (!empty($device_info['is_admin']))
                     <dt>IMEI</dt><dd class="tp-text-mono">{{ $device_info['imei'] ?? '—' }}</dd>
-                    <dt>Modelo</dt><dd>{{ $device_info['model'] ?? '—' }}</dd>
+                    <dt>{{ trans('front.model') }}</dt><dd>{{ $device_info['model'] ?? '—' }}</dd>
                     <dt>SIM</dt><dd class="tp-text-mono">{{ $device_info['sim'] ?? '—' }}</dd>
                 @endif
             </dl>
@@ -37,10 +37,10 @@
     {{-- Conductor (va en el drawer lateral, no en el bottombar) --}}
     @isset($driver)
         <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">Conductor</h4>
+            <h4 class="tp-h6 tp-mb-3">{{ trans('front.driver') }}</h4>
             @if ($driver)
                 <dl class="tp-defs">
-                    <dt>Nombre</dt><dd>{{ $driver->name ?? '—' }}</dd>
+                    <dt>{{ trans('ui.name') }}</dt><dd>{{ $driver->name ?? '—' }}</dd>
                     <dt>RFID</dt><dd>{{ $driver->rfid ?? '—' }}</dd>
                     <dt>{{ trans('validation.attributes.phone') }}</dt><dd>{{ $driver->phone ?? '—' }}</dd>
                     <dt>Email</dt><dd>{{ $driver->email ?? '—' }}</dd>
@@ -57,7 +57,7 @@
             <h4 class="tp-h6 tp-mb-3">{{ trans('front.location') }}</h4>
             @if ($location)
                 <dl class="tp-defs">
-                    <dt>Ciudad</dt><dd>{{ $location['city'] ?? '—' }}</dd>
+                    <dt>{{ trans('front.city') }}</dt><dd>{{ $location['city'] ?? '—' }}</dd>
                     <dt>{{ trans('ui.street') }}</dt><dd>{{ $location['road'] ?? '—' }}</dd>
                     <dt>{{ trans('front.country') }}</dt><dd>{{ $location['country'] ?? '—' }}</dd>
                     <dt>{{ trans('front.address') }}</dt><dd>{{ $location['address'] ?? '—' }}</dd>
@@ -71,7 +71,7 @@
     {{-- Sensores --}}
     @isset($sensors)
         <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">Sensores</h4>
+            <h4 class="tp-h6 tp-mb-3">{{ trans('front.sensors') }}</h4>
             @if (count($sensors))
                 <dl class="tp-defs tp-defs--sensors">
                     @foreach ($sensors as $sensor)
@@ -224,7 +224,7 @@
                         <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                         <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                     </svg>
-                    <span>Eventos recientes</span>
+                    <span>{{ trans('front.recent_events') }}</span>
                 </span>
             </h4>
             <div class="tp-dw__card-body">
