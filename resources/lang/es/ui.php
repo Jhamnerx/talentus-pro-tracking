@@ -376,6 +376,7 @@ return [
     'gateway_url'                        => 'URL del gateway',
     'generate_password_and_email'        => 'Generar contraseña y enviarla por email',
     'generating_export'                  => 'Generando exportación',
+    'geofence_created'                   => 'Geocerca creada.',
     'geofence_groups'                    => 'Grupos de geocercas',
     'geofence_overspeed'                 => 'Exceso en geocerca',
     'geolocation_denied'                 => 'Permiso de ubicación denegado.',

@@ -375,6 +375,7 @@ return [
     'gateway_url'                        => 'Gateway URL',
     'generate_password_and_email'        => 'Generate a password and email it',
     'generating_export'                  => 'Generating export',
+    'geofence_created'                   => 'Geofence created.',
     'geofence_groups'                    => 'Geofence groups',
     'geofence_overspeed'                 => 'Geofence speeding',
     'geolocation_denied'                 => 'Location permission denied.',

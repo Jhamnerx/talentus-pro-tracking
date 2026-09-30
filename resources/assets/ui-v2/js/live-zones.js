@@ -497,10 +497,14 @@
               .then(function (r) {
                 btn.disabled = false;
                 if (r && r.ok && r.data && r.data.ok) {
-                  tpModal.toast && tpModal.toast("Geocerca creada.", "success");
+                  tpModal.toast && tpModal.toast(tpT('ui.geofence_created'), "success");
                   tpModal.close(dialog);
                   load(true);
-                } else tpModal.toast && tpModal.toast(tpT('ui.create_failed'), "error");
+                } else {
+                  // errorToast saca el motivo del 422; antes solo se veia
+                  // "No se pudo crear." y no se sabia que campo fallaba.
+                  tpModal.errorToast(r, tpT('ui.create_failed'));
+                }
               })
               .catch(function () {
                 btn.disabled = false;
@@ -532,7 +536,7 @@
               var c = parseLatLng(g.center);
               payload.type = "circle";
               payload.center = c;
-              payload.polygon = [];
+              delete payload.polygon;          // ver geometryFromLayer
               if (payload.radius == null && g.radius) payload.radius = g.radius;
             } else {
               payload.type = "polygon";
@@ -635,7 +639,9 @@
   function geometryFromLayer(layer) {
     if (layer instanceof L.Circle) {
       var c = layer.getLatLng();
-      return { type: "circle", center: { lat: c.lat, lng: c.lng }, radius: Math.round(layer.getRadius()), polygon: [] };
+      // sin polygon: el validador aplica array|min:2 a un array PRESENTE
+      // aunque venga vacio, asi que mandarlo como [] tumbaba el circulo.
+      return { type: "circle", center: { lat: c.lat, lng: c.lng }, radius: Math.round(layer.getRadius()) };
     }
     // L.Polygon extiende L.Polyline, asi que el corredor se comprueba antes
     if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {

@@ -323,6 +323,32 @@
   /**
    * Fetch JSON with CSRF + same-origin.
    */
+  /**
+   * Muestra el motivo real de un error del servidor.
+   *
+   * Un 422 trae {errors: {campo: ["mensaje"]}}. Sin esto el usuario solo
+   * veia "No se pudo crear." y no habia forma de saber que campo fallaba.
+   *
+   * @param {object} r        respuesta de fetchJSON: {ok, status, data}
+   * @param {string} fallback texto si el servidor no explica nada
+   */
+  function errorToast(r, fallback) {
+    var msg = fallback;
+    var d = (r && r.data) || {};
+    if (d.errors && typeof d.errors === "object") {
+      for (var k in d.errors) {
+        if (!Object.prototype.hasOwnProperty.call(d.errors, k)) continue;
+        var v = d.errors[k];
+        msg = Array.isArray(v) ? v[0] : String(v);
+        break;
+      }
+    } else if (d.message) {
+      msg = d.message;
+    }
+    if (typeof toast === "function") toast(msg, "error");
+    return msg;
+  }
+
   function fetchJSON(url, opts) {
     opts = opts || {};
     var headers = Object.assign(
@@ -361,6 +387,7 @@
     setBusy: setBusy,
     showFieldErrors: showFieldErrors,
     fetchJSON: fetchJSON,
+    errorToast: errorToast,
     escapeHtml: escapeHtml,
     csrf: csrf,
     tabs: buildTabs,
