@@ -1921,6 +1921,10 @@
       // pulsar, para que sobreviva a un repintado de la lista.
       '<div class="tp-live__row' +
       (state.selectedId === d.id ? " is-selected" : "") +
+      // Oculto en el mapa (user_device_pivot.active = 0). Se sigue listando,
+      // como en el legacy, pero marcado: si no, la unica pista es la casilla
+      // y con cientos de filas no se ve.
+      (active ? "" : " is-map-hidden") +
       '" data-id="' +
       d.id +
       '" data-status="' +
@@ -1928,7 +1932,9 @@
       '"' +
       (accent ? ' style="--tp-accent:' + accent + '"' : "") +
       ' role="option">' +
-      '<label class="tp-live__row-active" title="' + tpT('ui.show_on_map') + '"><input type="checkbox" data-id="' +
+      '<label class="tp-live__row-active" title="' +
+      (active ? tpT('ui.hide_from_map') : tpT('ui.show_on_map')) +
+      '"><input type="checkbox" data-id="' +
       d.id +
       '"' +
       (active ? " checked" : "") +
@@ -1955,7 +1961,7 @@
       "</span></div>" +
       '<button type="button" class="tp-live__row-menu" data-id="' +
       d.id +
-      '" title="Acciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button>' +
+      '" title="' + tpT('ui.action') + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button>' +
       "</div>"
     );
   }

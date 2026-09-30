@@ -72,12 +72,21 @@ class DevicesController extends BaseController
         $perPage = min(2000, max(100, (int) $request->get('limit', 500)));
         $page    = max(1, (int) $request->get('page', 1));
 
-        // NB: sin ->wasConnected() a propósito → el conteo refleja TODAS las
-        // unidades del usuario (devices()->count(), igual que el total del
-        // admin), incluidas las que aún no han reportado (se muestran offline).
+        // wasConnected(): paridad con la LISTA del legacy.
+        //
+        // ObjectsController usa el mismo endpoint en dos modos: con full=1
+        // aplica solo wasConnected() (la lista lateral, que si muestra los
+        // desactivados con su casilla) y sin full añade visible() (el mapa,
+        // que no los dibuja). Aqui se replica el primero; el segundo lo hace
+        // el cliente, que ya se salta los `active === false` al pintar.
+        //
+        // Sin esto la lista traia 18 equipos que NUNCA han reportado y el
+        // total no cuadraba con Flota ni con el legacy (1429 / 1411 / 1410).
+        // Esos 18 siguen accesibles en Flota con el filtro "Nunca conectado".
         $devices = $this->user
             ->devices()
             ->filter($request->all())
+            ->wasConnected()
             ->clearOrdersBy()
             ->paginate($perPage, ['*'], 'page', $page);
 
