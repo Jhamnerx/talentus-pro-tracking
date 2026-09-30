@@ -225,6 +225,28 @@
 
   /* Map */
   --map-bg: #e8ecf1;
+
+  /* ----------------------------------------------------------------
+     Alias heredados.
+
+     events.css, live-ops.css, services.css y route-schedules.css usan
+     estos nombres, que nunca llegaron a definirse. Al escribirse como
+     var(--surface-base, #f1f5f9), el respaldo CLARO ganaba siempre y esas
+     pantallas se quedaban en blanco con el tema oscuro puesto.
+
+     Apuntan a los tokens reales, que ya se redefinen mas abajo en
+     [data-theme="dark"]: el alias hereda el cambio y no hay que
+     mantenerlo por duplicado.
+     ---------------------------------------------------------------- */
+  --surface-base: var(--surface-app);
+  --surface-default: var(--surface-raised);
+  --surface-1: var(--surface-raised);
+  --surface-2: var(--surface-sunken);
+  --text: var(--fg-primary);
+  --text-muted: var(--fg-tertiary);
+  --border: var(--border-subtle);
+  --brand-primary: var(--brand-600);
+  --radius-sm: var(--r-md);
 }
 
 /* ============================================================
