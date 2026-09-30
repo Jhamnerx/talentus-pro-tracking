@@ -1,0 +1,121 @@
+# Informe QA · UI v2 (Talentus Pro Tracking)
+
+- **Fecha:** 29-sep-2026 · **Entorno:** `http://talentus-pro-tracking.test` (copia de desarrollo)
+- **Cuentas:** administrador (vuelta completa) y usuario normal (vuelta de carga/permisos)
+- **Navegador:** Chrome (escritorio, viewport 2560×1249); móvil simulado a 390×844
+- **Datos:** equipo 219 `T6G-611 - TOYOTA ETIOS`, 18-mar-2026, según §2
+
+> **Para el agente que corrija:** cada fila de la tabla trae archivo/línea o endpoint cuando se identificó.
+> Capturas en `docs/qa-ui-v2/`. Contexto de datos y reglas de prueba en `docs/QA-UI-V2.md` (§2 datos congelados, equipo 219).
+> Tras corregir, marca la fila y vuelve a probar con los mismos pasos. No borres datos que no sean `QA-`.
+
+## Estado tras la corrección (29-sep, tarde)
+
+De los 27, **21 corregidos**, 3 sin arreglo porque no son de código, y 3
+parciales o sin reproducir. Todo verificado ejecutando: 37 páginas y
+endpoints responden, los 46 ficheros JS pasan `node --check`, los 52 blades
+compilan y las 717 claves de traducción resuelven en es y en en.
+
+| # | Estado | Commit | Nota |
+| - | ------ | ------ | ---- |
+| 1 | Corregido | `773472d2` | `trans()` dentro de una `const`: fatal al cargar la clase. Aparecio un SEGUNDO caso igual en ForwardsController que QA no llego a ver |
+| 2 | Corregido | `1a653980` | `pluck('id')` ambiguo en el join; un `catch` vacio lo convertia en perdida de datos |
+| 3 | Corregido | `1265b051` | La v2 mandaba `polygon: []`, y `min:2` si aplica a un array presente aunque este vacio |
+| 4 | Corregido | `728501aa` | Se leia el input visible (dd/mm) en vez del ISO oculto |
+| 5 | Corregido | `728501aa` | **Esquema**: `date` tenia `ON UPDATE CURRENT_TIMESTAMP`. Migracion incluida |
+| 6 | Corregido | `05842299` | El periodo se guarda como desplazamiento y el accessor lo resolvia en UTC en vez de en la zona del usuario |
+| 7 | Corregido | `1d860ead` | `traccarDevice` no es una relacion; el `catch` dejaba la flota a cero |
+| 8 | **No es fallo** | — | Los tres numeros se explican: live no filtra, fleet aplica `wasConnected()`, el legacy aplica ademas `visible()`. Esa bandera es la casilla del mapa de cada usuario y **la v2 no la expone**, asi que filtrar escondería vehiculos sin forma de recuperarlos. Requiere decision de producto |
+| 9 | Corregido | `15405d55` | Se usa el scope `search()` de la entidad. "TRANSMISION" sigue sin resultados y no es fallo: ese texto se genera al mostrar, no se guarda. El legacy igual |
+| 10 | Corregido | `f40b7715` | Se valida antes de abrir la pestaña |
+| 11 | Corregido | `f40b7715` | El 404 pasa a 422 por campo. El autocompletado de direcciones **no se corrige**: es la clave de Google Places, hay que habilitarla en la consola |
+| 12 | Corregido | `ebb533bd` | No faltaban reglas `dark`, faltaban los TOKENS: se usaban nombres inexistentes y ganaba siempre el respaldo claro. Mas los controles de Leaflet |
+| 13 | Corregido | `9ccdb50c` | Se descartaban las rutas de menos de 2 puntos, y ese endpoint alimenta tambien la tabla |
+| 14 | Corregido | `e16028c4` | Eventos se apila bajo 767 px; la cabecera compartida envuelve |
+| 15 | **No es codigo** | — | Faltan 2 de 105 ficheros de icono en disco, los dos con nombre de hash: los subio un usuario y no se copiaron a esta copia de desarrollo |
+| 16 | Corregido | `79e24773` | Lo habia introducido yo al conectar `tpI18n`: la clave generica pisaba el respaldo especifico |
+| 17 | Corregido | `35697c5b` | El enlace ya lleva el vehiculo; "exceso de velocidad" va a eventos, no a la configuracion de alertas |
+| 18 | Corregido | `9ccdb50c` | 118 literales mas. El menu estaba en un array PHP y mi detector tenia un fallo que solo cazaba lo acentuado |
+| 19 | Corregido | `35697c5b` | Los 12 rotulos del Co-Pilot en castellano llevaban el nombre de la pagina en ingles |
+| 20 | Corregido | `79e24773` | El valor ya venia con unidad desde la API y la tarjeta añadia otra |
+| 21 | **Parcial** | `e16028c4` | Arreglado el corte de odometro y horometro. Quedan los valores sin etiqueta ("3558:24:57") y la pildora que tapa Servicios: es contenido, no maquetacion |
+| 22 | Corregido | `35697c5b` | 534 de 1.427 odometros no tienen unidad en el sensor; ahora se usa la del usuario como respaldo |
+| 23 | Corregido | `79e24773` | "PARAR EN" era el VALOR mal traducido de `validation.attributes.called_at` |
+| 24 | Corregido | `35697c5b` | `load()` descartaba la recarga si ya habia otra en vuelo |
+| 25 | Corregido | `35697c5b` | El aviso se borra al corregir el campo, en el ayudante compartido |
+| 26 | Corregido | `79e24773` | El titulo depende del panel |
+| 27 | **Sin reproducir** | — | Necesita comprobacion a mano; no se puede distinguir de un efecto de la automatizacion sin navegador |
+
+Queda una prueba de humo (`humo_v2.php`) que lanza una peticion real a las 21
+paginas y 16 endpoints. Es lo que habria cazado el #1, que `php -l` no ve.
+
+---
+
+## Fallos (de más grave a menos)
+
+| # | Gravedad | Página | Qué falla | Cómo reproducirlo | Esperado | Obtenido |
+|---|---|---|---|---|---|---|
+| 1 | **Bloqueante** | `/ui/v2/dashboard` | La página no carga para ningún usuario | 1. Entrar como admin o como usuario normal. 2. Abrir `/ui/v2/dashboard` (o «Tablero» en el menú lateral). | Tablero con widgets | **HTTP 500** `FatalError: Constant expression contains invalid operations` en `app/Http/Controllers/Ui/V2/DashboardController.php:28`: `private const CATEGORIES = [... 'label' => trans('front.alarm_hardBraking') ...]`. No se puede llamar a `trans()` dentro de una constante (parece que lo rompió la traducción). Captura: `docs/qa-ui-v2/F-dashboard-500.png` |
+| 2 | **Alto** | `/ui/v2/alerts` | Al editar una regla se borran los vehículos que tenía asignados | 1. Nueva regla «QA-Alerta velocidad», vehículo 219, tipo Exceso de velocidad 120, «Crear alerta» → la lista muestra «1 vehículo». 2. Menú ⋮ → Editar: la pestaña Vehículos abre con **«0 seleccionados»**. 3. Cambiar solo el límite a 110 → «Guardar cambios». | La regla conserva su vehículo | Alcance **«0 vehículos»**; `GET /ui/v2/api/alerts` → `devices_count: 0`. Lo reproduje 2 veces. Cualquier edición de una regla real (p. ej. «Aceleración Brusca», 4 vehículos) la deja sin alcance. |
+| 3 | **Alto** | `/ui/v2/zones` | No se pueden crear geocercas circulares | 1. Geocercas → «+» → Círculo. 2. Dibujar un círculo. 3. Nombre «QA-Geocerca circulo» → Crear. | Se crea el círculo | Aviso «No se pudo crear.» · `POST /ui/v2/api/zones` → **422** `{"errors":{"polygon":["El polygon debe tener al menos 2 elementos."]}}`. Payload: `type:"circle"`, `center{lat,lng}`, `radius:270371`, `polygon:[]`. El backend exige `polygon` también para los círculos, y el aviso oculta el motivo. Los polígonos sí se crean bien. |
+| 4 | **Alto** | `/ui/v2/events` | El filtro de rango de fechas devuelve datos erróneos | 1. Vehículo = T6G-611 → 14 eventos (16-feb a 4-may-2026). 2. «Rango de fechas» 01/03/2026 – 31/03/2026. | 8 eventos de marzo (hay eventos del 03-03 al 31-03) | «No hay eventos en el rango seleccionado». La UI envía `date_from=01/03/2026 00:00:00&date_to=31/03/2026 23:59:59` (dd/mm/aaaa) y el backend lo interpreta como mm/dd: `date_to 31/03` → 0 resultados; `date_from 01/03` y `date_to 12/03` no filtran nada. Con ISO (`2026-03-01 … 2026-03-31`) la API devuelve los 8 correctos. |
+| 5 | **Alto** | `/ui/v2/expenses` | Al editar un gasto se pierde su fecha y hora | 1. Alta: T6G-611, «QA-Gasto prueba», 29/09/2026 10:30, cant. 3 × 12,5 → OK (37,5 · 10:30). 2. Editar: el formulario muestra 10:30 AM. 3. Cambiar solo la cantidad a 4 → Guardar. 4. Recargar. | Fecha 2026-09-29 10:30 | Fecha **2026-09-29 19:44** (hora del guardado). Queda guardado. Probablemente el gasto «test» existente (19:18) ya lo sufrió. |
+| 6 | **Alto** | `/ui/v2/reports` | Un reporte guardado vuelve con las fechas desplazadas +1 día | 1. Nuevo reporte «QA-Reporte-219-marzo», T6G-611, desde 18/03/2026 00:00 hasta 19/03/2026 00:00 → Guardar. 2. ⋮ → Editar. | 18/03 – 19/03 | **19/03/2026 – 20/03/2026**. `GET /ui/v2/api/reports/90/item` ya devuelve `date_from 2026-03-19`, `date_to 2026-03-20`, así que un reporte programado cubriría el día equivocado. Pista: a las 19:40 hora de Lima, el formulario legacy `/reports/create` propone 30/09–01/10 (día UTC), así que podría ser un desfase de zona horaria compartido. Captura: `docs/qa-ui-v2/F-reports-editar-fecha-+1dia.png` |
+| 7 | **Alto** | `/ui/v2/copilot` | Las cifras de la flota salen a cero | Abrir `/ui/v2/copilot` como admin. | Flota total ≈ 1.411 (la de `/ui/v2/fleet`) | **FLOTA TOTAL 0**, UTILIZACIÓN 0 %. |
+| 8 | **Alto** | `/ui/v2/live` · `/ui/v2/fleet` | El número de vehículos no coincide entre páginas ni con el legacy | Admin: contar vehículos en live, en fleet y en legacy `/objects`. | La misma cifra en las tres | Live «Todos **1429**» (`/ui/v2/api/devices` total 1429) · Fleet «**1411** dispositivos» (`/ui/v2/api/fleet` total 1411) · Legacy **1410**. Diferencias: live añade 18 equipos sin posición (ids 485, 530, 549, 623, 664, 779, 799, 938, 954, 1022, 1129, 1130, 1135, 1136, 1137, 1138, 1304, 1575); live y fleet incluyen el 308 `BVI-073` con `active=false`, que el legacy no muestra. |
+| 9 | Medio | `/ui/v2/events` | La búsqueda de texto no encuentra nada | Escribir «EL RECUERDO» en «Buscar evento…» (el primer evento de la lista es de M7K-929 EL RECUERDO). | Eventos de ese vehículo | 0 resultados. Pasa lo mismo con `q=TRANSMISION`, `T6G`, `Fuera`. El legacy `/events?search=EL RECUERDO` sí devuelve eventos. |
+| 10 | Medio | `/ui/v2/reports` | «Generar» sin dispositivos abre una pestaña con error 500 | Nuevo reporte → no elegir dispositivos → Generar. | Aviso de validación en el modal | Se abre una pestaña nueva `/reports/update?...generate=1` con **500** `ValidationException` (`ModalHelpers/ReportModalHelper.php:374`, selected_devices required). Captura: `docs/qa-ui-v2/F-reports-generar-vacio-500.png` |
+| 11 | Medio | `/ui/v2/tasks` | Guardar una tarea falla sin decir por qué | a) Formulario vacío → Guardar: `POST /ui/v2/api/tasks` **404**, sin mensaje. b) Vehículo + título + direcciones escritas, sin marcar punto en el mapa → Guardar: no hace nada (ni petición ni mensaje). c) El autocompletado de direcciones no sugiere nada; al abrir el selector de mapa sale un aviso crudo de Google en inglés: «This API is not activated on your API project…». | Validación visible, o geocodificar la dirección | Solo guarda si se marca a mano el punto en el mapa (así la tarea se creó bien). |
+| 12 | Medio | Modo oscuro (varias) | Texto ilegible en modo oscuro | Activar el modo oscuro (icono de tema) y abrir las páginas. | Buen contraste | **Eventos**: el panel de lista sigue en blanco, con títulos y botones Exportar/Refrescar/Borrar todo en blanco (contraste 1,1:1) y los controles del mapa como cuadrados blancos vacíos (`docs/qa-ui-v2/F-oscuro-eventos.jpg`). El contenedor `.tp-maint` se queda claro y el **título de página sale en blanco sobre blanco** (≈1:1) en: alertas, reportes (título y pestañas), mantenimiento, gastos, tareas (y chip «Tarea nueva»), conductores, compartir, acciones de llamada, programaciones de ruta, rutas, monitor y comandos (pestañas Horario/Registros/En cola/Plantillas) (`docs/qa-ui-v2/F-oscuro-alertas.jpg`). Sin problemas: live, history, zones, fleet, chat, copilot. |
+| 13 | Medio | `/ui/v2/routes/table` | Falta una ruta en el listado | Comparar Rutas con el selector «Ruta» de una nueva programación. | Las mismas rutas | Rutas y `/ui/v2/api/routes` muestran 4 (ids 5, 6, 7, 8); el selector de programaciones también ofrece «PRUEBA ADH ruta» (id 12). Un `fetch` al legacy `/routes` devolvió 503, así que no pude compararlo con el legacy. |
+| 14 | Medio | Móvil 390 px | Eventos y alertas no se adaptan al móvil | Ver a 390×844. | Lista y mapa apilados; cabecera completa | **Eventos**: la lista ocupa ~85 % del ancho y el mapa queda en una tira de ~40 px con los controles encima (`docs/qa-ui-v2/F-movil-eventos-mapa-comprimido.png`). **Alertas**: la cabecera corta «Plantillas» y «+ Nueva regla» fuera de pantalla. |
+| 15 | Medio | live, history, events, zones | Falta una imagen de icono (404) | Abrir cualquiera de esas páginas y mirar Red. | 200 | `GET /images/map_icons/3b78b0ebc9ff00d8f3070f2c7d4815461a079e88.png` → **404** (algún marcador sale sin icono). |
+| 16 | Bajo | `/ui/v2/commands` | Mensaje de validación poco claro | «Enviar comando» → «Enviar comando» sin dispositivo. | «Selecciona un dispositivo» | «No encontrado». *(No se envió nada.)* |
+| 17 | Bajo | `/ui/v2/copilot` | Un enlace sugerido no lleva al vehículo pedido, y otro texto sale en inglés | Preguntar «historial del T6G-611». | Historial con el 219 ya elegido | «Abrir History →» lleva a `/ui/v2/history` sin parámetro de dispositivo, y «History» aparece en inglés con la UI en castellano. «vehículos con exceso de velocidad» lleva a `/ui/v2/alerts?type=…` (la configuración de alertas, no a los eventos). |
+| 18 | Bajo | Idioma EN | Textos sin traducir (no salió ningún identificador crudo tipo `ui.xxx`) | Cambiar a inglés y recorrer las páginas. | Todo en inglés | **Menú lateral** entero en castellano (Objetos, Monitoreo de grupo, Eventos, Alertas, Historial, Reportes, Enviar comando, Cámara / Medios, Compartir, Mantenimiento, Gastos, Tareas, Conductores, Acciones de llamada, Geocercas, Rutas, Programaciones de ruta, «Ver todos los eventos»). **Events** y **Alerts**: la página casi entera, incluido el `<title>` («Eventos», «Alertas», Rango de fechas, «50 eventos (+)», Exportar, Refrescar, Borrar todo, «+ Nueva regla», Estado/Nombre/Horario, «Evento personalizado», Siempre). **Live**: Flota, «Buscar nombre, placa, IMEI…», Todos/Movimiento/Desconectado, Sin grupo, «N vehículos · hh:mm», Refrescar, «Actualizando cada 15s», Centrar en mapa, Ver historial, Agrupar por grupo. **Fleet**: «1411 dispositivos», «seleccionados». **History**: «Mostrar historial». **Zones**: Geocercas, Todas, Todos los grupos, «Círculo · 250 m», «Polígono · 4 pts», Exportar/Importar. **Reports**: «Reportes generados», «Logs de programados». **Expenses**: título «Gastos», columnas Nombre/Fecha, «N gastos». **Tasks**: «Todos los estados». **Sharing**: título «Compartir», «Todos los vehículos», Activo, Sí. **Call-actions**: «Todos los vehículos», «Toda respuesta». **Copilot**: título «Copiloto IA», chips Parados/Excesos velocidad/Reporte ayer/Historial, KPIs Flota total/Eventos 24h, Refrescar. |
+| 19 | Bajo | Idioma ES | Textos en inglés con la UI en castellano | — | Castellano | Panel de info del vehículo → Servicios: «**Days** expirado». Dibujo de geocercas: «Click to start drawing shape.» / «Click to continue drawing shape.» (leaflet-draw). Copilot: «Abrir History →». |
+| 20 | Bajo | `/ui/v2/history` | Unidades duplicadas en las tarjetas de resumen | 219, 18/03/2026. | «195.5 km», «68 km/h» | «195.5 Km **km**», «68 kph **km/h**», «16 **km/h**». |
+| 21 | Bajo | `/ui/v2/live` (panel de info) | Datos poco claros o cortados | Abrir la ficha de T6G-611. | Fecha u hora legible | «Eventos recientes» muestra «3558:24:57», «3583:34:57»… sin etiqueta (¿horas transcurridas?). Odómetro/Horómetro/Detenido/Distancia salen truncados («27116…», «934:2…»). La píldora «Actualizando cada 15s» tapa la tarjeta Servicios. |
+| 22 | Bajo | `/ui/v2/maintenance` | Unidades inconsistentes | Ver la columna «Distancia restante». | Formato uniforme | «70274» y «11175» sin unidad, junto a «1391Km» y «92676km». |
+| 23 | Bajo | `/ui/v2/call-actions` | Etiqueta y fecha raras | Ver el listado. | «Llamado el» / fecha vacía «—» | La columna de fecha se llama «**PARAR EN**». Una fila muestra «1970-01-01 00:00:00» (fecha vacía mostrada como época). |
+| 24 | Bajo | `/ui/v2/alerts` | El contador no se actualiza | Crear una regla. | «13 reglas» | Sigue diciendo «12 reglas» hasta recargar. |
+| 25 | Bajo | `/ui/v2/drivers` | El error de validación no desaparece | Guardar vacío → «Requerido» → escribir el nombre. | El error desaparece | «Requerido» sigue visible hasta guardar. |
+| 26 | Bajo | `/ui/v2/zones` | Título de pestaña incorrecto | Abrir `/ui/v2/zones` (redirige a `live?panel=zones`). | «Geocercas · …» | «Mapa · …». |
+| 27 | Bajo · **a confirmar** | Botones «+» / «Nueva regla» | El primer clic tras cargar la página no abre el modal | Pasó en gastos, tareas, conductores, compartir, alertas, acciones de llamada y comandos; el segundo clic sí abre. | Se abre con el primer clic | Puede ser un efecto de la automatización del navegador; conviene comprobarlo a mano. |
+
+**Anotado una vez, según §9:** el servidor de sockets no responde (`:9001/socket.io` → 503 / sin conexión) en todas las páginas.
+
+## Qué probé y salió bien
+
+- **Carga de las 21 páginas** (admin): todas 200 menos el dashboard. `/ui/v2/legacy` lleva a `/objects`. Sin errores de JS en consola en ninguna.
+- **Live**: mapa, marcadores y clusters, búsqueda en el panel de flota, ficha del vehículo (velocímetro, datos de objeto, conductor, ubicación, Street View, servicios).
+- **History (219, 18-mar-2026)**: 195,5 km · 29 viajes · 30 paradas · 2.976 puntos. **Coincide con el legacy** `/history` con el mismo umbral de parada (180 s → P30/D29, 195,5 km). Reproducción, gráfica de velocidad, pestañas de sensores y «Registro de datos» OK. Las exportaciones GSR/KML/GPX/CSV responden 200 con contenido (CSV: 2.976 filas).
+- **Events**: filtro por vehículo (219 → 14) y paginación por `offset` (50 + 50, sin solapes). El primer evento coincide con el legacy.
+- **Reports**: reporte «Información general» del 219 generado en HTML (194,32 km, máx. 68, media 16). Guardar, listar y borrar OK.
+- **Maintenance**: 110 filas = 110 en el legacy (el doc dice 115; la cifra coincide entre v2 y legacy). El modal de edición carga.
+- **Altas y ediciones con registros `QA-`**: gasto, tarea, conductor (con dispositivo), compartir (el enlace abre **sin sesión**: `fetch` sin cookies → 200 con T6G-611), alerta, geocerca polígono con límites por tipo de vehículo (Pesados vacío 50 / cargado 40, persisten), acción de llamada (alta y edición), programación de ruta, modal de puntos de control. Validación de campos vacíos: gastos, conductores y reportes (esta última mal, ver #10).
+- **Borrado** desde la UI (modal de confirmación propio) de todos mis registros QA-: OK.
+- **Buscador global** (clic en la barra): encuentra vehículos. **Menú de usuario**, modales con Escape, «Cancelar».
+- **Usuario normal**: 5 vehículos, contadores cuadran; chat y acciones de llamada dan 403 y además **no salen en el menú** (coherente). Dashboard también da 500.
+- **Móvil 390 px**: sin scroll horizontal en fleet y alerts; el menú hamburguesa y el tirador de la flota funcionan.
+- **Traducción**: ninguna clave cruda en pantalla, en ninguna página, en ninguno de los dos idiomas.
+
+## Qué no pude probar y por qué
+
+- **Dashboard** (widgets, rangos, ranking): bloqueado por el #1.
+- **Comandos**: solo hasta el formulario, por la regla §4.3. No vi los campos de comando porque Escape cerró el modal entero.
+- **Descargas a disco**: exportación de rutas, eventos y flota, e importación de rutas y geocercas. Descargar archivos requiere tu permiso explícito; las exportaciones de historial las validé por `fetch` sin guardar nada. ⚠️ Un clic en «Exportar GSR» del historial pudo haber descargado un `.gsr` a tu carpeta de Descargas.
+- **Dibujo de rutas y edición de vértices** de geocercas: con la automatización, el arrastre en Leaflet no es fiable; solo pude dibujar polígono y círculo.
+- **Mantenimiento: alta y renovación**: la página no tiene botón de alta (el alta va por el dispositivo); no guardé cambios sobre servicios reales.
+- **Conductores: «Establecer como actual»**: cambiaría el conductor actual real del 219.
+- **Chat**: el admin no tiene vehículos con chat, así que no hay conversación que probar.
+- **Paleta con Ctrl+K**: Chrome intercepta el atajo; con clic sí se abre.
+- **Rail plegable (que recuerde el estado)** y **bandeja de notificaciones**: sin probar.
+- **Monitor**: carga con la rejilla guardada (32 celdas, 23 vehículos); no cambié los tamaños de rejilla.
+- **Ventana privada** para el enlace de compartir: sustituida por una petición sin cookies.
+
+## Limpieza y estado final
+
+- Borré todos mis registros `QA-` (gasto 7, tarea 2, conductor 13, compartir 648, alerta 8959, geocerca 1371, llamada 5, programación 8, reporte 90). Verificado por API: no queda ninguno.
+- **Quedan y no los borré:** «QA-Reporte 219» (id 89), que ya existía antes de esta revisión, y el evento automático «Tarea nueva (QA-Tarea prueba)» que generó el alta de la tarea. Borrarlo es tocar la tabla de eventos, así que lo dejo a tu criterio.
+- El idioma del admin volvió a **ES**, el tema a **claro** y la sesión del navegador vuelve a ser la del **admin**.
