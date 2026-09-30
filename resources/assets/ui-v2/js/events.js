@@ -475,8 +475,14 @@
     var f = document.getElementById("tp-events-from");
     var t = document.getElementById("tp-events-to");
     var qs = "";
-    if (f && f.value) qs += "&date_from=" + encodeURIComponent(f.value + " 00:00:00");
-    if (t && t.value) qs += "&date_to=" + encodeURIComponent(t.value + " 23:59:59");
+    // tpDate.value(): el input visible muestra el formato del usuario
+    // (dd/mm/aaaa) y el ISO vive en un hidden. Leyendo .value a secas, el
+    // backend interpretaba 01/03 como 1 de ENERO y 31/03 no era fecha
+    // valida, asi que el rango no devolvia nada.
+    var fv = window.tpDate ? tpDate.value(f) : (f && f.value) || "";
+    var tv = window.tpDate ? tpDate.value(t) : (t && t.value) || "";
+    if (fv) qs += "&date_from=" + encodeURIComponent(fv + " 00:00:00");
+    if (tv) qs += "&date_to=" + encodeURIComponent(tv + " 23:59:59");
     return qs;
   }
 

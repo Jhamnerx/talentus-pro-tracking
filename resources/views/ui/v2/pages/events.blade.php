@@ -46,8 +46,8 @@
                 <details class="tp-events__range">
                     <summary class="tp-text-xs tp-text-muted">Rango de fechas</summary>
                     <div class="tp-row" style="gap:6px;margin-top:6px;">
-                        <input type="date" class="tp-input tp-input--sm" id="tp-events-from" title="Desde">
-                        <input type="date" class="tp-input tp-input--sm" id="tp-events-to" title="Hasta">
+                        <input type="date" class="tp-input tp-input--sm" id="tp-events-from" title="{{ trans('front.from') }}">
+                        <input type="date" class="tp-input tp-input--sm" id="tp-events-to" title="{{ trans('global.to') }}">
                         <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-range-clear"
                             title="Limpiar rango">×</button>
                     </div>
