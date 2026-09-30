@@ -519,8 +519,13 @@
     var kinds = ["pickup", "delivery"];
     for (var i = 0; i < kinds.length; i++) {
       if (val(form, kinds[i] + "_address") && !val(form, kinds[i] + "_address_lat")) {
+        // Una sola frase con marcador: antes se concatenaban tres trozos y
+        // "recogida"/"entrega" iban en castellano fijo, asi que en ingles
+        // salia el mensaje mezclado.
         tpModal.toast(
-          tpT('ui.locate_the_address_of') + (kinds[i] === "pickup" ? "recogida" : "entrega") + tpT('ui.with_the_map_button'),
+          tpT('ui.locate_address_with_map', {
+            kind: kinds[i] === "pickup" ? tpT('ui.pickup') : tpT('ui.delivery'),
+          }),
           "warning",
         );
         return;
@@ -580,7 +585,7 @@
           tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
-        tpModal.toast(id ? "Tarea actualizada." : "Tarea creada.", "success");
+        tpModal.toast(id ? tpT('ui.task_updated') : tpT('ui.task_created'), "success");
         tpModal.close(dialog);
         if (typeof onSaved === "function") onSaved();
       })

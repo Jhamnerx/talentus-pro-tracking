@@ -222,6 +222,10 @@ class TasksController extends BaseController
 
     public function store(Request $request): JsonResponse
     {
+        if ($error = $this->vehiculoInvalido($request)) {
+            return $error;
+        }
+
         try {
             $task = $this->service->create($request->all());
             $this->saveCustomFields($task, $request);
@@ -232,11 +236,45 @@ class TasksController extends BaseController
         }
     }
 
+    /**
+     * El vehiculo se comprueba ANTES de llamar al servicio.
+     *
+     * TaskUserService::create() lee $data['device_id'] sin mirar si existe y,
+     * cuando falta, lanza ResourseNotFoundException: la respuesta era un 404
+     * "Dispositivo no fue encontrado", que ni es el codigo correcto ni le
+     * dice al usuario lo que pasa de verdad (que no eligio vehiculo). Con un
+     * 422 por campo entra por el camino que el formulario ya sabe pintar.
+     */
+    private function vehiculoInvalido(Request $request): ?JsonResponse
+    {
+        $id = (int) $request->input('device_id');
+
+        if (! $id) {
+            return response()->json([
+                'ok'     => false,
+                'errors' => ['device_id' => [trans('ui.select_a_vehicle_dot')]],
+            ], 422);
+        }
+
+        if (! $this->user->devices()->where('devices.id', $id)->exists()) {
+            return response()->json([
+                'ok'     => false,
+                'errors' => ['device_id' => [trans('ui.invalid_vehicle')]],
+            ], 422);
+        }
+
+        return null;
+    }
+
     public function update(Request $request, $id): JsonResponse
     {
         $task = Task::find($id);
         if (! $task) {
             abort(404);
+        }
+
+        if ($error = $this->vehiculoInvalido($request)) {
+            return $error;
         }
 
         try {

@@ -283,7 +283,7 @@
         return '<option value="' + p[0] + '">' + esc(p[1]) + "</option>";
       }).join("") +
       "</select></label>" +
-      '<div class="tp-form__field" data-rep-field="devices"><span class="tp-form__label">Dispositivos</span><div data-rep-devices></div></div>' +
+      '<div class="tp-form__field" data-rep-field="devices"><span class="tp-form__label">' + tpT('front.devices') + '</span><div data-rep-devices></div></div>' +
       "</div>" +
       ROW +
       '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.date_from') + '</span>' +
@@ -889,6 +889,19 @@
   function doGenerate(dialog) {
     var payload = collectPayload(dialog);
     delete payload.id;
+
+    // Validar ANTES de abrir la pestaña. La ruta legacy lanza
+    // ValidationException si no hay dispositivos, y como se abre en otra
+    // pestaña el usuario solo veia un 500 en blanco, sin saber que faltaba.
+    if (!payload.devices || !payload.devices.length) {
+      tpModal.toast && tpModal.toast(tpT('ui.select_at_least_one_vehicle'), "warning");
+      return;
+    }
+    if (!payload.type) {
+      tpModal.toast && tpModal.toast(tpT('ui.pick_a_type'), "warning");
+      return;
+    }
+
     payload.generate = 1;
     if (payload.format === "html" || payload.format === "json" || payload.format === "csv") {
       payload.view = 1;
