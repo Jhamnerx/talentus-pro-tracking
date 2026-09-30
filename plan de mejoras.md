@@ -1,7 +1,7 @@
 # Plan de implementación y salida a producción
 
 **Plataforma de Rastreo · Talentus Technology**
-Estado a **29 de septiembre de 2026** · rama `nuevo-tema`
+Estado a **30 de septiembre de 2026** · rama `nuevo-tema`
 
 ---
 
@@ -14,8 +14,8 @@ actualización del núcleo a GPSWox 3.7.13 sobre Laravel 9.
 
 | Concepto                                    | Cifra                     |
 | ------------------------------------------- | ------------------------- |
-| Periodo de trabajo                          | 31-may → 29-sep-2026      |
-| Commits por delante de producción           | 298                       |
+| Periodo de trabajo                          | 31-may → 30-sep-2026      |
+| Commits por delante de producción           | 322                       |
 | Ficheros tocados                            | 1.045                     |
 | Líneas añadidas / eliminadas                | +185.846 / −30.058        |
 | Migraciones de base de datos por aplicar    | 31                        |
@@ -28,7 +28,7 @@ La anterior era el 3; se corre una semana porque entre el 28 y el 29 de
 septiembre entraron tres funcionalidades nuevas (§1.6) después de la fecha de
 congelación, por decisión expresa de dirección.
 
-El mayor riesgo operativo **hoy** no es técnico: hay **241 commits sin subir al
+El mayor riesgo operativo **hoy** no es técnico: hay **265 commits sin subir al
 repositorio remoto**. Todo ese trabajo existe en una sola máquina. Resolverlo
 es lo primero del calendario y no admite espera.
 
@@ -351,6 +351,44 @@ sirve para cualquier valor inválido, no solo para este.
 
 ---
 
+### 1.8 · Revisión en navegador y correcciones (30 sep)
+
+Se encargó una **revisión completa en navegador** de las 21 páginas de la v2,
+con guion escrito (`docs/QA-UI-V2.md`) y comparación contra el legacy. Es
+trabajo de la Fase 1 adelantado: conviene descontarlo de ese bloque.
+
+Resultado: **32 defectos** (27 en la primera vuelta y 5 más en el re-test),
+de los que hoy quedan **0 abiertos**. El informe completo, con el commit de
+cada corrección, está en `docs/QA-UI-V2-informe.md`.
+
+Lo que más se repitió, por orden de impacto:
+
+| Patrón | Casos | Ejemplo |
+| ------ | ----- | ------- |
+| `try/catch` mudo que convierte un error en un dato falso | 2 | Editar una alerta le borraba los 1.429 vehículos; el Co-Pilot mostraba la flota a cero |
+| Consultas sin límite superior de fecha | 4 | El tablero contaba desde el inicio del rango **hasta hoy**: 3.016 eventos donde había 1.150 |
+| Zona horaria: se guarda en la del usuario y se lee en la de la aplicación | 1 | Un reporte guardado volvía con las fechas corridas un día, y uno programado cubría el día equivocado |
+| Esquema heredado de MySQL | 1 | `device_expenses.date` tenía `ON UPDATE CURRENT_TIMESTAMP`: editar la cantidad borraba la fecha del gasto |
+
+Tres de los defectos los introdujo la propia tanda de traducción del 29-sep,
+y conviene decirlo: `trans()` dentro de una `const` (fatal que `php -l` no
+ve, y que tiró el tablero entero), una clave genérica que tapaba un mensaje
+específico, y espacios perdidos al recortar literales.
+
+**Dos cosas quedan hechas que antes no existían:**
+
+- **Versionado automático de assets.** Las 100 referencias a JS y CSS
+  llevaban el número de versión *a mano*. Publicar una corrección sin
+  acordarse de subirlo deja al navegador sirviendo el fichero viejo — que es
+  justo lo que pasó: el re-test reprodujo un fallo ya corregido hasta forzar
+  la recarga. Ahora se calcula del `filemtime`.
+- **Prueba de humo.** `php artisan uiv2:smoke` lanza una petición real a las
+  21 páginas y 16 endpoints. Es lo que habría cazado el bloqueante del
+  tablero, que `php -l` no ve porque es un fatal de ejecución, no de
+  sintaxis. Hoy: 37/37.
+
+---
+
 ### 1.6 · Entregado tras la fecha de congelación (28–29 sep)
 
 Tres funcionalidades pedidas después del 28-sep, la fecha en que el plan
@@ -399,11 +437,14 @@ Ninguno de los dos bloquea la salida a producción.
 
 | Qué                                                        | Por qué importa                                        |
 | ---------------------------------------------------------- | ------------------------------------------------------ |
-| **241 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina               |
+| **265 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina               |
 | **Sin suite de pruebas automáticas**                       | Cada regresión se detecta a mano o en producción       |
+| ~~La prueba de humo no está versionada~~ · **hecho**       | `php artisan uiv2:smoke` — 21 páginas y 16 endpoints, 37/37 |
+| **es/validation.php y en/validation.php no tienen la misma forma** | Uno guarda las etiquetas en la raíz y el otro dentro de `attributes`. Ya ha roto 18 claves en dos tandas distintas |
+| `saveSettings()` no valida `template_color`                | Acepta cualquier valor por POST; el respaldo evita el daño visual, pero la validación falta |
 | ~~`gulp sass-all` roto~~ · **resuelto el 29-sep**          | Los 32 temas vuelven a compilar (`4575f61f`)           |
 | ~~Traducción de la v2 incompleta~~ · **resuelta el 29-sep**| Vistas, controladores y JS pasan por `trans()`         |
-| Cola de difusión sin worker (24 trabajos esperando)        | Los avisos emergentes no llegan si nadie procesa la cola|
+| Cola de difusión sin worker (26 trabajos esperando)        | Los avisos emergentes no llegan si nadie procesa la cola|
 | **`clean-css` 4.2.1 descarta las at-rules que no conoce**  | Toda `@container` desaparece del CSS compilado sin avisar |
 | **Ocho cortes responsive distintos** entre hojas de estilo | 640, 720, 760, 767, 900, 960, 1100… las casi-coincidencias ya causaron un fallo real |
 
@@ -421,6 +462,39 @@ rail a 767 px mientras `components.css` mostraba el botón de menú a 640: entre
 esos dos anchos no había ni rail ni forma de abrirlo. Ya está corregido, pero
 la causa de fondo —ocho breakpoints sueltos, con parejas a 6 px de distancia—
 sigue ahí. Conviene fijarlos como tokens antes de que vuelva a pasar.
+
+### 2.4 · No es código: configuración y datos del servidor
+
+Cosas que no se arreglan programando y que hoy dejan funcionalidad a medias.
+Conviene resolverlas **antes** del piloto, porque desde dentro parecen fallos
+de la aplicación.
+
+| Qué | Efecto hoy | Quién lo resuelve |
+| --- | ---------- | ----------------- |
+| **Clave de Google Places sin habilitar** | El autocompletado de direcciones en Tareas no sugiere nada y muestra un aviso crudo de Google en inglés | Consola de Google Cloud |
+| **Servidor de sockets parado** (`socket/socket.js`, puertos 9001/9002) | Sin tiempo real: ni avisos emergentes, ni fotos de cámara, ni chat. La interfaz funciona, pero sondeando | Operaciones |
+| **Cola sin worker** | 26 trabajos esperando; los avisos no salen | Operaciones |
+| **Faltan 2 de 105 ficheros de icono de mapa** | Algún marcador sale sin icono (404). Son iconos SUBIDOS por un usuario; hay que confirmar que en producción sí están | Operaciones |
+
+### 2.5 · Limitaciones conocidas que se dejan documentadas
+
+No son defectos: son decisiones o límites que conviene tener escritos para no
+volver a investigarlos.
+
+- **El puente de traducciones pesa ~54 KB por página** (1.106 claves). Se
+  manda entero en todas. Si molesta, se parte por página.
+- **Unas 30 cadenas se tradujeron como fragmentos** de una concatenación
+  (`"(máx"`, `"· límite"`). Funcionan, pero no permiten reordenar la frase en
+  otro idioma. Pasarlas a marcadores exige reescribir cada sitio.
+- **El Co-Pilot reconoce la pregunta solo en castellano**: las expresiones
+  regulares que la interpretan (`/(ralent|idle)/u`) no son texto que se
+  muestre, sino reconocimiento de entrada. Hacerlo multiidioma es otro
+  trabajo.
+- **Los mensajes de evento generados al vuelo no son buscables.** La columna
+  `events.message` está vacía para algunos tipos y el texto se compone al
+  mostrarlo. El legacy tiene la misma limitación.
+- **La v2 no aplica `visible()` a la lista**, igual que el legacy: los
+  vehículos ocultos del mapa se listan con su casilla. Ver §1.8.
 
 ---
 
@@ -499,6 +573,14 @@ claro y oscuro**, y **los dos idiomas**.
 **Criterio de salida:** cero defectos bloqueantes abiertos; los de severidad
 media, documentados y aceptados.
 
+> **Ya adelantado:** la revisión del 30-sep (§1.8) recorrió las 21 páginas en
+> los dos temas y los dos idiomas, con comparación contra el legacy, y cerró
+> los 32 defectos que encontró. Lo que **no** cubrió y sigue pendiente en esta
+> fase: los ~130 reportes por muestreo, las integraciones regulatorias
+> (OSINERGMIN, SUTRAN, WiseTrack…), los roles distintos de admin y usuario
+> normal, y todo lo que exige descargar ficheros o enviar comandos a equipos
+> reales.
+
 ### Fase 2 · Piloto en producción — lun 26-oct a vie 6-nov
 
 Un grupo reducido de usuarios reales trabaja en la v2 sobre datos de
@@ -555,11 +637,18 @@ preferible mover la fecha que salir con un defecto conocido.
 
 ## 7 · Decisiones que se necesitan
 
-1. **¿Se confirma el 3 de noviembre** como fecha objetivo?
+1. **¿Se confirma el 10 de noviembre** como fecha objetivo? (La propuesta
+   inicial era el 3; se corrió una semana por las tres funcionalidades que
+   entraron tras la congelación — ver §1.6.)
 2. **¿Quiénes forman el grupo piloto** de la Fase 2?
 3. **¿Hay entorno de preproducción** disponible, o hay que montarlo en Fase 0?
 4. **¿Se acepta salir** sin vídeo a bordo ni integración con el ERP?
-5. **¿Se aborda la traducción al inglés** antes de salir, o queda para después?
+5. ~~¿Se aborda la traducción al inglés?~~ **Resuelto**: está hecha y
+   verificada (§1.7 y §1.8).
+6. **¿Quién habilita la clave de Google Places y levanta el socket y la
+   cola?** Ver §2.4: sin eso, tres funciones parecen rotas desde dentro.
+7. **¿Se acepta que la revisión en navegador del 30-sep cubre parte de la
+   Fase 1**, o se repite entera con el equipo?
 
 ---
 ---

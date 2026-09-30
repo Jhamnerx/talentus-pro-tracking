@@ -25,6 +25,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         'App\Console\Commands\Inspire',
+        'App\Console\Commands\UiV2SmokeCommand',
         'App\Console\Commands\CleanModelChangeLogCommand',
         'App\Console\Commands\BootTest',
         'App\Console\Commands\DispatchPendingCommands',
