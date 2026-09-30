@@ -328,16 +328,12 @@ class AlertsController extends BaseController
         /** @var \Tobuli\Entities\Alert $alert */
         $alert = $data['item'];
 
-        $devicesSelected = [];
-        try {
-            $devicesSelected = $alert->devices()->pluck('id')->all();
-        } catch (\Throwable $e) {
-        }
-        $geofencesSelected = [];
-        try {
-            $geofencesSelected = $alert->geofences()->pluck('id')->all();
-        } catch (\Throwable $e) {
-        }
+        // pluck CUALIFICADO: son relaciones con pivote, y 'id' a secas es
+        // ambiguo en el join ("Column 'id' in field list is ambiguous").
+        // Antes reventaba, el catch mudo se lo tragaba, el formulario abria
+        // con 0 vehiculos y al guardar el sync() los borraba.
+        $devicesSelected   = $alert->devices()->pluck('devices.id')->all();
+        $geofencesSelected = $alert->geofences()->pluck('geofences.id')->all();
 
         $typeFieldValues = [];
         $typeMatch = collect($types)->firstWhere('key', $alert->type);
