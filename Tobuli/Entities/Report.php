@@ -73,12 +73,44 @@ class Report extends AbstractEntity implements DisplayInterface
         return $this->belongsToMany('Tobuli\Entities\Poi', 'report_poi_pivot', 'report_id', 'poi_id');
     }
 
+    /**
+     * Resuelve un periodo relativo contra el dia de HOY DEL USUARIO.
+     *
+     * El periodo no se guarda como fecha absoluta sino como desplazamiento
+     * ("-195 days 00:00"). ReportModalHelper lo calcula contra el dia del
+     * usuario, y ReportsDailyCommand lo resuelve igual al ejecutar el
+     * reporte programado. Los accessors eran la pieza descolocada: usaban
+     * Carbon::parse() a secas, o sea la zona de la aplicacion (UTC).
+     *
+     * Con un usuario en UTC-5, a partir de las 19:00 hora local el
+     * calendario UTC ya ha cambiado de dia, asi que al reabrir un reporte
+     * guardado TODO el periodo aparecia corrido una jornada. Un reporte
+     * programado cubria el dia equivocado.
+     *
+     * @param  string $formato   p. ej. "-195 days 00:00"
+     * @param  string $respaldo  hora a usar si no hay formato guardado
+     */
+    private function resuelveRelativo($formato, $respaldo)
+    {
+        if (empty($formato)) {
+            return Carbon::parse($respaldo)->format('Y-m-d H:i');
+        }
+
+        try {
+            $hoyUsuario = strtotime(date('Y-m-d', \Formatter::time()->now()));
+        } catch (\Throwable $e) {
+            // sin usuario en contexto (consola, colas): la zona de la app
+            $hoyUsuario = strtotime(date('Y-m-d'));
+        }
+
+        $ts = strtotime($formato, $hoyUsuario);
+
+        return $ts ? date('Y-m-d H:i', $ts) : Carbon::parse($respaldo)->format('Y-m-d H:i');
+    }
+
     public function getFromFormatedAttribute()
     {
-        if ($this->from_format)
-            return Carbon::parse( $this->from_format )->format('Y-m-d H:i');
-        else
-            return Carbon::parse( '00:00:00' )->format('Y-m-d H:i');
+        return $this->resuelveRelativo($this->from_format, '00:00:00');
     }
 
     public function getFormatAttribute($value)
@@ -91,10 +123,7 @@ class Report extends AbstractEntity implements DisplayInterface
 
     public function getToFormatedAttribute()
     {
-        if ($this->to_format)
-            return Carbon::parse( $this->to_format )->format('Y-m-d H:i');
-        else
-            return Carbon::parse( '23:45:00' )->format('Y-m-d H:i');
+        return $this->resuelveRelativo($this->to_format, '23:45:00');
     }
 
     public function isSchedule()
