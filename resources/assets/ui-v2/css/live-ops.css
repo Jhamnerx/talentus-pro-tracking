@@ -2774,14 +2774,17 @@ table.tp-lock-hist th {
   color: var(--dash-fg3);
 }
 .tp-dash__stat-value {
-  font-size: 20px;
+  /* Sin nowrap: un odometro de 6 cifras o un horometro completo no caben
+     en la celda y salian cortados ("27116...", "934:2..."), que es peor
+     que ocupar dos lineas. */
+  font-size: 18px;
+  line-height: 1.15;
   font-weight: 700;
   color: var(--dash-fg);
   margin-top: 2px;
   font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .tp-dash__stat-unit {
   font-size: 11px;

@@ -339,3 +339,30 @@
 [data-theme="dark"] .tp-maint__title-ico {
   color: var(--brand-accent, #1b99bd);
 }
+
+/* ------------------------------------------------------------------
+   Movil: la cabecera de .tp-maint (titulo + herramientas) dejaba fuera
+   de pantalla los botones de la derecha ("Plantillas", "+ Nueva
+   regla"). Con el ancho justo ya envuelve, pero las herramientas
+   tienen que poder ocupar la linea entera y el buscador dejar de
+   medir 240px fijos.
+   ------------------------------------------------------------------ */
+@media (max-width: 767px) {
+  .tp-maint {
+    padding: 14px 12px;
+  }
+
+  .tp-maint__head {
+    align-items: stretch;
+  }
+
+  .tp-maint__tools {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .tp-maint__tools .tp-input {
+    width: 100%;
+    min-width: 0;
+  }
+}

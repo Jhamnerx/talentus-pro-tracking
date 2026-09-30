@@ -356,3 +356,29 @@
 .tp-events__range[open] summary {
   margin-bottom: 2px;
 }
+
+/* ------------------------------------------------------------------
+   Movil: la rejilla de 340px + resto dejaba el mapa en una franja de
+   unos 40px con los controles amontonados encima (ver
+   docs/qa-ui-v2/F-movil-eventos-mapa-comprimido.png). Se apila: la
+   lista arriba y el mapa debajo, con altura propia para que sirva de
+   algo.
+   ------------------------------------------------------------------ */
+@media (max-width: 767px) {
+  .tp-events {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) 45vh;
+    overflow-y: auto;
+  }
+
+  .tp-events__list-panel {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+    min-height: 0;
+  }
+
+  .tp-events__map-area,
+  .tp-events__map {
+    min-height: 45vh;
+  }
+}
