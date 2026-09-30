@@ -31,7 +31,9 @@ class CopilotController extends BaseController
         $noFix       = [];
 
         try {
-            $user->devices()->with(['traccarDevice', 'traccar'])->chunk(200, function ($chunk) use (&$stat, &$longOffline, &$longIdle, &$noFix, $now) {
+            // 'traccarDevice' NO es una relacion de Device (es 'traccar'):
+            // with() lanzaba y el catch de abajo dejaba todo a cero.
+            $user->devices()->with(['traccar'])->chunk(200, function ($chunk) use (&$stat, &$longOffline, &$longIdle, &$noFix, $now) {
                 foreach ($chunk as $d) {
                     $stat['total']++;
                     $g = $this->groupStatus((string) ($d->online ?? 'offline'));
@@ -51,6 +53,8 @@ class CopilotController extends BaseController
                 }
             });
         } catch (\Throwable $e) {
+            // sin esto, un fallo aqui devolvia la flota a cero sin rastro
+            \Log::warning('Co-Pilot: fallo al recorrer la flota', ['error' => $e->getMessage()]);
         }
 
         if (count($longOffline) > 0) {
