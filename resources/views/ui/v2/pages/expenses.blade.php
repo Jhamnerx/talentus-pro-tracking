@@ -29,7 +29,7 @@
                 Gastos
             </h2>
             <div class="tp-maint__tools" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                <input type="text" class="tp-input" id="tp-exp-search" placeholder="Buscar…" autocomplete="off">
+                <input type="text" class="tp-input" id="tp-exp-search" placeholder="{{ trans('ui.search_ellipsis') }}" autocomplete="off">
                 <select class="tp-input" id="tp-exp-device" style="width:200px"><option value="">{{ trans('ui.all_vehicles') }}</option></select>
                 <input type="date" class="tp-input" id="tp-exp-from" title="Desde">
                 <input type="date" class="tp-input" id="tp-exp-to" title="Hasta">

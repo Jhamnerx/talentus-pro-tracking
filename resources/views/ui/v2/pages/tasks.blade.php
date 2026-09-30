@@ -53,7 +53,7 @@
                 </span>
                 <span data-tsk-only="tasks" style="display:inline-flex;">
                     <select class="tp-input" id="tp-tasks-status" style="width: 170px">
-                        <option value="">Todos los estados</option>
+                        <option value="">{{ trans('ui.all_statuses') }}</option>
                         @foreach ($statuses as $id => $label)
                             <option value="{{ $id }}">{{ $label }}</option>
                         @endforeach

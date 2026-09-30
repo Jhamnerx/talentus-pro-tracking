@@ -265,9 +265,13 @@ class MapLayersController extends BaseController
                 }
                 $coords[] = [(float) $lng, (float) $lat];
             }
-            if (count($coords) < 2) {
-                continue;
-            }
+            // NO se descartan las rutas de menos de 2 puntos. Este endpoint
+            // alimenta tambien la TABLA de rutas: saltarselas las volvia
+            // invisibles y, por tanto, imposibles de editar o borrar. Es el
+            // caso de las rutas que crean las programaciones, que solo
+            // existen para colgar puntos de control y no tienen trazado.
+            // Para el mapa ya filtran los consumidores (live.js y events.js
+            // hacen `if (pts.length < 2) return`).
             $items[] = [
                 'id'          => (int) $route->id,
                 'name'        => (string) $route->name,

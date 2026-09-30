@@ -36,8 +36,8 @@
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 <select class="tp-input" id="tp-drivers-assigned" style="width: 190px">
                     <option value="">{{ trans('global.all') }}</option>
-                    <option value="with">Con dispositivos</option>
-                    <option value="without">Sin dispositivos</option>
+                    <option value="with">{{ trans('ui.with_devices') }}</option>
+                    <option value="without">{{ trans('ui.without_devices') }}</option>
                 </select>
                 <button type="button" class="tp-btn tp-btn--accent" id="tp-drivers-add">＋</button>
             </div>

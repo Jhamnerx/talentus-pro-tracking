@@ -19,7 +19,7 @@
         <span>{{ trans('front.enable_widgets') }}</span>
     </label>
 
-    <p class="tp-text-xs tp-text-muted" style="margin:4px 0 8px;">Arrastra para reordenar · marca para mostrar.</p>
+    <p class="tp-text-xs tp-text-muted" style="margin:4px 0 8px;">{{ trans('ui.drag_to_reorder') }}</p>
 
     <div id="tp-widgets-config-fields" class="tp-widgets-grid">
         @foreach ($catalog as $key => $label)

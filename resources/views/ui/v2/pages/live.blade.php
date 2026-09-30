@@ -139,7 +139,7 @@
                             </button>
                         @endif
                         <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button"
-                            id="tp-live-group-toggle" title="Agrupar por grupo" aria-label="Agrupar por grupo"
+                            id="tp-live-group-toggle" title="{{ trans('ui.group_by_group') }}" aria-label="{{ trans('ui.group_by_group') }}"
                             aria-pressed="true">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -183,7 +183,7 @@
                         </svg>
                     </span>
                     <input type="text" class="tp-input tp-input--with-icon" id="tp-live-search"
-                        placeholder="Buscar nombre, placa, IMEI…" autocomplete="off">
+                        placeholder="{{ trans('ui.search_name_plate_imei') }}" autocomplete="off">
                 </div>
 
                 {{-- Status filter --}}
@@ -194,7 +194,7 @@
                         <span class="tp-segmented__label">Todos</span>
                         <span class="tp-segmented__count" data-count="all">0</span>
                     </button>
-                    <button class="tp-segmented__item" data-filter="moving" type="button" title="En movimiento">
+                    <button class="tp-segmented__item" data-filter="moving" type="button" title="{{ trans('front.move') }}">
                         <span class="tp-segmented__label"><span class="tp-dot tp-dot--moving"></span><span
                                 class="tp-segmented__text">Movimiento</span></span>
                         <span class="tp-segmented__count" data-count="moving">0</span>
@@ -231,7 +231,7 @@
                             <circle cx="11" cy="11" r="8" />
                             <path d="m21 21-4.35-4.35" />
                         </svg>
-                        <div class="tp-mt-2">Sin resultados</div>
+                        <div class="tp-mt-2">{{ trans('ui.no_results_plain') }}</div>
                     </div>
                 </div>
             </div>
@@ -257,7 +257,7 @@
                                 id="tp-pois-count"></span></h3>
                         @if (auth()->user()->perm('poi', 'edit'))
                             <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button" id="tp-pois-new"
-                                title="Nuevo POI" aria-label="Nuevo POI">
+                                title="{{ trans('ui.new_poi') }}" aria-label="{{ trans('ui.new_poi') }}">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 5v14M5 12h14" />
@@ -274,11 +274,11 @@
                             </svg>
                         </span>
                         <input type="text" class="tp-input tp-input--with-icon" id="tp-pois-search"
-                            placeholder="Buscar POI…" autocomplete="off">
+                            placeholder="{{ trans('ui.search_poi') }}" autocomplete="off">
                     </div>
                     <div class="tp-mt-3 tp-row" style="gap:6px;align-items:center;">
                         <select id="tp-pois-group" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;">
-                            <option value="">Todos los grupos</option>
+                            <option value="">{{ trans('ui.all_groups') }}</option>
                         </select>
                         {{-- Gestion de grupos (paridad PoisGroups legacy) --}}
                         @if (Auth::user()->can('view', new \Tobuli\Entities\PoiGroup()))
@@ -288,9 +288,9 @@
                     </div>
                 </header>
                 <div class="tp-live__list-wrap">
-                    <div class="tp-pois-list" id="tp-pois-list" role="listbox" aria-label="Lista de POIs"></div>
+                    <div class="tp-pois-list" id="tp-pois-list" role="listbox" aria-label="{{ trans('ui.poi_list') }}"></div>
                     <div class="tp-live__empty" id="tp-pois-empty" hidden>
-                        <div class="tp-mt-2">Sin POIs</div>
+                        <div class="tp-mt-2">{{ trans('ui.no_pois_plain') }}</div>
                     </div>
                 </div>
                 <footer class="tp-live__filters-foot" style="gap:6px;">
@@ -313,7 +313,7 @@
                                 id="tp-zones-count"></span></h3>
                         @if (auth()->user()->perm('geofences', 'edit'))
                             <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button" id="tp-zones-new"
-                                title="Nueva geocerca" aria-label="Nueva geocerca">
+                                title="{{ trans('ui.new_geofence') }}" aria-label="{{ trans('ui.new_geofence') }}">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 5v14M5 12h14" />
@@ -330,7 +330,7 @@
                             </svg>
                         </span>
                         <input type="text" class="tp-input tp-input--with-icon" id="tp-zones-search"
-                            placeholder="Buscar geocerca…" autocomplete="off">
+                            placeholder="{{ trans('ui.search_geofence') }}" autocomplete="off">
                     </div>
                     <div class="tp-segmented tp-segmented--full tp-mt-3" role="tablist" id="tp-zones-type-filter">
                         <button class="tp-segmented__item" data-ztype="all" aria-selected="true"
@@ -340,7 +340,7 @@
                     </div>
                     <div class="tp-mt-3 tp-row" style="gap:6px;align-items:center;">
                         <select id="tp-zones-group" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;">
-                            <option value="">Todos los grupos</option>
+                            <option value="">{{ trans('ui.all_groups') }}</option>
                         </select>
                         {{-- Gestion de grupos (paridad GeofencesGroups legacy) --}}
                         @if (Auth::user()->can('view', new \Tobuli\Entities\GeofenceGroup()))
@@ -350,9 +350,9 @@
                     </div>
                 </header>
                 <div class="tp-live__list-wrap">
-                    <div class="tp-poi-list" id="tp-zones-list" role="listbox" aria-label="Lista de geocercas"></div>
+                    <div class="tp-poi-list" id="tp-zones-list" role="listbox" aria-label="{{ trans('ui.geofence_list') }}"></div>
                     <div class="tp-live__empty" id="tp-zones-empty" hidden>
-                        <div class="tp-mt-2">Sin geocercas</div>
+                        <div class="tp-mt-2">{{ trans('ui.no_geofences_plain') }}</div>
                     </div>
                 </div>
                 <footer class="tp-live__filters-foot" style="gap:6px;">
@@ -432,7 +432,7 @@
         </aside>
 
         {{-- COLLAPSED FILTERS HANDLE (when filters panel is hidden) --}}
-        <button class="tp-live__filters-handle" id="tp-live-filters-expand" type="button" hidden title="Mostrar lista"
+        <button class="tp-live__filters-handle" id="tp-live-filters-expand" type="button" hidden title="{{ trans('ui.show_list') }}"
             aria-label="{{ trans('ui.show_vehicle_list') }}">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -447,10 +447,10 @@
             {{-- Map overlay: stats + actions --}}
             <div class="tp-live__map-overlay">
                 <div class="tp-live__map-stats" aria-live="polite">
-                    <span class="tp-live__map-stat" title="En movimiento" aria-label="En movimiento">
+                    <span class="tp-live__map-stat" title="{{ trans('front.move') }}" aria-label="{{ trans('front.move') }}">
                         <span class="tp-dot tp-dot--moving"></span>
                         <strong id="tp-live-stat-moving">0</strong>
-                        <span>en movimiento</span>
+                        <span>{{ trans('ui.moving_lower') }}</span>
                     </span>
                     <span class="tp-live__map-stat" title="{{ trans('ui.idling') }}" aria-label="{{ trans('ui.idling') }}">
                         <span class="tp-dot tp-dot--idle"></span>
@@ -478,7 +478,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-style-toggle"
-                    title="Cambiar capa de mapa" type="button" aria-haspopup="menu" aria-expanded="false">
+                    title="{{ trans('ui.change_map_layer') }}" type="button" aria-haspopup="menu" aria-expanded="false">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="12 2 22 8.5 12 15 2 8.5 12 2" />
@@ -569,7 +569,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-geofences"
-                    data-toggle="geofences" title="Mostrar geocercas" aria-label="Mostrar geocercas"
+                    data-toggle="geofences" title="{{ trans('ui.show_geofences') }}" aria-label="{{ trans('ui.show_geofences') }}"
                     aria-pressed="false" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -577,7 +577,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-routes"
-                    data-toggle="routes" title="Mostrar rutas" aria-label="Mostrar rutas" aria-pressed="false"
+                    data-toggle="routes" title="{{ trans('ui.show_routes') }}" aria-label="{{ trans('ui.show_routes') }}" aria-pressed="false"
                     type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -587,7 +587,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-poi"
-                    data-toggle="poi" title="Mostrar POIs" aria-label="Mostrar POIs" aria-pressed="false"
+                    data-toggle="poi" title="{{ trans('ui.show_pois') }}" aria-label="{{ trans('ui.show_pois') }}" aria-pressed="false"
                     type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -607,7 +607,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-names"
-                    data-toggle="names" title="Mostrar nombres" aria-label="{{ trans('ui.show_vehicle_names') }}"
+                    data-toggle="names" title="{{ trans('ui.show_names') }}" aria-label="{{ trans('ui.show_vehicle_names') }}"
                     aria-pressed="false" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -617,7 +617,7 @@
                     </svg>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-live__toggle" id="tp-live-toggle-tails"
-                    data-toggle="tails" title="Mostrar cola de recorrido" aria-label="Mostrar cola de recorrido"
+                    data-toggle="tails" title="{{ trans('ui.show_tail') }}" aria-label="{{ trans('ui.show_tail') }}"
                     aria-pressed="false" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -644,7 +644,7 @@
             {{-- Live indicator (bottom-left of map) --}}
             <div class="tp-live__pulse-tag" id="tp-live-pulse" aria-live="polite">
                 <span class="tp-live__pulse-dot"></span>
-                <span>Actualizando cada 15s</span>
+                <span>{{ trans('ui.refreshing_every_15s') }}</span>
             </div>
         
             {{-- Bottom widget cards (servicios, eventos, vista de calle, cámara, conductor, video) --}}
@@ -668,7 +668,7 @@
                 </div>
             </div>
             <button type="button" class="tp-live__bottombar-handle" id="tp-bottombar-expand" hidden
-                title="Mostrar widgets" aria-label="Mostrar widgets">
+                title="{{ trans('ui.show_widgets') }}" aria-label="{{ trans('ui.show_widgets') }}">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="m18 15-6-6-6 6" />
@@ -744,7 +744,7 @@
                             <path d="M2 12h3" />
                             <path d="M19 12h3" />
                         </svg>
-                        Centrar en mapa
+                        {{ trans('ui.center_on_map') }}
                     </button>
                     <button class="tp-btn tp-btn--ghost tp-btn--block" id="tp-drawer-history" type="button" disabled>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -753,7 +753,7 @@
                             <path d="M3 3v5h5" />
                             <path d="M12 7v5l4 2" />
                         </svg>
-                        Ver historial
+                        {{ trans('ui.see_history') }}
                     </button>
                 </div>
             </div>

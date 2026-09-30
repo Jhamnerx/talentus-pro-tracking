@@ -47,7 +47,7 @@
                 </header>
                 <div class="tp-chat__messages" id="tp-chat-messages"></div>
                 <form class="tp-chat__composer" id="tp-chat-composer">
-                    <input type="text" id="tp-chat-input" placeholder="Escribe un mensaje…" autocomplete="off">
+                    <input type="text" id="tp-chat-input" placeholder="{{ trans('ui.write_a_message') }}" autocomplete="off">
                     <button type="submit" class="tp-btn tp-btn--primary tp-btn--icon" aria-label="Enviar">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>

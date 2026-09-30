@@ -17,7 +17,7 @@
         <script type="application/json" id="tp-monitor-map-config">@json($mapConfig)</script>
 
         <header class="tp-mon__head">
-            <h1 class="tp-h5 tp-mb-0">Monitoreo de grupo</h1>
+            <h1 class="tp-h5 tp-mb-0">{{ trans('ui.group_monitor') }}</h1>
             <span class="tp-text-muted tp-text-sm" id="tp-mon-hint"></span>
 
             {{-- Los botones los pinta monitor.js desde su tabla LAYOUTS, para

@@ -15,7 +15,7 @@
 
         <header class="tp-dash__head">
             <div>
-                <h1 class="tp-h4 tp-mb-0">Panel de control</h1>
+                <h1 class="tp-h4 tp-mb-0">{{ trans('ui.control_panel') }}</h1>
                 <p class="tp-text-muted tp-mb-0">{{ trans('ui.dashboard_subtitle') }}</p>
             </div>
             {{-- Toolbar de rango (estilo Wialon: Hoy / Ayer / Semana / Mes) --}}
@@ -39,16 +39,16 @@
         <div class="tp-dash__meta"><span id="tp-dash-fetched"></span></div>
 
         {{-- KPI ROW --}}
-        <section class="tp-dash__kpis" aria-label="Indicadores clave">
+        <section class="tp-dash__kpis" aria-label="{{ trans('ui.key_indicators') }}">
             @php
                 $kpis = [
-                    ['key' => 'total', 'label' => 'Flota total', 'icon' => 'fleet'],
-                    ['key' => 'moving', 'label' => 'En movimiento', 'icon' => 'live', 'tone' => 'success'],
-                    ['key' => 'idle', 'label' => 'Inactivos', 'icon' => 'history', 'tone' => 'warning'],
-                    ['key' => 'stopped', 'label' => 'Detenidos', 'icon' => 'zones', 'tone' => 'info'],
-                    ['key' => 'offline', 'label' => 'Sin datos', 'icon' => 'alerts', 'tone' => 'muted'],
-                    ['key' => 'avgSpeed', 'label' => 'Vel. promedio', 'icon' => 'reports', 'suffix' => ' km/h'],
-                    ['key' => 'utilization', 'label' => 'Utilización', 'icon' => 'sparkle', 'tone' => 'brand', 'suffix' => '%'],
+                    ['key' => 'total', 'label' => trans('ui.fleet_total'), 'icon' => 'fleet'],
+                    ['key' => 'moving', 'label' => trans('front.move'), 'icon' => 'live', 'tone' => 'success'],
+                    ['key' => 'idle', 'label' => trans('ui.inactive_plural'), 'icon' => 'history', 'tone' => 'warning'],
+                    ['key' => 'stopped', 'label' => trans('ui.stopped_plural'), 'icon' => 'zones', 'tone' => 'info'],
+                    ['key' => 'offline', 'label' => trans('front.no_data'), 'icon' => 'alerts', 'tone' => 'muted'],
+                    ['key' => 'avgSpeed', 'label' => trans('ui.avg_speed'), 'icon' => 'reports', 'suffix' => ' km/h'],
+                    ['key' => 'utilization', 'label' => trans('ui.utilization'), 'icon' => 'sparkle', 'tone' => 'brand', 'suffix' => '%'],
                 ];
             @endphp
             @foreach ($kpis as $k)
@@ -69,8 +69,8 @@
             {{-- Fila 1 · donuts de estado (Wialon): donut izquierda + leyenda con conteos --}}
             <article class="tp-widget tp-widget--span-4" data-widget="health">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Estado de dispositivos</h3>
-                    <span class="tp-widget__tag">En vivo</span>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.device_status') }}</h3>
+                    <span class="tp-widget__tag">{{ trans('ui.live') }}</span>
                 </header>
                 <div class="tp-widget__body">
                     <div class="tp-donut">
@@ -83,7 +83,7 @@
             <article class="tp-widget tp-widget--span-4" data-widget="connection">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">{{ trans('ui.connection_status') }}</h3>
-                    <span class="tp-widget__tag">En vivo</span>
+                    <span class="tp-widget__tag">{{ trans('ui.live') }}</span>
                 </header>
                 <div class="tp-widget__body">
                     <div class="tp-donut">
@@ -95,8 +95,8 @@
 
             <article class="tp-widget tp-widget--span-4" data-widget="movement">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Estado de movimiento</h3>
-                    <span class="tp-widget__tag">En vivo</span>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.movement_status') }}</h3>
+                    <span class="tp-widget__tag">{{ trans('ui.live') }}</span>
                 </header>
                 <div class="tp-widget__body">
                     <div class="tp-donut">
@@ -122,11 +122,11 @@
                             <div class="tp-eco" id="tp-eco"
                                 title="{{ trans('ui.score_help') }}">
                                 <div class="tp-eco__value" data-eco-value>—</div>
-                                <div class="tp-eco__label">{{ trans('ui.score') }}<br>de flota</div>
+                                <div class="tp-eco__label">{{ trans('ui.score') }}<br>{{ trans('ui.of_fleet') }}</div>
                             </div>
                             <div class="tp-driving__risk">
                                 <span class="tp-driving__risk-val" data-risk-events>—</span>
-                                <span class="tp-driving__risk-lbl">eventos de riesgo</span>
+                                <span class="tp-driving__risk-lbl">{{ trans('ui.risk_events') }}</span>
                             </div>
                         </div>
                         <div class="tp-driving__tiles">
@@ -148,11 +148,11 @@
                             <div class="tp-behav" data-behav="overspeed">
                                 <span class="tp-behav__dot" style="background:#dc2626"></span>
                                 <span class="tp-behav__val" data-behav-val>—</span>
-                                <span class="tp-behav__lbl">Exceso de velocidad</span>
+                                <span class="tp-behav__lbl">{{ trans('front.overspeed') }}</span>
                             </div>
                         </div>
                         <div class="tp-driving__trend">
-                            <div class="tp-widget__subhead">Tendencia de eventos de riesgo</div>
+                            <div class="tp-widget__subhead">{{ trans('ui.risk_events_trend') }}</div>
                             <div class="tp-chart" id="tp-chart-trend" style="height:120px;"></div>
                         </div>
                     </div>
@@ -173,7 +173,7 @@
             {{-- Fila 3 · Alertas por tipo + Top vehículos de riesgo --}}
             <article class="tp-widget tp-widget--span-6" data-widget="bycategory">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Alertas por tipo</h3>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.alerts_by_type') }}</h3>
                     <span class="tp-widget__hint" data-total-events>—</span>
                 </header>
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-bycategory"></div></div>
@@ -215,8 +215,8 @@
                  bloque device_overview del legacy --}}
             <article class="tp-widget tp-widget--span-6" data-widget="overview">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Estado de la flota</h3>
-                    <a href="{{ url('/ui/v2/fleet') }}" class="tp-link tp-text-sm">Ver flota →</a>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.fleet_status') }}</h3>
+                    <a href="{{ url('/ui/v2/fleet') }}" class="tp-link tp-text-sm">{{ trans('ui.see_fleet_arrow') }}</a>
                 </header>
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-overview"></div></div>
             </article>
@@ -225,7 +225,7 @@
                 <article class="tp-widget tp-widget--span-6" data-widget="tasks">
                     <header class="tp-widget__head">
                         <h3 class="tp-h6 tp-mb-0">{{ trans('front.latest_tasks') }}</h3>
-                        <a href="{{ url('/ui/v2/tasks') }}" class="tp-link tp-text-sm">Ver tareas →</a>
+                        <a href="{{ url('/ui/v2/tasks') }}" class="tp-link tp-text-sm">{{ trans('ui.see_tasks_arrow') }}</a>
                     </header>
                     <div class="tp-widget__body">
                         <ul class="tp-notes" id="tp-dash-tasks">
@@ -238,7 +238,7 @@
             {{-- Fila 4 · Kilometraje + Top velocidad --}}
             <article class="tp-widget tp-widget--span-6" data-widget="mileage">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Unidades con mayor kilometraje</h3>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.top_mileage_units') }}</h3>
                     <span class="tp-widget__hint" id="tp-dash-mileage-hint">{{ trans('ui.in_the_period') }}</span>
                 </header>
                 <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-mileage"></div></div>
@@ -246,8 +246,8 @@
 
             <article class="tp-widget tp-widget--span-6" data-widget="topspeed">
                 <header class="tp-widget__head">
-                    <h3 class="tp-h6 tp-mb-0">Top 5 · velocidad actual</h3>
-                    <a href="{{ url('/ui/v2/live') }}" class="tp-link tp-text-sm">Ver mapa →</a>
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.top5_current_speed') }}</h3>
+                    <a href="{{ url('/ui/v2/live') }}" class="tp-link tp-text-sm">{{ trans('ui.see_map_arrow') }}</a>
                 </header>
                 <div class="tp-widget__body">
                     <table class="tp-table tp-table--sm" id="tp-dash-top-table">
@@ -263,7 +263,7 @@
             <article class="tp-widget tp-widget--span-12" data-widget="activity">
                 <header class="tp-widget__head">
                     <h3 class="tp-h6 tp-mb-0">{{ trans('ui.activity_last_24h') }}</h3>
-                    <span class="tp-widget__hint">Movimientos por hora</span>
+                    <span class="tp-widget__hint">{{ trans('ui.movements_per_hour') }}</span>
                 </header>
                 <div class="tp-widget__body"><div class="tp-chart" id="tp-chart-activity" style="height:240px;"></div></div>
             </article>

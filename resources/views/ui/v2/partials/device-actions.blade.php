@@ -167,7 +167,7 @@
          sensores, servicios y mantenimientos, no solo a la ficha. --}}
     <button type="button" class="tp-row-menu__item" data-act="changes">
         <span class="tp-row-menu__icon">{!! $ic['yesterday'] !!}</span>
-        <span>Historial de cambios</span>
+        <span>{{ trans('ui.change_history') }}</span>
     </button>
 
     @if ($u->perm('call_actions', 'view') && $u->perm('events', 'view'))

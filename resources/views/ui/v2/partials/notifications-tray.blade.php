@@ -5,7 +5,7 @@
         <header class="tp-tray__head">
             <div>
                 <div class="tp-h6">Notificaciones</div>
-                <div class="tp-text-xs tp-text-muted">Eventos y alertas recientes</div>
+                <div class="tp-text-xs tp-text-muted">{{ trans('ui.recent_events_alerts') }}</div>
             </div>
             <div class="tp-row">
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-notif-mark-all">{{ trans('ui.mark_as_read') }}</button>
@@ -30,12 +30,12 @@
 
         <div class="tp-tray__body" id="tp-notif-list">
             <div class="tp-tray__empty">
-                <div class="tp-text-muted">No hay notificaciones nuevas.</div>
+                <div class="tp-text-muted">{{ trans('ui.no_new_notifications') }}</div>
             </div>
         </div>
 
         <footer class="tp-tray__foot">
-            <a href="{{ url('/ui/v2/events') }}" class="tp-btn tp-btn--ghost tp-btn--block">Ver todos los eventos
+            <a href="{{ url('/ui/v2/events') }}" class="tp-btn tp-btn--ghost tp-btn--block">{{ trans('ui.see_all_events') }}
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </footer>

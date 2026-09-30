@@ -46,7 +46,7 @@
                     <dt>Email</dt><dd>{{ $driver->email ?? '—' }}</dd>
                 </dl>
             @else
-                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin conductor asignado.</p>
+                <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_driver_assigned') }}</p>
             @endif
         </section>
     @endisset
@@ -94,7 +94,7 @@
                     @endforeach
                 </dl>
             @else
-                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin sensores configurados.</p>
+                <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_sensors_configured') }}</p>
             @endif
         </section>
     @endisset
@@ -129,7 +129,7 @@
                         <img src="{{ $imgUrl }}" alt="{{ trans('front.device_image') }}" loading="lazy">
                     </a>
                 @else
-                    <p class="tp-text-xs tp-text-muted tp-mb-0">Sin imagen.</p>
+                    <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_image') }}</p>
                 @endif
             </div>
         </section>
@@ -153,7 +153,7 @@
                         hidden>{{ trans('global.apply') }}</button>
                 </div>
             @else
-                <p class="tp-text-xs tp-text-muted tp-mb-0">Sin plantillas.</p>
+                <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_templates_plain') }}</p>
             @endif
         </section>
     @endisset
@@ -238,7 +238,7 @@
                         @endforeach
                     </ul>
                 @else
-                    <p class="tp-text-xs tp-text-muted tp-mb-0">Sin eventos recientes.</p>
+                    <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_recent_events') }}</p>
                 @endif
             </div>
         </section>
@@ -254,7 +254,7 @@
                         <path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z" />
                         <circle cx="12" cy="10" r="2.5" />
                     </svg>
-                    <span>Vista de calle</span>
+                    <span>{{ trans('ui.street_view') }}</span>
                 </span>
             </h4>
             <div class="tp-dw__card-body">
@@ -268,7 +268,7 @@
                         <img src="{{ $streetview }}" alt="Street View" loading="lazy">
                     </div>
                 @else
-                    <p class="tp-text-xs tp-text-muted tp-mb-0">Street View no disponible (configura la API en Ajustes del servidor).</p>
+                    <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.street_view_unavailable') }}</p>
                 @endif
             </div>
         </section>
@@ -346,7 +346,7 @@
                         </div>
                     @endforeach
                 @else
-                    <p class="tp-text-xs tp-text-muted tp-mb-0">Sin sensores de combustible.</p>
+                    <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_fuel_sensors') }}</p>
                 @endif
             </div>
         </section>
@@ -395,7 +395,7 @@
                         <rect x="3" y="11" width="18" height="11" rx="2" />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
-                    <span>Bloqueo de motor</span>
+                    <span>{{ trans('ui.engine_lock') }}</span>
                 </span>
                 <span class="tp-lock-badge" data-lock-badge data-tone="{{ $lockTone }}">{{ $lockLabel }}</span>
             </h4>
@@ -425,12 +425,12 @@
                         <path d="m22 8-6 4 6 4V8Z" />
                         <rect x="2" y="6" width="14" height="12" rx="2" />
                     </svg>
-                    <span>Video en vivo</span>
+                    <span>{{ trans('ui.live_video') }}</span>
                 </span>
             </h4>
             <div class="tp-dw__card-body tp-dw__card-body--center">
                 <div class="tp-stack" style="gap:8px;">
-                    <a class="tp-btn tp-btn--secondary tp-btn--block" href="{{ $video_live_url }}" target="_blank" rel="noopener">En vivo</a>
+                    <a class="tp-btn tp-btn--secondary tp-btn--block" href="{{ $video_live_url }}" target="_blank" rel="noopener">{{ trans('ui.live') }}</a>
                     <a class="tp-btn tp-btn--ghost tp-btn--block" href="{{ $video_playback_url }}" target="_blank" rel="noopener">{{ trans('front.playback') }}</a>
                 </div>
             </div>

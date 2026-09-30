@@ -16,7 +16,7 @@
         <div class="tp-cmdk__body" id="tp-cmdk-body">
             <div class="tp-cmdk__group" data-group="recents">
                 <div class="tp-cmdk__group-title">Recientes</div>
-                <div class="tp-cmdk__empty">Sin elementos recientes.</div>
+                <div class="tp-cmdk__empty">{{ trans('ui.no_recent_items') }}</div>
             </div>
 
             <div class="tp-cmdk__group" data-group="actions">
@@ -24,12 +24,12 @@
 
                 <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/live">
                     <span class="tp-cmdk__item-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-                    <span class="tp-cmdk__item-label">Ir al mapa (Live)</span>
+                    <span class="tp-cmdk__item-label">{{ trans('ui.go_to_map_live') }}</span>
                     <span class="tp-cmdk__item-meta">{{ trans('ui.navigation') }}</span>
                 </button>
                 <button class="tp-cmdk__item" data-action="go" data-target="/ui/v2/dashboard">
                     <span class="tp-cmdk__item-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
-                    <span class="tp-cmdk__item-label">Ir al Tablero</span>
+                    <span class="tp-cmdk__item-label">{{ trans('ui.go_to_dashboard') }}</span>
                     <span class="tp-cmdk__item-meta">{{ trans('ui.navigation') }}</span>
                 </button>
                 <button class="tp-cmdk__item" data-action="theme-toggle">

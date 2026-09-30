@@ -154,7 +154,7 @@
                 <div class="tp-hist__timeline" id="tp-hist-timeline">
                     <div class="tp-hist__side-empty" id="tp-hist-tl-empty">
                         <span class="tp-text-muted tp-text-sm">{{ trans('ui.select_vehicle_and_date') }}
-                            <strong>Mostrar historial</strong>.</span>
+                            <strong>{{ trans('ui.show_history') }}</strong>.</span>
                     </div>
                 </div>
             </aside>
@@ -548,7 +548,7 @@
         {{-- ============ DATE-RANGE PICKER (modal) ============ --}}
         <div class="tp-datepick" id="tp-hist-datepick" hidden>
             <div class="tp-datepick__backdrop" data-datepick-close></div>
-            <div class="tp-datepick__panel" role="dialog" aria-label="Seleccionar fecha">
+            <div class="tp-datepick__panel" role="dialog" aria-label="{{ trans('ui.pick_date') }}">
                 <header class="tp-datepick__head">
                     <span class="tp-datepick__title">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"

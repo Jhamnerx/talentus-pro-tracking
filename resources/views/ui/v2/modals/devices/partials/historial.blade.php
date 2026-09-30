@@ -52,7 +52,7 @@
             </label>
             <div class="tp-form__field tp-col-2" style="align-items:flex-end;">
                 <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-maint-save>
-                    ＋ Guardar registro
+                    {{ trans('ui.save_record_plus') }}
                 </button>
             </div>
         </div>

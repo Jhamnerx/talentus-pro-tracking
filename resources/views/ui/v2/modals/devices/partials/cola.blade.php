@@ -50,7 +50,7 @@
 
 <div class="tp-form__grid tp-form__grid--2">
     <label class="tp-form__field">
-        <span class="tp-form__label">Color de cola</span>
+        <span class="tp-form__label">{{ trans('ui.tail_color') }}</span>
         <input type="color" name="tail_color" value="{{ $tailColor }}" data-tp-field>
     </label>
 
@@ -63,12 +63,12 @@
 
 {{-- ================= Colores del recorrido (historial) ================= --}}
 <div class="tp-routecolors" data-tp-routecolors>
-    <div class="tp-form__label" style="margin:16px 0 8px;">Colores del recorrido</div>
+    <div class="tp-form__label" style="margin:16px 0 8px;">{{ trans('ui.route_colors') }}</div>
 
     {{-- Por viajes --}}
     <label class="tp-routecolors__opt">
         <input type="radio" name="route_color_type" value="trips" {{ $rcType === 'trips' ? 'checked' : '' }}>
-        <span>Por viajes</span>
+        <span>{{ trans('ui.by_trips') }}</span>
     </label>
 
     {{-- Único (single) --}}
@@ -90,9 +90,9 @@
     <label class="tp-routecolors__opt tp-routecolors__opt--block">
         <span class="tp-routecolors__opt-head">
             <input type="radio" name="route_color_type" value="speed" {{ $rcType === 'speed' ? 'checked' : '' }}>
-            <span>Por velocidad</span>
+            <span>{{ trans('ui.by_speed') }}</span>
             <button type="button" class="tp-routecolors__add" data-rc-add title="{{ trans('ui.add_range') }}">+</button>
-            <button type="button" class="tp-routecolors__reset" data-rc-reset title="Restaurar rangos por defecto">↺</button>
+            <button type="button" class="tp-routecolors__reset" data-rc-reset title="{{ trans('ui.restore_default_ranges') }}">↺</button>
         </span>
         <span class="tp-routecolors__opt-body tp-routecolors__opt-body--block" data-rc-panel="speed">
             <span class="tp-routecolors__bar" data-rc-bar></span>
@@ -104,7 +104,7 @@
     <label class="tp-routecolors__opt @if (empty($rcSensors)) is-disabled @endif">
         <input type="radio" name="route_color_type" value="sensor" {{ $rcType === 'sensor' ? 'checked' : '' }}
             {{ empty($rcSensors) ? 'disabled' : '' }}>
-        <span>Por sensor</span>
+        <span>{{ trans('ui.by_sensor') }}</span>
         <span class="tp-routecolors__opt-body" data-rc-panel="sensor">
             <select name="route_sensor_id" class="tp-input tp-input--sm" {{ empty($rcSensors) ? 'disabled' : '' }}
                 style="min-width:160px;">
@@ -119,7 +119,7 @@
     </label>
     @if (empty($rcSensors))
         <div class="tp-text-xs tp-text-muted" style="margin:2px 0 0 24px;">
-            Se activa cuando un sensor del equipo define rangos de colores por intervalo.
+            {{ trans('ui.by_sensor_help') }}
         </div>
     @endif
 
@@ -136,7 +136,7 @@
         <input type="hidden" name="marker_colors_enabled" value="0">
         <input type="checkbox" name="marker_colors_enabled" value="1" data-mc-enabled
             {{ $mcOn ? 'checked' : '' }}>
-        <span>Colorear el marcador segun la velocidad</span>
+        <span>{{ trans('ui.color_marker_by_speed') }}</span>
     </label>
 
     <div class="tp-text-xs tp-text-muted" style="margin:0 0 10px 24px;">
@@ -150,7 +150,7 @@
                 <span>Rangos de velocidad ({{ $unidadVel }})</span>
                 <button type="button" class="tp-routecolors__add" data-rc-add title="{{ trans('ui.add_range') }}">+</button>
                 <button type="button" class="tp-routecolors__reset" data-rc-reset
-                    title="Restaurar rangos por defecto">↺</button>
+                    title="{{ trans('ui.restore_default_ranges') }}">↺</button>
             </span>
             <span class="tp-routecolors__opt-body tp-routecolors__opt-body--block">
                 <span class="tp-routecolors__bar" data-rc-bar></span>
@@ -159,7 +159,7 @@
         </div>
 
         {{-- Limite de la geocerca --}}
-        <div class="tp-form__label" style="margin:14px 0 8px;">Dentro de una geocerca con limite</div>
+        <div class="tp-form__label" style="margin:14px 0 8px;">{{ trans('ui.inside_geofence_with_limit') }}</div>
 
         <div class="tp-form__grid tp-form__grid--3">
             <label class="tp-form__field">
@@ -169,12 +169,12 @@
             </label>
 
             <label class="tp-form__field">
-                <span class="tp-form__label">Color al acercarse</span>
+                <span class="tp-form__label">{{ trans('ui.color_when_near') }}</span>
                 <input type="color" name="marker_geofence_near_color" value="{{ $mcNear }}" data-tp-field>
             </label>
 
             <label class="tp-form__field">
-                <span class="tp-form__label">Color al superarlo</span>
+                <span class="tp-form__label">{{ trans('ui.color_when_over') }}</span>
                 <input type="color" name="marker_geofence_over_color" value="{{ $mcOver }}" data-tp-field>
             </label>
         </div>

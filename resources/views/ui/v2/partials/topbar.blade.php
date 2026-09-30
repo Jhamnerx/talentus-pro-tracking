@@ -29,7 +29,7 @@
     </div>
 
     {{-- Global search (opens Command Palette) --}}
-    <button class="tp-topbar__search-btn" id="tp-open-palette" aria-label="Buscar (Ctrl+K)">
+    <button class="tp-topbar__search-btn" id="tp-open-palette" aria-label="{{ trans('ui.search_ctrl_k') }}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8" />
@@ -64,7 +64,7 @@
                 <button class="tp-menu__item" role="menuitem" data-tp-tool="point">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-                    Mostrar punto
+                    {{ trans('ui.show_point') }}
                 </button>
                 <button class="tp-menu__item" role="menuitem" data-tp-tool="address">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -78,7 +78,7 @@
                     <button class="tp-menu__item" role="menuitem" data-tp-tool="silent-devices">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 13a10 10 0 0 1 3-2"/><path d="M2 8.8A15 15 0 0 1 6 6.3"/><path d="M22 8.8a15 15 0 0 0-9.7-2.7"/><circle cx="12" cy="20" r="1"/></svg>
-                        Unidades sin transmitir
+                        {{ trans('ui.silent_units') }}
                     </button>
                 @endif
                 @if (config('addon.forwards') && auth()->user()->perm('forwards', 'view'))
@@ -129,7 +129,7 @@
 
     {{-- Ajustes de cuenta (abre el modal con tabs) --}}
     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" id="tp-account-btn" data-tp-account
-        data-tooltip="Ajustes de cuenta" aria-label="Ajustes de cuenta">
+        data-tooltip="Ajustes de cuenta" aria-label="{{ trans('ui.account_settings') }}">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3" />
@@ -165,7 +165,7 @@
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
             </svg>
-            Ajustes de cuenta
+            {{ trans('ui.account_settings') }}
         </button>
         <button class="tp-menu__item" role="menuitem" data-tp-password>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"

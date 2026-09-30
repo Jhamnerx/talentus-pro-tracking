@@ -167,7 +167,7 @@
                 <thead>
                     <tr>
                         <th class="tp-fleet__th-check"><input type="checkbox" id="tp-fleet-check-all"
-                                aria-label="Seleccionar todos"></th>
+                                aria-label="{{ trans('ui.select_all_m') }}"></th>
                         <th data-sort="name">Dispositivo</th>
                         <th data-sort="status">Estado</th>
                         <th data-sort="plate">Placa</th>
@@ -175,7 +175,7 @@
                         <th>Modelo</th>
                         <th>SIM</th>
                         <th class="tp-text-right" data-sort="speed">km/h</th>
-                        <th class="tp-text-right">Motor (h)</th>
+                        <th class="tp-text-right">{{ trans('ui.engine_h') }}</th>
                         <th>{{ trans('ui.last_movement') }}</th>
                         <th>Expira</th>
                         <th class="tp-fleet__th-actions"></th>

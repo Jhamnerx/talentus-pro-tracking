@@ -44,7 +44,7 @@
                 {{-- Rango absoluto (paridad EventModalHelper: date_from/date_to).
                      Si se rellena, tiene prioridad sobre la ventana relativa. --}}
                 <details class="tp-events__range">
-                    <summary class="tp-text-xs tp-text-muted">Rango de fechas</summary>
+                    <summary class="tp-text-xs tp-text-muted">{{ trans('ui.date_range') }}</summary>
                     <div class="tp-row" style="gap:6px;margin-top:6px;">
                         <input type="date" class="tp-input tp-input--sm" id="tp-events-from" title="{{ trans('front.from') }}">
                         <input type="date" class="tp-input tp-input--sm" id="tp-events-to" title="{{ trans('global.to') }}">
@@ -53,7 +53,7 @@
                     </div>
                 </details>
                 <select class="tp-input" style="width:100%" id="tp-events-type">
-                    <option value="">Todos los tipos</option>
+                    <option value="">{{ trans('ui.all_types') }}</option>
                 </select>
                 <select class="tp-input" style="width:100%" id="tp-events-device">
                     <option value="">{{ trans('ui.all_vehicles') }}</option>
@@ -63,11 +63,11 @@
                 </select>
                 <div class="tp-input-wrap">
                     <input type="text" class="tp-input tp-input--with-icon" id="tp-events-search"
-                        placeholder="Buscar evento…" autocomplete="off">
+                        placeholder="{{ trans('ui.search_event') }}" autocomplete="off">
                 </div>
             </header>
 
-            <div class="tp-events__list" id="tp-events-list" role="listbox" aria-label="Lista de eventos">
+            <div class="tp-events__list" id="tp-events-list" role="listbox" aria-label="{{ trans('ui.event_list') }}">
                 <div class="tp-text-xs tp-text-muted" style="padding:12px;">Cargando eventos…</div>
             </div>
 
@@ -78,7 +78,7 @@
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-refresh" type="button">Refrescar</button>
                     @if (Auth::user()->perm('events', 'remove'))
                         <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-clear" type="button"
-                            title="Borrar todos mis eventos">Borrar todo</button>
+                            title="{{ trans('ui.delete_all_my_events') }}">{{ trans('ui.delete_all') }}</button>
                     @endif
                 </div>
             </footer>
@@ -87,7 +87,7 @@
         {{-- MAP --}}
         <main class="tp-events__map-area">
             <div id="tp-events-map" class="tp-events__map"></div>
-            <div class="tp-events__hint" id="tp-events-hint">Selecciona un evento para verlo en el mapa</div>
+            <div class="tp-events__hint" id="tp-events-hint">{{ trans('ui.pick_event_for_map') }}</div>
 
             {{-- Controles de mapa --}}
             <div class="tp-events__map-controls">
@@ -102,7 +102,7 @@
                     </svg>
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ev-style"
-                    title="Cambiar tipo de mapa" aria-label="Cambiar tipo de mapa" aria-haspopup="menu">
+                    title="{{ trans('ui.change_map_type') }}" aria-label="{{ trans('ui.change_map_type') }}" aria-haspopup="menu">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="12 2 22 8.5 12 15 2 8.5 12 2" />
@@ -125,7 +125,7 @@
                     </svg>
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
-                    id="tp-ev-toggle-geofences" title="Mostrar geocercas" aria-label="Mostrar geocercas"
+                    id="tp-ev-toggle-geofences" title="{{ trans('ui.show_geofences') }}" aria-label="{{ trans('ui.show_geofences') }}"
                     aria-pressed="false">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -133,7 +133,7 @@
                     </svg>
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
-                    id="tp-ev-toggle-routes" title="Mostrar rutas" aria-label="Mostrar rutas" aria-pressed="false">
+                    id="tp-ev-toggle-routes" title="{{ trans('ui.show_routes') }}" aria-label="{{ trans('ui.show_routes') }}" aria-pressed="false">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="6" cy="19" r="2" />
@@ -142,7 +142,7 @@
                     </svg>
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
-                    id="tp-ev-toggle-poi" title="Mostrar POIs" aria-label="Mostrar POIs" aria-pressed="false">
+                    id="tp-ev-toggle-poi" title="{{ trans('ui.show_pois') }}" aria-label="{{ trans('ui.show_pois') }}" aria-pressed="false">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s7-7.58 7-13a7 7 0 0 0-14 0c0 5.42 7 13 7 13z" />
@@ -161,8 +161,8 @@
                     </svg>
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-ev-toggle"
-                    id="tp-ev-toggle-risk" title="Mapa de riesgo (todos los eventos)"
-                    aria-label="Mapa de riesgo" aria-pressed="false">
+                    id="tp-ev-toggle-risk" title="{{ trans('ui.risk_map_all_events') }}"
+                    aria-label="{{ trans('ui.risk_map') }}" aria-pressed="false">
                     {{-- Mapa de riesgo: capas/calor --}}
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -174,7 +174,7 @@
 
             {{-- Leyenda flotante del mapa de riesgo (severidad) --}}
             <div class="tp-events__legend" id="tp-ev-legend" hidden>
-                <div class="tp-events__legend-title">Mapa de riesgo</div>
+                <div class="tp-events__legend-title">{{ trans('ui.risk_map') }}</div>
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
                         style="background:#ef4444"></span> {{ trans('admin.status_critico') }}</div>
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"

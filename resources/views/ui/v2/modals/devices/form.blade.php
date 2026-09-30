@@ -28,7 +28,7 @@
         ['key' => 'servicios', 'label' => trans('front.services')],
         ['key' => 'exactitud', 'label' => trans('front.accuracy')],
         ['key' => 'cola', 'label' => trans('front.tail')],
-        ['key' => 'webservices', 'label' => 'Servicios Web', 'if' => !empty($caps['can_view_webservices'])],
+        ['key' => 'webservices', 'label' => trans('ui.web_services'), 'if' => !empty($caps['can_view_webservices'])],
         ['key' => 'gastos', 'label' => trans('front.expenses'), 'if' => !empty($caps['has_expenses'])],
         ['key' => 'camaras', 'label' => trans('front.cameras'), 'if' => !empty($caps['can_view_cameras'])],
         // Campos personalizados: mismo gate que el legacy (Devices/edit.blade)

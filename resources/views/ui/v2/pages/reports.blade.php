@@ -42,7 +42,7 @@
                 Reportes generados</button>
             <button type="button" class="tp-rep-tab" data-rep-tab="logs"
                 style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:500;">
-                Logs de programados</button>
+                {{ trans('ui.scheduled_logs') }}</button>
         </div>
 
         <div class="tp-maint__card">

@@ -47,7 +47,7 @@
 
             <div class="tp-copilot__suggestions" id="cp-quickq" aria-label="{{ trans('ui.quick_suggestions') }}">
                 <button class="tp-copilot__chip" type="button" data-q="vehículos parados">Parados</button>
-                <button class="tp-copilot__chip" type="button" data-q="excesos de velocidad">Excesos velocidad</button>
+                <button class="tp-copilot__chip" type="button" data-q="excesos de velocidad">{{ trans('ui.speeding_short') }}</button>
                 <button class="tp-copilot__chip" type="button" data-q="vehículos offline">Offline</button>
                 <button class="tp-copilot__chip" type="button" data-q="alertas sos">SOS</button>
                 <button class="tp-copilot__chip" type="button" data-q="reporte de ayer">Reporte ayer</button>
