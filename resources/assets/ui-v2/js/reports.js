@@ -2,8 +2,13 @@
  * TalentusPro · Reportes (rediseño estilo referencia)
  * -----------------------------------------------------
  * Página con tabs: "Reportes generados" (tabla `reports` = definiciones
- * guardadas/programadas; click en fila = abrir/generar) y "Logs de
- * programados" (`report_logs`; click = descargar).
+ * guardadas/programadas; click en fila = editar) y "Logs de programados"
+ * (`report_logs`; click = descargar).
+ *
+ * Ojo con el nombre del primer tab, heredado del legacy: esas filas NO son
+ * reportes generados, son definiciones. Por eso la accion del menu se llama
+ * "Generar ahora" y no "Abrir": lanza el reporte de nuevo, y como las fechas
+ * se guardan relativas, sale el mismo periodo movido a hoy.
  *
  * Modal Generar/Guardar:
  *  - Título · Periodo (picker de rango con 2 meses + rangos rápidos +
@@ -1051,8 +1056,8 @@
       savedRows.innerHTML = items.length
         ? items.map(function (r) {
             var acts = "";
-            acts += '<button type="button" role="menuitem" data-rep-open="' + r.id + '" data-format="' + esc(r.format.toLowerCase()) + '">' +
-              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Abrir</button>';
+            acts += '<button type="button" role="menuitem" data-rep-open="' + r.id + '">' +
+              '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> ' + tpT('ui.generate_now') + '</button>';
             if (canCreate)
               acts += '<button type="button" role="menuitem" data-rep-edit="' + r.id + '">' +
                 '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
@@ -1265,8 +1270,10 @@
       return;
     }
     if (e.target.closest(".tp-svc-kebab")) return;
+    // La fila abre la edicion, no genera: el legacy tampoco genera al pulsar
+    // en la fila, y un click despistado se bajaria el reporte entero.
     var row = e.target.closest("[data-rep-row]");
-    if (row) openSaved(row.getAttribute("data-rep-row"));
+    if (row && canCreate) openReportModal(row.getAttribute("data-rep-row"));
   });
 
   logsRows.addEventListener("click", function (e) {

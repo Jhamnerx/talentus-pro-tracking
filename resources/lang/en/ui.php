@@ -412,6 +412,7 @@ return [
     'generate_password_and_email'        => 'Generate a password and email it',
     'generated_reports'                  => 'Generated reports',
     'generating_export'                  => 'Generating export',
+    'generate_now'                       => 'Generate now',
     'generating_report'                  => 'Generating the report…',
     'geofence_created'                   => 'Geofence created.',
     'geofence_groups'                    => 'Geofence groups',

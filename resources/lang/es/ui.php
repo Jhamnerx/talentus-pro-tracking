@@ -413,6 +413,7 @@ return [
     'generate_password_and_email'        => 'Generar contraseña y enviarla por email',
     'generated_reports'                  => 'Reportes generados',
     'generating_export'                  => 'Generando exportación',
+    'generate_now'                       => 'Generar ahora',
     'generating_report'                  => 'Generando el reporte…',
     'geofence_created'                   => 'Geocerca creada.',
     'geofence_groups'                    => 'Grupos de geocercas',
