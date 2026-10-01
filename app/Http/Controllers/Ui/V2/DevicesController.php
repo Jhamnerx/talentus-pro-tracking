@@ -2741,6 +2741,15 @@ class DevicesController extends BaseController
             'engine_hours' => $texto('engine_hours'),
             'odometer'     => $texto('odometer'),
 
+            // La distancia que calcula la plataforma (totaldistance de Traccar)
+            // solo se enseña si el plugin la pide Y el equipo no trae sensor de
+            // odómetro: con sensor, la cifra buena es la del sensor y la
+            // calculada solo confunde -cuenta desde que se instaló el equipo, no
+            // desde que el vehículo salió de fábrica-. El interruptor es el mismo
+            // del legacy (app.settings.showTotalDistance).
+            'show_total_distance' => (bool) settings('plugins.device_widget_total_distance.status')
+                && ! $device->getSensorByType('odometer'),
+
             // Testigos. null = el vehiculo no lleva ese sensor, y entonces el
             // testigo NO se dibuja (distinto de dibujarlo apagado).
             'telltales' => [

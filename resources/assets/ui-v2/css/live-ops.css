@@ -2761,37 +2761,60 @@ table.tp-lock-hist th {
 
 /* ── Cifras de contexto ──────────────────────────────────── */
 .tp-dash__stats {
+  /* Dos columnas, no tres. El panel mide 380px: a tres columnas quedaban
+     ~90px utiles por tarjeta y un odometro de seis cifras con su unidad
+     ("271161 Km") no cabia en una linea. A dos son ~150px y entra holgado. */
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-.tp-dash__stat { padding: 10px; }
+/* Si el numero de cifras es impar, la ultima ocupa el ancho entero en vez
+   de dejar media fila vacia. */
+.tp-dash__stat:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.tp-dash__stat {
+  padding: 9px 11px;
+  min-width: 0;
+}
 .tp-dash__stat-label {
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--dash-fg3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tp-dash__stat-value {
-  /* La cifra NO se parte: solo se permite romper por el espacio que separa
-     el numero de su unidad ("27116 Km" -> dos lineas). Con elipsis salia
-     "27116..." y con overflow-wrap:anywhere salia peor todavia, partido a
-     mitad de cifra ("237536." / "9"). */
-  font-size: 17px;
+  /* Numero y unidad en la misma linea y alineados por la base. La cifra no
+     se parte nunca: con elipsis salia "27116..." y con overflow-wrap:anywhere
+     salia peor, cortada a mitad ("237536." / "9"). Si no cabe, se encoge el
+     contenedor, no el numero. */
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-top: 2px;
+  min-width: 0;
+}
+.tp-dash__stat-num {
+  font-size: 18px;
   line-height: 1.15;
   font-weight: 700;
   color: var(--dash-fg);
-  margin-top: 2px;
   font-variant-numeric: tabular-nums;
-  white-space: normal;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
   overflow-wrap: normal;
   word-break: keep-all;
 }
 .tp-dash__stat-unit {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--dash-fg3);
+  white-space: nowrap;
+  flex: none;
 }
 
 /* ── Reflujo, medido sobre el PANEL ──────────────────────── */
@@ -2815,7 +2838,9 @@ table.tp-lock-hist th {
   /* Sin etiqueta: el nombre queda en el title y en el aria-label */
   .tp-dash__tell-label { display: none; }
   .tp-dash__tell[data-on] svg { width: 22px; height: 22px; }
-  .tp-dash__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* El panel ya va a dos columnas; aqui, con menos de 640px de panel, una
+     sola para que la cifra no vuelva a quedarse sin sitio. */
+  .tp-dash__stats { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (prefers-reduced-motion: reduce) {

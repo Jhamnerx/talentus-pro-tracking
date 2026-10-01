@@ -985,11 +985,25 @@
   function celda(etiqueta, valor, unidad) {
     if (valor === null || valor === undefined || valor === "") return "";
 
+    var texto = String(valor).trim();
+
+    // Algunos valores llegan ya formateados por el sensor, con la unidad
+    // pegada ("271161 Km"). Se separa para que numero y unidad compartan
+    // linea en vez de partirse por ese espacio.
+    if (!unidad) {
+      var m = texto.match(/^(.*?)\s+([^\s\d]+)$/);
+      if (m) {
+        texto = m[1];
+        unidad = m[2];
+      }
+    }
+
     return (
       '<div class="tp-dash__stat">' +
       '<div class="tp-dash__stat-label">' + esc(etiqueta) + "</div>" +
-      '<div class="tp-dash__stat-value">' + esc(String(valor).trim()) +
-      (unidad ? ' <span class="tp-dash__stat-unit">' + esc(unidad) + "</span>" : "") +
+      '<div class="tp-dash__stat-value">' +
+      '<span class="tp-dash__stat-num">' + esc(texto) + "</span>" +
+      (unidad ? '<span class="tp-dash__stat-unit">' + esc(unidad) + "</span>" : "") +
       "</div></div>"
     );
   }
@@ -1064,13 +1078,20 @@
 
     if (tells) html += '<div class="tp-dash__tells">' + tells + "</div>";
 
-    // Cifras de contexto: las cuatro de siempre mas odometro y horometro
+    // Cifras de contexto: las cuatro de siempre mas odometro y horometro.
+    //
+    // La DISTANCIA es la que calcula la plataforma desde las posiciones; el
+    // ODOMETRO es el del vehiculo, leido del sensor. Miden lo mismo por dos
+    // caminos y casi nunca coinciden -la plataforma empieza a contar cuando
+    // se instala el equipo-, asi que con sensor de odometro la calculada no
+    // se enseña. Esa decision la toma el servidor (show_total_distance), que
+    // mira tambien el interruptor del plugin, como el legacy.
     var stats =
       celda(tpT('ui.odometer'), dash.odometer, null) +
       celda(tpT('ui.hour_meter'), dash.engine_hours, null) +
       celda("Rumbo", d.course != null ? Math.round(d.course) + "°" : null, null) +
       celda(tpT('front.stopped'), fmtDuration(d.stop_duration_sec), null) +
-      celda(tpT('front.distance'), d.total_distance, "km");
+      (dash.show_total_distance ? celda(tpT('front.distance'), d.total_distance, "km") : "");
 
     if (stats) html += '<div class="tp-dash__stats">' + stats + "</div>";
 
