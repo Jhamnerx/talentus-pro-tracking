@@ -272,7 +272,7 @@ th {
 <div class="cifras">
 <div class="cifra"><div class="cifra__n">106</div><div class="cifra__t">funcionalidades entregadas</div><div class="cifra__p">repartidas en 11 módulos</div></div>
 <div class="cifra"><div class="cifra__n">324</div><div class="cifra__t">commits en la rama</div><div class="cifra__p">31-may a 30-sep-2026</div></div>
-<div class="cifra"><div class="cifra__n">32</div><div class="cifra__t">defectos encontrados por QA</div><div class="cifra__p">0 abiertos hoy</div></div>
+<div class="cifra"><div class="cifra__n">33</div><div class="cifra__t">defectos corregidos</div><div class="cifra__p">32 de QA + 1 posterior; 0 abiertos</div></div>
 <div class="cifra"><div class="cifra__n">32</div><div class="cifra__t">migraciones por aplicar</div><div class="cifra__p">17 de este trabajo, 15 de la base</div></div>
 </div>
 <section>
@@ -462,6 +462,7 @@ th {
 <div class="bloque"><div class="bloque__cab"><h3>Y una nota incómoda</h3></div>
 <ul class="lista">
 <li><b>Tres defectos los introdujo la propia tanda de traducción del 29-sep</b><span><code>trans()</code> dentro de una <code>const</code> —sintaxis válida, fatal al cargar la clase— tiró el tablero entero. <code>php -l</code> pasó limpio en los 25 controladores.</span></li>
+<li><b>Un defecto 33 aparecio después, fuera de la revisión</b><span>Al pulsar Generar, un reporte en HTML se abria en una pestaña nueva en vez de descargarse. La v2 pedia la ruta con <code>view=1</code>, que devuelve la vista sin cabecera de descarga; el sistema clásico nunca manda ese parametro. De paso, en formato CSV salia una página en blanco. Corregido el 1-oct.</span></li>
 <li><b>De ahí salieron dos cosas que antes no existían</b><span>Versionado automático de assets por <code>filemtime</code> (las 100 referencias a JS y CSS llevaban el número a mano) y una <strong>prueba de humo</strong> que lanza una petición real a las 21 páginas y 16 endpoints: <code>php artisan uiv2:smoke</code>, 37 de 37.</span></li>
 </ul></div>
 </section>

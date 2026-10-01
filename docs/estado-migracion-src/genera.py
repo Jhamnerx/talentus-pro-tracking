@@ -22,7 +22,7 @@ inv = json.load(io.open(os.path.join(S, "inventario.json"), encoding="utf-8"))
 RESUMEN = [
     ("106", "funcionalidades entregadas", "repartidas en 11 modulos"),
     ("324", "commits en la rama", "31-may a 30-sep-2026"),
-    ("32", "defectos encontrados por QA", "0 abiertos hoy"),
+    ("33", "defectos corregidos", "32 de QA + 1 posterior; 0 abiertos"),
     ("32", "migraciones por aplicar", "17 de este trabajo, 15 de la base"),
 ]
 
@@ -78,6 +78,11 @@ QA_EXTRA = [
     (u"Tres defectos los introdujo la propia tanda de traduccion del 29-sep",
      u"`trans()` dentro de una `const` —sintaxis valida, fatal al cargar la clase— "
      u"tiro el tablero entero. `php -l` paso limpio en los 25 controladores."),
+    (u"Un defecto 33 aparecio despues, fuera de la revision",
+     u"Al pulsar Generar, un reporte en HTML se abria en una pestaña nueva en vez "
+     u"de descargarse. La v2 pedia la ruta con `view=1`, que devuelve la vista sin "
+     u"cabecera de descarga; el sistema clasico nunca manda ese parametro. De paso, "
+     u"en formato CSV salia una pagina en blanco. Corregido el 1-oct."),
     (u"De ahi salieron dos cosas que antes no existian",
      u"Versionado automatico de assets por `filemtime` (las 100 referencias a JS y "
      u"CSS llevaban el numero a mano) y una **prueba de humo** que lanza una peticion "
