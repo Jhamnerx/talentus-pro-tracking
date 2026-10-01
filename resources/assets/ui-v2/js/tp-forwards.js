@@ -63,7 +63,7 @@
         '<div class="tp-fwd__head">' +
         '<p class="tp-fwd__hint">' + tpT('ui.forwards_intro') + '</p>' +
         '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-fwd-add>' +
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> ' + tpT('global.add') + '</button></div>' +
+        '<svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> ' + tpT('global.add') + '</button></div>' +
         '<div class="tp-fwd__list">' + rows + "</div></div>";
 
       if (listDlg && listDlg.isConnected) {

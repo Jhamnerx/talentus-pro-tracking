@@ -98,7 +98,7 @@
       'dark:bg-slate-800 dark:border-slate-600">' +
       '<span data-cmd-chips class="contents"></span>' +
       '<span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400">' +
-      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>' +
+      '<svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span>' +
       "</button>" +
       // Portal fixed (se re-cuelga del <dialog> en bind): un panel absolute
       // quedaría RECORTADO por el overflow del cuerpo del modal.

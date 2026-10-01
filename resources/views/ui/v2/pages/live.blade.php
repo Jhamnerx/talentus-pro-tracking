@@ -242,7 +242,7 @@
             <footer class="tp-live__filters-foot">
                 <span class="tp-text-xs tp-text-muted" id="tp-live-status-text">Cargando…</span>
                 <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-live-refresh" type="button">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 12a9 9 0 1 1-3.5-7.1" />
                         <path d="M21 4v5h-5" />
@@ -602,7 +602,7 @@
                     data-toggle="hitos" title="{{ trans('front.show_km_markers') }}"
                     aria-label="{{ trans('front.show_km_markers') }}" aria-pressed="false" type="button">
                     {{-- Hito vial: poste con placa km --}}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 10v11" />
                         <rect x="6" y="3" width="12" height="7" rx="1.5" />
@@ -672,7 +672,7 @@
             </div>
             <button type="button" class="tp-live__bottombar-handle" id="tp-bottombar-expand" hidden
                 title="{{ trans('ui.show_widgets') }}" aria-label="{{ trans('ui.show_widgets') }}">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="m18 15-6-6-6 6" />
                 </svg>
@@ -712,7 +712,7 @@
                     </div>
                     <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm tp-drawer-vstate__btn"
                         id="tp-drawer-vstate-btn">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
                             <path d="M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
@@ -739,7 +739,7 @@
                 {{-- Quick actions --}}
                 <div class="tp-stack" style="gap:8px;">
                     <button class="tp-btn tp-btn--secondary tp-btn--block" id="tp-drawer-center" type="button">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3" />
                             <path d="M12 2v3" />
@@ -750,7 +750,7 @@
                         {{ trans('ui.center_on_map') }}
                     </button>
                     <button class="tp-btn tp-btn--ghost tp-btn--block" id="tp-drawer-history" type="button" disabled>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-7 3.3L3 8" />
                             <path d="M3 3v5h5" />

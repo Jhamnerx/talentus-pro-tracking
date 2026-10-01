@@ -30,7 +30,7 @@
 
     {{-- Global search (opens Command Palette) --}}
     <button class="tp-topbar__search-btn" id="tp-open-palette" aria-label="{{ trans('ui.search_ctrl_k') }}">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8" />
             <path d="m21 21-4.35-4.35" />
@@ -57,17 +57,17 @@
                 style="position:absolute; top:calc(100% + 6px); right:0;">
                 <div class="tp-menu__head"><div class="tp-text-overline">{{ trans('front.tools') }}</div></div>
                 <button class="tp-menu__item" role="menuitem" data-tp-tool="ruler">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4z"/><path d="m14.5 12.5 2-2M11.5 9.5l2-2M8.5 6.5l2-2M11.5 15.5l2-2"/></svg>
                     Regla
                 </button>
                 <button class="tp-menu__item" role="menuitem" data-tp-tool="point">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.3-7-11a7 7 0 0 1 14 0c0 4.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
                     {{ trans('ui.show_point') }}
                 </button>
                 <button class="tp-menu__item" role="menuitem" data-tp-tool="address">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                     {{ trans('front.show_address') }}
                 </button>
@@ -76,7 +76,7 @@
                      pudiera mirar uno a uno. --}}
                 @if (auth()->user()->perm('devices', 'view'))
                     <button class="tp-menu__item" role="menuitem" data-tp-tool="silent-devices">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M5 13a10 10 0 0 1 3-2"/><path d="M2 8.8A15 15 0 0 1 6 6.3"/><path d="M22 8.8a15 15 0 0 0-9.7-2.7"/><circle cx="12" cy="20" r="1"/></svg>
                         {{ trans('ui.silent_units') }}
                     </button>
@@ -85,7 +85,7 @@
                     <hr class="tp-divider" style="margin:4px 0;">
                     <button class="tp-menu__item" role="menuitem" data-tp-tool="forwards"
                         data-forwards-url="{{ route('ui.v2.api.forwards') }}">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
                         {{ trans('front.forwards') }}
                     </button>
@@ -140,7 +140,7 @@
     {{-- Notifications --}}
     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" id="tp-notif-btn" data-tooltip="{{ trans('front.notifications') }}"
         aria-label="{{ trans('front.notifications') }}" style="position:relative;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -160,7 +160,7 @@
             <div class="tp-text-xs tp-text-muted">{{ $user->email ?? '' }}</div>
         </div>
         <button class="tp-menu__item" role="menuitem" data-tp-account>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
@@ -168,7 +168,7 @@
             {{ trans('ui.account_settings') }}
         </button>
         <button class="tp-menu__item" role="menuitem" data-tp-password>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
@@ -181,7 +181,7 @@
             <button class="tp-menu__item" role="menuitem" data-tp-email-confirm
                 data-confirm-url="{{ route('ui.v2.api.account.email_confirm') }}"
                 data-resend-url="{{ route('ui.v2.api.account.email_resend') }}">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
@@ -193,7 +193,7 @@
         @endif
         {{-- Idioma (paridad LanguageController: solo los activos del sistema) --}}
         <button class="tp-menu__item" role="menuitem" data-tp-language>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -201,7 +201,7 @@
             {{ trans('global.language') }}
         </button>
         <button class="tp-menu__item" role="menuitem" data-density-toggle>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <line x1="3" y1="12" x2="21" y2="12" />

@@ -183,7 +183,7 @@
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-tp-service="list"
                     data-device-id="{{ $device->id }}"
                     title="{{ trans('front.services') }}" aria-label="{{ trans('front.services') }}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 6h18M3 12h18M3 18h18" />
                     </svg>
@@ -207,7 +207,7 @@
                     <p class="tp-text-xs tp-text-muted tp-mb-2">{{ trans('front.no_services') }}</p>
                     <button type="button" class="tp-btn tp-btn--sm tp-full tp-mt-2 tp-dw__add" data-tp-service="add"
                         data-device-id="{{ $device->id }}">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 5v14M5 12h14" />
                         </svg>
@@ -372,7 +372,7 @@
             <div class="tp-dw__card-body tp-dw__card-body--center">
                 <button type="button" class="tp-btn tp-btn--sm tp-full tp-dw__add" data-tp-commands
                     data-device-id="{{ $device->id }}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m22 2-7 20-4-9-9-4Z" />
                     </svg>

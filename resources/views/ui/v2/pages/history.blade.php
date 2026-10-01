@@ -81,7 +81,7 @@
                     {{-- Avanzado --}}
                     <button type="button" class="tp-hist__adv-toggle" id="tp-hist-adv-toggle" aria-expanded="false">
                         <span>{{ trans('front.advanced_options') }}</span>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m6 9 6 6 6-6" />
                         </svg>
@@ -289,7 +289,7 @@
                             id="tp-hist-toggle-hitos" type="button" title="{{ trans('front.show_km_markers') }}"
                             aria-pressed="{{ !empty($mapConfig['toggles']['hitos']) ? 'true' : 'false' }}">
                             {{-- Hito vial: poste con placa km --}}
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 10v11" />
                                 <rect x="6" y="3" width="12" height="7" rx="1.5" />

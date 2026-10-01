@@ -70,7 +70,7 @@
             <header class="tp-copilot__panel-head">
                 <h2 class="tp-h6 tp-mb-0">Insights & recomendaciones</h2>
                 <button class="tp-btn tp-btn--ghost tp-btn--xs" id="cp-refresh" type="button" title="Re-analizar">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M3 12a9 9 0 0114-7l4 4M21 12a9 9 0 01-14 7l-4-4M21 5v6h-6M3 19v-6h6" />
                     </svg>

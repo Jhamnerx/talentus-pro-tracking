@@ -36,7 +36,7 @@
 
         <footer class="tp-tray__foot">
             <a href="{{ url('/ui/v2/events') }}" class="tp-btn tp-btn--ghost tp-btn--block">{{ trans('ui.see_all_events') }}
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
         </footer>
     </aside>

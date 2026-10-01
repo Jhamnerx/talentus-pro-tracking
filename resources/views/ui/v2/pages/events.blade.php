@@ -153,7 +153,7 @@
                     id="tp-ev-toggle-hitos" title="{{ trans('front.show_km_markers') }}"
                     aria-label="{{ trans('front.show_km_markers') }}" aria-pressed="false">
                     {{-- Hito vial: poste con placa km --}}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 10v11" />
                         <rect x="6" y="3" width="12" height="7" rx="1.5" />
@@ -164,7 +164,7 @@
                     id="tp-ev-toggle-risk" title="{{ trans('ui.risk_map_all_events') }}"
                     aria-label="{{ trans('ui.risk_map') }}" aria-pressed="false">
                     {{-- Mapa de riesgo: capas/calor --}}
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z" />
                         <circle cx="12" cy="9" r="2.5" />
