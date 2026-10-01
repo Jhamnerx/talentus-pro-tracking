@@ -1077,6 +1077,7 @@
     Array.prototype.forEach.call(root.querySelectorAll("[data-tsk-tab]"), function (b) {
       var on = b.getAttribute("data-tsk-tab") === tab;
       b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
       b.style.borderBottomColor = on ? "var(--brand-500,#2e63d9)" : "transparent";
       b.style.color = on ? "var(--brand-500,#2e63d9)" : "";
       b.style.fontWeight = on ? "600" : "500";

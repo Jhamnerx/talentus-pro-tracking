@@ -310,7 +310,7 @@
       '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">' +
       DAY_PILLS.map(function (d) {
         return (
-          '<button type="button" data-rep-day="' + d[0] + '" class="is-on" ' +
+          '<button type="button" data-rep-day="' + d[0] + '" class="is-on" aria-pressed="true" ' +
           'style="appearance:none;cursor:pointer;border:1px solid var(--border-default,#cbd5e1);background:var(--surface-raised,#fff);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--fg-secondary,#475569);">' +
           d[1] + "</button>"
         );
@@ -428,6 +428,8 @@
     });
     function setPill(pill, on) {
       pill.classList.toggle("is-on", on);
+      // Pulsador de dos estados: el color no basta, aria-pressed lo dice.
+      pill.setAttribute("aria-pressed", on ? "true" : "false");
       pill.style.background = on ? "var(--surface-raised,#fff)" : "var(--surface-sunken,#f1f5f9)";
       pill.style.opacity = on ? "1" : "0.55";
     }

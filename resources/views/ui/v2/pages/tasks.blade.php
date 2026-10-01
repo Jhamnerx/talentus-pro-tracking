@@ -75,18 +75,21 @@
         </header>
 
         {{-- Tabs: tareas | conjuntos de tareas --}}
-        <div style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
-            <button type="button" class="tp-tsk-tab is-active" data-tsk-tab="tasks"
+        <div role="tablist" aria-label="{{ trans('front.tasks') }}"
+            style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
+            <button type="button" class="tp-tsk-tab is-active" role="tab" id="tp-tsk-tab-tasks"
+                aria-selected="true" aria-controls="tp-tsk-panel-tasks" data-tsk-tab="tasks"
                 style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:600;">
                 {{ trans('front.tasks') }}</button>
             @if (!empty($canTaskSets))
-                <button type="button" class="tp-tsk-tab" data-tsk-tab="sets"
+                <button type="button" class="tp-tsk-tab" role="tab" id="tp-tsk-tab-sets"
+                    aria-selected="false" aria-controls="tp-tsk-panel-sets" data-tsk-tab="sets"
                     style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:500;">
                     {{ trans('front.task_sets') }}</button>
             @endif
         </div>
 
-        <div class="tp-maint__card" data-tsk-panel="tasks">
+        <div class="tp-maint__card" role="tabpanel" id="tp-tsk-panel-tasks" aria-labelledby="tp-tsk-tab-tasks" data-tsk-panel="tasks">
             <div class="tp-maint__wrap">
                 <table class="tp-svc-table" id="tp-tasks-table">
                     <thead>
@@ -129,7 +132,7 @@
         </div>
 
         {{-- Conjuntos de tareas --}}
-        <div class="tp-maint__card" data-tsk-panel="sets" style="display:none;">
+        <div class="tp-maint__card" role="tabpanel" id="tp-tsk-panel-sets" aria-labelledby="tp-tsk-tab-sets" data-tsk-panel="sets" style="display:none;">
             <div class="tp-maint__wrap">
                 <table class="tp-svc-table" id="tp-tasksets-table">
                     <thead>

@@ -277,11 +277,13 @@
     var e = state.baseLayers[id]; if (!e) return;
     if (state.currentBase && state.baseLayers[state.currentBase]) state.map.removeLayer(state.baseLayers[state.currentBase].layer);
     e.layer.addTo(state.map); if (e.layer.bringToBack) e.layer.bringToBack(); state.currentBase = id;
-    var menu = $("#tp-hist-providers-menu"); if (menu) menu.querySelectorAll("[data-map-id]").forEach(function (b) { b.classList.toggle("is-active", b.getAttribute("data-map-id") === id); });
+    var menu = $("#tp-hist-providers-menu"); if (menu) menu.querySelectorAll("[data-map-id]").forEach(function (b) { var on = b.getAttribute("data-map-id") === id; b.classList.toggle("is-active", on); b.setAttribute("aria-checked", on ? "true" : "false"); });
   }
   function buildProvidersMenu() {
     var menu = $("#tp-hist-providers-menu"); if (!menu) return;
-    menu.innerHTML = Object.keys(state.baseLayers).map(function (id) { return '<button type="button" class="tp-menu__item" data-map-id="' + id + '">' + esc(state.baseLayers[id].name) + "</button>"; }).join("");
+    menu.innerHTML = Object.keys(state.baseLayers).map(function (id) { return '<button type="button" role="menuitemradio" aria-checked="' +
+      (id === state.currentBase ? "true" : "false") +
+      '" class="tp-menu__item" data-map-id="' + id + '">' + esc(state.baseLayers[id].name) + "</button>"; }).join("");
     menu.addEventListener("click", function (e) { var b = e.target.closest("[data-map-id]"); if (!b) return; var id = b.getAttribute("data-map-id"); setBaseLayer(id); persistMapId(id); menu.hidden = true; });
   }
   function persistMapId(id) { try { var fd = new FormData(); fd.append("key", "tp_map_id"); fd.append("value", String(id)); fetch("/ui/v2/api/preferences", { method: "POST", body: fd, credentials: "same-origin", headers: { "X-CSRF-TOKEN": csrf() } }).catch(function () {}); } catch (e) {} }
