@@ -1351,7 +1351,12 @@ class DevicesController extends BaseController
             $data['caps'] = [
                 'is_admin'             => (bool) $this->user->isAdmin(),
                 'can_edit_users'       => (bool) ($this->user->isAdmin() && $this->user->perm('users', 'view')),
-                'can_view_sensors'     => (bool) $this->user->isAdmin(),
+                // El legacy no gatea esta pestaña (Devices/edit.blade la deja
+                // suelta; solo el bloque de GRUPOS de sensores es de admin), y
+                // los endpoints de sensores de la v2 ya exigen devices.edit en
+                // sensorDevice(). Con isAdmin() se escondia una pestaña que el
+                // usuario podia usar entera.
+                'can_view_sensors'     => (bool) $this->user->perm('devices', 'edit'),
                 'can_view_cameras'     => (bool) $this->user->perm('device_camera', 'view'),
                 'has_expenses'         => (bool) (function_exists('expensesTypesExist') && expensesTypesExist()),
                 'can_view_webservices' => (bool) (
@@ -2161,6 +2166,44 @@ class DevicesController extends BaseController
      * Resuelve el device y verifica permiso de edición (el helper legacy
      * no valida ownership en create/list, así que lo hacemos aquí).
      */
+    /**
+     * Texto de un sensor con su unidad de medida.
+     *
+     * Numerical::getValueFormatted() pega la unidad que le haya puesto
+     * SensorsManager, pero este solo llama a setUnit() cuando el tipo declara
+     * 'unit' en getInputs(). EngineHours no lo declara -usa 'unit_type', y
+     * solo en show_type 'connected'-, asi que un horometro con
+     * unit_of_measurement='H' sale como "237536.9 " y la unidad configurada
+     * no se ve en ningun lado. Son 27 sensores en esta base, todos de ese
+     * tipo: es el unico del catalogo que declara 'unit_type' en vez de 'unit'.
+     *
+     * Arreglarlo en la capa de sensores tocaria codigo compartido con el
+     * legacy, que alimenta reportes e historial. Se completa aqui, al
+     * presentar, y solo cuando falta de verdad.
+     */
+    private function sensorTexto(\Tobuli\Entities\DeviceSensor $sensor, $formateado): string
+    {
+        $texto = trim((string) $formateado);
+        $unidad = trim((string) $sensor->unit_of_measurement);
+
+        if ($texto === '' || $texto === '-' || $unidad === '') {
+            return $texto;
+        }
+
+        // Ya la trae (odometro: "271161 Km"): no duplicarla.
+        if (mb_strtolower(mb_substr($texto, -mb_strlen($unidad))) === mb_strtolower($unidad)) {
+            return $texto;
+        }
+
+        // Solo a cifras. Un sensor logico ("ON") o textual ("Claro") no lleva
+        // unidad aunque alguien haya rellenado el campo.
+        if (! is_numeric(str_replace([',', ' '], ['.', ''], $texto))) {
+            return $texto;
+        }
+
+        return $texto . ' ' . $unidad;
+    }
+
     private function sensorDevice(int $deviceId)
     {
         $device = DeviceRepo::find($deviceId);
@@ -2702,7 +2745,10 @@ class DevicesController extends BaseController
             }
 
             try {
-                return (string) $sensor->getValueCurrent($traccar)->getFormatted();
+                return $this->sensorTexto(
+                    $sensor,
+                    $sensor->getValueCurrent($traccar)->getFormatted()
+                );
             } catch (\Throwable $e) {
                 return null;
             }
@@ -2969,7 +3015,7 @@ class DevicesController extends BaseController
                 }
                 $rows[] = [
                     'name'     => $sensor->formatName(),
-                    'formated' => $formatted,
+                    'formated' => $this->sensorTexto($sensor, $formatted),
                     'type'        => (string) $sensor->type,
                     'custom_icon' => $icon,
                 ];

@@ -2810,9 +2810,11 @@ table.tp-lock-hist th {
   word-break: keep-all;
 }
 .tp-dash__stat-unit {
-  font-size: 11px;
+  /* La unidad acompaña a la cifra, no es una nota al pie: mismo trato que en
+     la lista de Sensores, donde valor y unidad van seguidos. */
+  font-size: 12px;
   font-weight: 600;
-  color: var(--dash-fg3);
+  color: var(--dash-fg2, var(--dash-fg3));
   white-space: nowrap;
   flex: none;
 }
