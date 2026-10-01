@@ -19,6 +19,9 @@
  *  - Enviar a email (chips con "+", se envía como send_to_email con ;)
  *    y programación Diario/Semanal/Mensual con hora (los flags viven en
  *    la entidad Report; el cron reports:daily los procesa).
+ *  - ABRIR una guardada = se pide la definicion al endpoint de la v2 y
+ *    se manda como la mandaria el formulario: la ruta legacy no sabe
+ *    cargar un reporte por id, exige la definicion entera.
  *  - GENERAR = POST a la ruta legacy reports/update con generate=1 en
  *    ESTA pestaña: responde con Content-Disposition: attachment y el
  *    navegador descarga, igual que el legacy; GUARDAR = POST al backend v2
@@ -1113,10 +1116,71 @@
     else loadLogs();
   }
 
+  /**
+   * Una definicion guardada, con la forma que tendria si se hubiese abierto
+   * el modal de edicion y se hubiese pulsado Generar. Mismos nombres de
+   * campo que collectPayload(): es el contrato que espera la ruta legacy.
+   *
+   * Quedan fuera a proposito los campos de programacion y de envio (daily,
+   * weekly, monthly, send_to_email, send_to_ftp): no cambian el contenido
+   * del reporte, y mandarlos activa la validacion extra de validateInput()
+   * -si hay programacion, exige correo- sin que sirva para nada aqui.
+   */
+  function payloadDesdeItem(it) {
+    var hoy = ymd(new Date());
+    var devIds = (it.device_ids || []).map(Number);
+
+    var p = {
+      title: it.title || "",
+      type: it.type,
+      format: it.format,
+      period: it.period || "",
+      date_from: it.date_from || hoy,
+      from_time: it.from_time || "00:00",
+      date_to: it.date_to || hoy,
+      to_time: it.to_time || "23:59",
+      speed_limit: it.speed_limit == null ? "" : it.speed_limit,
+      stops: it.stops || "",
+      show_addresses: it.show_addresses ? 1 : 0,
+      zones_instead: it.zones_instead ? 1 : 0,
+      skip_blank_results: it.skip_blank_results ? 1 : 0,
+      devices: devIds,
+      selected_devices: ["s;0;"].concat(devIds.map(function (i) {
+        return "id;1;" + i;
+      })),
+      geofences: (it.geofence_ids || []).map(Number),
+      metas: it.metas || [],
+      generate: 1,
+    };
+
+    var dias = it.period_weekdays || [];
+    if (dias.length && dias.length < 7) p.period_weekdays = dias;
+    if (it.period_time_from) p.period_time_from = it.period_time_from;
+    if (it.period_time_to) p.period_time_to = it.period_time_to;
+
+    // Parametros propios del tipo, tal y como se guardaron.
+    var params = it.parameters || {};
+    Object.keys(params).forEach(function (k) {
+      if (p[k] == null) p[k] = params[k];
+    });
+
+    return p;
+  }
+
   // Abrir una definicion guardada es generarla: tambien se descarga.
   function openSaved(id) {
     if (tpModal.toast) tpModal.toast(tpT("ui.generating_report"), "info");
-    postDescarga(META.generateUrl, { id: id, generate: 1 });
+
+    tpModal
+      .fetchJSON(URLS.item.replace("{id}", id), { method: "GET" })
+      .then(function (r) {
+        var it = r.ok && r.data && r.data.ok ? r.data.item : null;
+        if (!it) throw new Error("item");
+        postDescarga(META.generateUrl, payloadDesdeItem(it));
+      })
+      .catch(function () {
+        tpModal.toast(tpT("ui.load_failed"), "error");
+      });
   }
 
   // Tabs
@@ -1177,7 +1241,7 @@
   savedRows.addEventListener("click", function (e) {
     var open = e.target.closest("[data-rep-open]");
     if (open) {
-      openSaved(open.getAttribute("data-rep-open"), open.getAttribute("data-format"));
+      openSaved(open.getAttribute("data-rep-open"));
       return;
     }
     var edit = e.target.closest("[data-rep-edit]");
