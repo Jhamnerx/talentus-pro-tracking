@@ -403,6 +403,41 @@
     body.scrollTop = 0;
   }
 
+  /* ── Teclado para controles que no son <button> ──────────────────────
+     Doce sitios de la v2 reciben click sobre un <tr>, <div> o <span>: filas
+     de tabla, opciones del desplegable propio, celdas del horario. Un
+     <button> responde a Enter y Espacio por su cuenta; esos no.
+
+     En vez de doce manejadores nuevos, uno solo: si el elemento declara rol
+     de control y puede recibir foco, Enter o Espacio le disparan un click.
+     Asi los manejadores de click que ya existen valen tal cual.
+
+     No se toca nada nativo -<button>, <a href>, <input>, <select>...-, que
+     ya lo hacen solos y donde Espacio significa otra cosa (escribir, abrir
+     la lista). */
+  var ROLES_CONTROL = ["button", "option", "switch", "checkbox", "menuitem", "tab", "radio"];
+  var NATIVOS = ["BUTTON", "A", "INPUT", "SELECT", "TEXTAREA", "SUMMARY", "OPTION", "LABEL"];
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" && e.key !== " " && e.key !== "Spacebar") return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    var el = e.target;
+    if (!el || el.nodeType !== 1) return;
+    if (NATIVOS.indexOf(el.tagName) !== -1) return;
+    if (el.isContentEditable) return;
+
+    var rol = el.getAttribute("role");
+    if (!rol || ROLES_CONTROL.indexOf(rol) === -1) return;
+    if (el.getAttribute("aria-disabled") === "true") return;
+    // Enfocable: o lo han hecho enfocable, o ya tiene el foco.
+    if (el.tabIndex < 0 && document.activeElement !== el) return;
+
+    // Espacio desplazaria la pagina.
+    e.preventDefault();
+    el.click();
+  });
+
   function csrf() {
     var meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.getAttribute("content") : "";

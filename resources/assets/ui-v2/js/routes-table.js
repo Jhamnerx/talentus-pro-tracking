@@ -128,9 +128,15 @@
 
     var html = "";
     slice.forEach(function (r) {
+      // Activa/inactiva es un conmutador, no un boton: role="switch" lo dice
+      // mejor y aria-checked lleva el estado, que antes vivia solo en la
+      // clase. Enfocable solo si se puede editar; si no, es texto.
+      var conmuta = CAN_EDIT
+        ? ' data-toggle="' + r.id + '" role="switch" tabindex="0" aria-checked="' + (r.active ? "true" : "false") + '"'
+        : "";
       var badge = r.active
-        ? '<span class="tp-rt-badge is-on"' + (CAN_EDIT ? ' data-toggle="' + r.id + '"' : "") + ">" + esc(T("active", "Activo")) + "</span>"
-        : '<span class="tp-rt-badge"' + (CAN_EDIT ? ' data-toggle="' + r.id + '"' : "") + ">" + esc(T("inactive", "Inactivo")) + "</span>";
+        ? '<span class="tp-rt-badge is-on"' + conmuta + ">" + esc(T("active", "Activo")) + "</span>"
+        : '<span class="tp-rt-badge"' + conmuta + ">" + esc(T("inactive", "Inactivo")) + "</span>";
       html +=
         "<tr><td>" + badge + "</td><td>" + esc(r.name) + "</td>" +
         '<td><span class="tp-rt-swatch" style="background:' + (r.color || "#7c3aed") + '"></span> <span class="tp-rt-hex">' + esc((r.color || "").toLowerCase()) + "</span></td>" +

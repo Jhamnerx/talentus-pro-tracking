@@ -53,7 +53,9 @@
       convsEl.innerHTML = items.length
         ? items.map(function (c) {
             return (
-              '<li class="tp-chat__conv-item' + (state.deviceId === c.device_id ? " is-active" : "") + '" data-device="' + c.device_id + '">' +
+              '<li class="tp-chat__conv-item' + (state.deviceId === c.device_id ? " is-active" : "") +
+              '" role="button" tabindex="0" aria-current="' +
+              (state.deviceId === c.device_id ? "true" : "false") + '" data-device="' + c.device_id + '">' +
               '<span class="tp-chat__avatar">' + esc((c.name || "?").slice(0, 2).toUpperCase()) + "</span>" +
               '<span class="tp-chat__conv-info"><span class="tp-chat__conv-title">' + esc(c.name) + "</span></span>" +
               (c.unread ? '<span class="tp-chat__badge">' + c.unread + "</span>" : "") +

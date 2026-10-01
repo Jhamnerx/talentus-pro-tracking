@@ -1996,3 +1996,16 @@ select.tp-input:disabled {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Foco en controles que no son <button> ────────────────────────────
+   Filas de tabla, conversaciones e insignias que reciben role + tabindex:
+   sin un anillo visible se puede llegar con Tab pero no se ve donde estas,
+   que es media reparacion. :focus-visible solo lo pinta con teclado, no al
+   pulsar con el raton. */
+[role="button"][tabindex]:focus-visible,
+[role="switch"][tabindex]:focus-visible,
+[role="option"][tabindex]:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+  border-radius: var(--r-sm, 6px);
+}

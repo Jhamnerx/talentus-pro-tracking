@@ -1065,7 +1065,10 @@
               acts += '<button type="button" role="menuitem" class="is-danger" data-rep-del="' + r.id + '">' +
                 '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
             return (
-              '<tr data-rep-row="' + r.id + '" data-format="' + esc(r.format.toLowerCase()) + '" style="cursor:pointer;">' +
+              // role + tabindex: el puente de teclado de modal.js convierte Enter y
+              // Espacio en click. Sin esto la fila solo responde al raton.
+              '<tr data-rep-row="' + r.id + '" data-format="' + esc(r.format.toLowerCase()) +
+              '" role="button" tabindex="0" style="cursor:pointer;">' +
               "<td>" + esc(r.title || "–") + "</td>" +
               "<td>" + esc(r.type_label) + "</td>" +
               "<td>" + esc(r.format) + "</td>" +
@@ -1102,7 +1105,8 @@
               acts += '<button type="button" role="menuitem" class="is-danger" data-log-del="' + r.id + '">' +
                 '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
             return (
-              '<tr data-log-row="' + esc(r.download) + '" style="cursor:pointer;">' +
+              '<tr data-log-row="' + esc(r.download) +
+              '" role="button" tabindex="0" style="cursor:pointer;">' +
               "<td>" + esc(r.title || "–") + "</td>" +
               "<td>" + esc(r.type_label) + "</td>" +
               "<td>" + esc(r.format) + "</td>" +
