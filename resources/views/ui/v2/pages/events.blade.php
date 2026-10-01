@@ -33,7 +33,8 @@
         <aside class="tp-events__list-panel">
             <header class="tp-events__head">
                 <h3 class="tp-h6" style="margin:0;">{{ trans('front.driving_events') }}</h3>
-                <select class="tp-input" style="width:100%" id="tp-events-hours">
+                <select class="tp-input" style="width:100%" id="tp-events-hours"
+                        aria-label="{{ trans('ui.date_range') }}">
                     <option value="0" selected>{{ trans('front.all') }}</option>
                     <option value="1">{{ trans('front.last_hour') }}</option>
                     <option value="6">{{ trans('ui.last_6_hours') }}</option>
@@ -46,16 +47,20 @@
                 <details class="tp-events__range">
                     <summary class="tp-text-xs tp-text-muted">{{ trans('ui.date_range') }}</summary>
                     <div class="tp-row" style="gap:6px;margin-top:6px;">
-                        <input type="date" class="tp-input tp-input--sm" id="tp-events-from" title="{{ trans('front.from') }}">
-                        <input type="date" class="tp-input tp-input--sm" id="tp-events-to" title="{{ trans('global.to') }}">
+                        <input type="date" class="tp-input tp-input--sm" id="tp-events-from"
+                        aria-label="{{ trans('front.from') }}" title="{{ trans('front.from') }}">
+                        <input type="date" class="tp-input tp-input--sm" id="tp-events-to"
+                        aria-label="{{ trans('global.to') }}" title="{{ trans('global.to') }}">
                         <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-range-clear"
                             title="Limpiar rango">×</button>
                     </div>
                 </details>
-                <select class="tp-input" style="width:100%" id="tp-events-type">
+                <select class="tp-input" style="width:100%" id="tp-events-type"
+                        aria-label="{{ trans('front.event') }} · {{ trans('front.type') }}">
                     <option value="">{{ trans('ui.all_types') }}</option>
                 </select>
-                <select class="tp-input" style="width:100%" id="tp-events-device">
+                <select class="tp-input" style="width:100%" id="tp-events-device"
+                        aria-label="{{ trans('front.device') }}">
                     <option value="">{{ trans('ui.all_vehicles') }}</option>
                     @foreach ($devices ?? [] as $d)
                         <option value="{{ $d['id'] }}">{{ $d['name'] }}</option>

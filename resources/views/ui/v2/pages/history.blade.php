@@ -88,7 +88,7 @@
                     </button>
                     <div class="tp-hist__adv" id="tp-hist-adv" hidden>
                         <div>
-                            <label class="tp-hist__label">{{ trans('front.stops') }}</label>
+                            <label class="tp-hist__label" for="tp-hist-stops">{{ trans('front.stops') }}</label>
                             <select class="tp-input tp-input--sm tp-full" id="tp-hist-stops">
                                 <option value="0">{{ trans('front.all') }}</option>
                                 <option value="60">&gt; 1 min</option>
@@ -464,7 +464,8 @@
                                 <rect x="5" y="5" width="14" height="14" rx="2" />
                             </svg>
                         </button>
-                        <select class="tp-history__gsel" id="tp-hist-speed-sel" title="{{ trans('front.playback_speed') }}">
+                        <select class="tp-history__gsel" id="tp-hist-speed-sel"
+                        aria-label="{{ trans('front.playback_speed') }}" title="{{ trans('front.playback_speed') }}">
                             <option value="1">x1</option>
                             <option value="4">x4</option>
                             <option value="8" selected>x8</option>
@@ -588,10 +589,11 @@
                                 <label class="tp-hist__label">{{ trans('front.from') }}</label>
                                 <div class="tp-datepick__time-row">
                                     <input type="text" class="tp-input tp-input--sm" id="tp-hist-dp-from-date"
-                                        readonly>
+                                        aria-label="{{ trans('front.from') }} · {{ trans('front.date') }}" readonly>
                                     {{-- Hora como select de pasos de 5 min (tp-select, 24h) —
                                          el input time nativo mostraba AM/PM y se cortaba --}}
-                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-from-time" style="width: 92px">
+                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-from-time" style="width: 92px"
+                            aria-label="{{ trans('front.from') }} · {{ trans('front.time') }}">
                                         @for ($m = 0; $m < 1440; $m += 5)
                                             <option value="{{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}"
                                                 {{ $m === 0 ? 'selected' : '' }}>
@@ -605,8 +607,10 @@
                             <div>
                                 <label class="tp-hist__label">{{ trans('front.to') }}</label>
                                 <div class="tp-datepick__time-row">
-                                    <input type="text" class="tp-input tp-input--sm" id="tp-hist-dp-to-date" readonly>
-                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-to-time" style="width: 92px">
+                                    <input type="text" class="tp-input tp-input--sm" id="tp-hist-dp-to-date" readonly
+                            aria-label="{{ trans('global.to') }} · {{ trans('front.date') }}">
+                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-to-time" style="width: 92px"
+                            aria-label="{{ trans('global.to') }} · {{ trans('front.time') }}">
                                         @for ($m = 0; $m < 1440; $m += 5)
                                             <option value="{{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}">
                                                 {{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}</option>

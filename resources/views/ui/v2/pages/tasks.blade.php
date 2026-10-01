@@ -47,12 +47,14 @@
                 <input type="text" class="tp-input" id="tp-tasks-search"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 <span data-tsk-only="tasks" style="display:inline-flex;">
-                    <select class="tp-input" id="tp-tasks-device" style="width: 210px">
+                    <select class="tp-input" id="tp-tasks-device" style="width: 210px"
+                        aria-label="{{ trans('front.device') }}">
                         <option value="">{{ trans('ui.all_vehicles') }}</option>
                     </select>
                 </span>
                 <span data-tsk-only="tasks" style="display:inline-flex;">
-                    <select class="tp-input" id="tp-tasks-status" style="width: 170px">
+                    <select class="tp-input" id="tp-tasks-status" style="width: 170px"
+                        aria-label="{{ trans('front.status') }}">
                         <option value="">{{ trans('ui.all_statuses') }}</option>
                         @foreach ($statuses as $id => $label)
                             <option value="{{ $id }}">{{ $label }}</option>
@@ -96,7 +98,7 @@
                         <tr>
                             @if (!empty($canEdit))
                                 <th style="width: 34px;"><input type="checkbox" class="tp-choice-input"
-                                        id="tp-tasks-checkall"></th>
+                                        id="tp-tasks-checkall" aria-label="{{ trans('front.select_all') }}"></th>
                             @endif
                             <th>{{ trans('validation.attributes.title') }}</th>
                             <th>{{ trans('validation.attributes.device_id') }}</th>
