@@ -224,7 +224,7 @@
     var url = it.url ? escapeAttr(it.url) : "";
     var id = it.id != null ? String(it.id) : "";
     return (
-      '<button class="tp-cmdk__item" data-action="result" data-type="' +
+      '<button class="tp-cmdk__item" role="option" data-action="result" data-type="' +
       escapeAttr(it.type || "") +
       '" data-id="' +
       escapeAttr(id) +
@@ -269,9 +269,25 @@
       });
   }
   function setActive(el) {
-    getItems().forEach(function (i) {
-      i.classList.toggle("is-active", i === el);
+    var input = document.getElementById("tp-cmdk-input");
+
+    getItems().forEach(function (i, n) {
+      var on = i === el;
+      i.classList.toggle("is-active", on);
+      // El resaltado vivia solo en la clase: aria-selected es lo unico que
+      // oye un lector de pantalla.
+      i.setAttribute("aria-selected", on ? "true" : "false");
+      // Hace falta un id al que apuntar; se pone aqui y no en cada sitio
+      // que pinta elementos, que son once.
+      if (!i.id) i.id = "tp-cmdk-opt-" + n;
     });
+
+    // El foco NO se mueve: sigue en la caja de texto, que es donde se
+    // escribe. aria-activedescendant es lo que dice cual esta resaltado.
+    if (input) {
+      if (el && el.id) input.setAttribute("aria-activedescendant", el.id);
+      else input.removeAttribute("aria-activedescendant");
+    }
   }
   function updateActive(el) {
     if (!el) return;
