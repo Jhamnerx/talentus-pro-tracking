@@ -168,11 +168,25 @@ return [
         'alt_stationary_max_dist_m' => env('GNSS_GLITCH_ALT_STATIONARY_DIST', 10),
         'accel_max_kph_s'      => env('GNSS_GLITCH_ACCEL_MAX', 10),
         'accel_min_speed_kph'  => env('GNSS_GLITCH_ACCEL_MIN_SPEED', 25),
+        // Tolerancia (% de la velocidad actual, mínimo 10 kph) para corroborar 'acc': si el
+        // desplazamiento GPS real (impliedKph) queda dentro de este margen de la velocidad
+        // reportada, el salto de velocidad NO se marca como glitch (el problema está en la
+        // velocidad anterior, no en esta posición). Ver evaluateGnssGlitch().
+        'accel_corroboration_tolerance_pct' => env('GNSS_GLITCH_ACCEL_CORROBORATION_PCT', 0.35),
         'tele_min_distance_m'  => env('GNSS_GLITCH_TELE_MIN_DIST', 50),
         'tele_speed_factor'    => env('GNSS_GLITCH_TELE_FACTOR', 2),
         'tele_speed_margin'    => env('GNSS_GLITCH_TELE_MARGIN', 40),
     ],
     'overspeed_tracking_max_gap' => env('OVERSPEED_TRACKING_MAX_GAP', 300),
+
+    // Umbrales de detectJumpFromStop() (PositionsWriter). Además del umbral de distancia,
+    // se invalida la posición si avg_speed > current_speed*multiplier + margen_kph, para
+    // absorber el ruido normal entre velocidad GPS instantánea y velocidad media calculada
+    // por distancia/tiempo (con reporte cada 30s, un 10% de tolerancia sin margen absoluto
+    // invalidaba arranques normales desde parada).
+    'from_stop_max_jump_meters'       => env('FROM_STOP_MAX_JUMP_METERS', 150),
+    'from_stop_avg_speed_multiplier'  => env('FROM_STOP_AVG_SPEED_MULTIPLIER', 1.3),
+    'from_stop_avg_speed_margin_kph'  => env('FROM_STOP_AVG_SPEED_MARGIN_KPH', 5),
 
     /*
      * Eventos nativos de exceso de velocidad en geocerca reportados por el propio

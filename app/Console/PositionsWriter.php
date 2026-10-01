@@ -592,6 +592,9 @@ class PositionsWriter
             }
         }
 
+        // Detectar solución GNSS corrupta (saltos imposibles de altitud/velocidad/posición)
+        $this->detectGnssGlitch($lastValidPosition);
+
         //tmp
         if (! $this->position->isValid()) {
             $this->position->distance = 0;
@@ -637,6 +640,11 @@ class PositionsWriter
 
         // Detectar salto de posición desde parada (jump from stop)
         $this->detectJumpFromStop($distance, $lastValidPosition);
+
+        // Registrar (modo sombra, solo log) el evento nativo de exceso de velocidad
+        // en geocerca que reporta el propio equipo Teltonika (AVL 157 en FTC927,
+        // AVL por zona en familia FMB/FMC/FMU/FMM incl. FMC920)
+        $this->detectNativeGeofenceSpeedEvent();
 
         $totalDistance = $lastValidPosition ? $lastValidPosition->getParameter('totaldistance', 0) : 0;
 
@@ -1854,8 +1862,18 @@ class PositionsWriter
         $jumpByDistance = $distanceMeters > $maxJumpMeters;
 
         // Criterio 2: avg_speed > current_speed cuando se arrancó desde 0
-        //  (la velocidad media no puede superar la velocidad final en una aceleración desde reposo)
-        $jumpByAvgSpeed = $currentSpeed > 0 && $avgSpeedKph > $currentSpeed * 1.1;
+        //  (la velocidad media no puede superar, con margen razonable, la velocidad final
+        //  en una aceleración desde reposo). El margen original (x1.1, sin tolerancia
+        //  absoluta) invalidaba arranques normales: con reporte cada 30s, el ruido típico
+        //  entre velocidad GPS instantánea y velocidad media calculada por distancia/tiempo
+        //  ya supera ese 10% sin que haya ningún salto real (ej. 95m/30s=11.4 kph vs
+        //  speed=10 kph reportado -> antes se invalidaba por solo 0.4 kph de diferencia).
+        //  Se usa un multiplicador más laxo + un margen absoluto en kph para absorber ese
+        //  ruido y solo invalidar cuando la diferencia es lo bastante grande como para ser
+        //  una teleportación real.
+        $avgSpeedMultiplier = (float) config('tobuli.from_stop_avg_speed_multiplier', 1.3);
+        $avgSpeedMarginKph  = (float) config('tobuli.from_stop_avg_speed_margin_kph', 5);
+        $jumpByAvgSpeed = $currentSpeed > 0 && $avgSpeedKph > ($currentSpeed * $avgSpeedMultiplier + $avgSpeedMarginKph);
 
         if (! $jumpByDistance && ! $jumpByAvgSpeed) {
             return;
@@ -1876,6 +1894,374 @@ class PositionsWriter
         if ($jumpByAvgSpeed) {
             $this->position->valid = 0;
         }
+    }
+
+    /**
+     * Detecta una solución GNSS corrupta (GNSS glitch).
+     *
+     * Con buena cobertura (33–36 satélites) el equipo puede entregar durante unos
+     * segundos datos físicamente imposibles: velocidad alternando 4 → 123 → 4 km/h,
+     * altitud de -1.963 a 19.489 m y saltos de cientos de metros en 2 s.
+     * Ninguno de los filtros anteriores lo detecta (sat, max_speed, salto > 1 km...).
+     *
+     * Siempre se compara contra la ÚLTIMA POSICIÓN VÁLIDA y solo si tiene como
+     * máximo 'max_age_seconds' de antigüedad (no afecta reanudaciones tras paradas
+     * largas ni historial fuera de orden). Reglas en evaluateGnssGlitch().
+     *
+     * En modo sombra (enforce = false) solo marca el parámetro 'gnss_glitch' y
+     * registra en el log 'validaciones_tecnicas'. Con enforce = true además invalida
+     * la posición y restaura velocidad/altitud de la última válida, de modo que no
+     * suma kilometraje ni dispara alertas (las alertas ignoran valid = 0).
+     *
+     * Caso reportado: CJN-824 (FTC927) 25/09/2026, 16 falsos excesos de 42–140 km/h.
+     */
+    protected function detectGnssGlitch($lastValidPosition): void
+    {
+        $cfg = (array) config('tobuli.gnss_glitch', []);
+
+        if (empty($cfg['enabled']) || ! $lastValidPosition) {
+            return;
+        }
+
+        $metrics = [];
+        $reasons = self::evaluateGnssGlitch(
+            [
+                'time'      => $this->position->time,
+                'speed'     => $this->position->speed,
+                'altitude'  => $this->position->altitude,
+                'latitude'  => $this->position->latitude,
+                'longitude' => $this->position->longitude,
+            ],
+            [
+                'time'      => $lastValidPosition->time,
+                'speed'     => $lastValidPosition->speed,
+                'altitude'  => $lastValidPosition->altitude,
+                'latitude'  => $lastValidPosition->latitude,
+                'longitude' => $lastValidPosition->longitude,
+            ],
+            $cfg,
+            $metrics
+        );
+
+        $enforce = filter_var($cfg['enforce'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $logContext = [
+            'device_id'           => $this->device->id,
+            'imei'                => $this->device->imei,
+            'plate_number'        => $this->device->plate_number,
+            'time'                => $this->position->time,
+            'lat'                 => $this->position->latitude,
+            'lng'                 => $this->position->longitude,
+            'speed'               => $this->position->speed,
+            'altitude'            => $this->position->altitude,
+            'last_valid_time'     => $lastValidPosition->time,
+            'last_valid_speed'    => $lastValidPosition->speed,
+            'last_valid_altitude' => $lastValidPosition->altitude,
+            'dt'                  => $metrics['dt'] ?? null,
+            'dAlt'                => $metrics['dAlt'] ?? null,
+            'accel'               => $metrics['accel'] ?? null,
+            'distM'               => $metrics['distM'] ?? null,
+            'impliedKph'          => $metrics['impliedKph'] ?? null,
+            'stationary'          => $metrics['stationary'] ?? false,
+            'accelCorroborated'   => $metrics['accelCorroborated'] ?? false,
+            'reasons'             => $reasons,
+            'enforce'             => $enforce,
+        ];
+
+        if (empty($reasons)) {
+            // Salto de altitud descartado por vehículo detenido: se registra para auditar en modo sombra
+            if (! empty($metrics['stationary'])) {
+                \Log::channel('validaciones_tecnicas')->info('GNSS glitch alt descartado (detenido)', $logContext);
+            }
+
+            // Aceleración "imposible" descartada porque el desplazamiento GPS real coincide
+            // con la velocidad actual reportada: la velocidad ANTERIOR (last_valid_speed) es
+            // la sospechosa, no esta posición. Se registra para auditar en modo sombra.
+            if (! empty($metrics['accelCorroborated'])) {
+                \Log::channel('validaciones_tecnicas')->info('GNSS glitch acc descartado (desplazamiento real coincide)', $logContext);
+            }
+
+            return;
+        }
+
+        $this->line(sprintf(
+            'GNSS glitch detectado [%s]: speed=%.1f kph (última válida %.1f), dAlt=%.1fm, dist=%.1fm en %ds (implícita %.1f kph) en %s%s',
+            implode('|', $reasons),
+            floatval($this->position->speed),
+            floatval($lastValidPosition->speed),
+            $metrics['dAlt'] ?? 0,
+            $metrics['distM'] ?? 0,
+            $metrics['dt'] ?? 0,
+            $metrics['impliedKph'] ?? 0,
+            $this->position->time,
+            $enforce ? '' : ' (modo sombra)'
+        ));
+
+        $this->position->setParameter('gnss_glitch', implode('|', $reasons));
+
+        \Log::channel('validaciones_tecnicas')->warning('GNSS glitch detectado', $logContext);
+
+        if (! $enforce) {
+            return;
+        }
+
+        $this->position->valid = 0;
+        $this->position->speed = floatval($lastValidPosition->speed);
+        $this->position->altitude = $lastValidPosition->altitude;
+    }
+
+    /**
+     * Reglas puras del filtro GNSS glitch (sin estado, testeable).
+     *
+     * $current / $lastValid: ['time', 'speed', 'altitude', 'latitude', 'longitude'].
+     * Devuelve las razones detectadas ('alt', 'acc', 'tele'); vacío si la posición es plausible.
+     * $metrics recibe los valores calculados (dt, dAlt, accel, distM, impliedKph) para el log.
+     *
+     * - alt:  |Δaltitud| > alt_min_jump_m y |Δaltitud|/dt > alt_max_rate_ms, salvo vehículo
+     *         detenido (speed y última speed <= alt_stationary_speed_kph y distancia
+     *         <= alt_stationary_max_dist_m); en ese caso $metrics['stationary'] = true.
+     * - acc:  aceleración positiva > accel_max_kph_s y velocidad actual > accel_min_speed_kph.
+     * - tele: distancia > tele_min_distance_m y velocidad implícita por la distancia
+     *         > max(speed * tele_speed_factor, speed + tele_speed_margin).
+     *
+     * dt = max(dtRaw, 1): el equipo manda varios registros en el mismo segundo.
+     */
+    public static function evaluateGnssGlitch(array $current, array $lastValid, array $cfg, array &$metrics = []): array
+    {
+        $metrics = [];
+
+        $dtRaw = strtotime($current['time']) - strtotime($lastValid['time']);
+
+        if ($dtRaw < 0 || $dtRaw > (float) ($cfg['max_age_seconds'] ?? 30)) {
+            return [];
+        }
+
+        $dt = max($dtRaw, 1);
+        $speed = floatval($current['speed'] ?? 0);
+        $lastSpeed = floatval($lastValid['speed'] ?? 0);
+
+        $reasons = [];
+
+        // Distancia con las coordenadas crudas (la usan la corroboración de 'alt' y la regla 'tele')
+        $distM = getDistance(
+            $current['latitude'] ?? null,
+            $current['longitude'] ?? null,
+            $lastValid['latitude'] ?? null,
+            $lastValid['longitude'] ?? null
+        ) * 1000;
+
+        // Vehículo detenido: velocidad actual y última válida bajo el umbral, y sin desplazamiento real
+        $stationarySpeed = (float) ($cfg['alt_stationary_speed_kph'] ?? 3);
+        $isStationary = $speed <= $stationarySpeed
+            && $lastSpeed <= $stationarySpeed
+            && $distM <= (float) ($cfg['alt_stationary_max_dist_m'] ?? 10);
+
+        // Velocidad implícita por el desplazamiento GPS real (la usan la corroboración de
+        // 'acc' y la regla 'tele')
+        $impliedKph = ($distM / $dt) * 3.6;
+
+        // 1) Salto de altitud imposible
+        $dAlt = null;
+        $stationary = false;
+        if (isset($current['altitude'], $lastValid['altitude'])) {
+            $dAlt = abs(floatval($current['altitude']) - floatval($lastValid['altitude']));
+
+            if ($dAlt > (float) ($cfg['alt_min_jump_m'] ?? 40) && ($dAlt / $dt) > (float) ($cfg['alt_max_rate_ms'] ?? 20)) {
+                // Detenido: el salto de altitud no se considera glitch (heartbeat/keep-alive sin fix de
+                // elevación). En particular altitude === 0 es el valor por defecto del equipo sin fix
+                // completo: con el vehículo parado es una lectura de baja confianza, no un salto real.
+                // En movimiento, altitude = 0 SÍ se evalúa para no ocultar glitches reales.
+                if ($isStationary) {
+                    $stationary = true;
+                } else {
+                    $reasons[] = 'alt';
+                }
+            }
+        }
+
+        // 2) Aceleración imposible (solo positiva; las frenadas no cuentan)
+        //
+        // Corroboración: si el desplazamiento GPS real (distM/impliedKph) ya es consistente
+        // con la velocidad ACTUAL reportada, el vehículo de verdad recorrió esa distancia a
+        // esa velocidad — el salto no es un problema de ESTA posición, sino de que la
+        // velocidad ANTERIOR (last_valid_speed) no era confiable (caso muy frecuente en
+        // producción: last_valid_speed = 0 justo antes, típicamente por una lectura con
+        // pocos satélites que congela coordenadas y pone speed=0 sin invalidar la posición,
+        // o el primer reporte del equipo tras arrancar). Marcar 'acc' aquí invalidaría la
+        // posición CORRECTA (con enforce=true) y dejaría pasar el dato malo (el "0"
+        // anterior) — justo al revés de lo que se busca.
+        //
+        // Solo se corrobora si hubo desplazamiento real (> alt_stationary_max_dist_m): si
+        // casi no hay desplazamiento pese al salto de velocidad, NO se corrobora — ahí sí
+        // hay contradicción real entre posición y velocidad (glitch genuino).
+        $accel = ($speed - $lastSpeed) / $dt;
+        $accelCorroborated = false;
+
+        if ($accel > (float) ($cfg['accel_max_kph_s'] ?? 10) && $speed > (float) ($cfg['accel_min_speed_kph'] ?? 25)) {
+            $tolerancePct = (float) ($cfg['accel_corroboration_tolerance_pct'] ?? 0.35);
+            $tolerance = max($speed * $tolerancePct, 10);
+
+            if ($distM > (float) ($cfg['alt_stationary_max_dist_m'] ?? 10) && abs($impliedKph - $speed) <= $tolerance) {
+                $accelCorroborated = true;
+            } else {
+                $reasons[] = 'acc';
+            }
+        }
+
+        // 3) Teleportación: la distancia recorrida no es compatible con la velocidad reportada
+        $maxPlausibleKph = max(
+            $speed * (float) ($cfg['tele_speed_factor'] ?? 2),
+            $speed + (float) ($cfg['tele_speed_margin'] ?? 40)
+        );
+
+        if ($distM > (float) ($cfg['tele_min_distance_m'] ?? 50) && $impliedKph > $maxPlausibleKph) {
+            $reasons[] = 'tele';
+        }
+
+        $metrics = [
+            'dt'                => $dt,
+            'dAlt'              => $dAlt === null ? null : round($dAlt, 1),
+            'accel'             => round($accel, 2),
+            'distM'             => round($distM, 1),
+            'impliedKph'        => round($impliedKph, 1),
+            'stationary'        => $stationary,
+            'accelCorroborated' => $accelCorroborated,
+        ];
+
+        return $reasons;
+    }
+
+    /**
+     * Registra (SOLO LOG, modo sombra) el evento nativo de exceso de velocidad en
+     * geocerca que reporta el propio equipo Teltonika, con la duración exacta de
+     * hardware entre el inicio y el fin del exceso. No dispara ni modifica ninguna
+     * alerta — corre en paralelo al método actual de la plataforma
+     * (GeofenceAlertCheck::checkOverspeedDuration(), que sigue siendo la única
+     * fuente real de las alertas) para poder auditar si ambos coinciden antes de
+     * decidir si el nativo se usa como fuente autoritativa.
+     *
+     * Semántica por modelo (config('tobuli.native_geofence_speed')):
+     * - FTC927 (plataforma FT): AVL 157 = flag start(1)/stop(0) de exceso; AVL 155 =
+     *   ID de geocerca configurado en el equipo (valor + 1).
+     * - Familia FMB/FMC/FMU/FMM, incluido FMC920 (Codec8 clásico): cada geocerca
+     *   tiene su propio AVL ID dedicado (zone_avl_map), con valor 0-3 por evento:
+     *   0=salió de zona, 1=entró a zona, 2=fin de exceso, 3=inicio de exceso.
+     *
+     * IMPORTANTE: el "ID de geocerca" aquí es el número de geocerca configurado
+     * DENTRO DEL EQUIPO (slot 1-50), no necesariamente el id de nuestra entidad
+     * Geofence en la plataforma — no hay (todavía) una tabla que relacione uno con
+     * el otro, así que la comparación contra checkOverspeedDuration() debe hacerse
+     * manualmente por ahora cruzando el log con la configuración del dispositivo.
+     */
+    protected function detectNativeGeofenceSpeedEvent(): void
+    {
+        $cfg = (array) config('tobuli.native_geofence_speed', []);
+
+        if (empty($cfg['enabled'])) {
+            return;
+        }
+
+        $event = $this->position->getParameter('event');
+
+        if ($event === null) {
+            return;
+        }
+
+        $eventId = (int) $event;
+        $isFtc = stripos((string) $this->device->device_model, (string) ($cfg['ftc_model_match'] ?? 'ftc')) !== false;
+
+        $deviceZoneId = null;
+        $eventType    = null; // 'start' | 'stop'
+
+        if ($isFtc) {
+            if ($eventId !== 157) {
+                return;
+            }
+
+            $flag = $this->position->getParameter('io157');
+
+            if ($flag === null) {
+                return;
+            }
+
+            $eventType = ((int) $flag === 1) ? 'start' : 'stop';
+
+            $rawZone = $this->position->getParameter('io155');
+            $deviceZoneId = $rawZone !== null ? ((int) $rawZone + 1) : null;
+        } else {
+            $zoneMap = (array) ($cfg['zone_avl_map'] ?? []);
+
+            if (! array_key_exists($eventId, $zoneMap)) {
+                return;
+            }
+
+            $value = $this->position->getParameter('io' . $eventId);
+
+            if ($value === null) {
+                return;
+            }
+
+            $value = (int) $value;
+
+            // 0 = salió de zona, 1 = entró a zona: no son eventos de velocidad
+            if (! in_array($value, [2, 3], true)) {
+                return;
+            }
+
+            $eventType    = ($value === 3) ? 'start' : 'stop';
+            $deviceZoneId = $zoneMap[$eventId];
+        }
+
+        $positionTime = strtotime($this->position->time);
+        $cacheKey     = 'native_geofence_speed_start_' . $this->device->id . '_' . $deviceZoneId;
+        $maxGap       = (int) config('tobuli.overspeed_tracking_max_gap', 300);
+
+        $logBase = [
+            'device_id'      => $this->device->id,
+            'imei'           => $this->device->imei,
+            'plate_number'   => $this->device->plate_number,
+            'device_model'   => $this->device->device_model,
+            'device_zone_id' => $deviceZoneId,
+            'event_type'     => $eventType,
+            'time'           => $this->position->time,
+            'speed'          => $this->position->speed,
+        ];
+
+        if ($eventType === 'start') {
+            Cache::put($cacheKey, $positionTime, now()->addHours(24));
+
+            \Log::channel('validaciones_tecnicas')->info('Exceso nativo en geocerca: inicio', $logBase);
+
+            return;
+        }
+
+        // $eventType === 'stop'
+        $startTime = Cache::get($cacheKey);
+        Cache::forget($cacheKey);
+
+        if (! $startTime || $positionTime < $startTime) {
+            \Log::channel('validaciones_tecnicas')->info(
+                'Exceso nativo en geocerca: fin sin inicio previo registrado (se descarta)',
+                $logBase
+            );
+
+            return;
+        }
+
+        $nativeDuration = $positionTime - $startTime;
+
+        if ($nativeDuration > $maxGap) {
+            \Log::channel('validaciones_tecnicas')->info(
+                'Exceso nativo en geocerca: fin descartado por gap mayor a overspeed_tracking_max_gap',
+                $logBase + ['native_duration' => $nativeDuration, 'max_gap' => $maxGap]
+            );
+
+            return;
+        }
+
+        \Log::channel('validaciones_tecnicas')->warning(
+            'Exceso nativo en geocerca: fin (comparar manualmente con checkOverspeedDuration())',
+            $logBase + ['native_duration' => $nativeDuration]
+        );
     }
 
     /**
@@ -1927,7 +2313,8 @@ class PositionsWriter
         $relevant = [];
         foreach ($attributes as $key => $value) {
             $lower = strtolower((string) $key);
-            if (str_contains($lower, 'out')
+            if (
+                str_contains($lower, 'out')
                 || str_contains($lower, 'in1')
                 || str_contains($lower, 'adc')
                 || $lower === 'io9'
@@ -1942,7 +2329,8 @@ class PositionsWriter
         $outActive = false;
         foreach ($relevant as $key => $value) {
             $lower = strtolower((string) $key);
-            if (in_array($lower, ['out1', 'dout1'], true)
+            if (
+                in_array($lower, ['out1', 'dout1'], true)
                 && ($value === true || $value === 1 || $value === '1' || $value === 'true')
             ) {
                 $outActive = true;

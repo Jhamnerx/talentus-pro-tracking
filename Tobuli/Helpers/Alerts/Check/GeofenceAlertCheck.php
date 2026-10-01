@@ -11,6 +11,25 @@ class GeofenceAlertCheck extends AlertCheck
 {
     protected $movingGeofence;
 
+    /**
+     * Duración real (segundos) del exceso de velocidad calculada por checkOverspeedDuration()
+     * o checkOverspeedClosure() para la geocerca que acaba de disparar el evento. Se consume y
+     * resetea en checkEvents() inmediatamente después de leerla, así que no se arrastra entre
+     * geocercas del mismo loop.
+     */
+    protected $lastOverspeedDuration = null;
+
+    /**
+     * Cuando el episodio de exceso se cierra (el vehículo deja de superar el límite, sale de
+     * la geocerca, o falla el horario) y la duración acumulada alcanza el mínimo configurado,
+     * aquí se guarda el snapshot de la ÚLTIMA posición que sí estaba sobre el límite (velocidad,
+     * ubicación, altitud, rumbo y hora), para que el evento quede registrado donde realmente
+     * ocurrió el exceso y no en la posición de cierre (que ya está por debajo del límite, fuera
+     * de la geocerca, o fuera de horario). Se consume y resetea en checkEvents() inmediatamente
+     * después de leerlo.
+     */
+    protected $pendingClosureSnapshot = null;
+
     public function __construct(Device $device, Alert $alert)
     {
         parent::__construct($device, $alert);
@@ -53,18 +72,31 @@ class GeofenceAlertCheck extends AlertCheck
             $event->setAdditional('geofence', $geofence->name);
 
             if ($type == Event::TYPE_ZONE_OVERSPEED) {
-                // $startTime = Cache::get('overspeed_start_' . $this->device->id);
-                // $endTime = Cache::get('overspeed_end_' . $this->device->id);
+                if ($this->pendingClosureSnapshot !== null) {
+                    // Evento disparado en el cierre del episodio (ver checkOverspeedClosure()):
+                    // se reemplazan ubicación/velocidad/hora del evento por las de la última
+                    // posición que sí superaba el límite, en vez de las de la posición actual
+                    // (que es la que cerró el episodio y ya no está en exceso).
+                    $snapshot = $this->pendingClosureSnapshot;
 
-                // if ($startTime && $endTime) {
-                //     $duration = $startTime->diffInSeconds($endTime);
-                //     $formattedDuration = $duration < 60 ? "{$duration} segundos" : round($duration / 60, 2) . " minutos";
-                //     $event->setAdditional('overspeed_duration', $formattedDuration);
-                //     Cache::forget('overspeed_start_' . $this->device->id);  // Clear the start time from cache
-                //     Cache::forget('overspeed_end_' . $this->device->id);    // Clear the end time from cache
-                // }
+                    $event->latitude  = $snapshot['latitude'];
+                    $event->longitude = $snapshot['longitude'];
+                    $event->altitude  = $snapshot['altitude'];
+                    $event->course    = $snapshot['course'];
+                    $event->speed     = $snapshot['speed_display'];
+                    $event->time      = $snapshot['time_string'];
 
-                $event->setAdditional('exceso', ($position->speed - $this->resolveSpeedLimit($geofence)));
+                    $event->setAdditional('exceso', ($snapshot['speed_raw'] - $this->resolveSpeedLimit($geofence)));
+
+                    $this->pendingClosureSnapshot = null;
+                } else {
+                    $event->setAdditional('exceso', ($position->speed - $this->resolveSpeedLimit($geofence)));
+                }
+
+                if ($this->lastOverspeedDuration !== null) {
+                    $event->setAdditional('overspeed_duration', $this->lastOverspeedDuration);
+                    $this->lastOverspeedDuration = null;
+                }
             }
             $this->silent($event);
 
@@ -112,8 +144,7 @@ class GeofenceAlertCheck extends AlertCheck
                 return false;
             case 'geofence_overspeed':
                 if (!$this->checkGeofenceWithSchedules($position, $geofence)) {
-                    $this->clearOverspeedTracking($geofence);
-                    return false;
+                    return $this->checkOverspeedClosure($position, $geofence);
                 }
 
                 $sat = $position->getParameter('sat');
@@ -124,11 +155,10 @@ class GeofenceAlertCheck extends AlertCheck
                 $isCurrentIn = $this->checkGeofence($position, $geofence);
 
                 if ($this->checkSpeed($position, $geofence) && $isCurrentIn) {
-                    return $this->checkOverspeedDuration($geofence);
+                    return $this->checkOverspeedDuration($position, $geofence);
                 }
 
-                $this->clearOverspeedTracking($geofence);
-                return false;
+                return $this->checkOverspeedClosure($position, $geofence);
             default:
                 return false;
         }
@@ -138,7 +168,7 @@ class GeofenceAlertCheck extends AlertCheck
         return 'geofence_overspeed_start_' . $this->alert->id . '_' . $this->device->id . '_' . $geofence->id;
     }
 
-    protected function checkOverspeedDuration($geofence)
+    protected function checkOverspeedDuration($position, $geofence)
     {
         $minDuration = $this->alert->getMinOverspeedDuration();
 
@@ -146,20 +176,99 @@ class GeofenceAlertCheck extends AlertCheck
             return 'geofence_overspeed';
         }
 
-        $cacheKey = $this->getOverspeedTrackingKey($geofence);
-        $startTime = Cache::get($cacheKey);
+        $positionTime = strtotime($position->time);
+        $cacheKey     = $this->getOverspeedTrackingKey($geofence);
+        $cached       = Cache::get($cacheKey);
+        $startTime    = $cached['start'] ?? null;
+        $maxGap       = (int) config('tobuli.overspeed_tracking_max_gap', 300);
+        $snapshot     = $this->snapshotOverspeedPosition($position);
 
-        if (!$startTime) {
-            Cache::put($cacheKey, time(), now()->addHours(24));
+        // Sin marca, marca posterior a la posición (historial fuera de orden) o marca
+        // demasiado antigua (el equipo dejó de reportar sobre el límite sin registro
+        // intermedio): se reinicia el conteo desde esta posición.
+        if (!$startTime || $positionTime < $startTime || ($positionTime - $startTime) > $maxGap) {
+            Cache::put($cacheKey, ['start' => $positionTime, 'last' => $snapshot], now()->addHours(24));
             return false;
         }
 
-        if ((time() - $startTime) >= $minDuration) {
+        $duration = $positionTime - $startTime;
+
+        if ($duration >= $minDuration) {
             Cache::forget($cacheKey);
+            $this->lastOverspeedDuration = $duration;
             return 'geofence_overspeed';
         }
 
+        // Aún no alcanza la duración mínima: se conserva el inicio del episodio, pero se
+        // actualiza el snapshot de la última posición conocida sobre el límite, por si el
+        // vehículo baja de velocidad (o sale de la geocerca/horario) antes de volver a
+        // superar el límite, y checkOverspeedClosure() necesita cerrarlo con este dato.
+        Cache::put($cacheKey, ['start' => $startTime, 'last' => $snapshot], now()->addHours(24));
+
         return false;
+    }
+
+    /**
+     * Cierra un episodio de exceso que venía siendo trackeado por checkOverspeedDuration(),
+     * para el caso en que la propia posición actual ya no califica para seguir midiéndolo
+     * (bajó del límite, salió de la geocerca, o falla el horario). Sin esto, ese tipo de
+     * posición simplemente limpiaba el cache y la duración acumulada se perdía sin evaluarse,
+     * incluso cuando el exceso real (confirmado por el propio equipo, ej. io155) sí superaba
+     * la duración mínima configurada.
+     */
+    protected function checkOverspeedClosure($position, $geofence)
+    {
+        $cacheKey = $this->getOverspeedTrackingKey($geofence);
+        $minDuration = $this->alert->getMinOverspeedDuration();
+
+        if (!$minDuration) {
+            $this->clearOverspeedTracking($geofence);
+            return false;
+        }
+
+        $cached = Cache::get($cacheKey);
+        Cache::forget($cacheKey);
+
+        if (!$cached || empty($cached['last'])) {
+            return false;
+        }
+
+        $startTime = $cached['start'];
+        $last      = $cached['last'];
+        $maxGap    = (int) config('tobuli.overspeed_tracking_max_gap', 300);
+        $closeTime = strtotime($position->time);
+
+        // Si la posición de cierre llegó demasiado tiempo después de la última posición
+        // conocida sobre el límite, el dato ya no es confiable (hueco grande de reporte):
+        // se descarta en vez de calcular una duración artificial.
+        if ($closeTime < $last['time'] || ($closeTime - $last['time']) > $maxGap) {
+            return false;
+        }
+
+        $duration = $closeTime - $startTime;
+
+        if ($duration < $minDuration) {
+            return false;
+        }
+
+        $this->pendingClosureSnapshot = $last;
+        $this->lastOverspeedDuration  = $duration;
+
+        return 'geofence_overspeed';
+    }
+
+    protected function snapshotOverspeedPosition($position): array
+    {
+        return [
+            'time'          => strtotime($position->time),
+            'time_string'   => $position->time,
+            'latitude'      => $position->latitude,
+            'longitude'     => $position->longitude,
+            'altitude'      => $position->altitude,
+            'course'        => $position->course,
+            'speed_raw'     => $position->speed,
+            'speed_display' => $this->device->getSpeed($position),
+        ];
     }
 
     protected function clearOverspeedTracking($geofence): void
