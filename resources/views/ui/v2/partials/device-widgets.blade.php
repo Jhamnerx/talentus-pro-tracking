@@ -200,16 +200,20 @@
                         @endforeach
                     </dl>
                 @else
+                    {{-- Estado vacío. El botón vive AQUÍ, como el .widget-empty del
+                         legacy, que se esconde en cuanto la tabla tiene filas. Con
+                         servicios ya cargados se añade desde el icono de la cabecera,
+                         que abre la lista y allí tiene su propio "+ Añadir servicio". --}}
                     <p class="tp-text-xs tp-text-muted tp-mb-2">{{ trans('front.no_services') }}</p>
+                    <button type="button" class="tp-btn tp-btn--sm tp-full tp-mt-2 tp-dw__add" data-tp-service="add"
+                        data-device-id="{{ $device->id }}">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        {{ trans('front.add_service') }}
+                    </button>
                 @endif
-                <button type="button" class="tp-btn tp-btn--sm tp-full tp-mt-2 tp-dw__add" data-tp-service="add"
-                    data-device-id="{{ $device->id }}">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 5v14M5 12h14" />
-                    </svg>
-                    {{ trans('front.add_service') }}
-                </button>
             </div>
         </section>
     @endisset

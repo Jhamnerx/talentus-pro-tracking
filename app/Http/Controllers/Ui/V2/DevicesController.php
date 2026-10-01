@@ -3096,17 +3096,25 @@ class DevicesController extends BaseController
         }
 
         // Widget de bloqueo de motor (plugin locking_widget). Gateado por el plugin
-        // (no por la config de widgets): al activarlo aparece por device. Lee el
-        // estado del parámetro de la última posición (igual que LockStatusController
-        // legacy) y expone los comandos preconfigurados para Cortar/Restablecer.
-        if (settings('plugins.locking_widget.status')) {
+        // Y por tener sensor "blocked" en el equipo. Lee el estado del parámetro de
+        // la última posición (igual que LockStatusController legacy) y expone los
+        // comandos preconfigurados para Cortar/Restablecer.
+        //
+        // Lo del sensor es una desviación a propósito: el legacy pinta el widget en
+        // TODOS los equipos y muestra "Desconocido" cuando no hay dato. Sobre 1.429
+        // vehículos eso son 1.429 tarjetas con dos botones rojos que no cortan nada.
+        // Mismo criterio que el widget de vídeo, unas líneas más arriba.
+        $sensorBloqueo = $device->getSensorByType('blocked');
+
+        if (settings('plugins.locking_widget.status') && $sensorBloqueo) {
             $lockStatus = null; // null = desconocido
-            // 1) Fuente preferida: el sensor "blocked" del device (misma que el candado
-            //    de la lista). Así se configura UNA vez en el sensor y sirve para todo.
-            if (\Tobuli\Sensors\Types\Blocked::isEnabled() && ($bs = $device->getSensorByType('blocked'))) {
-                $lockStatus = (bool) $bs->getValueCurrent($device)->getValue();
+            // 1) Fuente preferida: el propio sensor (la misma que el candado de la
+            //    lista). Así se configura UNA vez y sirve para todo.
+            if (\Tobuli\Sensors\Types\Blocked::isEnabled()) {
+                $lockStatus = (bool) $sensorBloqueo->getValueCurrent($device)->getValue();
             } else {
-                // 2) Fallback: parámetro crudo configurado en el plugin (parameter/value_on/off).
+                // 2) El tipo de sensor está deshabilitado globalmente pero el equipo
+                //    tiene uno configurado: se lee el parámetro crudo del plugin.
                 try {
                     $lastPos = $device->positionTraccar();
                     $params  = $lastPos ? $lastPos->parameters : [];
