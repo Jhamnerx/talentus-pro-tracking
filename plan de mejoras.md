@@ -18,7 +18,7 @@ actualización del núcleo a GPSWox 3.7.13 sobre Laravel 9.
 | Commits por delante de producción           | 322                       |
 | Ficheros tocados                            | 1.045                     |
 | Líneas añadidas / eliminadas                | +185.846 / −30.058        |
-| Migraciones de base de datos por aplicar    | 31                        |
+| Migraciones de base de datos por aplicar    | 32                        |
 | Puntos del plan 8–15 entregados             | 6 de 6                    |
 | Funcionalidades entregadas (inventario §1.2)| 104, en 11 áreas          |
 | Pendientes (aplazados por decisión)         | 2 — vídeo a bordo y ERP   |
@@ -28,9 +28,15 @@ La anterior era el 3; se corre una semana porque entre el 28 y el 29 de
 septiembre entraron tres funcionalidades nuevas (§1.6) después de la fecha de
 congelación, por decisión expresa de dirección.
 
-El mayor riesgo operativo **hoy** no es técnico: hay **265 commits sin subir al
-repositorio remoto**. Todo ese trabajo existe en una sola máquina. Resolverlo
-es lo primero del calendario y no admite espera.
+**Dónde estamos.** Esto sigue siendo **desarrollo**. Producción corre hoy la
+versión **legacy**, sin tocar: la v2 convive bajo `/ui/v2/*` y no sustituye
+nada. El despliegue será una **fusión a `main`** cuando lo pendiente esté
+cerrado, no un goteo de cambios.
+
+El mayor riesgo operativo **hoy** no es técnico: hay **265 commits sin subir
+al repositorio remoto**. Producción no depende de ellos —corre el legacy—,
+pero todo ese trabajo existe en **una sola máquina**. Resolverlo es lo primero
+del calendario y no admite espera.
 
 ---
 
@@ -437,16 +443,24 @@ Ninguno de los dos bloquea la salida a producción.
 
 | Qué                                                        | Por qué importa                                        |
 | ---------------------------------------------------------- | ------------------------------------------------------ |
-| **265 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina               |
+| **265 commits sin subir al remoto**                        | Todo el trabajo vive en una sola máquina. No afecta a producción, que corre el legacy, pero una pérdida de disco se lleva cuatro meses |
 | **Sin suite de pruebas automáticas**                       | Cada regresión se detecta a mano o en producción       |
 | ~~La prueba de humo no está versionada~~ · **hecho**       | `php artisan uiv2:smoke` — 21 páginas y 16 endpoints, 37/37 |
-| **es/validation.php y en/validation.php no tienen la misma forma** | Uno guarda las etiquetas en la raíz y el otro dentro de `attributes`. Ya ha roto 18 claves en dos tandas distintas |
+| Las etiquetas de idioma viven en sitios distintos según el fichero | **No se unifican**: se mantiene como lo maneja el legacy (ver nota abajo) |
 | `saveSettings()` no valida `template_color`                | Acepta cualquier valor por POST; el respaldo evita el daño visual, pero la validación falta |
 | ~~`gulp sass-all` roto~~ · **resuelto el 29-sep**          | Los 32 temas vuelven a compilar (`4575f61f`)           |
 | ~~Traducción de la v2 incompleta~~ · **resuelta el 29-sep**| Vistas, controladores y JS pasan por `trans()`         |
-| Cola de difusión sin worker (26 trabajos esperando)        | Los avisos emergentes no llegan si nadie procesa la cola|
+| Cola de difusión sin worker                                | En producción hace falta el worker, o los avisos emergentes no salen. La cola de desarrollo se vació el 30-sep |
 | **`clean-css` 4.2.1 descarta las at-rules que no conoce**  | Toda `@container` desaparece del CSS compilado sin avisar |
 | **Ocho cortes responsive distintos** entre hojas de estilo | 640, 720, 760, 767, 900, 960, 1100… las casi-coincidencias ya causaron un fallo real |
+
+**Sobre las etiquetas de idioma.** `es/validation.php` guarda varias en la
+raíz del array y `en/validation.php` las mismas dentro de `attributes`. Es
+inconsistente y ya ha costado 18 claves rotas en dos tandas distintas, pero
+**no se va a unificar**: el legacy lee esos ficheros con la forma que tienen
+hoy, y reordenarlos lo rompería. La regla, cuando falte una clave, es
+**añadirla en el nivel donde la pide quien la consume**, sin mover lo que ya
+está. Es lo que se hizo el 29 y el 30 de septiembre.
 
 Las dos últimas se descubrieron el 29-sep y merecen una nota.
 
@@ -463,18 +477,26 @@ esos dos anchos no había ni rail ni forma de abrirlo. Ya está corregido, pero
 la causa de fondo —ocho breakpoints sueltos, con parejas a 6 px de distancia—
 sigue ahí. Conviene fijarlos como tokens antes de que vuelva a pasar.
 
-### 2.4 · No es código: configuración y datos del servidor
+### 2.4 · No es código: claves y datos del servidor
 
-Cosas que no se arreglan programando y que hoy dejan funcionalidad a medias.
-Conviene resolverlas **antes** del piloto, porque desde dentro parecen fallos
-de la aplicación.
+Nada de esto se arregla programando, pero desde dentro **parece** un fallo de
+la aplicación. Conviene cerrarlo antes del piloto.
 
-| Qué | Efecto hoy | Quién lo resuelve |
-| --- | ---------- | ----------------- |
-| **Clave de Google Places sin habilitar** | El autocompletado de direcciones en Tareas no sugiere nada y muestra un aviso crudo de Google en inglés | Consola de Google Cloud |
-| **Servidor de sockets parado** (`socket/socket.js`, puertos 9001/9002) | Sin tiempo real: ni avisos emergentes, ni fotos de cámara, ni chat. La interfaz funciona, pero sondeando | Operaciones |
-| **Cola sin worker** | 26 trabajos esperando; los avisos no salen | Operaciones |
-| **Faltan 2 de 105 ficheros de icono de mapa** | Algún marcador sale sin icono (404). Son iconos SUBIDOS por un usuario; hay que confirmar que en producción sí están | Operaciones |
+| Qué | Dónde se configura | Estado |
+| --- | ------------------ | ------ |
+| **API de Places no habilitada** para la clave de Google | La clave ya está puesta: *Ajustes del servidor → `google_maps_key`*. Lo que falta es **habilitar la API de Places para esa clave** en la consola de Google Cloud | Pendiente. Sin ella, el autocompletado de direcciones en Tareas no sugiere nada y sale un aviso crudo de Google en inglés |
+| **Clave de Roads** (límites de vía) | `.env` → `speedlimit_key` (`config/services.php`) | **Vacía**. Los reportes que usan el límite de vía caen al límite de la geocerca |
+| **Faltan 2 de 105 ficheros de icono de mapa** | `public/images/map_icons/` | Son iconos **subidos por un usuario**; las filas están en `map_icons` pero los ficheros no se copiaron a esta máquina. Hay que confirmar que en producción sí están |
+
+**Lo que NO es una incidencia:**
+
+- **El servidor de sockets está parado a propósito**, porque estamos en
+  desarrollo. En producción se levanta (`socket/socket.js`, puertos
+  9001/9002) y el tiempo real funciona. Si en una revisión aparece
+  `ERR_CONNECTION_REFUSED` contra esos puertos, es esto.
+- **Las colas ya se vaciaron** (30-sep): eran 26 trabajos de desarrollo
+  —cambios de carpeta de cámara, sincronizaciones de alertas, borrados de
+  tablas, eventos de aviso— que nadie iba a procesar.
 
 ### 2.5 · Limitaciones conocidas que se dejan documentadas
 
@@ -505,12 +527,18 @@ El orden importa.
 
 ### 3.1 · Antes de la ventana
 
-1. **Subir la rama al remoto** y etiquetar la versión candidata.
-2. **Copia de seguridad completa** de las dos bases (`gpswox_web` y
+1. **Subir `nuevo-tema` al remoto** y etiquetar la versión candidata. Hoy
+   son 265 commits que solo existen en una máquina.
+2. **Fusionar a `main`.** El despliegue es esa fusión, cuando lo pendiente
+   esté cerrado — no un goteo de cambios. Producción sigue corriendo el
+   legacy hasta ese momento.
+3. **Copia de seguridad completa** de las dos bases (`gpswox_web` y
    `gpswox_traccar`) y del directorio de subidas.
-3. **Ensayo en preproducción** con una copia reciente de los datos reales:
-   correr las 30 migraciones y medir cuánto tardan.
-4. Confirmar que el servidor cumple los requisitos de **Laravel 9** (PHP 8.0+).
+4. **Ensayo en preproducción** con una copia reciente de los datos reales:
+   correr las **32 migraciones** y medir cuánto tardan.
+5. Confirmar que el servidor cumple los requisitos de **Laravel 9** (PHP 8.0+).
+6. **Levantar el socket y el worker de la cola**, que en desarrollo están
+   parados (§2.4).
 
 ### 3.2 · Durante la ventana (estimada: 60–90 minutos)
 
