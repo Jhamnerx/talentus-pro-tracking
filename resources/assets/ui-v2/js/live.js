@@ -21,6 +21,8 @@
     geoUrl: root.getAttribute("data-geo-url") || "",
     fullAddress: root.getAttribute("data-widget-full-address") === "1",
     pollInterval: parseInt(root.getAttribute("data-poll-interval"), 10) || 15000,
+    // 'standart' (975h 30min 44s) o 'hh:mm:ss' (975:30:44), de la cuenta.
+    durationFormat: root.getAttribute("data-duration-format") || "standart",
   };
 
   // Reenvíos disponibles para el modal de grupos (inyectados por el blade;
@@ -909,13 +911,35 @@
     if (el) el.textContent = val == null || val === "" ? "—" : val;
   }
   // Duración (segundos) → H:MM:SS. Alimenta la KPI "Detenido".
+  /**
+   * Duracion en el formato que tenga elegido la cuenta.
+   *
+   * Port de secondsToTime() + time_lrt() del legacy (helpers/helper.js), que
+   * miran app.settings.durationFormat. Antes esto escribia H:MM:SS a pelo y
+   * el ajuste de Ajustes de cuenta no servia de nada: el popup del sistema
+   * clasico decia "12min 50s" y aqui salia "975:11:53" para lo mismo.
+   */
   function fmtDuration(sec) {
     if (sec == null || sec === "") return "—";
+
     sec = Math.max(0, Math.round(Number(sec) || 0));
+
     var h = Math.floor(sec / 3600),
       m = Math.floor((sec % 3600) / 60),
       s = sec % 60;
-    return h + ":" + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
+
+    if (CFG.durationFormat === "hh:mm:ss") {
+      // El legacy rellena a dos digitos cada tramo; con mas de 99 horas la
+      // hora crece y se queda tal cual.
+      return (h < 10 ? "0" : "") + h + ":" + ("0" + m).slice(-2) + ":" + ("0" + s).slice(-2);
+    }
+
+    // 'standart': se omiten los tramos a cero, los segundos siempre salen.
+    return (
+      (h ? h + tpT("front.hour_short") + " " : "") +
+      (m ? m + tpT("front.minute_short") + " " : "") +
+      s + tpT("front.second_short")
+    );
   }
   /* ============================================================
      Tablero del vehiculo (drawer)

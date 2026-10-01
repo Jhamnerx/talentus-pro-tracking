@@ -30,7 +30,10 @@
         data-routes-import-url="{{ route('routes.import') }}"
         data-zones-export-url="{{ route('geofences.export_create') }}"
         data-pois-export-url="{{ route('pois.export.store') }}"
-        data-poll-interval="5000">
+        data-poll-interval="5000"
+        {{-- Mismo origen que app.settings.durationFormat del legacy
+             (Helper::getJsConfig): 'standart' o 'hh:mm:ss'. --}}
+        data-duration-format="{{ \Formatter::duration()->getFormat() }}">
 
         {{-- Map config (provider IDs, API keys) injected for the JS layer --}}
         <script type="application/json" id="tp-live-map-config">@json($mapConfig)</script>
