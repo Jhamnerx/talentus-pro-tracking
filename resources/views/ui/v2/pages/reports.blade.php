@@ -36,11 +36,14 @@
         </header>
 
         {{-- Tabs: definiciones guardadas | logs de programados enviados --}}
-        <div style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
-            <button type="button" class="tp-rep-tab is-active" data-rep-tab="saved"
+        <div role="tablist" aria-label="{{ trans('front.reports') }}"
+            style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
+            <button type="button" class="tp-rep-tab is-active" role="tab" id="tp-rep-tab-saved"
+                aria-selected="true" aria-controls="tp-rep-panel-saved" data-rep-tab="saved"
                 style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:600;">
                 {{ trans('ui.generated_reports') }}</button>
-            <button type="button" class="tp-rep-tab" data-rep-tab="logs"
+            <button type="button" class="tp-rep-tab" role="tab" id="tp-rep-tab-logs"
+                aria-selected="false" aria-controls="tp-rep-panel-logs" data-rep-tab="logs"
                 style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:500;">
                 {{ trans('ui.scheduled_logs') }}</button>
         </div>
@@ -55,7 +58,7 @@
                 @endif
             </div>
 
-            <div class="tp-maint__wrap" data-rep-panel="saved">
+            <div class="tp-maint__wrap" role="tabpanel" id="tp-rep-panel-saved" aria-labelledby="tp-rep-tab-saved" data-rep-panel="saved">
                 <table class="tp-svc-table">
                     <thead>
                         <tr>
@@ -74,7 +77,7 @@
                 </table>
             </div>
 
-            <div class="tp-maint__wrap" data-rep-panel="logs" hidden>
+            <div class="tp-maint__wrap" role="tabpanel" id="tp-rep-panel-logs" aria-labelledby="tp-rep-tab-logs" data-rep-panel="logs" hidden>
                 <table class="tp-svc-table">
                     <thead>
                         <tr>

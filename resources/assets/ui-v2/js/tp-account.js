@@ -949,9 +949,15 @@
     body.innerHTML =
       '<div class="tp-acc">' +
       '<div class="tp-acc__tabs" role="tablist">' +
-      tabs.map(function (t) { return '<button type="button" class="tp-acc__tab" data-acc-go="' + t.key + '">' + esc(t.label) + "</button>"; }).join("") +
+      tabs.map(function (t) {
+        // role + id: el panel de abajo apunta a la pestaña activa con
+        // aria-labelledby, que es lo que da contexto al leerlo.
+        return '<button type="button" class="tp-acc__tab" role="tab"' +
+          ' id="tp-acc-tab-' + esc(t.key) + '" aria-selected="false"' +
+          ' aria-controls="tp-acc-panel" data-acc-go="' + t.key + '">' + esc(t.label) + "</button>";
+      }).join("") +
       "</div>" +
-      '<div class="tp-acc__panel" data-acc-panel></div>' +
+      '<div class="tp-acc__panel" role="tabpanel" id="tp-acc-panel" data-acc-panel></div>' +
       '<div class="tp-acc__foot" data-acc-foot></div>' +
       "</div>";
 
@@ -969,8 +975,13 @@
     if (!tab) return;
     dlg._accActive = tab;
     Array.prototype.forEach.call(dlg.querySelectorAll("[data-acc-go]"), function (b) {
-      b.classList.toggle("is-active", b.getAttribute("data-acc-go") === key);
+      var on = b.getAttribute("data-acc-go") === key;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
     });
+    // El panel es uno solo y se reusa: se reetiqueta con la pestaña activa.
+    var panelEl = dlg.querySelector("[data-acc-panel]");
+    if (panelEl) panelEl.setAttribute("aria-labelledby", "tp-acc-tab-" + key);
     var panel = dlg.querySelector("[data-acc-panel]");
     panel.innerHTML = tab.build();
 

@@ -1199,6 +1199,9 @@
       Array.prototype.forEach.call(document.querySelectorAll("[data-rep-tab]"), function (b) {
         var on = b === btn;
         b.classList.toggle("is-active", on);
+        // La clase cambia el aspecto; el atributo es lo unico que oye un
+        // lector de pantalla. Van juntos para que no se separen.
+        b.setAttribute("aria-selected", on ? "true" : "false");
         b.style.borderBottomColor = on ? "var(--brand-500,#2e63d9)" : "transparent";
         b.style.color = on ? "var(--brand-500,#2e63d9)" : "";
         b.style.fontWeight = on ? "600" : "500";
