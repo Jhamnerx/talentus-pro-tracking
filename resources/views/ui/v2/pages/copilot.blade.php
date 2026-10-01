@@ -39,7 +39,7 @@
                         <path d="M21 21l-4.35-4.35" />
                     </svg>
                 </div>
-                <input type="text" class="tp-copilot__ask-input" id="cp-q"
+                <input aria-label="{{ trans('ui.copilot_placeholder') }}" type="text" class="tp-copilot__ask-input" id="cp-q"
                     placeholder="{{ trans('ui.copilot_placeholder') }}"
                     autocomplete="off" maxlength="200">
                 <button class="tp-btn tp-btn--primary tp-btn--sm" id="cp-go" type="button">Preguntar</button>

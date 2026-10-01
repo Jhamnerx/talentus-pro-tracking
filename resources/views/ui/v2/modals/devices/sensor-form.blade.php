@@ -150,9 +150,9 @@
         {{-- ── Bitcut ────────────────────────────────────────── --}}
         <div class="tp-col-2" data-sensor-input="bitcut">
             <div class="tp-form__field">
-                <span class="tp-form__label">{{ trans('front.bitcut') }}</span>
+                <span class="tp-form__label" id="tp-lbl-bitcut">{{ trans('front.bitcut') }}</span>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="checkbox" class="tp-choice-input" name="bitcut" value="1" id="tp-sen-bitcut"
+                    <input aria-labelledby="tp-lbl-bitcut" type="checkbox" class="tp-choice-input" name="bitcut" value="1" id="tp-sen-bitcut"
                         {{ !empty($item->bitcut) ? 'checked' : '' }}>
                     <input type="text" class="tp-input" name="bitcut_start" value="{{ $item->bitcut['start'] ?? '' }}"
                         placeholder="{{ trans('validation.attributes.bitcut_start') }}" data-enable="tp-sen-bitcut" style="flex: 1;">
@@ -169,9 +169,9 @@
         {{-- ── Setflag (extracción) ──────────────────────────── --}}
         <div class="tp-col-2" data-sensor-input="setflag">
             <div class="tp-form__field">
-                <span class="tp-form__label">{{ trans('front.setflag') }}</span>
+                <span class="tp-form__label" id="tp-lbl-setflag">{{ trans('front.setflag') }}</span>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="checkbox" class="tp-choice-input" name="setflag" value="1" id="tp-sen-setflag"
+                    <input aria-labelledby="tp-lbl-setflag" type="checkbox" class="tp-choice-input" name="setflag" value="1" id="tp-sen-setflag"
                         {{ !empty($item->setflag_count) ? 'checked' : '' }}>
                     <input type="text" class="tp-input" name="setflag_start" value="{{ $item->setflag_start ?? '' }}"
                         placeholder="{{ trans('validation.attributes.on_setflag_1') }}" data-enable="tp-sen-setflag" style="flex: 1;">
@@ -184,9 +184,9 @@
         {{-- ── Fórmula ───────────────────────────────────────── --}}
         <div class="tp-col-2" data-sensor-input="formula">
             <div class="tp-form__field">
-                <span class="tp-form__label">{{ trans('validation.attributes.formula') }}</span>
+                <span class="tp-form__label" id="tp-lbl-formula">{{ trans('validation.attributes.formula') }}</span>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="checkbox" class="tp-choice-input" value="1" id="tp-sen-formula"
+                    <input aria-labelledby="tp-lbl-formula" type="checkbox" class="tp-choice-input" value="1" id="tp-sen-formula"
                         {{ !empty($item->formula) && empty($item->setflag_count) ? 'checked' : '' }}>
                     <input type="text" class="tp-input" name="formula"
                         value="{{ empty($item->formula) || !empty($item->setflag_count) ? $formulaPlaceholder : $item->formula }}"
@@ -309,7 +309,7 @@
             <div class="tp-form__field">
                 <span class="tp-form__label">{{ trans('front.preview') }}</span>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" class="tp-input" name="input" placeholder="{{ trans('validation.attributes.value') }}" style="flex: 1;">
+                    <input aria-label="{{ trans('validation.attributes.value') }}" type="text" class="tp-input" name="input" placeholder="{{ trans('validation.attributes.value') }}" style="flex: 1;">
                     <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-sensor-preview>▶</button>
                     <input type="text" class="tp-input" data-sensor-preview-result readonly style="flex: 1;">
                 </div>
@@ -445,11 +445,11 @@
                             {{-- El legacy tiene DOS inputs (uno "Valor", otro "Desde") y
                                  muestra el que toca segun vt. Aqui es uno solo, asi que
                                  el placeholder cambia con el tipo (lo hace syncMapControls). --}}
-                            <input type="text" class="tp-input" data-map-v style="flex: 1;"
+                            <input aria-label="{{ trans('validation.attributes.value') }}" type="text" class="tp-input" data-map-v style="flex: 1;"
                                 placeholder="{{ trans('validation.attributes.value') }}"
                                 data-ph-value="{{ trans('validation.attributes.value') }}"
                                 data-ph-from="{{ trans('global.from') }}">
-                            <input type="text" class="tp-input" data-map-t placeholder="{{ trans('global.to') }}" style="flex: 1; display: none;">
+                            <input aria-label="{{ trans('global.to') }}" type="text" class="tp-input" data-map-t placeholder="{{ trans('global.to') }}" style="flex: 1; display: none;">
                         </div>
                     </div>
                     <label class="tp-form__field">

@@ -23,7 +23,7 @@
                 <span class="tp-search">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" /></svg>
-                    <input type="search" id="tp-chat-search" placeholder="{{ trans('ui.search_vehicle') }}" autocomplete="off">
+                    <input aria-label="{{ trans('ui.search_vehicle') }}" type="search" id="tp-chat-search" placeholder="{{ trans('ui.search_vehicle') }}" autocomplete="off">
                 </span>
             </header>
             <ul class="tp-chat__convs" id="tp-chat-convs">
@@ -47,7 +47,7 @@
                 </header>
                 <div class="tp-chat__messages" id="tp-chat-messages"></div>
                 <form class="tp-chat__composer" id="tp-chat-composer">
-                    <input type="text" id="tp-chat-input" placeholder="{{ trans('ui.write_a_message') }}" autocomplete="off">
+                    <input aria-label="{{ trans('ui.write_a_message') }}" type="text" id="tp-chat-input" placeholder="{{ trans('ui.write_a_message') }}" autocomplete="off">
                     <button type="submit" class="tp-btn tp-btn--primary tp-btn--icon" aria-label="{{ trans('front.send') }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></svg>

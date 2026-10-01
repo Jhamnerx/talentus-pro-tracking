@@ -35,7 +35,7 @@
                     style="margin-left:8px; font-weight:400;">—</span>
             </h2>
             <div class="tp-maint__tools" style="display:flex; gap:10px; align-items:center;">
-                <input type="search" class="tp-input" id="tp-alerts-search" placeholder="{{ trans('ui.search_rule') }}"
+                <input aria-label="{{ trans('ui.search_rule') }}" type="search" class="tp-input" id="tp-alerts-search" placeholder="{{ trans('ui.search_rule') }}"
                     autocomplete="off" style="min-width:220px;">
                 <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-alerts-refresh" title="Actualizar">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

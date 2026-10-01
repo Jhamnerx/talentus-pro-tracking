@@ -26,7 +26,7 @@
                     <circle cx="11" cy="11" r="7" />
                     <path d="M21 21l-4.35-4.35" />
                 </svg>
-                <input type="search" class="tp-input" data-services-search placeholder="{{ trans('front.search') }}"
+                <input aria-label="{{ trans('front.search') }}" type="search" class="tp-input" data-services-search placeholder="{{ trans('front.search') }}"
                     autocomplete="off">
             </span>
             <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-service-add

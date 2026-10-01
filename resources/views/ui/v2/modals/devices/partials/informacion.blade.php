@@ -302,10 +302,10 @@
     {{-- ── Reenvío (forward): input-group con checkbox embebido + Protocolo ── --}}
     @if ($cv('forward'))
         <div class="tp-form__field">
-            <span class="tp-form__label">{{ trans('validation.attributes.forward') }}</span>
+            <span class="tp-form__label" id="tp-lbl-forward">{{ trans('validation.attributes.forward') }}</span>
             <div class="tp-input-group">
                 <input type="hidden" name="forward[active]" value="0">
-                <input type="checkbox" name="forward[active]" value="1" id="tp-dev-forward"
+                <input aria-labelledby="tp-lbl-forward" type="checkbox" name="forward[active]" value="1" id="tp-dev-forward"
                     {{ !empty($forward['active']) ? 'checked' : '' }}>
                 <input type="text" name="forward[ip]" placeholder="10.0.0.0:6000"
                     value="{{ $forward['ip'] ?? '' }}" data-enable="tp-dev-forward"

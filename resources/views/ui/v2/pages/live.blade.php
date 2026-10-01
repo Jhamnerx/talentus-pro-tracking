@@ -185,7 +185,7 @@
                             <path d="m21 21-4.35-4.35" />
                         </svg>
                     </span>
-                    <input type="text" class="tp-input tp-input--with-icon" id="tp-live-search"
+                    <input aria-label="{{ trans('ui.search_name_plate_imei') }}" type="text" class="tp-input tp-input--with-icon" id="tp-live-search"
                         placeholder="{{ trans('ui.search_name_plate_imei') }}" autocomplete="off">
                 </div>
 
@@ -276,7 +276,7 @@
                                 <path d="m21 21-4.35-4.35" />
                             </svg>
                         </span>
-                        <input type="text" class="tp-input tp-input--with-icon" id="tp-pois-search"
+                        <input aria-label="{{ trans('ui.search_poi') }}" type="text" class="tp-input tp-input--with-icon" id="tp-pois-search"
                             placeholder="{{ trans('ui.search_poi') }}" autocomplete="off">
                     </div>
                     <div class="tp-mt-3 tp-row" style="gap:6px;align-items:center;">
@@ -332,7 +332,7 @@
                                 <path d="m21 21-4.35-4.35" />
                             </svg>
                         </span>
-                        <input type="text" class="tp-input tp-input--with-icon" id="tp-zones-search"
+                        <input aria-label="{{ trans('ui.search_geofence') }}" type="text" class="tp-input tp-input--with-icon" id="tp-zones-search"
                             placeholder="{{ trans('ui.search_geofence') }}" autocomplete="off">
                     </div>
                     <div class="tp-segmented tp-segmented--full tp-mt-3" role="tablist" id="tp-zones-type-filter">

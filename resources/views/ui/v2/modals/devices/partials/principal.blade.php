@@ -75,10 +75,10 @@
 
     @if ($isAdminCap && !$isBeaconCap)
         <div class="tp-form__field">
-            <span class="tp-form__label">{{ trans('validation.attributes.expiration_date') }}</span>
+            <span class="tp-form__label" id="tp-lbl-expiration">{{ trans('validation.attributes.expiration_date') }}</span>
             <div style="display: flex; gap: 9px; align-items: center;">
                 <input type="hidden" name="enable_expiration_date" value="0">
-                <input type="checkbox" name="enable_expiration_date" value="1" data-tp-expiration-toggle
+                <input aria-labelledby="tp-lbl-expiration" type="checkbox" name="enable_expiration_date" value="1" data-tp-expiration-toggle
                     {{ $hasExpire ? 'checked' : '' }}>
                 {{-- Valor combinado (YYYY-MM-DD HH:MM) que se envía; lo arma device-modal.js. --}}
                 <input type="hidden" name="expiration_date" value="{{ $expCombined }}" data-tp-exp-value data-tp-field>

@@ -62,7 +62,7 @@
                     @endforeach
                 </select>
                 <div class="tp-input-wrap">
-                    <input type="text" class="tp-input tp-input--with-icon" id="tp-events-search"
+                    <input aria-label="{{ trans('ui.search_event') }}" type="text" class="tp-input tp-input--with-icon" id="tp-events-search"
                         placeholder="{{ trans('ui.search_event') }}" autocomplete="off">
                 </div>
             </header>

@@ -68,10 +68,10 @@
     @if (Auth::user()->can('view', $item, 'max_speed'))
         @php $canEditMax = Auth::user()->can('edit', $item, 'max_speed'); @endphp
         <div class="tp-form__field">
-            <span class="tp-form__label">{{ trans('validation.attributes.max_speed') }}</span>
+            <span class="tp-form__label" id="tp-lbl-maxspeed">{{ trans('validation.attributes.max_speed') }}</span>
             <div style="display: flex; gap: 9px; align-items: center;">
                 <input type="hidden" name="max_speed" value="">
-                <input type="checkbox" name="enable_max_speed" value="1" id="tp-dev-maxspeed"
+                <input aria-labelledby="tp-lbl-maxspeed" type="checkbox" name="enable_max_speed" value="1" id="tp-dev-maxspeed"
                     {{ $hasMaxSpeed ? 'checked' : '' }} {{ $canEditMax ? '' : 'disabled' }}>
                 <input type="number" min="0" step="1" name="max_speed" value="{{ $item->max_speed ?? '' }}"
                     data-enable="tp-dev-maxspeed" {{ $hasMaxSpeed && $canEditMax ? '' : 'disabled' }} style="flex: 1;"
@@ -102,10 +102,10 @@
     </label>
 
     <div class="tp-form__field">
-        <span class="tp-form__label">{{ trans('validation.attributes.fuel_detect_sec_after_stop') }}</span>
+        <span class="tp-form__label" id="tp-lbl-fuelstop">{{ trans('validation.attributes.fuel_detect_sec_after_stop') }}</span>
         <div style="display: flex; gap: 9px; align-items: center;">
             <input type="hidden" name="fuel_detect_sec_after_stop" value="">
-            <input type="checkbox" name="enable_fuel_detect_sec_after_stop" value="1" id="tp-dev-fuelstop"
+            <input aria-labelledby="tp-lbl-fuelstop" type="checkbox" name="enable_fuel_detect_sec_after_stop" value="1" id="tp-dev-fuelstop"
                 {{ $hasFuelStop ? 'checked' : '' }}>
             <select class="tp-input" name="fuel_detect_sec_after_stop" data-enable="tp-dev-fuelstop"
                 {{ $hasFuelStop ? '' : 'disabled' }} style="flex: 1; width: 100%;" data-tp-field>

@@ -20,7 +20,7 @@
                 <circle cx="11" cy="11" r="7" />
                 <path d="M21 21l-4.35-4.35" />
             </svg>
-            <input type="search" class="tp-input" data-users-search placeholder="{{ trans('front.search') }}"
+            <input aria-label="{{ trans('front.search') }}" type="search" class="tp-input" data-users-search placeholder="{{ trans('front.search') }}"
                 autocomplete="off">
         </span>
         <button type="button" class="tp-link-action" data-users-select-all>{{ trans('front.select_all') }}</button>
