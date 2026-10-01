@@ -59,6 +59,7 @@
         <div class="tp-tabs__nav" role="tablist">
             @foreach ($tabs as $i => $t)
                 <button type="button" class="tp-tabs__tab{{ $i === 0 ? ' is-active' : '' }}" role="tab"
+                    aria-selected="{{ $i === 0 ? 'true' : 'false' }}"
                     data-tp-tab="{{ $t['key'] }}">{{ $t['label'] }}</button>
             @endforeach
         </div>

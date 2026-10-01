@@ -42,6 +42,7 @@
       var key = btn.getAttribute("data-rsch-tab");
       root.querySelectorAll("[data-rsch-tab]").forEach(function (b) {
         b.classList.toggle("is-active", b === btn);
+        b.setAttribute("aria-selected", b === btn ? "true" : "false");
       });
       root.querySelectorAll("[data-rsch-panel]").forEach(function (p) {
         p.hidden = p.getAttribute("data-rsch-panel") !== key;

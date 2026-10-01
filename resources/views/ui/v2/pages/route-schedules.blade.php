@@ -33,10 +33,10 @@
             </h2>
 
             <div class="tp-rsch__tabs" role="tablist">
-                <button type="button" class="tp-btn tp-btn--ghost is-active" data-rsch-tab="list" role="tab">
+                <button type="button" class="tp-btn tp-btn--ghost is-active" data-rsch-tab="list" role="tab" aria-selected="true">
                     {{ trans('front.route_schedules') }}
                 </button>
-                <button type="button" class="tp-btn tp-btn--ghost" data-rsch-tab="adherence" role="tab">
+                <button type="button" class="tp-btn tp-btn--ghost" data-rsch-tab="adherence" role="tab" aria-selected="false">
                     {{ trans('front.route_adherence') }}
                 </button>
             </div>

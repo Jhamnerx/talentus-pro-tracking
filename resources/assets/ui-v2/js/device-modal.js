@@ -76,6 +76,7 @@
         var key = btn.getAttribute("data-tp-tab");
         Array.prototype.forEach.call(tabs, function (b) {
           b.classList.toggle("is-active", b === btn);
+          b.setAttribute("aria-selected", b === btn ? "true" : "false");
         });
         Array.prototype.forEach.call(panels, function (p) {
           p.classList.toggle(

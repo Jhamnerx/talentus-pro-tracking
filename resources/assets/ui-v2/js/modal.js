@@ -519,11 +519,19 @@
     container.innerHTML =
       '<div class="tp-tabs">' + navHtml + panelHtml + "</div>";
 
+    // Estado inicial: la clase ya la pone el HTML de arriba, el atributo no.
+    container.querySelectorAll("[data-tp-tab]").forEach(function (b) {
+      b.setAttribute("aria-selected", b.classList.contains("is-active") ? "true" : "false");
+    });
+
     container.querySelectorAll("[data-tp-tab]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var key = btn.getAttribute("data-tp-tab");
         container.querySelectorAll("[data-tp-tab]").forEach(function (b) {
           b.classList.toggle("is-active", b === btn);
+          // La clase cambia el aspecto; el atributo es lo unico que oye un
+          // lector de pantalla. Van juntos para que no se separen.
+          b.setAttribute("aria-selected", b === btn ? "true" : "false");
         });
         container.querySelectorAll("[data-tp-panel]").forEach(function (p) {
           p.classList.toggle(
