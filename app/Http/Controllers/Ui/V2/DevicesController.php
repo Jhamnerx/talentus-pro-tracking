@@ -2826,7 +2826,11 @@ class DevicesController extends BaseController
         if (empty($cfg) || ! empty($cfg['default'])) {
             $cfg = settings('widgets');
         }
-        $active = (! empty($cfg['list']) && is_array($cfg['list'])) ? array_values($cfg['list']) : [];
+        // "Habilitar widgets" apaga el bloque entero, igual que el legacy:
+        //   @if( ! empty($widgets['status']) && ! empty($widgets['list']) )
+        $active = (! empty($cfg['status']) && ! empty($cfg['list']) && is_array($cfg['list']))
+            ? array_values($cfg['list'])
+            : [];
 
         $has = function ($key) use ($active) {
             return in_array($key, $active, true) && config("lists.widgets.$key");
@@ -3095,10 +3099,11 @@ class DevicesController extends BaseController
             $data['video_playback_url'] = url('/device_video/' . $device->id . '/playback/modal');
         }
 
-        // Widget de bloqueo de motor (plugin locking_widget). Gateado por el plugin
-        // Y por tener sensor "blocked" en el equipo. Lee el estado del parámetro de
-        // la última posición (igual que LockStatusController legacy) y expone los
-        // comandos preconfigurados para Cortar/Restablecer.
+        // Widget de bloqueo de motor. Tres condiciones: estar en la lista de
+        // widgets del usuario (como los otros doce del catálogo), el plugin
+        // locking_widget activo, y que el equipo tenga sensor "blocked". Lee el
+        // estado del parámetro de la última posición (igual que LockStatusController
+        // legacy) y expone los comandos preconfigurados para Cortar/Restablecer.
         //
         // Lo del sensor es una desviación a propósito: el legacy pinta el widget en
         // TODOS los equipos y muestra "Desconocido" cuando no hay dato. Sobre 1.429
@@ -3106,7 +3111,7 @@ class DevicesController extends BaseController
         // Mismo criterio que el widget de vídeo, unas líneas más arriba.
         $sensorBloqueo = $device->getSensorByType('blocked');
 
-        if (settings('plugins.locking_widget.status') && $sensorBloqueo) {
+        if ($has('locking') && settings('plugins.locking_widget.status') && $sensorBloqueo) {
             $lockStatus = null; // null = desconocido
             // 1) Fuente preferida: el propio sensor (la misma que el candado de la
             //    lista). Así se configura UNA vez y sirve para todo.
