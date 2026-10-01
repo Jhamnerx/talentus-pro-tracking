@@ -306,6 +306,39 @@
     });
   }
 
+  /**
+   * Busca a que control del modal pertenece una clave de error.
+   *
+   * El backend nombra las claves como el modelo (send_to_email, devices,
+   * date_from...), pero no todo campo es un <input name="...">: los
+   * selectores de chips y los pickers no llevan name. Por eso se admite
+   * tambien data-error-for, que puede listar varias claves separadas por
+   * espacio (p.ej. "devices selected_devices"), y se reintenta sin el
+   * indice cuando la regla es sobre un array ("send_to_email.0").
+   */
+  function campoDeError(dlg, key) {
+    function busca(k) {
+      // Las claves vienen del servidor; entrecomilladas son seguras, pero
+      // una comilla dentro romperia el selector.
+      if (/["\\]/.test(k)) return null;
+      return (
+        dlg.querySelector('[name="' + k + '"]') ||
+        dlg.querySelector('[data-error-for~="' + k + '"]')
+      );
+    }
+
+    var corte = key.indexOf(".");
+    return busca(key) || (corte > 0 ? busca(key.slice(0, corte)) : null);
+  }
+
+  /**
+   * Pinta los errores de validacion junto a su campo.
+   *
+   * Lo que no se puede colocar NO se descarta: se lista arriba del modal.
+   * Antes se perdia en silencio y el modal se quedaba quieto, sin decir que
+   * faltaba -justo lo que pasaba al guardar un reporte programado sin
+   * correo: el servidor respondia 422 con send_to_email y no se veia nada.
+   */
   function showFieldErrors(dlg, errors) {
     // Clear prior errors
     dlg.querySelectorAll(".tp-field__error").forEach(function (n) {
@@ -314,31 +347,60 @@
     dlg.querySelectorAll(".is-invalid").forEach(function (n) {
       n.classList.remove("is-invalid");
     });
+    var previo = dlg.querySelector(".tp-modal__errors");
+    if (previo) previo.remove();
+
     if (!errors || typeof errors !== "object") return;
+
+    var sueltos = [];
+
     Object.keys(errors).forEach(function (key) {
       var msg = Array.isArray(errors[key]) ? errors[key][0] : errors[key];
-      var input = dlg.querySelector('[name="' + key + '"]');
-      if (input) {
-        input.classList.add("is-invalid");
-        var err = document.createElement("div");
-        err.className = "tp-field__error";
-        err.textContent = msg;
-        var holder = input.closest(".tp-field") || input.parentNode;
-        holder.appendChild(err);
+      var input = campoDeError(dlg, key);
 
-        // El aviso desaparece en cuanto se corrige el campo. Antes seguia
-        // visible hasta el siguiente envio, asi que parecia que el
-        // formulario no se enteraba de lo que acababas de escribir.
-        var limpia = function () {
-          input.classList.remove("is-invalid");
-          if (err.parentNode) err.parentNode.removeChild(err);
-          input.removeEventListener("input", limpia);
-          input.removeEventListener("change", limpia);
-        };
-        input.addEventListener("input", limpia);
-        input.addEventListener("change", limpia);
+      if (!input) {
+        if (msg && sueltos.indexOf(msg) === -1) sueltos.push(msg);
+        return;
       }
+
+      input.classList.add("is-invalid");
+      var err = document.createElement("div");
+      err.className = "tp-field__error";
+      err.textContent = msg;
+      var holder =
+        input.closest(".tp-field") || input.closest(".tp-form__field") || input.parentNode;
+      holder.appendChild(err);
+
+      // El aviso desaparece en cuanto se corrige el campo. Antes seguia
+      // visible hasta el siguiente envio, asi que parecia que el
+      // formulario no se enteraba de lo que acababas de escribir.
+      var limpia = function () {
+        input.classList.remove("is-invalid");
+        if (err.parentNode) err.parentNode.removeChild(err);
+        input.removeEventListener("input", limpia);
+        input.removeEventListener("change", limpia);
+      };
+      input.addEventListener("input", limpia);
+      input.addEventListener("change", limpia);
     });
+
+    if (!sueltos.length) return;
+
+    var body = dlg.querySelector(".tp-modal__body");
+    if (!body) return;
+
+    var caja = document.createElement("div");
+    caja.className = "tp-modal__errors";
+    caja.setAttribute("role", "alert");
+    var lista = document.createElement("ul");
+    sueltos.forEach(function (m) {
+      var li = document.createElement("li");
+      li.textContent = m;
+      lista.appendChild(li);
+    });
+    caja.appendChild(lista);
+    body.insertBefore(caja, body.firstChild);
+    body.scrollTop = 0;
   }
 
   function csrf() {

@@ -146,6 +146,35 @@
   font-size: 12px;
   color: var(--status-alert, #ef4444);
 }
+
+/* Resumen de los errores que no se pueden colgar de un campo concreto.
+   Va arriba del cuerpo del modal: visible aunque mal colocado. */
+.tp-modal__errors {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--status-alert, #ef4444);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--status-alert, #ef4444) 9%, transparent);
+  color: var(--status-alert, #ef4444);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.tp-modal__errors ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.tp-modal__errors li + li {
+  margin-top: 3px;
+}
+
+/* El error puede caer en el contenedor de un campo sin input propio
+   (chips, pickers): se marca lo que tenga dentro. */
+.is-invalid > input,
+.is-invalid > select,
+.is-invalid input,
+.is-invalid select {
+  border-color: var(--status-alert, #ef4444);
+}
 .tp-input,
 .tp-select,
 .tp-textarea {

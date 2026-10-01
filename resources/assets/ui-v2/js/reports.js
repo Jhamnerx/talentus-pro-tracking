@@ -287,15 +287,15 @@
         return '<option value="' + p[0] + '">' + esc(p[1]) + "</option>";
       }).join("") +
       "</select></label>" +
-      '<div class="tp-form__field" data-rep-field="devices"><span class="tp-form__label">' + tpT('front.devices') + '</span><div data-rep-devices></div></div>' +
+      '<div class="tp-form__field" data-rep-field="devices" data-error-for="devices selected_devices"><span class="tp-form__label">' + tpT('front.devices') + '</span><div data-rep-devices></div></div>' +
       "</div>" +
       ROW +
-      '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.date_from') + '</span>' +
+      '<div class="tp-form__field" data-error-for="date_from from_time"><span class="tp-form__label">' + tpT('ui.date_from') + '</span>' +
       fechaHora("from", range.from, range.fromTime) + "</div>" +
-      '<div class="tp-form__field" data-rep-field="geofences"><span class="tp-form__label">Geocercas</span><div data-rep-geofences></div></div>' +
+      '<div class="tp-form__field" data-rep-field="geofences" data-error-for="geofences"><span class="tp-form__label">Geocercas</span><div data-rep-geofences></div></div>' +
       "</div>" +
       ROW +
-      '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.date_to') + '</span>' +
+      '<div class="tp-form__field" data-error-for="date_to to_time"><span class="tp-form__label">' + tpT('ui.date_to') + '</span>' +
       fechaHora("to", range.to, range.toTime) + "</div>" +
       // Filtro de días y franja horaria: no lo tiene el legacy, pero es lo
       // que permite "solo lunes a viernes de 08:00 a 18:00". Plegado.
@@ -335,7 +335,7 @@
       "</select></div>" +
       "</div>" +
       '<div class="tp-form__grid tp-form__grid--2" style="margin-top:12px;">' +
-      '<div class="tp-form__field" data-rep-field="metas"><span class="tp-form__label">Metas</span><div data-rep-metas></div></div>' +
+      '<div class="tp-form__field" data-rep-field="metas" data-error-for="metas"><span class="tp-form__label">Metas</span><div data-rep-metas></div></div>' +
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;min-height:36px;">' +
       '<label class="tp-choice" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="skip_blank_results" value="1"' + (item.skip_blank_results ? " checked" : "") + "><span>" + tpT('ui.skip_empty_results') + "</span></label>" +
@@ -348,7 +348,7 @@
       ROW +
       '<div class="tp-form__field"><span class="tp-form__label">Enviar a email</span>' +
       '<div class="tp-input-group" style="padding-right:4px;padding-left:0;">' +
-      '<input type="text" data-rep-email-input placeholder="Email…" style="padding-left:11px;">' +
+      '<input type="text" data-rep-email-input data-error-for="send_to_email" placeholder="Email…" style="padding-left:11px;">' +
       '<button type="button" data-rep-email-add title="Agregar" style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:16px;font-weight:700;padding:0 8px;line-height:1;">＋</button>' +
       "</div>" +
       '<div data-rep-emails style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>' +
