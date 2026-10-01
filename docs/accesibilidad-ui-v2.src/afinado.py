@@ -53,7 +53,10 @@ INTERACTIVO = ("button", "a", "input", "select", "textarea", "summary", "label")
 malos = []
 for f, t in fuentes:
     for g in ganchos:
-        for m in re.finditer(r"<(\w+)([^>]*\b" + re.escape(g) + r"\b[^>]*)>", t):
+        # El atributo tiene que TERMINAR ahi: con \b, "data-sensor" casaba
+        # dentro de "data-sensor-input" y marcaba 22 divs de un formulario
+        # que nadie hace clicables.
+        for m in re.finditer(r"<(\w+)([^>]*\b" + re.escape(g) + r"(?=[\s=>\"'])[^>]*)>", t):
             tag, attrs = m.group(1).lower(), m.group(2)
             if tag in INTERACTIVO:
                 continue

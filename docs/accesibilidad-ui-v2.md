@@ -13,7 +13,7 @@ JavaScript**, que en esta aplicación generan la mayoría de los controles
 
 | # | Problema | Casos | Severidad |
 |---|----------|------:|-----------|
-| 1 | Elemento no interactivo con click (sin teclado) | 60 | Crítico |
+| 1 | Elemento no interactivo con click (sin teclado) | 12 | Crítico |
 | 2 | Campo de formulario sin etiqueta | 84 | Alto |
 | 3 | Icono decorativo sin `aria-hidden` | 56 | Medio |
 | 4 | Conmutador sin estado expuesto | 17 | Alto |
@@ -22,35 +22,38 @@ JavaScript**, que en esta aplicación generan la mayoría de los controles
 | 7 | Foco sin indicador visible | 3 | Crítico |
 | 8 | Botón de solo icono sin nombre accesible | 2 | Crítico |
 
-**~237 casos reales.** El escaneo en bruto dio 510; el resto eran falsos
-positivos del propio escáner, depurados en cuatro pasadas (ver *Método*).
+**~189 casos reales.** El escaneo en bruto dio 510; el resto eran falsos
+positivos del propio escáner, depurados en seis pasadas (ver *Método*).
 
 ---
 
-## 1 · Elemento no interactivo con click · 60 casos · CRÍTICO
+## 1 · Elemento no interactivo con click · 12 casos · CRÍTICO
 
 Un `<tr>`, `<div>` o `<span>` con manejador de click **no recibe foco con
 Tab y no responde a Enter ni a Espacio**. Con teclado o lector de pantalla,
 esa función no existe.
 
+Son estos doce, verificados uno a uno:
+
 | Dónde | Qué es |
 |-------|--------|
+| `tp-select.js:283` y `:292` `<div data-dd-val>` | **opciones del desplegable propio** |
 | `reports.js:1068` `<tr data-rep-row>` | fila de reporte guardado → abre la edición |
 | `reports.js:1105` `<tr data-log-row>` | fila de log → descarga el fichero |
-| `device-modal.js:738` `<tr data-sensor>` | fila de sensor → abre su formulario |
-| `tp-account.js:242` `<tr data-acc-item>` | fila de la cuenta |
-| `tp-chat.js:56` `<li data-device>` | vehículo del chat |
-| `tp-select.js:283` `<div data-dd-val>` | **opción de desplegable propio** |
+| `tp-chat.js:56` `<li data-device>` | conversación del chat |
+| `routes-table.js:132` y `:133` `<span data-toggle>` | insignia activo/inactivo, conmuta |
+| `live.js:2536` `<div data-dgm-head>` | cabecera de grupo plegable |
 | `alerts.js:827` `<span data-day>` | celda del horario semanal |
-| `tp-route-schedules.js:272`, `tp-checklists.js:41` | filas de puntos de control y checklist |
-
-Reparto: 44 `div`, 5 `span`, 5 `tr`, 3 `section`, 1 `li`, 1 `form`, 1 `aside`.
+| `tp-account.js:242` `<tr data-acc-item>` | fila de la cuenta |
+| `history.js:701` `<div data-idx>` | elemento de la línea de tiempo |
+| `device-modal.js:339` `<span data-idx>` | fila de color de ruta |
 
 **Corrección.** Para lo que es un botón, usar `<button type="button">` con el
 reseteo de estilo que ya existe. Donde la fila debe seguir siendo `<tr>`, dar
 `tabindex="0"`, `role="button"` y manejar `keydown` con Enter y Espacio. El
-caso de `tp-select.js` es el más grave: un desplegable propio necesita
-`role="listbox"` / `role="option"`, `aria-activedescendant` y flechas.
+caso de `tp-select.js` es el más grave y el único que no es mecánico: un
+desplegable propio necesita `role="listbox"` / `role="option"`,
+`aria-activedescendant` y navegación con flechas.
 
 ## 2 · Campo de formulario sin etiqueta · 84 casos · ALTO
 
@@ -166,6 +169,16 @@ quedó sin nombre. El resto ya llevan `title` o `aria-label`.
 El 1 y el 2 juntos son los que deciden si la aplicación se puede usar con
 teclado. Los demás mejoran la experiencia pero no bloquean.
 
+**Dónde está la palanca.** Tres arreglos cubren más de la mitad de los casos:
+
+- `modal.js:526` — el constructor de pestañas `tpModal.tabs`, compartido.
+  Añadir ahí `role="tab"` y `aria-selected` arregla las pestañas de todos
+  los modales de una vez.
+- Un bloque `@media (prefers-reduced-motion)` en `components.css` cubre los
+  13 ficheros del grupo 5.
+- `tp-select.js` es el desplegable propio de toda la v2: arreglarlo una vez
+  vale para cada formulario que lo use.
+
 ## Método
 
 Las cifras salen de un escaneo propio, depurado contra el código. La primera
@@ -181,6 +194,13 @@ aplicación:
 - Puntos de leyenda y pseudo-elementos contados como destinos táctiles: de 29
   quedaron 3.
 - `outline: none` con `box-shadow` de reemplazo: de 8 quedaron 3.
+- `data-sensor` casando dentro de `data-sensor-input`, porque el guion cuenta
+  como límite de palabra: 22 divs de un formulario marcados de más.
+- Y el que más pesaba: **no distinguir el control del contenedor**. Un gancho
+  aparece en un `closest()` por dos motivos opuestos —
+  `e.target.closest("[data-x]")` significa que el usuario pulsa ahí, pero
+  `otraVar.closest("[data-x]")` es subir desde un botón interior para acotar
+  la fila. Solo el primero necesita teclado. De 60 quedaron 12.
 
 **Lección para repetir la revisión:** en esta aplicación el marcado vive en
 cadenas de JavaScript tanto como en los blades, y cualquier herramienta que
