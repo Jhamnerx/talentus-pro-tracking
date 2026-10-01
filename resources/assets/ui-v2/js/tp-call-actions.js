@@ -211,7 +211,7 @@
     if (canEdit) items += '<button type="button" role="menuitem" data-ca-edit="' + r.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg> ' + tpT('global.edit') + '</button>';
     if (canRemove) items += '<button type="button" role="menuitem" class="is-danger" data-ca-del="' + r.id + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
     if (!items) return "";
-    return '<div class="tp-svc-kebab"><button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button><div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>";
+    return '<div class="tp-svc-kebab"><button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + esc(tpT("ui.action")) + '"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button><div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>";
   }
 
   var RESP_STYLE = { answer: "background:#dcfce7;color:#15803d;", no_answer: "background:#fee2e2;color:#b91c1c;", no_response: "background:#f1f5f9;color:#475569;" };

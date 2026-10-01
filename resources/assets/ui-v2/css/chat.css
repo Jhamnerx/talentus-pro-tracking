@@ -234,6 +234,9 @@
 .tp-chat__composer input:focus {
   outline: none;
   border-color: var(--border-focus, var(--brand-500));
+  /* Solo el cambio de color en un borde de 1 px no llega al 3:1 que pide el
+     criterio de apariencia del foco. Mismo anillo que .tp-input. */
+  box-shadow: var(--shadow-focus);
 }
 
 @media (max-width: 760px) {

@@ -83,6 +83,19 @@
   transition: background var(--dur-fast);
   flex-shrink: 0;
 }
+.tp-alerts__rule-toggle::before {
+  /* El interruptor mide menos de 24 px de alto. Se amplia el AREA de pulsado
+     hasta el minimo sin tocar el aspecto; el ::after es el deslizante. */
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 24px;
+  min-height: 24px;
+  width: 100%;
+  height: 100%;
+}
 .tp-alerts__rule-toggle::after {
   content: "";
   position: absolute;
@@ -713,6 +726,19 @@ button.tp-alerts__rule-toggle:hover {
   padding: 0;
   vertical-align: middle;
   transition: background var(--dur-fast);
+}
+.tp-alert-toggle::before {
+  /* El interruptor mide menos de 24 px de alto. Se amplia el AREA de pulsado
+     hasta el minimo sin tocar el aspecto; el ::after es el deslizante. */
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 24px;
+  min-height: 24px;
+  width: 100%;
+  height: 100%;
 }
 .tp-alert-toggle::after {
   content: "";

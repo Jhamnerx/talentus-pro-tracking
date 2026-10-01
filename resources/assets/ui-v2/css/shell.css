@@ -229,6 +229,13 @@ body.tp-app-body {
   border-bottom: 1px solid var(--border-subtle);
   color: var(--fg-tertiary);
 }
+/* El input no tiene borde propio: el anillo de foco va en la fila que lo
+   contiene, como en .tp-copilot__ask-form. Sin esto, quien navega con
+   teclado no sabe que esta escribiendo en el buscador. */
+.tp-cmdk__head:focus-within {
+  border-bottom-color: var(--border-focus);
+  box-shadow: inset 0 -2px 0 0 var(--border-focus);
+}
 .tp-cmdk__input {
   flex: 1;
   height: 24px;

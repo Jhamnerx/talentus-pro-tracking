@@ -721,8 +721,10 @@ table.tp-lock-hist th {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  /* 24 px es el minimo de WCAG 2.2 AA para punteros en web. Es el control
+     mas usado de la lista: estaba en 22. */
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: 6px;

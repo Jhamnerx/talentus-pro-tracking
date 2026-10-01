@@ -89,7 +89,9 @@
       // Dispositivos: dropdown multi-select con chips (estilo referencia)
       '<div><label class="' + UI.label + '">' + esc(T("devices", "Dispositivos")) + "</label>" +
       '<div class="relative" data-cmd-devwrap>' +
-      '<button type="button" data-cmd-devbtn class="appearance-none cursor-pointer w-full min-h-[36px] text-left ' +
+      // El <label> de arriba no etiqueta un <button>: el nombre va aqui.
+      '<button type="button" data-cmd-devbtn aria-label="' + esc(T("devices", "Dispositivos")) +
+      '" class="appearance-none cursor-pointer w-full min-h-[36px] text-left ' +
       "pl-2 pr-9 py-1 rounded-lg border border-solid border-slate-300 bg-white relative " +
       "flex flex-wrap items-center gap-1 " +
       "hover:border-slate-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 " +

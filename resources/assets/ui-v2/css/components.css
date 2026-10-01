@@ -1978,3 +1978,21 @@ select.tp-input:disabled {
   background: var(--surface-raised);
   color: var(--fg-primary);
 }
+
+/* ── Movimiento reducido ───────────────────────────────────────────────
+   De los 15 ficheros CSS de la v2 con transiciones, solo uno lo tenia en
+   cuenta. Un bloque global es mas fiable que repetirlo en cada sitio: quien
+   haya pedido reducir el movimiento en su sistema deja de ver animaciones
+   en toda la interfaz, no solo en las partes que alguien se acordo de
+   cubrir. No se pone a 0 sino a 0,01 ms para que sigan disparandose los
+   eventos de fin de transicion de los que depende algun componente. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
