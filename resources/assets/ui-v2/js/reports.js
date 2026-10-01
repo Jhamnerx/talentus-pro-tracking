@@ -19,8 +19,9 @@
  *  - Enviar a email (chips con "+", se envía como send_to_email con ;)
  *    y programación Diario/Semanal/Mensual con hora (los flags viven en
  *    la entidad Report; el cron reports:daily los procesa).
- *  - GENERAR = GET a la ruta legacy reports/update con generate=1
- *    (+view=1 para HTML) en pestaña nueva; GUARDAR = POST al backend v2
+ *  - GENERAR = POST a la ruta legacy reports/update con generate=1 en
+ *    ESTA pestaña: responde con Content-Disposition: attachment y el
+ *    navegador descarga, igual que el legacy; GUARDAR = POST al backend v2
  *    que delega en ReportModalHelper::create() (los devices viajan como
  *    devices[] + secuencia selected_devices[] del EntityLoader).
  * ===================================================== */
@@ -886,13 +887,59 @@
     return payload;
   }
 
+  /**
+   * Pide el reporte como lo pide el legacy: un POST normal en ESTA pestaña.
+   * La ruta responde con Content-Disposition: attachment, asi que el
+   * navegador descarga el fichero y la pagina -y el modal- se quedan donde
+   * estaban. Nada de window.open: una pestaña nueva solo sirve para que el
+   * reporte se abra en vez de bajarse.
+   *
+   * Va por POST y no por GET a proposito: con muchos vehiculos elegidos la
+   * querystring se pasa del limite del servidor.
+   */
+  function postDescarga(url, campos) {
+    var form = document.createElement("form");
+    form.method = "POST";
+    form.action = url;
+    form.style.display = "none";
+
+    function campo(nombre, valor) {
+      var i = document.createElement("input");
+      i.type = "hidden";
+      i.name = nombre;
+      i.value = valor;
+      form.appendChild(i);
+    }
+
+    campo("_token", tpModal.csrf());
+
+    Object.keys(campos).forEach(function (k) {
+      var v = campos[k];
+      if (Array.isArray(v)) {
+        var nm = /\[\]$/.test(k) ? k : k + "[]";
+        v.forEach(function (x) {
+          campo(nm, x);
+        });
+      } else if (v != null && v !== "") {
+        campo(k, v);
+      }
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    // El navegador ya tiene el envio en marcha; el form sobra.
+    setTimeout(function () {
+      if (form.parentNode) form.parentNode.removeChild(form);
+    }, 0);
+  }
+
   function doGenerate(dialog) {
     var payload = collectPayload(dialog);
     delete payload.id;
 
-    // Validar ANTES de abrir la pestaña. La ruta legacy lanza
-    // ValidationException si no hay dispositivos, y como se abre en otra
-    // pestaña el usuario solo veia un 500 en blanco, sin saber que faltaba.
+    // Validar ANTES de enviar. La ruta legacy lanza ValidationException
+    // si no hay dispositivos, y el envio se lleva la pagina por delante:
+    // el usuario acabaria en un error sin saber que le faltaba elegir.
     if (!payload.devices || !payload.devices.length) {
       tpModal.toast && tpModal.toast(tpT('ui.select_at_least_one_vehicle'), "warning");
       return;
@@ -903,23 +950,16 @@
     }
 
     payload.generate = 1;
-    if (payload.format === "html" || payload.format === "json" || payload.format === "csv") {
-      payload.view = 1;
-    }
+    // Sin `view`: con el, la ruta devuelve $report->view() -la vista, sin
+    // cabecera de descarga- y el reporte se abria en una pestaña. Sin el
+    // entra por $report->download(), que es lo que hace el legacy. Ademas
+    // view() no tiene caso para 'csv', asi que ese formato salia en blanco.
 
-    var qs = [];
-    Object.keys(payload).forEach(function (k) {
-      var v = payload[k];
-      if (Array.isArray(v)) {
-        v.forEach(function (x) {
-          qs.push(encodeURIComponent(k) + "[]=" + encodeURIComponent(x));
-        });
-      } else if (v != null && v !== "") {
-        qs.push(encodeURIComponent(k) + "=" + encodeURIComponent(v));
-      }
-    });
+    // Un reporte grande tarda, y al descargarse no cambia nada en pantalla:
+    // sin este aviso el usuario vuelve a pulsar Generar.
+    if (tpModal.toast) tpModal.toast(tpT("ui.generating_report"), "info");
 
-    window.open(META.generateUrl + "?" + qs.join("&"), "_blank", "noopener");
+    postDescarga(META.generateUrl, payload);
   }
 
   function doSave(dialog, id) {
@@ -1073,10 +1113,10 @@
     else loadLogs();
   }
 
-  function openSaved(id, format) {
-    var url = META.generateUrl + "?id=" + id + "&generate=1";
-    if (format === "html" || format === "json" || format === "csv") url += "&view=1";
-    window.open(url, "_blank", "noopener");
+  // Abrir una definicion guardada es generarla: tambien se descarga.
+  function openSaved(id) {
+    if (tpModal.toast) tpModal.toast(tpT("ui.generating_report"), "info");
+    postDescarga(META.generateUrl, { id: id, generate: 1 });
   }
 
   // Tabs
@@ -1162,13 +1202,14 @@
     }
     if (e.target.closest(".tp-svc-kebab")) return;
     var row = e.target.closest("[data-rep-row]");
-    if (row) openSaved(row.getAttribute("data-rep-row"), row.getAttribute("data-format"));
+    if (row) openSaved(row.getAttribute("data-rep-row"));
   });
 
   logsRows.addEventListener("click", function (e) {
     var dl = e.target.closest("[data-log-dl]");
     if (dl) {
-      window.open(dl.getAttribute("data-log-dl"), "_blank", "noopener");
+      // attachment: el navegador baja el fichero y la pagina no se mueve.
+      window.location.href = dl.getAttribute("data-log-dl");
       return;
     }
     var del = e.target.closest("[data-log-del]");
@@ -1188,7 +1229,7 @@
     }
     if (e.target.closest(".tp-svc-kebab")) return;
     var row = e.target.closest("[data-log-row]");
-    if (row) window.open(row.getAttribute("data-log-row"), "_blank", "noopener");
+    if (row) window.location.href = row.getAttribute("data-log-row");
   });
 
   // Habilitadores del schedule (delegado: el modal se crea después).
