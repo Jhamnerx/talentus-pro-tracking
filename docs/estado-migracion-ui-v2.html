@@ -1,0 +1,554 @@
+<title>Migración UI v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+<style>
+/* Informe de estado. Banda de cifras arriba y luego una sola columna con
+   tablas densas: es un documento para leer y proyectar, no un panel.
+   La identidad sale de los tokens del propio producto (tokens.css,
+   --brand-600 #1b43a3), no de una paleta inventada para la ocasion. */
+
+:root {
+  --azul:        #1b43a3;
+  --azul-claro:  #e8edfa;
+  --tinta:       #0d1322;
+  --tinta-2:     #475069;
+  --tinta-3:     #727b94;
+  --papel:       #f6f7fb;
+  --superficie:  #ffffff;
+  --linea:       #dde2ed;
+  --linea-2:     #ecf0f7;
+  --hecho:       #0f7250;
+  --hecho-bg:    #e2f3ec;
+  --espera:      #9c5c00;
+  --espera-bg:   #fbeeda;
+  --parado:      #727b94;
+  --parado-bg:   #eceef4;
+  --fase-tinta:  #ffffff;
+
+  --display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --texto:   "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --dato:    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --azul:        #86a7f2;
+    --azul-claro:  #1a2440;
+    --tinta:       #e9edf7;
+    --tinta-2:     #aab3cb;
+    --tinta-3:     #828ba4;
+    --papel:       #0a0e18;
+    --superficie:  #141a28;
+    --linea:       #293145;
+    --linea-2:     #1d2433;
+    --hecho:       #4cc49b;
+    --hecho-bg:    #12302a;
+    --espera:      #e3a845;
+    --espera-bg:   #332613;
+    --parado:      #7e879f;
+    --parado-bg:   #212838;
+    --fase-tinta:  #0a0e18;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --azul:        #86a7f2;
+  --azul-claro:  #1a2440;
+  --tinta:       #e9edf7;
+  --tinta-2:     #aab3cb;
+  --tinta-3:     #828ba4;
+  --papel:       #0a0e18;
+  --superficie:  #141a28;
+  --linea:       #293145;
+  --linea-2:     #1d2433;
+  --hecho:       #4cc49b;
+  --hecho-bg:    #12302a;
+  --espera:      #e3a845;
+  --espera-bg:   #332613;
+  --parado:      #7e879f;
+  --parado-bg:   #212838;
+  --fase-tinta:  #0a0e18;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--texto);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+code {
+  font-family: var(--dato);
+  font-size: .89em;
+  background: var(--linea-2);
+  border-radius: 3px;
+  padding: .5px 4px;
+  overflow-wrap: break-word;
+}
+
+.marco {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding-inline: 20px;
+  padding-block: 40px 64px;
+}
+
+/* ------------------------------------------------------------ cabecera -- */
+.cab { border-bottom: 2px solid var(--tinta); padding-bottom: 22px; margin-bottom: 30px; }
+.cab__eyebrow {
+  font-family: var(--dato); font-size: 11.5px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--azul); margin: 0 0 10px;
+}
+.cab h1 {
+  font-family: var(--display); font-weight: 700;
+  font-size: clamp(31px, 5.5vw, 48px); line-height: 1.06;
+  margin: 0 0 14px; letter-spacing: -.018em; text-wrap: balance;
+}
+.cab__sub { margin: 0; color: var(--tinta-2); max-width: 66ch; font-size: 15.5px; }
+.cab__meta {
+  margin-top: 18px; display: flex; flex-wrap: wrap; gap: 6px 20px;
+  font-family: var(--dato); font-size: 12.5px; color: var(--tinta-3);
+}
+.cab__meta b { color: var(--tinta); font-weight: 600; }
+
+/* -------------------------------------------------------------- cifras -- */
+.cifras {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 1px; background: var(--linea); border: 1px solid var(--linea);
+  border-radius: 10px; overflow: hidden; margin-bottom: 46px;
+}
+.cifra { background: var(--superficie); padding: 16px 18px; }
+.cifra__n {
+  font-family: var(--dato); font-size: 31px; font-weight: 600; line-height: 1;
+  color: var(--azul); font-variant-numeric: tabular-nums;
+}
+.cifra__t { margin-top: 8px; font-size: 13.5px; font-weight: 600; }
+.cifra__p { font-size: 12.5px; color: var(--tinta-3); }
+
+/* ----------------------------------------------------------- secciones -- */
+section { margin-bottom: 54px; }
+.sec-cab { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 7px; }
+.sec-cab h2 {
+  font-family: var(--display); font-weight: 600; font-size: 26px;
+  margin: 0; letter-spacing: -.012em;
+}
+.sec-cab .n {
+  font-family: var(--dato); font-size: 11.5px; font-weight: 600; color: var(--azul);
+  border: 1px solid currentColor; border-radius: 4px; padding: 1px 7px;
+}
+.sec-int { margin: 0 0 24px; color: var(--tinta-2); max-width: 72ch; }
+
+/* ------------------------------------------------------ bloque y tabla -- */
+.bloque { border-top: 1px solid var(--linea); padding-top: 14px; margin-top: 24px; }
+.bloque__cab {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 14px; margin-bottom: 9px;
+}
+.bloque__cab h3 { font-size: 15.5px; font-weight: 600; margin: 0; }
+.bloque__n {
+  font-family: var(--dato); font-size: 12px; color: var(--tinta-3);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.bloque__nota { margin: 0 0 12px; color: var(--tinta-2); font-size: 13.5px; max-width: 72ch; }
+
+.tabla-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td, th { text-align: left; vertical-align: top; padding: 6px 12px 6px 0; }
+td:last-child, th:last-child { padding-right: 0; }
+tbody tr + tr td { border-top: 1px solid var(--linea-2); }
+th {
+  font-family: var(--dato); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tinta-3); font-weight: 500;
+  border-bottom: 1px solid var(--linea); padding-bottom: 7px;
+}
+.fecha {
+  font-family: var(--dato); font-size: 12.5px; color: var(--tinta-2);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.dur {
+  font-family: var(--dato); font-size: 12.5px; white-space: nowrap;
+  font-variant-numeric: tabular-nums; color: var(--tinta-2);
+}
+.nota { color: var(--tinta-2); font-size: 13.5px; }
+
+/* --------------------------------------------------------------- pill --- */
+.pill {
+  display: inline-block; font-family: var(--dato); font-size: 10.5px;
+  font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2.5px 8px; border-radius: 999px; white-space: nowrap;
+}
+.pill--si  { color: var(--hecho);  background: var(--hecho-bg); }
+.pill--no  { color: var(--espera); background: var(--espera-bg); }
+.pill--off { color: var(--parado); background: var(--parado-bg); }
+
+/* ----------------------------------------------------------- dos cajas -- */
+.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 720px) { .dos { grid-template-columns: 1fr; } }
+.caja {
+  background: var(--superficie); border: 1px solid var(--linea);
+  border-radius: 10px; padding: 18px 20px;
+}
+.caja__t { display: flex; align-items: center; gap: 9px; margin-bottom: 3px; flex-wrap: wrap; }
+.caja__t h3 { margin: 0; font-size: 14.5px; font-weight: 600; }
+.caja__p { margin: 0 0 14px; font-size: 13px; color: var(--tinta-3); }
+.lista { margin: 0; padding: 0; list-style: none; }
+.lista li { padding: 10px 0; border-top: 1px solid var(--linea-2); }
+.lista li:first-child { border-top: 0; padding-top: 0; }
+.lista li:last-child { padding-bottom: 0; }
+.lista b { display: block; font-weight: 600; font-size: 14px; margin-bottom: 1px; }
+.lista span { color: var(--tinta-2); font-size: 13.5px; }
+
+/* ------------------------------------------------------------ patrones -- */
+.patron {
+  display: grid; grid-template-columns: 54px 1fr; gap: 16px;
+  padding: 14px 0; border-top: 1px solid var(--linea-2);
+}
+.patron:first-of-type { border-top: 0; padding-top: 2px; }
+.patron__n {
+  font-family: var(--dato); font-size: 23px; font-weight: 600; color: var(--azul);
+  line-height: 1.05; font-variant-numeric: tabular-nums;
+}
+.patron__n small {
+  display: block; font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--tinta-3); font-weight: 500; margin-top: 2px;
+}
+.patron b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 2px; }
+.patron span { color: var(--tinta-2); font-size: 13.5px; }
+
+/* --------------------------------------------------------------- fases -- */
+.fase {
+  display: grid; grid-template-columns: 46px 1fr; gap: 16px;
+  padding: 16px 0; border-top: 1px solid var(--linea);
+}
+.fase__n {
+  font-family: var(--dato); font-size: 18px; font-weight: 600;
+  color: var(--fase-tinta); background: var(--azul);
+  width: 34px; height: 34px; border-radius: 8px;
+  display: grid; place-items: center;
+}
+.fase__t { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.fase__t h3 { margin: 0; font-size: 16px; font-weight: 600; }
+.fase p { margin: 6px 0 0; color: var(--tinta-2); font-size: 13.5px; max-width: 72ch; }
+
+/* ---------------------------------------------------------- decisiones -- */
+.dec { counter-reset: d; margin: 0; padding: 0; list-style: none; }
+.dec li {
+  counter-increment: d; position: relative;
+  padding: 11px 0 11px 34px; border-top: 1px solid var(--linea-2);
+}
+.dec li:first-child { border-top: 0; }
+.dec li::before {
+  content: counter(d); position: absolute; left: 0; top: 12px;
+  font-family: var(--dato); font-size: 12px; font-weight: 600; color: var(--azul);
+  background: var(--azul-claro); width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+}
+.dec b { font-weight: 600; font-size: 14.5px; }
+.dec span { display: block; color: var(--tinta-2); font-size: 13.5px; }
+
+/* ----------------------------------------------------------------- pie -- */
+.pie {
+  margin-top: 58px; padding-top: 20px; border-top: 1px solid var(--linea);
+  font-family: var(--dato); font-size: 12.5px; color: var(--tinta-3);
+  display: flex; flex-wrap: wrap; gap: 6px 22px;
+}
+</style>
+
+<div class="marco">
+<header class="cab">
+<p class="cab__eyebrow">Talentus Pro Tracking &middot; rama <code>nuevo-tema</code></p>
+<h1>Migración a la interfaz v2</h1>
+<p class="cab__sub">Estado del trabajo a 30 de septiembre de 2026. Producción sigue corriendo la versión clasica, sin tocar: la v2 convive bajo <code>/ui/v2/*</code> y no sustituye nada todavía. El despliegue será una <strong>fusión a <code>main</code></strong> cuando lo pendiente este cerrado, no un goteo de cambios.</p>
+<div class="cab__meta"><span>Periodo <b>31-may &rarr; 30-sep-2026</b></span><span>Salida propuesta <b>mar 10-nov-2026</b></span><span>Vehículos en la cuenta <b>1.429</b></span></div>
+</header>
+<div class="cifras">
+<div class="cifra"><div class="cifra__n">106</div><div class="cifra__t">funcionalidades entregadas</div><div class="cifra__p">repartidas en 11 módulos</div></div>
+<div class="cifra"><div class="cifra__n">324</div><div class="cifra__t">commits en la rama</div><div class="cifra__p">31-may a 30-sep-2026</div></div>
+<div class="cifra"><div class="cifra__n">32</div><div class="cifra__t">defectos encontrados por QA</div><div class="cifra__p">0 abiertos hoy</div></div>
+<div class="cifra"><div class="cifra__n">32</div><div class="cifra__t">migraciones por aplicar</div><div class="cifra__p">17 de este trabajo, 15 de la base</div></div>
+</div>
+<section>
+<div class="sec-cab"><span class="n">A</span><h2>Lo entregado</h2><span class="fecha">106 funcionalidades</span></div>
+<p class="sec-int">Agrupado por módulo, con la fecha de entrega en la rama. Donde solo aparece el mes, el trabajo se repartió en varias sesiones de ese mes. Todas las fechas son de 2026.</p>
+<div class="bloque">
+<div class="bloque__cab"><h3>Mapa y operación en vivo</h3><span class="bloque__n">13</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Mapa en vivo con panel lateral, tarjetas de vehículo y menú de acciones</td><td class="fecha">jun</td></tr>
+<tr><td><strong>Cambio de motor de mapas: MapLibre → Leaflet</strong>, el mismo del sistema clásico</td><td class="fecha">29-jun</td></tr>
+<tr><td>Catálogo completo de capas base (Google, OSM, Carto, LocationIQ…)</td><td class="fecha">29-jun</td></tr>
+<tr><td>Iconos reales de marcador por tipo, nombres, cola (tail) y agrupación</td><td class="fecha">28-jun</td></tr>
+<tr><td>Filtro de estado con datos autoritativos del servidor</td><td class="fecha">28-jun</td></tr>
+<tr><td>Carga de todas las páginas de vehículos (se quitó el tope de 1.000)</td><td class="fecha">28-jun</td></tr>
+<tr><td>Agrupación de la lista, «Sin grupo» siempre primero</td><td class="fecha">jul</td></tr>
+<tr><td>Widgets del vehículo: panel lateral + franja inferior configurable</td><td class="fecha">jun</td></tr>
+<tr><td>Widgets de Objeto, Combustible (gráfico 24 h) y Comando GPRS</td><td class="fecha">25-jul</td></tr>
+<tr><td><strong>Seguir</strong>: ventana flotante con mini-mapa</td><td class="fecha">18-ago</td></tr>
+<tr><td>Preferencias de marcador aplicadas desde Ajustes</td><td class="fecha">24-jul</td></tr>
+<tr><td>Unidades sin transmitir señaladas en el mapa</td><td class="fecha">28-ago</td></tr>
+<tr><td><strong>Tiempo real por socket</strong> y posiciones cada 5 s</td><td class="fecha">21-sep</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Monitoreo de grupo — módulo nuevo</h3><span class="bloque__n">2</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Grilla de mini-mapas en vivo, uno por vehículo</td><td class="fecha">18-ago</td></tr>
+<tr><td>Tamaño de cuadrícula configurable de 2 a 32 celdas</td><td class="fecha">20-sep</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Flota</h3><span class="bloque__n">7</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Cabecera, panel de filtros y tabla en tarjeta</td><td class="fecha">20-ago</td></tr>
+<tr><td>Columnas configurables (compartidas con la lista clásica)</td><td class="fecha">19-ago</td></tr>
+<tr><td>Columnas de sensor con rangos de color</td><td class="fecha">20-ago</td></tr>
+<tr><td>Columna Dirección y refresco automático</td><td class="fecha">20-ago</td></tr>
+<tr><td>Estados Lookup como filtros</td><td class="fecha">19-ago</td></tr>
+<tr><td>Icono asignado a cada vehículo en la lista</td><td class="fecha">20-sep</td></tr>
+<tr><td>Copiar sensores de un vehículo a otros (tres modos)</td><td class="fecha">20-ago</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Geocercas, POI y rutas</h3><span class="bloque__n">8</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>POI: CRUD nativo sobre el mapa, marcadores arrastrables, por grupos</td><td class="fecha">28-jun</td></tr>
+<tr><td>Geocercas: dibujo de polígono y círculo, vértices editables</td><td class="fecha">28-jun</td></tr>
+<tr><td>Límite de velocidad por <strong>tipo y estado de vehículo</strong> en la geocerca</td><td class="fecha">28-jun</td></tr>
+<tr><td><strong>Geocerca de corredor</strong> (línea con anchura)</td><td class="fecha">5-sep</td></tr>
+<tr><td>CRUD de grupos de geocercas y de POI</td><td class="fecha">19-ago</td></tr>
+<tr><td>Rutas: CRUD completo</td><td class="fecha">21-jul</td></tr>
+<tr><td><strong>Puntos de control, programaciones y reporte de adherencia</strong></td><td class="fecha">5-sep</td></tr>
+<tr><td>Hitos kilométricos como capa compartida</td><td class="fecha">21-jul</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Alertas y eventos</h3><span class="bloque__n">12</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Modal de alerta completo, 6 pestañas, en paridad con el clásico</td><td class="fecha">29-jul</td></tr>
+<tr><td>Índice de reglas con menú de acciones</td><td class="fecha">29-jul</td></tr>
+<tr><td>Alertas del vehículo con periodo de vigencia</td><td class="fecha">19-ago</td></tr>
+<tr><td>Editar la alerta desde el menú del vehículo</td><td class="fecha">20-ago</td></tr>
+<tr><td><strong>Plantillas de alerta</strong> sembradas al dar de alta un usuario (§14)</td><td class="fecha">23-ago</td></tr>
+<tr><td>Tipo <strong>«Alarma del equipo»</strong> sobre el campo <code>alarm</code> de Traccar</td><td class="fecha">22-ago</td></tr>
+<tr><td>Tipo <strong>umbral sobre el valor de un sensor</strong></td><td class="fecha">19-sep</td></tr>
+<tr><td>Acción <strong>«enviar reporte por correo»</strong> con ventana del evento</td><td class="fecha">5-sep</td></tr>
+<tr><td>Operador «incluye» y comodín de protocolo en eventos</td><td class="fecha">22-ago</td></tr>
+<tr><td>Página de Eventos con mapa, borrado masivo y filtro por fechas</td><td class="fecha">jun/ago</td></tr>
+<tr><td>Notificaciones en vivo: emergente, sonido y aviso de escritorio</td><td class="fecha">22-jul</td></tr>
+<tr><td>Avisos del administrador (franjas y emergentes)</td><td class="fecha">19-ago</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Reportes</h3><span class="bloque__n">10</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Módulo rediseñado con pestañas y modal Generar/Guardar</td><td class="fecha">22-jul</td></tr>
+<tr><td>Franja horaria como control de dos manijas</td><td class="fecha">22-jul</td></tr>
+<tr><td>Periodo que termina en 23:59 (día completo) y rangos rápidos</td><td class="fecha">23-jul</td></tr>
+<tr><td>Corrección de un fallo heredado en <code>setPeriodTimeTo</code></td><td class="fecha">22-jul</td></tr>
+<tr><td>El modal recupera la forma y las opciones del sistema clásico</td><td class="fecha">26-ago</td></tr>
+<tr><td><strong>Cabecera y pie en todos los formatos</strong> (§15)</td><td class="fecha">23-ago</td></tr>
+<tr><td>Periodo mostrado en la hora del usuario</td><td class="fecha">ago</td></tr>
+<tr><td><strong>Reporte de conducción</strong>: eventos bruscos por cada 100 km (§12)</td><td class="fecha">24-ago</td></tr>
+<tr><td><strong>Reporte de costo de operación</strong> (§10)</td><td class="fecha">24-ago</td></tr>
+<tr><td><strong>Reporte de adherencia a ruta</strong> (tipo 909)</td><td class="fecha">5-sep</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Tablero</h3><span class="bloque__n">6</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Tablero fusionado: flota, conducción y alertas</td><td class="fecha">25-jul</td></tr>
+<tr><td>Tarjetas de estado con anillo y leyenda</td><td class="fecha">25-jul</td></tr>
+<tr><td>Rango por zona horaria del usuario, con fuente única de fechas</td><td class="fecha">25-jul</td></tr>
+<tr><td>Filtros de rango acelerados</td><td class="fecha">25-jul</td></tr>
+<tr><td>Bloques que faltaban y kilometraje por selección</td><td class="fecha">19-ago</td></tr>
+<tr><td><strong>Ranking de conducción</strong> con el mismo cálculo del reporte (§12)</td><td class="fecha">24-ago</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Vehículo: ficha y gestión</h3><span class="bloque__n">14</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Modal del vehículo con todas las pestañas en paridad</td><td class="fecha">jul</td></tr>
+<tr><td>Pestañas Sensores, Usuarios, Servicios Web, Servicios, Gastos, Cámaras</td><td class="fecha">jul</td></tr>
+<tr><td>Iconos de sensor y selector en el mapeo de valores</td><td class="fecha">19-ago</td></tr>
+<tr><td>Historial de mantenimientos</td><td class="fecha">19-ago</td></tr>
+<tr><td>Configurador del GPS en el alta, y <strong>configuración remota por SMS</strong></td><td class="fecha">19-ago</td></tr>
+<tr><td>Beacons</td><td class="fecha">19-ago</td></tr>
+<tr><td>Galería de medios del vehículo</td><td class="fecha">19-ago</td></tr>
+<tr><td><strong>Listas de verificación</strong> (plantillas y ejecución por servicio)</td><td class="fecha">19-ago</td></tr>
+<tr><td>Estados de vehículo con etiqueta corta, color y cambiador rápido</td><td class="fecha">29-jul</td></tr>
+<tr><td>Tipos de trayecto</td><td class="fecha">19-ago</td></tr>
+<tr><td>Bloqueo de motor: candado en la lista y comandos por plantilla</td><td class="fecha">26-jul</td></tr>
+<tr><td><strong>Costo por kilómetro</strong> del vehículo (§10)</td><td class="fecha">24-ago</td></tr>
+<tr><td><strong>Historial de cambios del vehículo</strong> y más cobertura de auditoría (§8)</td><td class="fecha">24-ago</td></tr>
+<tr><td>Vídeo a bordo: canales por vehículo y visor gateado (hasta 6)</td><td class="fecha">20-sep</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Otros módulos migrados</h3><span class="bloque__n">14</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Módulo</td><td class="fecha">Fecha</td></tr>
+<tr><td>Servicios / Mantenimiento</td><td class="fecha">21-jul</td></tr>
+<tr><td>Enviar comando (hub completo)</td><td class="fecha">21-jul</td></tr>
+<tr><td>Gastos</td><td class="fecha">27-jul</td></tr>
+<tr><td>Reenvíos, y su asignación a grupos de objetos</td><td class="fecha">27-jul</td></tr>
+<tr><td>Compartir (Sharing) + página pública con identidad v2</td><td class="fecha">22-jul</td></tr>
+<tr><td>Conductores</td><td class="fecha">22-jul</td></tr>
+<tr><td>Tareas, conjuntos, importación CSV/XLS y asignación masiva</td><td class="fecha">23-jul</td></tr>
+<tr><td>Chat y Acciones de llamada</td><td class="fecha">25-jul</td></tr>
+<tr><td>Grupos de objetos</td><td class="fecha">23-jul</td></tr>
+<tr><td>Ajustes de cuenta con todas las pestañas</td><td class="fecha">24-jul</td></tr>
+<tr><td>Cuenta: categorías de medios y credenciales secundarias</td><td class="fecha">19-ago</td></tr>
+<tr><td>Cuenta: SMS de prueba y vaciado de la cola</td><td class="fecha">19-ago</td></tr>
+<tr><td><strong>Panel de cumplimiento regulatorio</strong> (§11)</td><td class="fecha">23-ago</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Plataforma y componentes propios</h3><span class="bloque__n">12</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td>Tema desmarcado y canal de compilación con Tailwind</td><td class="fecha">26-jun</td></tr>
+<tr><td><code>tp-select</code>: componente de selección propio</td><td class="fecha">22-jul</td></tr>
+<tr><td><code>tp-datepicker</code>: calendario propio con salto a mes y año</td><td class="fecha">22-jul</td></tr>
+<tr><td><code>tp-socket</code>: capa de tiempo real</td><td class="fecha">21-sep</td></tr>
+<tr><td>Selector de vehículos compartido por todas las pantallas</td><td class="fecha">20-sep</td></tr>
+<tr><td>Modo claro y oscuro con tokens de diseño</td><td class="fecha">jul</td></tr>
+<tr><td><strong>Tema <code>admin-v2</code></strong> para el panel de administración</td><td class="fecha">19-sep</td></tr>
+<tr><td>Preferencia de interfaz persistida por usuario</td><td class="fecha">18-ago</td></tr>
+<tr><td>Selector de idioma en la interfaz</td><td class="fecha">19-ago</td></tr>
+<tr><td>Login moderno con la paleta v2</td><td class="fecha">18-ago</td></tr>
+<tr><td>Confirmación de correo por código único</td><td class="fecha">18-ago</td></tr>
+<tr><td>Control de acceso del rail en paridad con el menú clásico</td><td class="fecha">23-jul</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Núcleo, integraciones y datos</h3><span class="bloque__n">8</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td><strong>Actualización a GPSWox 3.7.13 sobre Laravel 9</strong> (fases A, B1–B11)</td><td class="fecha">1–2-sep</td></tr>
+<tr><td><strong>2FA de Google</strong> completo y middleware de teléfono</td><td class="fecha">2-sep</td></tr>
+<tr><td>Proveedor de correo <strong>Gmail (OAuth2)</strong></td><td class="fecha">2-sep</td></tr>
+<tr><td><code>Reply-To</code> configurable, igual para los cinco proveedores</td><td class="fecha">27-ago</td></tr>
+<tr><td>Normalización de la celda GSM y <code>apply_network_data</code></td><td class="fecha">28-ago</td></tr>
+<tr><td><strong>Índice en la cola de WiseTrack</strong> (incidente en producción)</td><td class="fecha">22-ago</td></tr>
+<tr><td>Combustible: rellenos y robos sobre la curva, varias series a la vez</td><td class="fecha">19-sep</td></tr>
+<tr><td>Combustible: un reinicio del contador ya no borra el consumo</td><td class="fecha">19-sep</td></tr>
+</tbody></table></div></div>
+</section>
+<section>
+<div class="sec-cab"><span class="n">B</span><h2>Lo que QA ya probo</h2><span class="fecha">30-sep-2026</span></div>
+<p class="sec-int">Se encargo una revisión completa en navegador de las 21 páginas, con guion escrito (<code>docs/QA-UI-V2.md</code>) y comparación contra el sistema clásico. Encontró <strong>32 defectos</strong> en dos vueltas —27 y 5 más en el re-test— y hoy no queda ninguno abierto. Es trabajo de la Fase 1 adelantado: conviene descontarlo de ese bloque. El informe, con el commit de cada corrección, está en <code>docs/QA-UI-V2-informe.md</code>.</p>
+<div class="dos">
+<div class="caja"><div class="caja__t"><span class="pill pill--si">cubierto</span><h3>Probado y corregido</h3></div><p class="caja__p">Nada pendiente en estos frentes.</p><ul class="lista">
+<li><b>Las 21 páginas de la v2</b><span>Todas cargan. Cada una comparada con su equivalente del sistema clásico.</span></li>
+<li><b>Tema claro y tema oscuro</b><span>Recorrido completo en los dos.</span></li>
+<li><b>Castellano e inglés</b><span>Medido página a página: cero palabras sin traducir en ninguno de los dos.</span></li>
+<li><b>Móvil a 390 px de ancho</b><span>Menu, lista de vehículos y panel lateral.</span></li>
+<li><b>Altas, ediciones y borrados</b><span>Gasto, tarea, conductor, alerta, geocerca, acción de llamada, programación de ruta y enlace compartido.</span></li>
+<li><b>Historial del equipo 219</b><span>195,5 km, 29 viajes, 30 paradas, 2.976 puntos. Coincide con el sistema clásico.</span></li>
+<li><b>Permisos</b><span>Cuenta de administrador y cuenta de usuario normal.</span></li>
+</ul></div>
+<div class="caja"><div class="caja__t"><span class="pill pill--no">sin cubrir</span><h3>Queda para la Fase 1</h3></div><p class="caja__p">La revisión no llegó aquí.</p><ul class="lista">
+<li><b>Los ~130 tipos de reporte</b><span>Solo se generó uno de principio a fin. Hace falta muestreo dirigido.</span></li>
+<li><b>Integraciones regulatorias</b><span>OSINERGMIN, SUTRAN, WiseTrack, Comsatel, Sidersales y EPS Center.</span></li>
+<li><b>Roles intermedios</b><span>Gestor, operador, supervisor y demo.</span></li>
+<li><b>Envío de comandos a equipos</b><span>Son SMS y GPRS reales contra hardware. Solo se llegó al formulario.</span></li>
+<li><b>Descarga e importación de ficheros</b><span>Exportar rutas, eventos y flota; importar rutas y geocercas.</span></li>
+<li><b>Dibujo con arrastre</b><span>Edición de vértices de geocerca y trazado de rutas sobre el mapa.</span></li>
+</ul></div>
+</div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Los patrones que más se repitieron</h3><span class="bloque__n">8 de los 32</span></div>
+<p class="bloque__nota">Ordenados por impacto. Los cuatro son errores de los que no avisa nadie: la aplicación responde con un número, y el número está mal.</p>
+<div class="patron"><div class="patron__n">2<small>casos</small></div><div><b><code>try/catch</code> mudo que convierte un error en un dato falso</b><span>Editar una alerta le borraba sus 1.429 vehículos. El Co-Pilot mostraba la flota entera a cero.</span></div></div>
+<div class="patron"><div class="patron__n">4<small>casos</small></div><div><b>Consultas sin límite superior de fecha</b><span>El tablero contaba desde el inicio del rango <strong>hasta hoy</strong>: 3.016 eventos de riesgo donde había 1.150. La gráfica, que sí se ajustaba al eje, tenía razón.</span></div></div>
+<div class="patron"><div class="patron__n">1<small>casos</small></div><div><b>Zona horaria: se guarda en la del usuario y se lee en la de la aplicación</b><span>Un reporte guardado volvía con las fechas corridas un día, y uno programado cubría el día equivocado.</span></div></div>
+<div class="patron"><div class="patron__n">1<small>casos</small></div><div><b>Esquema heredado de MySQL</b><span><code>device_expenses.date</code> tenía <code>ON UPDATE CURRENT_TIMESTAMP</code>: editar la cantidad de un gasto le borraba la fecha.</span></div></div>
+</div>
+<div class="bloque"><div class="bloque__cab"><h3>Y una nota incómoda</h3></div>
+<ul class="lista">
+<li><b>Tres defectos los introdujo la propia tanda de traducción del 29-sep</b><span><code>trans()</code> dentro de una <code>const</code> —sintaxis válida, fatal al cargar la clase— tiró el tablero entero. <code>php -l</code> pasó limpio en los 25 controladores.</span></li>
+<li><b>De ahí salieron dos cosas que antes no existían</b><span>Versionado automático de assets por <code>filemtime</code> (las 100 referencias a JS y CSS llevaban el número a mano) y una <strong>prueba de humo</strong> que lanza una petición real a las 21 páginas y 16 endpoints: <code>php artisan uiv2:smoke</code>, 37 de 37.</span></li>
+</ul></div>
+</section>
+<section>
+<div class="sec-cab"><span class="n">C</span><h2>Lo pendiente</h2></div>
+<p class="sec-int">Con la fase en la que toca hacerlo y el tiempo estimado. Nada de esto bloquea la salida salvo que se decida lo contrario.</p>
+<div class="bloque">
+<div class="bloque__cab"><h3>Claves y datos del servidor</h3><span class="bloque__n">4</span></div>
+<p class="bloque__nota">Nada de esto se arregla programando, pero desde dentro <strong>parece</strong> un fallo de la aplicación. Conviene cerrarlo antes del piloto.</p>
+<div class="tabla-wrap"><table><thead><tr><th style="width:26%">Qué</th><th>Detalle</th><th>Cuándo</th><th>Estimado</th></tr></thead><tbody>
+<tr><td><strong>API de Places no habilitada para la clave de Google</strong></td><td class="nota">La clave ya está puesta en <em>Ajustes del servidor</em>. Falta habilitar la API de Places para esa clave en la consola de Google Cloud. Sin ella, el autocompletado de direcciones en Tareas no sugiere nada.</td><td class="fecha">Fase 0</td><td class="dur">30 min</td></tr>
+<tr><td><strong>Clave de Roads vacía (<code>speedlimit_key</code>)</strong></td><td class="nota">Los reportes que usan el límite de vía caen al límite de la geocerca.</td><td class="fecha">Fase 0</td><td class="dur">30 min</td></tr>
+<tr><td><strong>Faltan 2 de 105 ficheros de icono de mapa</strong></td><td class="nota">Son iconos subidos por un usuario: las filas están en la tabla pero los ficheros no se copiaron a esta máquina. Confirmar que en producción sí están.</td><td class="fecha">Fase 0</td><td class="dur">1 h</td></tr>
+<tr><td><strong>Worker de la cola en producción</strong></td><td class="nota">Sin el, los avisos emergentes no salen. La cola de desarrollo se vació el 30-sep: eran 26 trabajos que nadie iba a procesar.</td><td class="fecha">Fase 3</td><td class="dur">30 min</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Deuda técnica antes de salir</h3><span class="bloque__n">5</span></div>
+<p class="bloque__nota">Ninguno bloquea, pero cada punto es una trampa para quien venga detrás.</p>
+<div class="tabla-wrap"><table><thead><tr><th style="width:26%">Qué</th><th>Detalle</th><th>Cuándo</th><th>Estimado</th></tr></thead><tbody>
+<tr><td><strong>Subir los 267 commits al remoto</strong></td><td class="nota">Cuatro meses de trabajo viven en una sola máquina. Producción no depende de ellos —corre la versión clasica— pero una pérdida de disco se lo lleva todo. Es lo primero del calendario y no admite espera.</td><td class="fecha">Fase 0, día 1</td><td class="dur">2 h</td></tr>
+<tr><td><strong>Actualizar <code>gulp-clean-css</code></strong></td><td class="nota">La versión 4.2.1 descarta en silencio las at-rules que no conoce: toda <code>@container</code> desaparece del CSS minificado sin un solo aviso.</td><td class="fecha">Fase 0</td><td class="dur">medio día</td></tr>
+<tr><td><strong>Fijar los cortes responsive como tokens</strong></td><td class="nota">Ocho breakpoints sueltos, con parejas a 6 px de distancia. Ya causó un fallo real.</td><td class="fecha">Fase 0</td><td class="dur">1 día</td></tr>
+<tr><td><strong>Validar <code>template_color</code> al guardarlo</strong></td><td class="nota"><code>saveSettings()</code> acepta cualquier valor por POST. El respaldo en cascada evita el daño visual, pero la validación sigue faltando.</td><td class="fecha">Fase 0</td><td class="dur">2 h</td></tr>
+<tr><td><strong>Sin suite de pruebas automáticas</strong></td><td class="nota">Cada regresión se detecta a mano o en producción. La prueba de humo cubre que las páginas respondan, no que los datos sean correctos.</td><td class="fecha">Después de salir</td><td class="dur">a decidir</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Aplazado por decisión del cliente</h3><span class="bloque__n">2</span></div>
+<p class="bloque__nota">Ninguno de los dos bloquea la salida.</p>
+<div class="tabla-wrap"><table><thead><tr><th style="width:26%">Qué</th><th>Detalle</th><th>Cuándo</th><th>Estimado</th></tr></thead><tbody>
+<tr><td><strong>Video a bordo</strong></td><td class="nota">La interfaz está terminada y gateada por vehículo, hasta 6 canales. Falta el decodificador JT808/Howen. Hoy no hay equipos compatibles en la flota.</td><td class="fecha">Sin fecha</td><td class="dur">—</td></tr>
+<tr><td><strong>Suscripciones y planes</strong></td><td class="nota">Los pagos pasan al ERP de Talentus. A la espera de definir la integración.</td><td class="fecha">Sin fecha</td><td class="dur">—</td></tr>
+</tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Limitaciones que se dejan documentadas</h3><span class="bloque__n">5</span></div>
+<p class="bloque__nota">No son defectos: son decisiones o límites conocidos, escritos aquí para no volver a investigarlos.</p>
+<ul class="lista">
+<li><b>El puente de traducciones pesa ~54 KB por página</b><span>1.106 claves, y se manda entero en todas. Si molesta, se parte por página.</span></li>
+<li><b>Unas 30 cadenas se tradujeron como fragmentos de una concatenación</b><span>Funcionan, pero no permiten reordenar la frase en otro idioma. Pasarlas a marcadores exige reescribir cada sitio donde se usan.</span></li>
+<li><b>El Co-Pilot reconoce la pregunta solo en castellano</b><span>Las expresiones regulares que la interpretan no son texto que se muestre, sino reconocimiento de entrada. Hacerlo multiidioma es otro trabajo.</span></li>
+<li><b>Los mensajes de evento generados al vuelo no son buscables</b><span>La columna <code>events.message</code> está vacía para algunos tipos y el texto se compone al mostrarlo. El sistema clásico tiene la misma limitación.</span></li>
+<li><b>Las etiquetas de idioma no se van a unificar</b><span><code>es/validation.php</code> guarda varias en la raíz y <code>en/validation.php</code> las mismas dentro de <code>attributes</code>. Es inconsistente y ya ha costado 18 claves rotas, pero el sistema clásico las lee con la forma que tienen hoy y reordenarlas lo rompería. La regla es <strong>añadir la clave en el nivel donde la pide quien la consume</strong>, sin mover lo que ya está.</span></li>
+</ul></div>
+</section>
+<section>
+<div class="sec-cab"><span class="n">D</span><h2>Plan de pruebas y calendario</h2><span class="fecha">5-oct &rarr; 20-nov</span></div>
+<p class="sec-int">Cinco fases hasta la salida. El calendario asume dedicación continua y que la Fase 1 no destape un defecto estructural; si lo destapa, la fecha se mueve. Es preferible mover la fecha que salir con un defecto conocido.</p>
+<div class="fase"><div class="fase__n">0</div><div><div class="fase__t"><h3>Consolidación</h3><span class="fecha">lun 5-oct &rarr; vie 9-oct</span><span class="pill pill--off">1 semana</span></div><p>Subir la rama, congelar funcionalidades, levantar preproducción y medir las 32 migraciones contra una copia de la base real.</p></div></div>
+<div class="fase"><div class="fase__n">1</div><div><div class="fase__t"><h3>Pruebas sistemáticas</h3><span class="fecha">lun 12-oct &rarr; vie 23-oct</span><span class="pill pill--off">2 semanas</span></div><p>Módulo por módulo, con lista escrita, en los dos temas y los dos idiomas. Criterio de salida: cero defectos bloqueantes abiertos; los medios, documentados y aceptados.</p></div></div>
+<div class="fase"><div class="fase__n">2</div><div><div class="fase__t"><h3>Piloto en producción</h3><span class="fecha">lun 26-oct &rarr; vie 6-nov</span><span class="pill pill--off">2 semanas</span></div><p>Un grupo reducido de usuarios con la v2 y datos reales, con vuelta atrás por usuario.</p></div></div>
+<div class="fase"><div class="fase__n">3</div><div><div class="fase__t"><h3>Salida</h3><span class="fecha">mar 10-nov</span><span class="pill pill--off">1 noche</span></div><p>Fusión a <code>main</code>, migraciones y ventana de 60 a 90 minutos.</p></div></div>
+<div class="fase"><div class="fase__n">4</div><div><div class="fase__t"><h3>Estabilización</h3><span class="fecha">mar 10-nov &rarr; vie 20-nov</span><span class="pill pill--off">1,5 semanas</span></div><p>Corrección de lo que aparezca con la flota completa encima.</p></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Fase 1, bloque a bloque</h3><span class="bloque__n">11 días</span></div>
+<p class="bloque__nota">Cada bloque se recorre en tema claro y oscuro y en los dos idiomas. Lo marcado como <span class="pill pill--si">visto</span> lo cubrió la revisión del 30-sep y debería ir más rápido de lo estimado.</p>
+<div class="tabla-wrap"><table><thead><tr><th>Bloque</th><th>Días</th><th>Estado</th></tr></thead><tbody>
+<tr><td>Mapa en vivo, monitoreo de grupo y flota</td><td class="dur">2</td><td><span class="pill pill--si">visto</span></td></tr>
+<tr><td>Alertas, eventos, notificaciones y tiempo real</td><td class="dur">2</td><td><span class="pill pill--si">visto</span></td></tr>
+<tr><td>Reportes: los ~130 tipos, por muestreo dirigido</td><td class="dur">2</td><td><span class="pill pill--no">sin ver</span></td></tr>
+<tr><td>Historial, combustible y telemetría</td><td class="dur">1</td><td><span class="pill pill--si">visto</span></td></tr>
+<tr><td>Rutas, geocercas, POI y programaciones</td><td class="dur">1</td><td><span class="pill pill--si">visto</span></td></tr>
+<tr><td>Mantenimiento, gastos, tareas, conductores y chat</td><td class="dur">1</td><td><span class="pill pill--si">visto</span></td></tr>
+<tr><td>Integraciones regulatorias (OSINERGMIN, SUTRAN, WiseTrack…)</td><td class="dur">1</td><td><span class="pill pill--no">sin ver</span></td></tr>
+<tr><td>Roles: admin, gestor, operador, supervisor y demo</td><td class="dur">1</td><td><span class="pill pill--no">sin ver</span></td></tr>
+</tbody></table></div></div>
+</section>
+<section>
+<div class="sec-cab"><span class="n">E</span><h2>Actividad por mes</h2><span class="fecha">324 commits</span></div>
+<p class="sec-int">Agosto concentró los módulos nuevos y septiembre la estabilización y las correcciones de QA.</p>
+<div class="tabla-wrap"><table><thead><tr><th style="width:14%">Mes</th><th style="width:10%">Commits</th><th>Qué pasó</th></tr></thead><tbody>
+<tr><td class="fecha">mayo</td><td class="dur">2</td><td class="nota">Arranque: shell, páginas y modales del tema nuevo.</td></tr>
+<tr><td class="fecha">junio</td><td class="dur">55</td><td class="nota">Mapa en vivo y cambio de motor de mapas a Leaflet, el mismo del sistema clásico.</td></tr>
+<tr><td class="fecha">julio</td><td class="dur">71</td><td class="nota">Widgets del vehículo, reportes y ficha de equipo.</td></tr>
+<tr><td class="fecha">agosto</td><td class="dur">102</td><td class="nota">Monitoreo de grupo, flota, tablero y los módulos nuevos.</td></tr>
+<tr><td class="fecha">septiembre</td><td class="dur">94</td><td class="nota">Tiempo real por socket, traducción completa, revisión de QA y correcciones.</td></tr>
+</tbody></table></div>
+</section>
+<section>
+<div class="sec-cab"><span class="n">F</span><h2>Decisiones que hacen falta</h2></div>
+<p class="sec-int">Seis preguntas abiertas. Las cuatro primeras condicionan el calendario.</p>
+<ul class="dec">
+<li><b>¿Se confirma el 10 de noviembre como fecha objetivo?</b><span>La propuesta inicial era el 3; se corrió una semana por las tres funcionalidades que entraron tras la congelación.</span></li>
+<li><b>¿Quiénes forman el grupo piloto de la Fase 2?</b></li>
+<li><b>¿Hay entorno de preproducción disponible, o hay que montarlo en Fase 0?</b></li>
+<li><b>¿Se acepta salir sin video a bordo ni integración con el ERP?</b></li>
+<li><b>¿Quién habilita la clave de Google Places?</b><span>Sin eso, el autocompletado de direcciones parece roto desde dentro.</span></li>
+<li><b>¿La revisión del 30-sep cubre parte de la Fase 1, o se repite entera con el equipo?</b></li>
+</ul>
+</section>
+<footer class="pie"><span>Talentus Pro Tracking</span><span>Rama <code>nuevo-tema</code>, 267 commits sin subir al remoto</span><span>Generado el 30-sep-2026</span></footer>
+</div>
