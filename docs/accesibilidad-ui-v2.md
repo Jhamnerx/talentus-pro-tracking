@@ -8,48 +8,58 @@ contrastadas con WCAG 2.2 AA.
 El escaneo cubre las dos fuentes de marcado: los blades **y las cadenas de
 JavaScript**, que en esta aplicación generan la mayoría de los controles.
 
-> **Estado:** seis de los ocho grupos están corregidos. Quedan los
-> conmutadores y los campos sin etiqueta.
+> **Estado:** siete de los ocho grupos están corregidos. Queda la rejilla
+> del horario de alertas (4 casos, necesita diseño) y los campos sin
+> etiqueta.
 
 ## Dónde estamos
 
 | # | Problema | Encontrados | Pendientes | Severidad |
 |---|----------|------------:|-----------:|-----------|
 | 1 | Elemento no interactivo con click | 6 | **0** | Crítico |
-| 2 | Campo de formulario sin etiqueta | 84 | **84** | Alto |
+| 2 | Campo de formulario sin etiqueta | 84 | **83** | Alto |
 | 3 | Icono decorativo sin `aria-hidden` | 56 | **0** | Medio |
-| 4 | Conmutador sin estado expuesto | 17 | **12** | Alto |
+| 4 | Conmutador sin estado expuesto | 17 | **4** | Alto |
 | 5 | `prefers-reduced-motion` sin respetar | 13 ficheros | **0** | Medio |
 | 6 | Destino táctil por debajo de 24×24 px | 3 | **0** | Alto |
 | 7 | Foco sin indicador visible | 2 | **0** | Crítico |
 | 8 | Botón de solo icono sin nombre accesible | 2 | **0** | Crítico |
 
-**96 pendientes de 172.** Lo corregido está en cuatro commits: `4f0fb712`,
-`2ba82bcb`, `30ed8e43` y `4c1c59a4`.
+**87 pendientes de 172.** Lo corregido está en siete commits: `4f0fb712`,
+`2ba82bcb`, `30ed8e43`, `4c1c59a4`, `2356ea2b`, `68cd293d` y `1f9708dd`.
 
 ---
 
 ## Lo que queda
 
-### 4 · Conmutador sin estado expuesto · 12 casos · ALTO
+### 4 · Conmutador sin estado expuesto · 4 casos · ALTO
 
-Cambiar una clase CSS cambia el aspecto, no lo que anuncia un lector de
-pantalla. No son un patrón, son cuatro:
+Solo queda la **rejilla del horario de alertas** (`alerts.js:920`, `:925`,
+`:942`, `:961`). Es la única pieza que necesita diseño, no un atributo.
 
-| Patrón | Dónde | Qué falta |
-|--------|-------|-----------|
-| **Pestañas sin rol** (4) | `reports.js:1201`, `fleet.js:900`, `live.js:3345`, `tp-account.js:972` | `role="tablist"`, `role="tab"`, `role="tabpanel"`, los `id` que los enlazan, y luego `aria-selected` |
-| **Rejilla del horario** (4) | `alerts.js:920`, `:925`, `:942`, `:961` | `aria-pressed` por celda **y** una alternativa al arrastre (criterio de arrastre de WCAG 2.2) |
-| **Pulsadores** (3) | `reports.js:430`, `tp-tasks.js:1079`, `command-palette.js:273` | `aria-pressed`, salvo el de la paleta que es `aria-selected` sobre una opción |
-| **Menú de capas** (1) | `history.js:280` | `aria-checked` |
+Son **672 celdas** — 96 franjas de 15 minutos × 7 días —, así que hacerlas
+tabulables una a una está descartado: el patrón correcto es `role="grid"`
+con `role="row"` y `role="gridcell"`, tabindex itinerante y navegación con
+flechas. Unas 3 o 4 horas, y toca un formulario que guarda datos.
 
-Las tres que ya estaban bien estructuradas (`modal.js`, `device-modal.js`,
-`tp-route-schedules.js`) se corrigieron en `30ed8e43`.
+Lo que **sí** está ya resuelto ahí, comprobado al mirarlo:
 
-**Caso aparte.** La cabecera de grupo plegable de `live.js:2536` lleva un
-`<input type="checkbox">` dentro, así que **no puede** ser `role="button"`:
-sería ARIA inválido. Hay que convertir el galón en un `<button>` propio que
-pliegue, con `aria-expanded`. Es reestructurar, no añadir un atributo.
+- **La alternativa al arrastre existe.** Se pinta arrastrando, pero un click
+  simple en una celda la cambia, y hay un botón por día más cuatro presets
+  (limpiar, siempre, laborables, fin de semana). El criterio de arrastre de
+  WCAG 2.2 queda cubierto.
+- **Hay camino de teclado grueso**: los botones de día y los presets son
+  `<button>` de verdad. Lo que falta es la celda individual.
+
+De los 17 originales, nueve se corrigieron y **dos eran código muerto**:
+
+| Dónde | Qué pasa |
+|-------|----------|
+| `fleet.js:899` | `querySelectorAll("[data-status]")` para "reflejar el botón activo del segmentado". Ese segmentado ya no existe: la página filtra con `<select id="tp-fleet-status">`, y los únicos `data-status` del proyecto están en `live.js` y son los chips de estado del vehículo |
+| `live.js:3311` y `:3344` | operan sobre `.tp-live__paneltab`, que no se pinta en ningún sitio. Los paneles se cambian desde los enlaces del rail, más abajo en la misma función |
+
+No se han borrado: eliminar código es decisión del equipo, y conviene mirar
+antes si alguien lo dejó a medio migrar.
 
 ### 2 · Campo de formulario sin etiqueta · 84 casos · ALTO
 
