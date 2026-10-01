@@ -8,25 +8,50 @@ contrastadas con WCAG 2.2 AA.
 El escaneo cubre las dos fuentes de marcado: los blades **y las cadenas de
 JavaScript**, que en esta aplicación generan la mayoría de los controles.
 
-> **Estado:** siete de los ocho grupos están corregidos. Queda la rejilla
-> del horario de alertas (4 casos, necesita diseño) y los campos sin
-> etiqueta.
+> **Estado: cerrado el 1-oct-2026.** Siete de los ocho grupos corregidos.
+> Lo que queda está **aplazado a propósito**, con el criterio explicado en
+> *Por qué se para aquí*.
 
 ## Dónde estamos
 
 | # | Problema | Encontrados | Pendientes | Severidad |
 |---|----------|------------:|-----------:|-----------|
 | 1 | Elemento no interactivo con click | 6 | **0** | Crítico |
-| 2 | Campo de formulario sin etiqueta | 84 | **83** | Alto |
+| 2 | Campo de formulario sin etiqueta | 84 | **49** | Aplazado |
 | 3 | Icono decorativo sin `aria-hidden` | 56 | **0** | Medio |
-| 4 | Conmutador sin estado expuesto | 17 | **4** | Alto |
+| 4 | Conmutador sin estado expuesto | 17 | **4** | Aplazado |
 | 5 | `prefers-reduced-motion` sin respetar | 13 ficheros | **0** | Medio |
 | 6 | Destino táctil por debajo de 24×24 px | 3 | **0** | Alto |
 | 7 | Foco sin indicador visible | 2 | **0** | Crítico |
 | 8 | Botón de solo icono sin nombre accesible | 2 | **0** | Crítico |
 
-**87 pendientes de 172.** Lo corregido está en siete commits: `4f0fb712`,
-`2ba82bcb`, `30ed8e43`, `4c1c59a4`, `2356ea2b`, `68cd293d` y `1f9708dd`.
+**53 pendientes de 172.** Lo corregido está en nueve commits, de
+`4f0fb712` a `c344d5d0`.
+
+## Por qué se para aquí
+
+Lo corregido no era "accesibilidad" en abstracto: era cosas que **afectaban
+a todo el mundo**. El menú de tres puntos de cada vehículo medía 22 px, que
+falla en móvil para cualquiera. La paleta de comandos no mostraba el foco,
+así que quien navega con Tab iba a ciegas. Las filas de reportes no
+respondían a Enter. Y `prefers-reduced-motion` lo activa gente con mareo o
+migraña, que es mucho más común que la ceguera.
+
+Lo que queda —49 etiquetas de campo y la rejilla— **solo lo nota alguien
+que use lector de pantalla**, y está en pantallas de configuración
+ocasional: el modal de sensores lo toca quien da de alta equipos, muy de
+vez en cuando. Para un panel de operaciones de flota, el coste de acertar
+con 49 textos técnicos no se justifica hoy.
+
+**Esto cambia si aparece un cliente del sector público.** La plataforma ya
+reporta a OSINERGMIN, SUTRAN y MTC, así que opera en transporte regulado.
+En Perú, la Ley 29973 y la NTP que adopta WCAG pueden aparecer en un pliego
+de licitación. Si eso entra en el horizonte, estos 53 pasan de prescindible
+a requisito, y conviene hacerlos con calma antes y no con prisa durante un
+concurso.
+
+Todo queda localizado por fichero y línea más abajo: retomarlo es abrir este
+documento, no volver a investigar.
 
 ---
 
@@ -61,23 +86,27 @@ De los 17 originales, nueve se corrigieron y **dos eran código muerto**:
 No se han borrado: eliminar código es decisión del equipo, y conviene mirar
 antes si alguien lo dejó a medio migrar.
 
-### 2 · Campo de formulario sin etiqueta · 84 casos · ALTO
+### 2 · Campo de formulario sin etiqueta · 49 casos · APLAZADO
 
-- **29** usan el `placeholder` como única etiqueta. Desaparece al escribir y
-  muchos lectores no lo anuncian.
-- **55** no tienen ni etiqueta ni placeholder.
+En esta base **no hay un solo `<label for>`**: 129 `<label>` envuelven su
+campo —eso vale— y 90 `<span class="tp-form__label">` son texto visible sin
+asociar. De ahí salen todos estos.
 
-| Fichero | Casos |
-|---------|------:|
-| `modals/devices/sensor-form.blade.php` | 24 |
-| `pages/history.blade.php` | 6 |
-| `pages/live.blade.php` | 6 |
-| `modals/devices/partials/exactitud.blade.php` | 4 |
-| `modals/devices/partials/principal.blade.php` | 4 |
-| `pages/events.blade.php` | 4 |
+Los 35 que se podían resolver sin interpretar ya están hechos. Los 49 que
+quedan se reparten así:
 
-**Corrección.** `<label for>` visible donde quepa; `aria-label` en las barras
-de herramientas, donde una etiqueta visible estorba.
+| Dónde | Casos | Qué hace falta |
+|-------|------:|----------------|
+| `sensor-form.blade.php` | 18 | Son campos técnicos —inicio y cantidad de un bitcut, operador y valor de una condición— donde el nombre tiene que ser preciso |
+| `poi-form`, `principal`, y 20 blades más | 31 | Pantallas de configuración ocasional |
+
+De esos 49, **5** tienen un `<span>` encima que nombra una sección con **dos
+controles** (un operador y un valor): usar ese texto para ambos confunde más
+que ayuda, y uno de ellos es un `&nbsp;` que solo separa.
+
+**Qué hace falta.** Decidir el texto de cada campo, que es trabajo de quien
+conozca el dominio o de rescatar los equivalentes del sistema clásico. El
+script `campos.py` los clasifica y da fichero y línea.
 
 ---
 
