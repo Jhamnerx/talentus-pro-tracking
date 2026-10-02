@@ -477,5 +477,42 @@
     "fecha": "19-sep"
    }
   ]
+ },
+ {
+  "modulo": "Cierre de septiembre y primeros de octubre",
+  "items": [
+   {
+    "que": "**Filtro de saltos GNSS** en el pipeline de posiciones: descarta soluciones corruptas por saltos imposibles de altitud, velocidad o posición, y deja de invalidar arranques normales desde parada",
+    "fecha": "1-oct"
+   },
+   {
+    "que": "Cierre del episodio de **exceso en geocerca** con la ubicación, velocidad y hora de la última posición que sí superaba el límite",
+    "fecha": "1-oct"
+   },
+   {
+    "que": "Registro en modo sombra del evento nativo de exceso en geocerca que reporta el propio equipo Teltonika",
+    "fecha": "1-oct"
+   },
+   {
+    "que": "**Accesibilidad**: 7 de 8 grupos corregidos, 119 de 172 casos (foco visible, nombres accesibles, destinos táctiles, movimiento reducido, teclado en filas y pestañas)",
+    "fecha": "1-oct"
+   },
+   {
+    "que": "**Puente de teclado** global: Enter y Espacio activan cualquier control que no sea un `<button>`, sin tocar los manejadores que ya existen",
+    "fecha": "1-oct"
+   },
+   {
+    "que": "**Auditoría de permisos** de la v2 contra el sistema clásico: las 147 rutas de escritura verificadas por ejecución, con los scripts guardados para repetirla antes de salir",
+    "fecha": "1-oct"
+   },
+   {
+    "que": "Comprobador de **claves de traducción**: compara lo que el JS pide con lo que el puente publica (781 claves, todas llegan)",
+    "fecha": "1-oct"
+   },
+   {
+    "que": "Pruebas unitarias del filtro GNSS y de la duración del exceso en geocerca (14 pruebas, sin arrancar la aplicación)",
+    "fecha": "1-oct"
+   }
+  ]
  }
 ]

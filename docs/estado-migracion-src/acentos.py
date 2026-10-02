@@ -59,7 +59,10 @@ PALABRAS = {
     u"estan": u"están", u"sera": u"será", u"mas": u"más",
     u"aqui": u"aquí", u"ahi": u"ahí", u"todavia": u"todavía",
     u"incomoda": u"incómoda", u"repartio": u"repartió",
-    u"deberia": u"debería",
+    u"deberia": u"debería", u"auditoria": u"auditoría",
+    u"Auditoria": u"Auditoría", u"comprobacion": u"comprobación",
+    u"configuracion": u"configuración", u"ubicacion": u"ubicación",
+    u"posicion": u"posición", u"posiciones": u"posiciones",
     u"accion": u"acción", u"programacion": u"programación",
     u"estabilizacion": u"estabilización",
 }

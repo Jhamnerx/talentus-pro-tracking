@@ -20,9 +20,9 @@ inv = json.load(io.open(os.path.join(S, "inventario.json"), encoding="utf-8"))
 # ================================================================= datos ===
 
 RESUMEN = [
-    ("106", "funcionalidades entregadas", "repartidas en 11 modulos"),
-    ("324", "commits en la rama", "31-may a 30-sep-2026"),
-    ("33", "defectos corregidos", "32 de QA + 1 posterior; 0 abiertos"),
+    ("114", "funcionalidades entregadas", "repartidas en 12 modulos"),
+    ("353", "commits en la rama", "31-may a 2-oct-2026"),
+    ("45", "defectos corregidos", "32 de QA + 13 posteriores; 0 abiertos"),
     ("32", "migraciones por aplicar", "17 de este trabajo, 15 de la base"),
 ]
 
@@ -78,11 +78,18 @@ QA_EXTRA = [
     (u"Tres defectos los introdujo la propia tanda de traduccion del 29-sep",
      u"`trans()` dentro de una `const` —sintaxis valida, fatal al cargar la clase— "
      u"tiro el tablero entero. `php -l` paso limpio en los 25 controladores."),
-    (u"Un defecto 33 aparecio despues, fuera de la revision",
-     u"Al pulsar Generar, un reporte en HTML se abria en una pestaña nueva en vez "
-     u"de descargarse. La v2 pedia la ruta con `view=1`, que devuelve la vista sin "
-     u"cabecera de descarga; el sistema clasico nunca manda ese parametro. De paso, "
-     u"en formato CSV salia una pagina en blanco. Corregido el 1-oct."),
+    (u"Trece defectos mas aparecieron despues, usando la aplicacion",
+     u"Los encontro el cliente, no la revision, y ahi esta el aviso: el recorrido "
+     u"del 30-sep comprobo que las 21 paginas **cargaran**, no que cada boton "
+     u"hiciera lo suyo. Todos corregidos el 1-oct."),
+    (u"Los tres que mas dicen del tipo de fallo que queda",
+     u"**Los reportes se abrian en una pestaña en vez de descargarse**: la v2 pedia "
+     u"la ruta con `view=1` y el sistema clasico nunca manda ese parametro; de paso, "
+     u"en CSV salia una pagina en blanco. **El modal de widgets no mandaba sobre el "
+     u"de bloqueo de motor**: de las trece entradas del catalogo, doce consultaban la "
+     u"configuracion del usuario y esa no. **La pestaña Sensores estaba oculta** a "
+     u"quien no fuera administrador, cuando el sistema clasico no la gatea y los "
+     u"propios endpoints de la v2 ya exigian el permiso correcto."),
     (u"De ahi salieron dos cosas que antes no existian",
      u"Versionado automatico de assets por `filemtime` (las 100 referencias a JS y "
      u"CSS llevaban el numero a mano) y una **prueba de humo** que lanza una peticion "
@@ -210,6 +217,9 @@ MESES = [
     (u"agosto", u"102", u"Monitoreo de grupo, flota, tablero y los modulos nuevos."),
     (u"septiembre", u"94", u"Tiempo real por socket, traduccion completa, revision de QA "
                            u"y correcciones."),
+    (u"octubre", u"29", u"Dos dias: filtro de saltos GNSS con sus pruebas, auditoria de "
+                        u"permisos contra el sistema clasico, 13 correcciones encontradas "
+                        u"al usar la aplicacion y la tanda de accesibilidad."),
 ]
 
 DECISIONES = [
@@ -514,12 +524,12 @@ w('<div class="marco">')
 w('<header class="cab">')
 w('<p class="cab__eyebrow">Talentus Pro Tracking &middot; rama <code>nuevo-tema</code></p>')
 w('<h1>Migracion a la interfaz v2</h1>')
-w('<p class="cab__sub">Estado del trabajo a 30 de septiembre de 2026. Produccion sigue '
+w('<p class="cab__sub">Estado del trabajo a 2 de octubre de 2026. Produccion sigue '
   'corriendo la version clasica, sin tocar: la v2 convive bajo <code>/ui/v2/*</code> y no '
   'sustituye nada todavia. El despliegue sera una <strong>fusion a <code>main</code></strong> '
   'cuando lo pendiente este cerrado, no un goteo de cambios.</p>')
 w('<div class="cab__meta">'
-  '<span>Periodo <b>31-may &rarr; 30-sep-2026</b></span>'
+  '<span>Periodo <b>31-may &rarr; 2-oct-2026</b></span>'
   '<span>Salida propuesta <b>mar 10-nov-2026</b></span>'
   '<span>Vehiculos en la cuenta <b>1.429</b></span>'
   '</div>')
@@ -536,7 +546,7 @@ w('</div>')
 # ------------------------------------------------------------ entregado ---
 w('<section>')
 w('<div class="sec-cab"><span class="n">A</span><h2>Lo entregado</h2>'
-  '<span class="fecha">106 funcionalidades</span></div>')
+  '<span class="fecha">114 funcionalidades</span></div>')
 w('<p class="sec-int">Agrupado por modulo, con la fecha de entrega en la rama. Donde solo '
   'aparece el mes, el trabajo se repartio en varias sesiones de ese mes. Todas las fechas '
   'son de 2026.</p>')
@@ -657,9 +667,10 @@ w('</section>')
 # ------------------------------------------------------------ actividad ---
 w('<section>')
 w('<div class="sec-cab"><span class="n">E</span><h2>Actividad por mes</h2>'
-  '<span class="fecha">324 commits</span></div>')
-w('<p class="sec-int">Agosto concentro los modulos nuevos y septiembre la estabilizacion y '
-  'las correcciones de QA.</p>')
+  '<span class="fecha">353 commits</span></div>')
+w('<p class="sec-int">Agosto concentro los modulos nuevos, septiembre la estabilizacion '
+  'y las correcciones de QA, y los dos primeros dias de octubre el cierre: permisos, '
+  'accesibilidad y lo que fue apareciendo al usar la aplicacion.</p>')
 w('<div class="tabla-wrap"><table><thead><tr>'
   '<th style="width:14%">Mes</th><th style="width:10%">Commits</th><th>Que paso</th>'
   '</tr></thead><tbody>')
@@ -683,8 +694,8 @@ w('</section>')
 
 w('<footer class="pie">'
   '<span>Talentus Pro Tracking</span>'
-  '<span>Rama <code>nuevo-tema</code>, 267 commits sin subir al remoto</span>'
-  '<span>Generado el 30-sep-2026</span>'
+  '<span>Rama <code>nuevo-tema</code>, 296 commits sin subir al remoto</span>'
+  '<span>Generado el 2-oct-2026</span>'
   '</footer>')
 w('</div>')
 

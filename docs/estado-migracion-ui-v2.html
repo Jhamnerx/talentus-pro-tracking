@@ -266,17 +266,17 @@ th {
 <header class="cab">
 <p class="cab__eyebrow">Talentus Pro Tracking &middot; rama <code>nuevo-tema</code></p>
 <h1>Migración a la interfaz v2</h1>
-<p class="cab__sub">Estado del trabajo a 30 de septiembre de 2026. Producción sigue corriendo la versión clasica, sin tocar: la v2 convive bajo <code>/ui/v2/*</code> y no sustituye nada todavía. El despliegue será una <strong>fusión a <code>main</code></strong> cuando lo pendiente este cerrado, no un goteo de cambios.</p>
-<div class="cab__meta"><span>Periodo <b>31-may &rarr; 30-sep-2026</b></span><span>Salida propuesta <b>mar 10-nov-2026</b></span><span>Vehículos en la cuenta <b>1.429</b></span></div>
+<p class="cab__sub">Estado del trabajo a 2 de octubre de 2026. Producción sigue corriendo la versión clasica, sin tocar: la v2 convive bajo <code>/ui/v2/*</code> y no sustituye nada todavía. El despliegue será una <strong>fusión a <code>main</code></strong> cuando lo pendiente este cerrado, no un goteo de cambios.</p>
+<div class="cab__meta"><span>Periodo <b>31-may &rarr; 2-oct-2026</b></span><span>Salida propuesta <b>mar 10-nov-2026</b></span><span>Vehículos en la cuenta <b>1.429</b></span></div>
 </header>
 <div class="cifras">
-<div class="cifra"><div class="cifra__n">106</div><div class="cifra__t">funcionalidades entregadas</div><div class="cifra__p">repartidas en 11 módulos</div></div>
-<div class="cifra"><div class="cifra__n">324</div><div class="cifra__t">commits en la rama</div><div class="cifra__p">31-may a 30-sep-2026</div></div>
-<div class="cifra"><div class="cifra__n">33</div><div class="cifra__t">defectos corregidos</div><div class="cifra__p">32 de QA + 1 posterior; 0 abiertos</div></div>
+<div class="cifra"><div class="cifra__n">114</div><div class="cifra__t">funcionalidades entregadas</div><div class="cifra__p">repartidas en 12 módulos</div></div>
+<div class="cifra"><div class="cifra__n">353</div><div class="cifra__t">commits en la rama</div><div class="cifra__p">31-may a 2-oct-2026</div></div>
+<div class="cifra"><div class="cifra__n">45</div><div class="cifra__t">defectos corregidos</div><div class="cifra__p">32 de QA + 13 posteriores; 0 abiertos</div></div>
 <div class="cifra"><div class="cifra__n">32</div><div class="cifra__t">migraciones por aplicar</div><div class="cifra__p">17 de este trabajo, 15 de la base</div></div>
 </div>
 <section>
-<div class="sec-cab"><span class="n">A</span><h2>Lo entregado</h2><span class="fecha">106 funcionalidades</span></div>
+<div class="sec-cab"><span class="n">A</span><h2>Lo entregado</h2><span class="fecha">114 funcionalidades</span></div>
 <p class="sec-int">Agrupado por módulo, con la fecha de entrega en la rama. Donde solo aparece el mes, el trabajo se repartió en varias sesiones de ese mes. Todas las fechas son de 2026.</p>
 <div class="bloque">
 <div class="bloque__cab"><h3>Mapa y operación en vivo</h3><span class="bloque__n">13</span></div>
@@ -428,6 +428,18 @@ th {
 <tr><td>Combustible: rellenos y robos sobre la curva, varias series a la vez</td><td class="fecha">19-sep</td></tr>
 <tr><td>Combustible: un reinicio del contador ya no borra el consumo</td><td class="fecha">19-sep</td></tr>
 </tbody></table></div></div>
+<div class="bloque">
+<div class="bloque__cab"><h3>Cierre de septiembre y primeros de octubre</h3><span class="bloque__n">8</span></div>
+<div class="tabla-wrap"><table><tbody>
+<tr><td><strong>Filtro de saltos GNSS</strong> en el pipeline de posiciones: descarta soluciones corruptas por saltos imposibles de altitud, velocidad o posición, y deja de invalidar arranques normales desde parada</td><td class="fecha">1-oct</td></tr>
+<tr><td>Cierre del episodio de <strong>exceso en geocerca</strong> con la ubicación, velocidad y hora de la última posición que sí superaba el límite</td><td class="fecha">1-oct</td></tr>
+<tr><td>Registro en modo sombra del evento nativo de exceso en geocerca que reporta el propio equipo Teltonika</td><td class="fecha">1-oct</td></tr>
+<tr><td><strong>Accesibilidad</strong>: 7 de 8 grupos corregidos, 119 de 172 casos (foco visible, nombres accesibles, destinos táctiles, movimiento reducido, teclado en filas y pestañas)</td><td class="fecha">1-oct</td></tr>
+<tr><td><strong>Puente de teclado</strong> global: Enter y Espacio activan cualquier control que no sea un <code>&lt;button&gt;</code>, sin tocar los manejadores que ya existen</td><td class="fecha">1-oct</td></tr>
+<tr><td><strong>Auditoría de permisos</strong> de la v2 contra el sistema clásico: las 147 rutas de escritura verificadas por ejecución, con los scripts guardados para repetirla antes de salir</td><td class="fecha">1-oct</td></tr>
+<tr><td>Comprobador de <strong>claves de traducción</strong>: compara lo que el JS pide con lo que el puente publica (781 claves, todas llegan)</td><td class="fecha">1-oct</td></tr>
+<tr><td>Pruebas unitarias del filtro GNSS y de la duración del exceso en geocerca (14 pruebas, sin arrancar la aplicación)</td><td class="fecha">1-oct</td></tr>
+</tbody></table></div></div>
 </section>
 <section>
 <div class="sec-cab"><span class="n">B</span><h2>Lo que QA ya probo</h2><span class="fecha">30-sep-2026</span></div>
@@ -462,7 +474,8 @@ th {
 <div class="bloque"><div class="bloque__cab"><h3>Y una nota incómoda</h3></div>
 <ul class="lista">
 <li><b>Tres defectos los introdujo la propia tanda de traducción del 29-sep</b><span><code>trans()</code> dentro de una <code>const</code> —sintaxis válida, fatal al cargar la clase— tiró el tablero entero. <code>php -l</code> pasó limpio en los 25 controladores.</span></li>
-<li><b>Un defecto 33 aparecio después, fuera de la revisión</b><span>Al pulsar Generar, un reporte en HTML se abria en una pestaña nueva en vez de descargarse. La v2 pedia la ruta con <code>view=1</code>, que devuelve la vista sin cabecera de descarga; el sistema clásico nunca manda ese parametro. De paso, en formato CSV salia una página en blanco. Corregido el 1-oct.</span></li>
+<li><b>Trece defectos más aparecieron después, usando la aplicación</b><span>Los encontró el cliente, no la revisión, y ahí esta el aviso: el recorrido del 30-sep comprobo que las 21 páginas <strong>cargaran</strong>, no que cada boton hiciera lo suyo. Todos corregidos el 1-oct.</span></li>
+<li><b>Los tres que más dicen del tipo de fallo que queda</b><span><strong>Los reportes se abrian en una pestaña en vez de descargarse</strong>: la v2 pedia la ruta con <code>view=1</code> y el sistema clásico nunca manda ese parametro; de paso, en CSV salia una página en blanco. <strong>El modal de widgets no mandaba sobre el de bloqueo de motor</strong>: de las trece entradas del catalogo, doce consultaban la configuración del usuario y esa no. <strong>La pestaña Sensores estaba oculta</strong> a quien no fuera administrador, cuando el sistema clásico no la gatea y los propios endpoints de la v2 ya exigian el permiso correcto.</span></li>
 <li><b>De ahí salieron dos cosas que antes no existían</b><span>Versionado automático de assets por <code>filemtime</code> (las 100 referencias a JS y CSS llevaban el número a mano) y una <strong>prueba de humo</strong> que lanza una petición real a las 21 páginas y 16 endpoints: <code>php artisan uiv2:smoke</code>, 37 de 37.</span></li>
 </ul></div>
 </section>
@@ -529,14 +542,15 @@ th {
 </tbody></table></div></div>
 </section>
 <section>
-<div class="sec-cab"><span class="n">E</span><h2>Actividad por mes</h2><span class="fecha">324 commits</span></div>
-<p class="sec-int">Agosto concentró los módulos nuevos y septiembre la estabilización y las correcciones de QA.</p>
+<div class="sec-cab"><span class="n">E</span><h2>Actividad por mes</h2><span class="fecha">353 commits</span></div>
+<p class="sec-int">Agosto concentró los módulos nuevos, septiembre la estabilización y las correcciones de QA, y los dos primeros días de octubre el cierre: permisos, accesibilidad y lo que fue apareciendo al usar la aplicación.</p>
 <div class="tabla-wrap"><table><thead><tr><th style="width:14%">Mes</th><th style="width:10%">Commits</th><th>Qué pasó</th></tr></thead><tbody>
 <tr><td class="fecha">mayo</td><td class="dur">2</td><td class="nota">Arranque: shell, páginas y modales del tema nuevo.</td></tr>
 <tr><td class="fecha">junio</td><td class="dur">55</td><td class="nota">Mapa en vivo y cambio de motor de mapas a Leaflet, el mismo del sistema clásico.</td></tr>
 <tr><td class="fecha">julio</td><td class="dur">71</td><td class="nota">Widgets del vehículo, reportes y ficha de equipo.</td></tr>
 <tr><td class="fecha">agosto</td><td class="dur">102</td><td class="nota">Monitoreo de grupo, flota, tablero y los módulos nuevos.</td></tr>
 <tr><td class="fecha">septiembre</td><td class="dur">94</td><td class="nota">Tiempo real por socket, traducción completa, revisión de QA y correcciones.</td></tr>
+<tr><td class="fecha">octubre</td><td class="dur">29</td><td class="nota">Dos días: filtro de saltos GNSS con sus pruebas, auditoría de permisos contra el sistema clásico, 13 correcciones encontradas al usar la aplicación y la tanda de accesibilidad.</td></tr>
 </tbody></table></div>
 </section>
 <section>
@@ -551,5 +565,5 @@ th {
 <li><b>¿La revisión del 30-sep cubre parte de la Fase 1, o se repite entera con el equipo?</b></li>
 </ul>
 </section>
-<footer class="pie"><span>Talentus Pro Tracking</span><span>Rama <code>nuevo-tema</code>, 267 commits sin subir al remoto</span><span>Generado el 30-sep-2026</span></footer>
+<footer class="pie"><span>Talentus Pro Tracking</span><span>Rama <code>nuevo-tema</code>, 296 commits sin subir al remoto</span><span>Generado el 2-oct-2026</span></footer>
 </div>
