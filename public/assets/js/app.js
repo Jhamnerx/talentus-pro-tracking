@@ -10375,7 +10375,9 @@ function Geofences() {
       var type = e.layerType,
         layer = e.layer;
 
-      if (type === "polygon" || type === "circle") {
+      // Leaflet.draw emite "polyline" para el corredor. Sin esta rama la
+      // linea dibujada se descartaba y Guardar enviaba polygon vacio.
+      if (type === "polygon" || type === "circle" || type === "polyline") {
         dd("app.drawnItems.addLayer");
 
         var _polygon = tmpItem.setLayer(layer);

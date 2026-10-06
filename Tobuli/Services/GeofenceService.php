@@ -103,7 +103,13 @@ class GeofenceService extends ModelService
         }
 
         if (array_key_exists('speed_limit', $data)) {
-            $data['speed_limit'] = \Formatter::speed()->reverse($data['speed_limit']);
+            // Vacio significa "sin limite", no "limite de 0 km/h".
+            // Formatter::speed()->reverse('') devuelve 0, y un 0 en los
+            // limites POR TIPO si cuenta como limite real: todo vehiculo de
+            // ese tipo quedaria en exceso permanente dentro de la geocerca.
+            $data['speed_limit'] = ($data['speed_limit'] === null || $data['speed_limit'] === '')
+                ? null
+                : \Formatter::speed()->reverse($data['speed_limit']);
         }
 
         if (array_key_exists('vehicle_speed_limits', $data) && is_array($data['vehicle_speed_limits'])) {

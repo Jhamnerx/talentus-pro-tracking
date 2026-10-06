@@ -455,7 +455,19 @@ class DeviceModalHelper extends ModalHelper
         $device_cameras = DeviceCameraRepo::searchAndPaginate(['filter' => ['device_id' => $device_id]], 'id', 'desc', 10);
 
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
-        $vehicle_types = VehicleType::with('states')->where('user_id', $this->user->id)->orderBy('name')->get();
+        // Los tipos del usuario que edita MAS el que ya tenga el dispositivo,
+        // que puede ser de su dueño. Sin esto el valor no salia en la lista,
+        // se enviaba vacio y guardar borraba el tipo y el estado ajenos.
+        $vehicle_types = VehicleType::with('states')
+            ->where(function ($q) use ($item) {
+                $q->where('user_id', $this->user->id);
+
+                if ($item && $item->vehicle_type_id) {
+                    $q->orWhere('id', $item->vehicle_type_id);
+                }
+            })
+            ->orderBy('name')
+            ->get();
 
         $fuel_types = $this->fuel_types;
 
@@ -539,7 +551,10 @@ class DeviceModalHelper extends ModalHelper
         if ($activeChanged) {
             if (! $newActive) {
                 // Desactivación → suspensión
-                $item->updateQuietly(['suspended_at' => now()]);
+                // forceFill y no updateQuietly: updateQuietly pasa por
+                // asignacion masiva y 'suspended_at' no esta en $fillable,
+                // asi que Eloquent la descartaba sin avisar.
+                $item->forceFill(['suspended_at' => now()])->saveQuietly();
                 DeviceMaintenance::create([
                     'device_id' => $item->id,
                     'tipo'      => DeviceMaintenance::TIPO_SUSPENSION,
@@ -559,7 +574,7 @@ class DeviceModalHelper extends ModalHelper
                     'motivo'    => $motivo,
                     'user_id'   => $this->user->id,
                 ]);
-                $item->updateQuietly(['suspended_at' => null]);
+                $item->forceFill(['suspended_at' => null])->saveQuietly();
             }
         }
 

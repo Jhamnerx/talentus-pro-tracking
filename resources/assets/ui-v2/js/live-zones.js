@@ -538,6 +538,13 @@
               payload.center = c;
               delete payload.polygon;          // ver geometryFromLayer
               if (payload.radius == null && g.radius) payload.radius = g.radius;
+            } else if (g.type === "line") {
+              // Un corredor es una linea con anchura. Sin esta rama caia en
+              // el else y se guardaba como poligono: dejaba de ser corredor
+              // y perdia su radio.
+              payload.type = "line";
+              payload.polygon = normCoords(g.coordinates);
+              if (payload.radius == null && g.radius) payload.radius = g.radius;
             } else {
               payload.type = "polygon";
               payload.polygon = normCoords(g.coordinates);
