@@ -61,6 +61,11 @@ class GeofenceImporter extends Importer
             $data['type'] = strtolower($data['type']);
         }
 
+        // El importador llama a store() directo y se salta normalize() del service.
+        if (array_key_exists('category', $data) && ($data['category'] === '' || $data['category'] === null)) {
+            $data['category'] = null;
+        }
+
         unset($data['group_id']);
 
         if (!empty($data['center'])) {
@@ -130,11 +135,14 @@ class GeofenceImporter extends Importer
     {
         return [
             'name'          => 'required',
-            'type'          => 'required|in:polygon,circle',
-            'polygon'       => 'required_if:type,polygon|nullable|array',
-            'polygon.*.lat' => 'required_if:type,polygon|lat',
-            'polygon.*.lng' => 'required_if:type,polygon|lng',
-            'radius'        => 'required_if:type,circle|nullable|numeric',
+            // 'line' es el corredor: linea + radio, como en GeofenceFormValidator.
+            // Sin el, un GEXP con corredores abortaba el import entero.
+            'type'          => 'required|in:polygon,circle,line',
+            'category'      => 'nullable|in:carga,descarga,grifo,taller,descanso',
+            'polygon'       => 'required_if:type,polygon,line|nullable|array',
+            'polygon.*.lat' => 'required_if:type,polygon,line|lat',
+            'polygon.*.lng' => 'required_if:type,polygon,line|lng',
+            'radius'        => 'required_if:type,circle,line|nullable|numeric',
             'center'        => 'required_if:type,circle|nullable|array',
             'center.lat'    => 'required_if:type,circle|lat',
             'center.lng'    => 'required_if:type,circle|lng',

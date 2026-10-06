@@ -20,6 +20,7 @@ use Tobuli\Helpers\Alerts\Check\Checker;
 use Tobuli\Helpers\LbsLocation\LbsManager;
 use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
 use Tobuli\Services\EventWriteService;
+use Tobuli\Services\Operations\OperationChecker;
 
 class PositionsWriter
 {
@@ -45,6 +46,9 @@ class PositionsWriter
     protected $drivers = [];
 
     protected $alertChecker = null;
+
+    /** @var OperationChecker|null evaluacion de vueltas (modulo de Operaciones), una por lote */
+    protected $operationChecker = null;
 
     protected $debug;
 
@@ -663,6 +667,8 @@ class PositionsWriter
             $this->alerts();
         }
 
+        $this->operations();
+
         if ($this->events || $this->isChanged($this->position, $this->getPrevPosition())) {
             $this->addPosition($this->position);
 
@@ -718,7 +724,7 @@ class PositionsWriter
         if ($this->device->consatel) {
             //REGISTRAR BASE DE DATOS COMSATEL
 
-            $this->position->protocol == 'teltonika' ? $this->saveDataComsatel($this->device, $this->position) : Log::info('No se pudo registrar en la base de datos Comsatel la placa: ' . $this->device->plate_number);
+            $this->position->protocol == 'teltonika' ? $this->saveDataComsatel($this->device, $this->position) : \Log::info('No se pudo registrar en la base de datos Comsatel la placa: ' . $this->device->plate_number);
         }
 
         if ($this->device->wisetrack) {
@@ -1170,6 +1176,28 @@ class PositionsWriter
 
         foreach ($alerts as $alert) {
             Cache::store('array')->set("alert.{$alert->id}", $alert);
+        }
+    }
+
+    /**
+     * Modulo de Operaciones (control de vueltas). Misma forma que alerts():
+     * el checker se construye una vez por lote y su primera llamada hace una
+     * consulta indexada; sin fila de estado, el resto del lote no cuesta nada.
+     * Las tramas atrasadas no mueven el estado: acumulan un recalculo que se
+     * escribe en write().
+     */
+    protected function operations()
+    {
+        if (! OperationChecker::enabled())
+            return;
+
+        if (is_null($this->operationChecker))
+            $this->operationChecker = new OperationChecker($this->device);
+
+        if ($this->checkableAlerts() && ! $this->isHistory()) {
+            $this->operationChecker->check($this->position, $this->device->positionTraccar());
+        } else {
+            $this->operationChecker->late($this->position);
         }
     }
 
@@ -1644,6 +1672,9 @@ class PositionsWriter
 
         $this->registerHistoryRecalculation();
         $this->updateOdometer();
+
+        if ($this->operationChecker)
+            $this->operationChecker->flush();
 
 
         foreach ($this->device->sensors as $sensor) {

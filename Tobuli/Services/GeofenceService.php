@@ -4,6 +4,8 @@ namespace Tobuli\Services;
 
 use Tobuli\Entities\Geofence;
 use CustomFacades\Validators\GeofenceFormValidator;
+use Tobuli\Exceptions\ValidationException;
+use Tobuli\Services\Operations\OperationService;
 
 class GeofenceService extends ModelService
 {
@@ -39,6 +41,14 @@ class GeofenceService extends ModelService
 
         $this->syncVehicleSpeedLimits($geofence, $data);
 
+        // Operaciones: si cambio la forma, versiona los puntos que usan esta
+        // geocerca (comparacion numerica dentro; un guardado sin mover no
+        // crea version). Va aqui y no en edit() para cubrir v2, legacy, API
+        // y DiemRateService.
+        if ($geofence->wasChanged(['type', 'coordinates', 'center', 'radius', 'name'])) {
+            OperationService::versionPointsForGeofence($geofence);
+        }
+
         return $geofence;
     }
 
@@ -65,7 +75,29 @@ class GeofenceService extends ModelService
 
     public function delete($geofence)
     {
+        $this->checkNotOperationPoint($geofence);
+
         return $geofence->delete();
+    }
+
+    /**
+     * Una geocerca que es punto vigente de una operacion no se puede borrar:
+     * primero hay que quitarla de la operacion. Cubre v2, legacy (tambien el
+     * borrado masivo) y la API, porque todos pasan por delete().
+     */
+    public function checkNotOperationPoint(Geofence $geofence): void
+    {
+        $operations = OperationService::operationsUsingGeofence($geofence);
+
+        if ($operations->isEmpty())
+            return;
+
+        throw new ValidationException([
+            'id' => trans('front.geofence_in_operation', [
+                'name'       => $geofence->name,
+                'operations' => $operations->pluck('name')->implode(', '),
+            ]),
+        ]);
     }
 
     /**
@@ -76,6 +108,13 @@ class GeofenceService extends ModelService
         if (array_key_exists('group_id', $data)) {
             if (empty($data['group_id'])) {
                 $data['group_id'] = null;
+            }
+        }
+
+        if (array_key_exists('category', $data)) {
+            // El select manda "" para "sin categoria".
+            if ($data['category'] === '' || $data['category'] === null) {
+                $data['category'] = null;
             }
         }
 

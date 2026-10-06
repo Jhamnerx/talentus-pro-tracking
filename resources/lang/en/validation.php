@@ -163,6 +163,7 @@ return array(
         'expiration_date' => 'Expiration date',
         'days_to_remind' => 'Days to remind before expiration',
         'type' => 'Type',
+        'category' => 'Category',
         'format' => 'Format',
         'show_addresses' => 'Show addresses',
         'stops' => 'Stops',

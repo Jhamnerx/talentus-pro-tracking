@@ -1963,6 +1963,15 @@ class DevicesController extends BaseController
 
         $this->checkException('devices_groups', 'remove', $group);
 
+        // Operaciones: un grupo que usa una operacion no se borra; primero hay
+        // que quitarlo de la operacion o eliminarla.
+        $operations = \Tobuli\Services\Operations\OperationService::operationsUsingGroup((int) $group->id);
+        if ($operations->isNotEmpty()) {
+            throw new \Tobuli\Exceptions\ValidationException([
+                'id' => trans('front.group_in_operation', ['operations' => $operations->pluck('name')->implode(', ')]),
+            ]);
+        }
+
         // Paridad legacy: los devices vuelven a "Sin grupo" (0, no NULL)
         \DB::table('user_device_pivot')->where('group_id', $group->id)->update(['group_id' => 0]);
         $group->delete();

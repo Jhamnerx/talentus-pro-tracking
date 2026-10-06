@@ -1179,6 +1179,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('chat',         ['as' => 'chat',         'uses' => 'Ui\V2\ChatController@page']);
     Route::get('expenses',     ['as' => 'expenses',     'uses' => 'Ui\V2\ExpensesController@page']);
     Route::get('route-schedules', ['as' => 'route_schedules', 'uses' => 'Ui\V2\RouteSchedulesController@page']);
+    Route::get('operations',   ['as' => 'operations',   'uses' => 'Ui\V2\OperationsController@page']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
     Route::prefix('api')->group(function () {
@@ -1205,6 +1206,20 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::put('route-schedules/{id}',       ['as' => 'api.route_schedules.update',     'uses' => 'Ui\V2\RouteSchedulesController@update'])->where('id', '[0-9]+');
         Route::delete('route-schedules/{id}',    ['as' => 'api.route_schedules.destroy',    'uses' => 'Ui\V2\RouteSchedulesController@destroy'])->where('id', '[0-9]+');
         Route::get('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints',         'uses' => 'Ui\V2\RouteSchedulesController@checkpoints'])->where('id', '[0-9]+');
+
+        // Operaciones: control de vueltas entre puntos de carga y descarga
+        Route::get('operations',                     ['as' => 'api.operations',                     'uses' => 'Ui\V2\OperationsController@data']);
+        Route::get('operations/meta',                ['as' => 'api.operations.meta',                'uses' => 'Ui\V2\OperationsController@meta']);
+        Route::get('operations/live',                ['as' => 'api.operations.live',                'uses' => 'Ui\V2\OperationsController@live']);
+        Route::get('operations/cycles',              ['as' => 'api.operations.cycles',              'uses' => 'Ui\V2\OperationsController@cycles']);
+        Route::get('operations/cycles/{id}',         ['as' => 'api.operations.cycle',               'uses' => 'Ui\V2\OperationsController@cycle'])->where('id', '[0-9]+');
+        Route::get('operations/recalculations',      ['as' => 'api.operations.recalculations',      'uses' => 'Ui\V2\OperationsController@recalculations']);
+        Route::get('operations/recalculate/preview', ['as' => 'api.operations.recalculate_preview', 'uses' => 'Ui\V2\OperationsController@recalculatePreview']);
+        Route::post('operations/recalculate',        ['as' => 'api.operations.recalculate',         'uses' => 'Ui\V2\OperationsController@recalculate']);
+        Route::post('operations',                    ['as' => 'api.operations.store',               'uses' => 'Ui\V2\OperationsController@store']);
+        Route::put('operations/{id}',                ['as' => 'api.operations.update',              'uses' => 'Ui\V2\OperationsController@update'])->where('id', '[0-9]+');
+        Route::post('operations/{id}/toggle',        ['as' => 'api.operations.toggle',              'uses' => 'Ui\V2\OperationsController@toggle'])->where('id', '[0-9]+');
+        Route::delete('operations/{id}',             ['as' => 'api.operations.destroy',             'uses' => 'Ui\V2\OperationsController@destroy'])->where('id', '[0-9]+');
         Route::put('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints.save',    'uses' => 'Ui\V2\RouteSchedulesController@saveCheckpoints'])->where('id', '[0-9]+');
 
         Route::get('expenses',        ['as' => 'api.expenses',        'uses' => 'Ui\V2\ExpensesController@data']);

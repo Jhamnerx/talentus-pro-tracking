@@ -303,6 +303,14 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+        // Modulo de Operaciones (control de vueltas). No se siembra en
+        // user_permissions: el admin lo marca por usuario (piloto). Para
+        // abrirlo a todos: PermissionService::addToAll('operations').
+        'operations' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
         'widget_template_webhook' => [
             'view'  => 1,
             'edit'  => 0,

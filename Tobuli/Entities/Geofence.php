@@ -35,6 +35,26 @@ class Geofence extends AbstractEntity implements DisplayInterface
      */
     const TYPE_LINE = 'line';
 
+    /**
+     * Uso de la geocerca dentro de una operacion de acarreo (modulo de
+     * Operaciones). `type` ya esta ocupado por la forma, por eso va aparte.
+     * Carga y descarga son los puntos entre los que se cuentan las vueltas;
+     * grifo, taller y descanso son zonas donde una parada queda autorizada.
+     */
+    const CATEGORY_LOAD = 'carga';
+    const CATEGORY_UNLOAD = 'descarga';
+    const CATEGORY_FUEL = 'grifo';
+    const CATEGORY_WORKSHOP = 'taller';
+    const CATEGORY_REST = 'descanso';
+
+    const CATEGORIES = [
+        self::CATEGORY_LOAD,
+        self::CATEGORY_UNLOAD,
+        self::CATEGORY_FUEL,
+        self::CATEGORY_WORKSHOP,
+        self::CATEGORY_REST,
+    ];
+
     public static string $displayField = 'name';
 
     protected $table = 'geofences';
@@ -48,6 +68,7 @@ class Geofence extends AbstractEntity implements DisplayInterface
         'polygon_color',
         'speed_limit',
         'type',
+        'category',
         'radius',
         'center',
         'polygon',
@@ -67,6 +88,7 @@ class Geofence extends AbstractEntity implements DisplayInterface
 
     protected $filterables = [
         'group_id',
+        'category',
     ];
 
     protected $polygonHelpers = [];
@@ -455,6 +477,24 @@ class Geofence extends AbstractEntity implements DisplayInterface
     public function scopeUserOwned(Builder $query, User $user): Builder
     {
         return $query->where(['user_id' => $user->id]);
+    }
+
+    /** @param string|string[] $category una categoria o varias (ver CATEGORIES). */
+    public function scopeCategory(Builder $query, $category): Builder
+    {
+        return $query->whereIn('geofences.category', (array) $category);
+    }
+
+    /** Categorias con su etiqueta traducida, para selects y filtros. */
+    public static function categories(): array
+    {
+        $list = [];
+
+        foreach (self::CATEGORIES as $category) {
+            $list[$category] = trans('front.geofence_category_' . $category);
+        }
+
+        return $list;
     }
 
     public function scopeUserAccessible(Builder $query, User $user): Builder

@@ -172,6 +172,13 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping();
 
+        // Modulo de Operaciones: tramos cerrados, "sin datos", tramos
+        // vencidos y cola de recalculos. Sin efecto con operations_enabled apagado.
+        $schedule
+            ->command('operations:process')
+            ->everyMinute()
+            ->withoutOverlapping();
+
         //WEB SERVICES JOBS — dispatch manejado por Supervisor, estos solo programan
         $schedule->job(new DispatchSutranJobs)->everyMinute()->withoutOverlapping();
         $schedule->job(new DispatchComsatelJobs)->everyMinute()->withoutOverlapping();

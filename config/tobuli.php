@@ -158,6 +158,11 @@ return [
     'prev_position_device_object' => env('PREV_POSITION_DEVICE_OBJECT', false),
     'apply_network_data' => env('APPLY_NETWORK_DATA', true),
     'overwrite_invalid'  => env('OVERWRITE_INVALID', true),
+
+    // Modulo de Operaciones (control de vueltas). Apagado, PositionsWriter no
+    // hace ninguna consulta ni evaluacion por el modulo: es el interruptor de
+    // despliegue y de vuelta atras.
+    'operations_enabled' => env('OPERATIONS_ENABLED', false),
     'gnss_glitch' => [
         'enabled'              => env('GNSS_GLITCH_ENABLED', true),
         'enforce'              => env('GNSS_GLITCH_ENFORCE', false), // false = modo sombra
@@ -1551,6 +1556,10 @@ return [
         ],
         \Tobuli\Entities\RouteSchedule::class => [
             'attributes' => ['*'],
+        ],
+        \Tobuli\Entities\Operation::class => [
+            'attributes' => ['*'],
+            'attributes_to_ignore' => ['created_at', 'updated_at'],
         ],
         \Tobuli\Entities\Poi::class => [
             'attributes' => ['*'],

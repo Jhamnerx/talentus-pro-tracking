@@ -1378,6 +1378,14 @@
     new MutationObserver(drawGraph).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
 
+  function parseLocal(s) {
+    if (!s) return null;
+    var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s);
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0);
+  }
+  function hhmm(d) { return (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes(); }
+
   function init() {
     bind();
     startToday(); applyQuickRange("today"); commitRange();
@@ -1387,6 +1395,16 @@
       if (dev) { var d = state.devices.filter(function (x) { return x.id === parseInt(dev, 10); })[0]; if (d) selDevice(d.id, d.name); }
       var range = qs.get("range");
       if (range && ["today", "yesterday", "week", "month"].indexOf(range) !== -1) { applyQuickRange(range); commitRange(); }
+      // Rango exacto (?from=YYYY-MM-DD HH:MM&to=...): lo usa "Ver en mapa" de
+      // Operaciones para abrir el recorrido de un tramo o de una parada.
+      var qFrom = parseLocal(qs.get("from")), qTo = parseLocal(qs.get("to"));
+      if (qFrom && qTo) {
+        dp.from = new Date(qFrom.getFullYear(), qFrom.getMonth(), qFrom.getDate());
+        dp.to = new Date(qTo.getFullYear(), qTo.getMonth(), qTo.getDate());
+        $("#tp-hist-dp-from-time").value = hhmm(qFrom);
+        $("#tp-hist-dp-to-time").value = hhmm(qTo);
+        commitRange();
+      }
       if (dev && combo.getAttribute("data-value")) load();
     });
   }

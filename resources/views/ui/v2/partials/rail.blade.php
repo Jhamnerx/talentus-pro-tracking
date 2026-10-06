@@ -36,6 +36,7 @@
         ['key' => 'zones', 'label' => trans('front.geofences'), 'icon' => 'geofence', 'url' => url('/ui/v2/live?panel=zones'), 'can' => $u->perm('geofences', 'view')],
         ['key' => 'routes', 'label' => trans('front.routes'), 'icon' => 'route', 'url' => url('/ui/v2/live?panel=routes'), 'can' => $u->perm('routes', 'view')],
         ['key' => 'route_schedules', 'label' => trans('ui.route_schedules'), 'icon' => 'history', 'url' => url('/ui/v2/route-schedules'), 'can' => $u->perm('routes', 'view')],
+        ['key' => 'operations', 'label' => trans('front.operations'), 'icon' => 'route', 'url' => url('/ui/v2/operations'), 'can' => $u->perm('operations', 'view')],
         ['key' => 'pois', 'label' => trans('front.poi'), 'icon' => 'mappin', 'url' => url('/ui/v2/live?panel=pois'), 'can' => $u->perm('poi', 'view')],
     ];
 

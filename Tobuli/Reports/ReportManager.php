@@ -117,6 +117,7 @@ class ReportManager
         907 => Reports\DrivingBehaviourReport::class,
         908 => Reports\OperatingCostReport::class,
         909 => Reports\RouteAdherenceReport::class,
+        910 => Reports\OperationCyclesReport::class,
 
     ];
 

@@ -799,6 +799,7 @@ return [
         'change_password' => 'Cambiar contraseña',
         'new_password' => 'Nueva contraseña',
         'type' => 'Tipo',
+        'category' => 'Categoría',
         'sensor_type' => 'Tipo de sensor',
         'fuel_measurement_type' => 'Medición de combustible',
         'export_type' => 'Tipo de exportación',
