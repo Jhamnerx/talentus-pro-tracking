@@ -118,7 +118,10 @@ class BackupFtp implements BackupUploaderInterface
 
     protected function run(string $command, ?BackupProcess $backupProcess = null): void
     {
-        $process = Process::fromShellCommandline($command);
+        // Sin pipefail, "mysqldump | gzip | ncftpput" devuelve el código de ncftpput: si mysqldump
+        // o tar fallan, se sube un .gz vacío (20 bytes) y el backup se da por bueno.
+        $process = Process::fromShellCommandline('bash -o pipefail -c ' . escapeshellarg($command));
+        $process->setTimeout(null);
         $process->start();
 
         $timer = 0;

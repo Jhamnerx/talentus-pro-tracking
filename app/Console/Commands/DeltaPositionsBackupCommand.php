@@ -135,7 +135,7 @@ class DeltaPositionsBackupCommand extends Command
             . " | gzip -9"
             . " | " . $this->ftp->buildPipeUploadCommand($remotePath);
 
-        $process = Process::fromShellCommandline($cmd);
+        $process = Process::fromShellCommandline('bash -o pipefail -c ' . escapeshellarg($cmd));
         $process->setTimeout(300);
         $process->setEnv(['MYSQL_PWD' => $config['password']]);
         $process->run();

@@ -8,14 +8,16 @@ class DatabaseBackuper extends AbstractBackuper
 {
     protected function backup($item): bool
     {
-        $command = "mysqldump"
+        // MYSQL_PWD en vez de -p'...': con contraseña vacía "-p''" queda en "-p" y mysqldump
+        // pide la clave por terminal (sin TTY no vuelca nada); y una comilla en la clave rompe el comando.
+        $command = "MYSQL_PWD=" . escapeshellarg((string)$item['password'])
+            . " mysqldump"
             . " --single-transaction=TRUE"
             . " --lock-tables=false"
-            . " -u '{$item['username']}'"
-            . " -h '{$item['host']}'"
-            . " -p'{$item['password']}'"
-            . " --port={$item['port']}"
-            . " --databases {$item['database']}";
+            . " -u " . escapeshellarg($item['username'])
+            . " -h " . escapeshellarg($item['host'])
+            . " --port=" . escapeshellarg($item['port'])
+            . " --databases " . escapeshellarg($item['database']);
 
         $this->uploader->process($command, $this->process, $item);
 

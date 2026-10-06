@@ -79,15 +79,15 @@ class DevicesPositionsBackuper extends AbstractBackuper
             throw new \InvalidArgumentException("Database with ID `$databaseId`");
         }
 
-        $this->cmdBase = "mysqldump"
+        $this->cmdBase = "MYSQL_PWD=" . escapeshellarg((string)$config['password'])
+            . " mysqldump"
             . " --insert-ignore"
             . " --no-create-info"
             . " --skip-add-drop-table"
-            . " -u '{$config['username']}'"
-            . " -h '{$config['host']}'"
-            . " -p'{$config['password']}'"
-            . " --port={$config['port']}"
-            . " {$config['database']}";
+            . " -u " . escapeshellarg($config['username'])
+            . " -h " . escapeshellarg($config['host'])
+            . " --port=" . escapeshellarg($config['port'])
+            . " " . escapeshellarg($config['database']);
     }
 
     /**

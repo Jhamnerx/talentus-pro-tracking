@@ -387,7 +387,9 @@ function images_path($path = '')
         $path = DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
     }
 
-    return "/var/www/html/images{$path}";
+    // Antes era fijo "/var/www/html/images", que en esta instalación no existe: las imágenes
+    // subidas (device_images, device_icons, checklistPhotos…) viven en public/images.
+    return public_path("images{$path}");
 }
 
 function asset_resource($path, $file = null)
