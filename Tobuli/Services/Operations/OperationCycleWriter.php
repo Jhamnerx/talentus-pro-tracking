@@ -390,6 +390,11 @@ class OperationCycleWriter
         $this->state->candidate_point_id = null;
         $this->state->pending_since = null;
 
+        // Sin esto, el siguiente tramo reutilizaba la vuelta ya cerrada que
+        // seguia cargada en la relacion.
+        $this->state->setRelation('openLeg', null);
+        $this->state->setRelation('openCycle', null);
+
         if (! $this->state->isInsidePoint()) {
             $this->state->state = OperationDeviceState::STATE_UNKNOWN;
         }
