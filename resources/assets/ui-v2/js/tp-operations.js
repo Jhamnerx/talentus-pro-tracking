@@ -321,10 +321,23 @@
   var exportBtn = $("tp-ops-export");
   if (exportBtn) exportBtn.addEventListener("click", function () {
     if (!$("tp-ops-from").value || !$("tp-ops-to").value) { tpModal.toast(t("ui.pick_date_range"), "error"); return; }
-    var devIds = $("tp-ops-filter-device").value ? [Number($("tp-ops-filter-device").value)]
-      : (state.meta.devices || []).map(function (d) { return d.id; });
+    // Solo los vehiculos de la operacion (o el filtrado): mandar toda la
+    // flota desborda max_input_vars de PHP y la lista llega truncada.
+    var opSel = $("tp-ops-filter-operation").value;
+    var devIds;
+    if ($("tp-ops-filter-device").value) {
+      devIds = [Number($("tp-ops-filter-device").value)];
+    } else {
+      devIds = [];
+      (state.meta.operations || []).forEach(function (o) {
+        if (opSel && String(o.id) !== String(opSel)) return;
+        (o.device_ids || []).forEach(function (id) { if (devIds.indexOf(id) < 0) devIds.push(id); });
+      });
+    }
+    if (!devIds.length) { tpModal.toast(t("ui.ops_no_vehicles"), "error"); return; }
     var campos = {
-      type: REPORT_TYPE, format: "html", generate: 1,
+      // view=1: la ruta legacy devuelve el HTML en pantalla en vez de descargarlo.
+      type: REPORT_TYPE, format: "html", generate: 1, view: 1,
       date_from: $("tp-ops-from").value, from_time: "00:00",
       date_to: $("tp-ops-to").value, to_time: "23:59",
       devices: devIds,

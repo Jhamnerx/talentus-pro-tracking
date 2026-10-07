@@ -83,8 +83,15 @@ class OperationsController extends BaseController
                 OperationCycle::STATUS_COMPLETED  => trans('ui.ops_status_completed'),
                 OperationCycle::STATUS_INCOMPLETE => trans('ui.ops_status_incomplete'),
             ],
-            'operations' => Operation::userOwned($this->user)->orderBy('name')->get(['id', 'name', 'active'])
-                ->map(fn ($o) => ['id' => (int) $o->id, 'name' => (string) $o->name, 'active' => (bool) $o->active])->all(),
+            // device_ids: para que "Exportar" mande al reporte solo los vehiculos
+            // de la operacion (toda la flota desborda max_input_vars de PHP).
+            'operations' => Operation::userOwned($this->user)->with('deviceStates:operation_id,device_id')->orderBy('name')->get(['id', 'name', 'active'])
+                ->map(fn ($o) => [
+                    'id'         => (int) $o->id,
+                    'name'       => (string) $o->name,
+                    'active'     => (bool) $o->active,
+                    'device_ids' => $o->deviceStates->pluck('device_id')->map(fn ($d) => (int) $d)->values()->all(),
+                ])->all(),
             'can_edit'   => (bool) $this->user->perm('operations', 'edit'),
             'can_remove' => (bool) $this->user->perm('operations', 'remove'),
             'devices'    => $this->user->devices()->clearOrdersBy()->orderBy('devices.name')
