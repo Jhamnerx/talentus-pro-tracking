@@ -177,6 +177,29 @@
   }
   function openDatePick() { $("#tp-hist-datepick").hidden = false; renderCals(); }
   function closeDatePick() { $("#tp-hist-datepick").hidden = true; }
+  /**
+   * Los dos selects de hora los mejora tp-select, que dibuja un boton
+   * propio. Cambiar select.value no toca ese boton: hay que rehacerlo o la
+   * hora se ve mal aunque el valor sea correcto.
+   */
+  function syncTimeSelects() {
+    // Las horas son inputs de texto libres (HH:MM): solo se normaliza lo escrito.
+    [$("#tp-hist-dp-from-time"), $("#tp-hist-dp-to-time")].forEach(function (el, i) {
+      if (el) el.value = normalizeTime(el.value) || (i ? "23:59" : "00:00");
+    });
+  }
+
+  /* "7:5" -> "07:05", "1430" -> "14:30"; null si no es una hora valida. */
+  function normalizeTime(s) {
+    s = String(s == null ? "" : s).trim();
+    // Con dos puntos valen 1 o 2 digitos por lado ("7:5"); sin ellos, HHMM ("1830").
+    var m = /^(\d{1,2}):(\d{1,2})$/.exec(s) || /^(\d{1,2})(\d{2})$/.exec(s);
+    if (!m) return null;
+    var h = +m[1], mi = +m[2];
+    if (h > 23 || mi > 59) return null;
+    return (h < 10 ? "0" : "") + h + ":" + (mi < 10 ? "0" : "") + mi;
+  }
+
   function applyQuickRange(key) {
     var n = new Date(), a = new Date(n.getFullYear(), n.getMonth(), n.getDate()), b = new Date(a);
     var ft = "00:00", tt = "23:59";
@@ -189,20 +212,16 @@
     else if (key === "lastmonth") { a = new Date(n.getFullYear(), n.getMonth() - 1, 1); b = new Date(n.getFullYear(), n.getMonth(), 0); }
     dp.from = a; dp.to = b; dp.calY = a.getFullYear(); dp.calM = a.getMonth();
     $("#tp-hist-dp-from-time").value = ft; $("#tp-hist-dp-to-time").value = tt;
-    // Los selects de hora están mejorados por tp-select: sincronizar el botón
-    [$("#tp-hist-dp-from-time"), $("#tp-hist-dp-to-time")].forEach(function (sel) {
-      if (sel && sel._tpdd && window.tpSelect && tpSelect.refresh) {
-        try { tpSelect.refresh(sel); } catch (e) {}
-      }
-    });
+    syncTimeSelects();
     renderCals();
   }
   function commitRange() {
     if (!dp.from) return;
+    syncTimeSelects();
     if (!dp.to || dp.to.getTime() < dp.from.getTime()) dp.to = new Date(dp.from);
     state.range = {
-      fromDate: ymd(dp.from), fromTime: $("#tp-hist-dp-from-time").value || "00:00",
-      toDate: ymd(dp.to), toTime: $("#tp-hist-dp-to-time").value || "23:59",
+      fromDate: ymd(dp.from), fromTime: normalizeTime($("#tp-hist-dp-from-time").value) || "00:00",
+      toDate: ymd(dp.to), toTime: normalizeTime($("#tp-hist-dp-to-time").value) || "23:59",
     };
     var lbl = state.range.fromDate + " " + state.range.fromTime + "  —  " + state.range.toDate + " " + state.range.toTime;
     $("#tp-hist-daterange-label").textContent = lbl;
@@ -1385,13 +1404,6 @@
     return new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0);
   }
   function hhmm(d) { return (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes(); }
-  function snap5(d, up) {
-    var m = d.getMinutes(), r = up ? Math.ceil(m / 5) * 5 : Math.floor(m / 5) * 5;
-    var out = new Date(d.getTime());
-    out.setMinutes(Math.min(r, 55), 0, 0);
-    if (up && r > 55) out.setMinutes(55);
-    return out;
-  }
 
   function init() {
     bind();
@@ -1408,10 +1420,12 @@
       if (qFrom && qTo) {
         dp.from = new Date(qFrom.getFullYear(), qFrom.getMonth(), qFrom.getDate());
         dp.to = new Date(qTo.getFullYear(), qTo.getMonth(), qTo.getDate());
-        // Los selectores de hora van en pasos de 5 min: el inicio se redondea
-        // hacia abajo y el fin hacia arriba para no recortar el recorrido.
-        $("#tp-hist-dp-from-time").value = hhmm(snap5(qFrom, false));
-        $("#tp-hist-dp-to-time").value = hhmm(snap5(qTo, true));
+        // Hora exacta del tramo o la parada: las horas son texto libre.
+        $("#tp-hist-dp-from-time").value = hhmm(qFrom);
+        $("#tp-hist-dp-to-time").value = hhmm(qTo);
+        // Sin esto la etiqueta del campo salia bien pero el dialogo mostraba
+        // 00:00 y 23:59: el valor estaba puesto y el boton de tp-select no.
+        syncTimeSelects();
         commitRange();
       }
       if (dev && combo.getAttribute("data-value")) load();

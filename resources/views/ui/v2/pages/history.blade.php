@@ -590,17 +590,13 @@
                                 <div class="tp-datepick__time-row">
                                     <input type="text" class="tp-input tp-input--sm" id="tp-hist-dp-from-date"
                                         aria-label="{{ trans('front.from') }} · {{ trans('front.date') }}" readonly>
-                                    {{-- Hora como select de pasos de 5 min (tp-select, 24h) —
-                                         el input time nativo mostraba AM/PM y se cortaba --}}
-                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-from-time" style="width: 92px"
-                            aria-label="{{ trans('front.from') }} · {{ trans('front.time') }}">
-                                        @for ($m = 0; $m < 1440; $m += 5)
-                                            <option value="{{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}"
-                                                {{ $m === 0 ? 'selected' : '' }}>
-                                                {{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}</option>
-                                        @endfor
-                                        <option value="23:59">23:59</option>
-                                    </select>
+                                    {{-- Hora libre (HH:MM) con sugerencias cada 5 min. Un select
+                                         obligaba a redondear y "Ver en mapa" desde Operaciones
+                                         perdia minutos del tramo; el input time nativo mostraba AM/PM. --}}
+                                    <input type="text" class="tp-input tp-input--sm tp-hist__time" id="tp-hist-dp-from-time"
+                                        style="width: 92px" value="00:00" list="tp-hist-time-steps" inputmode="numeric"
+                                        placeholder="HH:MM" maxlength="5" autocomplete="off"
+                                        aria-label="{{ trans('front.from') }} · {{ trans('front.time') }}">
                                 </div>
                             </div>
                             <span class="tp-datepick__sep">—</span>
@@ -609,14 +605,16 @@
                                 <div class="tp-datepick__time-row">
                                     <input type="text" class="tp-input tp-input--sm" id="tp-hist-dp-to-date" readonly
                             aria-label="{{ trans('global.to') }} · {{ trans('front.date') }}">
-                                    <select class="tp-input tp-input--sm" id="tp-hist-dp-to-time" style="width: 92px"
-                            aria-label="{{ trans('global.to') }} · {{ trans('front.time') }}">
+                                    <input type="text" class="tp-input tp-input--sm tp-hist__time" id="tp-hist-dp-to-time"
+                                        style="width: 92px" value="23:59" list="tp-hist-time-steps" inputmode="numeric"
+                                        placeholder="HH:MM" maxlength="5" autocomplete="off"
+                                        aria-label="{{ trans('global.to') }} · {{ trans('front.time') }}">
+                                    <datalist id="tp-hist-time-steps">
                                         @for ($m = 0; $m < 1440; $m += 5)
-                                            <option value="{{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}">
-                                                {{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}</option>
+                                            <option value="{{ sprintf('%02d:%02d', intdiv($m, 60), $m % 60) }}"></option>
                                         @endfor
-                                        <option value="23:59" selected>23:59</option>
-                                    </select>
+                                        <option value="23:59"></option>
+                                    </datalist>
                                 </div>
                             </div>
                         </div>
