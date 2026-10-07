@@ -971,6 +971,8 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'category'                            => 'Categoría',
+    'no_category'                         => 'Sin categoría',
     'updated'                             => 'Actualizado',
     'ops_tab_live'                        => 'En vivo',
     'ops_tab_cycles'                      => 'Vueltas',

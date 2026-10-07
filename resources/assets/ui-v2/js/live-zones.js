@@ -161,6 +161,7 @@
     return S.items.filter(function (g) {
       if (S.type !== "all" && g.type !== S.type) return false;
       if (S.groupId && String(g.group_id || 0) !== String(S.groupId)) return false;
+      if (S.category && (g.category || "") !== S.category) return false;
       if (q && (g.name || "").toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
@@ -210,6 +211,18 @@
         );
       })
       .join("");
+  }
+
+  function fillCategorySelect() {
+    var sel = document.getElementById("tp-zones-category");
+    if (!sel) return;
+    var cur = sel.value;
+    var cats = S.categories || {};
+    sel.innerHTML = '<option value="">' + tpT('ui.all_categories') + "</option>" +
+      Object.keys(cats).map(function (k) {
+        return '<option value="' + k + '">' + esc(cats[k]) + "</option>";
+      }).join("");
+    sel.value = cur;
   }
 
   function fillGroupSelect() {
@@ -416,6 +429,13 @@
       '<div class="tp-field"><label class="tp-field__label">' + tpT('front.group') + '</label><select name="group_id" class="tp-input">' +
       groupOpts +
       "</select></div>" +
+      // Categoria (Operaciones): carga, descarga, grifo, taller, descanso.
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.category') + '</label><select name="category" class="tp-input">' +
+      '<option value="">' + tpT('ui.no_category') + '</option>' +
+      Object.keys(S.categories || {}).map(function (k) {
+        return '<option value="' + k + '"' + (g && g.category === k ? " selected" : "") + ">" + esc(S.categories[k]) + "</option>";
+      }).join("") +
+      "</select></div>" +
       // Geocerca móvil: sigue al vehículo elegido (plugin moving_geofence).
       (S.movingPlugin
         ? '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.vehicle_moving_geofence') + '</label>' +
@@ -455,6 +475,8 @@
       name: name,
       polygon_color: f.querySelector('[name="polygon_color"]').value,
       group_id: parseInt(f.querySelector('[name="group_id"]').value, 10) || 0,
+      // Siempre viaja (vacio = quitar la categoria).
+      category: f.querySelector('[name="category"]').value || null,
     };
     var devSel = f.querySelector('[name="device_id"]');
     // Solo viaja si el plugin pinta el selector: GeofenceUserService::checkDevice
@@ -578,7 +600,11 @@
         if (r && r.ok && r.data && r.data.ok) {
           tpModal.toast && tpModal.toast("Geocerca eliminada.", "success");
           load(true);
-        } else tpModal.toast && tpModal.toast(tpT('ui.delete_failed'), "error");
+        } else {
+          // El servidor explica por que no (p. ej. es punto de una operacion).
+          var msg = (r && r.data && r.data.message) || tpT('ui.delete_failed');
+          tpModal.toast && tpModal.toast(msg, "error");
+        }
       });
     };
     if (tpModal.confirm)
@@ -853,6 +879,7 @@
       .then(function (j) {
         S.items = (j && j.items) || [];
         S.groups = (j && j.groups) || [];
+        S.categories = (j && j.categories) || {};
         S.vehicleTypes = (j && j.vehicle_types) || [];
         S.speedPlugin = !!(j && j.speed_limit_plugin);
         S.movingPlugin = !!(j && j.moving_plugin);
@@ -865,6 +892,7 @@
         });
         S.loaded = true;
         fillGroupSelect();
+        fillCategorySelect();
         renderList();
         renderLayers();
         settleRedraw();
@@ -1081,6 +1109,13 @@
     if (grp)
       grp.addEventListener("change", function () {
         S.groupId = grp.value || "";
+        renderList();
+        renderLayers();
+      });
+    var cat = document.getElementById("tp-zones-category");
+    if (cat)
+      cat.addEventListener("change", function () {
+        S.category = cat.value || "";
         renderList();
         renderLayers();
       });

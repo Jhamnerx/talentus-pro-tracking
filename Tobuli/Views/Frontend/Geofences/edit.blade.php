@@ -40,6 +40,12 @@
         </div>
     </div>
 
+
+    <div class="form-group">
+        {!! Form::label('category', trans('front.geofence_category').':') !!}
+        {!! Form::select('category', ['' => trans('front.geofence_category_none')] + \Tobuli\Entities\Geofence::categories(), $item->category, ['class' => 'form-control']) !!}
+    </div>
+
     @include('front::Geofences.partials.vehicle_speed_limits')
 
     @if (config('addon.reports_geofleet_in'))

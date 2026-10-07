@@ -970,6 +970,8 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'category'                            => 'Category',
+    'no_category'                         => 'No category',
     'updated'                             => 'Updated',
     'ops_tab_live'                        => 'Live',
     'ops_tab_cycles'                      => 'Cycles',

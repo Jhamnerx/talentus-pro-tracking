@@ -345,6 +345,10 @@
                         <select id="tp-zones-group" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;">
                             <option value="">{{ trans('ui.all_groups') }}</option>
                         </select>
+                        <select id="tp-zones-category" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;"
+                            aria-label="{{ trans('ui.category') }}">
+                            <option value="">{{ trans('ui.all_categories') }}</option>
+                        </select>
                         {{-- Gestion de grupos (paridad GeofencesGroups legacy) --}}
                         @if (Auth::user()->can('view', new \Tobuli\Entities\GeofenceGroup()))
                             <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-zones-groups-manage"
