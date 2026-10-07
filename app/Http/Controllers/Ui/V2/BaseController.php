@@ -165,7 +165,7 @@ abstract class BaseController extends Controller
     protected function eventSeverity(string $type): string
     {
         $critical = ['sos', 'overspeed', 'geofence_overspeed', 'unplugged', 'fuel_theft', 'jump_from_stop', 'ghost_speed'];
-        $warning  = ['zone_out', 'idle_duration', 'stop_duration', 'offline_duration', 'expiring_device', 'expiring_sim', 'expiring_user', 'driver_unauthorized'];
+        $warning  = ['zone_out', 'idle_duration', 'stop_duration', 'operation_stop', 'offline_duration', 'expiring_device', 'expiring_sim', 'expiring_user', 'driver_unauthorized'];
         $info     = ['zone_in', 'move_start', 'ignition_on', 'ignition_off', 'driver', 'driver_authorized', 'plugged_in', 'fuel_fill', 'task_new', 'task_complete'];
         if (in_array($type, $critical, true)) return 'critical';
         if (in_array($type, $warning, true))  return 'warning';

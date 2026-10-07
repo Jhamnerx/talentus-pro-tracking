@@ -164,6 +164,7 @@ return array(
         'days_to_remind' => 'Days to remind before expiration',
         'type' => 'Type',
         'category' => 'Category',
+        'operation_stop_seconds' => 'Stop longer than (seconds)',
         'format' => 'Format',
         'show_addresses' => 'Show addresses',
         'stops' => 'Stops',

@@ -524,3 +524,9 @@
   background: none;
   cursor: pointer;
 }
+
+/* Tema oscuro: el titulo usaba --brand-800 (azul marino), que sobre el fondo
+   oscuro del modal no se distinguia. Pasa al color de texto principal. */
+[data-theme="dark"] .tp-modal__title {
+  color: var(--fg-primary);
+}

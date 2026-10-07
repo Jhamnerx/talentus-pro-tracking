@@ -4,8 +4,13 @@
 > **Revisado contra el código el 4 de octubre de 2026**: se corrigieron la evaluación en vivo
 > (ahora como las alertas, con estado en BD), permisos, registro de reportes, tipos de la base de
 > datos, la pestaña En vivo (sin socket) y se añadió el paso 0 y la compatibilidad con el legacy.
-> **Nada de lo descrito está construido ni probado todavía.** Este archivo es el traspaso para
-> continuar el trabajo en Claude Code dentro de este repositorio.
+> **Estado al 7-oct-2026 (rama `operaciones`):** fase 1 y fase 2 implementadas y probadas con
+> datos reales del vehículo 219. Decisiones tomadas en la implementación: el borrado de geocercas
+> y grupos en uso se bloquea; la primera versión de un punto vale para todo el pasado (así el
+> recálculo sirve sobre días anteriores a crear la operación); los motivos con «autoriza» marcan
+> la parada como autorizada y «Otro» solo la explica; la alerta «Parada en operación» usa
+> `operation_stop_seconds` (segundos exactos) y se evalúa cada minuto. Pendientes: fases 3 y 4,
+> `round`→`floor` en la alerta de duración de parada.
 >
 > Cómo retomar: leer este archivo y `CLAUDE.md`, y empezar por «Orden dentro de la fase 1».
 > Trabajar en una rama nueva: al momento de escribir esto la rama activa era `nuevo-tema` y tenía

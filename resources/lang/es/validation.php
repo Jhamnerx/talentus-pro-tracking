@@ -800,6 +800,7 @@ return [
         'new_password' => 'Nueva contraseña',
         'type' => 'Tipo',
         'category' => 'Categoría',
+        'operation_stop_seconds' => 'Parada mayor a (segundos)',
         'sensor_type' => 'Tipo de sensor',
         'fuel_measurement_type' => 'Medición de combustible',
         'export_type' => 'Tipo de exportación',

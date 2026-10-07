@@ -52,6 +52,7 @@ class Event extends AbstractEntity implements DisplayInterface
     const TYPE_OFFLINE_DURATION = 'offline_duration';
     const TYPE_MOVE_DURATION = 'move_duration';
     const TYPE_STOP_DURATION = 'stop_duration';
+    const TYPE_OPERATION_STOP = 'operation_stop';
     const TYPE_IDLE_DURATION = 'idle_duration';
     const TYPE_IGNITION_DURATION = 'ignition_duration';
     const TYPE_IGNITION_ON = 'ignition_on';
@@ -302,6 +303,16 @@ class Event extends AbstractEntity implements DisplayInterface
                 $duration = Arr::get($this->additional, 'stop_duration', 0);
                 $detail   = $duration . ' ' . trans('front.minutes');
                 break;
+            case Event::TYPE_OPERATION_STOP:
+                $parts = [Formatter::duration()->human((int) Arr::get($this->additional, 'stop_seconds', 0))];
+                if ($op = Arr::get($this->additional, 'operation'))
+                    $parts[] = $op;
+                if ($dir = Arr::get($this->additional, 'direction'))
+                    $parts[] = trans($dir === 'outbound' ? 'front.operation_outbound' : 'front.operation_inbound');
+                if ($n = Arr::get($this->additional, 'cycle_number'))
+                    $parts[] = trans('front.operation_cycle') . ' #' . $n;
+                $detail = implode(' · ', $parts);
+                break;
             case Event::TYPE_TIME_DURATION:
                 $duration = Arr::get($this->additional, 'time_duration', 0);
                 $detail   = $duration . ' ' . trans('front.minutes');
@@ -376,6 +387,9 @@ class Event extends AbstractEntity implements DisplayInterface
                 break;
             case Event::TYPE_STOP_DURATION:
                 $name = trans('validation.attributes.stop_duration_longer_than');
+                break;
+            case Event::TYPE_OPERATION_STOP:
+                $name = trans('front.operation_stop');
                 break;
             case Event::TYPE_TIME_DURATION:
                 $name = trans('validation.attributes.time_duration');
@@ -536,6 +550,10 @@ class Event extends AbstractEntity implements DisplayInterface
                 'title' => trans('front.stop_duration'),
             ],
             [
+                'type' => Event::TYPE_OPERATION_STOP,
+                'title' => trans('front.operation_stop'),
+            ],
+            [
                 'type' => Event::TYPE_TIME_DURATION,
                 'title' => trans('front.time_duration'),
             ],
@@ -677,6 +695,7 @@ class Event extends AbstractEntity implements DisplayInterface
             case Event::TYPE_TIME_DURATION:
             case Event::TYPE_MOVE_DURATION:
             case Event::TYPE_STOP_DURATION:
+            case Event::TYPE_OPERATION_STOP:
             case Event::TYPE_IDLE_DURATION:
             case Event::TYPE_POI_IDLE_DURATION:
             case Event::TYPE_POI_STOP_DURATION:

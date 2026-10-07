@@ -15,6 +15,8 @@ use Tobuli\Entities\OperationDeviceState;
 use Tobuli\Entities\OperationLeg;
 use Tobuli\Entities\OperationPoint;
 use Tobuli\Entities\OperationRecalculation;
+use Tobuli\Entities\OperationStop;
+use Tobuli\Entities\OperationStopReason;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Services\Operations\OperationService;
 
@@ -370,7 +372,7 @@ class OperationsController extends BaseController
         $operationIds = Operation::userOwned($this->user)->withTrashed()->pluck('id');
 
         $cycle = OperationCycle::whereIn('operation_id', $operationIds)
-            ->with(['device:id,name', 'legs.fromPoint:id,name', 'legs.toPoint:id,name', 'legs.stops'])
+            ->with(['device:id,name', 'legs.fromPoint:id,name', 'legs.toPoint:id,name', 'legs.stops.reason', 'legs.stops.justifier:id,email'])
             ->find((int) $id);
 
         if (! $cycle) {
@@ -409,6 +411,13 @@ class OperationsController extends BaseController
                         'geofence'    => $s->geofence_name,
                         'authorized'  => (bool) $s->authorized,
                         'doubtful'    => (bool) $s->doubtful,
+                        // Fase 2: justificacion
+                        'justified'    => $s->isJustified(),
+                        'reason_id'    => $s->reason_id ? (int) $s->reason_id : null,
+                        'reason'       => $s->reasonLabel(),
+                        'note'         => $s->note,
+                        'justified_by' => $s->justifier->email ?? null,
+                        'justified_at' => $s->justified_at ? Formatter::time()->human($s->justified_at) : null,
                     ];
                 })->all(),
             ];
@@ -508,6 +517,115 @@ class OperationsController extends BaseController
         }
 
         return [$operation, array_values($devices), Formatter::time()->reverse($from . ' 00:00:00')];
+    }
+
+    // ------------------------------------------------------------------
+    // Fase 2: motivos de parada y justificacion
+    // ------------------------------------------------------------------
+
+    public function reasons(): JsonResponse
+    {
+        $this->gate('view');
+
+        OperationStopReason::seedFor($this->user);
+
+        $items = OperationStopReason::userOwned($this->user)
+            ->orderBy('position')->orderBy('name')
+            ->get()
+            ->map(fn ($r) => ['id' => (int) $r->id, 'name' => (string) $r->name, 'authorizes' => (bool) $r->authorizes])
+            ->all();
+
+        return response()->json(['ok' => true, 'items' => $items]);
+    }
+
+    /** Guarda el catalogo entero: [{id?, name, authorizes}]. Los que faltan se borran. */
+    public function saveReasons(Request $request): JsonResponse
+    {
+        $this->gate('edit');
+
+        $rows = (array) $request->get('items', []);
+        $keep = [];
+
+        DB::transaction(function () use ($rows, &$keep) {
+            foreach (array_values($rows) as $position => $row) {
+                $name = trim((string) ($row['name'] ?? ''));
+
+                if ($name === '') {
+                    continue;
+                }
+
+                $attributes = [
+                    'name'       => mb_substr($name, 0, 100),
+                    'authorizes' => (bool) ($row['authorizes'] ?? false),
+                    'position'   => $position,
+                ];
+
+                $reason = ! empty($row['id'])
+                    ? OperationStopReason::userOwned($this->user)->find((int) $row['id'])
+                    : null;
+
+                $reason = $reason
+                    ? tap($reason)->update($attributes)
+                    : OperationStopReason::create($attributes + ['user_id' => $this->user->id]);
+
+                $keep[] = $reason->id;
+            }
+
+            OperationStopReason::userOwned($this->user)->whereNotIn('id', $keep ?: [0])->delete();
+        });
+
+        return $this->reasons();
+    }
+
+    /**
+     * Justifica una parada. reason_id nulo = "Otro" (nota obligatoria, no
+     * autoriza). Un motivo con `authorizes` marca la parada como autorizada
+     * y recalcula el contador del tramo. Guarda quien y cuando.
+     */
+    public function justifyStop(Request $request, $id): JsonResponse
+    {
+        $this->gate('edit');
+
+        $operationIds = Operation::userOwned($this->user)->withTrashed()->pluck('id');
+
+        $stop = OperationStop::whereHas('leg.cycle', fn ($q) => $q->whereIn('operation_id', $operationIds))
+            ->with('leg')
+            ->find((int) $id);
+
+        if (! $stop) {
+            abort(404);
+        }
+
+        $reasonId = $request->get('reason_id');
+        $note = trim((string) $request->get('note', ''));
+        $reason = null;
+
+        if ($reasonId) {
+            $reason = OperationStopReason::userOwned($this->user)->find((int) $reasonId);
+
+            if (! $reason) {
+                return response()->json(['ok' => false, 'errors' => ['reason_id' => trans('validation.exists', ['attribute' => trans('ui.ops_reason')])]], 422);
+            }
+        } elseif ($note === '') {
+            return response()->json(['ok' => false, 'errors' => ['note' => trans('ui.ops_note_required_other')]], 422);
+        }
+
+        $stop->reason_id = $reason ? $reason->id : null;
+        $stop->note = $note !== '' ? mb_substr($note, 0, 2000) : null;
+        $stop->justified_by = $this->user->id;
+        $stop->justified_at = date('Y-m-d H:i:s');
+
+        // Autorizada si el motivo lo dice; "Otro" solo explica.
+        $stop->authorized = $reason ? (bool) $reason->authorizes : false;
+        $stop->save();
+
+        if ($stop->leg) {
+            $stop->leg->unauthorized_stops_count = $stop->leg->stops()
+                ->where('authorized', 0)->where('doubtful', 0)->count();
+            $stop->leg->save();
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     // ------------------------------------------------------------------

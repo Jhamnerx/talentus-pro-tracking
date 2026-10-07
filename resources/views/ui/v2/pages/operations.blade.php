@@ -23,6 +23,8 @@
         data-recalc-preview-url="{{ route('ui.v2.api.operations.recalculate_preview') }}"
         data-recalc-url="{{ route('ui.v2.api.operations.recalculate') }}"
         data-recalcs-url="{{ route('ui.v2.api.operations.recalculations') }}"
+        data-reasons-url="{{ route('ui.v2.api.operations.reasons') }}"
+        data-justify-url="{{ url('/ui/v2/api/operations/stops') . '/{id}/justify' }}"
         data-history-url="{{ url('/ui/v2/history') }}"
         data-report-url="{{ url('/reports/update') }}"
         data-can-edit="{{ auth()->user()->perm('operations', 'edit') ? '1' : '0' }}"
@@ -174,6 +176,7 @@
                     <input type="text" class="tp-input" id="tp-ops-search"
                         placeholder="{{ trans('front.search') }}…" aria-label="{{ trans('front.search') }}" autocomplete="off">
                     @if (auth()->user()->perm('operations', 'edit'))
+                        <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-reasons">{{ trans('ui.ops_reasons') }}</button>
                         <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-recalc">{{ trans('ui.ops_recalculate') }}</button>
                         <button type="button" class="tp-btn tp-btn--accent" id="tp-ops-add">＋ {{ trans('ui.ops_add') }}</button>
                     @endif

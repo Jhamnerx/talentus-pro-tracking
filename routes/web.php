@@ -1220,6 +1220,10 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::put('operations/{id}',                ['as' => 'api.operations.update',              'uses' => 'Ui\V2\OperationsController@update'])->where('id', '[0-9]+');
         Route::post('operations/{id}/toggle',        ['as' => 'api.operations.toggle',              'uses' => 'Ui\V2\OperationsController@toggle'])->where('id', '[0-9]+');
         Route::delete('operations/{id}',             ['as' => 'api.operations.destroy',             'uses' => 'Ui\V2\OperationsController@destroy'])->where('id', '[0-9]+');
+        // Fase 2: motivos de parada y justificacion
+        Route::get('operations/stop-reasons',        ['as' => 'api.operations.reasons',             'uses' => 'Ui\V2\OperationsController@reasons']);
+        Route::put('operations/stop-reasons',        ['as' => 'api.operations.reasons.save',        'uses' => 'Ui\V2\OperationsController@saveReasons']);
+        Route::post('operations/stops/{id}/justify', ['as' => 'api.operations.stops.justify',       'uses' => 'Ui\V2\OperationsController@justifyStop'])->where('id', '[0-9]+');
         Route::put('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints.save',    'uses' => 'Ui\V2\RouteSchedulesController@saveCheckpoints'])->where('id', '[0-9]+');
 
         Route::get('expenses',        ['as' => 'api.expenses',        'uses' => 'Ui\V2\ExpensesController@data']);

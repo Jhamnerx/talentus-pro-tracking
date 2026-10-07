@@ -971,6 +971,23 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'ops_alert_operation_stop'            => 'Parada en operación',
+    'ops_justify'                         => 'Justificar',
+    'ops_justify_title'                   => 'Justificar parada',
+    'ops_reason'                          => 'Motivo',
+    'ops_reason_other'                    => 'Otro (escribir motivo)',
+    'ops_note'                            => 'Comentario',
+    'ops_note_required_other'             => 'Con «Otro» el comentario es obligatorio.',
+    'ops_justified_by'                    => 'Justificó :user el :date',
+    'ops_justified'                       => 'Justificada',
+    'ops_reasons'                         => 'Motivos de parada',
+    'ops_reason_name'                     => 'Nombre del motivo',
+    'ops_reason_authorizes'               => 'Autoriza la parada',
+    'ops_reason_explains'                 => 'Solo explica',
+    'ops_add_reason'                      => '+ Agregar motivo',
+    'ops_reason_saved'                    => 'Motivos guardados.',
+    'ops_confirm_delete_reason'           => '¿Eliminar este motivo? Las paradas ya justificadas conservan su comentario.',
+    'ops_justify_saved'                   => 'Parada justificada.',
     'category'                            => 'Categoría',
     'no_category'                         => 'Sin categoría',
     'updated'                             => 'Actualizado',

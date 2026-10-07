@@ -492,6 +492,15 @@ class AlertModalHelper extends ModalHelper
                         ),
                     ]);
                     break;
+                case 'operation_stop':
+                    $type['attributes'] = AttributesCollection::make([
+                        Field::number(
+                            'operation_stop_seconds',
+                            trans('validation.attributes.operation_stop_seconds'),
+                            $alert ? $alert->operation_stop_seconds : 60
+                        ),
+                    ]);
+                    break;
                 case 'move_start':
                 case 'stop_duration':
                     $type['attributes'] = AttributesCollection::make([
@@ -878,6 +887,11 @@ class AlertModalHelper extends ModalHelper
             [
                 'type'  => 'stop_duration',
                 'title' => trans('front.stop_duration'),
+            ],
+            [
+                // Modulo de Operaciones: parada fuera de zona autorizada en un tramo.
+                'type'  => 'operation_stop',
+                'title' => trans('front.operation_stop'),
             ],
             [
                 'type'  => 'time_duration',

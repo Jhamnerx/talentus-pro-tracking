@@ -970,6 +970,23 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'ops_alert_operation_stop'            => 'Stop during operation',
+    'ops_justify'                         => 'Justify',
+    'ops_justify_title'                   => 'Justify stop',
+    'ops_reason'                          => 'Reason',
+    'ops_reason_other'                    => 'Other (write the reason)',
+    'ops_note'                            => 'Comment',
+    'ops_note_required_other'             => 'With "Other" the comment is required.',
+    'ops_justified_by'                    => 'Justified by :user on :date',
+    'ops_justified'                       => 'Justified',
+    'ops_reasons'                         => 'Stop reasons',
+    'ops_reason_name'                     => 'Reason name',
+    'ops_reason_authorizes'               => 'Authorizes the stop',
+    'ops_reason_explains'                 => 'Explains only',
+    'ops_add_reason'                      => '+ Add reason',
+    'ops_reason_saved'                    => 'Reasons saved.',
+    'ops_confirm_delete_reason'           => 'Delete this reason? Already justified stops keep their comment.',
+    'ops_justify_saved'                   => 'Stop justified.',
     'category'                            => 'Category',
     'no_category'                         => 'No category',
     'updated'                             => 'Updated',

@@ -25,6 +25,8 @@
     recalcPreview: root.getAttribute("data-recalc-preview-url"),
     recalc: root.getAttribute("data-recalc-url"),
     recalcs: root.getAttribute("data-recalcs-url"),
+    reasons: root.getAttribute("data-reasons-url"),
+    justify: root.getAttribute("data-justify-url"),
     history: root.getAttribute("data-history-url"),
     report: root.getAttribute("data-report-url"),
   };
@@ -252,6 +254,12 @@
   }
 
   $("tp-ops-cycle-rows").addEventListener("click", function (e) {
+    var jl = e.target.closest("[data-justify-stop]");
+    if (jl) {
+      e.preventDefault();
+      openJustify(Number(jl.getAttribute("data-justify-stop")), Number(jl.getAttribute("data-justify-cycle")));
+      return;
+    }
     var link = e.target.closest("[data-map-device]");
     if (link) {
       e.preventDefault();
@@ -297,14 +305,20 @@
       var stops = l.stops && l.stops.length ? '<table class="tp-ops__stops"><thead><tr>' +
         "<th>" + esc(t("ui.ops_stop_start")) + "</th><th>" + esc(t("ui.ops_stop_duration")) + "</th>" +
         "<th>" + esc(t("ui.ops_engine_on")) + "</th><th>" + esc(t("ui.ops_engine_off")) + "</th>" +
-        "<th>" + esc(t("ui.ops_geofence")) + "</th><th>" + esc(t("front.status")) + "</th><th></th></tr></thead><tbody>" +
+        "<th>" + esc(t("ui.ops_geofence")) + "</th><th>" + esc(t("front.status")) + "</th><th>" + esc(t("ui.ops_reason")) + "</th><th></th></tr></thead><tbody>" +
         l.stops.map(function (s) {
           var cls = s.doubtful ? "is-doubtful" : (s.authorized ? "" : "is-unauthorized");
           var st = s.doubtful ? t("ui.ops_doubtful") : (s.authorized ? t("ui.ops_authorized") : t("ui.ops_unauthorized"));
+          var reason = s.justified
+            ? esc(s.reason || "") + (s.note ? ' <span class="tp-ops__hint">' + esc(s.note) + "</span>" : "") +
+              '<div class="tp-ops__hint">' + esc(t("ui.ops_justified_by", { user: s.justified_by || "", date: s.justified_at || "" })) + "</div>"
+            : "—";
+          var actions = '<a href="#" data-map-device="' + c.device_id + '" data-map-from="' + esc(s.started_local) + '" data-map-to="' + esc(s.ended_local) + '">' + esc(t("ui.ops_view_on_map")) + "</a>";
+          if (canEdit) actions += ' · <a href="#" data-justify-stop="' + s.id + '" data-justify-cycle="' + c.id + '">' + esc(t("ui.ops_justify")) + "</a>";
           return '<tr class="' + cls + '"><td>' + esc(s.started_at) + "</td><td>" + esc(s.duration) + "</td>" +
             "<td>" + esc(s.engine_on || "—") + "</td><td>" + esc(s.engine_off || "—") + "</td>" +
-            "<td>" + esc(s.geofence || "—") + "</td><td>" + esc(st) + "</td>" +
-            '<td><a href="#" data-map-device="' + c.device_id + '" data-map-from="' + esc(s.started_local) + '" data-map-to="' + esc(s.ended_local) + '">' + esc(t("ui.ops_view_on_map")) + "</a></td></tr>";
+            "<td>" + esc(s.geofence || "—") + "</td><td>" + esc(st) + "</td><td>" + reason + "</td>" +
+            "<td>" + actions + "</td></tr>";
         }).join("") + "</tbody></table>"
         : '<div class="tp-ops__hint">' + esc(l.ended_at ? t("ui.ops_no_stops") : t("ui.ops_legs_open")) + "</div>";
 
@@ -430,6 +444,129 @@
   if (addBtn) addBtn.addEventListener("click", function () { openForm(null); });
   var recalcBtn = $("tp-ops-recalc");
   if (recalcBtn) recalcBtn.addEventListener("click", function () { openRecalc(null); });
+  var reasonsBtn = $("tp-ops-reasons");
+  if (reasonsBtn) reasonsBtn.addEventListener("click", openReasons);
+
+  /* =====================================================
+   * Fase 2: justificar paradas y catalogo de motivos
+   * ===================================================== */
+  function loadReasons() {
+    return tpModal.fetchJSON(URLS.reasons, { method: "GET" }).then(function (res) {
+      return (res && res.data && res.data.items) || [];
+    });
+  }
+
+  /* Vuelve a pintar el detalle de una vuelta ya desplegada. */
+  function refreshCycleDetail(cycleId) {
+    var tr = $("tp-ops-cycle-rows").querySelector('[data-cycle="' + cycleId + '"]');
+    var detail = tr && tr.nextElementSibling;
+    if (!detail || !detail.classList.contains("tp-ops__detail")) return;
+    tpModal.fetchJSON(URLS.cycle.replace("{id}", cycleId), { method: "GET" }).then(function (res) {
+      var d = (res && res.data) || {};
+      if (d.ok) detail.innerHTML = '<td colspan="12">' + cycleDetail(d.item) + "</td>";
+    });
+  }
+
+  function openJustify(stopId, cycleId) {
+    loadReasons().then(function (reasons) {
+      var opts = reasons.map(function (r) {
+        return '<option value="' + r.id + '">' + esc(r.name) + (r.authorizes ? "" : " · " + esc(t("ui.ops_reason_explains"))) + "</option>";
+      }).join("") + '<option value="">' + esc(t("ui.ops_reason_other")) + "</option>";
+
+      var body = '<div class="tp-scope" style="display:grid;gap:10px;">' +
+        field(t("ui.ops_reason"), '<select class="tp-input" name="reason_id" data-x-reason style="width:100%;">' + opts + "</select>") +
+        field(t("ui.ops_note"), '<textarea class="tp-input" name="note" data-x-note rows="3" style="width:100%;"></textarea>' +
+          '<span class="tp-ops__hint">' + esc(t("ui.ops_note_required_other")) + "</span>") +
+        '<div class="tp-ops__err" data-x-err></div></div>';
+
+      var dlg = tpModal.open({
+        title: t("ui.ops_justify_title"),
+        size: "sm",
+        body: body,
+        buttons: [
+          { label: t("global.cancel"), variant: "ghost", close: true },
+          { label: t("global.save"), variant: "primary", close: false, onClick: function (d) {
+            var err = d.querySelector("[data-x-err]");
+            var payload = { reason_id: d.querySelector("[data-x-reason]").value || null, note: d.querySelector("[data-x-note]").value.trim() };
+            if (!payload.reason_id && !payload.note) { err.textContent = t("ui.ops_note_required_other"); err.classList.add("is-visible"); return false; }
+            tpModal.setBusy(d, true);
+            tpModal.fetchJSON(URLS.justify.replace("{id}", stopId), { method: "POST", json: payload }).then(function (res) {
+              tpModal.setBusy(d, false);
+              if (!res.ok || !res.data || !res.data.ok) {
+                var errors = (res.data && res.data.errors) || {};
+                var first = Object.keys(errors)[0];
+                err.textContent = first ? [].concat(errors[first])[0] : t("ui.save_failed");
+                err.classList.add("is-visible");
+                return;
+              }
+              tpModal.close(d);
+              tpModal.toast(t("ui.ops_justify_saved"), "success");
+              refreshCycleDetail(cycleId);
+            });
+            return false;
+          } },
+        ],
+      });
+    });
+  }
+
+  function reasonRow(r) {
+    r = r || { name: "", authorizes: true };
+    return '<div class="tp-ops__point" data-x-reason-row' + (r.id ? ' data-id="' + r.id + '"' : "") + ' style="grid-template-columns:1fr auto auto;">' +
+      '<input type="text" class="tp-input" data-x-rname value="' + esc(r.name) + '" placeholder="' + esc(t("ui.ops_reason_name")) + '" aria-label="' + esc(t("ui.ops_reason_name")) + '">' +
+      '<label class="tp-ops__check" style="padding:0;"><input type="checkbox" data-x-rauth' + (r.authorizes ? " checked" : "") + "> " + esc(t("ui.ops_reason_authorizes")) + "</label>" +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-btn--icon" data-x-remove-reason aria-label="' + esc(t("global.delete")) + '">×</button>' +
+      "</div>";
+  }
+
+  function openReasons() {
+    loadReasons().then(function (reasons) {
+      var body = '<div class="tp-scope" style="display:grid;gap:10px;">' +
+        '<p class="tp-ops__sub" style="margin:0;">' + esc(t("ui.ops_note_required_other")) + "</p>" +
+        '<div class="tp-ops__points" data-x-reasons>' + reasons.map(reasonRow).join("") + "</div>" +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-reason style="justify-self:start;">' + esc(t("ui.ops_add_reason")) + "</button>" +
+        '<div class="tp-ops__err" data-x-err></div></div>';
+
+      var dlg = tpModal.open({
+        title: t("ui.ops_reasons"),
+        size: "md",
+        body: body,
+        buttons: [
+          { label: t("global.cancel"), variant: "ghost", close: true },
+          { label: t("global.save"), variant: "primary", close: false, onClick: function (d) {
+            var items = [];
+            d.querySelectorAll("[data-x-reason-row]").forEach(function (row) {
+              var it = { name: row.querySelector("[data-x-rname]").value.trim(), authorizes: row.querySelector("[data-x-rauth]").checked ? 1 : 0 };
+              if (row.getAttribute("data-id")) it.id = Number(row.getAttribute("data-id"));
+              if (it.name) items.push(it);
+            });
+            tpModal.setBusy(d, true);
+            tpModal.fetchJSON(URLS.reasons, { method: "PUT", json: { items: items } }).then(function (res) {
+              tpModal.setBusy(d, false);
+              if (!res.ok || !res.data || !res.data.ok) { tpModal.errorToast(res, t("ui.save_failed")); return; }
+              tpModal.close(d);
+              tpModal.toast(t("ui.ops_reason_saved"), "success");
+            });
+            return false;
+          } },
+        ],
+      });
+      if (!dlg) return;
+      dlg.addEventListener("click", function (e) {
+        if (e.target.closest("[data-x-add-reason]")) {
+          dlg.querySelector("[data-x-reasons]").insertAdjacentHTML("beforeend", reasonRow(null));
+          return;
+        }
+        var rm = e.target.closest("[data-x-remove-reason]");
+        if (rm) {
+          var row = rm.closest("[data-x-reason-row]");
+          if (!row.getAttribute("data-id")) { row.remove(); return; }
+          tpModal.confirm({ title: t("ui.ops_reasons"), message: t("ui.ops_confirm_delete_reason"), confirmLabel: t("global.delete"), danger: true })
+            .then(function (ok) { if (ok) row.remove(); });
+        }
+      });
+    });
+  }
 
   /* ---------- Formulario ---------- */
   function field(label, input, full) {
