@@ -239,6 +239,18 @@
       $("tp-ops-cycles-range").textContent = t("ui.page_short") + " " + (d.page || 1) + " / " + (d.pages || 1);
       $("tp-ops-cycles-total").textContent = (d.total || 0) + " " + t("ui.ops_cycles").toLowerCase();
       state.cycles.pages = d.pages || 1;
+      showPendingRecalcs();
+    });
+  }
+
+  /* Un recalculo en cola lo atiende operations:process (cada minuto): mientras
+     tanto la lista puede estar vacia o a medias, y conviene decirlo. */
+  function showPendingRecalcs() {
+    tpModal.fetchJSON(URLS.recalcs, { method: "GET" }).then(function (res) {
+      var items = (res && res.data && res.data.items) || [];
+      var pending = items.filter(function (r) { return r.status === "pending" || r.status === "running"; });
+      var el = $("tp-ops-cycles-total");
+      if (pending.length) el.textContent += " · " + t("ui.ops_recalc_pending_hint");
     });
   }
 
