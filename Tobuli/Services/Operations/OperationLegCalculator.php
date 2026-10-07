@@ -110,6 +110,15 @@ class OperationLegCalculator
                 continue;
             }
 
+            // El pipeline cuenta un hueco de señal como parada. Si quitando
+            // los huecos (> GAP_SECONDS entre tramas) no llega al umbral, no
+            // es una parada sino tiempo sin datos, que ya va en gap_seconds.
+            $gap = (int) $this->stat($group, 'no_data_duration');
+
+            if ($duration - $gap < $operation->stop_threshold_seconds) {
+                continue;
+            }
+
             $engineOn = $hasEngineSensor ? (int) $this->stat($group, 'engine_on_duration') : null;
             $engineOff = $hasEngineSensor ? (int) $this->stat($group, 'engine_off_duration') : null;
 

@@ -80,6 +80,18 @@ class OperationCycleWriter
 
         $this->currentTs = $ts;
         $changed = false;
+
+        // Tramo vencido: no llego al otro punto en max_leg_hours. Se cierra
+        // como incompleto en la hora limite, igual en vivo que en el
+        // recalculo (operations:process solo cubre los tramos sin tramas).
+        $leg = $this->state->openLeg;
+        $maxSeconds = max(1, (int) $this->operation->max_leg_hours) * 3600;
+
+        if ($leg && $leg->isOpen() && $ts - $leg->started_at->getTimestamp() > $maxSeconds) {
+            $this->abandon(date('Y-m-d H:i:s', $leg->started_at->getTimestamp() + $maxSeconds));
+            $changed = true;
+        }
+
         $inside = $this->pointAt($lat, $lng);
 
         if ($this->state->isInsidePoint()) {
