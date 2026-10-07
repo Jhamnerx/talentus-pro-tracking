@@ -224,7 +224,12 @@ gulp.task("ui-v2-css", function () {
   return gulp
     .src("resources/assets/ui-v2/css/*.css")
     .pipe(postcss([tailwindcss("./tailwind.config.js"), autoprefixer()]))
-    .pipe(cleanCSS()) // minificar la salida de public (las fuentes en resources quedan legibles)
+    // Minificar la salida de public (las fuentes en resources quedan legibles).
+    // tidySelectors apagado: clean-css 4 recorta el espacio de
+    // ":where([data-theme=dark], [data-theme=dark] *)" (las variantes dark: de
+    // Tailwind) y lo deja como "[data-theme=dark]*", que no coincide con nada;
+    // por eso el calendario y los paneles con clases dark: salian claros.
+    .pipe(cleanCSS({ level: { 1: { tidySelectors: false } } }))
     .pipe(gulp.dest("public/assets/ui/v2/css"))
     .pipe(browserSync.reload({ stream: true }));
 });

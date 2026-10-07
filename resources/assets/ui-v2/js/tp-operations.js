@@ -58,6 +58,16 @@
   }
   function today() { return ymd(new Date()); }
 
+  /* tp-datepicker convierte los input[type=date] en texto dd/mm/aaaa y guarda
+     el ISO en un hidden: leer .value a pelo manda "08/07/2026" al servidor. */
+  function dval(el) { return window.tpDate ? tpDate.value(el) : ((el && el.value) || ""); }
+  function dateGet(id) { return dval($(id)); }
+  function dateSet(id, iso) {
+    var el = $(id);
+    if (!el) return;
+    if (el._tpdp) el._tpdp.set(iso); else el.value = iso;
+  }
+
   function fillSelect(sel, items, placeholder, selected) {
     if (!sel) return;
     sel.innerHTML = (placeholder != null ? '<option value="">' + esc(placeholder) + "</option>" : "") +
@@ -138,7 +148,7 @@
       rows.innerHTML = '<tr><td colspan="8" class="tp-svc-table__empty">' + esc(t("ui.ops_pick_operation")) + "</td></tr>";
       return;
     }
-    var date = $("tp-ops-live-date").value || today();
+    var date = dateGet("tp-ops-live-date") || today();
     var qs = "?operation_id=" + encodeURIComponent(opId) + "&date=" + encodeURIComponent(date);
 
     tpModal.fetchJSON(URLS.live + qs, { method: "GET" }).then(function (res) {
@@ -181,9 +191,9 @@
   $("tp-ops-live-rows").addEventListener("click", function (e) {
     var tr = e.target.closest("[data-live-device]");
     if (!tr) return;
-    var date = $("tp-ops-live-date").value || today();
-    $("tp-ops-from").value = date;
-    $("tp-ops-to").value = date;
+    var date = dateGet("tp-ops-live-date") || today();
+    dateSet("tp-ops-from", date);
+    dateSet("tp-ops-to", date);
     $("tp-ops-filter-operation").value = $("tp-ops-live-operation").value;
     fillShiftFilter();
     $("tp-ops-filter-device").value = tr.getAttribute("data-live-device");
@@ -201,8 +211,8 @@
    * ===================================================== */
   function cyclesQuery() {
     var p = {
-      from: $("tp-ops-from").value,
-      to: $("tp-ops-to").value,
+      from: dateGet("tp-ops-from"),
+      to: dateGet("tp-ops-to"),
       operation_id: $("tp-ops-filter-operation").value,
       device_id: $("tp-ops-filter-device").value,
       shift_id: $("tp-ops-filter-shift").value,
@@ -215,7 +225,7 @@
 
   function loadCycles() {
     var rows = $("tp-ops-cycle-rows");
-    if (!$("tp-ops-from").value || !$("tp-ops-to").value) {
+    if (!dateGet("tp-ops-from") || !dateGet("tp-ops-to")) {
       rows.innerHTML = '<tr><td colspan="12" class="tp-svc-table__empty">' + esc(t("ui.pick_date_range")) + "</td></tr>";
       return;
     }
@@ -334,7 +344,7 @@
   /* Exportar: el mismo POST oculto que usa la pagina de Reportes. */
   var exportBtn = $("tp-ops-export");
   if (exportBtn) exportBtn.addEventListener("click", function () {
-    if (!$("tp-ops-from").value || !$("tp-ops-to").value) { tpModal.toast(t("ui.pick_date_range"), "error"); return; }
+    if (!dateGet("tp-ops-from") || !dateGet("tp-ops-to")) { tpModal.toast(t("ui.pick_date_range"), "error"); return; }
     // Solo los vehiculos de la operacion (o el filtrado): mandar toda la
     // flota desborda max_input_vars de PHP y la lista llega truncada.
     var opSel = $("tp-ops-filter-operation").value;
@@ -352,8 +362,8 @@
     var campos = {
       // view=1: la ruta legacy devuelve el HTML en pantalla en vez de descargarlo.
       type: REPORT_TYPE, format: "html", generate: 1, view: 1,
-      date_from: $("tp-ops-from").value, from_time: "00:00",
-      date_to: $("tp-ops-to").value, to_time: "23:59",
+      date_from: dateGet("tp-ops-from"), from_time: "00:00",
+      date_to: dateGet("tp-ops-to"), to_time: "23:59",
       devices: devIds,
       selected_devices: ["s;0;"].concat(devIds.map(function (i) { return "id;1;" + i; })),
       operation_id: $("tp-ops-filter-operation").value ? [$("tp-ops-filter-operation").value] : [],
@@ -785,7 +795,7 @@
     }
 
     function preview() {
-      var opId = dlg.querySelector("[data-x-op]").value, from = dlg.querySelector("[data-x-from]").value;
+      var opId = dlg.querySelector("[data-x-op]").value, from = dval(dlg.querySelector("[data-x-from]"));
       if (!opId || !from) return;
       var devs = dlg._devices ? dlg._devices.getIds() : [];
       var qs = "?operation_id=" + opId + "&from=" + from + devs.map(function (i) { return "&devices[]=" + i; }).join("");
@@ -807,7 +817,7 @@
     var err = d.querySelector("[data-x-err]");
     var payload = {
       operation_id: d.querySelector("[data-x-op]").value,
-      from: d.querySelector("[data-x-from]").value,
+      from: dval(d.querySelector("[data-x-from]")),
       devices: d._devices ? d._devices.getIds() : [],
       use_current_points: d.querySelector('[name="x-points"]:checked').value,
     };
@@ -822,9 +832,9 @@
   }
 
   /* ---------- Arranque ---------- */
-  $("tp-ops-live-date").value = today();
-  $("tp-ops-from").value = today();
-  $("tp-ops-to").value = today();
+  dateSet("tp-ops-live-date", today());
+  dateSet("tp-ops-from", today());
+  dateSet("tp-ops-to", today());
 
   loadMeta().then(function () {
     loadList();
