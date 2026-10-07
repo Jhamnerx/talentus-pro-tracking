@@ -970,6 +970,8 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'ops_view_leg_on_map'                 => 'View leg on map',
+    'ops_view_stop_on_map'                => 'View stop on map',
     'ops_alert_operation_stop'            => 'Stop during operation',
     'ops_justify'                         => 'Justify',
     'ops_justify_title'                   => 'Justify stop',

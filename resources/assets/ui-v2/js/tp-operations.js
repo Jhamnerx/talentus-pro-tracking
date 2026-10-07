@@ -320,7 +320,7 @@
         "<span>" + esc(l.duration) + "</span>" +
         (l.distance ? "<span>" + esc(t("ui.ops_leg_distance")) + ": " + esc(l.distance) + "</span>" : "") +
         (l.gap ? "<span>" + esc(t("ui.ops_leg_gap")) + ": " + esc(l.gap) + "</span>" : "") +
-        (l.ended_local ? '<a href="#" class="tp-btn tp-btn--ghost tp-btn--sm" data-map-device="' + c.device_id + '" data-map-from="' + esc(l.started_local) + '" data-map-to="' + esc(l.ended_local) + '">' + esc(t("ui.ops_view_on_map")) + "</a>" : "") +
+        (l.ended_local ? '<a href="#" class="tp-btn tp-btn--ghost tp-btn--sm" data-map-device="' + c.device_id + '" data-map-from="' + esc(l.started_local) + '" data-map-to="' + esc(l.ended_local) + '">' + esc(t("ui.ops_view_leg_on_map")) + "</a>" : "") +
         (!l.calculated && l.ended_at ? '<span class="tp-ops__hint">' + esc(t("ui.ops_pending_calc")) + "</span>" : "") +
         "</div>";
 
@@ -335,7 +335,7 @@
             ? esc(s.reason || "") + (s.note ? ' <span class="tp-ops__hint">' + esc(s.note) + "</span>" : "") +
               '<div class="tp-ops__hint">' + esc(t("ui.ops_justified_by", { user: s.justified_by || "", date: s.justified_at || "" })) + "</div>"
             : "—";
-          var actions = '<a href="#" data-map-device="' + c.device_id + '" data-map-from="' + esc(s.started_local) + '" data-map-to="' + esc(s.ended_local) + '">' + esc(t("ui.ops_view_on_map")) + "</a>";
+          var actions = '<a href="#" data-map-device="' + c.device_id + '" data-map-from="' + esc(s.started_local) + '" data-map-to="' + esc(s.ended_local) + '">' + esc(t("ui.ops_view_stop_on_map")) + "</a>";
           if (canEdit) actions += ' · <a href="#" data-justify-stop="' + s.id + '" data-justify-cycle="' + c.id + '">' + esc(t("ui.ops_justify")) + "</a>";
           return '<tr class="' + cls + '"><td>' + esc(s.started_at) + "</td><td>" + esc(s.duration) + "</td>" +
             "<td>" + esc(s.engine_on || "—") + "</td><td>" + esc(s.engine_off || "—") + "</td>" +

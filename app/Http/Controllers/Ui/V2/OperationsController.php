@@ -391,7 +391,9 @@ class OperationsController extends BaseController
                 'started_at'   => Formatter::time()->human($leg->started_at),
                 'ended_at'     => $leg->ended_at ? Formatter::time()->human($leg->ended_at) : null,
                 'started_local' => Formatter::time()->convert($leg->started_at, 'Y-m-d H:i'),
-                'ended_local'   => $leg->ended_at ? Formatter::time()->convert($leg->ended_at, 'Y-m-d H:i') : null,
+                // Fin redondeado al minuto siguiente: Historial trabaja en HH:MM y
+                // 15:46:54 quedaria fuera de un rango que termina en 15:46.
+                'ended_local'   => $leg->ended_at ? Formatter::time()->convert($leg->ended_at->copy()->addSeconds(59), 'Y-m-d H:i') : null,
                 'duration'     => Formatter::duration()->human((int) $leg->duration_seconds),
                 'distance'     => $leg->distance_meters !== null ? Formatter::distance()->human($leg->distance_meters / 1000) : null,
                 'calculated'   => ! is_null($leg->calculated_at),
@@ -402,7 +404,7 @@ class OperationsController extends BaseController
                         'started_at'  => Formatter::time()->human($s->started_at),
                         'ended_at'    => Formatter::time()->human($s->ended_at),
                         'started_local' => Formatter::time()->convert($s->started_at, 'Y-m-d H:i'),
-                        'ended_local'   => Formatter::time()->convert($s->ended_at, 'Y-m-d H:i'),
+                        'ended_local'   => Formatter::time()->convert($s->ended_at->copy()->addSeconds(59), 'Y-m-d H:i'),
                         'duration'    => Formatter::duration()->human((int) $s->duration_seconds),
                         'engine_on'   => $s->engine_on_seconds !== null ? Formatter::duration()->human((int) $s->engine_on_seconds) : null,
                         'engine_off'  => $s->engine_off_seconds !== null ? Formatter::duration()->human((int) $s->engine_off_seconds) : null,
