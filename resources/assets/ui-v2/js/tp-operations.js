@@ -337,7 +337,7 @@
 
   function postDescarga(url, campos) {
     var form = document.createElement("form");
-    form.method = "POST"; form.action = url; form.target = "_blank"; form.style.display = "none";
+    form.method = "POST"; form.action = url; form.style.display = "none";
     function campo(n, v) { var i = document.createElement("input"); i.type = "hidden"; i.name = n; i.value = v; form.appendChild(i); }
     campo("_token", tpModal.csrf());
     Object.keys(campos).forEach(function (k) {
@@ -345,7 +345,10 @@
       if (Array.isArray(v)) v.forEach(function (x) { campo(/\[\]$/.test(k) ? k : k + "[]", x); });
       else if (v != null && v !== "") campo(k, v);
     });
-    document.body.appendChild(form); form.submit(); form.remove();
+    document.body.appendChild(form);
+    form.submit();
+    // Quitarlo en el acto deja el POST sin cuerpo (la ruta legacy recibia data vacia).
+    setTimeout(function () { if (form.parentNode) form.parentNode.removeChild(form); }, 0);
   }
 
   /* =====================================================
