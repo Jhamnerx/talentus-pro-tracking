@@ -183,7 +183,7 @@
                     <table class="tp-svc-table">
                         <thead>
                             <tr>
-                                <th>{{ trans('validation.attributes.name') }}</th>
+                                <th>{{ trans('ui.name') }}</th>
                                 <th>{{ trans('front.group') }}</th>
                                 <th>{{ trans('ui.vehicles') }}</th>
                                 <th>{{ trans('ui.ops_points') }}</th>

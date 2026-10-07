@@ -1385,6 +1385,13 @@
     return new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0);
   }
   function hhmm(d) { return (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes(); }
+  function snap5(d, up) {
+    var m = d.getMinutes(), r = up ? Math.ceil(m / 5) * 5 : Math.floor(m / 5) * 5;
+    var out = new Date(d.getTime());
+    out.setMinutes(Math.min(r, 55), 0, 0);
+    if (up && r > 55) out.setMinutes(55);
+    return out;
+  }
 
   function init() {
     bind();
@@ -1401,8 +1408,10 @@
       if (qFrom && qTo) {
         dp.from = new Date(qFrom.getFullYear(), qFrom.getMonth(), qFrom.getDate());
         dp.to = new Date(qTo.getFullYear(), qTo.getMonth(), qTo.getDate());
-        $("#tp-hist-dp-from-time").value = hhmm(qFrom);
-        $("#tp-hist-dp-to-time").value = hhmm(qTo);
+        // Los selectores de hora van en pasos de 5 min: el inicio se redondea
+        // hacia abajo y el fin hacia arriba para no recortar el recorrido.
+        $("#tp-hist-dp-from-time").value = hhmm(snap5(qFrom, false));
+        $("#tp-hist-dp-to-time").value = hhmm(snap5(qTo, true));
         commitRange();
       }
       if (dev && combo.getAttribute("data-value")) load();

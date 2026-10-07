@@ -77,6 +77,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\CopyDevicesCommand',
         'App\Console\Commands\CalcVirtualOdometerCommand',
         'App\Console\Commands\RecalculateDeviceHistoryCommand',
+        'App\Console\Commands\OperationsProcessCommand',
         'App\Console\Commands\SplitDevicesCommand',
         'App\Console\Commands\FakeDevicesCommand',
         'App\Console\Commands\DropDeviceFreeTablesCommand',

@@ -24,7 +24,7 @@
         'idle',
         'import', 'inactive', 'latitude', 'loading', 'location', 'logout',
         'logs', 'longitude', 'map', 'minute', 'minute_short', 'model', 'month', 'monthly',
-        'move', 'move_duration', 'new', 'next', 'no_data', 'no_routes',
+        'move', 'move_duration', 'new', 'next', 'no_data', 'no_routes', 'operations',
         'no_services', 'none', 'overspeed', 'playback', 'points', 'preview',
         'previous', 'protocol', 'queued', 'queued_for_online', 'report',
         'response', 'results', 'route', 'route_length', 'routes',

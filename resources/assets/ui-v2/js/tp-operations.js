@@ -99,7 +99,7 @@
 
       fillSelect($("tp-ops-live-operation"), ops, ops.length ? null : t("ui.ops_pick_operation"), state.liveOperation || (active[0] && active[0].id));
       fillSelect($("tp-ops-filter-operation"), ops, t("ui.all_f"));
-      fillSelect($("tp-ops-filter-device"), d.devices || [], t("global.all"));
+      fillSelect($("tp-ops-filter-device"), d.devices || [], t("front.all"));
       fillShiftFilter();
 
       state.liveOperation = $("tp-ops-live-operation").value || null;
@@ -111,7 +111,7 @@
     var op = state.byId[opId];
     var shifts = op ? op.shifts.map(function (s) { return { id: s.id, name: s.name }; }) : [];
     if (op) shifts.push({ id: "none", name: t("ui.ops_no_shift") });
-    fillSelect($("tp-ops-filter-shift"), shifts, t("global.all"));
+    fillSelect($("tp-ops-filter-shift"), shifts, t("front.all"));
   }
 
   /* =====================================================
