@@ -146,20 +146,25 @@
   left: 50%;
   /* width/height/margin llegan en linea: dependen del tamaño del icono */
   border-radius: 50%;
-  /* Tiene que verse MAS que el halo azul del seleccionado (opacidad .18 y
-     latiendo). Disco de color con anillo del mismo tono y filo blanco, que
-     es lo que lo hace legible lo mismo sobre satelite que sobre calles. */
-  opacity: 0.6;
-  box-shadow:
-    0 0 0 2.5px currentColor,
-    0 0 0 4.5px rgba(255, 255, 255, 0.92),
-    0 0 9px 1px rgba(0, 0, 0, 0.3);
+  /* Tinte muy suave, el mismo peso que el del seleccionado. Lo que de
+     verdad marca el color es el resplandor del icono, no este disco: uno
+     opaco tapaba al vehiculo y a la etiqueta. */
+  opacity: 0.18;
   pointer-events: none;
   z-index: 0;
 }
+/* Resplandor pegado a la silueta, igual que el seleccionado pero con el
+   color del rango de velocidad, que llega en --tp-halo desde el propio
+   <img>. Se hace con una variable y no con un filter en linea para que la
+   regla del seleccionado -misma especificidad, mas abajo en la hoja- siga
+   ganando cuando el vehiculo esta seleccionado Y coloreado. */
 .tp-lmarker--colored img {
   position: relative;
   z-index: 1;
+  filter:
+    drop-shadow(0 0 0 var(--tp-halo))
+    drop-shadow(0 0 6px var(--tp-halo))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
 }
 /* La etiqueta coloreada lleva el color en linea (viene del rango); aqui solo
    se asegura que el texto se lea sobre cualquier tono. */

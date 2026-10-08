@@ -341,12 +341,13 @@
     var estiloNombre = col
       ? ' style="background:' + col + ';border-color:' + col + ';color:#fff;"'
       : "";
-    // El halo se dimensiona con el icono: van de 25x33 (flecha) a 48x48, y
-    // con una medida fija desaparecia detras de los grandes.
-    var haloPx = Math.round(Math.max(w, h) * 1.3) + 12;
+    // El disco se dimensiona con el icono: van de 25x33 (flecha) a 48x48, y
+    // con una medida fija quedaba desproporcionado en los extremos. La
+    // proporcion es la del seleccionado (38 px para un icono de ~32).
+    var haloPx = Math.round(Math.max(w, h) * 1.15) + 6;
     var haloMid = -Math.round(haloPx / 2);
     var halo = col
-      ? '<span class="tp-lmarker__halo" style="background:' + col + ";color:" + col +
+      ? '<span class="tp-lmarker__halo" style="background:' + col +
         ";width:" + haloPx + "px;height:" + haloPx + "px;margin:" + haloMid + "px 0 0 " +
         haloMid + 'px;"></span>'
       : "";
@@ -370,6 +371,8 @@
       '" height="' +
       h +
       '" style="display:block;' +
+      // El drop-shadow del resplandor lee este --tp-halo (ver live-ops.css).
+      (col ? "--tp-halo:" + col + ";" : "") +
       rot +
       '" draggable="false">';
     return L.divIcon({
