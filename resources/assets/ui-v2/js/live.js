@@ -2006,11 +2006,16 @@
       (speedNum === 0 ? " tp-live__row-speed--zero" : "") +
       '">' +
       esc(speedTxt) +
-      '</span><span class="tp-live__row-time">' +
+      '</span><span class="tp-live__row-time" title="' + tpT('ui.last_signal') + '">' +
       // De baja: el legacy escribe "Desactivado" en la 2ª linea y NO muestra
       // la ultima transmision. Aqui igual, o se leerian dos cosas que se
       // contradicen (desactivado + "hace 3 dias").
-      (enabled ? fmtTimeAgo(d.acktimestamp || d.timestamp) : "") +
+      //
+      // ts y no d.acktimestamp || d.timestamp: acktimestamp manda aunque sea
+      // mas viejo y suele ir dias por detras, asi que la fila mostraba la
+      // fecha de hoy y al lado "2d". El legacy usa max() de los dos
+      // (Device::getTime, getLastConnectTimestamp).
+      (enabled ? fmtTimeAgo(ts) : "") +
       "</span></div>" +
       '<button type="button" class="tp-live__row-menu" data-id="' +
       d.id +
