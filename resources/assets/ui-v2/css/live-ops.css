@@ -207,6 +207,14 @@
     opacity: 0;
   }
 }
+/* El halo de velocidad no late: es fijo. Este, el del seleccionado, si, y
+   es la unica animacion continua sobre el mapa: se para con el ajuste de
+   movimiento reducido del sistema, como las otras dos del fichero. */
+@media (prefers-reduced-motion: reduce) {
+  .tp-lmarker--selected::after {
+    animation: none;
+  }
+}
 /* Etiqueta de nombre del marcador (toggle "nombres") */
 .tp-lmarker__name {
   display: none;
