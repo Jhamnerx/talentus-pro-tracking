@@ -60,10 +60,10 @@
   var $protocol = document.getElementById("tp-fleet-protocol");
 
   var STATUS_LABELS = {
-    moving: "Moviendo",
+    moving: tpT('front.move'),
     idle: tpT('front.idle'),
     stopped: tpT('front.stopped'),
-    offline: "Offline",
+    offline: tpT('front.offline'),
   };
 
   function escapeHtml(s) {

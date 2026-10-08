@@ -673,9 +673,9 @@
     ack: tpT('front.stopped'),
     stop: tpT('front.stopped'),
     idle: tpT('front.idle'),
-    blocked: "Bloqueado",
-    offline: "Desconectado",
-    expired: "Expirado",
+    blocked: tpT('front.blocked'),
+    offline: tpT('front.offline'),
+    expired: tpT('front.expired'),
   };
   var addrCache = {};
   function fetchAddr(d, cb) {

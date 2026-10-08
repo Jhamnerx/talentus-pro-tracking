@@ -2190,6 +2190,37 @@ class DevicesController extends BaseController
      * legacy, que alimenta reportes e historial. Se completa aqui, al
      * presentar, y solo cuando falta de verdad.
      */
+    /**
+     * Rotulo del estado del objeto.
+     *
+     * Las mismas etiquetas que pinta el JS en la pastilla del drawer
+     * (STATUS_LABELS de live.js / monitor.js), para que la ficha "Objeto" y
+     * la pastilla no digan cosas distintas del mismo vehiculo. Antes se
+     * traducia con trans('front.' . $estado) y cuatro de los seis estados
+     * posibles no tienen clave en front.php: salia "front.online".
+     */
+    private function estadoTexto(?string $estado): ?string
+    {
+        if ($estado === null || $estado === '') {
+            return null;
+        }
+
+        $etiquetas = [
+            'online'          => trans('front.move'),
+            'move'            => trans('front.move'),
+            'excessive_speed' => trans('front.overspeed'),
+            'engine'          => trans('ui.engine_on'),
+            'ack'             => trans('front.stopped'),
+            'stop'            => trans('front.stopped'),
+            'idle'            => trans('front.idle'),
+            'blocked'         => trans('front.blocked'),
+            'offline'         => trans('front.offline'),
+            'expired'         => trans('front.expired'),
+        ];
+
+        return $etiquetas[$estado] ?? $estado;
+    }
+
     private function sensorTexto(\Tobuli\Entities\DeviceSensor $sensor, $formateado): string
     {
         $texto = trim((string) $formateado);
@@ -2928,7 +2959,7 @@ class DevicesController extends BaseController
 
             $data['device_info'] = [
                 'status'      => $device->getStatus(),
-                'status_text' => trans('front.' . $device->getStatus()),
+                'status_text' => $this->estadoTexto($device->getStatus()),
                 'address'     => $address['address'] ?? null,
                 'time'        => $device->time ? \Formatter::time()->format($device->time) : null,
                 'coords'      => ($device->lat && $device->lng)

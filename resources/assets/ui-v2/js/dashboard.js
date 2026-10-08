@@ -285,7 +285,7 @@
       tbody.innerHTML = '<tr><td colspan="4" class="tp-text-muted tp-text-center">' + tpT('ui.no_data_dot') + '</td></tr>';
       return;
     }
-    var labels = { moving: "Moviendo", idle: tpT('front.idle'), stopped: tpT('front.stopped'), offline: tpT('front.no_data') };
+    var labels = { moving: tpT('front.move'), idle: tpT('front.idle'), stopped: tpT('front.stopped'), offline: tpT('front.no_data') };
     tbody.innerHTML = top
       .map(function (d, i) {
         var g = statusGroup(d.status);
