@@ -1506,6 +1506,9 @@ return [
             'device_distance'      => [
                 'enabled' => 1,
                 'options' => [
+                    // Sin 'period' el desplegable de opciones reventaba
+                    // (Undefined array key) y con el, todo /dashboard.
+                    'period'  => 'day',
                     'devices' => []
                 ],
             ],
