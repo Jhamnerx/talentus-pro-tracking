@@ -144,13 +144,16 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
+  /* width/height/margin llegan en linea: dependen del tamaño del icono */
   border-radius: 50%;
-  opacity: 0.45;
-  /* El difuminado evita el borde duro del circulo sobre el mapa */
-  filter: blur(2px);
+  /* Tiene que verse MAS que el halo azul del seleccionado (opacidad .18 y
+     latiendo). Disco de color con anillo del mismo tono y filo blanco, que
+     es lo que lo hace legible lo mismo sobre satelite que sobre calles. */
+  opacity: 0.6;
+  box-shadow:
+    0 0 0 2.5px currentColor,
+    0 0 0 4.5px rgba(255, 255, 255, 0.92),
+    0 0 9px 1px rgba(0, 0, 0, 0.3);
   pointer-events: none;
   z-index: 0;
 }

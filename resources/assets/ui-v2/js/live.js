@@ -341,12 +341,23 @@
     var estiloNombre = col
       ? ' style="background:' + col + ';border-color:' + col + ';color:#fff;"'
       : "";
+    // El halo se dimensiona con el icono: van de 25x33 (flecha) a 48x48, y
+    // con una medida fija desaparecia detras de los grandes.
+    var haloPx = Math.round(Math.max(w, h) * 1.3) + 12;
+    var haloMid = -Math.round(haloPx / 2);
     var halo = col
-      ? '<span class="tp-lmarker__halo" style="background:' + col + ';"></span>'
+      ? '<span class="tp-lmarker__halo" style="background:' + col + ";color:" + col +
+        ";width:" + haloPx + "px;height:" + haloPx + "px;margin:" + haloMid + "px 0 0 " +
+        haloMid + 'px;"></span>'
       : "";
+    // El color por velocidad es del VEHICULO; el de estado es un ajuste de la
+    // CUENTA para todos. Manda el del vehiculo: si lo tiene, no se pone la
+    // clase de estado. Antes se ponian las dos y ganaba el color en linea
+    // solo por la cascada del CSS.
+    var claseNombre = "tp-lmarker__name" + (col ? "" : " tp-lmarker__name--" + grp);
 
     var html =
-      '<span class="tp-lmarker__name tp-lmarker__name--' + grp + '"' + estiloNombre + ">" +
+      '<span class="' + claseNombre + '"' + estiloNombre + ">" +
       esc(d.name || "") +
       vehicleStateBadge(d.vehicle_state, "vertical-align:middle;margin-left:4px;") +
       '<span class="tp-lmarker__speed">' + esc(spd) + "</span>" +
