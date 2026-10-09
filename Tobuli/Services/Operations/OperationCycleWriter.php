@@ -281,6 +281,15 @@ class OperationCycleWriter
             $cycle = null;
         }
 
+        // Volvio a descarga sin haber hecho nunca la ida (salio de descarga y
+        // regreso): la vuelta queda incompleta y se cierra, en vez de ir
+        // acumulando tramos descarga->descarga en una sola vuelta abierta.
+        if (! $point->isLoad() && $cycle && $cycle->isOpen()
+            && ! $cycle->legs()->where('direction', OperationLeg::DIRECTION_OUTBOUND)->where('status', OperationLeg::STATUS_COMPLETED)->exists()) {
+            $this->closeCycle($cycle, $enterAt);
+            $cycle = null;
+        }
+
         $visit = OperationVisit::create([
             'operation_id'       => $this->operation->id,
             'operation_point_id' => $point->id,
