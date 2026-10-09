@@ -1542,13 +1542,19 @@ function listsTranslations()
         'image' => trans('front.device_image'),
         'fuel_graph' => trans('front.fuel'),
         'gprs_command' => trans('front.gprs_command'),
-        'recent_events' => trans('front.recent_events'),
         'driver' => trans('front.driver'),
         'live_video' => trans('front.live_video'),
     ];
 
     if (! settings('main_settings.streetview_key') && (settings('main_settings.streetview_api') != 'default')) {
         unset($widgetsData[array_search('streetview', $widgetsData)]);
+    }
+
+    // Estaba en el array de arriba sin condicion, asi que el interruptor
+    // "Eventos recientes" del admin no hacia nada: el widget salia igual
+    // apagado. Se gatea como el de bloqueo, que es el patron de al lado.
+    if (settings('plugins.recent_events.status')) {
+        $widgetsData['recent_events'] = trans('front.recent_events');
     }
 
     if (settings('plugins.locking_widget.status')) {
