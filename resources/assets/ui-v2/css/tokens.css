@@ -71,21 +71,35 @@
   --status-alert: #ef4444;
   --status-sos: #b91c1c;
 
-  /* Los nueve colores que el usuario puede elegir por vehiculo en la pestaña
-     Iconos (DeviceModalHelper::$device_icon_colors) y que getStatusColor()
-     devuelve por nombre. Aqui se les da un tono legible como texto: los nueve
-     pasan AA (>=4.5:1) sobre el fondo claro. Las variantes oscuras, abajo. */
-  --sc-green: #15803d;
-  --sc-yellow: #b45309;
-  --sc-orange: #c2410c;
-  --sc-red: #dc2626;
-  --sc-blue: #2563eb;
-  --sc-cyan: #0e7490;
-  --sc-gray: #6b7280;
-  --sc-black: #1f2937;
-  /* "Blanco" es el color del icono de desconectado; como texto sobre fondo
-     claro no se puede usar tal cual, se baja a un neutro legible. */
-  --sc-white: #64748b;
+  /* Los nueve colores que el usuario elige por vehiculo en la pestaña Iconos
+     (DeviceModalHelper::$device_icon_colors) y que getStatusColor() devuelve
+     por nombre. El valor es el MISMO que pinta el legacy: muestreado de
+     public/images/device_icons/estados/<nombre>.png, para que el indicador de
+     la v2 y el icono del legacy sean el mismo color.
+
+     Sirven de relleno (punto, acento), no de texto: #eae100 sobre blanco da
+     1.38:1. Para eso esta la variante -ink, el mismo tono oscurecido hasta
+     pasar 4.6:1, que tambien se usa de fondo de la etiqueta del marcador
+     porque esa lleva texto blanco encima. */
+  --sc-green: #8bcf1c;
+  --sc-yellow: #eae100;
+  --sc-orange: #eaaf00;
+  --sc-red: #eb1700;
+  --sc-blue: #376dd9;
+  --sc-cyan: #21c0f0;
+  --sc-gray: #9f9f9f;
+  --sc-black: #393939;
+  --sc-white: #9c9c9c;
+
+  --sc-green-ink: #568011;
+  --sc-yellow-ink: #7c7700;
+  --sc-orange-ink: #936e00;
+  --sc-red-ink: #e61700;
+  --sc-blue-ink: #376dd9;
+  --sc-cyan-ink: #167f9e;
+  --sc-gray-ink: #747474;
+  --sc-black-ink: #393939;
+  --sc-white-ink: #757575;
 
   /* === SPACING (4pt grid) ================================= */
   --sp-0: 0;
@@ -332,16 +346,20 @@
   --status-stopped: #9ca3af;
   --status-offline: #fbbf24;
 
-  /* Los nueve del catalogo, aclarados para el fondo oscuro. Todos >=6.6:1. */
-  --sc-green: #34d399;
-  --sc-yellow: #fbbf24;
-  --sc-orange: #fb923c;
-  --sc-red: #f87171;
-  --sc-blue: #60a5fa;
-  --sc-cyan: #22d3ee;
-  --sc-gray: #9ca3af;
-  --sc-black: #e2e8f0;
-  --sc-white: #cbd5e1;
+  /* Los rellenos no cambian -son los del legacy y contrastan bien sobre el
+     fondo oscuro- salvo el negro, que ahi seria invisible. Las tintas se
+     aclaran hasta >=6:1. */
+  --sc-black: #636363;
+
+  --sc-green-ink: #8bcf1c;
+  --sc-yellow-ink: #eae100;
+  --sc-orange-ink: #eaaf00;
+  --sc-red-ink: #f26859;
+  --sc-blue-ink: #6b93e3;
+  --sc-cyan-ink: #21c0f0;
+  --sc-gray-ink: #9f9f9f;
+  --sc-black-ink: #949494;
+  --sc-white-ink: #9c9c9c;
 }
 
 /* ============================================================

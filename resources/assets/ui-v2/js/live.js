@@ -152,10 +152,13 @@
     green: 1, yellow: 1, orange: 1, red: 1,
     blue: 1, cyan: 1, gray: 1, black: 1, white: 1,
   };
-  function statusVar(c) {
+  // tinta=true devuelve el tono oscurecido, para texto o para un fondo que
+  // lleve texto blanco encima. Un hex propio no se puede oscurecer aqui: se
+  // devuelve igual.
+  function statusVar(c, tinta) {
     if (!c) return "";
     c = String(c).toLowerCase();
-    if (SC_NOMBRES[c]) return "var(--sc-" + c + ")";
+    if (SC_NOMBRES[c]) return "var(--sc-" + c + (tinta ? "-ink" : "") + ")";
     return c.charAt(0) === "#" ? c : "";
   }
 
@@ -384,8 +387,10 @@
     var claseNombre = "tp-lmarker__name" + (col ? "" : " tp-lmarker__name--" + grp);
     // Con "colorear etiqueta segun el estado" activo, el tono sale del color
     // del vehiculo (.tp-status-color lo recoge en el CSS).
-    var colEstadoEtq = col ? "" : statusVar(d.icon_color);
-    if (colEstadoEtq) estiloNombre = ' style="--tp-status:' + colEstadoEtq + ';"';
+    // La etiqueta lleva texto blanco encima: va con la tinta, no con el
+    // relleno (texto blanco sobre #eae100 no se lee).
+    var colEstadoEtq = col ? "" : statusVar(d.icon_color, true);
+    if (colEstadoEtq) estiloNombre = ' style="--tp-status-ink:' + colEstadoEtq + ';"';
 
     var html =
       '<span class="' + claseNombre + '"' + estiloNombre + ">" +
@@ -2004,6 +2009,7 @@
     // Color del estado SEGUN EL VEHICULO (icon_colors -> getStatusColor), que
     // es lo que manda en el legacy. Antes solo se usaba para el acento.
     var colEstado = statusVar(d.icon_color);
+    var colEstadoInk = statusVar(d.icon_color, true);
     var accent = colVel || colEstado || "";
     // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
     var lockIcon = "";
@@ -2049,7 +2055,7 @@
       '"' +
       (accent
         ? ' style="--tp-accent:' + accent +
-          (colEstado ? ";--tp-status:" + colEstado : "") +
+          (colEstado ? ";--tp-status:" + colEstado + ";--tp-status-ink:" + colEstadoInk : "") +
           (colVel ? ";--tp-speed:" + colVel : "") + '"'
         : "") +
       ' role="option">' +

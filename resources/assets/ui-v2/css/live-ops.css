@@ -270,9 +270,9 @@
 }
 /* Con color propio del vehiculo manda ese; las tres de abajo quedan de
    respaldo para los que no lo tienen. */
-.tp-status-color .tp-lmarker__name[style*="--tp-status"] {
-  background: var(--tp-status);
-  border-color: var(--tp-status);
+.tp-status-color .tp-lmarker__name[style*="--tp-status-ink"] {
+  background: var(--tp-status-ink);
+  border-color: var(--tp-status-ink);
   color: #fff;
 }
 .tp-status-color .tp-lmarker__name--stopped {
@@ -885,7 +885,8 @@ table.tp-lock-hist th {
 .tp-live__row.tp-live__row--status .tp-live__row-name,
 .tp-live__row.tp-live__row--status .tp-live__row-speed,
 .tp-live__row.tp-live__row--status .tp-live__row-time {
-  color: var(--tp-status);
+  /* Tinta: el relleno del legacy no vale como texto (#eae100 da 1.38:1) */
+  color: var(--tp-status-ink);
 }
 /* Vehiculo con color por velocidad: manda sobre el estado, igual que en el
    marcador. La doble clase iguala la especificidad de las reglas de arriba
