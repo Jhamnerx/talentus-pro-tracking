@@ -627,7 +627,8 @@
 
   function cursorIcon(course) {
     var icon = (state.device && state.device.icon) || {}, type = icon.type || "arrow", src, w, h, rotate = false, bottom = false;
-    if (type === "arrow") { src = "/images/device_icons/estados/" + ((state.device && state.device.icon_color) || "green") + ".png"; w = 25; h = 33; rotate = true; }
+    // 50x50: es el tamaño real de esos PNG (ver live.js)
+    if (type === "arrow") { src = "/images/device_icons/estados/" + ((state.device && state.device.icon_color) || "green") + ".png"; w = 50; h = 50; rotate = true; }
     else if (type === "rotating") { src = assetPath(icon.path); w = icon.width || 32; h = icon.height || 32; rotate = true; }
     else { src = assetPath(icon.path); w = icon.width || 32; h = icon.height || 32; bottom = true; }
     var rot = rotate ? "transform:rotate(" + (course || 0) + "deg);" : "";

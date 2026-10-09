@@ -345,8 +345,11 @@
       anchorBottom = false;
     if (type === "arrow") {
       src = "/images/device_icons/estados/" + (d.icon_color || "gray") + ".png";
-      w = 25;
-      h = 33;
+      // Los PNG de estados/ son cuadrados de 50x50. Pintarlos a 25x33 -las
+      // medidas que la tabla guarda para la flecha- los dejaba a la mitad y
+      // estirados a lo alto.
+      w = 50;
+      h = 50;
       rotate = true;
     } else if (type === "rotating") {
       src = assetPath(icon.path);

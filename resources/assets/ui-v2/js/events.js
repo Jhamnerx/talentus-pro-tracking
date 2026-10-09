@@ -127,8 +127,9 @@
     var src, w, h, rotate = false, bottom = false;
     if (type === "arrow") {
       src = "/images/device_icons/estados/" + (ev.icon_color || icon.color || "gray") + ".png";
-      w = 25;
-      h = 33;
+      // 50x50: es el tamano real de esos PNG (ver live.js)
+      w = 50;
+      h = 50;
       rotate = true;
     } else if (type === "rotating") {
       src = assetPath(icon.path);
