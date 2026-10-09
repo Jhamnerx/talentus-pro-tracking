@@ -147,8 +147,10 @@ class OperationCyclesReport extends DeviceReport
 
     private function row(OperationCycle $c): array
     {
-        $out = $c->legs->first(fn ($l) => $l->isOutbound());
-        $in = $c->legs->first(fn ($l) => ! $l->isOutbound());
+        // El tramo que cuenta es el completado; si el vehiculo salio y volvio a
+        // entrar al mismo punto hay tramos incompletos de por medio.
+        $out = $c->legs->first(fn ($l) => $l->isOutbound() && $l->status === OperationLeg::STATUS_COMPLETED) ?? $c->legs->first(fn ($l) => $l->isOutbound());
+        $in = $c->legs->first(fn ($l) => ! $l->isOutbound() && $l->status === OperationLeg::STATUS_COMPLETED) ?? $c->legs->last(fn ($l) => ! $l->isOutbound());
         $hasEngine = $c->legs->contains(fn ($l) => ! is_null($l->idle_seconds));
 
         $statuses = [

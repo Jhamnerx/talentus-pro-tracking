@@ -670,8 +670,10 @@ class OperationsController extends BaseController
     private function cycleRow(OperationCycle $c): array
     {
         $legs = $c->legs;
-        $out = $legs->first(fn ($l) => $l->isOutbound());
-        $in = $legs->first(fn ($l) => ! $l->isOutbound());
+        // El tramo que cuenta es el completado; si el vehiculo salio y volvio a
+        // entrar al mismo punto hay tramos incompletos de por medio.
+        $out = $legs->first(fn ($l) => $l->isOutbound() && $l->status === OperationLeg::STATUS_COMPLETED) ?? $legs->first(fn ($l) => $l->isOutbound());
+        $in = $legs->first(fn ($l) => ! $l->isOutbound() && $l->status === OperationLeg::STATUS_COMPLETED) ?? $legs->last(fn ($l) => ! $l->isOutbound());
 
         $idle = $legs->sum('idle_seconds');
         $hasIdle = $legs->contains(fn ($l) => ! is_null($l->idle_seconds));
