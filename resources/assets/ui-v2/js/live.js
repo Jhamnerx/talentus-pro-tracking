@@ -280,6 +280,11 @@
     var cfg = d.marker_colors;
     if (!cfg) return null;
 
+    // Si el equipo no transmite, no hay velocidad que colorear: el 0 kph es
+    // el ultimo dato conocido, no una medida. Sin esto una unidad caida
+    // desde anoche salia verde -rango 0-40- como si estuviera circulando.
+    if (classify(d) === "offline") return null;
+
     // d.speed sale del accessor de Device, que es Formatter::speed()->format()
     // sobre getSpeed(): ya viene en la unidad del usuario y ya aplica el
     // sensor de velocidad ECM cuando el vehiculo lo tiene configurado. El

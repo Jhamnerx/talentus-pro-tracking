@@ -62,7 +62,12 @@
   --status-moving: #10b981;
   --status-idle: #f59e0b;
   --status-stopped: #6b7280;
-  --status-offline: #4b5563;
+  /* Ambar, no otro gris: con #4b5563 "desconectado" y "detenido" se veian
+     iguales. El legacy pinta el offline de amarillo
+     (settings device.status_colors.colors.offline) y el acento lateral de la
+     fila ya salia amarillo porque viene de getStatusColor(). 5.02:1 sobre
+     blanco, por encima del 4.5 de AA para texto normal. */
+  --status-offline: #b45309;
   --status-alert: #ef4444;
   --status-sos: #b91c1c;
 
@@ -304,11 +309,12 @@
   /* Map */
   --map-bg: #0a0e18;
 
-  /* Estados: los grises (detenido/desconectado) definidos en :root son muy
-     oscuros para el fondo dark; se aclaran para que el nombre/velocidad/hora
-     de los vehículos offline sean legibles en la lista de flota. */
+  /* Estados: el gris de "detenido" definido en :root es muy oscuro para el
+     fondo dark y el ambar de "desconectado" se apaga; se aclaran los dos para
+     que el nombre/velocidad/hora de esos vehículos sean legibles en la lista
+     de flota. El ambar da 11.02:1 sobre el fondo oscuro. */
   --status-stopped: #9ca3af;
-  --status-offline: #94a3b8;
+  --status-offline: #fbbf24;
 }
 
 /* ============================================================
