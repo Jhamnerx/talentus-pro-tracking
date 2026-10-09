@@ -32,6 +32,7 @@ class OperationService extends ModelService
         $this->user = $user;
 
         $this->setDefaults([
+            'kind'                   => Operation::KIND_HAUL,
             'active'                 => true,
             'min_dwell_seconds'      => 30,
             'stop_threshold_seconds' => 60,
@@ -41,6 +42,7 @@ class OperationService extends ModelService
 
         $rules = [
             'name'                   => 'required|string|max:255',
+            'kind'                   => 'in:haul,route',
             'device_group_id'        => 'required|integer',
             'active'                 => 'boolean',
             'min_dwell_seconds'      => 'integer|min:0|max:3600',
@@ -452,7 +454,7 @@ class OperationService extends ModelService
     protected function only(array $data): array
     {
         return array_intersect_key($data, array_flip([
-            'name', 'device_group_id', 'active', 'min_dwell_seconds',
+            'name', 'kind', 'device_group_id', 'active', 'min_dwell_seconds',
             'stop_threshold_seconds', 'max_leg_hours', 'authorized_categories',
         ]));
     }

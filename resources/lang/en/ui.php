@@ -972,6 +972,9 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'ops_kind'                            => 'Operation type',
+    'ops_state_at_start'                  => 'At route start',
+    'ops_state_at_end'                    => 'At route end',
     'ops_view_leg_on_map'                 => 'View leg on map',
     'ops_view_stop_on_map'                => 'View stop on map',
     'ops_alert_operation_stop'            => 'Stop during operation',

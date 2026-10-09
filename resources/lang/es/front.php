@@ -498,6 +498,17 @@ return [
     'geofence_category_taller' => 'Taller',
     'geofence_category_descanso' => 'Descanso',
     'geofence_category_none' => 'Sin categoría',
+    'geofence_category_inicio_ruta' => 'Inicio de ruta',
+    'geofence_category_fin_ruta' => 'Fin de ruta',
+    'operation_kind_haul' => 'Acarreo (carga / descarga)',
+    'operation_kind_route' => 'Ruta (inicio / fin)',
+    'operation_route_start' => 'Inicio de ruta',
+    'operation_route_end' => 'Fin de ruta',
+    'operation_origin' => 'Origen',
+    'operation_destination' => 'Destino',
+    'operation_exit_from' => 'Salida de :point',
+    'operation_arrival_to' => 'Llegada a :point',
+    'operation_time_at' => 'Tiempo en :point',
     'operations' => 'Operaciones',
     'operation_point_geofence_missing' => 'Alguna geocerca elegida como punto no existe o no es tuya.',
     'operation_point_geofence_moving' => 'La geocerca «:name» está asignada a un vehículo (geocerca móvil) y no puede ser punto de una operación.',
@@ -1453,8 +1464,6 @@ return [
     'diesel_electric' => 'Hibrido - Diesel/Electrico',
     'propane' => 'GLP (Gas propano)',
     'methanol' => 'Metanol',
-
-    // Rutas con puntos de control, programaciones y adherencia
     'route_schedules' => 'Programaciones de ruta',
     'route_schedule' => 'Programación de ruta',
     'route_schedule_add' => 'Nueva programación',
@@ -1495,24 +1504,16 @@ return [
     'route_max_delay' => 'Mayor retraso',
     'route_only_breaches' => 'Solo vueltas con incidencias',
     'route_schedule_required' => 'Elige al menos una programación.',
-
-    // Acción de alerta: enviar reporte por correo
     'alert_report_notification' => 'Reporte por correo',
     'alert_report_minutes_before' => 'Minutos antes del evento',
     'alert_report_minutes_after' => 'Minutos después del evento',
     'alert_report_hint' => 'El reporte cubre el vehículo desde X minutos antes hasta X minutos después del evento, y se envía cuando esa ventana ya ha pasado.',
     'report_format' => 'Formato',
-
-    // Geocerca de linea (corredor)
     'corridor' => 'Corredor (línea)',
     'corridor_width' => 'Distancia al eje (m)',
     'corridor_width_hint' => 'Cuánto se puede separar el vehículo de la línea dibujada antes de contar como fuera.',
     'please_draw_corridor' => 'Dibuja el eje del corredor en el mapa e indica cuánto puede separarse el vehículo.',
-
-    // Gráfico del historial: varias series a la vez
     'graph_series_hint' => 'Haz clic para añadir o quitar esta serie del gráfico',
-
-    // Alerta por umbral de sensor
     'sensor_value' => 'Valor de sensor',
     'sensor_value_type' => 'Sensor a vigilar',
     'sensor_value_operator' => 'Avisa cuando el valor esté',
@@ -1521,8 +1522,6 @@ return [
     'sensor_value_limit' => 'Umbral',
     'sensor_value_duration' => 'Duración mínima (min)',
     'sensor_value_duration_hint' => 'Cuánto tiene que mantenerse el valor pasado el umbral antes de avisar. Con 0 avisa a la primera lectura. Solo avisa una vez hasta que el valor vuelve a la normalidad.',
-
-    // Vídeo a bordo: canales por vehículo
     'video_channels' => 'Canales de vídeo a bordo',
     'video_channels_hint' => 'Cuántas cámaras lleva el vehículo (hasta 6). Con 0 el vehículo no ofrece vídeo y el widget no se muestra.',
     'video_channels_unsupported' => 'El protocolo de este equipo no lleva vídeo, así que el visor no abrirá aunque se configuren canales.',

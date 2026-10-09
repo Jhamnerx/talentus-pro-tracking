@@ -973,6 +973,9 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'ops_kind'                            => 'Tipo de operación',
+    'ops_state_at_start'                  => 'En inicio de ruta',
+    'ops_state_at_end'                    => 'En fin de ruta',
     'ops_view_leg_on_map'                 => 'Ver tramo en mapa',
     'ops_view_stop_on_map'                => 'Ver parada en mapa',
     'ops_alert_operation_stop'            => 'Parada en operación',

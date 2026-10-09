@@ -11,6 +11,7 @@
 @stop
 
 @section('content')
+    @php $col = $report->columnLabels(); @endphp
     @foreach ($report->getItems() as $item)
         <div class="panel panel-default">
             @include('Frontend.Reports.partials.item_heading')
@@ -49,13 +50,13 @@
                                 <th>{{ trans('global.date') }}</th>
                                 <th>{{ trans('front.operation_shift') }}</th>
                                 <th>{{ trans('front.status') }}</th>
-                                <th>{{ trans('front.operation_load_exit') }}</th>
-                                <th>{{ trans('front.operation_unload_enter') }}</th>
-                                <th>{{ trans('front.operation_unload_exit') }}</th>
-                                <th>{{ trans('front.operation_load_enter') }}</th>
-                                <th class="ops-num">{{ trans('front.operation_load_time') }}</th>
+                                <th>{{ $col['a_exit'] }}</th>
+                                <th>{{ $col['b_enter'] }}</th>
+                                <th>{{ $col['b_exit'] }}</th>
+                                <th>{{ $col['a_enter'] }}</th>
+                                <th class="ops-num">{{ $col['a_time'] }}</th>
                                 <th class="ops-num">{{ trans('front.operation_outbound') }}</th>
-                                <th class="ops-num">{{ trans('front.operation_unload_time') }}</th>
+                                <th class="ops-num">{{ $col['b_time'] }}</th>
                                 <th class="ops-num">{{ trans('front.operation_inbound') }}</th>
                                 <th class="ops-num">{{ trans('front.operation_cycle') }}</th>
                                 <th class="ops-num">{{ trans('front.stopped') }}</th>

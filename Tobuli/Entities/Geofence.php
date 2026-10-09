@@ -46,10 +46,15 @@ class Geofence extends AbstractEntity implements DisplayInterface
     const CATEGORY_FUEL = 'grifo';
     const CATEGORY_WORKSHOP = 'taller';
     const CATEGORY_REST = 'descanso';
+    // Operaciones de ruta: el punto donde empieza y donde termina la vuelta.
+    const CATEGORY_ROUTE_START = 'inicio_ruta';
+    const CATEGORY_ROUTE_END = 'fin_ruta';
 
     const CATEGORIES = [
         self::CATEGORY_LOAD,
         self::CATEGORY_UNLOAD,
+        self::CATEGORY_ROUTE_START,
+        self::CATEGORY_ROUTE_END,
         self::CATEGORY_FUEL,
         self::CATEGORY_WORKSHOP,
         self::CATEGORY_REST,

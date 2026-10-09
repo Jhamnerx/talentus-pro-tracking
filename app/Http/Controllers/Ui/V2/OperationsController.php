@@ -79,6 +79,11 @@ class OperationsController extends BaseController
             'groups'     => $groups,
             'geofences'  => $geofences,
             'categories' => Geofence::categories(),
+            'kinds'      => Operation::kinds(),
+            // Etiquetas por tipo de operacion: roles de los puntos, categorias
+            // que les corresponden y estados en vivo.
+            'role_labels'     => [Operation::KIND_HAUL => Operation::roleLabels(Operation::KIND_HAUL), Operation::KIND_ROUTE => Operation::roleLabels(Operation::KIND_ROUTE)],
+            'role_categories' => [Operation::KIND_HAUL => Operation::roleCategories(Operation::KIND_HAUL), Operation::KIND_ROUTE => Operation::roleCategories(Operation::KIND_ROUTE)],
             'states'     => $this->stateLabels(),
             'statuses'   => [
                 OperationCycle::STATUS_OPEN       => trans('ui.ops_status_open'),
@@ -223,7 +228,7 @@ class OperationsController extends BaseController
             ->groupBy('device_id');
 
         $authorized = Geofence::userOwned($this->user)->category($operation->authorizedCategories())->get();
-        $labels = $this->stateLabels();
+        $labels = Operation::stateLabels($operation->kind);
 
         $rows = [];
         $totalCycles = 0;
@@ -644,6 +649,7 @@ class OperationsController extends BaseController
         return [
             'id'                     => (int) $o->id,
             'name'                   => (string) $o->name,
+            'kind'                   => (string) ($o->kind ?: Operation::KIND_HAUL),
             'device_group_id'        => $o->device_group_id ? (int) $o->device_group_id : null,
             'group'                  => $o->deviceGroup->title ?? null,
             'devices_count'          => (int) ($o->device_states_count ?? $o->deviceStates()->count()),
@@ -705,13 +711,6 @@ class OperationsController extends BaseController
 
     private function stateLabels(): array
     {
-        return [
-            OperationDeviceState::STATE_UNKNOWN   => trans('ui.ops_state_unknown'),
-            OperationDeviceState::STATE_AT_LOAD   => trans('ui.ops_state_at_load'),
-            OperationDeviceState::STATE_OUTBOUND  => trans('ui.ops_state_outbound'),
-            OperationDeviceState::STATE_AT_UNLOAD => trans('ui.ops_state_at_unload'),
-            OperationDeviceState::STATE_INBOUND   => trans('ui.ops_state_inbound'),
-            OperationDeviceState::STATE_NO_DATA   => trans('ui.ops_state_no_data'),
-        ];
+        return Operation::stateLabels(Operation::KIND_HAUL);
     }
 }

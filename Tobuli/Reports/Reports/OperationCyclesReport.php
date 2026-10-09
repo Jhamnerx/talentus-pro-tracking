@@ -67,6 +67,9 @@ class OperationCyclesReport extends DeviceReport
         ];
     }
 
+    /** @var string|null tipo comun de las operaciones del reporte (null si se mezclan) */
+    protected $kind = null;
+
     protected function beforeGenerate()
     {
         parent::beforeGenerate();
@@ -80,6 +83,47 @@ class OperationCyclesReport extends DeviceReport
         }
 
         $this->operationIds = $query->pluck('id');
+
+        $kinds = (clone $query)->pluck('kind')->map(fn ($k) => $k ?: Operation::KIND_HAUL)->unique();
+        $this->kind = $kinds->count() === 1 ? $kinds->first() : null;
+    }
+
+    /**
+     * Rotulos de las columnas de puntos segun el tipo de operacion: con
+     * operaciones de ruta se habla de inicio y fin, no de carga y descarga.
+     * Si el reporte mezcla tipos se usan rotulos neutros (origen/destino).
+     */
+    public function columnLabels(): array
+    {
+        if ($this->kind === Operation::KIND_ROUTE) {
+            $a = trans('front.operation_route_start');
+            $b = trans('front.operation_route_end');
+        } elseif ($this->kind === Operation::KIND_HAUL) {
+            return [
+                'a_point' => trans('front.operation_load_point'),
+                'b_point' => trans('front.operation_unload_point'),
+                'a_exit'  => trans('front.operation_load_exit'),
+                'b_enter' => trans('front.operation_unload_enter'),
+                'b_exit'  => trans('front.operation_unload_exit'),
+                'a_enter' => trans('front.operation_load_enter'),
+                'a_time'  => trans('front.operation_load_time'),
+                'b_time'  => trans('front.operation_unload_time'),
+            ];
+        } else {
+            $a = trans('front.operation_origin');
+            $b = trans('front.operation_destination');
+        }
+
+        return [
+            'a_point' => $a,
+            'b_point' => $b,
+            'a_exit'  => trans('front.operation_exit_from', ['point' => $a]),
+            'b_enter' => trans('front.operation_arrival_to', ['point' => $b]),
+            'b_exit'  => trans('front.operation_exit_from', ['point' => $b]),
+            'a_enter' => trans('front.operation_arrival_to', ['point' => $a]),
+            'a_time'  => trans('front.operation_time_at', ['point' => $a]),
+            'b_time'  => trans('front.operation_time_at', ['point' => $b]),
+        ];
     }
 
     protected function generateDevice($device)
@@ -192,15 +236,15 @@ class OperationCyclesReport extends DeviceReport
             trans('front.operations'),
             '#',
             trans('front.status'),
-            trans('front.operation_load_point'),
-            trans('front.operation_unload_point'),
-            trans('front.operation_load_exit'),
-            trans('front.operation_unload_enter'),
-            trans('front.operation_unload_exit'),
-            trans('front.operation_load_enter'),
-            trans('front.operation_load_time'),
+            $this->columnLabels()['a_point'],
+            $this->columnLabels()['b_point'],
+            $this->columnLabels()['a_exit'],
+            $this->columnLabels()['b_enter'],
+            $this->columnLabels()['b_exit'],
+            $this->columnLabels()['a_enter'],
+            $this->columnLabels()['a_time'],
             trans('front.operation_outbound'),
-            trans('front.operation_unload_time'),
+            $this->columnLabels()['b_time'],
             trans('front.operation_inbound'),
             trans('front.operation_cycle'),
             trans('front.stopped'),

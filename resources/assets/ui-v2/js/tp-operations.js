@@ -431,10 +431,10 @@
     if (canRemove) acciones += '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ops-del="' + o.id + '">' + esc(t("global.delete")) + "</button>";
 
     return "<tr>" +
-      "<td>" + esc(o.name) + "</td>" +
+      "<td>" + esc(o.name) + '<div class="tp-ops__hint">' + esc((state.meta.kinds || {})[o.kind] || "") + "</div></td>" +
       "<td>" + esc(o.group || "—") + "</td>" +
       "<td>" + o.devices_count + "</td>" +
-      "<td>" + (o.points.length ? "<div><strong>" + esc(t("ui.ops_load_points")) + ":</strong> " + esc(loads.join(", ")) + "</div><div><strong>" + esc(t("ui.ops_unload_points")) + ":</strong> " + esc(unloads.join(", ")) + "</div>" : esc(t("ui.ops_points_none"))) + "</td>" +
+      "<td>" + (o.points.length ? "<div><strong>" + esc(roleLabel(o.kind, "load")) + ":</strong> " + esc(loads.join(", ")) + "</div><div><strong>" + esc(roleLabel(o.kind, "unload")) + ":</strong> " + esc(unloads.join(", ")) + "</div>" : esc(t("ui.ops_points_none"))) + "</td>" +
       "<td>" + (o.shifts.length ? o.shifts.map(function (s) { return esc(s.name) + " " + esc(s.start_time) + "–" + esc(s.end_time); }).join("<br>") : "—") + "</td>" +
       "<td>" + pill(o.active ? "completed" : "no_data", o.active ? t("global.yes") : t("global.no")) + "</td>" +
       '<td class="tp-svc-table__actions" style="white-space:nowrap;text-align:right;">' + acciones + "</td>" +
@@ -590,15 +590,27 @@
     });
   }
 
-  /* ---------- Formulario ---------- */
-  function field(label, input, full) {
-    return '<div class="tp-field"' + (full ? ' style="grid-column:1/-1;"' : "") + ">" +
-      (label ? '<label class="tp-field__label">' + esc(label) + "</label>" : "") + input + "</div>";
+  /* Etiqueta del rol de un punto ("Carga"/"Descarga" o "Inicio de ruta"/"Fin de ruta"). */
+  function roleLabel(kind, role) {
+    var m = (state.meta.role_labels || {})[kind || "haul"] || {};
+    return m[role] || (role === "load" ? t("ui.ops_state_at_load") : t("ui.ops_state_at_unload"));
+  }
+  function roleCategory(kind, role) {
+    var m = (state.meta.role_categories || {})[kind || "haul"] || {};
+    return m[role] || (role === "load" ? "carga" : "descarga");
   }
 
-  function geofenceOptions(role, selectedId) {
+  /* ---------- Formulario ---------- */
+  function field(label, input, full) {
+    // La etiqueta puede traer un <span data-x-role-title> para re-rotularla.
+    var safe = /^<span [^>]*>[^<]*<\/span>$/.test(label) ? label : esc(label);
+    return '<div class="tp-field"' + (full ? ' style="grid-column:1/-1;"' : "") + ">" +
+      (label ? '<label class="tp-field__label">' + safe + "</label>" : "") + input + "</div>";
+  }
+
+  function geofenceOptions(role, selectedId, kind) {
     var cats = state.meta.categories || {};
-    var preferred = role === "load" ? "carga" : "descarga";
+    var preferred = roleCategory(kind, role);
     var list = (state.meta.geofences || []).slice().sort(function (a, b) {
       var pa = a.category === preferred ? 0 : 1, pb = b.category === preferred ? 0 : 1;
       return pa - pb || a.name.localeCompare(b.name);
@@ -609,10 +621,10 @@
     }).join("");
   }
 
-  function pointRow(role, point) {
+  function pointRow(role, point, kind) {
     return '<div class="tp-ops__point" data-x-point data-role="' + role + '">' +
-      '<select class="tp-input" data-x-geofence aria-label="' + esc(t("ui.ops_geofence")) + '">' + geofenceOptions(role, point ? point.geofence_id : null) + "</select>" +
-      '<span class="tp-ops__hint">' + esc(role === "load" ? t("ui.ops_state_at_load") : t("ui.ops_state_at_unload")) + "</span>" +
+      '<select class="tp-input" data-x-geofence aria-label="' + esc(t("ui.ops_geofence")) + '">' + geofenceOptions(role, point ? point.geofence_id : null, kind) + "</select>" +
+      '<span class="tp-ops__hint" data-x-role-hint>' + esc(roleLabel(kind, role)) + "</span>" +
       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-btn--icon" data-x-remove aria-label="' + esc(t("global.delete")) + '">×</button>' +
       "</div>";
   }
@@ -636,21 +648,26 @@
 
     var cats = m.categories || {};
     var auth = item ? item.authorized_categories : ["grifo", "taller", "descanso"];
-    var catsHtml = Object.keys(cats).filter(function (k) { return k !== "carga" && k !== "descarga"; }).map(function (k) {
+    var catsHtml = Object.keys(cats).filter(function (k) { return ["carga", "descarga", "inicio_ruta", "fin_ruta"].indexOf(k) < 0; }).map(function (k) {
       return '<label><input type="checkbox" data-x-cat value="' + k + '"' + (auth.indexOf(k) >= 0 ? " checked" : "") + "> " + esc(cats[k]) + "</label>";
     }).join("");
 
     var loads = item ? item.points.filter(function (p) { return p.role === "load"; }) : [null];
     var unloads = item ? item.points.filter(function (p) { return p.role === "unload"; }) : [null];
+    var kind = (item && item.kind) || "haul";
+    var kindOpts = Object.keys(m.kinds || {}).map(function (k) {
+      return '<option value="' + k + '"' + (k === kind ? " selected" : "") + ">" + esc(m.kinds[k]) + "</option>";
+    }).join("");
 
     var body =
       '<div class="tp-scope" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
       field(t("ui.name_required_field"), '<input type="text" class="tp-input" name="name" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
+      field(t("ui.ops_kind"), '<select class="tp-input" name="kind" data-x-kind style="width:100%;">' + kindOpts + "</select>") +
       field(t("ui.ops_group_required"), '<select class="tp-input" name="device_group_id" data-x-group style="width:100%;">' + groupOpts + "</select>" +
-        '<span class="tp-ops__hint" data-x-group-hint></span>') +
-      field(t("ui.ops_load_points"), '<div class="tp-ops__points" data-x-points="load">' + loads.map(function (p) { return pointRow("load", p); }).join("") + "</div>" +
+        '<span class="tp-ops__hint" data-x-group-hint></span>', true) +
+      field('<span data-x-role-title="load">' + esc(roleLabel(kind, "load")) + "</span>", '<div class="tp-ops__points" data-x-points="load">' + loads.map(function (p) { return pointRow("load", p, kind); }).join("") + "</div>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-point="load" style="margin-top:6px;">' + esc(t("ui.ops_add_point")) + "</button>", true) +
-      field(t("ui.ops_unload_points"), '<div class="tp-ops__points" data-x-points="unload">' + unloads.map(function (p) { return pointRow("unload", p); }).join("") + "</div>" +
+      field('<span data-x-role-title="unload">' + esc(roleLabel(kind, "unload")) + "</span>", '<div class="tp-ops__points" data-x-points="unload">' + unloads.map(function (p) { return pointRow("unload", p, kind); }).join("") + "</div>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-point="unload" style="margin-top:6px;">' + esc(t("ui.ops_add_point")) + "</button>", true) +
       field(t("ui.ops_shifts"), '<div class="tp-ops__shifts" data-x-shifts>' + (item ? item.shifts.map(shiftRow).join("") : "") + "</div>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-shift style="margin-top:6px;">' + esc(t("ui.ops_add_shift")) + "</button>" +
@@ -685,11 +702,27 @@
     dlg.querySelector("[data-x-group]").addEventListener("change", groupHint);
     groupHint();
 
+    // Al cambiar el tipo se rotulan los dos bloques de puntos y se reordenan
+    // las geocercas (primero las de la categoria que corresponde al rol).
+    dlg.querySelector("[data-x-kind]").addEventListener("change", function () {
+      var k = this.value;
+      ["load", "unload"].forEach(function (role) {
+        dlg.querySelector('[data-x-role-title="' + role + '"]').textContent = roleLabel(k, role);
+        dlg.querySelectorAll('[data-x-points="' + role + '"] [data-x-point]').forEach(function (row) {
+          var sel = row.querySelector("[data-x-geofence]");
+          var cur = sel.value;
+          sel.innerHTML = geofenceOptions(role, cur ? Number(cur) : null, k);
+          if (window.tpSelect && tpSelect.refresh) tpSelect.refresh(sel);
+          row.querySelector("[data-x-role-hint]").textContent = roleLabel(k, role);
+        });
+      });
+    });
+
     dlg.addEventListener("click", function (e) {
       var add = e.target.closest("[data-x-add-point]");
       if (add) {
         var role = add.getAttribute("data-x-add-point");
-        dlg.querySelector('[data-x-points="' + role + '"]').insertAdjacentHTML("beforeend", pointRow(role, null));
+        dlg.querySelector('[data-x-points="' + role + '"]').insertAdjacentHTML("beforeend", pointRow(role, null, dlg.querySelector("[data-x-kind]").value));
         return;
       }
       if (e.target.closest("[data-x-add-shift]")) {
@@ -722,6 +755,7 @@
 
     var payload = {
       name: d.querySelector("[data-x-name]").value.trim(),
+      kind: d.querySelector("[data-x-kind]").value,
       device_group_id: d.querySelector("[data-x-group]").value,
       points: points,
       shifts: shifts,

@@ -23,6 +23,11 @@ class Operation extends AbstractEntity implements DisplayInterface
     use Searchable;
     use SoftDeletes;
 
+    // Acarreo (carga/descarga) o ruta (inicio/fin). Misma maquina de estados:
+    // el rol 'load' es el punto donde empieza la vuelta y 'unload' el otro extremo.
+    const KIND_HAUL = 'haul';
+    const KIND_ROUTE = 'route';
+
     public static string $displayField = 'name';
 
     protected $table = 'operations';
@@ -30,6 +35,7 @@ class Operation extends AbstractEntity implements DisplayInterface
     protected $fillable = [
         'user_id',
         'name',
+        'kind',
         'device_group_id',
         'active',
         'min_dwell_seconds',
@@ -120,6 +126,50 @@ class Operation extends AbstractEntity implements DisplayInterface
         }
 
         return $this->deviceGroup->devices()->pluck('devices.id');
+    }
+
+    public static function kinds(): array
+    {
+        return [
+            self::KIND_HAUL  => trans('front.operation_kind_haul'),
+            self::KIND_ROUTE => trans('front.operation_kind_route'),
+        ];
+    }
+
+    public function isRoute(): bool
+    {
+        return $this->kind === self::KIND_ROUTE;
+    }
+
+    /** Etiquetas de los dos roles de punto segun el tipo de operacion. */
+    public static function roleLabels(?string $kind): array
+    {
+        return $kind === self::KIND_ROUTE
+            ? ['load' => trans('front.operation_route_start'), 'unload' => trans('front.operation_route_end')]
+            : ['load' => trans('front.geofence_category_carga'), 'unload' => trans('front.geofence_category_descarga')];
+    }
+
+    /** Categorias de geocerca que corresponden a cada rol segun el tipo. */
+    public static function roleCategories(?string $kind): array
+    {
+        return $kind === self::KIND_ROUTE
+            ? ['load' => Geofence::CATEGORY_ROUTE_START, 'unload' => Geofence::CATEGORY_ROUTE_END]
+            : ['load' => Geofence::CATEGORY_LOAD, 'unload' => Geofence::CATEGORY_UNLOAD];
+    }
+
+    /** Etiquetas de estado en vivo segun el tipo. */
+    public static function stateLabels(?string $kind): array
+    {
+        $route = $kind === self::KIND_ROUTE;
+
+        return [
+            OperationDeviceState::STATE_UNKNOWN   => trans('ui.ops_state_unknown'),
+            OperationDeviceState::STATE_AT_LOAD   => trans($route ? 'ui.ops_state_at_start' : 'ui.ops_state_at_load'),
+            OperationDeviceState::STATE_OUTBOUND  => trans('ui.ops_state_outbound'),
+            OperationDeviceState::STATE_AT_UNLOAD => trans($route ? 'ui.ops_state_at_end' : 'ui.ops_state_at_unload'),
+            OperationDeviceState::STATE_INBOUND   => trans('ui.ops_state_inbound'),
+            OperationDeviceState::STATE_NO_DATA   => trans('ui.ops_state_no_data'),
+        ];
     }
 
     /** @return string[] categorias de geocerca donde una parada es autorizada */

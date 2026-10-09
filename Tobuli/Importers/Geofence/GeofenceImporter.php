@@ -138,7 +138,7 @@ class GeofenceImporter extends Importer
             // 'line' es el corredor: linea + radio, como en GeofenceFormValidator.
             // Sin el, un GEXP con corredores abortaba el import entero.
             'type'          => 'required|in:polygon,circle,line',
-            'category'      => 'nullable|in:carga,descarga,grifo,taller,descanso',
+            'category'      => 'nullable|in:carga,descarga,inicio_ruta,fin_ruta,grifo,taller,descanso',
             'polygon'       => 'required_if:type,polygon,line|nullable|array',
             'polygon.*.lat' => 'required_if:type,polygon,line|lat',
             'polygon.*.lng' => 'required_if:type,polygon,line|lng',
