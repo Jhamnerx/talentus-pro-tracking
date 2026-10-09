@@ -95,6 +95,9 @@ abstract class BaseController extends Controller
             // Los limites ya llegan en la unidad del usuario (el feed de zonas
             // los convierte), asi que estos rangos van en la misma unidad.
             'markerColors'     => (array) config('tobuli.marker_speed_colors', []),
+            // Animacion de movimiento del marcador (plugin del admin). Misma
+            // clave que lee el legacy en getJsConfig -> animateDeviceMove.
+            'animateMove'      => (bool) settings('plugins.device_move_animation.status'),
             // Toggles de capas (mismo store que el legacy → user->map_controls)
             'toggles'          => [
                 'devices'   => $tg('m_objects', 'showDevice'),

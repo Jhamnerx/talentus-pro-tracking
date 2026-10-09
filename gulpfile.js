@@ -249,7 +249,12 @@ gulp.task("ui-v2-js", function () {
 // tiempo y añade riesgo). Una sola copia del fichero en el repo.
 gulp.task("ui-v2-vendor", function () {
   return gulp
-    .src("resources/assets/js/lib/socket.io.js")
+    .src([
+      "resources/assets/js/lib/socket.io.js",
+      // Animacion de movimiento del marcador: el mismo plugin que usa el
+      // legacy (model/device.js -> layer.slideTo).
+      "resources/assets/js/lib/leaflet/Leaflet.Marker.SlideTo.js",
+    ])
     .pipe(gulp.dest("public/assets/ui/v2/js/lib"));
 });
 

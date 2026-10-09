@@ -793,6 +793,8 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    {{-- Animacion de movimiento del marcador: el mismo plugin del legacy --}}
+    <script src="{{ asset_resource('assets/ui/v2/js/lib/Leaflet.Marker.SlideTo.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/device-modal.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-basemaps.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}"></script>

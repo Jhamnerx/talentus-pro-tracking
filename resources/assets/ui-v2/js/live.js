@@ -443,8 +443,10 @@
       var cont = markerContainer();
       var m = state.markers[d.id];
       if (m) {
-        m.setLatLng(ll);
+        // Primero el icono -rumbo y color- y luego la posicion, como el
+        // legacy: setIcon rehace el elemento y cortaria el deslizamiento.
         m.setIcon(deviceIcon(d));
+        moverMarcador(m, ll);
       } else {
         m = L.marker(ll, { icon: deviceIcon(d) });
         m.on("click", function () {
@@ -465,6 +467,43 @@
   }
 
   // Contenedor activo de marcadores: cluster o layerGroup normal.
+  /**
+   * Mueve el marcador a su nueva posicion, deslizandolo si el plugin
+   * "Animacion de movimiento del dispositivo" esta activo.
+   *
+   * Las dos condiciones son las del legacy (model/device.js): el plugin
+   * encendido y el marcador colgando del mapa. Con los objetos agrupados el
+   * marcador vive dentro del cluster, y deslizarlo ahi pelea con el
+   * reagrupado, asi que en ese caso salta, igual que en el legacy.
+   */
+  function moverMarcador(m, ll) {
+    var anima =
+      MAP_CFG.animateMove &&
+      typeof m.slideTo === "function" &&
+      state.map &&
+      state.map.hasLayer(m);
+
+    if (!anima) {
+      m.setLatLng(ll);
+      return;
+    }
+
+    var destino = L.latLng(ll[0], ll[1]);
+
+    if (m.getLatLng().equals(destino)) return;
+
+    // El mismo respiro de 150 ms del legacy: deja que el icono recien puesto
+    // se asiente antes de empezar a mover.
+    setTimeout(function () {
+      if (!state.map || !state.map.hasLayer(m)) return;
+      try {
+        m.slideTo(destino, { duration: CFG.pollInterval });
+      } catch (e) {
+        m.setLatLng(destino);
+      }
+    }, 150);
+  }
+
   function markerContainer() {
     return state.toggles.cluster && state.clusterGroup ? state.clusterGroup : state.deviceLayer;
   }
