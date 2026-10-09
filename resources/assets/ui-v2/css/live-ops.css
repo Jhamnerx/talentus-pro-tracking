@@ -287,6 +287,31 @@
   border-color: #64748b;
   color: #fff;
 }
+/* Etiqueta fija de la geocerca (nombre + tamaño). Equivale a
+   .leaflet-popup-geofence .name del legacy: fondo del color del poligono,
+   texto blanco con sombra para que se lea sobre cualquier tono. */
+.leaflet-marker-icon.tp-zone-label {
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+}
+.tp-zone-label > span {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  color: #fff;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.85);
+}
+
 /* Leaflet: popup del device con el mismo estilo que teníamos en MapLibre */
 .tp-dev-popup-wrap .leaflet-popup-content-wrapper {
   border-radius: 12px;

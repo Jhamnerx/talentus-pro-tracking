@@ -98,6 +98,14 @@ abstract class BaseController extends Controller
             // Animacion de movimiento del marcador (plugin del admin). Misma
             // clave que lee el legacy en getJsConfig -> animateDeviceMove.
             'animateMove'      => (bool) settings('plugins.device_move_animation.status'),
+            // Tamaño de la geocerca en su etiqueta (plugin del admin), con la
+            // unidad de distancia del usuario. Igual que el legacy en
+            // getJsConfig -> showGeofenceSize + units.distance.
+            'geofenceSize'     => (bool) settings('plugins.geofence_size.status'),
+            'distance'         => [
+                'unit'  => \Formatter::distance()->getUnit(),
+                'ratio' => \Formatter::distance()->getRatio(),
+            ],
             // Toggles de capas (mismo store que el legacy → user->map_controls)
             'toggles'          => [
                 'devices'   => $tg('m_objects', 'showDevice'),

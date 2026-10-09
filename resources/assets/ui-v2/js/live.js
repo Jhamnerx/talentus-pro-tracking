@@ -3509,6 +3509,11 @@
     map: function () {
       return state.map;
     },
+    // El config del mapa, para los modulos que cuelgan de este (geocercas,
+    // POIs, rutas): lo leen de aqui en vez de volver a parsear el JSON.
+    cfg: function () {
+      return MAP_CFG;
+    },
     refresh: function () {
       fetchDevices(true);
     },
