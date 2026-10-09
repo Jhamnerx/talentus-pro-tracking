@@ -233,10 +233,12 @@
   color: var(--fg-primary, #1a1f2b);
   border: 1px solid var(--border-default, #e7e9ee);
   border-radius: 4px;
-  padding: 0 5px;
-  font-size: 10px;
+  /* La medida del legacy (.leaf-device-marker .name i: padding 4px 8px sobre
+     el cuerpo de 12px). Estaba en 10px y 0 5px, bastante mas pequeña. */
+  padding: 4px 8px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 16px;
+  line-height: 1.2;
   pointer-events: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
@@ -270,10 +272,10 @@
 }
 /* Con color propio del vehiculo manda ese; las tres de abajo quedan de
    respaldo para los que no lo tienen. */
-.tp-status-color .tp-lmarker__name[style*="--tp-status-ink"] {
-  background: var(--tp-status-ink);
-  border-color: var(--tp-status-ink);
-  color: #fff;
+.tp-status-color .tp-lmarker__name[style*="--tp-status-on"] {
+  background: var(--tp-status);
+  border-color: var(--tp-status);
+  color: var(--tp-status-on);
 }
 .tp-status-color .tp-lmarker__name--stopped {
   background: #6b7280;
@@ -961,7 +963,11 @@ table.tp-lock-hist th {
   height: 8px;
   border-radius: 50%;
   background: var(--status-offline);
-  box-shadow: 0 0 0 2px var(--surface-raised);
+  /* El filo gris hace de borde -el legacy le pone 1px- para que "blanco" o
+     "amarillo" no desaparezcan sobre el fondo claro. */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.22),
+    0 0 0 3px var(--surface-raised);
 }
 .tp-live__row[data-status="moving"] .tp-live__row-dot {
   background: var(--status-moving);

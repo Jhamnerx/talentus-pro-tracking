@@ -152,14 +152,19 @@
     green: 1, yellow: 1, orange: 1, red: 1,
     blue: 1, cyan: 1, gray: 1, black: 1, white: 1,
   };
-  // tinta=true devuelve el tono oscurecido, para texto o para un fondo que
-  // lleve texto blanco encima. Un hex propio no se puede oscurecer aqui: se
-  // devuelve igual.
-  function statusVar(c, tinta) {
+  // variante: "ink" = el tono oscurecido, para texto suelto. "on" = el color
+  // del texto que va encima del relleno. Sin variante, el relleno. Un hex
+  // propio no se puede derivar aqui: se devuelve igual (y de texto encima,
+  // blanco, que es lo que habia antes).
+  function statusVar(c, variante) {
     if (!c) return "";
     c = String(c).toLowerCase();
-    if (SC_NOMBRES[c]) return "var(--sc-" + c + (tinta ? "-ink" : "") + ")";
-    return c.charAt(0) === "#" ? c : "";
+    if (SC_NOMBRES[c]) {
+      if (variante === "on") return "var(--sc-" + c + "-on)";
+      return "var(--sc-" + c + (variante ? "-ink" : "") + ")";
+    }
+    if (c.charAt(0) !== "#") return "";
+    return variante === "on" ? "#fff" : c;
   }
 
   function fmtTimeAgo(ts) {
@@ -387,10 +392,15 @@
     var claseNombre = "tp-lmarker__name" + (col ? "" : " tp-lmarker__name--" + grp);
     // Con "colorear etiqueta segun el estado" activo, el tono sale del color
     // del vehiculo (.tp-status-color lo recoge en el CSS).
-    // La etiqueta lleva texto blanco encima: va con la tinta, no con el
-    // relleno (texto blanco sobre #eae100 no se lee).
-    var colEstadoEtq = col ? "" : statusVar(d.icon_color, true);
-    if (colEstadoEtq) estiloNombre = ' style="--tp-status-ink:' + colEstadoEtq + ';"';
+    // La etiqueta usa el relleno -el color tal cual del legacy- y el color de
+    // texto que le toca por contraste: blanco sobre azul, oscuro sobre
+    // amarillo. No se puede fijar uno solo: texto blanco sobre amarillo da
+    // 1.07:1 y texto oscuro sobre azul, 1.71:1.
+    var cEtq = col ? "" : statusVar(d.icon_color);
+    var cEtqOn = col ? "" : statusVar(d.icon_color, "on");
+    if (cEtq) {
+      estiloNombre = ' style="--tp-status:' + cEtq + ";--tp-status-on:" + cEtqOn + ';"';
+    }
 
     var html =
       '<span class="' + claseNombre + '"' + estiloNombre + ">" +

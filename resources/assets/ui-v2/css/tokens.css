@@ -81,25 +81,39 @@
      1.38:1. Para eso esta la variante -ink, el mismo tono oscurecido hasta
      pasar 4.6:1, que tambien se usa de fondo de la etiqueta del marcador
      porque esa lleva texto blanco encima. */
-  --sc-green: #8bcf1c;
-  --sc-yellow: #eae100;
-  --sc-orange: #eaaf00;
-  --sc-red: #eb1700;
-  --sc-blue: #376dd9;
-  --sc-cyan: #21c0f0;
-  --sc-gray: #9f9f9f;
-  --sc-black: #393939;
-  --sc-white: #9c9c9c;
+  --sc-green: green;
+  --sc-yellow: yellow;
+  --sc-orange: orange;
+  --sc-red: red;
+  --sc-blue: blue;
+  --sc-cyan: cyan;
+  --sc-gray: gray;
+  --sc-black: black;
+  --sc-white: white;
 
-  --sc-green-ink: #568011;
-  --sc-yellow-ink: #7c7700;
-  --sc-orange-ink: #936e00;
-  --sc-red-ink: #e61700;
-  --sc-blue-ink: #376dd9;
-  --sc-cyan-ink: #167f9e;
+  /* Para texto suelto: el relleno no sirve (#ffff00 da 1.07:1 sobre blanco).
+     Mismo tono, oscurecido hasta >=4.6:1. */
+  --sc-green-ink: #008000;
+  --sc-yellow-ink: #787800;
+  --sc-orange-ink: #a16800;
+  --sc-red-ink: #eb0000;
+  --sc-blue-ink: #0000ff;
+  --sc-cyan-ink: #008282;
   --sc-gray-ink: #747474;
-  --sc-black-ink: #393939;
+  --sc-black-ink: #000000;
   --sc-white-ink: #757575;
+
+  /* Color del texto que va ENCIMA del relleno (etiqueta del marcador),
+     elegido por contraste contra cada color. */
+  --sc-green-on: #fff;
+  --sc-yellow-on: #1f2937;
+  --sc-orange-on: #1f2937;
+  --sc-red-on: #fff;
+  --sc-blue-on: #fff;
+  --sc-cyan-on: #1f2937;
+  --sc-gray-on: #fff;
+  --sc-black-on: #fff;
+  --sc-white-on: #1f2937;
 
   /* === SPACING (4pt grid) ================================= */
   --sp-0: 0;
@@ -349,17 +363,18 @@
   /* Los rellenos no cambian -son los del legacy y contrastan bien sobre el
      fondo oscuro- salvo el negro, que ahi seria invisible. Las tintas se
      aclaran hasta >=6:1. */
+  /* El negro como relleno seria invisible sobre el fondo oscuro. */
   --sc-black: #636363;
 
-  --sc-green-ink: #8bcf1c;
-  --sc-yellow-ink: #eae100;
-  --sc-orange-ink: #eaaf00;
-  --sc-red-ink: #f26859;
-  --sc-blue-ink: #6b93e3;
-  --sc-cyan-ink: #21c0f0;
-  --sc-gray-ink: #9f9f9f;
+  --sc-green-ink: #4da64d;
+  --sc-yellow-ink: #ffff00;
+  --sc-orange-ink: #ffa500;
+  --sc-red-ink: #ff5c5c;
+  --sc-blue-ink: #8787ff;
+  --sc-cyan-ink: #00ffff;
+  --sc-gray-ink: #949494;
   --sc-black-ink: #949494;
-  --sc-white-ink: #9c9c9c;
+  --sc-white-ink: #ffffff;
 }
 
 /* ============================================================
