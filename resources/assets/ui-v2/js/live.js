@@ -145,6 +145,20 @@
         return "offline";
     }
   }
+  // getStatusColor() del legacy devuelve el color por NOMBRE, de un catalogo
+  // de nueve. Se traduce al token del tema para que claro y oscuro usen el
+  // tono que toca; si alguien guardo un hex propio, se respeta tal cual.
+  var SC_NOMBRES = {
+    green: 1, yellow: 1, orange: 1, red: 1,
+    blue: 1, cyan: 1, gray: 1, black: 1, white: 1,
+  };
+  function statusVar(c) {
+    if (!c) return "";
+    c = String(c).toLowerCase();
+    if (SC_NOMBRES[c]) return "var(--sc-" + c + ")";
+    return c.charAt(0) === "#" ? c : "";
+  }
+
   function fmtTimeAgo(ts) {
     if (!ts) return "—";
     var sec = parseInt(ts, 10);
@@ -368,6 +382,10 @@
     // clase de estado. Antes se ponian las dos y ganaba el color en linea
     // solo por la cascada del CSS.
     var claseNombre = "tp-lmarker__name" + (col ? "" : " tp-lmarker__name--" + grp);
+    // Con "colorear etiqueta segun el estado" activo, el tono sale del color
+    // del vehiculo (.tp-status-color lo recoge en el CSS).
+    var colEstadoEtq = col ? "" : statusVar(d.icon_color);
+    if (colEstadoEtq) estiloNombre = ' style="--tp-status:' + colEstadoEtq + ';"';
 
     var html =
       '<span class="' + claseNombre + '"' + estiloNombre + ">" +
@@ -1155,6 +1173,11 @@
     if (dot) {
       // Los cuatro cubos tienen su clase en el CSS, no hace falta mapear.
       dot.className = "tp-dot tp-dot--" + classify(d);
+      // ...pero si el vehiculo tiene color propio para ese estado, manda el
+      // suyo, igual que en la ficha del legacy.
+      var cDrawer = statusVar(d.icon_color);
+      dot.style.background = cDrawer || "";
+      dot.title = STATUS_LABELS[d.online] || d.online || "";
     }
     renderDashboard(d);
     // El resto de la ficha (última señal, coordenadas, altitud, motor, imei,
@@ -1978,7 +2001,10 @@
     // distintas del mismo vehiculo. markerColor() sale en el primer if cuando
     // el vehiculo no usa la opcion, asi que no cuesta nada en los demas.
     var colVel = markerColor(d);
-    var accent = colVel || d.icon_color || "";
+    // Color del estado SEGUN EL VEHICULO (icon_colors -> getStatusColor), que
+    // es lo que manda en el legacy. Antes solo se usaba para el acento.
+    var colEstado = statusVar(d.icon_color);
+    var accent = colVel || colEstado || "";
     // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
     var lockIcon = "";
     if (d.blocked === true || d.blocked === false) {
@@ -2008,6 +2034,7 @@
       // -> addClass('active')). La clase se pone aqui tambien, no solo al
       // pulsar, para que sobreviva a un repintado de la lista.
       '<div class="tp-live__row' +
+      (colEstado ? " tp-live__row--status" : "") +
       (colVel ? " tp-live__row--colored" : "") +
       (state.selectedId === d.id ? " is-selected" : "") +
       // Oculto en el mapa (user_device_pivot.active = 0). Se sigue listando,
@@ -2021,7 +2048,9 @@
       status +
       '"' +
       (accent
-        ? ' style="--tp-accent:' + accent + (colVel ? ";--tp-speed:" + colVel : "") + '"'
+        ? ' style="--tp-accent:' + accent +
+          (colEstado ? ";--tp-status:" + colEstado : "") +
+          (colVel ? ";--tp-speed:" + colVel : "") + '"'
         : "") +
       ' role="option">' +
       '<label class="tp-live__row-active" title="' +
@@ -2031,7 +2060,10 @@
       '"' +
       (active ? " checked" : "") +
       "></label>" +
-      '<span class="tp-live__row-dot"></span>' +
+      // El legacy pone el nombre del estado en el title del indicador.
+      '<span class="tp-live__row-dot" title="' +
+      esc(STATUS_LABELS[d.online] || d.online || "") +
+      '"></span>' +
       '<div class="tp-live__row-main"><div class="tp-live__row-name"><span class="tp-live__row-nametext">' +
       esc(d.name || "#" + d.id) +
       "</span>" +
