@@ -204,7 +204,7 @@
   /* ---------- live status placeholder updater ---------- */
   // Stub: replace with real socket data binding in Phase 2.
   function updateLiveStatus(counts) {
-    ["moving", "idle", "offline"].forEach(function (key) {
+    ["moving", "idle", "stopped", "offline"].forEach(function (key) {
       document
         .querySelectorAll('[data-live-count="' + key + '"]')
         .forEach(function (el) {
@@ -214,7 +214,7 @@
   }
   window.tpUpdateLiveStatus = updateLiveStatus;
   // Provide sensible default zeros so the topbar doesn't show "—" forever.
-  updateLiveStatus({ moving: 0, idle: 0, offline: 0 });
+  updateLiveStatus({ moving: 0, idle: 0, stopped: 0, offline: 0 });
 
   /* ---------- Expose helpers ---------- */
   window.Talentus = window.Talentus || {};

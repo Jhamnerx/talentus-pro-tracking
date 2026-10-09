@@ -207,6 +207,11 @@
                                 class="tp-segmented__text">{{ trans('front.idle') }}</span></span>
                         <span class="tp-segmented__count" data-count="idle">0</span>
                     </button>
+                    <button class="tp-segmented__item" data-filter="stopped" type="button" title="{{ trans('front.stopped') }}">
+                        <span class="tp-segmented__label"><span class="tp-dot tp-dot--stopped"></span><span
+                                class="tp-segmented__text">{{ trans('front.stopped') }}</span></span>
+                        <span class="tp-segmented__count" data-count="stopped">0</span>
+                    </button>
                     <button class="tp-segmented__item" data-filter="offline" type="button" title="{{ trans('front.disconnected') }}">
                         <span class="tp-segmented__label"><span class="tp-dot tp-dot--offline"></span><span
                                 class="tp-segmented__text">{{ trans('front.disconnected') }}</span></span>
@@ -464,10 +469,15 @@
                         <strong id="tp-live-stat-idle">0</strong>
                         <span>{{ trans('ui.idle_lowercase') }}</span>
                     </span>
-                    <span class="tp-live__map-stat" title="Desconectados" aria-label="Desconectados">
+                    <span class="tp-live__map-stat" title="{{ trans('front.stopped') }}" aria-label="{{ trans('front.stopped') }}">
+                        <span class="tp-dot tp-dot--stopped"></span>
+                        <strong id="tp-live-stat-stopped">0</strong>
+                        <span>{{ trans('ui.stopped_lowercase') }}</span>
+                    </span>
+                    <span class="tp-live__map-stat" title="{{ trans('front.disconnected') }}" aria-label="{{ trans('front.disconnected') }}">
                         <span class="tp-dot tp-dot--offline"></span>
                         <strong id="tp-live-stat-offline">0</strong>
-                        <span>desconectados</span>
+                        <span>{{ trans('ui.disconnected_lowercase') }}</span>
                     </span>
                 </div>
             </div>

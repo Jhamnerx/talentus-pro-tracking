@@ -443,6 +443,8 @@ return [
     'hour_meter'                         => 'Horómetro',
     'icons_load_failed'                  => 'No se pudieron cargar los iconos.',
     'idle_lowercase'                     => 'en ralentí',
+    'stopped_lowercase'                     => 'detenidos',
+    'disconnected_lowercase'                     => 'desconectados',
     'idling'                             => 'En ralentí',
     'ignition'                           => 'Ignición',
     'ignition_upper'                     => 'IGNICIÓN',

@@ -121,6 +121,10 @@
   // -----------------------------------------------------------
   // Estado operativo del device (autoritativo: d.online)
   // -----------------------------------------------------------
+  // Los mismos cubos que el legacy en Device::getStatusColor(): el naranja
+  // es SOLO para el motor encendido sin moverse. Un vehiculo parado con el
+  // motor apagado (ack) es "detenido" y va en gris; juntarlos hacia que la
+  // v2 dijera ralenti de cualquier vehiculo quieto.
   function classify(d) {
     switch (d && d.online) {
       case "online":
@@ -128,12 +132,15 @@
       case "move":
         return "moving";
       case "engine":
+      case "idle":
+        return "idle";
       case "ack":
       case "stop":
-      case "idle":
       case "park":
+      // El legacy le da color propio (negro). Aqui no hay cubo para eso, y
+      // un vehiculo con el motor bloqueado esta parado: va con los detenidos.
       case "blocked":
-        return "idle";
+        return "stopped";
       default:
         return "offline";
     }
@@ -1141,8 +1148,8 @@
     setText("tp-drawer-plate", d.plate_number || d.imei || "—");
     var dot = document.getElementById("tp-drawer-dot");
     if (dot) {
-      var st = classify(d);
-      dot.className = "tp-dot tp-dot--" + (st === "moving" ? "moving" : st === "idle" ? "idle" : "offline");
+      // Los cuatro cubos tienen su clase en el CSS, no hace falta mapear.
+      dot.className = "tp-dot tp-dot--" + classify(d);
     }
     renderDashboard(d);
     // El resto de la ficha (última señal, coordenadas, altitud, motor, imei,
@@ -1387,12 +1394,13 @@
   function recompute() {
     var q = state.searchQuery.trim().toLowerCase();
     var sf = state.statusFilter;
-    var counts = { all: state.devices.length, moving: 0, idle: 0, offline: 0 };
+    var counts = { all: state.devices.length, moving: 0, idle: 0, stopped: 0, offline: 0 };
     // Base: búsqueda + filtro de estado segmentado (siempre aplican a lista y mapa).
     var base = state.devices.filter(function (d) {
       var c = classify(d);
       if (c === "moving") counts.moving++;
       else if (c === "idle") counts.idle++;
+      else if (c === "stopped") counts.stopped++;
       else counts.offline++;
       if (sf !== "all" && c !== sf) return false;
       if (q) {
@@ -1407,7 +1415,7 @@
     state.filtered = af.ids && af.sidebar ? base.filter(advPass) : base.slice();
     state.mapFiltered = af.ids && af.map ? base.filter(advPass) : base.slice();
     var sorter = function (a, b) {
-      var r = { moving: 0, idle: 1, offline: 2 };
+      var r = { moving: 0, idle: 1, stopped: 2, offline: 3 };
       var ra = r[classify(a)],
         rb = r[classify(b)];
       if (ra !== rb) return ra - rb;
@@ -1415,7 +1423,7 @@
     };
     state.filtered.sort(sorter);
     state.mapFiltered.sort(sorter);
-    ["all", "moving", "idle", "offline"].forEach(function (k) {
+    ["all", "moving", "idle", "stopped", "offline"].forEach(function (k) {
       var n = root.querySelector('[data-count="' + k + '"]');
       if (n) n.textContent = counts[k];
     });
@@ -1423,10 +1431,17 @@
     if (sM) sM.textContent = counts.moving;
     var sI = document.getElementById("tp-live-stat-idle");
     if (sI) sI.textContent = counts.idle;
+    var sS = document.getElementById("tp-live-stat-stopped");
+    if (sS) sS.textContent = counts.stopped;
     var sO = document.getElementById("tp-live-stat-offline");
     if (sO) sO.textContent = counts.offline;
     if (window.tpUpdateLiveStatus)
-      window.tpUpdateLiveStatus({ moving: counts.moving, idle: counts.idle, offline: counts.offline });
+      window.tpUpdateLiveStatus({
+        moving: counts.moving,
+        idle: counts.idle,
+        stopped: counts.stopped,
+        offline: counts.offline,
+      });
   }
 
   // -----------------------------------------------------------

@@ -442,6 +442,8 @@ return [
     'hour_meter'                         => 'Hour meter',
     'icons_load_failed'                  => 'The icons could not be loaded.',
     'idle_lowercase'                     => 'idling',
+    'stopped_lowercase'                     => 'stopped',
+    'disconnected_lowercase'                     => 'disconnected',
     'idling'                             => 'Idling',
     'ignition'                           => 'Ignition',
     'ignition_upper'                     => 'IGNITION',
