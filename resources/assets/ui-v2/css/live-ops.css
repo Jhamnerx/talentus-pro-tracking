@@ -872,6 +872,14 @@ table.tp-lock-hist th {
 .tp-live__row[data-status="alert"] .tp-live__row-time {
   color: var(--status-alert);
 }
+/* Vehiculo con color por velocidad: manda sobre el estado, igual que en el
+   marcador. La doble clase iguala la especificidad de las reglas de arriba
+   (que llevan un atributo) y, al ir despues, gana. */
+.tp-live__row.tp-live__row--colored .tp-live__row-name,
+.tp-live__row.tp-live__row--colored .tp-live__row-speed,
+.tp-live__row.tp-live__row--colored .tp-live__row-time {
+  color: var(--tp-speed);
+}
 /* Menú de acciones flotante del kebab */
 .tp-row-menu {
   min-width: 230px;
@@ -953,6 +961,9 @@ table.tp-lock-hist th {
 }
 .tp-live__row[data-status="alert"] .tp-live__row-dot {
   background: var(--status-alert);
+}
+.tp-live__row.tp-live__row--colored .tp-live__row-dot {
+  background: var(--tp-speed);
 }
 
 .tp-live__row-main {

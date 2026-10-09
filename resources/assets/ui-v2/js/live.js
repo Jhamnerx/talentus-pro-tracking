@@ -1967,8 +1967,13 @@
     var ts = Math.max(parseInt(d.timestamp, 10) || 0, parseInt(d.acktimestamp, 10) || 0);
     var metaTxt = d.time || d.plate_number || d.imei || "";
     var metaIsStatus = !enabled || active === false || ts === 0; // estado, no fecha
-    // Acento lateral con el color de estado real del device (getStatusColor).
-    var accent = d.icon_color || "";
+    // Acento lateral con el color de estado real del device (getStatusColor),
+    // salvo que el vehiculo tenga color por velocidad: ese manda, igual que en
+    // el marcador, para que la fila y la etiqueta del mapa no digan cosas
+    // distintas del mismo vehiculo. markerColor() sale en el primer if cuando
+    // el vehiculo no usa la opcion, asi que no cuesta nada en los demas.
+    var colVel = markerColor(d);
+    var accent = colVel || d.icon_color || "";
     // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
     var lockIcon = "";
     if (d.blocked === true || d.blocked === false) {
@@ -1998,6 +2003,7 @@
       // -> addClass('active')). La clase se pone aqui tambien, no solo al
       // pulsar, para que sobreviva a un repintado de la lista.
       '<div class="tp-live__row' +
+      (colVel ? " tp-live__row--colored" : "") +
       (state.selectedId === d.id ? " is-selected" : "") +
       // Oculto en el mapa (user_device_pivot.active = 0). Se sigue listando,
       // como en el legacy, pero marcado: si no, la unica pista es la casilla
@@ -2009,7 +2015,9 @@
       '" data-status="' +
       status +
       '"' +
-      (accent ? ' style="--tp-accent:' + accent + '"' : "") +
+      (accent
+        ? ' style="--tp-accent:' + accent + (colVel ? ";--tp-speed:" + colVel : "") + '"'
+        : "") +
       ' role="option">' +
       '<label class="tp-live__row-active" title="' +
       (active ? tpT('ui.hide_from_map') : tpT('ui.show_on_map')) +
