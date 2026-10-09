@@ -2018,12 +2018,13 @@
     // el marcador, para que la fila y la etiqueta del mapa no digan cosas
     // distintas del mismo vehiculo. markerColor() sale en el primer if cuando
     // el vehiculo no usa la opcion, asi que no cuesta nada en los demas.
-    var colVel = markerColor(d);
-    // Color del estado SEGUN EL VEHICULO (icon_colors -> getStatusColor), que
-    // es lo que manda en el legacy. Antes solo se usaba para el acento.
+    // La fila dice SIEMPRE el estado; el color por velocidad se queda en el
+    // marcador del mapa, que es lo que nombra el ajuste. Mezclarlos daba dos
+    // verdes distintos en la lista para lo que se lee como el mismo estado:
+    // el de la banda 0-40 (#22c55e) y el de "movimiento" (#008000).
     var colEstado = statusVar(d.icon_color);
     var colEstadoInk = statusVar(d.icon_color, true);
-    var accent = colVel || colEstado || "";
+    var accent = colEstado || "";
     // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
     var lockIcon = "";
     if (d.blocked === true || d.blocked === false) {
@@ -2054,7 +2055,6 @@
       // pulsar, para que sobreviva a un repintado de la lista.
       '<div class="tp-live__row' +
       (colEstado ? " tp-live__row--status" : "") +
-      (colVel ? " tp-live__row--colored" : "") +
       (state.selectedId === d.id ? " is-selected" : "") +
       // Oculto en el mapa (user_device_pivot.active = 0). Se sigue listando,
       // como en el legacy, pero marcado: si no, la unica pista es la casilla
@@ -2068,8 +2068,7 @@
       '"' +
       (accent
         ? ' style="--tp-accent:' + accent +
-          (colEstado ? ";--tp-status:" + colEstado + ";--tp-status-ink:" + colEstadoInk : "") +
-          (colVel ? ";--tp-speed:" + colVel : "") + '"'
+          ";--tp-status:" + colEstado + ";--tp-status-ink:" + colEstadoInk + '"'
         : "") +
       ' role="option">' +
       '<label class="tp-live__row-active" title="' +
