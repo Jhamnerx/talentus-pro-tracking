@@ -142,7 +142,7 @@
       return (
         '<div class="tp-fleet__ident">' +
         '<span class="tp-fleet__ident-chip" style="background:' +
-        escapeHtml(hexToSoft(d.icon_color)) + '">' +
+        escapeHtml(statusSoft(d.icon_color)) + '">' +
         '<img class="tp-fleet__ident-icon" src="' + escapeHtml(deviceIconSrc(d)) + '" alt="" loading="lazy">' +
         "</span>" +
         '<span class="tp-fleet__ident-text">' +
@@ -211,24 +211,28 @@
 
   // El estado del vehículo llega como nombre de color (green, yellow…), que es
   // lo que guarda el legacy, no como hex.
-  var STATUS_HEX = {
-    green: "#16a34a", yellow: "#eab308", red: "#ef4444",
-    blue: "#2563eb", orange: "#f97316", black: "#334155",
+  // Mismo criterio que live.js: getStatusColor() devuelve el color por NOMBRE
+  // y aqui se traduce al token del tema. "ink" es el tono para texto.
+  // Se repite en cada fichero porque shell.js va con defer y se ejecuta
+  // despues que estos.
+  var SC_NOMBRES = {
+    green: 1, yellow: 1, orange: 1, red: 1,
+    blue: 1, cyan: 1, gray: 1, black: 1, white: 1,
   };
-
-  function statusHex(c) {
-    if (!c) return "#64748b";
-    return STATUS_HEX[String(c).toLowerCase()] || (String(c).charAt(0) === "#" ? c : "#64748b");
+  function statusVar(c, variante) {
+    if (!c) return "";
+    c = String(c).toLowerCase();
+    if (SC_NOMBRES[c]) return "var(--sc-" + c + (variante ? "-" + variante : "") + ")";
+    return c.charAt(0) === "#" ? c : "";
   }
 
-  // Fondo suave del chip de identidad, a partir del color de estado
-  function hexToSoft(c) {
-    var hex = statusHex(c);
-    if (hex.charAt(0) !== "#" || hex.length < 7) return "rgba(100,116,139,.12)";
-    var r = parseInt(hex.slice(1, 3), 16);
-    var g = parseInt(hex.slice(3, 5), 16);
-    var b = parseInt(hex.slice(5, 7), 16);
-    return "rgba(" + r + "," + g + "," + b + ",.14)";
+  // Fondo suave del chip de identidad, a partir del color de estado. Antes se
+  // pasaba por una tabla de seis nombres -faltaban gray, white y cyan, que
+  // acababan en el gris de respaldo- y se mezclaba a mano con parseInt. Con el
+  // token basta color-mix, que ademas sigue al tema.
+  function statusSoft(c) {
+    var v = statusVar(c);
+    return v ? "color-mix(in srgb, " + v + " 14%, transparent)" : "rgba(100,116,139,.12)";
   }
 
   function colValue(field, d) {

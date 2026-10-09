@@ -101,13 +101,26 @@
     offline: tpT('front.offline'),
     expired: tpT('front.expired'),
   };
-  function statusTone(d) {
-    var s = d.online;
-    if (s === "online" || s === "excessive_speed") return "#10b981";
-    if (s === "engine" || s === "idle") return "#f59e0b";
-    if (s === "ack" || s === "stop") return "#3b82f6";
-    if (s === "blocked") return "#ef4444";
-    return "#94a3b8";
+  // Mismo criterio que live.js: getStatusColor() devuelve el color por NOMBRE
+  // y aqui se traduce al token del tema. "ink" es el tono para texto.
+  // Se repite en cada fichero porque shell.js va con defer y se ejecuta
+  // despues que estos.
+  var SC_NOMBRES = {
+    green: 1, yellow: 1, orange: 1, red: 1,
+    blue: 1, cyan: 1, gray: 1, black: 1, white: 1,
+  };
+  function statusVar(c, variante) {
+    if (!c) return "";
+    c = String(c).toLowerCase();
+    if (SC_NOMBRES[c]) return "var(--sc-" + c + (variante ? "-" + variante : "") + ")";
+    return c.charAt(0) === "#" ? c : "";
+  }
+
+  // El color del vehiculo (icon_colors del legacy). Antes eran cinco
+  // hexadecimales fijos que ademas no cuadraban con el legacy: ack salia azul
+  // y blocked rojo, cuando alli son gris y negro.
+  function statusTone(d, variante) {
+    return statusVar(d && d.icon_color, variante) || "var(--status-offline)";
   }
 
   /* ----- marcador con el icono REAL del device (compacto de live.js) ----- */
@@ -241,7 +254,7 @@
     var pill = cell.el.querySelector("[data-c-pill]");
     if (pill) {
       pill.textContent = STATUS_LABELS[d.online] || d.online || "—";
-      pill.style.color = statusTone(d);
+      pill.style.color = statusTone(d, "ink");
     }
     var sp = cell.el.querySelector("[data-c-speed]");
     if (sp) sp.textContent = d.speed_text || "—";

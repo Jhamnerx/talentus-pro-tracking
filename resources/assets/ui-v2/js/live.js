@@ -775,7 +775,10 @@
     var html =
       '<div class="tp-dev-popup" data-status="' +
       status +
-      '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"></span>' +
+      '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"' +
+      // Igual que la fila y la ficha: manda el color del vehiculo.
+      (statusVar(d.icon_color) ? ' style="background:' + statusVar(d.icon_color) + '"' : "") +
+      "></span>" +
       '<span class="tp-dev-popup__name">' +
       esc(d.name || "#" + d.id) +
       "</span></div>" +

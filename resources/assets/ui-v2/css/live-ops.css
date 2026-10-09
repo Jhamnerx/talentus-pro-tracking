@@ -2594,8 +2594,9 @@ table.tp-lock-hist th {
   box-shadow: inset 3px 0 0 0 var(--brand-500, #2e63d9);
 }
 .tp-live__row.is-selected .tp-live__row-nametext {
+  /* Solo negrita: antes tambien forzaba --fg-primary y el vehiculo
+     seleccionado era el unico de la lista sin su color de estado. */
   font-weight: 700;
-  color: var(--fg-primary);
 }
 .tp-live__group-items .tp-live__row.is-selected {
   border-color: var(--brand-300, #a9c2f5);
