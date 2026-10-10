@@ -65,7 +65,7 @@
     checkTime: "",
     // Capas del mapa, apagadas por defecto: en celdas pequeñas estorban mas
     // que ayudan, y quien las quiera las deja encendidas (se recuerdan).
-    capas: { zones: false, pois: false, routes: false },
+    capas: { zones: false, pois: false, routes: false, tails: false },
   };
   try {
     var capasGuardadas = JSON.parse(localStorage.getItem(LS_CAPAS) || "null");
@@ -73,6 +73,7 @@
       state.capas.zones = !!capasGuardadas.zones;
       state.capas.pois = !!capasGuardadas.pois;
       state.capas.routes = !!capasGuardadas.routes;
+      state.capas.tails = !!capasGuardadas.tails;
     }
   } catch (e) {}
   try {
@@ -146,7 +147,9 @@
   function colorPorVelocidad(d) {
     var cfg = d.marker_colors;
     if (!cfg) return null;
-    if (clasifica(d) === "offline") return null;
+    // Solo en movimiento: a 0 kph el primer tramo (0-40) es verde y un
+    // vehiculo parado salia con el verde de uno circulando despacio.
+    if (clasifica(d) !== "moving") return null;
 
     var v = parseFloat(d.speed);
     if (isNaN(v)) return null;
@@ -342,11 +345,13 @@
       cell.marker = L.marker(ll, { icon: deviceIcon(d) }).addTo(cell.map);
       cell.map.setView(ll, 15);
       pintaCapas(cell);
+      pintaCola(cell, d);
     } else {
       // Primero el icono -rumbo y color- y luego la posicion: setIcon rehace
       // el elemento y cortaria el deslizamiento (igual que en Live).
       cell.marker.setIcon(deviceIcon(d));
       mueve(cell, ll);
+      pintaCola(cell, d);
       cell.map.panTo(ll);
     }
   }
@@ -372,6 +377,42 @@
       if (!cell.map || !cell.map.hasLayer(m)) return;
       try { m.slideTo(destino, { duration: 15000 }); } catch (e) { m.setLatLng(destino); }
     }, 150);
+  }
+
+  /**
+   * Cola de recorrido del vehiculo de la celda.
+   *
+   * Es la misma polilinea que pinta Live (renderTails): las ultimas
+   * posiciones que manda el feed, con el color de cola del vehiculo. A
+   * diferencia de geocercas o rutas, esto NO es compartido: cada celda pinta
+   * la de SU vehiculo.
+   */
+  function pintaCola(cell, d) {
+    if (!cell || !cell.map) return;
+
+    if (cell.cola) {
+      try { cell.map.removeLayer(cell.cola); } catch (e) {}
+      cell.cola = null;
+    }
+    if (!state.capas.tails || !d) return;
+
+    var cola = d.tail;
+    if (typeof cola === "string") {
+      try { cola = JSON.parse(cola); } catch (e) { cola = null; }
+    }
+    if (!cola || cola.length < 2) return;
+
+    var pts = cola
+      .map(function (p) { return [parseFloat(p.lat), parseFloat(p.lng)]; })
+      .filter(function (x) { return !isNaN(x[0]) && !isNaN(x[1]); });
+    if (pts.length < 2) return;
+
+    cell.cola = L.polyline(pts, {
+      color: d.tail_color || "#1e88e5",
+      weight: 2,
+      opacity: 0.8,
+      interactive: false,
+    }).addTo(cell.map);
   }
 
   /* ── Capas (geocercas, POIs, rutas) ─────────────────────────────────
@@ -412,8 +453,9 @@
         pinta();
         guardaCapas();
         // El color por velocidad dentro de una geocerca necesita las zonas
-        // cargadas, asi que se repintan tambien los marcadores.
-        pintaCapasTodas();
+        // cargadas, asi que se repintan tambien los marcadores. updateAll()
+        // vuelve a pintar las colas de paso.
+        if (k !== "tails") pintaCapasTodas();
         updateAll();
       });
     });

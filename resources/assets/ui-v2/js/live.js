@@ -302,10 +302,11 @@
     var cfg = d.marker_colors;
     if (!cfg) return null;
 
-    // Si el equipo no transmite, no hay velocidad que colorear: el 0 kph es
-    // el ultimo dato conocido, no una medida. Sin esto una unidad caida
-    // desde anoche salia verde -rango 0-40- como si estuviera circulando.
-    if (classify(d) === "offline") return null;
+    // Solo con el vehiculo EN MOVIMIENTO. El primer tramo (0-40) es verde,
+    // asi que uno parado salia del mismo verde que uno circulando despacio;
+    // y si ademas no transmite, ese 0 kph ni siquiera es una medida, es el
+    // ultimo dato conocido. Parado o en ralenti manda el color del estado.
+    if (classify(d) !== "moving") return null;
 
     // d.speed sale del accessor de Device, que es Formatter::speed()->format()
     // sobre getSpeed(): ya viene en la unidad del usuario y ya aplica el

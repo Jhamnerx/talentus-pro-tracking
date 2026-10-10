@@ -31,6 +31,8 @@
                     aria-pressed="false">{{ trans('front.poi') }}</button>
                 <button type="button" class="tp-mon__layer" data-mon-layer="routes"
                     aria-pressed="false">{{ trans('front.routes') }}</button>
+                <button type="button" class="tp-mon__layer" data-mon-layer="tails"
+                    aria-pressed="false">{{ trans('front.tail') }}</button>
             </div>
 
             {{-- Los botones los pinta monitor.js desde su tabla LAYOUTS, para
