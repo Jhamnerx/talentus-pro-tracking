@@ -168,13 +168,19 @@
     }
 
     var rangos = cfg.ranges || def.ranges || [];
+    if (!rangos.length) return null;
+
+    var minimo = Infinity;
     for (var i = 0; i < rangos.length; i++) {
       var r = rangos[i];
       var desde = r.from == null ? -Infinity : +r.from;
       var hasta = r.to == null ? Infinity : +r.to;
+      if (desde < minimo) minimo = desde;
       if (v >= desde && v < hasta) return r.color || null;
     }
-    return rangos.length ? rangos[rangos.length - 1].color || null : null;
+    // Por debajo del primer tramo, sin color (ver live.js)
+    if (v < minimo) return null;
+    return rangos[rangos.length - 1].color || null;
   }
 
   // Los mismos cubos que Live, para saber si el equipo transmite.

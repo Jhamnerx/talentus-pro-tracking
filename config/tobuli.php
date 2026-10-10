@@ -351,7 +351,10 @@ return [
     */
     'marker_speed_colors' => [
         'ranges' => [
-            ['from' => 0,  'to' => 40,   'color' => '#22c55e'],
+            // Desde 1 y no desde 0: a 0 kph el vehiculo esta parado y no se
+            // colorea por velocidad, que es lo que hacia salir con el verde
+            // del primer tramo a uno detenido.
+            ['from' => 1,  'to' => 40,   'color' => '#22c55e'],
             ['from' => 40, 'to' => 60,   'color' => '#eab308'],
             ['from' => 60, 'to' => 90,   'color' => '#f97316'],
             ['from' => 90, 'to' => null, 'color' => '#ef4444'],

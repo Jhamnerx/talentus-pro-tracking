@@ -287,15 +287,24 @@
   }
 
   function colorDeRango(rangos, v) {
+    if (!rangos.length) return null;
+
+    var minimo = Infinity;
     for (var i = 0; i < rangos.length; i++) {
       var r = rangos[i];
       var desde = r.from == null ? -Infinity : +r.from;
       var hasta = r.to == null ? Infinity : +r.to;
+      if (desde < minimo) minimo = desde;
       // Tramo abierto por arriba: [desde, hasta)
       if (v >= desde && v < hasta) return r.color || null;
     }
-    // Por encima del ultimo tramo cerrado, el ultimo color definido
-    return rangos.length ? rangos[rangos.length - 1].color || null : null;
+
+    // Por DEBAJO del primer tramo no hay color: los tramos empiezan en 1 y el
+    // 0 kph queda fuera a proposito, para no pintar de verde a un parado.
+    if (v < minimo) return null;
+
+    // Por encima del ultimo tramo cerrado, el ultimo color definido.
+    return rangos[rangos.length - 1].color || null;
   }
 
   function markerColor(d) {
