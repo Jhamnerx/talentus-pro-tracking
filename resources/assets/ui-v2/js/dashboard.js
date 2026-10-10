@@ -40,10 +40,13 @@
   }
   function textColor() { return cssVar("--fg-secondary", "#888"); }
 
+  // El MISMO reparto que classify() en live.js y que groupStatus() en el
+  // servidor: el naranja de ralenti es solo del motor encendido, y un
+  // vehiculo parado con el motor apagado (ack) va con los detenidos.
   function statusGroup(status) {
     if (status === "online" || status === "move" || status === "excessive_speed") return "moving";
-    if (status === "idle" || status === "ack" || status === "engine") return "idle";
-    if (status === "stop" || status === "park") return "stopped";
+    if (status === "engine" || status === "idle") return "idle";
+    if (status === "ack" || status === "stop" || status === "park" || status === "blocked") return "stopped";
     return "offline";
   }
   function chart(id) {

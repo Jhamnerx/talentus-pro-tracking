@@ -161,10 +161,16 @@ abstract class BaseController extends Controller
         if (in_array($status, ['online', 'move', 'excessive_speed'], true)) {
             return 'moving';
         }
-        if (in_array($status, ['idle', 'ack', 'engine'], true)) {
+        // El naranja de ralenti es SOLO del motor encendido. Un vehiculo
+        // parado con el motor apagado (ack) va con los detenidos, como en el
+        // legacy (Device::getStatusColor: STATUS_ACK -> 'stopped') y como ya
+        // hace la lista de Live desde ccff70c7.
+        if (in_array($status, ['engine', 'idle'], true)) {
             return 'idle';
         }
-        if (in_array($status, ['stop', 'park'], true)) {
+        // blocked estaba cayendo en 'offline': el vehiculo esta parado, no
+        // desconectado. El legacy le da color propio, que aqui no existe.
+        if (in_array($status, ['ack', 'stop', 'park', 'blocked'], true)) {
             return 'stopped';
         }
         return 'offline';
