@@ -294,6 +294,10 @@
     if (!jsonInput || !rowsEl) return null;
 
     var DEFAULTS = opts.defaults || [];
+    // Donde arranca la escala. Sale de los valores por defecto del bloque, no
+    // de un 0 fijo: el color del marcador empieza en 1 -a 0 kph el vehiculo
+    // esta parado y no se colorea- y el del recorrido en 0.
+    var SUELO = DEFAULTS.length && DEFAULTS[0].from != null ? +DEFAULTS[0].from : 0;
     var ranges;
 
     try {
@@ -312,7 +316,7 @@
       ranges.sort(function (a, b) {
         return (a.from || 0) - (b.from || 0);
       });
-      var from = 0;
+      var from = SUELO;
       ranges.forEach(function (r, i) {
         r.from = from;
         if (i === ranges.length - 1) r.to = null;
@@ -393,7 +397,7 @@
     if (addBtn)
       addBtn.addEventListener("click", function (e) {
         e.preventDefault();
-        var lastFrom = ranges.length > 1 ? ranges[ranges.length - 1].from : 0;
+        var lastFrom = ranges.length > 1 ? ranges[ranges.length - 1].from : SUELO;
         ranges.splice(ranges.length - 1, 0, { from: lastFrom, to: lastFrom + 20, color: "#94a3b8" });
         avisa();
         sync();
