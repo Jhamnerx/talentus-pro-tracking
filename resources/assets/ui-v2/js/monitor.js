@@ -14,6 +14,9 @@
   if (!root) return;
 
   var CFG = {
+    zonesUrl: root.getAttribute("data-zones-url"),
+    poisUrl: root.getAttribute("data-pois-url"),
+    routesUrl: root.getAttribute("data-routes-url"),
     devicesUrl: root.getAttribute("data-devices-url"),
     updatesUrl: root.getAttribute("data-updates-url"),
   };
@@ -45,6 +48,7 @@
 
   var LS_KEY = "tp_monitor_slots";
   var LS_TAM = "tp_monitor_size";
+  var LS_CAPAS = "tp_monitor_layers";
 
   function layoutDe(n) {
     for (var i = 0; i < LAYOUTS.length; i++) if (LAYOUTS[i].n === n) return LAYOUTS[i];
@@ -59,7 +63,18 @@
     cells: [],
     size: TAM_POR_DEFECTO,
     checkTime: "",
+    // Capas del mapa, apagadas por defecto: en celdas pequeñas estorban mas
+    // que ayudan, y quien las quiera las deja encendidas (se recuerdan).
+    capas: { zones: false, pois: false, routes: false },
   };
+  try {
+    var capasGuardadas = JSON.parse(localStorage.getItem(LS_CAPAS) || "null");
+    if (capasGuardadas && typeof capasGuardadas === "object") {
+      state.capas.zones = !!capasGuardadas.zones;
+      state.capas.pois = !!capasGuardadas.pois;
+      state.capas.routes = !!capasGuardadas.routes;
+    }
+  } catch (e) {}
   try {
     state.slots = JSON.parse(localStorage.getItem(LS_KEY) || "[]") || [];
   } catch (e) {
@@ -124,6 +139,51 @@
   }
 
   /* ----- marcador con el icono REAL del device (compacto de live.js) ----- */
+  /* ── Color del marcador por velocidad (igual que en Live) ───────────
+     El rango manda salvo dentro de una geocerca con limite, donde pintan
+     los colores de "proximo" y "excedido". Sin transmitir no se aplica:
+     ese 0 kph es el ultimo dato conocido, no una medida. */
+  function colorPorVelocidad(d) {
+    var cfg = d.marker_colors;
+    if (!cfg) return null;
+    if (clasifica(d) === "offline") return null;
+
+    var v = parseFloat(d.speed);
+    if (isNaN(v)) return null;
+
+    var def = (MAP_CFG && MAP_CFG.markerColors) || {};
+    var defGeo = def.geofence || {};
+
+    var gf = window.tpMapLayers && tpMapLayers.limitFor
+      ? tpMapLayers.limitFor(d.lat, d.lng, d.vehicle_type_id, d.vehicle_state_id)
+      : null;
+
+    if (gf && gf.limit) {
+      var margen = cfg.margin != null ? +cfg.margin : (+defGeo.margin || 0);
+      if (v >= gf.limit) return cfg.over || defGeo.over || null;
+      if (margen > 0 && v >= gf.limit - margen) return cfg.near || defGeo.near || null;
+    }
+
+    var rangos = cfg.ranges || def.ranges || [];
+    for (var i = 0; i < rangos.length; i++) {
+      var r = rangos[i];
+      var desde = r.from == null ? -Infinity : +r.from;
+      var hasta = r.to == null ? Infinity : +r.to;
+      if (v >= desde && v < hasta) return r.color || null;
+    }
+    return rangos.length ? rangos[rangos.length - 1].color || null : null;
+  }
+
+  // Los mismos cubos que Live, para saber si el equipo transmite.
+  function clasifica(d) {
+    switch (d && d.online) {
+      case "online": case "excessive_speed": case "move": return "moving";
+      case "engine": case "idle": return "idle";
+      case "ack": case "stop": case "park": case "blocked": return "stopped";
+      default: return "offline";
+    }
+  }
+
   function deviceIcon(d) {
     var icon = d.icon || {};
     var type = icon.type || "arrow";
@@ -138,9 +198,23 @@
       src = assetPath(icon.path); w = icon.width || 32; h = icon.height || 32; anchorBottom = true;
     }
     var rot = rotate ? "transform:rotate(" + (parseFloat(d.course) || 0) + "deg);" : "";
+
+    // Resplandor: disco tenue detras y brillo pegado a la silueta, el mismo
+    // tratamiento que en Live. El color sale de la velocidad; si el vehiculo
+    // no la usa, del estado (icon_color -> getStatusColor del legacy).
+    var col = colorPorVelocidad(d) || statusVar(d.icon_color);
+    var haloPx = Math.round(Math.max(w, h) * 1.15) + 6;
+    var haloMid = -Math.round(haloPx / 2);
+    var halo = col
+      ? '<span class="tp-mon-halo" style="background:' + col +
+        ";width:" + haloPx + "px;height:" + haloPx + "px;margin:" + haloMid + "px 0 0 " +
+        haloMid + 'px;"></span>'
+      : "";
+
     return L.divIcon({
-      html: '<img src="' + src + '" width="' + w + '" height="' + h + '" style="display:block;' + rot + '" draggable="false">',
-      className: "tp-mon-marker",
+      html: halo + '<img src="' + src + '" width="' + w + '" height="' + h +
+        '" style="display:block;' + (col ? "--tp-halo:" + col + ";" : "") + rot + '" draggable="false">',
+      className: "tp-mon-marker" + (col ? " tp-mon-marker--colored" : ""),
       iconSize: [w, h],
       iconAnchor: anchorBottom ? [w / 2, h] : [w / 2, h / 2],
     });
@@ -267,11 +341,86 @@
     if (!cell.marker) {
       cell.marker = L.marker(ll, { icon: deviceIcon(d) }).addTo(cell.map);
       cell.map.setView(ll, 15);
+      pintaCapas(cell);
     } else {
-      cell.marker.setLatLng(ll);
+      // Primero el icono -rumbo y color- y luego la posicion: setIcon rehace
+      // el elemento y cortaria el deslizamiento (igual que en Live).
       cell.marker.setIcon(deviceIcon(d));
+      mueve(cell, ll);
       cell.map.panTo(ll);
     }
+  }
+
+  /**
+   * Lleva el marcador a su nueva posicion, deslizandolo si el plugin
+   * "Animacion de movimiento del dispositivo" esta activo. La duracion es el
+   * intervalo de refresco, como el checkFrequency del legacy.
+   */
+  function mueve(cell, ll) {
+    var m = cell.marker;
+    var anima =
+      MAP_CFG.animateMove &&
+      typeof m.slideTo === "function" &&
+      cell.map && cell.map.hasLayer(m);
+
+    if (!anima) { m.setLatLng(ll); return; }
+
+    var destino = L.latLng(ll[0], ll[1]);
+    if (m.getLatLng().equals(destino)) return;
+
+    setTimeout(function () {
+      if (!cell.map || !cell.map.hasLayer(m)) return;
+      try { m.slideTo(destino, { duration: 15000 }); } catch (e) { m.setLatLng(destino); }
+    }, 150);
+  }
+
+  /* ── Capas (geocercas, POIs, rutas) ─────────────────────────────────
+     Los datos se piden una vez para toda la pantalla; las capas de Leaflet
+     se construyen por celda, porque una capa solo cuelga de un mapa. */
+  function pintaCapas(cell) {
+    if (!cell || !cell.map || !window.tpMapLayers) return;
+
+    if (cell.capas) { cell.capas.quitar(); cell.capas = null; }
+
+    if (!state.capas.zones && !state.capas.pois && !state.capas.routes) return;
+
+    tpMapLayers
+      .cargar({ zones: CFG.zonesUrl, pois: CFG.poisUrl, routes: CFG.routesUrl })
+      .then(function () {
+        if (!cell.map) return;
+        cell.capas = tpMapLayers.dibujar(cell.map, state.capas);
+      });
+  }
+
+  function pintaCapasTodas() {
+    state.cells.forEach(function (c) { if (c && c.map) pintaCapas(c); });
+  }
+
+  /* ── Interruptores de capa de la cabecera ───────────────────────────── */
+  function montaInterruptores() {
+    var btns = document.querySelectorAll("[data-mon-layer]");
+    Array.prototype.forEach.call(btns, function (b) {
+      var k = b.getAttribute("data-mon-layer");
+      function pinta() {
+        var on = !!state.capas[k];
+        b.classList.toggle("is-on", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      pinta();
+      b.addEventListener("click", function () {
+        state.capas[k] = !state.capas[k];
+        pinta();
+        guardaCapas();
+        // El color por velocidad dentro de una geocerca necesita las zonas
+        // cargadas, asi que se repintan tambien los marcadores.
+        pintaCapasTodas();
+        updateAll();
+      });
+    });
+  }
+
+  function guardaCapas() {
+    try { localStorage.setItem(LS_CAPAS, JSON.stringify(state.capas)); } catch (e) {}
   }
 
   function renderAll() {
@@ -492,6 +641,7 @@
   }
 
   pintaSelectorTam();
+  montaInterruptores();
   aplicaColumnas();
   construyeCeldas();
 
