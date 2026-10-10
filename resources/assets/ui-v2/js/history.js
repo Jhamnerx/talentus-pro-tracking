@@ -203,7 +203,16 @@
   function applyQuickRange(key) {
     var n = new Date(), a = new Date(n.getFullYear(), n.getMonth(), n.getDate()), b = new Date(a);
     var ft = "00:00", tt = "23:59";
-    if (key === "yesterday") { a.setDate(a.getDate() - 1); b.setDate(b.getDate() - 1); }
+    // "Ultima hora": desde hace una hora hasta el final del dia, que es lo
+    // que hace el legacy (controller/history.js device(): from = ahora-1h,
+    // to = 23:45 de hoy). No son "los ultimos 60 minutos".
+    if (key === "last_hour") {
+      var h = new Date(n.getTime() - 3600000);
+      a = new Date(h.getFullYear(), h.getMonth(), h.getDate());
+      b = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+      ft = hhmm(h);
+    }
+    else if (key === "yesterday") { a.setDate(a.getDate() - 1); b.setDate(b.getDate() - 1); }
     else if (key === "2days") { a.setDate(a.getDate() - 2); }
     else if (key === "3days") { a.setDate(a.getDate() - 3); }
     else if (key === "week") { a.setDate(a.getDate() - ((a.getDay() + 6) % 7)); }
@@ -1414,7 +1423,11 @@
       var qs = new URLSearchParams(location.search), dev = qs.get("device");
       if (dev) { var d = state.devices.filter(function (x) { return x.id === parseInt(dev, 10); })[0]; if (d) selDevice(d.id, d.name); }
       var range = qs.get("range");
-      if (range && ["today", "yesterday", "week", "month"].indexOf(range) !== -1) { applyQuickRange(range); commitRange(); }
+      // La lista corta se comia rangos que applyQuickRange si sabe resolver:
+      // el menu del vehiculo manda "last_hour" y se quedaba en el dia entero.
+      var RANGOS = ["last_hour", "today", "yesterday", "2days", "3days",
+                    "week", "lastweek", "month", "lastmonth"];
+      if (range && RANGOS.indexOf(range) !== -1) { applyQuickRange(range); commitRange(); }
       // Rango exacto (?from=YYYY-MM-DD HH:MM&to=...): lo usa "Ver en mapa" de
       // Operaciones para abrir el recorrido de un tramo o de una parada.
       var qFrom = parseLocal(qs.get("from")), qTo = parseLocal(qs.get("to"));
