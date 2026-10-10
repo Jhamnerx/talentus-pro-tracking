@@ -429,27 +429,37 @@
       var el2 = state.pointPopup && state.pointPopup.getElement();
       var slot = el2 && el2.querySelector("[data-pt-extra]");
       if (!slot) return;
-      var html = "";
+      // Sensores: filas normales de la ficha, como en el legacy, donde van en
+      // la tabla principal y no en el bloque de parametros.
+      var filas = "";
+      var sv = pos.sensors_value || {};
+      Object.keys(sv).forEach(function (k) {
+        if (sv[k] != null && typeof sv[k] !== "object") filas += ptRow(esc(k), esc(String(sv[k])));
+      });
+
+      // Parametros del equipo: un bloque corrido, clave y valor en la MISMA
+      // linea, como el legacy (una sola celda con <br> entre lineas). En dos
+      // columnas, con cuarenta nombres de largo desigual, quedaba una escalera.
+      function linea(k, v) {
+        return '<div class="tp-hist-pt__raw-l"><span>' + k + "</span> " + v + "</div>";
+      }
+      var crudo = "";
       var arr = pos.other_arr || [];
       if (Object.prototype.toString.call(arr) === "[object Array]") {
-        // parseXML legacy devuelve lineas "clave: valor"
+        // parseXML del legacy devuelve lineas "clave: valor"
         arr.forEach(function (line) {
           var t2 = String(line), ix = t2.indexOf(": ");
-          if (ix > 0) html += ptRow(esc(t2.slice(0, ix)), esc(t2.slice(ix + 2)));
-          else if (t2) html += ptRow("", esc(t2));
+          if (ix > 0) crudo += linea(esc(t2.slice(0, ix)) + ":", esc(t2.slice(ix + 2)));
+          else if (t2) crudo += linea("", esc(t2));
         });
       } else if (arr && typeof arr === "object") {
         Object.keys(arr).forEach(function (k) {
           var v = arr[k];
-          if (v != null && typeof v !== "object") html += ptRow(esc(k), esc(String(v)));
+          if (v != null && typeof v !== "object") crudo += linea(esc(k) + ":", esc(String(v)));
         });
       }
-      // Sensores marcados "mostrar en popup"
-      var sv = pos.sensors_value || {};
-      Object.keys(sv).forEach(function (k) {
-        if (sv[k] != null && typeof sv[k] !== "object") html += ptRow(esc(k), esc(String(sv[k])));
-      });
-      slot.innerHTML = html;
+
+      slot.innerHTML = filas + (crudo ? '<div class="tp-hist-pt__raw">' + crudo + "</div>" : "");
       var m2 = el2.querySelector("[data-pt-more]");
       if (m2) m2.remove();
       if (state.pointPopup) state.pointPopup.update();

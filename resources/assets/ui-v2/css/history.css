@@ -908,6 +908,31 @@
   text-align: right;
   color: var(--fg-primary);
 }
+/* El hueco de los parametros es un <span>: como hijo de la rejilla contaba
+   como UNA celda y las filas de sensores de dentro no se alineaban con el
+   resto. Con display:contents sus hijos entran en la rejilla del padre. */
+.tp-hist-pt__defs [data-pt-extra] {
+  display: contents;
+}
+/* Parametros del equipo: bloque corrido a lo ancho, clave y valor en la
+   misma linea, como la celda unica del legacy. */
+.tp-hist-pt__raw {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+  text-align: left;
+  line-height: 1.55;
+}
+.tp-hist-pt__raw-l {
+  /* Sin nowrap: un valor largo se partiria fuera del popup, que tiene 320 px
+     de ancho. Clave y valor caben en la misma linea en todos los parametros
+     del equipo, que son numeros cortos. */
+  word-break: break-word;
+}
+.tp-hist-pt__raw-l > span {
+  color: var(--fg-tertiary);
+}
 
 /* ---------- FOOTER (graph / datalog) — panel FLOTANTE sobre el mapa ---------- */
 .tp-history__bottom {
