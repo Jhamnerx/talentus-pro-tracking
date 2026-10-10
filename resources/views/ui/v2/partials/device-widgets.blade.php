@@ -19,7 +19,9 @@
             <h4 class="tp-h6 tp-mb-3">{{ trans('front.object') }}</h4>
             <dl class="tp-defs">
                 <dt>{{ trans('front.state') }}</dt><dd>{{ $device_info['status_text'] ?? '—' }}</dd>
-                <dt>{{ trans('front.address') }}</dt><dd>{{ $device_info['address'] ?? '—' }}</dd>
+                {{-- La direccion llega en una peticion aparte (ver DevicesController::address):
+                     el geocodificador es externo y retrasaba todo el drawer. --}}
+                <dt>{{ trans('front.address') }}</dt><dd data-tp-addr="address">…</dd>
                 <dt>{{ trans('ui.last_signal') }}</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
                 <dt>{{ trans('front.coordinates') }}</dt><dd class="tp-text-mono">{{ $device_info['coords'] ?? '—' }}</dd>
                 <dt>{{ trans('front.altitude') }}</dt><dd>{{ $device_info['altitude'] ?? '—' }}</dd>
@@ -55,16 +57,14 @@
     @isset($location)
         <section class="tp-card tp-card--flat tp-mb-4">
             <h4 class="tp-h6 tp-mb-3">{{ trans('front.location') }}</h4>
-            @if ($location)
-                <dl class="tp-defs">
-                    <dt>{{ trans('front.city') }}</dt><dd>{{ $location['city'] ?? '—' }}</dd>
-                    <dt>{{ trans('ui.street') }}</dt><dd>{{ $location['road'] ?? '—' }}</dd>
-                    <dt>{{ trans('front.country') }}</dt><dd>{{ $location['country'] ?? '—' }}</dd>
-                    <dt>{{ trans('front.address') }}</dt><dd>{{ $location['address'] ?? '—' }}</dd>
-                </dl>
-            @else
-                <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_address_available') }}</p>
-            @endif
+            {{-- Igual que arriba: los cuatro campos los rellena live.js con la
+                 respuesta de devices/{id}/address. --}}
+            <dl class="tp-defs">
+                <dt>{{ trans('front.city') }}</dt><dd data-tp-addr="city">…</dd>
+                <dt>{{ trans('ui.street') }}</dt><dd data-tp-addr="road">…</dd>
+                <dt>{{ trans('front.country') }}</dt><dd data-tp-addr="country">…</dd>
+                <dt>{{ trans('front.address') }}</dt><dd data-tp-addr="address">…</dd>
+            </dl>
         </section>
     @endisset
 

@@ -1332,6 +1332,44 @@
       .catch(function () { tpModal.setBusy(dlg, false); tpModal.toast(tpT('ui.network_error'), "error"); });
   }
 
+  /**
+   * Rellena los huecos [data-tp-addr] con la direccion del vehiculo.
+   *
+   * Va en su propia peticion: el geocodificador es un servicio externo y
+   * costaba ~260 ms de los ~263 ms que tardaba el endpoint de widgets,
+   * retrasando tambien a los Sensores, que no usan la direccion.
+   */
+  var addrFicha = {};
+  function pintarDireccion(id) {
+    var huecos = document.querySelectorAll("[data-tp-addr]");
+    if (!huecos.length) return;
+
+    function poner(a) {
+      Array.prototype.forEach.call(huecos, function (el) {
+        var k = el.getAttribute("data-tp-addr");
+        el.textContent = (a && a[k]) || "—";
+      });
+    }
+
+    if (addrFicha[id] !== undefined) return poner(addrFicha[id]);
+
+    var base = CFG.devicesUrl || "/ui/v2/api/devices";
+    fetch(base + "/" + id + "/address", {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin",
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        // Si entretanto se cambio de vehiculo, no se pisa lo que haya.
+        if (state.selectedId != id) return;
+        addrFicha[id] = (res && res.address) || null;
+        poner(addrFicha[id]);
+      })
+      .catch(function () {
+        if (state.selectedId == id) poner(null);
+      });
+  }
+
   // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
   function loadDrawerWidgets(id) {
     var box = document.getElementById("tp-drawer-widgets");
@@ -1373,6 +1411,7 @@
         }
         if (box) box.innerHTML = sideHtml || "";
         if (bottom) bottom.innerHTML = bottomHtml || "";
+        pintarDireccion(id);
         if (bottomHtml.trim()) {
           root.setAttribute("data-bottombar-open", "true");
           root.removeAttribute("data-bottombar-collapsed");

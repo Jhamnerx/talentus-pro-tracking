@@ -2905,6 +2905,35 @@ class DevicesController extends BaseController
      * and honoring the user's active-widget configuration
      * (getSettings('widgets'), same as the legacy bottombar).
      */
+    /**
+     * Direccion del vehiculo, aparte de los widgets.
+     *
+     * Vive en su propia peticion porque el geocodificador es una llamada a un
+     * servicio externo de cientos de milisegundos y no tiene por que retrasar
+     * el resto del drawer. Devuelve el objeto entero -ciudad, calle, pais- que
+     * necesita la tarjeta "Ubicacion", no solo el texto.
+     */
+    public function address(Request $request, $id): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $device = DeviceRepo::find((int) $id);
+
+        if (! $device || ! $device->lat || ! $device->lng) {
+            return response()->json(['ok' => true, 'address' => null]);
+        }
+
+        try {
+            $loc = GeoLocation::byCoordinates($device->lat, $device->lng);
+
+            return response()->json(['ok' => true, 'address' => $loc ? $loc->toArray() : null]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => true, 'address' => null]);
+        }
+    }
+
     public function widgets(Request $request, $id): JsonResponse
     {
         if (! $this->user->perm('devices', 'view')) {
@@ -2933,20 +2962,17 @@ class DevicesController extends BaseController
 
         $data = ['device' => $device, 'active' => $active];
 
-        // Dirección: geocode compartido por los widgets Ubicación y Objeto
-        // (evita pedir la dirección dos veces al mismo proveedor).
+        // La direccion NO se resuelve aqui. GeoLocation::byCoordinates sale al
+        // geocodificador externo y costaba ~260 ms de los ~263 ms del endpoint
+        // (el SQL eran 2 ms), bloqueando el drawer entero -Sensores incluidos-
+        // por un dato que solo usan "Objeto" y "Ubicacion". El navegador la
+        // pide aparte, igual que ya hace el popup del marcador.
         $address = null;
-        if (($has('location') || $has('device')) && $device->lat && $device->lng) {
-            try {
-                $loc = GeoLocation::byCoordinates($device->lat, $device->lng);
-                $address = $loc ? $loc->toArray() : null;
-            } catch (\Throwable $e) {
-                $address = null;
-            }
-        }
 
         if ($has('location')) {
-            $data['location'] = $address;
+            // La tarjeta se pinta vacia y se rellena luego; hace falta el flag
+            // para que la blade sepa que debe dibujarla.
+            $data['location'] = ['lazy' => true];
         }
 
         // Objeto: ficha UNIFICADA del vehículo (fusiona la antigua "Telemetría" del
