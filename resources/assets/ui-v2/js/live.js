@@ -1351,7 +1351,13 @@
       });
     }
 
-    if (addrFicha[id] !== undefined) return poner(addrFicha[id]);
+    // La clave lleva la POSICION, no solo el vehiculo: el legacy hace lo
+    // mismo ('_a_' + lat + lng en app.addressStack). Si se guardara por id, un
+    // vehiculo que se ha movido seguiria enseñando la direccion de antes.
+    var d = state.index[id] || {};
+    var clave = id + "@" + d.lat + "," + d.lng;
+
+    if (addrFicha[clave] !== undefined) return poner(addrFicha[clave]);
 
     var base = CFG.devicesUrl || "/ui/v2/api/devices";
     fetch(base + "/" + id + "/address", {
@@ -1362,8 +1368,8 @@
       .then(function (res) {
         // Si entretanto se cambio de vehiculo, no se pisa lo que haya.
         if (state.selectedId != id) return;
-        addrFicha[id] = (res && res.address) || null;
-        poner(addrFicha[id]);
+        addrFicha[clave] = (res && res.address) || null;
+        poner(addrFicha[clave]);
       })
       .catch(function () {
         if (state.selectedId == id) poner(null);
