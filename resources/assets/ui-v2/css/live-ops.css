@@ -1040,22 +1040,28 @@ table.tp-lock-hist th {
   color: #16a34a;
 }
 /* Icono de motor en la fila (detección de ignición por sensor). */
+/* Deteccion de encendido. Las mismas dos imagenes que usa el legacy de esta
+   marca desde su CSS propio (public/assets/custom/js.js):
+
+     .on  i.icon.detect_engine -> assets/custom/icons/acc.svg      (a color)
+     .off i.icon.detect_engine -> assets/custom/icons/acc_off.svg  (en grises)
+
+   Va aqui y no en el marcado, como alli, para que otra marca pueda cambiar
+   el dibujo sin tocar el JS. */
 .tp-eng-ico {
   flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  line-height: 0;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
-/* Encendido: el mismo verde que escribe el legacy ($color-status-on, que
-   resuelve a "green"), no un esmeralda inventado. Apagado, gris. */
 .tp-eng-ico--on {
-  color: var(--sc-green);
+  background-image: url("/assets/custom/icons/acc.svg");
 }
 .tp-eng-ico--off {
-  color: var(--fg-tertiary, #94a3b8);
-}
-.tp-eng-ico svg {
-  display: block;
+  background-image: url("/assets/custom/icons/acc_off.svg");
 }
 
 /* ── Estado de vehículo (VACÍO/CARGADO…): badge + cambiador ─────── */

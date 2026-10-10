@@ -2075,11 +2075,6 @@
       if (state.groups[i].id === gid) return state.groups[i].title;
     return tpT('front.group') + gid;
   }
-  // Contorno del icono de motor del legacy: glifo e913 de icomoon, sacado de
-  // public/assets/fonts/icomoon.svg para no depender de cargar la fuente.
-  var ICO_MOTOR =
-    "M82.080 249.126c-14.141 0-25.6 11.455-25.6 25.6v340.337c0 14.138 11.459 25.6 25.6 25.6s25.6-11.462 25.6-25.6v-340.337c0-14.138-11.462-25.6-25.6-25.6zM766.444 135.68h-280.477c-24.791 0-57.777 12.056-76.728 28.044l-82.285 69.431c-9.735 8.209-30.976 15.974-43.711 15.974h-53.583c-32.935 0-59.733 26.801-59.733 59.733v272.073c0 32.935 26.798 59.733 59.733 59.733h45.182c4.192 0 7.366 0.7 9.434 1.393 4.816 21.245 28.505 36.424 58.832 36.424h309.893c32.932 0 59.733-26.798 59.733-59.733v-7.366c0-4.625 3.908-8.533 8.533-8.533h45.175c32.935 0 59.733-26.798 59.733-59.733v-45.179c0-4.625 3.912-8.533 8.533-8.533h7.363c4.625 0 8.533 3.908 8.533 8.533v7.366c0 32.935 26.798 59.733 59.733 59.733h7.366c32.932 0 59.733-26.798 59.733-59.733v-234.26c0-32.935-26.801-59.733-59.733-59.733h-7.366c-32.935 0-59.733 26.798-59.733 59.733v7.366c0 4.622-3.908 8.533-8.533 8.533h-7.363c-4.622 0-8.533-3.912-8.533-8.533v-82.999c0-32.932-26.798-59.733-59.733-59.733zM229.659 589.469c-4.625 0-8.533-3.908-8.533-8.533v-272.073c0-4.622 3.908-8.533 8.533-8.533h53.583c24.791 0 57.777-12.052 76.728-28.041l82.285-69.427c9.735-8.212 30.976-15.981 43.711-15.981h280.477c4.622 0 8.533 3.908 8.533 8.533v82.992c0 32.935 26.798 59.733 59.733 59.733h7.363c32.932 0 59.733-26.798 59.733-59.733v-7.363c0-4.625 3.908-8.533 8.533-8.533h7.366c4.622 0 8.533 3.908 8.533 8.533v234.26c0 4.625-3.912 8.533-8.533 8.533h-7.366c-4.625 0-8.533-3.908-8.533-8.533v-7.366c0-32.935-26.801-59.733-59.733-59.733h-7.363c-32.935 0-59.733 26.798-59.733 59.733v45.179c0 4.625-3.912 8.533-8.533 8.533h-45.175c-32.935 0-59.733 26.798-59.733 59.733v7.366c0 4.625-3.912 8.533-8.533 8.533h-309.893c-4.192 0-7.366-0.7-9.434-1.393-4.816-21.245-28.505-36.424-58.832-36.424l-45.182 0.003zM687.135 740.731h-340.34c-14.141 0-25.6 11.462-25.6 25.6s11.459 25.6 25.6 25.6h340.34c14.141 0 25.6-11.462 25.6-25.6s-11.465-25.6-25.6-25.6zM498.053 627.282c-14.141 0-25.6 11.462-25.6 25.6v113.449c0 14.138 11.459 25.6 25.6 25.6s25.6-11.462 25.6-25.6v-113.446c0-14.141-11.459-25.603-25.6-25.603zM195.526 400.391h-113.446c-14.141 0-25.6 11.459-25.6 25.6 0 14.145 11.459 25.6 25.6 25.6h113.446c14.141 0 25.6-11.455 25.6-25.6 0-14.141-11.459-25.6-25.6-25.6z";
-
   // Badge del estado de vehículo (label corto + color). Compartido por la fila
   // del rail, la etiqueta del marcador y el drawer. vs = {name,label,color}.
   function vehicleStateBadge(vs, extraStyle) {
@@ -2129,20 +2124,17 @@
     }
     // Motor (paridad legacy detect_engine): solo si hay detección de ignición
     // por SENSOR → engine_status es bool; con GPS es null y no se muestra.
-    // Verde = encendido, gris = apagado.
+    // A color = encendido, en grises = apagado (acc.svg / acc_off.svg).
     var engineIcon = "";
     if (d.engine_status === true || d.engine_status === false) {
       engineIcon =
         '<span class="tp-eng-ico ' +
         (d.engine_status ? "tp-eng-ico--on" : "tp-eng-ico--off") +
         '" title="' +
+        // El dibujo lo pone el CSS con background-image, igual que el legacy
+        // de esta marca (.on/.off i.icon.detect_engine -> acc.svg / acc_off.svg).
         (d.engine_status ? tpT('ui.engine_on') : tpT('ui.engine_off')) +
-        '"><svg width="13" height="13" viewBox="0 0 1024 1024" fill="currentColor" aria-hidden="true">'
-        // El glifo del legacy (icomoon e913, el mismo .ico-engine). La fuente
-        // va con el eje Y invertido, 1024 por em y ascendente 960: de ahi el
-        // volteo.
-        + '<g transform="translate(0,960) scale(1,-1)"><path d="' + ICO_MOTOR + '"/></g>'
-        + '</svg></span>';
+        '"></span>';
     }
     // Badge de estado de vehículo (tipo con estados: VACÍO/CARGADO…) con su color.
     var stateBadge = vehicleStateBadge(d.vehicle_state);
