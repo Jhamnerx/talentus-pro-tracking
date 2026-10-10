@@ -387,7 +387,12 @@
       '<button type="button" class="tp-hist-pt__more" data-pt-more title="' + tpT('ui.see_all_parameters') + '"><span></span><span></span><span></span></button>' +
       "</div>";
     if (state.pointPopup) state.map.closePopup(state.pointPopup);
-    state.pointPopup = L.popup({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }).setLatLng(ll).setContent(html).openOn(state.map);
+    // El contenido va como NODO, no como cadena: con una cadena, cada
+    // popup.update() rehace el HTML desde ella y borraba la direccion recien
+    // puesta y el manejador del boton de los tres puntos.
+    var cont = document.createElement("div");
+    cont.innerHTML = html;
+    state.pointPopup = L.popup({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }).setLatLng(ll).setContent(cont).openOn(state.map);
     if (CFG.addrOn) fetchAddr(p.lat, p.lng, function (a) {
       var el2 = state.pointPopup && state.pointPopup.getElement();
       var dd = el2 && el2.querySelector("[data-addr]");
