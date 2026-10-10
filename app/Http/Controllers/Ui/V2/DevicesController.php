@@ -53,7 +53,31 @@ class DevicesController extends BaseController
             'pageTitle'     => $titulo,
             'mapConfig'     => $this->buildMapConfig(),
             'canCreate'     => $this->user->perm('devices', 'edit'),
+            // El kebab de los grupos NO depende de poder crear vehiculos. El
+            // legacy lo pinta sin guarda y deja que autorice el controlador
+            // con checkException('devices_groups', ...), que resuelve por la
+            // politica de DeviceGroup. Aqui se pregunta lo mismo.
+            'canGroups'     => $this->puedeGrupos(),
         ]);
+    }
+
+    /**
+     * Si el usuario puede gestionar grupos de objetos.
+     *
+     * La misma autorizacion que piden los endpoints de grupos y el legacy:
+     * checkException('devices_groups', ...), que pasa por la politica de
+     * DeviceGroup (bloquea demo, por ejemplo) y no por perm(). Se pregunta
+     * aqui para no pintar un menu que luego va a dar 403.
+     */
+    private function puedeGrupos(): bool
+    {
+        try {
+            $this->checkException('devices_groups', 'view');
+
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**

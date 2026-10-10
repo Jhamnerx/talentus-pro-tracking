@@ -25,6 +25,7 @@
         data-zone-groups-url="{{ url('/ui/v2/api/zone-groups') }}"
         data-poi-groups-url="{{ url('/ui/v2/api/poi-groups') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
         data-routes-url="{{ route('ui.v2.api.routes') }}" data-geo-url="{{ route('address.get') }}"
+        data-can-groups="{{ !empty($canGroups) ? '1' : '' }}"
         data-routes-table-url="{{ route('ui.v2.routes_table') }}"
         data-routes-export-url="{{ route('routes.export.store') }}"
         data-routes-import-url="{{ route('routes.import') }}"

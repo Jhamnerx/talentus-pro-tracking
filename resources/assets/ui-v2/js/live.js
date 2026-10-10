@@ -2542,7 +2542,11 @@
   }
 
   // ── Grupos de dispositivos: CRUD (patrón grupos de rutas) ──
-  var CAN_GROUPS = !!document.getElementById("tp-live-create-device"); // perm devices edit
+  // Gestionar grupos NO es lo mismo que crear vehiculos: antes se miraba si
+  // existia el boton de "nuevo vehiculo" -perm('devices','edit')- y dejaba sin
+  // kebab a quien si puede tocar grupos. El servidor resuelve el flag con la
+  // misma autorizacion que piden los endpoints (ver DevicesController).
+  var CAN_GROUPS = root.getAttribute("data-can-groups") === "1";
   var GROUPS_BASE = (CFG.devicesUrl || "/ui/v2/api/devices").replace(/\/devices(\?.*)?$/, "/device-groups");
 
   // Campo "Reenvíos" del modal de grupos: lista de checkboxes de los Forward
