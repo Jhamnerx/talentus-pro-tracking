@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual de pruebas · Plataforma de Rastreo · Módulo de Operaciones</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+  * { box-sizing: border-box; }
+  html { font-size: 10.5pt; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1f2937; line-height: 1.45; margin: 0; }
+  h1 { font-size: 24pt; margin: 0 0 4mm; color: #0f172a; }
+  h2 { font-size: 16pt; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid #1d4ed8; color: #1e3a8a; page-break-after: avoid; }
+  h3 { font-size: 12.5pt; margin: 6mm 0 2mm; color: #0f172a; page-break-after: avoid; }
+  p, li { margin: 0 0 2.2mm; }
+  ol, ul { padding-left: 6mm; margin: 0 0 3mm; }
+  li { page-break-inside: avoid; }
+  .chapter { page-break-before: always; }
+  .cover { page-break-after: always; display: flex; flex-direction: column; justify-content: center; min-height: 240mm; }
+  .cover .kicker { color: #1d4ed8; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 9pt; margin-bottom: 3mm; }
+  .cover .sub { font-size: 13pt; color: #475569; margin-bottom: 10mm; }
+  .cover table { font-size: 10pt; }
+  .new { display: inline-block; background: #dcfce7; color: #166534; font-weight: 700; font-size: 8pt; padding: 1px 6px; border-radius: 10px; vertical-align: middle; margin-left: 4px; letter-spacing: .04em; }
+  .box { border: 1px solid #cbd5e1; border-left: 4px solid #1d4ed8; background: #f8fafc; padding: 3mm 4mm; margin: 3mm 0 4mm; page-break-inside: avoid; }
+  .box.warn { border-left-color: #d97706; background: #fffbeb; }
+  .box.test { border-left-color: #16a34a; background: #f0fdf4; }
+  .box b { color: #0f172a; }
+  figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid #cbd5e1; border-radius: 4px; display: block; }
+  figure.narrow img { width: 72%; margin: 0 auto; }
+  figcaption { font-size: 9pt; color: #475569; margin-top: 1.5mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 4mm; font-size: 9.5pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #cbd5e1; padding: 1.6mm 2.2mm; vertical-align: top; text-align: left; }
+  th { background: #eff6ff; color: #1e3a8a; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9.5pt; background: #f1f5f9; padding: 0 3px; border-radius: 3px; }
+  .toc li { margin-bottom: 1mm; }
+  .steps li { margin-bottom: 2.5mm; }
+  .check { list-style: none; padding-left: 0; }
+  .check li::before { content: "☐ "; color: #1d4ed8; font-weight: 700; }
+  .muted { color: #64748b; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">Plataforma de Rastreo · Talentus Technology</div>
+  <h1>Manual de pruebas<br>Módulo de Operaciones (control de vueltas)</h1>
+  <div class="sub">Guía paso a paso para los usuarios de prueba: alta de unidades, geocercas, operaciones, alertas y reportes. Las novedades de esta versión están marcadas con <span class="new">NUEVO</span>.</div>
+  <table>
+    <tr><th style="width:32%">Versión del sistema</th><td>Rama <code>nuevo-tema</code> · entrega del 12 de octubre de 2026</td></tr>
+    <tr><th>Interfaz</th><td>Interfaz nueva (v2). El panel de administración conserva la interfaz clásica.</td></tr>
+    <tr><th>Público</th><td>Usuarios de prueba (supervisores de operación) y administrador de la plataforma</td></tr>
+    <tr><th>Cómo reportar errores</th><td>Al final de cada capítulo hay una lista «Qué probar». Reporta: qué hiciste, qué esperabas, qué pasó, hora, vehículo y, si es posible, una captura.</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Contenido</h2>
+  <ol class="toc">
+    <li>Antes de empezar: qué es una operación y cómo se cuenta una vuelta</li>
+    <li>Administrador: alta de unidades, usuario y permiso «Operaciones»</li>
+    <li>Grupos de vehículos</li>
+    <li>Geocercas con categoría <span class="new">NUEVO</span></li>
+    <li>Crear y editar una operación <span class="new">NUEVO</span></li>
+    <li>Seguimiento: pestaña «En vivo» <span class="new">NUEVO</span></li>
+    <li>Revisión: pestaña «Vueltas», detalle y justificación de paradas <span class="new">NUEVO</span></li>
+    <li>Recalcular vueltas y catálogo de motivos <span class="new">NUEVO</span></li>
+    <li>Alerta «Parada en operación» <span class="new">NUEVO</span></li>
+    <li>Reportes 910 a 913 <span class="new">NUEVO</span></li>
+    <li>Otras mejoras de esta entrega (mapa, historial, monitor)</li>
+    <li>Lista general de verificación</li>
+  </ol>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>1. Antes de empezar</h2>
+  <p>Una <b>operación</b> es un ciclo de trabajo repetitivo entre dos tipos de punto. El sistema cuenta cada ciclo como una <b>vuelta</b> y mide cuánto tardó cada parte.</p>
+  <table>
+    <tr><th style="width:26%">Tipo de operación</th><th>Puntos</th><th>Qué cuenta como vuelta</th></tr>
+    <tr><td>Acarreo (carga / descarga)</td><td>Una o varias geocercas de categoría <b>Carga</b> y una o varias de <b>Descarga</b></td><td>Salir de carga → llegar a descarga (ida) → salir de descarga → volver a carga (vuelta)</td></tr>
+    <tr><td>Ruta (inicio / fin) <span class="new">NUEVO</span></td><td>Geocercas de categoría <b>Inicio de ruta</b> y <b>Fin de ruta</b></td><td>Mismas reglas, con los nombres inicio / fin</td></tr>
+  </table>
+  <p>Conceptos que verás en pantalla:</p>
+  <ul>
+    <li><b>Tramo</b>: cada mitad de la vuelta (ida o vuelta). Tiene inicio, fin, duración y distancia.</li>
+    <li><b>Permanencia mínima</b>: segundos que el vehículo debe estar dentro de la geocerca para que cuente como «llegó». Evita que un paso rozando el borde cuente como visita.</li>
+    <li><b>Parada</b>: el vehículo estuvo quieto más del umbral configurado (por defecto 60 s) dentro de un tramo. Puede ser <b>autorizada</b> (cayó en una geocerca de categoría grifo, taller o descanso), <b>no autorizada</b> o <b>dato dudoso</b> (hubo un salto de señal).</li>
+    <li><b>Vuelta incompleta</b>: el ciclo se cerró sin completar los dos tramos (por ejemplo, volvió a descarga sin pasar por carga, o se pasó el tramo máximo en horas).</li>
+    <li><b>Turno</b>: franja horaria con nombre (Día, Noche). Los turnos que terminan a una hora menor que la de inicio cruzan la medianoche.</li>
+  </ul>
+  <div class="box">
+    <b>Orden recomendado para configurar desde cero:</b> unidades y usuario (admin) → grupo de vehículos → geocercas con categoría → operación → alerta → reportes. Los capítulos siguen ese orden.
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>2. Administrador: unidades, usuario y permiso</h2>
+  <p>Estas tareas se hacen en el <b>panel de administración</b> (interfaz clásica), con la cuenta de administrador.</p>
+
+  <h3>2.1 Alta de una unidad (vehículo con GPS)</h3>
+  <ol class="steps">
+    <li>Entra en <b>Admin → Vehículos</b>. Arriba a la derecha está el botón <b>+</b> (Agregar nuevo).</li>
+    <li>En la pestaña <b>Principal</b> escribe el <b>Nombre</b> (normalmente la placa, por ejemplo CFX-784) y el <b>IMEI</b> del equipo GPS. Marca <b>Activo</b>.</li>
+    <li>En la pestaña <b>Usuarios</b> asigna la unidad al usuario que la va a ver (el supervisor de la operación).</li>
+    <li>En <b>Sensores</b> revisa que exista el sensor de <b>encendido (ignición)</b>. El módulo de Operaciones lo usa para distinguir «detenido con motor encendido» (ralentí) de «motor apagado», y el reporte de horas trabajadas suma horas de motor a partir de él. Si la unidad tiene sensor de horas de motor o de combustible, también se usan.</li>
+    <li><b>Guardar</b>. La unidad aparece en el mapa del usuario en cuanto transmite.</li>
+  </ol>
+  <figure><img src="img/04-admin-vehiculos-lista.png" alt="Lista de vehículos en el admin"><figcaption>Admin → Vehículos. El botón + abre el alta.</figcaption></figure>
+  <figure><img src="img/05-admin-nuevo-vehiculo.png" alt="Modal de alta de vehículo"><figcaption>Alta de vehículo: nombre, IMEI y pestañas de usuarios, iconos, sensores, etc.</figcaption></figure>
+
+  <h3>2.2 Dar el permiso «Operaciones» al usuario <span class="new">NUEVO</span></h3>
+  <p>El módulo <b>no se ve</b> hasta que el administrador lo activa por usuario. Sin el permiso no aparece la entrada «Operaciones» en el menú lateral ni los reportes 910 a 913.</p>
+  <ol class="steps">
+    <li><b>Admin → Usuarios</b>. Busca al usuario por correo en el cuadro «Buscar».</li>
+    <li>En la columna <b>Acciones</b>, pulsa el engranaje y elige <b>Editar</b>.</li>
+    <li>Ve a la pestaña <b>Permisos</b> y busca la fila <b>Operaciones</b>. Marca las tres casillas: <b>ver</b>, <b>editar</b> y <b>eliminar</b>. Con solo «ver», el usuario consulta vueltas y reportes pero no crea ni modifica operaciones.</li>
+    <li><b>Guardar</b>.</li>
+  </ol>
+  <figure><img src="img/01-admin-lista-usuarios-dropdown.png" alt="Lista de usuarios con el menú de acciones"><figcaption>Admin → Usuarios: el engranaje de la fila abre Editar y «Inicie la sesión como».</figcaption></figure>
+  <figure><img src="img/02-admin-permiso-operaciones.png" alt="Pestaña Permisos con la fila Operaciones marcada"><figcaption>Pestaña Permisos: la fila «Operaciones» (recuadro rojo) es nueva.</figcaption></figure>
+
+  <h3>2.3 Entrar como el usuario</h3>
+  <p>Cada usuario ve solo sus operaciones. Para revisar lo que ve un cliente, el administrador usa <b>Inicie la sesión como</b> desde el mismo menú de la fila y confirma con <b>Sí</b>. Para volver a la cuenta de administrador, cierra sesión: la plataforma regresa automáticamente a la sesión anterior.</p>
+  <figure class="narrow"><img src="img/03-admin-entrar-como.png" alt="Confirmación de entrar como usuario"><figcaption>Confirmación antes de entrar como el usuario.</figcaption></figure>
+
+  <div class="box test"><b>Qué probar (admin)</b>
+    <ul class="check">
+      <li>Un usuario sin el permiso no ve «Operaciones» en el menú ni los reportes 910–913.</li>
+      <li>Con solo «ver», los botones Nueva operación / Editar / Eliminar no están disponibles.</li>
+      <li>Al cerrar sesión desde «entrar como», vuelves al admin.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>3. Grupos de vehículos</h2>
+  <p>Una operación se asigna a un <b>grupo de vehículos</b>, no a vehículos sueltos. Todos los vehículos del grupo participan en la operación; si agregas o quitas uno del grupo, la operación lo toma en el siguiente minuto.</p>
+  <ol class="steps">
+    <li>En el <b>Mapa</b> (menú lateral, primer icono), el panel izquierdo lista la flota. Pulsa el icono de <b>vista por grupos</b> (segundo botón junto a «Flota») para ver los vehículos agrupados.</li>
+    <li>En la cabecera de cada grupo hay un menú <b>⋮</b> con <b>Agregar nuevo</b>, <b>Editar</b> y <b>Eliminar</b>.</li>
+    <li>En el modal escribe el <b>Título</b> y marca los vehículos que pertenecen al grupo. <b>Guardar</b>.</li>
+  </ol>
+  <figure><img src="img/62-live-grupo-modal.png" alt="Modal de grupo de objetos"><figcaption>Modal «Grupos de objetos»: título y vehículos del grupo.</figcaption></figure>
+  <div class="box warn"><b>Regla nueva:</b> un grupo que está asignado a una operación <b>no se puede eliminar</b>. El sistema lo rechaza con un mensaje. Primero cambia el grupo de la operación (o elimina la operación) y después borra el grupo.</div>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Crear un grupo, asignarlo a una operación e intentar eliminarlo: debe salir el mensaje de bloqueo.</li>
+      <li>Agregar un vehículo al grupo de una operación activa: en «En vivo» debe aparecer en un par de minutos.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>4. Geocercas con categoría <span class="new">NUEVO</span></h2>
+  <p>Las geocercas ahora tienen un campo <b>Categoría</b>. La categoría le dice al módulo de Operaciones para qué sirve cada zona:</p>
+  <table>
+    <tr><th style="width:22%">Categoría</th><th>Uso</th></tr>
+    <tr><td>Carga / Descarga</td><td>Puntos de una operación de acarreo.</td></tr>
+    <tr><td>Inicio de ruta / Fin de ruta</td><td>Puntos de una operación de tipo ruta.</td></tr>
+    <tr><td>Grifo</td><td>Zona de abastecimiento. Las paradas dentro cuentan como autorizadas, y alimenta el reporte «Abastecimiento» y el descuento de horas por abastecimiento.</td></tr>
+    <tr><td>Taller</td><td>Paradas autorizadas (mantenimiento).</td></tr>
+    <tr><td>Descanso</td><td>Paradas autorizadas (comedor, cola de espera, estacionamiento de descanso).</td></tr>
+    <tr><td>Sin categoría</td><td>Geocerca normal; no participa en operaciones.</td></tr>
+  </table>
+
+  <h3>4.1 Crear una geocerca</h3>
+  <ol class="steps">
+    <li>En el menú lateral entra en <b>Geocercas</b> (o en el Mapa, panel «Geocercas»). Pulsa el botón <b>+</b>.</li>
+    <li>Elige la forma: <b>Polígono</b>, <b>Círculo</b> o <b>Corredor</b>. Para puntos de carga y descarga suele bastar un círculo de 80 a 120 m centrado en la zona de maniobra.</li>
+    <li>Dibuja sobre el mapa. Al terminar se abre el formulario.</li>
+    <li>Completa <b>Nombre</b>, <b>Color</b>, <b>Grupo</b> (opcional) y la <b>Categoría</b>. Guarda.</li>
+  </ol>
+  <figure class="narrow"><img src="img/32-geocerca-nueva-chooser.png" alt="Elección del tipo de geocerca"><figcaption>Nueva geocerca: elegir polígono, círculo o corredor.</figcaption></figure>
+  <figure><img src="img/31-geocerca-editar-categoria.png" alt="Formulario de geocerca con el campo Categoría"><figcaption>Formulario de la geocerca con el nuevo campo «Categoría».</figcaption></figure>
+
+  <h3>4.2 Filtrar la lista por categoría</h3>
+  <p>En el panel de geocercas hay un selector <b>«Todas las categorías»</b> que filtra la lista y el mapa. Úsalo para comprobar que todos los puntos de la operación tienen la categoría correcta.</p>
+  <figure><img src="img/30-geocercas-lista-categoria.png" alt="Lista de geocercas con filtro de categoría"><figcaption>Panel de geocercas con el filtro de categoría y las cinco zonas de la operación de prueba.</figcaption></figure>
+
+  <div class="box warn"><b>Reglas nuevas que debes conocer:</b>
+    <ul>
+      <li>Una geocerca usada como punto de una operación <b>no se puede eliminar</b>. Primero quítala de la operación.</li>
+      <li>Si <b>editas la forma</b> de una geocerca que es punto de una operación, las vueltas ya calculadas conservan la forma anterior; las nuevas usan la nueva. Si quieres rehacer el pasado con la forma nueva, usa «Recalcular vueltas» (capítulo 8).</li>
+      <li>Las <b>geocercas móviles</b> (ligadas a un vehículo) no se aceptan como punto de operación.</li>
+      <li>La categoría también está en la interfaz clásica (Geocercas → Editar) y se exporta e importa con el resto de datos de la geocerca.</li>
+    </ul>
+  </div>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Crear, editar y filtrar geocercas por cada categoría.</li>
+      <li>Intentar borrar una geocerca que es punto de operación: debe aparecer el mensaje de bloqueo.</li>
+      <li>Exportar e importar geocercas y verificar que la categoría se conserva.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>5. Crear y editar una operación <span class="new">NUEVO</span></h2>
+  <p>Menú lateral → <b>Operaciones</b> → pestaña <b>Operaciones</b> (la tercera). Aquí está la lista de operaciones del usuario y los botones <b>Motivos de parada</b>, <b>Recalcular vueltas</b> y <b>+ Nueva operación</b>.</p>
+  <figure><img src="img/20-ops-lista-operaciones.png" alt="Lista de operaciones"><figcaption>Pestaña Operaciones: nombre, grupo, vehículos, puntos, turnos, activo y acciones (Editar, Desactivar, Eliminar).</figcaption></figure>
+
+  <h3>5.1 Nueva operación</h3>
+  <ol class="steps">
+    <li>Pulsa <b>+ Nueva operación</b>.</li>
+    <li><b>Nombre</b>: como la conoce el cliente (por ejemplo «Acarreo Tajo Norte»).</li>
+    <li><b>Tipo de operación</b>: Acarreo (carga / descarga) o Ruta (inicio / fin). Cambia los nombres de los bloques de puntos.</li>
+    <li><b>Grupo de vehículos</b>: el grupo del capítulo 3. Debajo se muestra cuántos vehículos tiene.</li>
+    <li><b>Carga</b> y <b>Descarga</b>: elige las geocercas. Solo aparecen las que tienen la categoría correspondiente. Con <b>+ Agregar punto</b> puedes poner varias (por ejemplo tres frentes de carga y una descarga). La vuelta cuenta con cualquiera de ellas.</li>
+    <li><b>Turnos</b>: nombre, hora de inicio y hora de fin. Un turno cuya hora de fin es menor o igual a la de inicio termina al día siguiente (Noche 19:00–07:00). Los turnos no pueden solaparse.</li>
+    <li><b>Opciones avanzadas</b> (pulsa para desplegar):
+      <ul>
+        <li><b>Parada (segundos)</b>: a partir de cuántos segundos quieto se registra una parada. Por defecto 60.</li>
+        <li><b>Permanencia mínima (segundos)</b>: cuánto debe estar dentro de la geocerca para contar la llegada. Por defecto 30.</li>
+        <li><b>Tramo máximo (horas)</b>: si un tramo dura más, la vuelta se cierra como incompleta (vehículo que se fue a taller, por ejemplo). Por defecto 6.</li>
+        <li><b>Paradas autorizadas en geocercas de categoría</b>: grifo, taller, descanso. Una parada dentro de una geocerca de esas categorías no cuenta como no autorizada.</li>
+        <li><b>Horas trabajadas</b>: qué se descuenta de las horas de motor en el reporte «Horas trabajadas netas»: abastecimiento, ralentí y paradas no autorizadas.</li>
+      </ul>
+    </li>
+    <li><b>Operación activa</b>: desmarcada, la operación existe pero no evalúa posiciones.</li>
+    <li><b>Guardar</b>. A partir de ese momento cada posición nueva de los vehículos del grupo se evalúa; en un par de minutos «En vivo» muestra el estado.</li>
+  </ol>
+  <figure><img src="img/21-ops-nueva-operacion.png" alt="Modal Nueva operación"><figcaption>Nueva operación: nombre, tipo, grupo, puntos de carga y descarga, turnos.</figcaption></figure>
+  <figure><img src="img/23-ops-editar-avanzado.png" alt="Editar operación con opciones avanzadas"><figcaption>Editar operación: puntos, turnos y opciones avanzadas desplegadas.</figcaption></figure>
+  <figure><img src="img/24-ops-editar-horas-trabajadas.png" alt="Bloque Horas trabajadas"><figcaption>Bloque «Horas trabajadas»: descuentos que aplica el reporte 912.</figcaption></figure>
+
+  <h3>5.2 Editar, desactivar y eliminar</h3>
+  <ul>
+    <li><b>Editar</b> cambia la configuración para las posiciones futuras. Las vueltas ya calculadas no cambian (usa Recalcular si lo necesitas).</li>
+    <li><b>Desactivar</b> deja de evaluar sin perder nada; <b>Activar</b> reanuda.</li>
+    <li><b>Eliminar</b> borra la operación y sus vueltas (borrado lógico; pide confirmación).</li>
+  </ul>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Crear una operación con un punto de carga y uno de descarga; comprobar que los selectores solo muestran geocercas de esa categoría.</li>
+      <li>Turnos solapados o grupo sin vehículos: el formulario debe avisar y no guardar.</li>
+      <li>Cambiar el tipo a «Ruta»: los bloques pasan a Inicio / Fin de ruta.</li>
+      <li>Desactivar y volver a activar: «En vivo» deja de actualizar y vuelve.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>6. Seguimiento: pestaña «En vivo» <span class="new">NUEVO</span></h2>
+  <p>Es la vista de turno del supervisor. Se actualiza sola cada 20 segundos. Elige la <b>Operación</b> y el <b>día</b>.</p>
+  <ul>
+    <li><b>Tarjetas</b>: vueltas de hoy, ciclo promedio, vehículos en ciclo y paradas no autorizadas del día.</li>
+    <li><b>Tabla</b>, una fila por vehículo: <b>Estado</b> (En carga / Ida / En descarga / Vuelta, y si está detenido cuánto lleva), vueltas del día, duración del último ciclo, tiempo detenido y en ralentí, paradas no autorizadas y hora de la última trama.</li>
+    <li>Un vehículo <b>sin transmitir</b> conserva su último estado y su «última trama» envejece; así se detecta un GPS apagado.</li>
+  </ul>
+  <figure><img src="img/10-ops-en-vivo.png" alt="Pestaña En vivo"><figcaption>En vivo: tarjetas de resumen y estado por vehículo.</figcaption></figure>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Con un vehículo en movimiento real, seguir el cambio de estado al entrar y salir de carga y descarga (recuerda la permanencia mínima: no cambia al instante).</li>
+      <li>El contador «Vueltas hoy» debe coincidir con la pestaña Vueltas filtrada al día.</li>
+      <li>Al cambiar de operación o de día, las cifras cambian.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>7. Revisión: pestaña «Vueltas» <span class="new">NUEVO</span></h2>
+  <h3>7.1 Buscar vueltas</h3>
+  <ol class="steps">
+    <li>Elige <b>Desde</b> y <b>Hasta</b> (fechas), y opcionalmente operación, vehículo y turno.</li>
+    <li>Marca <b>Solo vueltas con paradas no autorizadas</b> para revisar únicamente las que requieren justificación.</li>
+    <li>Pulsa <b>Búsqueda</b>. Cada fila es una vuelta: número, vehículo, salida, turno, ciclo total, ida, vuelta, detenido, ralentí, paradas no autorizadas y <b>Estado</b> (Completa, Incompleta, En curso).</li>
+    <li><b>Exportar</b> genera el reporte 910 «Control de vueltas» con los mismos filtros, en la misma pestaña.</li>
+  </ol>
+  <figure><img src="img/11-ops-vueltas-lista.png" alt="Lista de vueltas"><figcaption>Pestaña Vueltas con filtros y una fila por vuelta.</figcaption></figure>
+
+  <h3>7.2 Detalle de una vuelta</h3>
+  <p>Pulsa la flecha <b>›</b> de la fila. Se despliegan los dos tramos con inicio, fin, duración, distancia, tiempo «sin datos» (huecos de señal) y el enlace <b>Ver tramo en mapa</b>, que abre el Historial ya posicionado en ese rango. Debajo, la tabla de <b>paradas</b> del tramo: inicio, duración, motor encendido y apagado, geocerca donde cayó, estado y motivo. Las no autorizadas van en rojo.</p>
+  <figure><img src="img/12-ops-vuelta-detalle.png" alt="Detalle de una vuelta con tramos y paradas"><figcaption>Detalle de la vuelta 38: ida sin paradas y vuelta con seis paradas, tres de ellas no autorizadas.</figcaption></figure>
+
+  <h3>7.3 Justificar una parada</h3>
+  <ol class="steps">
+    <li>En la fila de la parada pulsa <b>Justificar</b>.</li>
+    <li>Elige el <b>Motivo</b> del catálogo (capítulo 8) y, si hace falta, escribe un comentario. Con el motivo «Otro» el comentario es obligatorio.</li>
+    <li><b>Guardar</b>. La parada queda con el motivo, quién la justificó y cuándo; el reporte 911 lo muestra.</li>
+  </ol>
+  <figure class="narrow"><img src="img/13-ops-justificar-parada.png" alt="Modal Justificar parada"><figcaption>Justificar parada: motivo y comentario.</figcaption></figure>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Las horas de salida y llegada del detalle coinciden con el Historial («Ver tramo en mapa» debe abrir exactamente ese rango).</li>
+      <li>Las paradas dentro de un grifo, taller o descanso salen como autorizadas.</li>
+      <li>Una parada justificada muestra el motivo en el detalle y en el reporte 911.</li>
+      <li>Comparar el número de vueltas de un día con el control manual del cliente y anotar diferencias (vuelta, hora, vehículo).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>8. Recalcular vueltas y catálogo de motivos <span class="new">NUEVO</span></h2>
+  <h3>8.1 Recalcular vueltas</h3>
+  <p>Sirve para rehacer el pasado: después de cambiar la forma de una geocerca, los umbrales, los turnos o al crear una operación cuando los vehículos ya llevaban días trabajando.</p>
+  <ol class="steps">
+    <li>Pestaña Operaciones → <b>Recalcular vueltas</b>.</li>
+    <li>Elige la <b>operación</b>, <b>desde el día</b> y, si quieres, solo algunos <b>vehículos</b>.</li>
+    <li><b>Ubicación de los puntos</b>: «La vigente en cada momento» respeta la forma que tenía cada geocerca en cada fecha; «La actual» aplica la forma de hoy a todo el rango.</li>
+    <li>El modal avisa cuántas vueltas se reemplazarán y hasta qué fecha hay posiciones disponibles. Pulsa <b>Recalcular vueltas</b>.</li>
+    <li>El recálculo se encola y lo ejecuta el servidor en el siguiente minuto. Mientras está pendiente, la pestaña Vueltas muestra un aviso.</li>
+  </ol>
+  <figure class="narrow"><img src="img/25-ops-recalcular.png" alt="Modal Recalcular vueltas"><figcaption>Recalcular vueltas: operación, día de inicio, vehículos y ubicación de los puntos.</figcaption></figure>
+  <div class="box warn">Las justificaciones de paradas de las vueltas reemplazadas se pierden al recalcular. Justifica después de recalcular, no antes.</div>
+
+  <h3>8.2 Catálogo de motivos de parada</h3>
+  <p>Pestaña Operaciones → <b>Motivos de parada</b>. Es la lista que aparece al justificar. Cada motivo tiene un nombre y la casilla <b>Autoriza la parada</b>. El catálogo viene con siete motivos por defecto; puedes renombrarlos, quitarlos o agregar otros.</p>
+  <figure class="narrow"><img src="img/26-ops-motivos.png" alt="Catálogo de motivos de parada"><figcaption>Motivos de parada del usuario.</figcaption></figure>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Recalcular un día conocido y verificar que las vueltas vuelven a salir iguales (o con el cambio esperado si cambiaste algo).</li>
+      <li>Agregar un motivo nuevo y usarlo al justificar.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>9. Alerta «Parada en operación» <span class="new">NUEVO</span></h2>
+  <p>Avisa en el momento en que un vehículo <b>en tramo</b> (ida o vuelta) se detiene fuera de una zona autorizada más de X segundos. No dispara dentro de carga, descarga, grifo, taller o descanso, ni cuando la operación está inactiva.</p>
+  <ol class="steps">
+    <li>Menú lateral → <b>Alertas</b> → <b>Nueva alerta</b>.</li>
+    <li>Pestaña <b>Vehículos</b>: marca los del grupo de la operación.</li>
+    <li>Pestaña <b>Tipo</b>: en <b>Disparador</b> elige <b>Parada en operación</b> y define <b>Parada mayor a (segundos)</b>. Por defecto 60, que es lo que pidió el cliente.</li>
+    <li>Pestaña <b>Notificaciones</b>: correo, push, ventana emergente o sonido, como en cualquier alerta.</li>
+    <li><b>Crear alerta</b>. Los eventos salen en el panel de Eventos con la operación, el tramo y el número de vuelta.</li>
+  </ol>
+  <figure><img src="img/41-alerta-parada-operacion.png" alt="Nueva alerta con el disparador Parada en operación"><figcaption>Nueva regla de alerta: disparador «Parada en operación» y umbral en segundos.</figcaption></figure>
+  <p class="muted">Las alertas existentes «Duración de parada» y «Duración de ralentí» siguen funcionando igual y no dependen de la operación.</p>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Un vehículo detenido en ruta más de 60 s genera el evento; dentro del grifo o de la descarga, no.</li>
+      <li>El evento llega por el canal configurado (correo, push, popup).</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>10. Reportes <span class="new">NUEVO</span></h2>
+  <p>Menú lateral → <b>Reportes</b> → <b>+</b>. En el selector <b>Tipo</b> hay cuatro reportes nuevos. Los cuatro aceptan HTML, PDF y CSV, se pueden guardar y programar por correo como cualquier otro.</p>
+  <table>
+    <tr><th style="width:8%">ID</th><th style="width:24%">Reporte</th><th>Qué muestra</th><th style="width:26%">Parámetros</th></tr>
+    <tr><td>910</td><td>Control de vueltas</td><td>Una fila por vuelta: horas de salida y llegada en cada punto, tiempo en carga, ida, tiempo en descarga, vuelta, ciclo total, detenido, ralentí, motor apagado y paradas no autorizadas. Totales por día o por turno (vueltas, viajes, ciclo promedio).</td><td>Operaciones, totales por día o turno, solo vueltas con paradas no autorizadas</td></tr>
+    <tr><td>911</td><td>Paradas en operación</td><td>Una fila por parada: vuelta, tramo, inicio, duración, ubicación con enlace al mapa, motor, geocerca, estado, motivo y quién justificó.</td><td>Operación, solo no autorizadas</td></tr>
+    <tr><td>912</td><td>Horas trabajadas netas</td><td>Por día: horas de motor, descuentos activos (abastecimiento, ralentí, paradas no autorizadas), horas netas, combustible consumido y consumo por hora (solo con sensor de combustible).</td><td>Operación</td></tr>
+    <tr><td>913</td><td>Abastecimiento</td><td>Una fila por visita a una geocerca de categoría «grifo»: entrada, salida y duración, con totales por vehículo.</td><td>Ninguno propio</td></tr>
+  </table>
+  <ol class="steps">
+    <li>Elige el <b>Tipo</b>; el formulario muestra los parámetros propios del reporte (en la captura, «Operaciones» y «Totales por»).</li>
+    <li>Marca los <b>Dispositivos</b> y el rango de <b>fechas</b>.</li>
+    <li><b>Generar</b> lo abre en pantalla; <b>Guardar</b> lo deja en la lista de reportes guardados para repetirlo.</li>
+  </ol>
+  <figure><img src="img/51-reporte-910-formulario.png" alt="Formulario del reporte 910"><figcaption>Formulario del reporte con el tipo «Control de vueltas» y sus parámetros.</figcaption></figure>
+  <figure><img src="img/52-reporte-910-resultado.png" alt="Reporte 910 generado"><figcaption>910 Control de vueltas: totales del día y una fila por vuelta.</figcaption></figure>
+  <figure><img src="img/53-reporte-911-resultado.png" alt="Reporte 911 generado"><figcaption>911 Paradas en operación.</figcaption></figure>
+  <figure><img src="img/54-reporte-912-resultado.png" alt="Reporte 912 generado"><figcaption>912 Horas trabajadas netas, con los descuentos activos de la operación en la cabecera.</figcaption></figure>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>El 910 de un día coincide con la pestaña Vueltas (misma cantidad y mismas horas).</li>
+      <li>Generar los cuatro en HTML, PDF y CSV; un rango sin datos debe dar un reporte vacío, no un error.</li>
+      <li>El 913 solo tiene filas si existen geocercas de categoría «grifo».</li>
+      <li>Programar uno por correo (diario) y comprobar que llega.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>11. Otras mejoras de esta entrega</h2>
+  <p>Entran junto con el módulo y conviene probarlas de paso.</p>
+  <h3>Mapa en vivo</h3>
+  <ul>
+    <li>Colores de estado unificados con la interfaz clásica (movimiento, ralentí, detenido, desconectado). Una unidad que dejó de transmitir ya no se pinta como si estuviera viva.</li>
+    <li>Etiqueta fija de cada geocerca con su nombre y tamaño; animación de movimiento del marcador (si el administrador tiene activo el plugin).</li>
+    <li>Color del marcador por velocidad: el primer tramo de color empieza en 1 km/h, así un vehículo parado no sale «en verde».</li>
+  </ul>
+  <figure><img src="img/60-live-mapa.png" alt="Mapa en vivo"><figcaption>Mapa en vivo con las geocercas de la operación y sus etiquetas.</figcaption></figure>
+  <h3>Historial</h3>
+  <ul>
+    <li>El rango admite hora y minuto exactos (<b>HH:MM</b>), sin redondeo a 5 minutos. Los enlaces «Ver tramo en mapa» y «Ver parada en mapa» de Operaciones usan esto.</li>
+    <li>«Mostrar historial (última hora)» abre la última hora, no el día entero.</li>
+  </ul>
+  <figure><img src="img/70-historial-tramo.png" alt="Historial de un tramo"><figcaption>Historial abierto desde «Ver tramo en mapa» con el rango exacto del tramo.</figcaption></figure>
+  <h3>Monitoreo de grupo</h3>
+  <ul>
+    <li>Celdas con capas, resplandor del vehículo seleccionado, color por velocidad y animación.</li>
+  </ul>
+  <figure><img src="img/71-monitor.png" alt="Monitoreo de grupo"><figcaption>Monitoreo de grupo.</figcaption></figure>
+  <h3>Panel y plugins</h3>
+  <ul>
+    <li>El tablero ya no confunde «detenido» con «ralentí» y el modal del tablero abre con contenido.</li>
+    <li>El plugin del admin «Renovar la fecha de vencimiento de la SIM al renovar la suscripción» ahora funciona; el widget «Eventos recientes» respeta su interruptor.</li>
+  </ul>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>12. Lista general de verificación</h2>
+  <p>Marca cada punto al terminar. Si algo falla, anota el número del punto en el reporte de error.</p>
+  <ol class="steps">
+    <li>El usuario con permiso ve «Operaciones» en el menú; sin permiso, no.</li>
+    <li>Alta de unidad en admin y aparición en el mapa del usuario.</li>
+    <li>Grupo de vehículos creado y bloqueado al intentar borrarlo si está en una operación.</li>
+    <li>Geocercas con categoría: crear, editar, filtrar, bloqueo al borrar puntos en uso, export/import conserva categoría.</li>
+    <li>Operación creada con puntos, turnos y opciones avanzadas; validaciones de turnos solapados y grupo vacío.</li>
+    <li>«En vivo» cambia de estado con un vehículo real y las tarjetas cuadran con «Vueltas».</li>
+    <li>«Vueltas»: filtros, detalle, enlaces al historial con hora exacta, justificación de paradas.</li>
+    <li>Recalcular un rango y obtener el resultado esperado; aviso de recálculo pendiente.</li>
+    <li>Alerta «Parada en operación» dispara fuera de zonas autorizadas y no dentro.</li>
+    <li>Reportes 910–913 en HTML, PDF y CSV; vacíos sin error; 910 coincide con la pestaña Vueltas.</li>
+    <li>Conteo de vueltas de un día completo comparado con el control manual del cliente.</li>
+    <li>Mapa, historial y monitoreo: colores de estado, hora exacta, animación.</li>
+  </ol>
+  <div class="box"><b>Datos de la operación de prueba (entorno de pruebas):</b> operación «Acarreo prueba», grupo «Operación prueba» con tres volquetes, puntos Carga / Carga 2 / Carga 3 y Descarga, zona de descanso «Cola de descarga», turnos Día 07:00–19:00 y Noche 19:00–07:00, umbrales 60 s / 30 s / 6 h.</div>
+</section>
+
+</body>
+</html>
