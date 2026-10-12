@@ -972,6 +972,8 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'ops_worked_hours'                    => 'Worked hours',
+    'ops_worked_hours_hint'               => 'What is deducted from engine hours in the "Net worked hours" report.',
     'ops_kind'                            => 'Operation type',
     'ops_state_at_start'                  => 'At route start',
     'ops_state_at_end'                    => 'At route end',
