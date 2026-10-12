@@ -24,3 +24,6 @@ public/images/logos
 public/serve_file.php
 public/webhook.php
 api_examples_json/
+# Salidas de Playwright y PDF generado del manual (se regenera desde el HTML)
+.playwright-mcp/
+docs/manual-pruebas/*.pdf
