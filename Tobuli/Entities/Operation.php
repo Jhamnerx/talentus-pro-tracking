@@ -28,6 +28,19 @@ class Operation extends AbstractEntity implements DisplayInterface
     const KIND_HAUL = 'haul';
     const KIND_ROUTE = 'route';
 
+    // Descuentos de las horas trabajadas netas (fase 3), en el orden del plan.
+    const DEDUCTION_REFUELING = 'refueling';
+    const DEDUCTION_IDLE = 'idle';
+    const DEDUCTION_UNAUTHORIZED_STOPS = 'unauthorized_stops';
+    const DEDUCTION_BUCKET_IDLE = 'bucket_idle';
+
+    const DEDUCTIONS = [
+        self::DEDUCTION_REFUELING,
+        self::DEDUCTION_IDLE,
+        self::DEDUCTION_UNAUTHORIZED_STOPS,
+        self::DEDUCTION_BUCKET_IDLE,
+    ];
+
     public static string $displayField = 'name';
 
     protected $table = 'operations';
@@ -42,14 +55,16 @@ class Operation extends AbstractEntity implements DisplayInterface
         'stop_threshold_seconds',
         'max_leg_hours',
         'authorized_categories',
+        'worked_hours_deductions',
     ];
 
     protected $casts = [
-        'active'                 => 'bool',
-        'min_dwell_seconds'      => 'int',
-        'stop_threshold_seconds' => 'int',
-        'max_leg_hours'          => 'int',
-        'authorized_categories'  => 'array',
+        'active'                  => 'bool',
+        'min_dwell_seconds'       => 'int',
+        'stop_threshold_seconds'  => 'int',
+        'max_leg_hours'           => 'int',
+        'authorized_categories'   => 'array',
+        'worked_hours_deductions' => 'array',
     ];
 
     protected $searchable = [
@@ -169,6 +184,24 @@ class Operation extends AbstractEntity implements DisplayInterface
             OperationDeviceState::STATE_AT_UNLOAD => trans($route ? 'ui.ops_state_at_end' : 'ui.ops_state_at_unload'),
             OperationDeviceState::STATE_INBOUND   => trans('ui.ops_state_inbound'),
             OperationDeviceState::STATE_NO_DATA   => trans('ui.ops_state_no_data'),
+        ];
+    }
+
+    /** @return string[] descuentos activos para las horas trabajadas netas */
+    public function workedHoursDeductions(): array
+    {
+        $list = $this->worked_hours_deductions;
+
+        return is_array($list) ? array_values(array_intersect($list, self::DEDUCTIONS)) : [];
+    }
+
+    public static function deductionLabels(): array
+    {
+        return [
+            self::DEDUCTION_REFUELING          => trans('front.operation_deduction_refueling'),
+            self::DEDUCTION_IDLE               => trans('front.operation_deduction_idle'),
+            self::DEDUCTION_UNAUTHORIZED_STOPS => trans('front.operation_deduction_unauthorized_stops'),
+            self::DEDUCTION_BUCKET_IDLE        => trans('front.operation_deduction_bucket_idle'),
         ];
     }
 

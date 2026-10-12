@@ -80,6 +80,7 @@ class OperationsController extends BaseController
             'geofences'  => $geofences,
             'categories' => Geofence::categories(),
             'kinds'      => Operation::kinds(),
+            'deductions' => Operation::deductionLabels(),
             // Etiquetas por tipo de operacion: roles de los puntos, categorias
             // que les corresponden y estados en vivo.
             'role_labels'     => [Operation::KIND_HAUL => Operation::roleLabels(Operation::KIND_HAUL), Operation::KIND_ROUTE => Operation::roleLabels(Operation::KIND_ROUTE)],
@@ -658,6 +659,7 @@ class OperationsController extends BaseController
             'stop_threshold_seconds' => (int) $o->stop_threshold_seconds,
             'max_leg_hours'          => (int) $o->max_leg_hours,
             'authorized_categories'  => $o->authorizedCategories(),
+            'worked_hours_deductions' => $o->workedHoursDeductions(),
             'points'                 => $o->currentPoints->map(fn (OperationPoint $p) => [
                 'id'          => (int) $p->id,
                 'geofence_id' => $p->geofence_id ? (int) $p->geofence_id : null,

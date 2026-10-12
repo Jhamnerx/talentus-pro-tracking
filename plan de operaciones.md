@@ -9,7 +9,10 @@
 > y grupos en uso se bloquea; la primera versión de un punto vale para todo el pasado (así el
 > recálculo sirve sobre días anteriores a crear la operación); los motivos con «autoriza» marcan
 > la parada como autorizada y «Otro» solo la explica; la alerta «Parada en operación» usa
-> `operation_stop_seconds` (segundos exactos) y se evalúa cada minuto. Pendientes: fases 3 y 4,
+> `operation_stop_seconds` (segundos exactos) y se evalúa cada minuto.
+> **11-oct-2026:** fase 3 implementada (descuentos en la operación, reportes 912 «Horas trabajadas
+> netas» con consumo por hora y 913 «Abastecimiento»); el descuento «pala inactiva» queda en 0 hasta
+> la fase 4. Además, tipo de operación «ruta» (inicio/fin) con las mismas reglas. Pendientes: fase 4,
 > `round`→`floor` en la alerta de duración de parada.
 >
 > Cómo retomar: leer este archivo y `CLAUDE.md`, y empezar por «Orden dentro de la fase 1».

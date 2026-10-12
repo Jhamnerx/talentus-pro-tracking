@@ -973,6 +973,8 @@ return [
 
 
     // Operaciones (control de vueltas)
+    'ops_worked_hours'                    => 'Horas trabajadas',
+    'ops_worked_hours_hint'               => 'Lo que se descuenta de las horas de motor en el reporte «Horas trabajadas netas».',
     'ops_kind'                            => 'Tipo de operación',
     'ops_state_at_start'                  => 'En inicio de ruta',
     'ops_state_at_end'                    => 'En fin de ruta',

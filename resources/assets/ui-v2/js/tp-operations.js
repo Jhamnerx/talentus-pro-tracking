@@ -680,6 +680,11 @@
         "</div>" +
         field(t("ui.ops_authorized_categories"), '<div class="tp-ops__cats">' + catsHtml + "</div>", true) +
       "</details>" +
+      // Fase 3: descuentos de las horas trabajadas netas (reporte 912).
+      field(t("ui.ops_worked_hours"), '<div class="tp-ops__cats">' + Object.keys(m.deductions || {}).map(function (k) {
+        var on = item && (item.worked_hours_deductions || []).indexOf(k) >= 0;
+        return '<label><input type="checkbox" data-x-deduction value="' + k + '"' + (on ? " checked" : "") + "> " + esc(m.deductions[k]) + "</label>";
+      }).join("") + '</div><p class="tp-ops__sub">' + esc(t("ui.ops_worked_hours_hint")) + "</p>", true) +
       field("", '<label class="tp-ops__check"><input type="checkbox" data-x-active' + (!item || item.active ? " checked" : "") + "> " + esc(t("ui.ops_active")) + "</label>", true) +
       '<div class="tp-ops__err" data-x-err></div></div>';
 
@@ -752,6 +757,8 @@
     });
     var cats = [];
     d.querySelectorAll("[data-x-cat]:checked").forEach(function (c) { cats.push(c.value); });
+    var deductions = [];
+    d.querySelectorAll("[data-x-deduction]:checked").forEach(function (c) { deductions.push(c.value); });
 
     var payload = {
       name: d.querySelector("[data-x-name]").value.trim(),
@@ -760,6 +767,7 @@
       points: points,
       shifts: shifts,
       authorized_categories: cats,
+      worked_hours_deductions: deductions,
       stop_threshold_seconds: d.querySelector("[data-x-stop]").value,
       min_dwell_seconds: d.querySelector("[data-x-dwell]").value,
       max_leg_hours: d.querySelector("[data-x-maxleg]").value,

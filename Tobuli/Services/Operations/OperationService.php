@@ -38,6 +38,7 @@ class OperationService extends ModelService
             'stop_threshold_seconds' => 60,
             'max_leg_hours'          => 6,
             'authorized_categories'  => [Geofence::CATEGORY_FUEL, Geofence::CATEGORY_WORKSHOP, Geofence::CATEGORY_REST],
+            'worked_hours_deductions' => [],
         ]);
 
         $rules = [
@@ -50,6 +51,8 @@ class OperationService extends ModelService
             'max_leg_hours'          => 'integer|min:1|max:48',
             'authorized_categories'  => 'array',
             'authorized_categories.*' => 'in:' . implode(',', Geofence::CATEGORIES),
+            'worked_hours_deductions'   => 'array',
+            'worked_hours_deductions.*' => 'in:' . implode(',', Operation::DEDUCTIONS),
             'points'                 => 'required|array|min:2',
             'points.*.geofence_id'   => 'required|integer',
             'points.*.role'          => 'required|in:load,unload',
@@ -75,6 +78,10 @@ class OperationService extends ModelService
 
         if (array_key_exists('authorized_categories', $data) && ! is_array($data['authorized_categories'])) {
             $data['authorized_categories'] = $data['authorized_categories'] ? (array) $data['authorized_categories'] : [];
+        }
+
+        if (array_key_exists('worked_hours_deductions', $data) && ! is_array($data['worked_hours_deductions'])) {
+            $data['worked_hours_deductions'] = $data['worked_hours_deductions'] ? (array) $data['worked_hours_deductions'] : [];
         }
 
         foreach (['shifts', 'points'] as $key) {
@@ -455,7 +462,7 @@ class OperationService extends ModelService
     {
         return array_intersect_key($data, array_flip([
             'name', 'kind', 'device_group_id', 'active', 'min_dwell_seconds',
-            'stop_threshold_seconds', 'max_leg_hours', 'authorized_categories',
+            'stop_threshold_seconds', 'max_leg_hours', 'authorized_categories', 'worked_hours_deductions',
         ]));
     }
 }
