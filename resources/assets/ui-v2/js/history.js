@@ -177,10 +177,42 @@
   }
   function openDatePick() { $("#tp-hist-datepick").hidden = false; renderCals(); }
   function closeDatePick() { $("#tp-hist-datepick").hidden = true; }
+  /**
+   * Los dos selects de hora los mejora tp-select, que dibuja un boton
+   * propio. Cambiar select.value no toca ese boton: hay que rehacerlo o la
+   * hora se ve mal aunque el valor sea correcto.
+   */
+  function syncTimeSelects() {
+    // Las horas son inputs de texto libres (HH:MM): solo se normaliza lo escrito.
+    [$("#tp-hist-dp-from-time"), $("#tp-hist-dp-to-time")].forEach(function (el, i) {
+      if (el) el.value = normalizeTime(el.value) || (i ? "23:59" : "00:00");
+    });
+  }
+
+  /* "7:5" -> "07:05", "1430" -> "14:30"; null si no es una hora valida. */
+  function normalizeTime(s) {
+    s = String(s == null ? "" : s).trim();
+    // Con dos puntos valen 1 o 2 digitos por lado ("7:5"); sin ellos, HHMM ("1830").
+    var m = /^(\d{1,2}):(\d{1,2})$/.exec(s) || /^(\d{1,2})(\d{2})$/.exec(s);
+    if (!m) return null;
+    var h = +m[1], mi = +m[2];
+    if (h > 23 || mi > 59) return null;
+    return (h < 10 ? "0" : "") + h + ":" + (mi < 10 ? "0" : "") + mi;
+  }
+
   function applyQuickRange(key) {
     var n = new Date(), a = new Date(n.getFullYear(), n.getMonth(), n.getDate()), b = new Date(a);
     var ft = "00:00", tt = "23:59";
-    if (key === "yesterday") { a.setDate(a.getDate() - 1); b.setDate(b.getDate() - 1); }
+    // "Ultima hora": desde hace una hora hasta el final del dia, que es lo
+    // que hace el legacy (controller/history.js device(): from = ahora-1h,
+    // to = 23:45 de hoy). No son "los ultimos 60 minutos".
+    if (key === "last_hour") {
+      var h = new Date(n.getTime() - 3600000);
+      a = new Date(h.getFullYear(), h.getMonth(), h.getDate());
+      b = new Date(n.getFullYear(), n.getMonth(), n.getDate());
+      ft = hhmm(h);
+    }
+    else if (key === "yesterday") { a.setDate(a.getDate() - 1); b.setDate(b.getDate() - 1); }
     else if (key === "2days") { a.setDate(a.getDate() - 2); }
     else if (key === "3days") { a.setDate(a.getDate() - 3); }
     else if (key === "week") { a.setDate(a.getDate() - ((a.getDay() + 6) % 7)); }
@@ -189,20 +221,16 @@
     else if (key === "lastmonth") { a = new Date(n.getFullYear(), n.getMonth() - 1, 1); b = new Date(n.getFullYear(), n.getMonth(), 0); }
     dp.from = a; dp.to = b; dp.calY = a.getFullYear(); dp.calM = a.getMonth();
     $("#tp-hist-dp-from-time").value = ft; $("#tp-hist-dp-to-time").value = tt;
-    // Los selects de hora están mejorados por tp-select: sincronizar el botón
-    [$("#tp-hist-dp-from-time"), $("#tp-hist-dp-to-time")].forEach(function (sel) {
-      if (sel && sel._tpdd && window.tpSelect && tpSelect.refresh) {
-        try { tpSelect.refresh(sel); } catch (e) {}
-      }
-    });
+    syncTimeSelects();
     renderCals();
   }
   function commitRange() {
     if (!dp.from) return;
+    syncTimeSelects();
     if (!dp.to || dp.to.getTime() < dp.from.getTime()) dp.to = new Date(dp.from);
     state.range = {
-      fromDate: ymd(dp.from), fromTime: $("#tp-hist-dp-from-time").value || "00:00",
-      toDate: ymd(dp.to), toTime: $("#tp-hist-dp-to-time").value || "23:59",
+      fromDate: ymd(dp.from), fromTime: normalizeTime($("#tp-hist-dp-from-time").value) || "00:00",
+      toDate: ymd(dp.to), toTime: normalizeTime($("#tp-hist-dp-to-time").value) || "23:59",
     };
     var lbl = state.range.fromDate + " " + state.range.fromTime + "  —  " + state.range.toDate + " " + state.range.toTime;
     $("#tp-hist-daterange-label").textContent = lbl;
@@ -359,7 +387,12 @@
       '<button type="button" class="tp-hist-pt__more" data-pt-more title="' + tpT('ui.see_all_parameters') + '"><span></span><span></span><span></span></button>' +
       "</div>";
     if (state.pointPopup) state.map.closePopup(state.pointPopup);
-    state.pointPopup = L.popup({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }).setLatLng(ll).setContent(html).openOn(state.map);
+    // El contenido va como NODO, no como cadena: con una cadena, cada
+    // popup.update() rehace el HTML desde ella y borraba la direccion recien
+    // puesta y el manejador del boton de los tres puntos.
+    var cont = document.createElement("div");
+    cont.innerHTML = html;
+    state.pointPopup = L.popup({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }).setLatLng(ll).setContent(cont).openOn(state.map);
     if (CFG.addrOn) fetchAddr(p.lat, p.lng, function (a) {
       var el2 = state.pointPopup && state.pointPopup.getElement();
       var dd = el2 && el2.querySelector("[data-addr]");
@@ -396,27 +429,37 @@
       var el2 = state.pointPopup && state.pointPopup.getElement();
       var slot = el2 && el2.querySelector("[data-pt-extra]");
       if (!slot) return;
-      var html = "";
+      // Sensores: filas normales de la ficha, como en el legacy, donde van en
+      // la tabla principal y no en el bloque de parametros.
+      var filas = "";
+      var sv = pos.sensors_value || {};
+      Object.keys(sv).forEach(function (k) {
+        if (sv[k] != null && typeof sv[k] !== "object") filas += ptRow(esc(k), esc(String(sv[k])));
+      });
+
+      // Parametros del equipo: un bloque corrido, clave y valor en la MISMA
+      // linea, como el legacy (una sola celda con <br> entre lineas). En dos
+      // columnas, con cuarenta nombres de largo desigual, quedaba una escalera.
+      function linea(k, v) {
+        return '<div class="tp-hist-pt__raw-l"><span>' + k + "</span> " + v + "</div>";
+      }
+      var crudo = "";
       var arr = pos.other_arr || [];
       if (Object.prototype.toString.call(arr) === "[object Array]") {
-        // parseXML legacy devuelve lineas "clave: valor"
+        // parseXML del legacy devuelve lineas "clave: valor"
         arr.forEach(function (line) {
           var t2 = String(line), ix = t2.indexOf(": ");
-          if (ix > 0) html += ptRow(esc(t2.slice(0, ix)), esc(t2.slice(ix + 2)));
-          else if (t2) html += ptRow("", esc(t2));
+          if (ix > 0) crudo += linea(esc(t2.slice(0, ix)) + ":", esc(t2.slice(ix + 2)));
+          else if (t2) crudo += linea("", esc(t2));
         });
       } else if (arr && typeof arr === "object") {
         Object.keys(arr).forEach(function (k) {
           var v = arr[k];
-          if (v != null && typeof v !== "object") html += ptRow(esc(k), esc(String(v)));
+          if (v != null && typeof v !== "object") crudo += linea(esc(k) + ":", esc(String(v)));
         });
       }
-      // Sensores marcados "mostrar en popup"
-      var sv = pos.sensors_value || {};
-      Object.keys(sv).forEach(function (k) {
-        if (sv[k] != null && typeof sv[k] !== "object") html += ptRow(esc(k), esc(String(sv[k])));
-      });
-      slot.innerHTML = html;
+
+      slot.innerHTML = filas + (crudo ? '<div class="tp-hist-pt__raw">' + crudo + "</div>" : "");
       var m2 = el2.querySelector("[data-pt-more]");
       if (m2) m2.remove();
       if (state.pointPopup) state.pointPopup.update();
@@ -608,7 +651,8 @@
 
   function cursorIcon(course) {
     var icon = (state.device && state.device.icon) || {}, type = icon.type || "arrow", src, w, h, rotate = false, bottom = false;
-    if (type === "arrow") { src = "/images/device_icons/estados/" + ((state.device && state.device.icon_color) || "green") + ".png"; w = 25; h = 33; rotate = true; }
+    // 50x50: es el tamaño real de esos PNG (ver live.js)
+    if (type === "arrow") { src = "/images/device_icons/estados/" + ((state.device && state.device.icon_color) || "green") + ".png"; w = 50; h = 50; rotate = true; }
     else if (type === "rotating") { src = assetPath(icon.path); w = icon.width || 32; h = icon.height || 32; rotate = true; }
     else { src = assetPath(icon.path); w = icon.width || 32; h = icon.height || 32; bottom = true; }
     var rot = rotate ? "transform:rotate(" + (course || 0) + "deg);" : "";
@@ -1378,6 +1422,14 @@
     new MutationObserver(drawGraph).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
 
+  function parseLocal(s) {
+    if (!s) return null;
+    var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s);
+    if (!m) return null;
+    return new Date(+m[1], +m[2] - 1, +m[3], m[4] ? +m[4] : 0, m[5] ? +m[5] : 0);
+  }
+  function hhmm(d) { return (d.getHours() < 10 ? "0" : "") + d.getHours() + ":" + (d.getMinutes() < 10 ? "0" : "") + d.getMinutes(); }
+
   function init() {
     bind();
     startToday(); applyQuickRange("today"); commitRange();
@@ -1386,7 +1438,25 @@
       var qs = new URLSearchParams(location.search), dev = qs.get("device");
       if (dev) { var d = state.devices.filter(function (x) { return x.id === parseInt(dev, 10); })[0]; if (d) selDevice(d.id, d.name); }
       var range = qs.get("range");
-      if (range && ["today", "yesterday", "week", "month"].indexOf(range) !== -1) { applyQuickRange(range); commitRange(); }
+      // La lista corta se comia rangos que applyQuickRange si sabe resolver:
+      // el menu del vehiculo manda "last_hour" y se quedaba en el dia entero.
+      var RANGOS = ["last_hour", "today", "yesterday", "2days", "3days",
+                    "week", "lastweek", "month", "lastmonth"];
+      if (range && RANGOS.indexOf(range) !== -1) { applyQuickRange(range); commitRange(); }
+      // Rango exacto (?from=YYYY-MM-DD HH:MM&to=...): lo usa "Ver en mapa" de
+      // Operaciones para abrir el recorrido de un tramo o de una parada.
+      var qFrom = parseLocal(qs.get("from")), qTo = parseLocal(qs.get("to"));
+      if (qFrom && qTo) {
+        dp.from = new Date(qFrom.getFullYear(), qFrom.getMonth(), qFrom.getDate());
+        dp.to = new Date(qTo.getFullYear(), qTo.getMonth(), qTo.getDate());
+        // Hora exacta del tramo o la parada: las horas son texto libre.
+        $("#tp-hist-dp-from-time").value = hhmm(qFrom);
+        $("#tp-hist-dp-to-time").value = hhmm(qTo);
+        // Sin esto la etiqueta del campo salia bien pero el dialogo mostraba
+        // 00:00 y 23:59: el valor estaba puesto y el boton de tp-select no.
+        syncTimeSelects();
+        commitRange();
+      }
       if (dev && combo.getAttribute("data-value")) load();
     });
   }

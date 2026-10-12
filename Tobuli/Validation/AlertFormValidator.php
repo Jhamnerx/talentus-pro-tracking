@@ -40,6 +40,7 @@ class AlertFormValidator extends Validator
 
             'overspeed'         => 'required_if:type,overspeed|numeric',
             'stop_duration'     => 'required_if:type,stop_duration,poi_stop_duration|numeric',
+            'operation_stop_seconds' => 'required_if:type,operation_stop|numeric|min:1',
             'idle_duration'     => 'required_if:type,idle_duration,poi_idle_duration|numeric',
             'ignition_duration' => 'required_if:type,ignition_duration|numeric',
             'offline_duration'  => 'required_if:type,offline_duration|numeric',
@@ -72,6 +73,7 @@ class AlertFormValidator extends Validator
 
             'overspeed'         => 'required_if:type,overspeed|numeric',
             'stop_duration'     => 'required_if:type,stop_duration,poi_stop_duration|numeric',
+            'operation_stop_seconds' => 'required_if:type,operation_stop|numeric|min:1',
             'idle_duration'     => 'required_if:type,idle_duration,poi_idle_duration|numeric',
             'ignition_duration' => 'required_if:type,ignition_duration|numeric',
             'offline_duration'  => 'required_if:type,offline_duration|numeric',

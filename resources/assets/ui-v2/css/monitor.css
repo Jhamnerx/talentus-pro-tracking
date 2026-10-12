@@ -246,3 +246,69 @@
 [data-theme="dark"] .tp-mon__pickgroup {
   color: var(--brand-300);
 }
+
+/* ── Marcador: resplandor de color, como en Live ──────────────────────
+   El disco va DETRAS del icono; el brillo se pega a la silueta con
+   drop-shadow leyendo --tp-halo del propio <img>. */
+.tp-mon-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 0;
+}
+.tp-mon-marker--colored img {
+  position: relative;
+  z-index: 1;
+  filter:
+    drop-shadow(0 0 0 var(--tp-halo))
+    drop-shadow(0 0 6px var(--tp-halo))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
+}
+
+/* Punto de POI en la celda: pequeño, solo para situar */
+.leaflet-marker-icon.tp-mon-poi {
+  background: transparent;
+  border: 0;
+}
+.tp-mon-poi > span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Interruptores de capa de la cabecera ─────────────────────────── */
+.tp-mon__layers {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.tp-mon__layer {
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  color: var(--fg-secondary);
+  border-radius: var(--r-md, 8px);
+  padding: 5px 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tp-mon__layer:hover {
+  color: var(--fg-primary);
+  border-color: var(--border-focus, var(--brand-300));
+}
+.tp-mon__layer.is-on {
+  background: var(--brand-bg-subtle, rgba(46, 99, 217, 0.12));
+  border-color: var(--brand-300, #8faef1);
+  color: var(--brand-600, #2e63d9);
+}
+.tp-mon__layer:focus-visible {
+  outline: 2px solid var(--brand-500, #2e63d9);
+  outline-offset: 2px;
+}

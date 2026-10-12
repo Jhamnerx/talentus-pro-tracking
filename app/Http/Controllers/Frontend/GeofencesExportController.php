@@ -28,6 +28,7 @@ class GeofencesExportController extends Controller
             'coordinates',
             'polygon_color',
             'type',
+            'category',
             'radius',
             'center',
             'device_id',

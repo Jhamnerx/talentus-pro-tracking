@@ -17,6 +17,8 @@ _ide_helper_models.php
 /storage/framework/*
 storage/framework/cache/*
 public/images/device_icons
+# Fotos subidas de los vehiculos: contenido de cada instalacion, no del codigo
+public/images/device_images
 public/images/deviceTypes
 public/images/logos
 public/serve_file.php

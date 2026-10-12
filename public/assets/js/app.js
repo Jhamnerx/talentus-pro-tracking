@@ -18153,9 +18153,22 @@ function Dashboard()
 
     _this.init = function ()
     {
-        var modal = $modal.initModal();
+        // Con initModal() sin argumento el modal quedaba con id="undefined".
+        var modal = $modal.initModal('dashboard-modal');
 
-        modal.load(app.urls.dashboard, '', function () {
+        modal.load(app.urls.dashboard, '', function (res, status, xhr) {
+            // .load() no escribe nada si la peticion falla, pero el callback
+            // se llama igual: sin esto se abria un modal en blanco y el
+            // mensaje de error del servidor se perdia.
+            if (status === 'error') {
+                modal.html(res || '');
+
+                if ( ! modal.find('.modal-dialog').length) {
+                    handlerFailModal(xhr, status, xhr.statusText);
+                    return;
+                }
+            }
+
             modal.modal();
         });
     };

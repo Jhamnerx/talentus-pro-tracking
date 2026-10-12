@@ -61,6 +61,7 @@
     zone_out: tpT('ui.zone_exit_alt'),
     idle_duration: tpT('ui.long_idle'),
     stop_duration: "Detenido prolongado",
+    operation_stop: tpT('ui.ops_alert_operation_stop'),
     offline_duration: "Offline prolongado",
     move_duration: "Movimiento prolongado",
     move_start: tpT('ui.movement_start'),

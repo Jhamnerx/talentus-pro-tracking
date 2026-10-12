@@ -25,6 +25,7 @@
         data-zone-groups-url="{{ url('/ui/v2/api/zone-groups') }}"
         data-poi-groups-url="{{ url('/ui/v2/api/poi-groups') }}" data-pois-url="{{ route('ui.v2.api.pois') }}"
         data-routes-url="{{ route('ui.v2.api.routes') }}" data-geo-url="{{ route('address.get') }}"
+        data-can-groups="{{ !empty($canGroups) ? '1' : '' }}"
         data-routes-table-url="{{ route('ui.v2.routes_table') }}"
         data-routes-export-url="{{ route('routes.export.store') }}"
         data-routes-import-url="{{ route('routes.import') }}"
@@ -207,6 +208,11 @@
                                 class="tp-segmented__text">{{ trans('front.idle') }}</span></span>
                         <span class="tp-segmented__count" data-count="idle">0</span>
                     </button>
+                    <button class="tp-segmented__item" data-filter="stopped" type="button" title="{{ trans('front.stopped') }}">
+                        <span class="tp-segmented__label"><span class="tp-dot tp-dot--stopped"></span><span
+                                class="tp-segmented__text">{{ trans('front.stopped') }}</span></span>
+                        <span class="tp-segmented__count" data-count="stopped">0</span>
+                    </button>
                     <button class="tp-segmented__item" data-filter="offline" type="button" title="{{ trans('front.disconnected') }}">
                         <span class="tp-segmented__label"><span class="tp-dot tp-dot--offline"></span><span
                                 class="tp-segmented__text">{{ trans('front.disconnected') }}</span></span>
@@ -345,6 +351,10 @@
                         <select id="tp-zones-group" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;">
                             <option value="">{{ trans('ui.all_groups') }}</option>
                         </select>
+                        <select id="tp-zones-category" class="tp-input tp-input--sm" style="flex:1 1 auto;min-width:0;"
+                            aria-label="{{ trans('ui.category') }}">
+                            <option value="">{{ trans('ui.all_categories') }}</option>
+                        </select>
                         {{-- Gestion de grupos (paridad GeofencesGroups legacy) --}}
                         @if (Auth::user()->can('view', new \Tobuli\Entities\GeofenceGroup()))
                             <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-zones-groups-manage"
@@ -460,10 +470,15 @@
                         <strong id="tp-live-stat-idle">0</strong>
                         <span>{{ trans('ui.idle_lowercase') }}</span>
                     </span>
-                    <span class="tp-live__map-stat" title="Desconectados" aria-label="Desconectados">
+                    <span class="tp-live__map-stat" title="{{ trans('front.stopped') }}" aria-label="{{ trans('front.stopped') }}">
+                        <span class="tp-dot tp-dot--stopped"></span>
+                        <strong id="tp-live-stat-stopped">0</strong>
+                        <span>{{ trans('ui.stopped_lowercase') }}</span>
+                    </span>
+                    <span class="tp-live__map-stat" title="{{ trans('front.disconnected') }}" aria-label="{{ trans('front.disconnected') }}">
                         <span class="tp-dot tp-dot--offline"></span>
                         <strong id="tp-live-stat-offline">0</strong>
-                        <span>desconectados</span>
+                        <span>{{ trans('ui.disconnected_lowercase') }}</span>
                     </span>
                 </div>
             </div>
@@ -779,6 +794,8 @@
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    {{-- Animacion de movimiento del marcador: el mismo plugin del legacy --}}
+    <script src="{{ asset_resource('assets/ui/v2/js/lib/Leaflet.Marker.SlideTo.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/device-modal.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-basemaps.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}"></script>

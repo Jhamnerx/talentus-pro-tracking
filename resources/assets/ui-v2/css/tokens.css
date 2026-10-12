@@ -62,9 +62,58 @@
   --status-moving: #10b981;
   --status-idle: #f59e0b;
   --status-stopped: #6b7280;
-  --status-offline: #4b5563;
+  /* Ambar, no otro gris: con #4b5563 "desconectado" y "detenido" se veian
+     iguales. El legacy pinta el offline de amarillo
+     (settings device.status_colors.colors.offline) y el acento lateral de la
+     fila ya salia amarillo porque viene de getStatusColor(). 5.02:1 sobre
+     blanco, por encima del 4.5 de AA para texto normal. */
+  --status-offline: #b45309;
   --status-alert: #ef4444;
   --status-sos: #b91c1c;
+
+  /* Los nueve colores que el usuario elige por vehiculo en la pestaña Iconos
+     (DeviceModalHelper::$device_icon_colors) y que getStatusColor() devuelve
+     por nombre. El valor es el MISMO que pinta el legacy: muestreado de
+     public/images/device_icons/estados/<nombre>.png, para que el indicador de
+     la v2 y el icono del legacy sean el mismo color.
+
+     Sirven de relleno (punto, acento), no de texto: #eae100 sobre blanco da
+     1.38:1. Para eso esta la variante -ink, el mismo tono oscurecido hasta
+     pasar 4.6:1, que tambien se usa de fondo de la etiqueta del marcador
+     porque esa lleva texto blanco encima. */
+  --sc-green: green;
+  --sc-yellow: yellow;
+  --sc-orange: orange;
+  --sc-red: red;
+  --sc-blue: blue;
+  --sc-cyan: cyan;
+  --sc-gray: gray;
+  --sc-black: black;
+  --sc-white: white;
+
+  /* Para texto suelto: el relleno no sirve (#ffff00 da 1.07:1 sobre blanco).
+     Mismo tono, oscurecido hasta >=4.6:1. */
+  --sc-green-ink: #008000;
+  --sc-yellow-ink: #787800;
+  --sc-orange-ink: #a16800;
+  --sc-red-ink: #eb0000;
+  --sc-blue-ink: #0000ff;
+  --sc-cyan-ink: #008282;
+  --sc-gray-ink: #747474;
+  --sc-black-ink: #000000;
+  --sc-white-ink: #757575;
+
+  /* Color del texto que va ENCIMA del relleno (etiqueta del marcador),
+     elegido por contraste contra cada color. */
+  --sc-green-on: #fff;
+  --sc-yellow-on: #1f2937;
+  --sc-orange-on: #1f2937;
+  --sc-red-on: #fff;
+  --sc-blue-on: #fff;
+  --sc-cyan-on: #1f2937;
+  --sc-gray-on: #fff;
+  --sc-black-on: #fff;
+  --sc-white-on: #1f2937;
 
   /* === SPACING (4pt grid) ================================= */
   --sp-0: 0;
@@ -304,11 +353,28 @@
   /* Map */
   --map-bg: #0a0e18;
 
-  /* Estados: los grises (detenido/desconectado) definidos en :root son muy
-     oscuros para el fondo dark; se aclaran para que el nombre/velocidad/hora
-     de los vehículos offline sean legibles en la lista de flota. */
+  /* Estados: el gris de "detenido" definido en :root es muy oscuro para el
+     fondo dark y el ambar de "desconectado" se apaga; se aclaran los dos para
+     que el nombre/velocidad/hora de esos vehículos sean legibles en la lista
+     de flota. El ambar da 11.02:1 sobre el fondo oscuro. */
   --status-stopped: #9ca3af;
-  --status-offline: #94a3b8;
+  --status-offline: #fbbf24;
+
+  /* Los rellenos no cambian -son los del legacy y contrastan bien sobre el
+     fondo oscuro- salvo el negro, que ahi seria invisible. Las tintas se
+     aclaran hasta >=6:1. */
+  /* El negro como relleno seria invisible sobre el fondo oscuro. */
+  --sc-black: #636363;
+
+  --sc-green-ink: #4da64d;
+  --sc-yellow-ink: #ffff00;
+  --sc-orange-ink: #ffa500;
+  --sc-red-ink: #ff5c5c;
+  --sc-blue-ink: #8787ff;
+  --sc-cyan-ink: #00ffff;
+  --sc-gray-ink: #949494;
+  --sc-black-ink: #949494;
+  --sc-white-ink: #ffffff;
 }
 
 /* ============================================================

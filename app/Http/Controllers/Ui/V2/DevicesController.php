@@ -53,7 +53,31 @@ class DevicesController extends BaseController
             'pageTitle'     => $titulo,
             'mapConfig'     => $this->buildMapConfig(),
             'canCreate'     => $this->user->perm('devices', 'edit'),
+            // El kebab de los grupos NO depende de poder crear vehiculos. El
+            // legacy lo pinta sin guarda y deja que autorice el controlador
+            // con checkException('devices_groups', ...), que resuelve por la
+            // politica de DeviceGroup. Aqui se pregunta lo mismo.
+            'canGroups'     => $this->puedeGrupos(),
         ]);
+    }
+
+    /**
+     * Si el usuario puede gestionar grupos de objetos.
+     *
+     * La misma autorizacion que piden los endpoints de grupos y el legacy:
+     * checkException('devices_groups', ...), que pasa por la politica de
+     * DeviceGroup (bloquea demo, por ejemplo) y no por perm(). Se pregunta
+     * aqui para no pintar un menu que luego va a dar 403.
+     */
+    private function puedeGrupos(): bool
+    {
+        try {
+            $this->checkException('devices_groups', 'view');
+
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -1963,6 +1987,15 @@ class DevicesController extends BaseController
 
         $this->checkException('devices_groups', 'remove', $group);
 
+        // Operaciones: un grupo que usa una operacion no se borra; primero hay
+        // que quitarlo de la operacion o eliminarla.
+        $operations = \Tobuli\Services\Operations\OperationService::operationsUsingGroup((int) $group->id);
+        if ($operations->isNotEmpty()) {
+            throw new \Tobuli\Exceptions\ValidationException([
+                'id' => trans('front.group_in_operation', ['operations' => $operations->pluck('name')->implode(', ')]),
+            ]);
+        }
+
         // Paridad legacy: los devices vuelven a "Sin grupo" (0, no NULL)
         \DB::table('user_device_pivot')->where('group_id', $group->id)->update(['group_id' => 0]);
         $group->delete();
@@ -2181,6 +2214,37 @@ class DevicesController extends BaseController
      * legacy, que alimenta reportes e historial. Se completa aqui, al
      * presentar, y solo cuando falta de verdad.
      */
+    /**
+     * Rotulo del estado del objeto.
+     *
+     * Las mismas etiquetas que pinta el JS en la pastilla del drawer
+     * (STATUS_LABELS de live.js / monitor.js), para que la ficha "Objeto" y
+     * la pastilla no digan cosas distintas del mismo vehiculo. Antes se
+     * traducia con trans('front.' . $estado) y cuatro de los seis estados
+     * posibles no tienen clave en front.php: salia "front.online".
+     */
+    private function estadoTexto(?string $estado): ?string
+    {
+        if ($estado === null || $estado === '') {
+            return null;
+        }
+
+        $etiquetas = [
+            'online'          => trans('front.move'),
+            'move'            => trans('front.move'),
+            'excessive_speed' => trans('front.overspeed'),
+            'engine'          => trans('ui.engine_on'),
+            'ack'             => trans('front.stopped'),
+            'stop'            => trans('front.stopped'),
+            'idle'            => trans('front.idle'),
+            'blocked'         => trans('front.blocked'),
+            'offline'         => trans('front.offline'),
+            'expired'         => trans('front.expired'),
+        ];
+
+        return $etiquetas[$estado] ?? $estado;
+    }
+
     private function sensorTexto(\Tobuli\Entities\DeviceSensor $sensor, $formateado): string
     {
         $texto = trim((string) $formateado);
@@ -2865,6 +2929,35 @@ class DevicesController extends BaseController
      * and honoring the user's active-widget configuration
      * (getSettings('widgets'), same as the legacy bottombar).
      */
+    /**
+     * Direccion del vehiculo, aparte de los widgets.
+     *
+     * Vive en su propia peticion porque el geocodificador es una llamada a un
+     * servicio externo de cientos de milisegundos y no tiene por que retrasar
+     * el resto del drawer. Devuelve el objeto entero -ciudad, calle, pais- que
+     * necesita la tarjeta "Ubicacion", no solo el texto.
+     */
+    public function address(Request $request, $id): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $device = DeviceRepo::find((int) $id);
+
+        if (! $device || ! $device->lat || ! $device->lng) {
+            return response()->json(['ok' => true, 'address' => null]);
+        }
+
+        try {
+            $loc = GeoLocation::byCoordinates($device->lat, $device->lng);
+
+            return response()->json(['ok' => true, 'address' => $loc ? $loc->toArray() : null]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => true, 'address' => null]);
+        }
+    }
+
     public function widgets(Request $request, $id): JsonResponse
     {
         if (! $this->user->perm('devices', 'view')) {
@@ -2893,20 +2986,17 @@ class DevicesController extends BaseController
 
         $data = ['device' => $device, 'active' => $active];
 
-        // Dirección: geocode compartido por los widgets Ubicación y Objeto
-        // (evita pedir la dirección dos veces al mismo proveedor).
+        // La direccion NO se resuelve aqui. GeoLocation::byCoordinates sale al
+        // geocodificador externo y costaba ~260 ms de los ~263 ms del endpoint
+        // (el SQL eran 2 ms), bloqueando el drawer entero -Sensores incluidos-
+        // por un dato que solo usan "Objeto" y "Ubicacion". El navegador la
+        // pide aparte, igual que ya hace el popup del marcador.
         $address = null;
-        if (($has('location') || $has('device')) && $device->lat && $device->lng) {
-            try {
-                $loc = GeoLocation::byCoordinates($device->lat, $device->lng);
-                $address = $loc ? $loc->toArray() : null;
-            } catch (\Throwable $e) {
-                $address = null;
-            }
-        }
 
         if ($has('location')) {
-            $data['location'] = $address;
+            // La tarjeta se pinta vacia y se rellena luego; hace falta el flag
+            // para que la blade sepa que debe dibujarla.
+            $data['location'] = ['lazy' => true];
         }
 
         // Objeto: ficha UNIFICADA del vehículo (fusiona la antigua "Telemetría" del
@@ -2919,7 +3009,7 @@ class DevicesController extends BaseController
 
             $data['device_info'] = [
                 'status'      => $device->getStatus(),
-                'status_text' => trans('front.' . $device->getStatus()),
+                'status_text' => $this->estadoTexto($device->getStatus()),
                 'address'     => $address['address'] ?? null,
                 'time'        => $device->time ? \Formatter::time()->format($device->time) : null,
                 'coords'      => ($device->lat && $device->lng)

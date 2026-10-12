@@ -836,18 +836,24 @@ select.tp-input:disabled {
   border-radius: 50%;
   background: currentColor;
   flex-shrink: 0;
+  /* Como el borde de 1px del legacy: sin el, "amarillo" o "blanco" se
+     pierden sobre fondo claro. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
 }
+/* Relleno --sc-*, no el --status-* de texto: los cuatro cubos coinciden uno a
+   uno con los estados por defecto del legacy (movimiento=green, ralenti=orange,
+   detenido=gray, offline=yellow) y asi el punto se ve igual que su icono. */
 .tp-dot--moving {
-  background: var(--status-moving);
+  background: var(--sc-green);
 }
 .tp-dot--idle {
-  background: var(--status-idle);
+  background: var(--sc-orange);
 }
 .tp-dot--stopped {
-  background: var(--status-stopped);
+  background: var(--sc-gray);
 }
 .tp-dot--offline {
-  background: var(--status-offline);
+  background: var(--sc-yellow);
 }
 .tp-dot--alert {
   background: var(--status-alert);

@@ -54,6 +54,7 @@ class ZonesController extends BaseController
                 'name'          => (string) $g->name,
                 'group_id'      => $g->group_id ? (int) $g->group_id : null,
                 'type'          => (string) $g->type,
+                'category'      => $g->category,
                 'active'        => (bool) $g->active,
                 'polygon_color' => (string) ($g->polygon_color ?: '#1e88e5'),
                 'radius'        => $g->radius !== null ? (float) $g->radius : null,
@@ -83,6 +84,8 @@ class ZonesController extends BaseController
             'total'              => count($items),
             'items'              => $items,
             'groups'             => $groups,
+            // Uso de la geocerca en Operaciones (carga, descarga, grifo...).
+            'categories'         => Geofence::categories(),
             'vehicle_types'      => $this->vehicleTypesPayload(),
             'speed_limit_plugin' => (bool) settings('plugins.geofences_speed_limit.status'),
             // Geocerca móvil (plugin moving_geofence): catálogo de vehículos
@@ -264,6 +267,13 @@ class ZonesController extends BaseController
         try {
             $service = new GeofenceUserService($user);
             $service->remove($geofence);
+        } catch (ValidationException $e) {
+            // P. ej. la geocerca es punto de una operacion: el motivo va al usuario.
+            return response()->json([
+                'ok'      => false,
+                'error'   => 'validation',
+                'message' => $e->getErrors() ? $e->getErrors()->first() : trans('ui.delete_failed'),
+            ], 422);
         } catch (\Throwable $e) {
             return response()->json([
                 'ok'      => false,
@@ -439,6 +449,7 @@ class ZonesController extends BaseController
             'group_id'      => $g->group_id ? (int) $g->group_id : null,
             'device_id'     => $g->device_id ? (int) $g->device_id : null,
             'type'          => (string) $g->type,
+            'category'      => $g->category,
             'active'        => (bool) $g->active,
             'polygon_color' => (string) ($g->polygon_color ?: '#d000df'),
             'radius'        => $g->radius !== null ? (float) $g->radius : null,

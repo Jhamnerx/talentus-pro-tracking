@@ -77,6 +77,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\CopyDevicesCommand',
         'App\Console\Commands\CalcVirtualOdometerCommand',
         'App\Console\Commands\RecalculateDeviceHistoryCommand',
+        'App\Console\Commands\OperationsProcessCommand',
         'App\Console\Commands\SplitDevicesCommand',
         'App\Console\Commands\FakeDevicesCommand',
         'App\Console\Commands\DropDeviceFreeTablesCommand',
@@ -169,6 +170,13 @@ class Kernel extends ConsoleKernel
 
         $schedule
             ->command('devices:check_offline')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        // Modulo de Operaciones: tramos cerrados, "sin datos", tramos
+        // vencidos y cola de recalculos. Sin efecto con operations_enabled apagado.
+        $schedule
+            ->command('operations:process')
             ->everyMinute()
             ->withoutOverlapping();
 

@@ -363,7 +363,7 @@ return [
         'invoice_number' => 'Número de factura',
         'one_time_payment' => 'Pago único',
         'sharing_id' => 'Compartir',
-        'idle_duration_longer_than' => 'Duración inactiva más larga que',
+        'idle_duration_longer_than' => 'Duración en ralentí mayor que',
         'delete_after_expiration' => 'Eliminar después de vencimiento',
         'sharing_email' => 'Notificación por correo electrónico con enlace para compartir',
         'sharing_sms' => 'Notificación por SMS con enlace para compartir',

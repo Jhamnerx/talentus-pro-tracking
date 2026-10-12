@@ -95,6 +95,17 @@ abstract class BaseController extends Controller
             // Los limites ya llegan en la unidad del usuario (el feed de zonas
             // los convierte), asi que estos rangos van en la misma unidad.
             'markerColors'     => (array) config('tobuli.marker_speed_colors', []),
+            // Animacion de movimiento del marcador (plugin del admin). Misma
+            // clave que lee el legacy en getJsConfig -> animateDeviceMove.
+            'animateMove'      => (bool) settings('plugins.device_move_animation.status'),
+            // Tamaño de la geocerca en su etiqueta (plugin del admin), con la
+            // unidad de distancia del usuario. Igual que el legacy en
+            // getJsConfig -> showGeofenceSize + units.distance.
+            'geofenceSize'     => (bool) settings('plugins.geofence_size.status'),
+            'distance'         => [
+                'unit'  => \Formatter::distance()->getUnit(),
+                'ratio' => \Formatter::distance()->getRatio(),
+            ],
             // Toggles de capas (mismo store que el legacy → user->map_controls)
             'toggles'          => [
                 'devices'   => $tg('m_objects', 'showDevice'),
@@ -150,10 +161,16 @@ abstract class BaseController extends Controller
         if (in_array($status, ['online', 'move', 'excessive_speed'], true)) {
             return 'moving';
         }
-        if (in_array($status, ['idle', 'ack', 'engine'], true)) {
+        // El naranja de ralenti es SOLO del motor encendido. Un vehiculo
+        // parado con el motor apagado (ack) va con los detenidos, como en el
+        // legacy (Device::getStatusColor: STATUS_ACK -> 'stopped') y como ya
+        // hace la lista de Live desde ccff70c7.
+        if (in_array($status, ['engine', 'idle'], true)) {
             return 'idle';
         }
-        if (in_array($status, ['stop', 'park'], true)) {
+        // blocked estaba cayendo en 'offline': el vehiculo esta parado, no
+        // desconectado. El legacy le da color propio, que aqui no existe.
+        if (in_array($status, ['ack', 'stop', 'park', 'blocked'], true)) {
             return 'stopped';
         }
         return 'offline';
@@ -165,7 +182,7 @@ abstract class BaseController extends Controller
     protected function eventSeverity(string $type): string
     {
         $critical = ['sos', 'overspeed', 'geofence_overspeed', 'unplugged', 'fuel_theft', 'jump_from_stop', 'ghost_speed'];
-        $warning  = ['zone_out', 'idle_duration', 'stop_duration', 'offline_duration', 'expiring_device', 'expiring_sim', 'expiring_user', 'driver_unauthorized'];
+        $warning  = ['zone_out', 'idle_duration', 'stop_duration', 'operation_stop', 'offline_duration', 'expiring_device', 'expiring_sim', 'expiring_user', 'driver_unauthorized'];
         $info     = ['zone_in', 'move_start', 'ignition_on', 'ignition_off', 'driver', 'driver_authorized', 'plugged_in', 'fuel_fill', 'task_new', 'task_complete'];
         if (in_array($type, $critical, true)) return 'critical';
         if (in_array($type, $warning, true))  return 'warning';

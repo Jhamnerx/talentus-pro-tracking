@@ -1179,6 +1179,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('chat',         ['as' => 'chat',         'uses' => 'Ui\V2\ChatController@page']);
     Route::get('expenses',     ['as' => 'expenses',     'uses' => 'Ui\V2\ExpensesController@page']);
     Route::get('route-schedules', ['as' => 'route_schedules', 'uses' => 'Ui\V2\RouteSchedulesController@page']);
+    Route::get('operations',   ['as' => 'operations',   'uses' => 'Ui\V2\OperationsController@page']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
     Route::prefix('api')->group(function () {
@@ -1205,6 +1206,24 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::put('route-schedules/{id}',       ['as' => 'api.route_schedules.update',     'uses' => 'Ui\V2\RouteSchedulesController@update'])->where('id', '[0-9]+');
         Route::delete('route-schedules/{id}',    ['as' => 'api.route_schedules.destroy',    'uses' => 'Ui\V2\RouteSchedulesController@destroy'])->where('id', '[0-9]+');
         Route::get('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints',         'uses' => 'Ui\V2\RouteSchedulesController@checkpoints'])->where('id', '[0-9]+');
+
+        // Operaciones: control de vueltas entre puntos de carga y descarga
+        Route::get('operations',                     ['as' => 'api.operations',                     'uses' => 'Ui\V2\OperationsController@data']);
+        Route::get('operations/meta',                ['as' => 'api.operations.meta',                'uses' => 'Ui\V2\OperationsController@meta']);
+        Route::get('operations/live',                ['as' => 'api.operations.live',                'uses' => 'Ui\V2\OperationsController@live']);
+        Route::get('operations/cycles',              ['as' => 'api.operations.cycles',              'uses' => 'Ui\V2\OperationsController@cycles']);
+        Route::get('operations/cycles/{id}',         ['as' => 'api.operations.cycle',               'uses' => 'Ui\V2\OperationsController@cycle'])->where('id', '[0-9]+');
+        Route::get('operations/recalculations',      ['as' => 'api.operations.recalculations',      'uses' => 'Ui\V2\OperationsController@recalculations']);
+        Route::get('operations/recalculate/preview', ['as' => 'api.operations.recalculate_preview', 'uses' => 'Ui\V2\OperationsController@recalculatePreview']);
+        Route::post('operations/recalculate',        ['as' => 'api.operations.recalculate',         'uses' => 'Ui\V2\OperationsController@recalculate']);
+        Route::post('operations',                    ['as' => 'api.operations.store',               'uses' => 'Ui\V2\OperationsController@store']);
+        Route::put('operations/{id}',                ['as' => 'api.operations.update',              'uses' => 'Ui\V2\OperationsController@update'])->where('id', '[0-9]+');
+        Route::post('operations/{id}/toggle',        ['as' => 'api.operations.toggle',              'uses' => 'Ui\V2\OperationsController@toggle'])->where('id', '[0-9]+');
+        Route::delete('operations/{id}',             ['as' => 'api.operations.destroy',             'uses' => 'Ui\V2\OperationsController@destroy'])->where('id', '[0-9]+');
+        // Fase 2: motivos de parada y justificacion
+        Route::get('operations/stop-reasons',        ['as' => 'api.operations.reasons',             'uses' => 'Ui\V2\OperationsController@reasons']);
+        Route::put('operations/stop-reasons',        ['as' => 'api.operations.reasons.save',        'uses' => 'Ui\V2\OperationsController@saveReasons']);
+        Route::post('operations/stops/{id}/justify', ['as' => 'api.operations.stops.justify',       'uses' => 'Ui\V2\OperationsController@justifyStop'])->where('id', '[0-9]+');
         Route::put('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints.save',    'uses' => 'Ui\V2\RouteSchedulesController@saveCheckpoints'])->where('id', '[0-9]+');
 
         Route::get('expenses',        ['as' => 'api.expenses',        'uses' => 'Ui\V2\ExpensesController@data']);
@@ -1295,6 +1314,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('devices/{id}/template-webhook', ['as' => 'api.devices.template_webhook', 'uses' => 'Ui\V2\DevicesController@templateWebhookSend'])->where('id', '[0-9]+');
         Route::get('devices/{id}/changes',       ['as' => 'api.devices.changes',       'uses' => 'Ui\V2\DevicesController@deviceChanges'])->where('id', '[0-9]+');
         Route::get('devices/{id}/widgets', ['as' => 'api.devices.widgets', 'uses' => 'Ui\V2\DevicesController@widgets'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/address', ['as' => 'api.devices.address', 'uses' => 'Ui\V2\DevicesController@address'])->where('id', '[0-9]+');
         Route::get('devices/updates',     ['as' => 'api.devices.updates', 'uses' => 'Ui\V2\DevicesController@updates']);
         Route::get('devices/filter-ids',  ['as' => 'api.devices.filter_ids', 'uses' => 'Ui\V2\DevicesController@filterIds']);
         Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Ui\V2\DevicesController@store']);

@@ -158,6 +158,11 @@ return [
     'prev_position_device_object' => env('PREV_POSITION_DEVICE_OBJECT', false),
     'apply_network_data' => env('APPLY_NETWORK_DATA', true),
     'overwrite_invalid'  => env('OVERWRITE_INVALID', true),
+
+    // Modulo de Operaciones (control de vueltas). Apagado, PositionsWriter no
+    // hace ninguna consulta ni evaluacion por el modulo: es el interruptor de
+    // despliegue y de vuelta atras.
+    'operations_enabled' => env('OPERATIONS_ENABLED', false),
     'gnss_glitch' => [
         'enabled'              => env('GNSS_GLITCH_ENABLED', true),
         'enforce'              => env('GNSS_GLITCH_ENFORCE', false), // false = modo sombra
@@ -346,7 +351,10 @@ return [
     */
     'marker_speed_colors' => [
         'ranges' => [
-            ['from' => 0,  'to' => 40,   'color' => '#22c55e'],
+            // Desde 1 y no desde 0: a 0 kph el vehiculo esta parado y no se
+            // colorea por velocidad, que es lo que hacia salir con el verde
+            // del primer tramo a uno detenido.
+            ['from' => 1,  'to' => 40,   'color' => '#22c55e'],
             ['from' => 40, 'to' => 60,   'color' => '#eab308'],
             ['from' => 60, 'to' => 90,   'color' => '#f97316'],
             ['from' => 90, 'to' => null, 'color' => '#ef4444'],
@@ -1501,6 +1509,9 @@ return [
             'device_distance'      => [
                 'enabled' => 1,
                 'options' => [
+                    // Sin 'period' el desplegable de opciones reventaba
+                    // (Undefined array key) y con el, todo /dashboard.
+                    'period'  => 'day',
                     'devices' => []
                 ],
             ],
@@ -1551,6 +1562,10 @@ return [
         ],
         \Tobuli\Entities\RouteSchedule::class => [
             'attributes' => ['*'],
+        ],
+        \Tobuli\Entities\Operation::class => [
+            'attributes' => ['*'],
+            'attributes_to_ignore' => ['created_at', 'updated_at'],
         ],
         \Tobuli\Entities\Poi::class => [
             'attributes' => ['*'],

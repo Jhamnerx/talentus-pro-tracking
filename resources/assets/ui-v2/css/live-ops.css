@@ -144,19 +144,27 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 34px;
-  height: 34px;
-  margin: -17px 0 0 -17px;
+  /* width/height/margin llegan en linea: dependen del tamaño del icono */
   border-radius: 50%;
-  opacity: 0.45;
-  /* El difuminado evita el borde duro del circulo sobre el mapa */
-  filter: blur(2px);
+  /* Tinte muy suave, el mismo peso que el del seleccionado. Lo que de
+     verdad marca el color es el resplandor del icono, no este disco: uno
+     opaco tapaba al vehiculo y a la etiqueta. */
+  opacity: 0.18;
   pointer-events: none;
   z-index: 0;
 }
+/* Resplandor pegado a la silueta, igual que el seleccionado pero con el
+   color del rango de velocidad, que llega en --tp-halo desde el propio
+   <img>. Se hace con una variable y no con un filter en linea para que la
+   regla del seleccionado -misma especificidad, mas abajo en la hoja- siga
+   ganando cuando el vehiculo esta seleccionado Y coloreado. */
 .tp-lmarker--colored img {
   position: relative;
   z-index: 1;
+  filter:
+    drop-shadow(0 0 0 var(--tp-halo))
+    drop-shadow(0 0 6px var(--tp-halo))
+    drop-shadow(0 2px 4px rgba(0, 0, 0, 0.45));
 }
 /* La etiqueta coloreada lleva el color en linea (viene del rango); aqui solo
    se asegura que el texto se lea sobre cualquier tono. */
@@ -204,6 +212,14 @@
     opacity: 0;
   }
 }
+/* El halo de velocidad no late: es fijo. Este, el del seleccionado, si, y
+   es la unica animacion continua sobre el mapa: se para con el ajuste de
+   movimiento reducido del sistema, como las otras dos del fichero. */
+@media (prefers-reduced-motion: reduce) {
+  .tp-lmarker--selected::after {
+    animation: none;
+  }
+}
 /* Etiqueta de nombre del marcador (toggle "nombres") */
 .tp-lmarker__name {
   display: none;
@@ -217,10 +233,12 @@
   color: var(--fg-primary, #1a1f2b);
   border: 1px solid var(--border-default, #e7e9ee);
   border-radius: 4px;
-  padding: 0 5px;
-  font-size: 10px;
+  /* La medida del legacy (.leaf-device-marker .name i: padding 4px 8px sobre
+     el cuerpo de 12px). Estaba en 10px y 0 5px, bastante mas pequeña. */
+  padding: 4px 8px;
+  font-size: 12px;
   font-weight: 600;
-  line-height: 16px;
+  line-height: 1.2;
   pointer-events: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
@@ -252,11 +270,48 @@
   border-color: #f59e0b;
   color: #fff;
 }
+/* Con color propio del vehiculo manda ese; las tres de abajo quedan de
+   respaldo para los que no lo tienen. */
+.tp-status-color .tp-lmarker__name[style*="--tp-status-on"] {
+  background: var(--tp-status);
+  border-color: var(--tp-status);
+  color: var(--tp-status-on);
+}
+.tp-status-color .tp-lmarker__name--stopped {
+  background: #6b7280;
+  border-color: #6b7280;
+  color: #fff;
+}
 .tp-status-color .tp-lmarker__name--offline {
   background: #64748b;
   border-color: #64748b;
   color: #fff;
 }
+/* Etiqueta fija de la geocerca (nombre + tamaño). Equivale a
+   .leaflet-popup-geofence .name del legacy: fondo del color del poligono,
+   texto blanco con sombra para que se lea sobre cualquier tono. */
+.leaflet-marker-icon.tp-zone-label {
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  background: transparent;
+  border: 0;
+  pointer-events: none;
+}
+.tp-zone-label > span {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  color: #fff;
+  padding: 3px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.85);
+}
+
 /* Leaflet: popup del device con el mismo estilo que teníamos en MapLibre */
 .tp-dev-popup-wrap .leaflet-popup-content-wrapper {
   border-radius: 12px;
@@ -625,6 +680,12 @@ table.tp-lock-hist th {
   grid-template-columns: repeat(2, 1fr);
   gap: 2px;
 }
+/* Con cinco filtros (todos + los cuatro estados) la rejilla de dos columnas
+   dejaba uno suelto. "Todos" ocupa la fila entera y los estados quedan
+   emparejados debajo. */
+.tp-segmented--grid2 .tp-segmented__item[data-filter="all"] {
+  grid-column: 1 / -1;
+}
 .tp-segmented--grid2 .tp-segmented__item {
   display: flex;
   align-items: center;
@@ -845,6 +906,15 @@ table.tp-lock-hist th {
 .tp-live__row[data-status="alert"] .tp-live__row-time {
   color: var(--status-alert);
 }
+/* Color del estado SEGUN EL VEHICULO (icon_colors del legacy). Va despues de
+   los tonos genericos de arriba y antes del color por velocidad: ese es el
+   orden de prioridad. */
+.tp-live__row.tp-live__row--status .tp-live__row-name,
+.tp-live__row.tp-live__row--status .tp-live__row-speed,
+.tp-live__row.tp-live__row--status .tp-live__row-time {
+  /* Tinta: el relleno del legacy no vale como texto (#eae100 da 1.38:1) */
+  color: var(--tp-status-ink);
+}
 /* Menú de acciones flotante del kebab */
 .tp-row-menu {
   min-width: 230px;
@@ -910,7 +980,11 @@ table.tp-lock-hist th {
   height: 8px;
   border-radius: 50%;
   background: var(--status-offline);
-  box-shadow: 0 0 0 2px var(--surface-raised);
+  /* El filo gris hace de borde -el legacy le pone 1px- para que "blanco" o
+     "amarillo" no desaparezcan sobre el fondo claro. */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.22),
+    0 0 0 3px var(--surface-raised);
 }
 .tp-live__row[data-status="moving"] .tp-live__row-dot {
   background: var(--status-moving);
@@ -926,6 +1000,9 @@ table.tp-lock-hist th {
 }
 .tp-live__row[data-status="alert"] .tp-live__row-dot {
   background: var(--status-alert);
+}
+.tp-live__row.tp-live__row--status .tp-live__row-dot {
+  background: var(--tp-status);
 }
 
 .tp-live__row-main {
@@ -963,17 +1040,28 @@ table.tp-lock-hist th {
   color: #16a34a;
 }
 /* Icono de motor en la fila (detección de ignición por sensor). */
+/* Deteccion de encendido. Las mismas dos imagenes que usa el legacy de esta
+   marca desde su CSS propio (public/assets/custom/js.js):
+
+     .on  i.icon.detect_engine -> assets/custom/icons/acc.svg      (a color)
+     .off i.icon.detect_engine -> assets/custom/icons/acc_off.svg  (en grises)
+
+   Va aqui y no en el marcado, como alli, para que otra marca pueda cambiar
+   el dibujo sin tocar el JS. */
 .tp-eng-ico {
   flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  line-height: 0;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .tp-eng-ico--on {
-  color: #16a34a;
+  background-image: url("/assets/custom/icons/acc.svg");
 }
 .tp-eng-ico--off {
-  color: var(--fg-tertiary, #94a3b8);
+  background-image: url("/assets/custom/icons/acc_off.svg");
 }
 
 /* ── Estado de vehículo (VACÍO/CARGADO…): badge + cambiador ─────── */
@@ -2531,8 +2619,9 @@ table.tp-lock-hist th {
   box-shadow: inset 3px 0 0 0 var(--brand-500, #2e63d9);
 }
 .tp-live__row.is-selected .tp-live__row-nametext {
+  /* Solo negrita: antes tambien forzaba --fg-primary y el vehiculo
+     seleccionado era el unico de la lista sin su color de estado. */
   font-weight: 700;
-  color: var(--fg-primary);
 }
 .tp-live__group-items .tp-live__row.is-selected {
   border-color: var(--brand-300, #a9c2f5);

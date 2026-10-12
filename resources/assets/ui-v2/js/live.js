@@ -121,6 +121,10 @@
   // -----------------------------------------------------------
   // Estado operativo del device (autoritativo: d.online)
   // -----------------------------------------------------------
+  // Los mismos cubos que el legacy en Device::getStatusColor(): el naranja
+  // es SOLO para el motor encendido sin moverse. Un vehiculo parado con el
+  // motor apagado (ack) es "detenido" y va en gris; juntarlos hacia que la
+  // v2 dijera ralenti de cualquier vehiculo quieto.
   function classify(d) {
     switch (d && d.online) {
       case "online":
@@ -128,16 +132,41 @@
       case "move":
         return "moving";
       case "engine":
+      case "idle":
+        return "idle";
       case "ack":
       case "stop":
-      case "idle":
       case "park":
+      // El legacy le da color propio (negro). Aqui no hay cubo para eso, y
+      // un vehiculo con el motor bloqueado esta parado: va con los detenidos.
       case "blocked":
-        return "idle";
+        return "stopped";
       default:
         return "offline";
     }
   }
+  // getStatusColor() del legacy devuelve el color por NOMBRE, de un catalogo
+  // de nueve. Se traduce al token del tema para que claro y oscuro usen el
+  // tono que toca; si alguien guardo un hex propio, se respeta tal cual.
+  var SC_NOMBRES = {
+    green: 1, yellow: 1, orange: 1, red: 1,
+    blue: 1, cyan: 1, gray: 1, black: 1, white: 1,
+  };
+  // variante: "ink" = el tono oscurecido, para texto suelto. "on" = el color
+  // del texto que va encima del relleno. Sin variante, el relleno. Un hex
+  // propio no se puede derivar aqui: se devuelve igual (y de texto encima,
+  // blanco, que es lo que habia antes).
+  function statusVar(c, variante) {
+    if (!c) return "";
+    c = String(c).toLowerCase();
+    if (SC_NOMBRES[c]) {
+      if (variante === "on") return "var(--sc-" + c + "-on)";
+      return "var(--sc-" + c + (variante ? "-ink" : "") + ")";
+    }
+    if (c.charAt(0) !== "#") return "";
+    return variante === "on" ? "#fff" : c;
+  }
+
   function fmtTimeAgo(ts) {
     if (!ts) return "—";
     var sec = parseInt(ts, 10);
@@ -258,20 +287,35 @@
   }
 
   function colorDeRango(rangos, v) {
+    if (!rangos.length) return null;
+
+    var minimo = Infinity;
     for (var i = 0; i < rangos.length; i++) {
       var r = rangos[i];
       var desde = r.from == null ? -Infinity : +r.from;
       var hasta = r.to == null ? Infinity : +r.to;
+      if (desde < minimo) minimo = desde;
       // Tramo abierto por arriba: [desde, hasta)
       if (v >= desde && v < hasta) return r.color || null;
     }
-    // Por encima del ultimo tramo cerrado, el ultimo color definido
-    return rangos.length ? rangos[rangos.length - 1].color || null : null;
+
+    // Por DEBAJO del primer tramo no hay color: los tramos empiezan en 1 y el
+    // 0 kph queda fuera a proposito, para no pintar de verde a un parado.
+    if (v < minimo) return null;
+
+    // Por encima del ultimo tramo cerrado, el ultimo color definido.
+    return rangos[rangos.length - 1].color || null;
   }
 
   function markerColor(d) {
     var cfg = d.marker_colors;
     if (!cfg) return null;
+
+    // Solo con el vehiculo EN MOVIMIENTO. El primer tramo (0-40) es verde,
+    // asi que uno parado salia del mismo verde que uno circulando despacio;
+    // y si ademas no transmite, ese 0 kph ni siquiera es una medida, es el
+    // ultimo dato conocido. Parado o en ralenti manda el color del estado.
+    if (classify(d) !== "moving") return null;
 
     // d.speed sale del accessor de Device, que es Formatter::speed()->format()
     // sobre getSpeed(): ya viene en la unidad del usuario y ya aplica el
@@ -311,8 +355,11 @@
       anchorBottom = false;
     if (type === "arrow") {
       src = "/images/device_icons/estados/" + (d.icon_color || "gray") + ".png";
-      w = 25;
-      h = 33;
+      // Los PNG de estados/ son cuadrados de 50x50. Pintarlos a 25x33 -las
+      // medidas que la tabla guarda para la flecha- los dejaba a la mitad y
+      // estirados a lo alto.
+      w = 50;
+      h = 50;
       rotate = true;
     } else if (type === "rotating") {
       src = assetPath(icon.path);
@@ -341,12 +388,35 @@
     var estiloNombre = col
       ? ' style="background:' + col + ';border-color:' + col + ';color:#fff;"'
       : "";
+    // El disco se dimensiona con el icono: van de 25x33 (flecha) a 48x48, y
+    // con una medida fija quedaba desproporcionado en los extremos. La
+    // proporcion es la del seleccionado (38 px para un icono de ~32).
+    var haloPx = Math.round(Math.max(w, h) * 1.15) + 6;
+    var haloMid = -Math.round(haloPx / 2);
     var halo = col
-      ? '<span class="tp-lmarker__halo" style="background:' + col + ';"></span>'
+      ? '<span class="tp-lmarker__halo" style="background:' + col +
+        ";width:" + haloPx + "px;height:" + haloPx + "px;margin:" + haloMid + "px 0 0 " +
+        haloMid + 'px;"></span>'
       : "";
+    // El color por velocidad es del VEHICULO; el de estado es un ajuste de la
+    // CUENTA para todos. Manda el del vehiculo: si lo tiene, no se pone la
+    // clase de estado. Antes se ponian las dos y ganaba el color en linea
+    // solo por la cascada del CSS.
+    var claseNombre = "tp-lmarker__name" + (col ? "" : " tp-lmarker__name--" + grp);
+    // Con "colorear etiqueta segun el estado" activo, el tono sale del color
+    // del vehiculo (.tp-status-color lo recoge en el CSS).
+    // La etiqueta usa el relleno -el color tal cual del legacy- y el color de
+    // texto que le toca por contraste: blanco sobre azul, oscuro sobre
+    // amarillo. No se puede fijar uno solo: texto blanco sobre amarillo da
+    // 1.07:1 y texto oscuro sobre azul, 1.71:1.
+    var cEtq = col ? "" : statusVar(d.icon_color);
+    var cEtqOn = col ? "" : statusVar(d.icon_color, "on");
+    if (cEtq) {
+      estiloNombre = ' style="--tp-status:' + cEtq + ";--tp-status-on:" + cEtqOn + ';"';
+    }
 
     var html =
-      '<span class="tp-lmarker__name tp-lmarker__name--' + grp + '"' + estiloNombre + ">" +
+      '<span class="' + claseNombre + '"' + estiloNombre + ">" +
       esc(d.name || "") +
       vehicleStateBadge(d.vehicle_state, "vertical-align:middle;margin-left:4px;") +
       '<span class="tp-lmarker__speed">' + esc(spd) + "</span>" +
@@ -359,6 +429,8 @@
       '" height="' +
       h +
       '" style="display:block;' +
+      // El drop-shadow del resplandor lee este --tp-halo (ver live-ops.css).
+      (col ? "--tp-halo:" + col + ";" : "") +
       rot +
       '" draggable="false">';
     return L.divIcon({
@@ -381,8 +453,10 @@
       var cont = markerContainer();
       var m = state.markers[d.id];
       if (m) {
-        m.setLatLng(ll);
+        // Primero el icono -rumbo y color- y luego la posicion, como el
+        // legacy: setIcon rehace el elemento y cortaria el deslizamiento.
         m.setIcon(deviceIcon(d));
+        moverMarcador(m, ll);
       } else {
         m = L.marker(ll, { icon: deviceIcon(d) });
         m.on("click", function () {
@@ -403,6 +477,43 @@
   }
 
   // Contenedor activo de marcadores: cluster o layerGroup normal.
+  /**
+   * Mueve el marcador a su nueva posicion, deslizandolo si el plugin
+   * "Animacion de movimiento del dispositivo" esta activo.
+   *
+   * Las dos condiciones son las del legacy (model/device.js): el plugin
+   * encendido y el marcador colgando del mapa. Con los objetos agrupados el
+   * marcador vive dentro del cluster, y deslizarlo ahi pelea con el
+   * reagrupado, asi que en ese caso salta, igual que en el legacy.
+   */
+  function moverMarcador(m, ll) {
+    var anima =
+      MAP_CFG.animateMove &&
+      typeof m.slideTo === "function" &&
+      state.map &&
+      state.map.hasLayer(m);
+
+    if (!anima) {
+      m.setLatLng(ll);
+      return;
+    }
+
+    var destino = L.latLng(ll[0], ll[1]);
+
+    if (m.getLatLng().equals(destino)) return;
+
+    // El mismo respiro de 150 ms del legacy: deja que el icono recien puesto
+    // se asiente antes de empezar a mover.
+    setTimeout(function () {
+      if (!state.map || !state.map.hasLayer(m)) return;
+      try {
+        m.slideTo(destino, { duration: CFG.pollInterval });
+      } catch (e) {
+        m.setLatLng(destino);
+      }
+    }, 150);
+  }
+
   function markerContainer() {
     return state.toggles.cluster && state.clusterGroup ? state.clusterGroup : state.deviceLayer;
   }
@@ -673,9 +784,9 @@
     ack: tpT('front.stopped'),
     stop: tpT('front.stopped'),
     idle: tpT('front.idle'),
-    blocked: "Bloqueado",
-    offline: "Desconectado",
-    expired: "Expirado",
+    blocked: tpT('front.blocked'),
+    offline: tpT('front.offline'),
+    expired: tpT('front.expired'),
   };
   var addrCache = {};
   function fetchAddr(d, cb) {
@@ -716,7 +827,10 @@
     var html =
       '<div class="tp-dev-popup" data-status="' +
       status +
-      '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"></span>' +
+      '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"' +
+      // Igual que la fila y la ficha: manda el color del vehiculo.
+      (statusVar(d.icon_color) ? ' style="background:' + statusVar(d.icon_color) + '"' : "") +
+      "></span>" +
       '<span class="tp-dev-popup__name">' +
       esc(d.name || "#" + d.id) +
       "</span></div>" +
@@ -1127,8 +1241,13 @@
     setText("tp-drawer-plate", d.plate_number || d.imei || "—");
     var dot = document.getElementById("tp-drawer-dot");
     if (dot) {
-      var st = classify(d);
-      dot.className = "tp-dot tp-dot--" + (st === "moving" ? "moving" : st === "idle" ? "idle" : "offline");
+      // Los cuatro cubos tienen su clase en el CSS, no hace falta mapear.
+      dot.className = "tp-dot tp-dot--" + classify(d);
+      // ...pero si el vehiculo tiene color propio para ese estado, manda el
+      // suyo, igual que en la ficha del legacy.
+      var cDrawer = statusVar(d.icon_color);
+      dot.style.background = cDrawer || "";
+      dot.title = STATUS_LABELS[d.online] || d.online || "";
     }
     renderDashboard(d);
     // El resto de la ficha (última señal, coordenadas, altitud, motor, imei,
@@ -1223,6 +1342,50 @@
       .catch(function () { tpModal.setBusy(dlg, false); tpModal.toast(tpT('ui.network_error'), "error"); });
   }
 
+  /**
+   * Rellena los huecos [data-tp-addr] con la direccion del vehiculo.
+   *
+   * Va en su propia peticion: el geocodificador es un servicio externo y
+   * costaba ~260 ms de los ~263 ms que tardaba el endpoint de widgets,
+   * retrasando tambien a los Sensores, que no usan la direccion.
+   */
+  var addrFicha = {};
+  function pintarDireccion(id) {
+    var huecos = document.querySelectorAll("[data-tp-addr]");
+    if (!huecos.length) return;
+
+    function poner(a) {
+      Array.prototype.forEach.call(huecos, function (el) {
+        var k = el.getAttribute("data-tp-addr");
+        el.textContent = (a && a[k]) || "—";
+      });
+    }
+
+    // La clave lleva la POSICION, no solo el vehiculo: el legacy hace lo
+    // mismo ('_a_' + lat + lng en app.addressStack). Si se guardara por id, un
+    // vehiculo que se ha movido seguiria enseñando la direccion de antes.
+    var d = state.index[id] || {};
+    var clave = id + "@" + d.lat + "," + d.lng;
+
+    if (addrFicha[clave] !== undefined) return poner(addrFicha[clave]);
+
+    var base = CFG.devicesUrl || "/ui/v2/api/devices";
+    fetch(base + "/" + id + "/address", {
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      credentials: "same-origin",
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        // Si entretanto se cambio de vehiculo, no se pisa lo que haya.
+        if (state.selectedId != id) return;
+        addrFicha[clave] = (res && res.address) || null;
+        poner(addrFicha[clave]);
+      })
+      .catch(function () {
+        if (state.selectedId == id) poner(null);
+      });
+  }
+
   // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
   function loadDrawerWidgets(id) {
     var box = document.getElementById("tp-drawer-widgets");
@@ -1264,6 +1427,7 @@
         }
         if (box) box.innerHTML = sideHtml || "";
         if (bottom) bottom.innerHTML = bottomHtml || "";
+        pintarDireccion(id);
         if (bottomHtml.trim()) {
           root.setAttribute("data-bottombar-open", "true");
           root.removeAttribute("data-bottombar-collapsed");
@@ -1373,12 +1537,13 @@
   function recompute() {
     var q = state.searchQuery.trim().toLowerCase();
     var sf = state.statusFilter;
-    var counts = { all: state.devices.length, moving: 0, idle: 0, offline: 0 };
+    var counts = { all: state.devices.length, moving: 0, idle: 0, stopped: 0, offline: 0 };
     // Base: búsqueda + filtro de estado segmentado (siempre aplican a lista y mapa).
     var base = state.devices.filter(function (d) {
       var c = classify(d);
       if (c === "moving") counts.moving++;
       else if (c === "idle") counts.idle++;
+      else if (c === "stopped") counts.stopped++;
       else counts.offline++;
       if (sf !== "all" && c !== sf) return false;
       if (q) {
@@ -1393,7 +1558,7 @@
     state.filtered = af.ids && af.sidebar ? base.filter(advPass) : base.slice();
     state.mapFiltered = af.ids && af.map ? base.filter(advPass) : base.slice();
     var sorter = function (a, b) {
-      var r = { moving: 0, idle: 1, offline: 2 };
+      var r = { moving: 0, idle: 1, stopped: 2, offline: 3 };
       var ra = r[classify(a)],
         rb = r[classify(b)];
       if (ra !== rb) return ra - rb;
@@ -1401,7 +1566,7 @@
     };
     state.filtered.sort(sorter);
     state.mapFiltered.sort(sorter);
-    ["all", "moving", "idle", "offline"].forEach(function (k) {
+    ["all", "moving", "idle", "stopped", "offline"].forEach(function (k) {
       var n = root.querySelector('[data-count="' + k + '"]');
       if (n) n.textContent = counts[k];
     });
@@ -1409,10 +1574,17 @@
     if (sM) sM.textContent = counts.moving;
     var sI = document.getElementById("tp-live-stat-idle");
     if (sI) sI.textContent = counts.idle;
+    var sS = document.getElementById("tp-live-stat-stopped");
+    if (sS) sS.textContent = counts.stopped;
     var sO = document.getElementById("tp-live-stat-offline");
     if (sO) sO.textContent = counts.offline;
     if (window.tpUpdateLiveStatus)
-      window.tpUpdateLiveStatus({ moving: counts.moving, idle: counts.idle, offline: counts.offline });
+      window.tpUpdateLiveStatus({
+        moving: counts.moving,
+        idle: counts.idle,
+        stopped: counts.stopped,
+        offline: counts.offline,
+      });
   }
 
   // -----------------------------------------------------------
@@ -1938,8 +2110,18 @@
     var ts = Math.max(parseInt(d.timestamp, 10) || 0, parseInt(d.acktimestamp, 10) || 0);
     var metaTxt = d.time || d.plate_number || d.imei || "";
     var metaIsStatus = !enabled || active === false || ts === 0; // estado, no fecha
-    // Acento lateral con el color de estado real del device (getStatusColor).
-    var accent = d.icon_color || "";
+    // Acento lateral con el color de estado real del device (getStatusColor),
+    // salvo que el vehiculo tenga color por velocidad: ese manda, igual que en
+    // el marcador, para que la fila y la etiqueta del mapa no digan cosas
+    // distintas del mismo vehiculo. markerColor() sale en el primer if cuando
+    // el vehiculo no usa la opcion, asi que no cuesta nada en los demas.
+    // La fila dice SIEMPRE el estado; el color por velocidad se queda en el
+    // marcador del mapa, que es lo que nombra el ajuste. Mezclarlos daba dos
+    // verdes distintos en la lista para lo que se lee como el mismo estado:
+    // el de la banda 0-40 (#22c55e) y el de "movimiento" (#008000).
+    var colEstado = statusVar(d.icon_color);
+    var colEstadoInk = statusVar(d.icon_color, true);
+    var accent = colEstado || "";
     // Candado (solo si el device tiene sensor blocked): rojo=bloqueado, verde=libre.
     var lockIcon = "";
     if (d.blocked === true || d.blocked === false) {
@@ -1952,15 +2134,17 @@
     }
     // Motor (paridad legacy detect_engine): solo si hay detección de ignición
     // por SENSOR → engine_status es bool; con GPS es null y no se muestra.
-    // Verde = encendido, gris = apagado.
+    // A color = encendido, en grises = apagado (acc.svg / acc_off.svg).
     var engineIcon = "";
     if (d.engine_status === true || d.engine_status === false) {
       engineIcon =
         '<span class="tp-eng-ico ' +
         (d.engine_status ? "tp-eng-ico--on" : "tp-eng-ico--off") +
         '" title="' +
+        // El dibujo lo pone el CSS con background-image, igual que el legacy
+        // de esta marca (.on/.off i.icon.detect_engine -> acc.svg / acc_off.svg).
         (d.engine_status ? tpT('ui.engine_on') : tpT('ui.engine_off')) +
-        '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></span>';
+        '"></span>';
     }
     // Badge de estado de vehículo (tipo con estados: VACÍO/CARGADO…) con su color.
     var stateBadge = vehicleStateBadge(d.vehicle_state);
@@ -1969,6 +2153,7 @@
       // -> addClass('active')). La clase se pone aqui tambien, no solo al
       // pulsar, para que sobreviva a un repintado de la lista.
       '<div class="tp-live__row' +
+      (colEstado ? " tp-live__row--status" : "") +
       (state.selectedId === d.id ? " is-selected" : "") +
       // Oculto en el mapa (user_device_pivot.active = 0). Se sigue listando,
       // como en el legacy, pero marcado: si no, la unica pista es la casilla
@@ -1980,7 +2165,10 @@
       '" data-status="' +
       status +
       '"' +
-      (accent ? ' style="--tp-accent:' + accent + '"' : "") +
+      (accent
+        ? ' style="--tp-accent:' + accent +
+          ";--tp-status:" + colEstado + ";--tp-status-ink:" + colEstadoInk + '"'
+        : "") +
       ' role="option">' +
       '<label class="tp-live__row-active" title="' +
       (active ? tpT('ui.hide_from_map') : tpT('ui.show_on_map')) +
@@ -1989,7 +2177,10 @@
       '"' +
       (active ? " checked" : "") +
       "></label>" +
-      '<span class="tp-live__row-dot"></span>' +
+      // El legacy pone el nombre del estado en el title del indicador.
+      '<span class="tp-live__row-dot" title="' +
+      esc(STATUS_LABELS[d.online] || d.online || "") +
+      '"></span>' +
       '<div class="tp-live__row-main"><div class="tp-live__row-name"><span class="tp-live__row-nametext">' +
       esc(d.name || "#" + d.id) +
       "</span>" +
@@ -2006,11 +2197,16 @@
       (speedNum === 0 ? " tp-live__row-speed--zero" : "") +
       '">' +
       esc(speedTxt) +
-      '</span><span class="tp-live__row-time">' +
+      '</span><span class="tp-live__row-time" title="' + tpT('ui.last_signal') + '">' +
       // De baja: el legacy escribe "Desactivado" en la 2ª linea y NO muestra
       // la ultima transmision. Aqui igual, o se leerian dos cosas que se
       // contradicen (desactivado + "hace 3 dias").
-      (enabled ? fmtTimeAgo(d.acktimestamp || d.timestamp) : "") +
+      //
+      // ts y no d.acktimestamp || d.timestamp: acktimestamp manda aunque sea
+      // mas viejo y suele ir dias por detras, asi que la fila mostraba la
+      // fecha de hoy y al lado "2d". El legacy usa max() de los dos
+      // (Device::getTime, getLastConnectTimestamp).
+      (enabled ? fmtTimeAgo(ts) : "") +
       "</span></div>" +
       '<button type="button" class="tp-live__row-menu" data-id="' +
       d.id +
@@ -2358,7 +2554,11 @@
   }
 
   // ── Grupos de dispositivos: CRUD (patrón grupos de rutas) ──
-  var CAN_GROUPS = !!document.getElementById("tp-live-create-device"); // perm devices edit
+  // Gestionar grupos NO es lo mismo que crear vehiculos: antes se miraba si
+  // existia el boton de "nuevo vehiculo" -perm('devices','edit')- y dejaba sin
+  // kebab a quien si puede tocar grupos. El servidor resuelve el flag con la
+  // misma autorizacion que piden los endpoints (ver DevicesController).
+  var CAN_GROUPS = root.getAttribute("data-can-groups") === "1";
   var GROUPS_BASE = (CFG.devicesUrl || "/ui/v2/api/devices").replace(/\/devices(\?.*)?$/, "/device-groups");
 
   // Campo "Reenvíos" del modal de grupos: lista de checkboxes de los Forward
@@ -3369,6 +3569,11 @@
   window.tpLive = {
     map: function () {
       return state.map;
+    },
+    // El config del mapa, para los modulos que cuelgan de este (geocercas,
+    // POIs, rutas): lo leen de aqui en vez de volver a parsear el JSON.
+    cfg: function () {
+      return MAP_CFG;
     },
     refresh: function () {
       fetchDevices(true);

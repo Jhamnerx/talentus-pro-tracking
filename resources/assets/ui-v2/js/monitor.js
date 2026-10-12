@@ -14,6 +14,9 @@
   if (!root) return;
 
   var CFG = {
+    zonesUrl: root.getAttribute("data-zones-url"),
+    poisUrl: root.getAttribute("data-pois-url"),
+    routesUrl: root.getAttribute("data-routes-url"),
     devicesUrl: root.getAttribute("data-devices-url"),
     updatesUrl: root.getAttribute("data-updates-url"),
   };
@@ -45,6 +48,7 @@
 
   var LS_KEY = "tp_monitor_slots";
   var LS_TAM = "tp_monitor_size";
+  var LS_CAPAS = "tp_monitor_layers";
 
   function layoutDe(n) {
     for (var i = 0; i < LAYOUTS.length; i++) if (LAYOUTS[i].n === n) return LAYOUTS[i];
@@ -59,7 +63,19 @@
     cells: [],
     size: TAM_POR_DEFECTO,
     checkTime: "",
+    // Capas del mapa, apagadas por defecto: en celdas pequeñas estorban mas
+    // que ayudan, y quien las quiera las deja encendidas (se recuerdan).
+    capas: { zones: false, pois: false, routes: false, tails: false },
   };
+  try {
+    var capasGuardadas = JSON.parse(localStorage.getItem(LS_CAPAS) || "null");
+    if (capasGuardadas && typeof capasGuardadas === "object") {
+      state.capas.zones = !!capasGuardadas.zones;
+      state.capas.pois = !!capasGuardadas.pois;
+      state.capas.routes = !!capasGuardadas.routes;
+      state.capas.tails = !!capasGuardadas.tails;
+    }
+  } catch (e) {}
   try {
     state.slots = JSON.parse(localStorage.getItem(LS_KEY) || "[]") || [];
   } catch (e) {
@@ -97,36 +113,117 @@
     ack: tpT('front.stopped'),
     stop: tpT('front.stopped'),
     idle: tpT('front.idle'),
-    blocked: "Bloqueado",
-    offline: "Desconectado",
-    expired: "Expirado",
+    blocked: tpT('front.blocked'),
+    offline: tpT('front.offline'),
+    expired: tpT('front.expired'),
   };
-  function statusTone(d) {
-    var s = d.online;
-    if (s === "online" || s === "excessive_speed") return "#10b981";
-    if (s === "engine" || s === "idle") return "#f59e0b";
-    if (s === "ack" || s === "stop") return "#3b82f6";
-    if (s === "blocked") return "#ef4444";
-    return "#94a3b8";
+  // Mismo criterio que live.js: getStatusColor() devuelve el color por NOMBRE
+  // y aqui se traduce al token del tema. "ink" es el tono para texto.
+  // Se repite en cada fichero porque shell.js va con defer y se ejecuta
+  // despues que estos.
+  var SC_NOMBRES = {
+    green: 1, yellow: 1, orange: 1, red: 1,
+    blue: 1, cyan: 1, gray: 1, black: 1, white: 1,
+  };
+  function statusVar(c, variante) {
+    if (!c) return "";
+    c = String(c).toLowerCase();
+    if (SC_NOMBRES[c]) return "var(--sc-" + c + (variante ? "-" + variante : "") + ")";
+    return c.charAt(0) === "#" ? c : "";
+  }
+
+  // El color del vehiculo (icon_colors del legacy). Antes eran cinco
+  // hexadecimales fijos que ademas no cuadraban con el legacy: ack salia azul
+  // y blocked rojo, cuando alli son gris y negro.
+  function statusTone(d, variante) {
+    return statusVar(d && d.icon_color, variante) || "var(--status-offline)";
   }
 
   /* ----- marcador con el icono REAL del device (compacto de live.js) ----- */
+  /* ── Color del marcador por velocidad (igual que en Live) ───────────
+     El rango manda salvo dentro de una geocerca con limite, donde pintan
+     los colores de "proximo" y "excedido". Sin transmitir no se aplica:
+     ese 0 kph es el ultimo dato conocido, no una medida. */
+  function colorPorVelocidad(d) {
+    var cfg = d.marker_colors;
+    if (!cfg) return null;
+    // Solo en movimiento: a 0 kph el primer tramo (0-40) es verde y un
+    // vehiculo parado salia con el verde de uno circulando despacio.
+    if (clasifica(d) !== "moving") return null;
+
+    var v = parseFloat(d.speed);
+    if (isNaN(v)) return null;
+
+    var def = (MAP_CFG && MAP_CFG.markerColors) || {};
+    var defGeo = def.geofence || {};
+
+    var gf = window.tpMapLayers && tpMapLayers.limitFor
+      ? tpMapLayers.limitFor(d.lat, d.lng, d.vehicle_type_id, d.vehicle_state_id)
+      : null;
+
+    if (gf && gf.limit) {
+      var margen = cfg.margin != null ? +cfg.margin : (+defGeo.margin || 0);
+      if (v >= gf.limit) return cfg.over || defGeo.over || null;
+      if (margen > 0 && v >= gf.limit - margen) return cfg.near || defGeo.near || null;
+    }
+
+    var rangos = cfg.ranges || def.ranges || [];
+    if (!rangos.length) return null;
+
+    var minimo = Infinity;
+    for (var i = 0; i < rangos.length; i++) {
+      var r = rangos[i];
+      var desde = r.from == null ? -Infinity : +r.from;
+      var hasta = r.to == null ? Infinity : +r.to;
+      if (desde < minimo) minimo = desde;
+      if (v >= desde && v < hasta) return r.color || null;
+    }
+    // Por debajo del primer tramo, sin color (ver live.js)
+    if (v < minimo) return null;
+    return rangos[rangos.length - 1].color || null;
+  }
+
+  // Los mismos cubos que Live, para saber si el equipo transmite.
+  function clasifica(d) {
+    switch (d && d.online) {
+      case "online": case "excessive_speed": case "move": return "moving";
+      case "engine": case "idle": return "idle";
+      case "ack": case "stop": case "park": case "blocked": return "stopped";
+      default: return "offline";
+    }
+  }
+
   function deviceIcon(d) {
     var icon = d.icon || {};
     var type = icon.type || "arrow";
     var src, w, h, rotate = false, anchorBottom = false;
     if (type === "arrow") {
       src = "/images/device_icons/estados/" + (d.icon_color || "gray") + ".png";
-      w = 25; h = 33; rotate = true;
+      // 50x50: es el tamaño real de esos PNG (ver live.js)
+      w = 50; h = 50; rotate = true;
     } else if (type === "rotating") {
       src = assetPath(icon.path); w = icon.width || 32; h = icon.height || 32; rotate = true;
     } else {
       src = assetPath(icon.path); w = icon.width || 32; h = icon.height || 32; anchorBottom = true;
     }
     var rot = rotate ? "transform:rotate(" + (parseFloat(d.course) || 0) + "deg);" : "";
+
+    // Resplandor: disco tenue detras y brillo pegado a la silueta, el mismo
+    // tratamiento que en Live. El color sale de la velocidad; si el vehiculo
+    // no la usa, del estado (icon_color -> getStatusColor del legacy).
+    var col = colorPorVelocidad(d) || statusVar(d.icon_color);
+    var haloPx = Math.round(Math.max(w, h) * 1.15) + 6;
+    var haloMid = -Math.round(haloPx / 2);
+    var halo = col
+      ? '<span class="tp-mon-halo" style="background:' + col +
+        ";width:" + haloPx + "px;height:" + haloPx + "px;margin:" + haloMid + "px 0 0 " +
+        haloMid + 'px;"></span>'
+      : "";
+
     return L.divIcon({
-      html: '<img src="' + src + '" width="' + w + '" height="' + h + '" style="display:block;' + rot + '" draggable="false">',
-      className: "tp-mon-marker",
+      html: halo + '<img src="' + src + '" width="' + w + '" height="' + h +
+        '" style="display:block;' + (col ? "--tp-halo:" + col + ";" : "") + rot + '" draggable="false">',
+      className: "tp-mon-marker" + (col ? " tp-mon-marker--colored" : ""),
       iconSize: [w, h],
       iconAnchor: anchorBottom ? [w / 2, h] : [w / 2, h / 2],
     });
@@ -241,7 +338,7 @@
     var pill = cell.el.querySelector("[data-c-pill]");
     if (pill) {
       pill.textContent = STATUS_LABELS[d.online] || d.online || "—";
-      pill.style.color = statusTone(d);
+      pill.style.color = statusTone(d, "ink");
     }
     var sp = cell.el.querySelector("[data-c-speed]");
     if (sp) sp.textContent = d.speed_text || "—";
@@ -253,11 +350,125 @@
     if (!cell.marker) {
       cell.marker = L.marker(ll, { icon: deviceIcon(d) }).addTo(cell.map);
       cell.map.setView(ll, 15);
+      pintaCapas(cell);
+      pintaCola(cell, d);
     } else {
-      cell.marker.setLatLng(ll);
+      // Primero el icono -rumbo y color- y luego la posicion: setIcon rehace
+      // el elemento y cortaria el deslizamiento (igual que en Live).
       cell.marker.setIcon(deviceIcon(d));
+      mueve(cell, ll);
+      pintaCola(cell, d);
       cell.map.panTo(ll);
     }
+  }
+
+  /**
+   * Lleva el marcador a su nueva posicion, deslizandolo si el plugin
+   * "Animacion de movimiento del dispositivo" esta activo. La duracion es el
+   * intervalo de refresco, como el checkFrequency del legacy.
+   */
+  function mueve(cell, ll) {
+    var m = cell.marker;
+    var anima =
+      MAP_CFG.animateMove &&
+      typeof m.slideTo === "function" &&
+      cell.map && cell.map.hasLayer(m);
+
+    if (!anima) { m.setLatLng(ll); return; }
+
+    var destino = L.latLng(ll[0], ll[1]);
+    if (m.getLatLng().equals(destino)) return;
+
+    setTimeout(function () {
+      if (!cell.map || !cell.map.hasLayer(m)) return;
+      try { m.slideTo(destino, { duration: 15000 }); } catch (e) { m.setLatLng(destino); }
+    }, 150);
+  }
+
+  /**
+   * Cola de recorrido del vehiculo de la celda.
+   *
+   * Es la misma polilinea que pinta Live (renderTails): las ultimas
+   * posiciones que manda el feed, con el color de cola del vehiculo. A
+   * diferencia de geocercas o rutas, esto NO es compartido: cada celda pinta
+   * la de SU vehiculo.
+   */
+  function pintaCola(cell, d) {
+    if (!cell || !cell.map) return;
+
+    if (cell.cola) {
+      try { cell.map.removeLayer(cell.cola); } catch (e) {}
+      cell.cola = null;
+    }
+    if (!state.capas.tails || !d) return;
+
+    var cola = d.tail;
+    if (typeof cola === "string") {
+      try { cola = JSON.parse(cola); } catch (e) { cola = null; }
+    }
+    if (!cola || cola.length < 2) return;
+
+    var pts = cola
+      .map(function (p) { return [parseFloat(p.lat), parseFloat(p.lng)]; })
+      .filter(function (x) { return !isNaN(x[0]) && !isNaN(x[1]); });
+    if (pts.length < 2) return;
+
+    cell.cola = L.polyline(pts, {
+      color: d.tail_color || "#1e88e5",
+      weight: 2,
+      opacity: 0.8,
+      interactive: false,
+    }).addTo(cell.map);
+  }
+
+  /* ── Capas (geocercas, POIs, rutas) ─────────────────────────────────
+     Los datos se piden una vez para toda la pantalla; las capas de Leaflet
+     se construyen por celda, porque una capa solo cuelga de un mapa. */
+  function pintaCapas(cell) {
+    if (!cell || !cell.map || !window.tpMapLayers) return;
+
+    if (cell.capas) { cell.capas.quitar(); cell.capas = null; }
+
+    if (!state.capas.zones && !state.capas.pois && !state.capas.routes) return;
+
+    tpMapLayers
+      .cargar({ zones: CFG.zonesUrl, pois: CFG.poisUrl, routes: CFG.routesUrl })
+      .then(function () {
+        if (!cell.map) return;
+        cell.capas = tpMapLayers.dibujar(cell.map, state.capas);
+      });
+  }
+
+  function pintaCapasTodas() {
+    state.cells.forEach(function (c) { if (c && c.map) pintaCapas(c); });
+  }
+
+  /* ── Interruptores de capa de la cabecera ───────────────────────────── */
+  function montaInterruptores() {
+    var btns = document.querySelectorAll("[data-mon-layer]");
+    Array.prototype.forEach.call(btns, function (b) {
+      var k = b.getAttribute("data-mon-layer");
+      function pinta() {
+        var on = !!state.capas[k];
+        b.classList.toggle("is-on", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      pinta();
+      b.addEventListener("click", function () {
+        state.capas[k] = !state.capas[k];
+        pinta();
+        guardaCapas();
+        // El color por velocidad dentro de una geocerca necesita las zonas
+        // cargadas, asi que se repintan tambien los marcadores. updateAll()
+        // vuelve a pintar las colas de paso.
+        if (k !== "tails") pintaCapasTodas();
+        updateAll();
+      });
+    });
+  }
+
+  function guardaCapas() {
+    try { localStorage.setItem(LS_CAPAS, JSON.stringify(state.capas)); } catch (e) {}
   }
 
   function renderAll() {
@@ -478,6 +689,7 @@
   }
 
   pintaSelectorTam();
+  montaInterruptores();
   aplicaColumnas();
   construyeCeldas();
 

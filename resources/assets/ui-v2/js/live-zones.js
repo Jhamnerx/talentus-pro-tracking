@@ -129,6 +129,91 @@
     });
   }
 
+  /* ── Etiqueta fija con el nombre (y el tamaño) ──────────────────────
+     El legacy pinta una sobre cada geocerca visible (model/geofence.js
+     addPopup). Con el plugin "Mostrar tamaño de geocerca" añade el area
+     entre parentesis. */
+
+  function cfgMapa() {
+    return (window.tpLive && window.tpLive.cfg && window.tpLive.cfg()) || {};
+  }
+
+  // El area como la calcula el legacy: geodesica para el poligono y pi*r^2
+  // para el circulo. Para el corredor, que el legacy no tiene, largo x 2r,
+  // igual que areaAprox(). Esa NO se toca: de ella depende que geocerca gana
+  // cuando se solapan.
+  function areaEtiqueta(capa, g) {
+    if (g.type === "circle") {
+      var r = Number(g.radius) || 0;
+      return Math.PI * r * r;
+    }
+    if (g.type === "line") return areaAprox(g);
+    if (capa && capa.getLatLngs && L.GeometryUtil && L.GeometryUtil.geodesicArea) {
+      var pts = capa.getLatLngs();
+      if (pts && pts[0] && pts[0].length) {
+        return Math.abs(L.GeometryUtil.geodesicArea(pts[0]));
+      }
+    }
+    return areaAprox(g);
+  }
+
+  // Mismo formato que el legacy (formatArea): m2 -> unidad del usuario, 4
+  // decimales y el superindice.
+  function textoArea(m2) {
+    if (!isFinite(m2) || m2 <= 0) return "";
+    var u = cfgMapa().distance || {};
+    var v = m2 * 0.000001 * (Number(u.ratio) || 1);
+    return v.toFixed(4) + (u.unit || "Km") + "\u00B2";
+  }
+
+  function rgba(hex, alfa) {
+    var h = String(hex || "#1e88e5").replace("#", "");
+    if (h.length !== 6) return "rgba(30,136,229," + alfa + ")";
+    return (
+      "rgba(" + parseInt(h.substring(0, 2), 16) + "," +
+      parseInt(h.substring(2, 4), 16) + "," +
+      parseInt(h.substring(4, 6), 16) + "," + alfa + ")"
+    );
+  }
+
+  // El centro, no el primer vertice: el legacy usa getLatLngs()[0][0], que en
+  // una geocerca grande cae en una esquina. La v2 ya centra aqui su popup.
+  function centroDe(capa, g) {
+    if (capa && capa.getBounds) {
+      try {
+        var b = capa.getBounds();
+        if (b && b.isValid()) return b.getCenter();
+      } catch (e) {}
+    }
+    if (g.type === "circle") {
+      var c = parseLatLng(g.center);
+      if (c) return L.latLng(c.lat, c.lng);
+    }
+    return null;
+  }
+
+  function etiquetaDe(capa, g) {
+    var centro = centroDe(capa, g);
+    if (!centro) return null;
+
+    var texto = g.name || "";
+    if (cfgMapa().geofenceSize) {
+      var a = textoArea(areaEtiqueta(capa, g));
+      if (a) texto += " (" + a + ")";
+    }
+    if (!texto) return null;
+
+    return L.marker(centro, {
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({
+        className: "tp-zone-label",
+        html: '<span style="background:' + rgba(g.polygon_color, 0.81) + '">' + esc(texto) + "</span>",
+        iconSize: null,
+      }),
+    });
+  }
+
   function renderLayers() {
     var m = map();
     if (!m) return;
@@ -145,6 +230,9 @@
       });
       S.layer.addLayer(layer);
       S.layersById[g.id] = layer;
+
+      var etq = etiquetaDe(layer, g);
+      if (etq) S.layer.addLayer(etq);
     });
 
     updateCorridorWeights();
@@ -161,6 +249,7 @@
     return S.items.filter(function (g) {
       if (S.type !== "all" && g.type !== S.type) return false;
       if (S.groupId && String(g.group_id || 0) !== String(S.groupId)) return false;
+      if (S.category && (g.category || "") !== S.category) return false;
       if (q && (g.name || "").toLowerCase().indexOf(q) === -1) return false;
       return true;
     });
@@ -210,6 +299,18 @@
         );
       })
       .join("");
+  }
+
+  function fillCategorySelect() {
+    var sel = document.getElementById("tp-zones-category");
+    if (!sel) return;
+    var cur = sel.value;
+    var cats = S.categories || {};
+    sel.innerHTML = '<option value="">' + tpT('ui.all_categories') + "</option>" +
+      Object.keys(cats).map(function (k) {
+        return '<option value="' + k + '">' + esc(cats[k]) + "</option>";
+      }).join("");
+    sel.value = cur;
   }
 
   function fillGroupSelect() {
@@ -416,6 +517,13 @@
       '<div class="tp-field"><label class="tp-field__label">' + tpT('front.group') + '</label><select name="group_id" class="tp-input">' +
       groupOpts +
       "</select></div>" +
+      // Categoria (Operaciones): carga, descarga, grifo, taller, descanso.
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.category') + '</label><select name="category" class="tp-input">' +
+      '<option value="">' + tpT('ui.no_category') + '</option>' +
+      Object.keys(S.categories || {}).map(function (k) {
+        return '<option value="' + k + '"' + (g && g.category === k ? " selected" : "") + ">" + esc(S.categories[k]) + "</option>";
+      }).join("") +
+      "</select></div>" +
       // Geocerca móvil: sigue al vehículo elegido (plugin moving_geofence).
       (S.movingPlugin
         ? '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.vehicle_moving_geofence') + '</label>' +
@@ -455,6 +563,8 @@
       name: name,
       polygon_color: f.querySelector('[name="polygon_color"]').value,
       group_id: parseInt(f.querySelector('[name="group_id"]').value, 10) || 0,
+      // Siempre viaja (vacio = quitar la categoria).
+      category: f.querySelector('[name="category"]').value || null,
     };
     var devSel = f.querySelector('[name="device_id"]');
     // Solo viaja si el plugin pinta el selector: GeofenceUserService::checkDevice
@@ -578,7 +688,11 @@
         if (r && r.ok && r.data && r.data.ok) {
           tpModal.toast && tpModal.toast("Geocerca eliminada.", "success");
           load(true);
-        } else tpModal.toast && tpModal.toast(tpT('ui.delete_failed'), "error");
+        } else {
+          // El servidor explica por que no (p. ej. es punto de una operacion).
+          var msg = (r && r.data && r.data.message) || tpT('ui.delete_failed');
+          tpModal.toast && tpModal.toast(msg, "error");
+        }
       });
     };
     if (tpModal.confirm)
@@ -853,6 +967,7 @@
       .then(function (j) {
         S.items = (j && j.items) || [];
         S.groups = (j && j.groups) || [];
+        S.categories = (j && j.categories) || {};
         S.vehicleTypes = (j && j.vehicle_types) || [];
         S.speedPlugin = !!(j && j.speed_limit_plugin);
         S.movingPlugin = !!(j && j.moving_plugin);
@@ -865,6 +980,7 @@
         });
         S.loaded = true;
         fillGroupSelect();
+        fillCategorySelect();
         renderList();
         renderLayers();
         settleRedraw();
@@ -1081,6 +1197,13 @@
     if (grp)
       grp.addEventListener("change", function () {
         S.groupId = grp.value || "";
+        renderList();
+        renderLayers();
+      });
+    var cat = document.getElementById("tp-zones-category");
+    if (cat)
+      cat.addEventListener("change", function () {
+        S.category = cat.value || "";
         renderList();
         renderLayers();
       });
