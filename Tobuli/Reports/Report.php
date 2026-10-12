@@ -167,6 +167,12 @@ abstract class Report implements Arrayable
 
     public function getGeofenceNames()
     {
+        // Los reportes con el campo de geocercas deshabilitado (p. ej. 909,
+        // 910-913) llegan sin coleccion: la cabecera de parametros reventaba
+        // con "pluck() on null" y el navegador recibia una descarga rota.
+        if (empty($this->geofences))
+            return [];
+
         return $this->getGeofences()->pluck('name')->all();
     }
 
