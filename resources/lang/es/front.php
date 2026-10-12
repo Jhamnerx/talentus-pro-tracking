@@ -523,7 +523,6 @@ return [
     'operation_deduction_refueling' => 'Abastecimiento',
     'operation_deduction_idle' => 'Ralentí',
     'operation_deduction_unauthorized_stops' => 'Paradas no autorizadas',
-    'operation_deduction_bucket_idle' => 'Pala inactiva',
     'operation_deducted' => 'Descontado',
     'operation_net_hours' => 'Horas netas',
     'operation_fuel_per_hour' => 'Consumo por hora',

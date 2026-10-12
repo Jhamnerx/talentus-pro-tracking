@@ -200,7 +200,6 @@ return [
     'operation_deduction_refueling' => 'Refueling',
     'operation_deduction_idle' => 'Idling',
     'operation_deduction_unauthorized_stops' => 'Unauthorized stops',
-    'operation_deduction_bucket_idle' => 'Idle bucket',
     'operation_deducted' => 'Deducted',
     'operation_net_hours' => 'Net hours',
     'operation_fuel_per_hour' => 'Consumption per hour',

@@ -11,9 +11,9 @@
 > la parada como autorizada y «Otro» solo la explica; la alerta «Parada en operación» usa
 > `operation_stop_seconds` (segundos exactos) y se evalúa cada minuto.
 > **11-oct-2026:** fase 3 implementada (descuentos en la operación, reportes 912 «Horas trabajadas
-> netas» con consumo por hora y 913 «Abastecimiento»); el descuento «pala inactiva» queda en 0 hasta
-> la fase 4. Además, tipo de operación «ruta» (inicio/fin) con las mismas reglas. Pendientes: fase 4,
-> `round`→`floor` en la alerta de duración de parada.
+> netas» con consumo por hora y 913 «Abastecimiento»). Además, tipo de operación «ruta» (inicio/fin)
+> con las mismas reglas. La fase 4 (sensor de pala y proximidad) se retiró del plan el 11-oct-2026.
+> Pendiente: `round`→`floor` en la alerta de duración de parada.
 >
 > Cómo retomar: leer este archivo y `CLAUDE.md`, y empezar por «Orden dentro de la fase 1».
 > Trabajar en una rama nueva: al momento de escribir esto la rama activa era `nuevo-tema` y tenía
@@ -30,9 +30,8 @@ Un cliente necesita controlar volquetes y excavadoras en una operación de acarr
   y salidas, tiempos en cada punto y tiempos de ida y de vuelta.
 - Paradas dentro de la ida o la vuelta, con duración, motor encendido o apagado y sustento.
 - Ralentí entre A y B.
-- Horas trabajadas descontando abastecimiento y, en excavadoras, el tiempo con la pala quieta.
+- Horas trabajadas descontando abastecimiento.
 - Galones por hora por equipo.
-- Sensor de proximidad.
 
 Se construye un módulo de **Operaciones** en la UI v2. Se activa por grupo de vehículos, así que
 el resto de la flota no cambia.
@@ -43,7 +42,6 @@ el resto de la flota no cambia.
 | 1 · Vueltas | Categorías de geocerca, operaciones, turnos, conteo en vivo, historial, recálculo, tablero y reporte | Sí |
 | 2 · Paradas | Paradas no autorizadas con motivo, alerta con contexto de tramo | Sí |
 | 3 · Horas y combustible | Horas trabajadas netas, abastecimiento, galones por hora | Sí |
-| 4 · Sensores | Movimiento de pala en excavadora, sensor de proximidad | Sí, más instalación |
 
 Fuera del plan: pantallas del módulo en la interfaz anterior (legacy), la app móvil y la compra e
 instalación de equipos. El legacy solo recibe la compatibilidad necesaria para no romperse (campo
@@ -606,8 +604,8 @@ Patrón a seguir (el de `route-schedules`):
   categoría carga y descarga primero) · Turnos (lista con nombre, inicio y fin) · Opciones avanzadas (parada 60 s,
   permanencia 30 s, tramo máximo 6 h) · Operación activa.
 - Al guardar un cambio de puntos pregunta si recalcular las vueltas pasadas o aplicar solo hacia adelante.
-- Fase 3: bloque «Horas trabajadas» con cuatro casillas de descuento: abastecimiento, ralentí,
-  paradas no autorizadas y pala inactiva.
+- Fase 3: bloque «Horas trabajadas» con tres casillas de descuento: abastecimiento, ralentí y
+  paradas no autorizadas.
 
 ### Permisos
 
@@ -683,28 +681,9 @@ limpieza. El modal no deja elegir una fecha anterior a ese rango.
 
 ---
 
-## 10. Control de la pala en excavadoras (fase 4)
+## 10. (Retirado el 11-oct-2026: control de la pala en excavadoras y sensor de proximidad)
 
-El GPS solo no ve si la pala se mueve. Los volquetes tienen FTC927 (1 entrada digital, 1 analógica,
-1 salida, Bluetooth, sin CAN). Falta saber qué GPS llevan las excavadoras.
-
-| Opción | Instalación | Entrega | A favor | En contra |
-| --- | --- | --- | --- | --- |
-| EYE Sensor por Bluetooth | Fijado al brazo, cerca del cucharón, enlazado al FTC927 | Indicador y contador de movimiento | Sin cables ni intervención hidráulica; IP67 | La vibración del motor en ralentí puede marcar movimiento; hay que probarlo |
-| Presostato en la línea piloto | En la línea hidráulica de mando, a la entrada analógica | Encendido o apagado al accionar los mandos | Mide el accionamiento real | Intervenir el circuito hidráulico; la entrada digital suele usarse para ignición |
-
-En la plataforma: sensor «Pala en movimiento» en el vehículo. Pala inactiva = motor encendido y
-sensor sin movimiento más de un umbral (propuesto 60 s). Se descuenta de las horas netas si el
-usuario activó ese descuento.
-
-Piloto: una excavadora, dos días, contra observación en campo. El EYE permite ajustar los segundos
-sin movimiento antes de marcar «detenido» (0 a 300 s). Si hay falsos movimientos, usar el cambio de
-ángulo del brazo o pasar al presostato. Por confirmar con Teltonika si el FTC927 transmite el
-ángulo del EYE; su documentación lista temperatura, humedad, imán y movimiento.
-
-Fuentes: <https://wiki.teltonika-gps.com/view/FTC927_Bluetooth>,
-<https://wiki.teltonika-gps.com/images/e/e3/DS-FTC927.pdf>,
-<https://wiki.teltonika-gps.com/view/EYE_SENSOR_/_BTSMP1>.
+Se sacaron del plan. No hay código del módulo que dependa de ellos.
 
 ---
 
@@ -718,7 +697,6 @@ El esfuerzo es una estimación en días de un desarrollador, sin contar pruebas 
 | 1 · Vueltas | Todo lo marcado como fase 1, más el paso 0 | Fase 0 para tener datos reales | 14 a 18 días | El conteo de una semana coincide con el control manual del cliente |
 | 2 · Paradas | Motivos, justificación, alerta «Parada en operación», reporte de paradas | Fase 1 | 6 a 8 días | Un usuario justifica paradas y el reporte las muestra |
 | 3 · Horas y combustible | Abastecimiento, horas netas, consumo por hora | Fase 1; sensores configurados en el vehículo | 6 a 8 días | Los galones por hora de un equipo coinciden con su control de combustible |
-| 4 · Sensores | Sensor de pala en una excavadora piloto; sensor de proximidad | Definir y comprar hardware | 3 a 5 días de software, más instalación | Las horas de pala inactiva se descuentan en horas netas |
 
 La fase 1 sube de 12–15 a 14–18 días por lo que añadió la revisión: paso 0, compatibilidad
 legacy, acción de huecos, sincronización de vehículos y los cambios en Historial y Reportes.
@@ -797,7 +775,6 @@ Vuelta atrás: apagar `tobuli.operations_enabled`. Las tablas nuevas pueden qued
 | Sensor de ignición mal elegido o mal cableado | Ni paradas ni ralentí son fiables (el pipeline exige motor encendido para «en marcha») | Elegir el sensor exacto por equipo en la fase 0; el modal avisa si un vehículo del grupo no tiene sensor de motor |
 | Edición de geocercas desde el legacy o la API | Versiones falsas de puntos, o cambios sin versionar | Ganchos en `GeofenceService::update()`/`delete()`, comparación numérica, campo y aviso también en el legacy |
 | Producción en MariaDB 10.5.29 y desarrollo en MySQL 8 | Una migración que funciona en desarrollo puede fallar o comportarse distinto en producción (espacial, `timestamp`, JSON) | Sin columnas espaciales, horas en `dateTime`, JSON guardado como texto; probar las migraciones en una copia MariaDB antes de desplegar |
-| Vehículo sin sensor de combustible | Consumo por hora vacío | El FTC927 no lee CAN: hace falta FMC150 (en evaluación) o un sensor de nivel |
 | Grupos de vehículos por usuario | Un subusuario con otra agrupación ve otra cosa | La operación usa el grupo de su dueño y solo la ve su dueño |
 | Limpieza de posiciones antiguas (`db_clear`, mínimo 30 días) | No se recalcula más atrás de lo conservado | Las vueltas guardadas no dependen de las posiciones |
 | Cambios en `live-zones.js`, `history.js` y `reports.js` durante las pruebas de la UI v2 | Regresiones en pantallas ya probadas | Cambios pequeños y aditivos; rama aparte |
@@ -846,17 +823,11 @@ Vuelta atrás: apagar `tobuli.operations_enabled`. Las tablas nuevas pueden qued
 | Fase 3 | Se implementa completa; calcula según los sensores del vehículo |
 | Abastecimiento | Solo por visita a la geocerca de grifo |
 | Conservación de posiciones | Se configura en los ajustes; limpieza diaria |
-| Equipo en volquetes | FTC927 hoy |
-| Sensor de la pala | Piloto con EYE Sensor enlazado al FTC927 |
 
 ### Pendientes
 
 - [ ] ¿Entra en la salida del 10 de noviembre o en una posterior?
 - [ ] Pruebas automáticas (PHPUnit): ¿se escriben para el módulo, o se valida a mano con el recálculo sobre días reales (propuesto)? El repositorio no tiene `phpunit.xml` y una de las pruebas existentes falla.
 - [ ] Alerta de parada: ¿se cambia `round` por `floor` para que 1 minuto sea 1 minuto cumplido? Afecta a todos los clientes que usan esa alerta.
-- [ ] ¿Los volquetes pasan de FTC927 a FMC150? De eso depende el odómetro por CAN y el consumo real.
-- [ ] Sensor de proximidad: lo más probable es entre vehículos; falta confirmarlo y elegir el equipo.
-- [ ] Marca, modelo y GPS de las excavadoras.
-- [ ] Confirmar con Teltonika si el FTC927 transmite el ángulo del EYE Sensor.
 - [ ] Confirmar si cada motivo del catálogo autoriza o solo explica la parada.
 - [ ] Cómo cuenta hoy el cliente las vueltas, para validar el piloto.

@@ -32,13 +32,11 @@ class Operation extends AbstractEntity implements DisplayInterface
     const DEDUCTION_REFUELING = 'refueling';
     const DEDUCTION_IDLE = 'idle';
     const DEDUCTION_UNAUTHORIZED_STOPS = 'unauthorized_stops';
-    const DEDUCTION_BUCKET_IDLE = 'bucket_idle';
 
     const DEDUCTIONS = [
         self::DEDUCTION_REFUELING,
         self::DEDUCTION_IDLE,
         self::DEDUCTION_UNAUTHORIZED_STOPS,
-        self::DEDUCTION_BUCKET_IDLE,
     ];
 
     public static string $displayField = 'name';
@@ -201,7 +199,6 @@ class Operation extends AbstractEntity implements DisplayInterface
             self::DEDUCTION_REFUELING          => trans('front.operation_deduction_refueling'),
             self::DEDUCTION_IDLE               => trans('front.operation_deduction_idle'),
             self::DEDUCTION_UNAUTHORIZED_STOPS => trans('front.operation_deduction_unauthorized_stops'),
-            self::DEDUCTION_BUCKET_IDLE        => trans('front.operation_deduction_bucket_idle'),
         ];
     }
 

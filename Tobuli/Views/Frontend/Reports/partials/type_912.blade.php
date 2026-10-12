@@ -52,7 +52,6 @@
                                 <th class="ops-num {{ in_array('refueling', $active) ? '' : 'ops-off' }}">{{ $labels['refueling'] }}</th>
                                 <th class="ops-num {{ in_array('idle', $active) ? '' : 'ops-off' }}">{{ $labels['idle'] }}</th>
                                 <th class="ops-num {{ in_array('unauthorized_stops', $active) ? '' : 'ops-off' }}">{{ $labels['unauthorized_stops'] }}</th>
-                                <th class="ops-num {{ in_array('bucket_idle', $active) ? '' : 'ops-off' }}">{{ $labels['bucket_idle'] }}</th>
                                 <th class="ops-num">{{ trans('front.operation_deducted') }}</th>
                                 <th class="ops-num">{{ trans('front.operation_net_hours') }}</th>
                                 <th class="ops-num">{{ trans('front.fuel_consumption') }}</th>
@@ -67,7 +66,6 @@
                                     <td class="ops-num {{ in_array('refueling', $active) ? '' : 'ops-off' }}">{{ $r['refueling'] }}</td>
                                     <td class="ops-num {{ in_array('idle', $active) ? '' : 'ops-off' }}">{{ $r['idle'] }}</td>
                                     <td class="ops-num {{ in_array('unauthorized_stops', $active) ? '' : 'ops-off' }}">{{ $r['unauthorized'] }}</td>
-                                    <td class="ops-num ops-off">{{ $r['bucket_idle'] }}</td>
                                     <td class="ops-num">{{ $r['deducted'] }}</td>
                                     <td class="ops-num ops-net">{{ $r['net'] }}</td>
                                     <td class="ops-num">{{ $r['fuel'] ?: '—' }}</td>

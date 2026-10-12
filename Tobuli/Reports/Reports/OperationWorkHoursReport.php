@@ -19,9 +19,9 @@ use Tobuli\Reports\DeviceReport;
  * Horas trabajadas netas (modulo de Operaciones, fase 3).
  *
  * Por vehiculo y dia: horas de motor menos los descuentos que el usuario
- * activo en la operacion (abastecimiento, ralenti, paradas no autorizadas,
- * pala inactiva), y el consumo por hora (galones por hora de motor) en los
- * equipos con sensor de combustible.
+ * activo en la operacion (abastecimiento, ralenti, paradas no autorizadas),
+ * y el consumo por hora (galones por hora de motor) en los equipos con
+ * sensor de combustible.
  *
  * Reglas del plan (§8):
  * - Con sensor de horas de motor se usa ese dato; sin el, tiempo con
@@ -145,14 +145,10 @@ class OperationWorkHoursReport extends DeviceReport
                 ->where('started_at', '>=', $from)->where('started_at', '<=', $to)
                 ->sum('duration_seconds');
 
-            // Fase 4: sensor "Pala en movimiento". Hasta que exista, 0.
-            $bucketIdle = 0;
-
             $deducted = 0;
             if ($this->hasDeduction(Operation::DEDUCTION_REFUELING)) $deducted += $refueling;
             if ($this->hasDeduction(Operation::DEDUCTION_IDLE)) $deducted += $idle;
             if ($this->hasDeduction(Operation::DEDUCTION_UNAUTHORIZED_STOPS)) $deducted += $unauthorized;
-            if ($this->hasDeduction(Operation::DEDUCTION_BUCKET_IDLE)) $deducted += $bucketIdle;
 
             $net = max(0, $engine - $deducted);
 
@@ -167,7 +163,6 @@ class OperationWorkHoursReport extends DeviceReport
                 'refueling'    => Formatter::duration()->human($refueling),
                 'idle'         => Formatter::duration()->human($idle),
                 'unauthorized' => Formatter::duration()->human($unauthorized),
-                'bucket_idle'  => '—',
                 'deducted'     => Formatter::duration()->human($deducted),
                 'net'          => Formatter::duration()->human($net),
                 'net_s'        => $net,
@@ -245,7 +240,6 @@ class OperationWorkHoursReport extends DeviceReport
             trans('front.operation_deduction_refueling'),
             trans('front.operation_deduction_idle'),
             trans('front.operation_deduction_unauthorized_stops'),
-            trans('front.operation_deduction_bucket_idle'),
             trans('front.operation_deducted'),
             trans('front.operation_net_hours'),
             trans('front.fuel_consumption'),
@@ -256,7 +250,7 @@ class OperationWorkHoursReport extends DeviceReport
             $device = $item['meta']['device.name'] ?? '';
 
             foreach ($item['table']['rows'] ?? [] as $r) {
-                fputcsv($file, [$device, $r['date'], $r['engine'], $r['refueling'], $r['idle'], $r['unauthorized'], $r['bucket_idle'], $r['deducted'], $r['net'], $r['fuel'], $r['fuel_per_h']]);
+                fputcsv($file, [$device, $r['date'], $r['engine'], $r['refueling'], $r['idle'], $r['unauthorized'], $r['deducted'], $r['net'], $r['fuel'], $r['fuel_per_h']]);
             }
         }
     }
