@@ -117,6 +117,14 @@ class UserService
 
         $user->setSettings('widgets', $data['widgets'] ?? settings('widgets'), false);
 
+        // Los usuarios nuevos entran a la version nueva. La clave es la misma
+        // que escribe el shell al pisar /ui/v2/* (Ui\V2\BaseController::
+        // PREF_UI_VERSION) y la que mira ObjectsController@index para
+        // redirigir, asi que "Volver a UI clasica" la revierte sin nada
+        // especial. Sin sembrarla, el usuario recien creado aterrizaba en la
+        // UI clasica porque la preferencia no existia.
+        $user->setSettings('ui_version', 'v2', false);
+
         if ($user->isMonitoring() && $user->manager_id) {
             (new MonitoringDeviceSyncService())->syncFromManager($user);
         }
