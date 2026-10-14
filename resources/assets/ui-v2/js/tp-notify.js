@@ -50,15 +50,44 @@
     });
   }
 
+  /**
+   * Donde se apilan los avisos.
+   *
+   * Sobre el MAPA, como en el legacy. Alli basta con pegarlos al borde
+   * derecho de la ventana porque la derecha es el mapa; aqui no, que es la
+   * ficha del objeto. Si la pagina marca su area de mapa con
+   * data-tp-toast-area, el contenedor cuelga de ella: al abrir la ficha esa
+   * area se encoge -es una columna de la rejilla- y los avisos se mueven
+   * con ella. Sin area de mapa, al borde de la ventana como antes.
+   */
   function ensureHost() {
-    if (host) return host;
+    if (host && host.isConnected) return host;
+
+    var area = document.querySelector("[data-tp-toast-area]");
+
     host = document.createElement("div");
     host.id = "tp-notify-host";
     host.style.cssText =
-      "position:fixed;top:64px;right:16px;z-index:6000;display:flex;flex-direction:column;gap:10px;" +
-      "width:340px;max-width:calc(100vw - 32px);pointer-events:none;";
-    document.body.appendChild(host);
+      (area
+        ? "position:absolute;top:12px;right:12px;"
+        : "position:fixed;top:64px;right:16px;") +
+      "z-index:6000;display:flex;flex-direction:column;gap:10px;" +
+      "width:340px;max-width:calc(100% - 24px);pointer-events:none;";
+
+    (area || document.body).appendChild(host);
     return host;
+  }
+
+  /** Lo quita desvaneciendolo, no de golpe. */
+  function cerrar(el) {
+    if (!el || !el.parentNode || el.dataset.tpnGoing) return;
+    el.dataset.tpnGoing = "1";
+    el.style.transition = "opacity .25s ease, transform .25s ease";
+    el.style.opacity = "0";
+    el.style.transform = "translateX(12px)";
+    setTimeout(function () {
+      if (el.parentNode) el.remove();
+    }, 260);
   }
 
   function showToast(ev) {
@@ -89,7 +118,7 @@
 
     el.addEventListener("click", function (e) {
       if (e.target.closest("[data-tpn-close]")) {
-        el.remove();
+        cerrar(el);
         return;
       }
       window.location.href = "/ui/v2/events";
@@ -97,11 +126,18 @@
 
     h.appendChild(el);
 
-    // delay de la alerta: 0 = fijo; 5/10 = segundos (default 5 como el legacy)
-    var delay = ev.delay == null ? 5 : parseInt(ev.delay, 10);
+    // Segundos que dura el aviso, de la alerta. Un 0 explicito significa
+    // "hasta que lo cierren". Cualquier otra cosa que no sea un numero cae
+    // al respaldo de 10 s, el mismo del EventLatestTransformer: el campo
+    // "popup" de la alerta puede venir con el input VACIO, y entonces el
+    // transformer manda "" en vez del respaldo. Antes eso daba NaN, NaN > 0
+    // era falso y el aviso se quedaba en pantalla para siempre.
+    var delay = parseInt(ev.delay, 10);
+    if (isNaN(delay)) delay = 10;
+
     if (delay > 0) {
       setTimeout(function () {
-        if (el.parentNode) el.remove();
+        cerrar(el);
       }, delay * 1000);
     }
   }

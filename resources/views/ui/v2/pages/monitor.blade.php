@@ -45,7 +45,8 @@
         </header>
 
         {{-- Las celdas las renderiza monitor.js (vacía = botón +, llena = mini-mapa) --}}
-        <div class="tp-mon__grid" id="tp-mon-grid"></div>
+        {{-- data-tp-toast-area: ver tp-notify.js --}}
+        <div class="tp-mon__grid" id="tp-mon-grid" data-tp-toast-area></div>
     </div>
 @endsection
 

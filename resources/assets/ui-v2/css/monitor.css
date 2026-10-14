@@ -53,6 +53,9 @@
 .tp-mon__grid {
   flex: 1;
   min-height: 0;
+  /* Contexto para los avisos de alerta, que cuelgan de aqui en absoluto
+     (data-tp-toast-area, ver tp-notify.js). */
+  position: relative;
   display: grid;
   /* Las columnas las pone monitor.js: la forma del tamaño elegido,
      recortada a las que quepan con un ancho de celda usable. */

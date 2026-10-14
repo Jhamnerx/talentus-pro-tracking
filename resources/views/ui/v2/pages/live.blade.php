@@ -454,7 +454,9 @@
         </button>
 
         {{-- MAP --}}
-        <main class="tp-live__map-area">
+        {{-- data-tp-toast-area: aqui se apilan los avisos de alerta, sobre el
+             mapa y no sobre la ficha del objeto (ver tp-notify.js). --}}
+        <main class="tp-live__map-area" data-tp-toast-area>
             <div id="tp-live-map" class="tp-live__map"></div>
 
             {{-- Map overlay: stats + actions --}}
