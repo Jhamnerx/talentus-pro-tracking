@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual del usuario · Plataforma de Rastreo · Talentus Technology</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+  * { box-sizing: border-box; }
+  html { font-size: 10.5pt; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1f2937; line-height: 1.45; margin: 0; }
+  h1 { font-size: 24pt; margin: 0 0 4mm; color: #0f172a; }
+  h2 { font-size: 16pt; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid #1d4ed8; color: #1e3a8a; page-break-after: avoid; }
+  h3 { font-size: 12.5pt; margin: 6mm 0 2mm; color: #0f172a; page-break-after: avoid; }
+  h4 { font-size: 11pt; margin: 4mm 0 1.5mm; color: #1e3a8a; page-break-after: avoid; }
+  p, li { margin: 0 0 2.2mm; }
+  ol, ul { padding-left: 6mm; margin: 0 0 3mm; }
+  li { page-break-inside: avoid; }
+  .chapter { page-break-before: always; }
+  .cover { page-break-after: always; display: flex; flex-direction: column; justify-content: center; min-height: 240mm; }
+  .cover .kicker { color: #1d4ed8; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 9pt; margin-bottom: 3mm; }
+  .cover .sub { font-size: 13pt; color: #475569; margin-bottom: 10mm; }
+  .new { display: inline-block; background: #dcfce7; color: #166534; font-weight: 700; font-size: 8pt; padding: 1px 6px; border-radius: 10px; vertical-align: middle; margin-left: 4px; letter-spacing: .04em; }
+  .box { border: 1px solid #cbd5e1; border-left: 4px solid #1d4ed8; background: #f8fafc; padding: 3mm 4mm; margin: 3mm 0 4mm; page-break-inside: avoid; }
+  .box.warn { border-left-color: #d97706; background: #fffbeb; }
+  .box.tip { border-left-color: #16a34a; background: #f0fdf4; }
+  figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
+  figure img { width: auto; max-width: 100%; max-height: 100mm; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 4px; display: block; }
+  figure.narrow img { max-height: 90mm; }
+  figcaption { text-align: center; }
+  figcaption { font-size: 9pt; color: #475569; margin-top: 1.5mm; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 4mm; font-size: 9.5pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #cbd5e1; padding: 1.6mm 2.2mm; vertical-align: top; text-align: left; }
+  th { background: #eff6ff; color: #1e3a8a; }
+  .toc { columns: 2; column-gap: 10mm; }
+  .toc li { margin-bottom: 1mm; break-inside: avoid; }
+  .steps li { margin-bottom: 2.5mm; }
+  .muted { color: #64748b; font-size: 9pt; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; vertical-align: middle; margin-right: 4px; border: 1px solid #94a3b8; }
+  kbd { font-family: Consolas, monospace; font-size: 9pt; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 3px; padding: 0 4px; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">Plataforma de Rastreo · Talentus Technology</div>
+  <h1>Manual del usuario</h1>
+  <div class="sub">Guía completa de la plataforma, paso a paso y con capturas: acceso, mapa en vivo, vehículos, historial, eventos, alertas, reportes, comandos, compartir, geocercas, rutas, POI, programaciones, operaciones, mantenimiento, gastos, tareas, conductores, tablero y monitoreo de grupo.</div>
+  <table>
+    <tr><th style="width:32%">Versión</th><td>Interfaz nueva (v2) · octubre de 2026</td></tr>
+    <tr><th>Cuenta usada en las capturas</th><td>Usuario de prueba de Operaciones, con cuatro volquetes y la operación «Acarreo prueba»</td></tr>
+    <tr><th>Novedades</th><td>Las funciones nuevas de esta versión están marcadas con <span class="new">NUEVO</span></td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Contenido</h2>
+  <ol class="toc">
+    <li>Acceso y primeros pasos</li>
+    <li>Mapa en vivo (Vehículos)</li>
+    <li>Colores de estado y de velocidad</li>
+    <li>Ficha del vehículo: alta, sensores, iconos, cola y colores</li>
+    <li>Historial y sus modos</li>
+    <li>Eventos y cómo atenderlos</li>
+    <li>Alertas (reglas)</li>
+    <li>Reportes</li>
+    <li>Enviar comandos</li>
+    <li>Compartir vehículos</li>
+    <li>Geocercas</li>
+    <li>Rutas y programaciones de ruta</li>
+    <li>Puntos de interés (POI)</li>
+    <li>Operaciones (control de vueltas) <span class="new">NUEVO</span></li>
+    <li>Mantenimiento (servicios)</li>
+    <li>Gastos</li>
+    <li>Tareas y conductores</li>
+    <li>Tablero (panel de control)</li>
+    <li>Monitoreo de grupo</li>
+    <li>Ajustes de cuenta</li>
+    <li>Preguntas frecuentes</li>
+  </ol>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>1. Acceso y primeros pasos</h2>
+  <h3>1.1 Iniciar sesión</h3>
+  <ol class="steps">
+    <li>Abre la dirección de la plataforma en el navegador (Chrome, Edge o Firefox actualizados).</li>
+    <li>Escribe tu <b>correo</b> y tu <b>contraseña</b>. Marca «Recuérdame» si usas tu propio equipo.</li>
+    <li>Pulsa <b>Ingresar</b>. Si olvidaste la contraseña, usa «¿No puede acceder?» y sigue el correo de recuperación.</li>
+    <li>Las apps móviles están en Google Play y App Store (enlaces en la misma pantalla).</li>
+  </ol>
+  <figure><img src="img/01-login.jpg" alt="Pantalla de acceso"><figcaption>Pantalla de acceso.</figcaption></figure>
+
+  <h3>1.2 La pantalla principal</h3>
+  <ul>
+    <li><b>Menú lateral (izquierda)</b>: Tablero, Vehículos (mapa), Monitoreo de grupo, Eventos, Alertas, Historial, Reportes, Enviar comando, Compartir, Mantenimiento, Gastos, Tareas, Conductores, Geocercas, Rutas, Programaciones de ruta, Operaciones y POI. Abajo: cambiar idioma y volver a la interfaz clásica. El botón ☰ lo expande con nombres.</li>
+    <li><b>Barra superior</b>: buscador global (<kbd>Ctrl</kbd>+<kbd>K</kbd>), tema claro/oscuro (sol/luna), ajustes de cuenta (engranaje), notificaciones (campana) y tu usuario (iniciales).</li>
+  </ul>
+  <figure><img src="img/05-buscador.jpg" alt="Buscador global"><figcaption>Buscador global: escribe parte del nombre, placa o IMEI y salta al vehículo, geocerca o POI.</figcaption></figure>
+  <h3>1.3 Menú de usuario</h3>
+  <p>Pulsa tus iniciales arriba a la derecha: ajustes de cuenta, cambiar contraseña, confirmar email, idioma, cambiar densidad (más o menos espacio en las listas), volver a la interfaz clásica y cerrar sesión.</p>
+  <figure class="narrow"><img src="img/02-menu-usuario.jpg" alt="Menú de usuario"><figcaption>Menú de usuario.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>2. Mapa en vivo (Vehículos)</h2>
+  <p>Es la pantalla de trabajo diario. A la izquierda, la lista de la flota; a la derecha, el mapa. Se actualiza sola cada 15 segundos.</p>
+  <figure><img src="img/10-live-mapa.jpg" alt="Mapa en vivo"><figcaption>Mapa en vivo con la flota agrupada y las geocercas.</figcaption></figure>
+  <h3>2.1 Panel de la flota</h3>
+  <ul>
+    <li><b>Buscar</b> por nombre, placa o IMEI.</li>
+    <li><b>Filtros de estado</b>: Todos, Movimiento, Ralentí, Detenido, Desconectado (con el conteo de cada uno).</li>
+    <li>Botones junto a «Flota»: vista <b>plana</b> o <b>por grupos</b>, y filtro avanzado.</li>
+    <li>Cada fila muestra el nombre, un punto de color con el estado, la velocidad, la hora de la última posición y el tiempo en ese estado. La casilla de la izquierda muestra u oculta el vehículo en el mapa.</li>
+    <li>En la vista por grupos, el menú <b>⋮</b> del grupo permite <b>Agregar nuevo</b>, <b>Editar</b> y <b>Eliminar</b> grupos (título y vehículos que incluye).</li>
+  </ul>
+  <h3>2.2 Ficha rápida del vehículo</h3>
+  <p>Al pulsar una fila se abre la ficha: estado, velocidad, sensores principales (RPM, combustible, temperatura, ignición, odómetro, horómetro, rumbo), dirección, última señal, coordenadas, conductor y el detalle de todos los sensores. Abajo: <b>Centrar en mapa</b> y <b>Ver historial</b>.</p>
+  <figure><img src="img/11-live-ficha-vehiculo.jpg" alt="Ficha del vehículo"><figcaption>Ficha del vehículo con sensores y última posición.</figcaption></figure>
+  <h3>2.3 Menú de acciones del vehículo (⋮)</h3>
+  <table>
+    <tr><th style="width:36%">Opción</th><th>Qué hace</th></tr>
+    <tr><td>Mostrar historial (última hora / hoy / ayer)</td><td>Abre el Historial con ese rango ya cargado.</td></tr>
+    <tr><td>Enviar comando</td><td>Abre el formulario de comando GPRS o SMS para ese vehículo (capítulo 9).</td></tr>
+    <tr><td>Editar</td><td>Abre la ficha completa del vehículo (capítulo 4).</td></tr>
+    <tr><td>Seguir</td><td>El mapa sigue al vehículo mientras se mueve.</td></tr>
+    <tr><td>Alertas</td><td>Alertas que aplican a ese vehículo y su vigencia.</td></tr>
+    <tr><td>Compartir / Enlaces compartidos</td><td>Crea o revisa enlaces públicos de seguimiento (capítulo 10).</td></tr>
+    <tr><td>Historial de cambios</td><td>Registro de ediciones de la ficha.</td></tr>
+  </table>
+  <figure><img src="img/12-live-menu-vehiculo.jpg" alt="Menú del vehículo"><figcaption>Menú ⋮ de un vehículo.</figcaption></figure>
+  <h3>2.4 Controles del mapa (barra derecha)</h3>
+  <ul>
+    <li>Pantalla completa, ajustar a la flota visible, seguimiento automático, mi ubicación, zoom.</li>
+    <li><b>Capas</b>: OpenStreetMap, Google Normal / Híbrido / Satelital / Terreno / Tráfico, Carto, LocationIQ.</li>
+    <li>Interruptores: agrupar vehículos cercanos, mostrar vehículos, geocercas, rutas, POI, hitos KM, nombres, cola de recorrido y tráfico en vivo.</li>
+  </ul>
+  <figure><img src="img/13-live-capas-mapa.jpg" alt="Capas del mapa"><figcaption>Selector de capas base.</figcaption></figure>
+  <h3>2.5 Vista de lista (tabla de vehículos)</h3>
+  <p>El icono «Ver lista de vehículos» abre la tabla completa con búsqueda, filtros por estado, grupo, modelo y protocolo, columnas configurables y exportación. Desde aquí se agregan y editan vehículos.</p>
+  <figure><img src="img/14-live-vista-lista.jpg" alt="Tabla de vehículos"><figcaption>Vehículos en tabla.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>3. Colores de estado y de velocidad</h2>
+  <h3>3.1 Color de estado (punto de la lista y etiqueta del mapa)</h3>
+  <table>
+    <tr><th style="width:26%">Color</th><th>Estado</th><th>Significado</th></tr>
+    <tr><td><span class="dot" style="background:#22c55e"></span>Verde</td><td>En movimiento</td><td>Transmite y supera la velocidad mínima de movimiento.</td></tr>
+    <tr><td><span class="dot" style="background:#f59e0b"></span>Naranja</td><td>Ralentí</td><td>Detenido con el motor encendido.</td></tr>
+    <tr><td><span class="dot" style="background:#64748b"></span>Gris</td><td>Detenido</td><td>Quieto con motor apagado (o sin sensor de encendido).</td></tr>
+    <tr><td><span class="dot" style="background:#eab308"></span>Amarillo</td><td>Desconectado</td><td>Sin transmitir más tiempo del límite configurado.</td></tr>
+    <tr><td><span class="dot" style="background:#ef4444"></span>Rojo</td><td>Exceso de velocidad</td><td>Velocidad por encima del límite general.</td></tr>
+  </table>
+  <p class="muted">En esta versión los colores son los mismos en la lista, en la etiqueta del mapa y en la interfaz clásica. Un vehículo que dejó de transmitir ya no se muestra como si estuviera activo.</p>
+  <h3>3.2 Color por velocidad (marcador y recorrido)</h3>
+  <p>Cada vehículo puede colorear <b>el recorrido del historial</b> y <b>su marcador en vivo</b> según la velocidad, con rangos propios. Se configura en la ficha del vehículo, pestaña <b>Cola</b>:</p>
+  <ul>
+    <li><b>Colores del recorrido</b>: por viajes (un color por viaje), único, por velocidad (rangos) o por sensor (si un sensor define rangos).</li>
+    <li><b>Colorear el marcador según la velocidad</b>: tiñe la etiqueta y pone un halo detrás del icono. Dentro de una geocerca con límite mandan dos colores especiales: «al acercarse» y «al superarlo», con un aviso de X km/h antes del límite.</li>
+    <li>Los rangos se editan con la barra de tramos: <b>+</b> añade uno, <b>↺</b> restaura los valores por defecto, <b>×</b> quita el tramo. El primer tramo empieza en 1 km/h: a 0 el vehículo está parado y no se colorea.</li>
+  </ul>
+  <figure><img src="img/16-vehiculo-colores-velocidad.jpg" alt="Colores por velocidad"><figcaption>Pestaña Cola: color de cola, colores del recorrido y rangos de velocidad del marcador.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>4. Ficha del vehículo</h2>
+  <p>Desde la tabla de vehículos (<b>Agregar objeto</b> o <b>Editar</b> en el menú ⋮ de la fila) o desde el menú ⋮ del mapa (<b>Editar</b>).</p>
+  <h3>4.1 Alta de un vehículo</h3>
+  <ol class="steps">
+    <li>Vehículos (tabla) → <b>+ Agregar objeto</b>.</li>
+    <li><b>Principal</b>: nombre (normalmente la placa) e <b>IMEI</b> del GPS. Si el equipo requiere activación, aparece el bloque «Activación de dispositivo GPS».</li>
+    <li><b>Información</b>: grupo, tipo de dispositivo, SIM, placa, VIN, propietario, fechas de instalación y vencimiento, medición de combustible y costo.</li>
+    <li><b>Iconos</b>: tipo de icono e imagen del vehículo en el mapa.</li>
+    <li><b>Sensores</b>: cada dato que envía el GPS (encendido, movimiento, batería, odómetro, horas motor, combustible, temperatura, RPM, operador GSM…). Con <b>+</b> se agrega un sensor y con «Copiar a…» se copian a otros vehículos. El sensor de <b>Encendido</b> es el que distingue ralentí de detenido.</li>
+    <li><b>Exactitud</b>: filtros de posiciones (saltos, satélites, velocidad mínima).</li>
+    <li><b>Cola</b>: color y longitud de la cola de recorrido, colores por velocidad (capítulo 3).</li>
+    <li><b>Servicios</b>, <b>Gastos</b> e <b>Historial</b> (registro de reactivaciones y notas) se explican en sus capítulos.</li>
+    <li><b>Guardar</b>.</li>
+  </ol>
+  <figure><img src="img/18-vehiculo-agregar.jpg" alt="Nuevo vehículo"><figcaption>Nuevo vehículo: nombre e IMEI.</figcaption></figure>
+  <figure><img src="img/19-vehiculo-informacion.jpg" alt="Pestaña Información"><figcaption>Pestaña Información del vehículo.</figcaption></figure>
+  <figure><img src="img/17-vehiculo-sensores.jpg" alt="Pestaña Sensores"><figcaption>Pestaña Sensores.</figcaption></figure>
+  <div class="box warn">El límite de vehículos de tu cuenta lo fija el administrador. Si el alta falla por límite, contacta a soporte.</div>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>5. Historial y sus modos</h2>
+  <ol class="steps">
+    <li>Menú → <b>Historial</b>. Elige el <b>dispositivo</b>.</li>
+    <li>Elige la <b>fecha</b>: el selector admite fecha y hora exactas (<b>HH:MM</b>) para inicio y fin, y atajos (hoy, ayer, esta semana). Con la × vuelves a hoy.</li>
+    <li><b>Avanzado</b>: paradas mayores a X minutos, ajustar a la carretera, mostrar coordenadas no válidas.</li>
+    <li>Pulsa <b>Mostrar historial</b>.</li>
+  </ol>
+  <figure><img src="img/20-historial-recorrido.jpg" alt="Historial"><figcaption>Historial: recorrido en el mapa, lista de viajes y paradas a la izquierda, gráfica abajo.</figcaption></figure>
+  <figure><img src="img/21-historial-avanzado.jpg" alt="Opciones avanzadas"><figcaption>Opciones avanzadas del historial.</figcaption></figure>
+  <h3>5.1 Lo que ves</h3>
+  <ul>
+    <li><b>Resumen</b>: inicio del viaje, conductor, longitud de ruta.</li>
+    <li><b>Línea de tiempo</b>: alterna «Conducción» (con velocidad máxima y ▶ para reproducir ese tramo) y «Estacionado» (inicio, fin, duración). Al pulsar uno, el mapa se centra ahí.</li>
+    <li><b>Mapa</b>: recorrido coloreado según la configuración del vehículo (por viajes, único o por velocidad), flechas de sentido, paradas y eventos.</li>
+    <li><b>Controles derechos</b>: descargar (KML/GPX/CSV), pantalla completa, tipo de mapa, regla de distancia, y mostrar/ocultar recorrido, flechas, paradas, eventos, hitos KM, geocercas, rutas y POI.</li>
+  </ul>
+  <h3>5.2 Modos del panel inferior</h3>
+  <ul>
+    <li><b>Gráfica</b>: velocidad y sensores en el tiempo. Pasa el cursor para ver hora y valor; el punto se marca en el mapa. Zoom con + / −.</li>
+    <li><b>Registro de datos (Data log)</b>: tabla de posiciones con hora, velocidad, coordenadas y sensores; se puede ordenar, paginar y borrar registros.</li>
+    <li><b>Reproducción</b>: ▶ reproduce el recorrido a x1, x4, x8, x16, x32 o x120 con la hora y velocidad en vivo; la barra de progreso permite saltar.</li>
+  </ul>
+  <figure><img src="img/22-historial-datalog.jpg" alt="Registro de datos"><figcaption>Registro de datos del historial.</figcaption></figure>
+  <figure><img src="img/23-historial-reproduccion.jpg" alt="Reproducción"><figcaption>Reproducción del recorrido con control de velocidad.</figcaption></figure>
+  <div class="box tip">Desde el menú ⋮ de un vehículo en el mapa tienes atajos: historial de la última hora, de hoy y de ayer. Desde Operaciones, «Ver tramo en mapa» abre el historial con el rango exacto del tramo.</div>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>6. Eventos y cómo atenderlos</h2>
+  <p>Un <b>evento</b> es un aviso generado por una alerta (capítulo 7): exceso de velocidad, entrada a geocerca, parada en operación, SOS, etc. La campana de la barra superior muestra los no leídos.</p>
+  <ol class="steps">
+    <li>Menú → <b>Eventos</b>. Filtra por periodo (última hora, 6 h, 24 h, 3 días, 7 días o rango de fechas), tipo de evento, vehículo o texto.</li>
+    <li>Pulsa un evento: el mapa se centra en el punto y abre su tarjeta con hora, ubicación, velocidad y coordenadas.</li>
+    <li>Desde la tarjeta: <b>Historial</b> abre el recorrido alrededor de esa hora; <b>Eliminar</b> lo borra. Si el administrador activó el registro de llamadas, aparece también <b>Atender</b>, que guarda el tipo de respuesta, la fecha de la llamada y observaciones (se consultan en «Acciones de llamada»).</li>
+    <li><b>Exportar</b> descarga la lista filtrada; <b>Borrar todo</b> limpia los eventos del rango.</li>
+  </ol>
+  <figure><img src="img/30-eventos-lista.jpg" alt="Lista de eventos"><figcaption>Eventos: lista a la izquierda, mapa a la derecha.</figcaption></figure>
+  <figure><img src="img/31-evento-seleccionado.jpg" alt="Evento seleccionado"><figcaption>Tarjeta de un evento en el mapa.</figcaption></figure>
+  <figure><img src="img/04-notificaciones.jpg" alt="Notificaciones"><figcaption>Campana de notificaciones.</figcaption></figure>
+  <div class="box"><b>Procedimiento sugerido para atender un evento crítico (SOS, pánico, parada no autorizada):</b> 1) abrir el evento y verificar ubicación y hora; 2) revisar el historial de los últimos minutos; 3) contactar al conductor; 4) registrar la llamada con «Atender» (si está habilitado) o anotarla en la tarea del vehículo; 5) si procede, enviar un comando (bloqueo, pedir posición).</div>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>7. Alertas (reglas)</h2>
+  <p>Una alerta es una regla: <i>para estos vehículos, cuando pase esto, avísame así</i>. Menú → <b>Alertas</b>: la lista muestra estado, nombre, tipo, alcance, notificaciones y horario; el interruptor activa o pausa cada regla.</p>
+  <figure><img src="img/40-alertas-lista.jpg" alt="Lista de alertas"><figcaption>Reglas de alerta del usuario.</figcaption></figure>
+  <h3>7.1 Crear una alerta</h3>
+  <ol class="steps">
+    <li><b>+ Nueva regla</b>. Escribe el <b>nombre</b> y deja «Activa».</li>
+    <li><b>Vehículos</b>: marca los vehículos o «Seleccionar todos» (incluye los futuros).</li>
+    <li><b>Tipo</b>: elige el <b>disparador</b> y sus parámetros (por ejemplo, km/h del exceso, minutos de parada, segundos de parada en operación).</li>
+    <li><b>Geocercas</b>: solo para alertas de entrada/salida; elige sentido y zonas.</li>
+    <li><b>Horario</b>: si activas «Restringir por horario», pinta en la cuadrícula los días y horas en que la alerta aplica.</li>
+    <li><b>Notificaciones</b>: color en la lista, sonido, ventana emergente, push al móvil, correo, SMS, webhook; «ignorar si se repite en N minutos» evita avisos en cadena.</li>
+    <li><b>Comando</b>: opcionalmente, un comando que se envía al vehículo al dispararse (por ejemplo, bloqueo de motor).</li>
+    <li><b>Crear alerta</b>.</li>
+  </ol>
+  <figure><img src="img/41-alerta-nueva-vehiculos.jpg" alt="Nueva alerta, vehículos"><figcaption>Nueva regla: pestaña Vehículos.</figcaption></figure>
+  <figure><img src="img/42-alerta-nueva-tipo.jpg" alt="Nueva alerta, tipo"><figcaption>Pestaña Tipo: disparador y parámetros.</figcaption></figure>
+  <figure><img src="img/42-alerta-nueva-horario.jpg" alt="Nueva alerta, horario"><figcaption>Pestaña Horario.</figcaption></figure>
+  <figure><img src="img/42-alerta-nueva-notificaciones.jpg" alt="Nueva alerta, notificaciones"><figcaption>Pestaña Notificaciones.</figcaption></figure>
+  <h3>7.2 Tipos de alerta disponibles</h3>
+  <table>
+    <tr><th style="width:34%">Grupo</th><th>Disparadores</th></tr>
+    <tr><td>Velocidad</td><td>Exceso de velocidad; Exceso de velocidad en geocerca (usa el límite de la zona, con tolerancia y duración mínima).</td></tr>
+    <tr><td>Geocercas</td><td>Entrada, Salida, Entrada/Salida. También «PDI – duración de parada» y «PDI – duración en ralentí» para puntos de interés.</td></tr>
+    <tr><td>Duraciones</td><td>Estacionado, Tiempo, Fuera de línea, Movimiento, Encendido, Ralentí.</td></tr>
+    <tr><td>Motor y movimiento</td><td>Encendido ON/OFF, Comienzo del movimiento (y con filtro), Desenchufado, Alarma del equipo, Valor de sensor, Distancia.</td></tr>
+    <tr><td>Conductor</td><td>Cambio de conductor, Autorización de cambio de conductor.</td></tr>
+    <tr><td>Seguridad</td><td>SOS, Combustible (relleno / robo), Eventos personalizados (pánico, aceleración brusca, batería…).</td></tr>
+    <tr><td>Operaciones <span class="new">NUEVO</span></td><td>Parada en operación: vehículo en tramo detenido fuera de zona autorizada más de X segundos.</td></tr>
+    <tr><td>Administrativas</td><td>Estado de la tarea, Vencimiento del dispositivo.</td></tr>
+  </table>
+  <figure><img src="img/43-alerta-parada-operacion.jpg" alt="Alerta parada en operación"><figcaption>Disparador «Parada en operación».</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>8. Reportes</h2>
+  <p>Menú → <b>Reportes</b>. La página tiene dos pestañas: <b>Guardados</b> (plantillas que repites) y <b>Registros</b> (reportes ya generados, para descargarlos de nuevo).</p>
+  <ol class="steps">
+    <li>Pulsa <b>+</b> (o entra desde el menú, que ya abre el formulario).</li>
+    <li><b>Tipo</b>: elige el reporte. Los parámetros propios aparecen debajo (por ejemplo, operaciones y totales en «Control de vueltas»).</li>
+    <li><b>Formato</b>: HTML (en pantalla), PDF, XLSX o CSV. <b>Periodo</b>: hoy, ayer, semana, mes o personalizado con fecha y hora.</li>
+    <li><b>Dispositivos</b> y, si aplica, <b>geocercas</b>. «Controlar días y horas» limita a una franja (solo turno de noche, por ejemplo).</li>
+    <li>Opciones: paradas mayores a X minutos, omitir resultados vacíos, zonas en vez de direcciones, mostrar direcciones.</li>
+    <li><b>Generar</b> abre el reporte. <b>Guardar</b> lo deja en Guardados. <b>Enviar a email</b> con programación diaria, semanal o mensual lo manda solo.</li>
+  </ol>
+  <figure><img src="img/90-reportes-pagina.jpg" alt="Página de reportes"><figcaption>Página de reportes.</figcaption></figure>
+  <figure><img src="img/91-reporte-formulario.jpg" alt="Formulario de reporte"><figcaption>Formulario: tipo, formato, periodo, dispositivos y programación por correo.</figcaption></figure>
+  <figure><img src="img/92-reporte-resultado.jpg" alt="Reporte generado"><figcaption>Reporte generado en HTML.</figcaption></figure>
+  <h3>8.1 Reportes más usados</h3>
+  <table>
+    <tr><th style="width:30%">Reporte</th><th>Para qué</th></tr>
+    <tr><td>Información general / Viajes y paradas</td><td>Kilómetros, tiempos de conducción, paradas y ralentí por vehículo y día.</td></tr>
+    <tr><td>Exceso de velocidad / en geocerca</td><td>Infracciones con hora, lugar y velocidad.</td></tr>
+    <tr><td>Geocercas (entrada/salida, tiempo dentro)</td><td>Visitas a zonas y tiempo de permanencia.</td></tr>
+    <tr><td>Eventos</td><td>Listado de alertas disparadas.</td></tr>
+    <tr><td>Combustible, horas motor, sensores</td><td>Consumo, rellenos, horómetro y gráficas de sensores.</td></tr>
+    <tr><td>Cumplimiento de programación de rutas</td><td>Salidas a tiempo, adelantos y retrasos contra el horario (capítulo 12).</td></tr>
+    <tr><td>Control de vueltas, Paradas en operación, Horas trabajadas netas, Abastecimiento <span class="new">NUEVO</span></td><td>Reportes del módulo de Operaciones (capítulo 14).</td></tr>
+  </table>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>9. Enviar comandos</h2>
+  <p>Un comando es una orden al GPS: bloquear o desbloquear motor, pedir posición, reiniciar, configurar. Menú → <b>Enviar comando</b>.</p>
+  <ol class="steps">
+    <li>Pulsa <b>Enviar comando</b>. Elige la <b>conexión</b>: GPRS (datos, inmediato si el equipo está en línea) o SMS (por la SIM, útil sin cobertura de datos).</li>
+    <li>Marca «Enviar automáticamente al conectarse» si el vehículo está fuera de línea: se enviará cuando vuelva.</li>
+    <li>Elige el <b>dispositivo</b> y el <b>comando</b> (lista según el modelo de GPS, o una plantilla). Algunos piden parámetros.</li>
+    <li><b>Enviar comando</b>. El resultado queda en <b>Registros</b>; los pendientes, en <b>En cola</b>.</li>
+  </ol>
+  <ul>
+    <li><b>Horario</b>: programa un comando para una hora exacta, cada hora, diario, semanal o mensual (por ejemplo, apagar motor fuera de turno).</li>
+    <li><b>Plantillas de GPRS / SMS</b>: comandos propios para reutilizar.</li>
+  </ul>
+  <figure><img src="img/50-comandos-lista.jpg" alt="Página de comandos"><figcaption>Enviar comando: pestañas Horario, Registros, En cola y Plantillas.</figcaption></figure>
+  <figure class="narrow"><img src="img/51-comando-enviar.jpg" alt="Enviar comando"><figcaption>Formulario de envío.</figcaption></figure>
+  <figure class="narrow"><img src="img/51-comando-nuevo.jpg" alt="Horario de comando"><figcaption>Comando programado por horario.</figcaption></figure>
+  <div class="box warn">El bloqueo de motor es irreversible hasta que envíes el desbloqueo. Úsalo solo con el vehículo detenido y siguiendo el procedimiento de tu empresa.</div>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>10. Compartir vehículos</h2>
+  <p>Crea un enlace público para que un cliente o un familiar siga uno o varios vehículos sin cuenta en la plataforma. Menú → <b>Compartir</b> → <b>+</b>.</p>
+  <ol class="steps">
+    <li><b>Nombre</b> y descripción del enlace.</li>
+    <li><b>Expira por</b>: ninguna, duración (horas o días) o fecha fija. «Eliminar al expirar» lo borra solo.</li>
+    <li><b>Vehículos</b> a compartir (por grupo o uno a uno).</li>
+    <li>Opcional: enviar el enlace por <b>Email</b> o <b>SMS</b> (varios separados por punto y coma).</li>
+    <li><b>Guardar</b>. En la lista puedes copiar el enlace, desactivarlo o eliminarlo.</li>
+  </ol>
+  <figure><img src="img/52-compartir-lista.jpg" alt="Compartir"><figcaption>Enlaces compartidos.</figcaption></figure>
+  <figure><img src="img/53-compartir-nuevo.jpg" alt="Nuevo enlace"><figcaption>Compartir vehículos: vigencia, vehículos y envío.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>11. Geocercas</h2>
+  <p>Una geocerca es una zona dibujada en el mapa. Sirve para alertas de entrada y salida, límites de velocidad por zona, reportes de permanencia y, ahora, como punto de una operación. Menú → <b>Geocercas</b> (se abre el panel sobre el mapa).</p>
+  <h3>11.1 Crear</h3>
+  <ol class="steps">
+    <li>Pulsa <b>+</b> y elige <b>Polígono</b>, <b>Círculo</b> o <b>Corredor</b> (franja a lo largo de una línea).</li>
+    <li>Dibuja en el mapa: clic para cada vértice y doble clic para cerrar (polígono o corredor); clic y arrastre para el círculo.</li>
+    <li>Completa <b>Nombre</b>, <b>Color</b>, <b>Grupo</b>, <b>Categoría</b> <span class="new">NUEVO</span> (carga, descarga, inicio/fin de ruta, grifo, taller, descanso), <b>Vehículo</b> (para geocerca móvil que sigue a un vehículo), <b>Radio</b> (círculos) y <b>Límite de velocidad</b>.</li>
+    <li><b>Guardar</b>.</li>
+  </ol>
+  <figure class="narrow"><img src="img/77-geocerca-nueva.jpg" alt="Nueva geocerca"><figcaption>Tipo de geocerca a dibujar.</figcaption></figure>
+  <figure><img src="img/78-geocerca-editar.jpg" alt="Editar geocerca"><figcaption>Formulario de la geocerca.</figcaption></figure>
+  <h3>11.2 Lista y filtros</h3>
+  <p>Búsqueda, filtro por forma (polígonos / círculos), por grupo y por categoría. La casilla de cada fila la muestra u oculta en el mapa; los iconos centran, editan o eliminan. Abajo: <b>Exportar</b> e <b>Importar</b> (KML, GeoJSON, JSON).</p>
+  <figure><img src="img/76-geocercas-panel.jpg" alt="Panel de geocercas"><figcaption>Panel de geocercas con filtro por categoría.</figcaption></figure>
+  <h3>11.3 Alertas con geocercas</h3>
+  <ul>
+    <li><b>Entrada / Salida / Entrada-Salida</b>: crea la alerta (capítulo 7), elige el tipo y en la pestaña Geocercas marca las zonas.</li>
+    <li><b>Exceso de velocidad en geocerca</b>: usa el límite de la zona. El límite puede diferenciarse por tipo y estado de vehículo (cisterna cargada o vacía) desde Ajustes de cuenta → Tipos de vehículo.</li>
+    <li>Si varias geocercas se solapan, manda la de menor área.</li>
+  </ul>
+  <div class="box warn">Una geocerca usada como punto de una operación no se puede eliminar hasta quitarla de la operación. Las geocercas móviles no se aceptan como punto.</div>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>12. Rutas y programaciones de ruta</h2>
+  <h3>12.1 Rutas</h3>
+  <p>Una ruta es un trazado de referencia (ida de A a B). Menú → <b>Rutas</b> → <b>+ Nueva ruta</b>: clic para añadir puntos, doble clic para terminar; nombre, color y grupo; Guardar. Se pueden exportar e importar, y mostrarse en el mapa en vivo, en el historial y en el monitoreo.</p>
+  <figure><img src="img/71-ruta-nueva.jpg" alt="Nueva ruta"><figcaption>Dibujo de una ruta nueva.</figcaption></figure>
+  <h3>12.2 Programaciones de ruta</h3>
+  <p>Define horarios de salida sobre una ruta y controla el cumplimiento. Menú → <b>Programaciones de ruta</b> → <b>+ Nueva programación</b>.</p>
+  <ol class="steps">
+    <li><b>Nombre</b>, <b>Ruta</b> y <b>días</b> de la semana.</li>
+    <li><b>Salida de ida</b> y, opcionalmente, <b>salida de vuelta</b>.</li>
+    <li><b>Tolerancias</b> de adelanto y retraso en minutos.</li>
+    <li><b>Vehículos</b> asignados y «Activa». Guardar.</li>
+  </ol>
+  <p>La pestaña <b>Cumplimiento de programación de rutas</b> muestra, por fecha y vehículo, si salió a tiempo, adelantado o con retraso; «Solo incumplimientos» filtra los problemas. El mismo contenido está en el reporte del capítulo 8.</p>
+  <figure><img src="img/74-programaciones-ruta.jpg" alt="Programaciones de ruta"><figcaption>Programaciones de ruta y cumplimiento.</figcaption></figure>
+  <figure class="narrow"><img src="img/75-programacion-nueva.jpg" alt="Nueva programación"><figcaption>Nueva programación.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>13. Puntos de interés (POI)</h2>
+  <p>Marcadores fijos con nombre e icono (planta, almacén, grifo, cliente). Menú → <b>POI</b> → <b>+</b>, clic en el mapa donde va el punto, nombre, descripción, icono y grupo, Guardar. Se agrupan, se filtran por grupo (⚙ administra los grupos), se exportan e importan, y tienen alertas propias: «PDI – duración de la parada» y «PDI – duración en ralentí».</p>
+  <figure><img src="img/72-pois-panel.jpg" alt="Panel de POI"><figcaption>Panel de puntos de interés.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>14. Operaciones (control de vueltas) <span class="new">NUEVO</span></h2>
+  <p>Cuenta las vueltas entre puntos de carga y descarga (o inicio y fin de ruta), mide cada tramo y detecta paradas no autorizadas. Requiere el permiso «Operaciones», que activa el administrador.</p>
+  <h3>14.1 Configurar</h3>
+  <ol class="steps">
+    <li>Crea las geocercas con categoría <b>Carga</b> y <b>Descarga</b> (o Inicio / Fin de ruta), y si aplica <b>Grifo</b>, <b>Taller</b>, <b>Descanso</b> (zonas donde parar está autorizado).</li>
+    <li>Crea un <b>grupo de vehículos</b> con las unidades de la operación.</li>
+    <li>Menú → <b>Operaciones</b> → pestaña Operaciones → <b>+ Nueva operación</b>: nombre, tipo, grupo, puntos, turnos (pueden cruzar la medianoche) y, en opciones avanzadas, segundos de parada, permanencia mínima, tramo máximo, categorías autorizadas y descuentos de horas trabajadas.</li>
+  </ol>
+  <figure><img src="img/97-operaciones-editar.jpg" alt="Editar operación"><figcaption>Operación: puntos, turnos y opciones avanzadas.</figcaption></figure>
+  <h3>14.2 Seguir y revisar</h3>
+  <ul>
+    <li><b>En vivo</b>: estado de cada vehículo (En carga, Ida, En descarga, Vuelta), vueltas del día, ciclo promedio, paradas no autorizadas. Se actualiza cada 20 s.</li>
+    <li><b>Vueltas</b>: una fila por vuelta con tiempos de ida, vuelta, ciclo, detenido y ralentí; el detalle muestra tramos y paradas, con «Ver tramo en mapa» y <b>Justificar</b> para registrar el motivo de una parada.</li>
+    <li><b>Recalcular vueltas</b> rehace un rango pasado tras cambiar geocercas o umbrales. <b>Motivos de parada</b> administra el catálogo de justificaciones.</li>
+    <li>Reportes 910 Control de vueltas, 911 Paradas en operación, 912 Horas trabajadas netas y 913 Abastecimiento; alerta «Parada en operación».</li>
+  </ul>
+  <figure><img src="img/95-operaciones-en-vivo.jpg" alt="Operaciones en vivo"><figcaption>Pestaña En vivo.</figcaption></figure>
+  <figure><img src="img/96-operaciones-vueltas.jpg" alt="Vueltas"><figcaption>Pestaña Vueltas con el detalle de una vuelta.</figcaption></figure>
+  <p class="muted">El manual de pruebas del módulo de Operaciones describe este módulo en detalle, con capturas de cada pantalla.</p>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>15. Mantenimiento (servicios)</h2>
+  <p>Programa servicios por odómetro, horas de motor o días, y recibe aviso antes de que venzan. Menú → <b>Mantenimiento</b> lista todos los servicios con la distancia, horas o días restantes.</p>
+  <ol class="steps">
+    <li>Abre la ficha del vehículo → pestaña <b>Servicios</b> → <b>+ Añadir servicio</b>.</li>
+    <li><b>Nombre</b> (cambio de aceite, revisión de frenos), <b>Expira por</b> odómetro, horas de motor o días, <b>Intervalo</b> y <b>Último servicio</b> (valor en que se hizo).</li>
+    <li><b>Generar evento cuando falten</b> X km, horas o días: crea el aviso anticipado; opcionalmente correo.</li>
+    <li>«Renovar servicio al expirar» reprograma el siguiente automáticamente. Guardar.</li>
+  </ol>
+  <figure><img src="img/60-mantenimiento-lista.jpg" alt="Mantenimiento"><figcaption>Lista de servicios y lo que resta para cada uno.</figcaption></figure>
+  <figure class="narrow"><img src="img/61-mantenimiento-nuevo.jpg" alt="Añadir servicio"><figcaption>Añadir servicio.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>16. Gastos</h2>
+  <p>Registra combustible, peajes, repuestos y cualquier costo por vehículo. Menú → <b>Gastos</b> → <b>+</b>: vehículo, nombre, fecha y hora, tipo (los tipos se administran en Ajustes de cuenta), cantidad, costo unitario, proveedor, comprador y notas. La lista filtra por vehículo, fechas y texto, y muestra el total del periodo. Los mismos gastos aparecen en la pestaña Gastos de la ficha del vehículo y en el reporte «Costo de operación».</p>
+  <figure><img src="img/62-gastos-lista.jpg" alt="Gastos"><figcaption>Lista de gastos.</figcaption></figure>
+  <figure class="narrow"><img src="img/63-gastos-nuevo.jpg" alt="Nuevo gasto"><figcaption>Nuevo gasto.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>17. Tareas y conductores</h2>
+  <h3>17.1 Tareas</h3>
+  <p>Órdenes de recogida y entrega asignadas a un vehículo. Menú → <b>Tareas</b> → <b>+</b>: vehículo, título, número de factura, prioridad, conjunto de tareas; dirección y ventana horaria de <b>recogida</b> y de <b>entrega</b>, con cambio automático de estado al permanecer X segundos dentro de un radio. Los estados (nueva, en progreso, terminada, fallida) se ven en la lista y disparan la alerta «Estado de la tarea». Los <b>conjuntos de tareas</b> agrupan varias entregas de una misma jornada; también se importan desde archivo.</p>
+  <figure><img src="img/65-tareas-nueva.jpg" alt="Nueva tarea"><figcaption>Nueva tarea con recogida y entrega.</figcaption></figure>
+  <h3>17.2 Conductores</h3>
+  <p>Menú → <b>Conductores</b> → <b>+</b>: nombre, vehículos en los que puede ir, «establecer como actual», RFID o iButton, correo, teléfono y descripción. Con lector RFID en el vehículo, el conductor se identifica solo y las alertas «Cambio de conductor» y «Autorización» avisan de conductores no autorizados. El conductor actual se muestra en la ficha del vehículo y en los reportes.</p>
+  <figure class="narrow"><img src="img/67-conductores-nuevo.jpg" alt="Nuevo conductor"><figcaption>Nuevo conductor.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>18. Tablero (panel de control)</h2>
+  <p>Resumen de la flota para un periodo (hoy, ayer, semana, mes o rango): total, en movimiento, inactivos, detenidos, sin datos, velocidad promedio y utilización; estado de dispositivos (buen estado / requieren atención / mal estado), de conexión y de movimiento en vivo; conducción y comportamiento (puntuación de flota, frenados, aceleraciones, giros bruscos, excesos de velocidad), ranking de mejores y peores vehículos, kilometraje, tareas y notas. Los widgets se eligen en Ajustes de cuenta → Tablero.</p>
+  <figure><img src="img/80-tablero.jpg" alt="Tablero"><figcaption>Panel de control.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>19. Monitoreo de grupo</h2>
+  <p>Varios mapas a la vez, uno por vehículo, para una sala de control. Menú → <b>Monitoreo de grupo</b>: elige el número de celdas (2 a 32) y, en cada celda, el vehículo a seguir. Cada mapa sigue a su vehículo en vivo con el color por velocidad, el halo del seleccionado y la animación de movimiento; se pueden mostrar geocercas, POI, rutas y la cola de recorrido. La selección y el tamaño se recuerdan en el navegador.</p>
+  <figure><img src="img/81-monitoreo-grupo.jpg" alt="Monitoreo de grupo"><figcaption>Monitoreo de grupo.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>20. Ajustes de cuenta</h2>
+  <p>Engranaje de la barra superior. Pestañas:</p>
+  <table>
+    <tr><th style="width:28%">Pestaña</th><th>Contenido</th></tr>
+    <tr><td>Principal</td><td>Unidades (distancia, capacidad, altitud), formato de duración, fecha y hora, inicio de semana, zona horaria, horario de verano, mapa por defecto.</td></tr>
+    <tr><td>Grupos de vehículos</td><td>Crear y editar grupos (también desde el mapa).</td></tr>
+    <tr><td>Conductores</td><td>Acceso rápido al listado.</td></tr>
+    <tr><td>Tipos de vehículo</td><td>Tipos y estados (cargado / vacío) para límites de velocidad diferenciados por geocerca.</td></tr>
+    <tr><td>Eventos</td><td>Eventos personalizados del equipo GPS (pánico, aceleración brusca…) y cómo se muestran.</td></tr>
+    <tr><td>SMS gateway, Plantillas de SMS y GPRS</td><td>Envío de SMS y comandos propios.</td></tr>
+    <tr><td>Widgets y Tablero</td><td>Qué tarjetas se ven en la ficha del vehículo y en el panel de control.</td></tr>
+    <tr><td>Cliente</td><td>Datos de contacto de la cuenta.</td></tr>
+  </table>
+  <figure><img src="img/03-ajustes-cuenta.jpg" alt="Ajustes de cuenta"><figcaption>Ajustes de cuenta, pestaña Principal.</figcaption></figure>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>21. Preguntas frecuentes</h2>
+  <ul>
+    <li><b>Un vehículo sale «Desconectado» aunque está encendido.</b> Revisa cobertura y SIM; en la ficha, «Última señal» indica la hora de la última trama. Si pasó más del tiempo límite configurado, se marca desconectado.</li>
+    <li><b>No me llegan las notificaciones.</b> En la alerta, pestaña Notificaciones, confirma el canal (push requiere la app instalada y sesión iniciada; correo requiere el email confirmado en el menú de usuario).</li>
+    <li><b>El historial no muestra nada.</b> Verifica el rango de fechas y que el vehículo transmitió en ese periodo; prueba «Mostrar coordenadas no válidas».</li>
+    <li><b>Aparece «ralentí» en un vehículo que está apagado.</b> Falta o está mal configurado el sensor de encendido (ficha → Sensores).</li>
+    <li><b>No veo Operaciones en el menú.</b> El administrador debe darte el permiso.</li>
+    <li><b>Quiero la interfaz anterior.</b> Menú de usuario → «Volver a UI clásica» (o el último icono del menú lateral).</li>
+  </ul>
+  <div class="box tip">Soporte: desde la pantalla de acceso, «Nuestro equipo se encuentra 24/7» con los canales de contacto de Talentus Technology.</div>
+</section>
+
+</body>
+</html>
