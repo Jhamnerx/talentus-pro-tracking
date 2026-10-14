@@ -56,7 +56,9 @@
         ui:     @json(trans('ui')),
         front:  @json(\Illuminate\Support\Arr::only(trans('front'), $tpFront)),
         global: @json(\Illuminate\Support\Arr::only(trans('global'), $tpGlobal)),
-        attr:   @json(\Illuminate\Support\Arr::only(trans('validation.attributes'), $tpAttr)),
+        {{-- Todos los atributos (unos 15 KB): los modales nombran el campo
+             de cada error de validacion con ellos (tpModal.showFieldErrors). --}}
+        attr:   @json(trans('validation.attributes')),
     };
 
     // Mapa PLANO para las llamadas T(clave, "respaldo") que ya existian en

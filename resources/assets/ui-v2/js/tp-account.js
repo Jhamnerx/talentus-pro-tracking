@@ -313,7 +313,7 @@
         if (res.status === 422) {
           var errors = (res.data && res.data.errors) || {};
           var first = Object.keys(errors)[0];
-          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
+          tpModal.toast(tpModal.firstError(errors, tpT('ui.check_the_fields')), "warning");
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {
@@ -745,7 +745,7 @@
                   } else {
                     var errs = (res.data && res.data.errors) || {};
                     var first = Object.keys(errs)[0];
-                    tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
+                    tpModal.toast(tpModal.firstError(errs, tpT('ui.save_failed')), "error");
                   }
                 });
               return false;
@@ -856,7 +856,7 @@
                   }
                   var errs = (res.data && res.data.errors) || {};
                   var first = Object.keys(errs)[0];
-                  tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
+                  tpModal.toast(tpModal.firstError(errs, tpT('ui.save_failed')), "error");
                 });
               return false;
             },
@@ -1053,7 +1053,7 @@
                   var warn = (res.data && res.data.warnings) || [];
                   var first = Object.keys(errs)[0];
                   tpModal.toast(
-                    warn.length ? String(warn[0]) : first ? [].concat(errs[first])[0] : tpT('ui.send_failed'),
+                    warn.length ? String(warn[0]) : tpModal.firstError(errs, tpT('ui.send_failed')),
                     "error",
                   );
                 }).catch(function () { tpModal.setBusy(d, false); tpModal.toast(tpT('ui.network_error'), "error"); });
@@ -1147,7 +1147,7 @@
         if (res.status === 422) {
           var errors = (res.data && res.data.errors) || {};
           var first = Object.keys(errors)[0];
-          tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
+          tpModal.toast(tpModal.firstError(errors, tpT('ui.check_the_fields')), "warning");
           return;
         }
         if (!res.ok || !res.data || !res.data.ok) {

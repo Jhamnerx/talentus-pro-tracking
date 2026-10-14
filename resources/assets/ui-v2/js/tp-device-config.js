@@ -98,7 +98,7 @@
                 var errs = (res.data && res.data.errors) || {};
                 var first = Object.keys(errs)[0];
                 tpModal.toast(
-                  first ? [].concat(errs[first])[0] : (res.data && res.data.message) || tpT('ui.send_failed'),
+                  tpModal.firstError(errs, (res.data && res.data.message) || tpT('ui.send_failed')),
                   "error",
                 );
               })

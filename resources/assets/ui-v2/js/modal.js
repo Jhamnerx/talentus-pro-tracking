@@ -332,12 +332,38 @@
   }
 
   /**
-   * Pinta los errores de validacion junto a su campo.
+   * Nombre legible de un campo de error: la etiqueta que tiene al lado en el
+   * modal; si no, validation.attributes (puente attr.*); si no, la clave.
+   */
+  function etiquetaDeCampo(dlg, key, input) {
+    if (input) {
+      var holder = input.closest(".tp-field") || input.closest(".tp-form__field") || input.closest("label");
+      var lab = holder && holder.querySelector(".tp-form__label, .tp-field__label, label");
+      var txt = lab && lab.textContent.replace(/\s+/g, " ").replace(/[*:]\s*$/, "").trim();
+      if (txt) return txt;
+    }
+    var base = key.indexOf(".") > 0 ? key.slice(0, key.indexOf(".")) : key;
+    var attr = typeof tpT === "function" ? tpT("attr." + base) : "attr." + base;
+    if (attr !== "attr." + base) return attr;
+    return base.replace(/_/g, " ");
+  }
+
+  /** Activa la pestaña del modal que contiene el control (si hay pestañas). */
+  function mostrarPestanaDe(dlg, input) {
+    var panel = input.closest("[data-tp-panel]");
+    if (!panel) return;
+    var key = panel.getAttribute("data-tp-panel");
+    var btn = dlg.querySelector('[data-tp-tab="' + key + '"]');
+    if (btn && !btn.classList.contains("is-active")) btn.click();
+  }
+
+  /**
+   * Pinta los errores de validacion junto a su campo Y los resume bajo la
+   * cabecera del modal, uno por campo, con su nombre.
    *
-   * Lo que no se puede colocar NO se descarta: se lista arriba del modal.
-   * Antes se perdia en silencio y el modal se quedaba quieto, sin decir que
-   * faltaba -justo lo que pasaba al guardar un reporte programado sin
-   * correo: el servidor respondia 422 con send_to_email y no se veia nada.
+   * El resumen es la parte que se ve siempre: el campo puede estar en otra
+   * pestaña o fuera de la vista, y un "Necesario" suelto no dice que falta.
+   * Cada linea del resumen lleva al campo (y cambia de pestaña si hace falta).
    */
   function showFieldErrors(dlg, errors) {
     // Clear prior errors
@@ -352,16 +378,18 @@
 
     if (!errors || typeof errors !== "object") return;
 
-    var sueltos = [];
+    var resumen = [];
 
     Object.keys(errors).forEach(function (key) {
       var msg = Array.isArray(errors[key]) ? errors[key][0] : errors[key];
       var input = campoDeError(dlg, key);
+      var label = etiquetaDeCampo(dlg, key, input);
 
-      if (!input) {
-        if (msg && sueltos.indexOf(msg) === -1) sueltos.push(msg);
-        return;
+      if (!msg) return;
+      if (!resumen.some(function (r) { return r.label === label && r.msg === msg; })) {
+        resumen.push({ label: label, msg: msg, input: input });
       }
+      if (!input) return;
 
       input.classList.add("is-invalid");
       var err = document.createElement("div");
@@ -384,23 +412,48 @@
       input.addEventListener("change", limpia);
     });
 
-    if (!sueltos.length) return;
+    if (!resumen.length) return;
 
+    var head = dlg.querySelector(".tp-modal__head");
     var body = dlg.querySelector(".tp-modal__body");
-    if (!body) return;
+    if (!head && !body) return;
 
     var caja = document.createElement("div");
     caja.className = "tp-modal__errors";
     caja.setAttribute("role", "alert");
+    var titulo = document.createElement("div");
+    titulo.className = "tp-modal__errors-title";
+    titulo.textContent =
+      resumen.length === 1
+        ? tpT("ui.fix_field_to_continue")
+        : tpT("ui.fix_fields_to_continue", { count: resumen.length });
+    caja.appendChild(titulo);
     var lista = document.createElement("ul");
-    sueltos.forEach(function (m) {
+    resumen.forEach(function (r) {
       var li = document.createElement("li");
-      li.textContent = m;
+      var b = document.createElement("strong");
+      b.textContent = r.label;
+      li.appendChild(b);
+      li.appendChild(document.createTextNode(": " + r.msg));
+      if (r.input) {
+        li.className = "is-link";
+        li.setAttribute("role", "button");
+        li.tabIndex = 0;
+        li.addEventListener("click", function () {
+          mostrarPestanaDe(dlg, r.input);
+          var foco = r.input.matches("input,select,textarea") ? r.input : r.input.querySelector("input,select,textarea,button");
+          if (foco) { try { foco.focus({ preventScroll: true }); } catch (e) { foco.focus(); } }
+          (foco || r.input).scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+      }
       lista.appendChild(li);
     });
     caja.appendChild(lista);
-    body.insertBefore(caja, body.firstChild);
-    body.scrollTop = 0;
+    if (head && head.parentNode) head.parentNode.insertBefore(caja, head.nextSibling);
+    else body.insertBefore(caja, body.firstChild);
+    // Y se abre la pestaña del primer campo con error, si esta en otra.
+    var primero = resumen.filter(function (r) { return r.input; })[0];
+    if (primero) mostrarPestanaDe(dlg, primero.input);
   }
 
   /* ── Teclado para controles que no son <button> ──────────────────────
@@ -455,16 +508,28 @@
    * @param {object} r        respuesta de fetchJSON: {ok, status, data}
    * @param {string} fallback texto si el servidor no explica nada
    */
+  /**
+   * Primer error de validacion como texto "Campo: mensaje" (o el respaldo).
+   * Para los sitios que avisan con un toast y no tienen formulario donde
+   * colocar el error: "Necesario" a secas no dice que falta.
+   */
+  function firstError(errors, fallback) {
+    if (!errors || typeof errors !== "object") return fallback;
+    for (var k in errors) {
+      if (!Object.prototype.hasOwnProperty.call(errors, k)) continue;
+      var v = errors[k];
+      var msg = Array.isArray(v) ? v[0] : String(v);
+      if (!msg) continue;
+      return etiquetaDeCampo(null, k, null) + ": " + msg;
+    }
+    return fallback;
+  }
+
   function errorToast(r, fallback) {
     var msg = fallback;
     var d = (r && r.data) || {};
     if (d.errors && typeof d.errors === "object") {
-      for (var k in d.errors) {
-        if (!Object.prototype.hasOwnProperty.call(d.errors, k)) continue;
-        var v = d.errors[k];
-        msg = Array.isArray(v) ? v[0] : String(v);
-        break;
-      }
+      msg = firstError(d.errors, fallback);
     } else if (d.message) {
       msg = d.message;
     }
@@ -511,6 +576,7 @@
     showFieldErrors: showFieldErrors,
     fetchJSON: fetchJSON,
     errorToast: errorToast,
+    firstError: firstError,
     escapeHtml: escapeHtml,
     csrf: csrf,
     tabs: buildTabs,

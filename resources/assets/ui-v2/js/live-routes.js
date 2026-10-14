@@ -545,9 +545,8 @@
     var msg = T("could_not_save", tpT('ui.save_failed'));
     if (res && res.data) {
       if (res.data.errors) {
-        var k = Object.keys(res.data.errors)[0];
-        var e = res.data.errors[k];
-        msg = Array.isArray(e) ? e[0] : e || msg;
+        // "Campo: mensaje", que un "Necesario" suelto no dice que falta.
+        msg = tpModal.firstError(res.data.errors, msg);
       } else if (res.data.message) {
         msg = res.data.message;
       }

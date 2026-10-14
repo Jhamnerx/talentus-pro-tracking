@@ -1481,6 +1481,8 @@
             if (!metaRef) return false;
             var data = readForm(dlg, metaRef);
             if (!data.name) {
+              // Resumen bajo la cabecera + campo marcado, como un 422 del servidor.
+              window.tpModal.showFieldErrors(dlg, { name: [tpT('ui.name_the_rule')] });
               window.tpModal.toast(tpT('ui.name_the_rule'), "warning");
               return false;
             }
@@ -1495,9 +1497,7 @@
                   var errs = (res.data && res.data.errors) || {};
                   window.tpModal.showFieldErrors(dlg, errs);
                   var first = Object.keys(errs)[0];
-                  var msg = first
-                    ? [].concat(errs[first])[0]
-                    : tpT('ui.check_marked_fields');
+                  var msg = tpModal.firstError(errs, tpT('ui.check_marked_fields'));
                   window.tpModal.toast(msg, "warning");
                   return;
                 }

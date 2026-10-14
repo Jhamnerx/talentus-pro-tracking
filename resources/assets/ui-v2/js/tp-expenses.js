@@ -145,7 +145,12 @@
       .fetchJSON(url, { method: item ? "PUT" : "POST", json: payload })
       .then(function (res) {
         tpModal.setBusy(d, false);
-        if (res.status === 422) return showErr(tpT('ui.check_required_fields'));
+        if (res.status === 422) {
+          // Campo marcado + resumen bajo la cabecera; antes solo "revisa los campos".
+          var errors = (res.data && res.data.errors) || {};
+          tpModal.showFieldErrors(d, errors);
+          return showErr(tpModal.firstError(errors, tpT('ui.check_required_fields')));
+        }
         if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || tpT('ui.save_failed'));
         tpModal.close(d);
         load();

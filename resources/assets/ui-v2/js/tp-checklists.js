@@ -25,7 +25,7 @@
     var errs = (res.data && res.data.errors) || {};
     var first = Object.keys(errs)[0];
     tpModal.toast(
-      first ? [].concat(errs[first])[0] : (res.data && res.data.message) || fallback,
+      tpModal.firstError(errs, (res.data && res.data.message) || fallback),
       "error",
     );
   }

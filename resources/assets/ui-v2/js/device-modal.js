@@ -1025,7 +1025,7 @@
           var errs = (res.data && res.data.errors) || {};
           var first = Object.keys(errs)[0];
           tpModal.toast(
-            first ? [].concat(errs[first])[0] : (res.data && res.data.message) || tpT('ui.save_failed'),
+            tpModal.firstError(errs, (res.data && res.data.message) || tpT('ui.save_failed')),
             "error",
           );
         })
@@ -1466,7 +1466,7 @@
                   var errs = (res.data && res.data.errors) || {};
                   var first = Object.keys(errs)[0];
                   tpModal.toast(
-                    first ? [].concat(errs[first])[0] : tpT('ui.invalid_file'),
+                    tpModal.firstError(errs, tpT('ui.invalid_file')),
                     "error",
                   );
                   return;

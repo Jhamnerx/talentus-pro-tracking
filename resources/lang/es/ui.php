@@ -972,6 +972,8 @@ return [
     'zones_instead_of_addresses'         => 'Zonas en vez de direcciones',
 
 
+    'fix_field_to_continue'               => 'Corrige este campo para continuar',
+    'fix_fields_to_continue'              => 'Corrige estos :count campos para continuar',
     // Operaciones (control de vueltas)
     'ops_worked_hours'                    => 'Horas trabajadas',
     'ops_worked_hours_hint'               => 'Lo que se descuenta de las horas de motor en el reporte «Horas trabajadas netas».',

@@ -2681,7 +2681,7 @@
                   if (!res.ok || !res.data || !res.data.ok) {
                     var errors = (res.data && res.data.errors) || {};
                     var first = Object.keys(errors)[0];
-                    tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.save_failed'), "error");
+                    tpModal.toast(tpModal.firstError(errors, tpT('ui.save_failed')), "error");
                     return;
                   }
                   tpModal.toast(isEdit ? tpT('ui.group_updated') : tpT('ui.group_created'), "success");
@@ -3370,7 +3370,7 @@
           if (res.status === 422) {
             var errs = (res.data && res.data.errors) || {};
             var first = Object.keys(errs)[0];
-            tpModal.toast(first ? [].concat(errs[first])[0] : tpT('ui.invalid_image'), "error");
+            tpModal.toast(tpModal.firstError(errs, tpT('ui.invalid_image')), "error");
             return;
           }
           if (!res.ok || !res.data || !res.data.ok) {

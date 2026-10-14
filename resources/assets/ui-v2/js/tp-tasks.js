@@ -576,7 +576,7 @@
           tpModal.showFieldErrors(dialog, errors);
           var first = Object.keys(errors)[0];
           tpModal.toast(
-            first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'),
+            tpModal.firstError(errors, tpT('ui.check_the_fields')),
             "warning",
           );
           return;
@@ -892,7 +892,7 @@
                   var errors = (res.data && res.data.errors) || {};
                   var first = Object.keys(errors)[0];
                   tpModal.toast(
-                    first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.import_failed'),
+                    tpModal.firstError(errors, tpT('ui.import_failed')),
                     "error",
                   );
                   return;

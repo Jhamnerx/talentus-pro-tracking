@@ -454,9 +454,7 @@
             } else {
               var errs = res.data && res.data.errors;
               tpModal.toast(
-                (errs && (errs.id || errs[Object.keys(errs)[0]])) ||
-                  (res.data && res.data.message) ||
-                  T("error"),
+                tpModal.firstError(errs, (res.data && res.data.message) || T("error")),
                 "error",
               );
             }

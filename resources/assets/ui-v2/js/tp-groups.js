@@ -93,7 +93,7 @@
                 } else {
                   var errs = (res.data && res.data.errors) || {};
                   var first = Object.keys(errs)[0];
-                  toast(first ? [].concat(errs[first])[0] : tpT('ui.save_failed'), "error");
+                  toast(tpModal.firstError(errs, tpT('ui.save_failed')), "error");
                 }
               })
               .catch(function () {

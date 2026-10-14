@@ -957,9 +957,7 @@
         } else {
           var errs = res.data && res.data.errors;
           if (errs) {
-            var k = Object.keys(errs)[0];
-            var e = errs[k];
-            tpModal.toast(Array.isArray(e) ? e[0] : e, "error");
+            tpModal.toast(tpModal.firstError(errs, tpT('ui.save_failed')), "error");
           } else tpModal.toast((res.data && res.data.message) || T("error"), "error");
         }
       });

@@ -517,7 +517,7 @@
               if (!res.ok || !res.data || !res.data.ok) {
                 var errors = (res.data && res.data.errors) || {};
                 var first = Object.keys(errors)[0];
-                err.textContent = first ? [].concat(errors[first])[0] : t("ui.save_failed");
+                err.textContent = tpModal.firstError(errors, t("ui.save_failed"));
                 err.classList.add("is-visible");
                 return;
               }
@@ -792,7 +792,7 @@
         var errors = (res.data && res.data.errors) || {};
         tpModal.showFieldErrors(d, errors);
         var first = Object.keys(errors)[0];
-        return showErr(first ? [].concat(errors[first])[0] : t("ui.check_required_fields"));
+        return showErr(tpModal.firstError(errors, t("ui.check_required_fields")));
       }
       if (!res.ok || !res.data || !res.data.ok) return showErr((res.data && res.data.message) || t("ui.save_failed"));
       tpModal.close(d);

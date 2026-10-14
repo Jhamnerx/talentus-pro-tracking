@@ -415,7 +415,7 @@
         if (res.status === 422) {
           var errors = (res.data && res.data.errors) || {};
           var first = Object.keys(errors)[0];
-          return showErr(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'));
+          return showErr(tpModal.firstError(errors, tpT('ui.check_the_fields')));
         }
         if (!res.ok || !res.data || !res.data.ok) return showErr(tpT('ui.register_failed'));
         // Update optimista: marca el evento como atendido y re-pinta su fila,

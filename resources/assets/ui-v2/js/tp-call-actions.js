@@ -179,7 +179,7 @@
       if (res.status === 422) {
         var errors = (res.data && res.data.errors) || {};
         var first = Object.keys(errors)[0];
-        tpModal.toast(first ? (Array.isArray(errors[first]) ? errors[first][0] : errors[first]) : tpT('ui.check_the_fields'), "warning");
+        tpModal.toast(tpModal.firstError(errors, tpT('ui.check_the_fields')), "warning");
         return;
       }
       if (!res.ok || !res.data || !res.data.ok) { tpModal.toast(tpT('ui.save_failed'), "error"); return; }

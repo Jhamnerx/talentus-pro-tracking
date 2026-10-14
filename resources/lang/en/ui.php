@@ -971,6 +971,8 @@ return [
     'zones_instead_of_addresses'         => 'Zones instead of addresses',
 
 
+    'fix_field_to_continue'               => 'Fix this field to continue',
+    'fix_fields_to_continue'              => 'Fix these :count fields to continue',
     // Operaciones (control de vueltas)
     'ops_worked_hours'                    => 'Worked hours',
     'ops_worked_hours_hint'               => 'What is deducted from engine hours in the "Net worked hours" report.',

@@ -166,6 +166,25 @@
 .tp-modal__errors li + li {
   margin-top: 3px;
 }
+/* Resumen bajo la cabecera: titulo y lineas que llevan al campo. */
+.tp-modal__head + .tp-modal__errors {
+  margin: 0 20px 0;
+  border-radius: 8px;
+}
+.tp-modal__errors-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.tp-modal__errors li.is-link {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+}
+.tp-modal__errors li.is-link:hover,
+.tp-modal__errors li.is-link:focus-visible {
+  text-decoration-color: currentColor;
+  outline: none;
+}
 
 /* El error puede caer en el contenedor de un campo sin input propio
    (chips, pickers): se marca lo que tenga dentro. */
