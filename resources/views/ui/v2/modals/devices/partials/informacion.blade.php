@@ -11,6 +11,12 @@
     $cv = function ($f) use ($dev) {
         return !$dev || Auth::user()->can('view', $dev, $f);
     };
+    // Campo visible pero no editable (permiso device.<campo> solo de vista):
+    // va disabled, como en el legacy. Sin esto el usuario lo veia editable
+    // y el backend lo descartaba en silencio al guardar.
+    $ce = function ($f) use ($dev) {
+        return !$dev || Auth::user()->can('edit', $dev, $f);
+    };
 
     $groups = $device_groups ?? [];
     $types = $device_types ?? [];
@@ -58,7 +64,7 @@
     @if ($cv('device_type_id'))
         <label class="tp-form__field tp-col-2">
             <span class="tp-form__label">{{ trans('validation.attributes.device_type_id') }}</span>
-            <select class="tp-input" style="width: 100%" name="device_type_id" data-tp-field>
+            <select class="tp-input" style="width: 100%" name="device_type_id" {{ $ce('device_type_id') ? '' : 'disabled' }} data-tp-field>
                 @foreach ($types as $tid => $ttitle)
                     <option value="{{ $tid }}" {{ (string) ($item->device_type_id ?? '') === (string) $tid ? 'selected' : '' }}>
                         {{ $ttitle }}</option>
@@ -101,7 +107,7 @@
     @if ($cv('authentication'))
         <label class="tp-form__field tp-col-2">
             <span class="tp-form__label">{{ trans('validation.attributes.authentication') }}</span>
-            <input type="text" name="authentication" value="{{ $item->authentication ?? '' }}" data-tp-field>
+            <input type="text" name="authentication" value="{{ $item->authentication ?? '' }}" {{ $ce('authentication') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
@@ -109,14 +115,14 @@
     @if ($cv('sim_number'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.sim_number') }}</span>
-            <input type="text" name="sim_number" maxlength="30" value="{{ $item->sim_number ?? '' }}" data-tp-field>
+            <input type="text" name="sim_number" maxlength="30" value="{{ $item->sim_number ?? '' }}" {{ $ce('sim_number') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($additionalFieldsOn && $cv('installation_date'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.installation_date') }}</span>
-            <input type="date" name="installation_date" value="{{ $d($item->installation_date ?? null) }}" data-tp-field>
+            <input type="date" name="installation_date" value="{{ $d($item->installation_date ?? null) }}" {{ $ce('installation_date') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
@@ -132,14 +138,14 @@
     @if ($cv('plate_number'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.plate_number') }}</span>
-            <input type="text" name="plate_number" maxlength="20" value="{{ $item->plate_number ?? '' }}" data-tp-field>
+            <input type="text" name="plate_number" maxlength="20" value="{{ $item->plate_number ?? '' }}" {{ $ce('plate_number') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($simBlockingOn && $cv('msisdn'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.msisdn') }}</span>
-            <input type="text" name="msisdn" maxlength="30" value="{{ $item->msisdn ?? '' }}" data-tp-field>
+            <input type="text" name="msisdn" maxlength="30" value="{{ $item->msisdn ?? '' }}" {{ $ce('msisdn') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
@@ -147,42 +153,42 @@
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.registration_number') }}</span>
             <input type="text" name="registration_number" maxlength="40" value="{{ $item->registration_number ?? '' }}"
-                data-tp-field>
+                {{ $ce('registration_number') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($additionalFieldsOn && $cv('sim_activation_date'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.sim_activation_date') }}</span>
-            <input type="date" name="sim_activation_date" value="{{ $d($item->sim_activation_date ?? null) }}" data-tp-field>
+            <input type="date" name="sim_activation_date" value="{{ $d($item->sim_activation_date ?? null) }}" {{ $ce('sim_activation_date') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($cv('object_owner'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.object_owner') }}</span>
-            <input type="text" name="object_owner" maxlength="80" value="{{ $item->object_owner ?? '' }}" data-tp-field>
+            <input type="text" name="object_owner" maxlength="80" value="{{ $item->object_owner ?? '' }}" {{ $ce('object_owner') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($additionalFieldsOn && $cv('sim_expiration_date'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.sim_expiration_date') }}</span>
-            <input type="date" name="sim_expiration_date" value="{{ $d($item->sim_expiration_date ?? null) }}" data-tp-field>
+            <input type="date" name="sim_expiration_date" value="{{ $d($item->sim_expiration_date ?? null) }}" {{ $ce('sim_expiration_date') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($cv('vin'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.vin') }}</span>
-            <input type="text" name="vin" maxlength="32" value="{{ $item->vin ?? '' }}" data-tp-field>
+            <input type="text" name="vin" maxlength="32" value="{{ $item->vin ?? '' }}" {{ $ce('vin') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($cv('device_model'))
         <label class="tp-form__field">
             <span class="tp-form__label">{{ trans('validation.attributes.device_model') }}</span>
-            <input type="text" name="device_model" maxlength="80" value="{{ $item->device_model ?? '' }}" data-tp-field>
+            <input type="text" name="device_model" maxlength="80" value="{{ $item->device_model ?? '' }}" {{ $ce('device_model') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
@@ -202,14 +208,14 @@
         <label class="tp-form__field tp-col-2">
             <span class="tp-form__label">{{ trans('validation.attributes.additional_notes') }}</span>
             <input type="text" name="additional_notes" maxlength="500" value="{{ $item->additional_notes ?? '' }}"
-                data-tp-field>
+                {{ $ce('additional_notes') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 
     @if ($cv('comment'))
         <label class="tp-form__field tp-col-2">
             <span class="tp-form__label">{{ trans('validation.attributes.comment') }}</span>
-            <input type="text" name="comment" maxlength="500" value="{{ $item->comment ?? '' }}" data-tp-field>
+            <input type="text" name="comment" maxlength="500" value="{{ $item->comment ?? '' }}" {{ $ce('comment') ? '' : 'disabled' }} data-tp-field>
         </label>
     @endif
 

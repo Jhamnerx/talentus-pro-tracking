@@ -66,7 +66,10 @@ class DeviceFormValidator extends Validator
             'min_moving_speed'    => 'numeric|min:1|max:50',
             'min_fuel_fillings'   => 'numeric|min:1|max:1000',
             'min_fuel_thefts'     => 'numeric|min:1|max:1000',
-            'sim_number'          => 'required|unique:devices,sim_number,%s',
+            // sometimes: el campo no viaja cuando el usuario no tiene permiso
+            // device.sim_number (onlyEditables lo quita antes de validar) y con
+            // 'required' a secas el guardado fallaba con "Necesario".
+            'sim_number'          => 'sometimes|required|unique:devices,sim_number,%s',
             //'expiration_date'     => 'required_if:enable_expiration_date,1|date',
             'installation_date'   => 'date',
             'sim_activation_date' => 'date',
