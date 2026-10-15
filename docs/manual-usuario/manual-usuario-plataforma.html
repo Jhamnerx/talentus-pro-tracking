@@ -23,6 +23,9 @@
   .box { border: 1px solid #cbd5e1; border-left: 4px solid #1d4ed8; background: #f8fafc; padding: 3mm 4mm; margin: 3mm 0 4mm; page-break-inside: avoid; }
   .box.warn { border-left-color: #d97706; background: #fffbeb; }
   .box.tip { border-left-color: #16a34a; background: #f0fdf4; }
+  .box.test { border-left-color: #16a34a; background: #f0fdf4; }
+  .check { list-style: none; padding-left: 0; }
+  .check li::before { content: "☐ "; color: #1d4ed8; font-weight: 700; }
   figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
   figure img { width: auto; max-width: 100%; max-height: 100mm; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 4px; display: block; }
   figure.narrow img { max-height: 90mm; }
@@ -69,6 +72,7 @@
     <li>Rutas y programaciones de ruta</li>
     <li>Puntos de interés (POI)</li>
     <li>Operaciones (control de vueltas) <span class="new">NUEVO</span></li>
+    <li>Seguridad · Control de flota <span class="new">NUEVO</span></li>
     <li>Mantenimiento (servicios)</li>
     <li>Gastos</li>
     <li>Tareas y conductores</li>
@@ -406,7 +410,54 @@
 
 <!-- =============================================================== -->
 <section class="chapter">
-  <h2>15. Mantenimiento (servicios)</h2>
+  <h2>15. Seguridad · Control de flota <span class="new">NUEVO</span></h2>
+  <p>Tablero de seguridad y productividad por unidad, pensado para el reporte diario del área de seguridad: cuánto se movió cada unidad, a qué velocidad, cuántos excesos, salidas de zona, desconexiones y, si la unidad lo tiene, alertas de cinturón. Requiere el permiso «Seguridad» (lo activa el administrador).</p>
+  <h3>15.1 Filtros</h3>
+  <ul>
+    <li><b>Flota</b>: tipo de vehículo (volquete, camioneta…; se asignan en la ficha del vehículo, pestaña Información).</li>
+    <li><b>Turno</b>: Ambos, Día o Noche. Las horas del turno se definen en <b>Ajustes</b> (por defecto Día 07:00–19:00; la noche se atribuye al día en que empieza).</li>
+    <li><b>Desde / Hasta</b>, <b>Dispositivo</b>.</li>
+    <li><b>Vigencia (min)</b>: cuántos minutos sin trama hacen que una lectura deje de considerarse vigente.</li>
+    <li><b>Límite manual (km/h)</b>: velocidad a partir de la cual se cuenta un exceso <i>fuera</i> de geocercas. Dentro de una geocerca con límite manda la geocerca. Vacío: fuera de geocercas no se cuenta.</li>
+  </ul>
+  <figure><img src="img/100-seguridad-pantalla.jpg" alt="Pantalla de Seguridad"><figcaption>Seguridad: filtros, ocho tarjetas, estado actual por unidad y su gráfico.</figcaption></figure>
+  <h3>15.2 Qué muestra</h3>
+  <ul>
+    <li><b>Tarjetas</b>: eventos de sobrevelocidad, alertas de cinturón, salidas de geocerca, unidades con lectura vigente, en movimiento, stand by, sin lectura vigente y última lectura de la flota.</li>
+    <li><b>Estado actual</b>: última lectura de cada unidad, velocidad GPS, motor, antigüedad en minutos y estado (En movimiento ≥ 1 km/h; Stand by = motor encendido sin moverse; Detenido / motor apagado; Sin lectura vigente).</li>
+    <li><b>Resumen diario</b>: por fecha, km, horas de movimiento, velocidad media (km ÷ horas de movimiento), máxima GPS, unidades con movimiento, en stand by y excesos.</li>
+    <li><b>Gráficos</b>: unidades por estado diario, velocidad media por unidad, excesos por día y estado vigente de la flota.</li>
+    <li><b>Resultado por unidad</b> y <b>detalle diario por unidad</b> (km, motor, movimiento, paradas, registros, excesos, cinturón).</li>
+  </ul>
+  <figure><img src="img/101-seguridad-graficos.jpg" alt="Gráficos de Seguridad"><figcaption>Gráficos y resultado por unidad.</figcaption></figure>
+  <h3>15.3 Cómo se calcula cada dato</h3>
+  <table>
+    <tr><th style="width:28%">Dato</th><th>Origen</th></tr>
+    <tr><td>Sobrevelocidad</td><td>Suma de los eventos de las alertas de exceso (normal y en geocerca) y de los tramos calculados con las posiciones; un evento dentro de un tramo calculado cuenta una sola vez.</td></tr>
+    <tr><td>Salidas de geocerca</td><td>Cada salida de una geocerca del usuario dentro del turno.</td></tr>
+    <tr><td>Desconexiones</td><td>Eventos de corte de energía y de fuera de línea, más los huecos de señal mayores al ajuste «Corte de señal».</td></tr>
+    <tr><td>Alertas de cinturón</td><td>Solo en unidades con sensor de cinturón: tramos de 30 s o más con el cinturón suelto y el vehículo en movimiento. Sin sensor, la celda queda vacía.</td></tr>
+    <tr><td>Stand by* diario</td><td>Hubo horas de motor pero cero horas de movimiento en el período filtrado. No es el estado actual.</td></tr>
+  </table>
+  <h3>15.4 Ajustes, recalcular y exportar</h3>
+  <ol class="steps">
+    <li><b>Ajustes</b>: inicio y fin del turno Día, parada mínima (minutos) y corte de señal (minutos). Al cambiarlos, o al cambiar el límite manual, la pantalla avisa que hay que <b>recalcular</b>.</li>
+    <li><b>Recalcular</b>: rehace los datos del rango elegido (hasta 31 días desde la pantalla). El proceso automático recalcula cada hora el día de hoy y el de ayer.</li>
+    <li><b>Exportar a Excel</b>: descarga un libro con las hojas <b>Seguridad</b>, <b>Operaciones</b>, <b>Datos</b> y <b>Telemetría</b>, con los mismos filtros y los cuatro gráficos. Admite rangos de hasta 93 días.</li>
+  </ol>
+  <figure class="narrow"><img src="img/102-seguridad-ajustes.jpg" alt="Ajustes de Seguridad"><figcaption>Ajustes del turno y de los umbrales.</figcaption></figure>
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Cambiar turno, fechas y unidad y ver que cambian las tarjetas, tablas y gráficos.</li>
+      <li>Poner un límite manual, recalcular y comprobar que aparecen excesos; quitarlo y recalcular.</li>
+      <li>Exportar y comparar las cifras del Excel con la pantalla.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- =============================================================== -->
+<section class="chapter">
+  <h2>16. Mantenimiento (servicios)</h2>
   <p>Programa servicios por odómetro, horas de motor o días, y recibe aviso antes de que venzan. Menú → <b>Mantenimiento</b> lista todos los servicios con la distancia, horas o días restantes.</p>
   <ol class="steps">
     <li>Abre la ficha del vehículo → pestaña <b>Servicios</b> → <b>+ Añadir servicio</b>.</li>
@@ -420,7 +471,7 @@
 
 <!-- =============================================================== -->
 <section class="chapter">
-  <h2>16. Gastos</h2>
+  <h2>17. Gastos</h2>
   <p>Registra combustible, peajes, repuestos y cualquier costo por vehículo. Menú → <b>Gastos</b> → <b>+</b>: vehículo, nombre, fecha y hora, tipo (los tipos se administran en Ajustes de cuenta), cantidad, costo unitario, proveedor, comprador y notas. La lista filtra por vehículo, fechas y texto, y muestra el total del periodo. Los mismos gastos aparecen en la pestaña Gastos de la ficha del vehículo y en el reporte «Costo de operación».</p>
   <figure><img src="img/62-gastos-lista.jpg" alt="Gastos"><figcaption>Lista de gastos.</figcaption></figure>
   <figure class="narrow"><img src="img/63-gastos-nuevo.jpg" alt="Nuevo gasto"><figcaption>Nuevo gasto.</figcaption></figure>
@@ -428,7 +479,7 @@
 
 <!-- =============================================================== -->
 <section class="chapter">
-  <h2>17. Tareas y conductores</h2>
+  <h2>18. Tareas y conductores</h2>
   <h3>17.1 Tareas</h3>
   <p>Órdenes de recogida y entrega asignadas a un vehículo. Menú → <b>Tareas</b> → <b>+</b>: vehículo, título, número de factura, prioridad, conjunto de tareas; dirección y ventana horaria de <b>recogida</b> y de <b>entrega</b>, con cambio automático de estado al permanecer X segundos dentro de un radio. Los estados (nueva, en progreso, terminada, fallida) se ven en la lista y disparan la alerta «Estado de la tarea». Los <b>conjuntos de tareas</b> agrupan varias entregas de una misma jornada; también se importan desde archivo.</p>
   <figure><img src="img/65-tareas-nueva.jpg" alt="Nueva tarea"><figcaption>Nueva tarea con recogida y entrega.</figcaption></figure>
@@ -439,21 +490,21 @@
 
 <!-- =============================================================== -->
 <section class="chapter">
-  <h2>18. Tablero (panel de control)</h2>
+  <h2>19. Tablero (panel de control)</h2>
   <p>Resumen de la flota para un periodo (hoy, ayer, semana, mes o rango): total, en movimiento, inactivos, detenidos, sin datos, velocidad promedio y utilización; estado de dispositivos (buen estado / requieren atención / mal estado), de conexión y de movimiento en vivo; conducción y comportamiento (puntuación de flota, frenados, aceleraciones, giros bruscos, excesos de velocidad), ranking de mejores y peores vehículos, kilometraje, tareas y notas. Los widgets se eligen en Ajustes de cuenta → Tablero.</p>
   <figure><img src="img/80-tablero.jpg" alt="Tablero"><figcaption>Panel de control.</figcaption></figure>
 </section>
 
 <!-- =============================================================== -->
 <section class="chapter">
-  <h2>19. Monitoreo de grupo</h2>
+  <h2>20. Monitoreo de grupo</h2>
   <p>Varios mapas a la vez, uno por vehículo, para una sala de control. Menú → <b>Monitoreo de grupo</b>: elige el número de celdas (2 a 32) y, en cada celda, el vehículo a seguir. Cada mapa sigue a su vehículo en vivo con el color por velocidad, el halo del seleccionado y la animación de movimiento; se pueden mostrar geocercas, POI, rutas y la cola de recorrido. La selección y el tamaño se recuerdan en el navegador.</p>
   <figure><img src="img/81-monitoreo-grupo.jpg" alt="Monitoreo de grupo"><figcaption>Monitoreo de grupo.</figcaption></figure>
 </section>
 
 <!-- =============================================================== -->
 <section class="chapter">
-  <h2>20. Ajustes de cuenta</h2>
+  <h2>21. Ajustes de cuenta</h2>
   <p>Engranaje de la barra superior. Pestañas:</p>
   <table>
     <tr><th style="width:28%">Pestaña</th><th>Contenido</th></tr>
@@ -471,7 +522,7 @@
 
 <!-- =============================================================== -->
 <section class="chapter">
-  <h2>21. Preguntas frecuentes</h2>
+  <h2>22. Preguntas frecuentes</h2>
   <ul>
     <li><b>Un vehículo sale «Desconectado» aunque está encendido.</b> Revisa cobertura y SIM; en la ficha, «Última señal» indica la hora de la última trama. Si pasó más del tiempo límite configurado, se marca desconectado.</li>
     <li><b>No me llegan las notificaciones.</b> En la alerta, pestaña Notificaciones, confirma el canal (push requiere la app instalada y sesión iniciada; correo requiere el email confirmado en el menú de usuario).</li>
