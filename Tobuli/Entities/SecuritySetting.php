@@ -14,6 +14,15 @@ class SecuritySetting extends AbstractEntity
         'stop_minutes',
         'gap_minutes',
     ];
+    // Mismos valores que los DEFAULT de la migracion: firstOrCreate devuelve
+    // el modelo recien creado sin hidratar los defaults de la base.
+    protected $attributes = [
+        'day_start'        => '07:00',
+        'day_end'          => '19:00',
+        'validity_minutes' => 10,
+        'stop_minutes'     => 1,
+        'gap_minutes'      => 10,
+    ];
     protected $casts = [
         'speed_limit'      => 'int',
         'validity_minutes' => 'int',
