@@ -1180,6 +1180,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
     Route::get('expenses',     ['as' => 'expenses',     'uses' => 'Ui\V2\ExpensesController@page']);
     Route::get('route-schedules', ['as' => 'route_schedules', 'uses' => 'Ui\V2\RouteSchedulesController@page']);
     Route::get('operations',   ['as' => 'operations',   'uses' => 'Ui\V2\OperationsController@page']);
+    Route::get('security',     ['as' => 'security',     'uses' => 'Ui\V2\SecurityController@page']);
     Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
 
     Route::prefix('api')->group(function () {
@@ -1224,6 +1225,12 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('operations/stop-reasons',        ['as' => 'api.operations.reasons',             'uses' => 'Ui\V2\OperationsController@reasons']);
         Route::put('operations/stop-reasons',        ['as' => 'api.operations.reasons.save',        'uses' => 'Ui\V2\OperationsController@saveReasons']);
         Route::post('operations/stops/{id}/justify', ['as' => 'api.operations.stops.justify',       'uses' => 'Ui\V2\OperationsController@justifyStop'])->where('id', '[0-9]+');
+        // Seguridad: control de flota (tarjetas, resumen diario, estado en vivo, ajustes, exportacion)
+        Route::get('security/meta',         ['as' => 'api.security.meta',        'uses' => 'Ui\V2\SecurityController@meta']);
+        Route::get('security/data',         ['as' => 'api.security.data',        'uses' => 'Ui\V2\SecurityController@data']);
+        Route::post('security/settings',    ['as' => 'api.security.settings',    'uses' => 'Ui\V2\SecurityController@saveSettings']);
+        Route::post('security/recalculate', ['as' => 'api.security.recalculate', 'uses' => 'Ui\V2\SecurityController@recalculate']);
+        Route::get('security/export',       ['as' => 'api.security.export',      'uses' => 'Ui\V2\SecurityController@export']);
         Route::put('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints.save',    'uses' => 'Ui\V2\RouteSchedulesController@saveCheckpoints'])->where('id', '[0-9]+');
 
         Route::get('expenses',        ['as' => 'api.expenses',        'uses' => 'Ui\V2\ExpensesController@data']);
