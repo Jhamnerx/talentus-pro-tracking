@@ -23,6 +23,9 @@ use Tobuli\Services\Security\SecuritySummary;
  */
 class SecurityController extends BaseController
 {
+    /** Tope del rango exportable a Excel (un trimestre); mas dias disparan un libro enorme. */
+    const EXPORT_MAX_DAYS = 93;
+
     /** Mismo gate que Operaciones: el modulo no esta en el modelMap del exception Manager, asi que checkException no aplica. */
     private function gate(string $action): void
     {
@@ -156,6 +159,10 @@ class SecurityController extends BaseController
         $filters = $this->filters($request);
         if ($filters instanceof JsonResponse) {
             return $filters;
+        }
+
+        if (Carbon::parse($filters['from'])->diffInDays(Carbon::parse($filters['to'])) > self::EXPORT_MAX_DAYS) {
+            return response()->json(['ok' => false, 'errors' => ['to' => [trans('ui.security_export_range_too_long')]]], 422);
         }
 
         $stats = $this->filtered($filters)->with('device.vehicleType')->get();

@@ -63,11 +63,16 @@ class SecuritySheet extends BaseSheet implements WithCharts
         return self::TITLE;
     }
 
+    protected function columnWidths(): array
+    {
+        return $this->widths('B', 'T', 12, ['A' => 14]);
+    }
+
     protected function build(): void
     {
         $this->blank();
         $this->titleRow = $this->heading('SEGURIDAD · CONTROL DE FLOTA');
-        $this->row(['A' => 'Generado el ' . \Formatter::time()->human(date('Y-m-d H:i:s'))]);
+        $this->note('Generado el ' . \Formatter::time()->human(date('Y-m-d H:i:s')));
         $this->filters($this->filters);
         $this->blank(2);
 
@@ -110,7 +115,7 @@ class SecuritySheet extends BaseSheet implements WithCharts
         $this->ranges['daily'] = $this->table($this->daily, fn ($d) => [
             $d['date'], $d['km'], $d['moving_h'], $d['avg_kmh'], $d['max_kmh'], $d['moving'], $d['standby'], $d['overspeed'],
         ]);
-        $this->row(['A' => '*Stand by diario: hubo horas de motor pero no de movimiento en la fecha.']);
+        $this->note('*Stand by diario: hubo horas de motor pero no de movimiento en la fecha.');
         $this->blank();
 
         $this->heading('DETALLE DIARIO POR UNIDAD');

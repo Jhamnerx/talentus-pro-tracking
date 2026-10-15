@@ -30,6 +30,11 @@ class DataSheet extends BaseSheet
         return 'Datos';
     }
 
+    protected function columnWidths(): array
+    {
+        return $this->widths('A', 'Q', 14);
+    }
+
     protected function build(): void
     {
         $this->titleRow = $this->heading('DATOS · una fila por unidad, fecha y turno');

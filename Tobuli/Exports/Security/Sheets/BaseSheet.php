@@ -3,33 +3,55 @@
 namespace Tobuli\Exports\Security\Sheets;
 
 use Maatwebsite\Excel\Concerns\FromArray;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 
 /**
  * Base comun de las hojas del libro de Seguridad: construye la matriz de
  * celdas con un cursor de filas y recuerda que filas van en negrita
- * (titulos, etiquetas y cabeceras) para aplicarlas en AfterSheet.
+ * (titulos, etiquetas y cabeceras), cuales se combinan A:J (titulos largos)
+ * y los anchos fijos de columna, para aplicarlos en AfterSheet.
  *
- * WithStrictNullComparison: sin ella maatwebsite descarta los ceros
- * (`0 != null`). Las filas en blanco se representan como `[null]`, porque
- * una fila `[]` desaparece al aplanar las filas y descuadraria el layout.
+ * - Es su propio value binder (WithCustomValueBinder): los numeros PHP se
+ *   escriben como numericos y cualquier cadena como texto, nunca como
+ *   formula, para que un nombre de unidad "=1+1" o "@x" no se ejecute.
+ * - WithStrictNullComparison: sin ella maatwebsite descarta los ceros
+ *   (`0 != null`). Las filas en blanco se representan como `[null]`, porque
+ *   una fila `[]` desaparece al aplanar las filas y descuadraria el layout.
  */
-abstract class BaseSheet implements FromArray, WithTitle, ShouldAutoSize, WithEvents, WithStrictNullComparison
+abstract class BaseSheet extends StringValueBinder implements FromArray, WithTitle, WithEvents, WithStrictNullComparison, WithCustomValueBinder
 {
+    /** Columnas que abarca una fila de titulo combinada. */
+    const MERGE_TO = 'J';
+
+    // StringValueBinder convierte TODO a texto por defecto; aqui solo las
+    // cadenas (incluidas las que empiezan por "=", con prefijo de comilla).
+    protected $convertNull = false;
+    protected $convertBoolean = false;
+    protected $convertNumeric = false;
+    protected $convertFormula = true;
+
     /** @var array[] filas ya construidas (indice 0 = fila 1 de Excel) */
     protected array $rows = [];
 
     /** @var array<int, string[]> numero de fila => [primera, ultima] columna en negrita */
     protected array $bold = [];
 
+    /** @var int[] filas cuyo texto en A se combina A:J */
+    protected array $merged = [];
+
     /** @var int|null fila del titulo principal (fuente mayor) */
     protected ?int $titleRow = null;
 
     abstract protected function build(): void;
+
+    /** Anchos fijos por columna: ['A' => 14, 'B' => 12, ...]. */
+    abstract protected function columnWidths(): array;
 
     public function array(): array
     {
@@ -46,6 +68,14 @@ abstract class BaseSheet implements FromArray, WithTitle, ShouldAutoSize, WithEv
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
 
+                foreach ($this->columnWidths() as $column => $width) {
+                    $sheet->getColumnDimension($column)->setWidth($width);
+                }
+
+                foreach ($this->merged as $row) {
+                    $sheet->mergeCells("A{$row}:" . self::MERGE_TO . $row);
+                }
+
                 foreach ($this->bold as $row => [$from, $to]) {
                     $sheet->getStyle("{$from}{$row}:{$to}{$row}")->getFont()->setBold(true);
                 }
@@ -55,6 +85,16 @@ abstract class BaseSheet implements FromArray, WithTitle, ShouldAutoSize, WithEv
                 }
             },
         ];
+    }
+
+    /** Anchos iguales para un rango de columnas: widths('A', 'Q', 14). */
+    protected function widths(string $from, string $to, float $width, array $into = []): array
+    {
+        for ($i = $this->columnIndex($from); $i <= $this->columnIndex($to); $i++) {
+            $into[$this->columnLetter($i)] = $width;
+        }
+
+        return $into;
     }
 
     /** Numero (1-based) de la proxima fila que se escribira. */
@@ -98,10 +138,19 @@ abstract class BaseSheet implements FromArray, WithTitle, ShouldAutoSize, WithEv
         }
     }
 
-    /** Fila titulo de seccion/hoja (negrita). */
+    /** Fila titulo de seccion/hoja (negrita, combinada A:J para no ensanchar la columna A). */
     protected function heading(string $text): int
     {
-        return $this->row(['A' => $text], true);
+        return $this->note($text, true);
+    }
+
+    /** Texto largo en A combinado A:J (subtitulos, notas al pie). */
+    protected function note(string $text, bool $bold = false): int
+    {
+        $row = $this->row(['A' => $text], $bold);
+        $this->merged[] = $row;
+
+        return $row;
     }
 
     /** Tarjetas: fila de etiquetas y fila de valores, en columnas A, D, G, J (como el Excel). */

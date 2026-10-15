@@ -24,6 +24,11 @@ class TelemetrySheet extends BaseSheet
         return 'Telemetría';
     }
 
+    protected function columnWidths(): array
+    {
+        return $this->widths('A', 'G', 16);
+    }
+
     protected function build(): void
     {
         $this->titleRow = $this->heading('TELEMETRÍA · ÚLTIMA LECTURA POR UNIDAD');

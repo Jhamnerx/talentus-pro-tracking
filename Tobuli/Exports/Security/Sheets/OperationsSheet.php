@@ -23,11 +23,16 @@ class OperationsSheet extends BaseSheet
         return 'Operaciones';
     }
 
+    protected function columnWidths(): array
+    {
+        return $this->widths('A', 'G', 14);
+    }
+
     protected function build(): void
     {
         $this->blank();
         $this->titleRow = $this->heading('OPERACIONES · CONTROL DE FLOTA');
-        $this->row(['A' => 'Filtros compartidos con Seguridad']);
+        $this->note('Filtros compartidos con Seguridad');
         $this->filters(array_slice($this->filters, 0, 5));
         $this->blank(2);
 

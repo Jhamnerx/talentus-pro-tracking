@@ -1016,6 +1016,7 @@ return [
     'security_recalculated'               => 'Recalculado: :rows filas por unidad y día.',
     'security_recalc_needed'              => 'Los ajustes cambiaron: recalcula el período para actualizar los datos.',
     'security_range_too_long'             => 'El recálculo en pantalla admite hasta 31 días; el resto lo hace el proceso nocturno.',
+    'security_export_range_too_long'      => 'La exportación admite hasta 93 días. Acorta el rango.',
     'security_day_end_after_start'        => 'El fin del turno día debe ser posterior a su inicio.',
     'security_no_sensor'                  => 'Sin sensor',
     'security_last_calculated'            => 'Datos calculados hasta',
