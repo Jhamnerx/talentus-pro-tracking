@@ -38,7 +38,7 @@
         'week', 'yesterday',
     ];
             $tpGlobal = [ 'add', 'always', 'apply', 'cancel', 'clear', 'close',
-        'confirm', 'delete', 'edit', 'failed', 'no', 'not_found', 'save',
+        'confirm', 'delete', 'edit', 'failed', 'from', 'no', 'not_found', 'save',
         'to', 'user', 'yes',
     ];
     // OJO: aqui NO se cogen 'title' ni 'name'. Son etiquetas de campo de
