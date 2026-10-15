@@ -92,7 +92,6 @@
 
   function showToast(ev) {
     var h = ensureHost();
-    while (h.children.length >= MAX_TOASTS) h.removeChild(h.firstChild);
 
     var accent = ev.color || "#2e63d9";
     var parts = [];
@@ -100,7 +99,27 @@
     if (ev.geofence && ev.geofence.name) parts.push(esc(ev.geofence.name));
     if (ev.speed != null && ev.speed !== "") parts.push(esc(ev.speed));
 
+    // El mismo aviso del mismo vehiculo no se apila: se actualiza el que ya
+    // esta (hora y contador) y se reinicia su temporizador. Asi una alerta
+    // que dispara cada minuto no llena la pantalla.
+    var key = (ev.device && ev.device.name ? ev.device.name : "") + "|" + (ev.message || "");
+    var previo = Array.prototype.filter.call(h.children, function (c) { return c.dataset.tpnKey === key && !c.dataset.tpnGoing; })[0];
+    if (previo) {
+      var n = (parseInt(previo.dataset.tpnCount, 10) || 1) + 1;
+      previo.dataset.tpnCount = String(n);
+      var badge = previo.querySelector("[data-tpn-count]");
+      if (badge) { badge.textContent = "×" + n; badge.style.display = ""; }
+      var hora = previo.querySelector("[data-tpn-time]");
+      if (hora && ev.time) hora.textContent = ev.time;
+      programarCierre(previo, ev.delay);
+      return;
+    }
+
+    while (h.children.length >= MAX_TOASTS) h.removeChild(h.firstChild);
+
     var el = document.createElement("div");
+    el.dataset.tpnKey = key;
+    el.dataset.tpnCount = "1";
     el.style.cssText =
       "pointer-events:auto;display:flex;gap:10px;align-items:flex-start;cursor:pointer;" +
       "background:var(--surface-raised,#fff);color:var(--fg-primary,#0f172a);" +
@@ -109,9 +128,10 @@
       "font-size:13px;line-height:1.45;";
     el.innerHTML =
       '<div style="flex:1;min-width:0;">' +
-      '<div style="font-weight:600;">' + esc(ev.message || "") + "</div>" +
+      '<div style="font-weight:600;">' + esc(ev.message || "") +
+      ' <span data-tpn-count style="display:none;font-weight:700;font-size:11px;color:#fff;background:' + accent + ';border-radius:999px;padding:0 6px;margin-left:4px;"></span></div>' +
       (parts.length ? '<div style="color:var(--fg-secondary,#475569);font-size:12px;margin-top:2px;">' + parts.join(" · ") + "</div>" : "") +
-      (ev.time ? '<div style="color:var(--fg-muted,#94a3b8);font-size:11px;margin-top:2px;">' + esc(ev.time) + "</div>" : "") +
+      (ev.time ? '<div data-tpn-time style="color:var(--fg-muted,#94a3b8);font-size:11px;margin-top:2px;">' + esc(ev.time) + "</div>" : "") +
       "</div>" +
       '<button type="button" data-tpn-close aria-label="Cerrar" ' +
       'style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);font-size:15px;line-height:1;padding:2px;">×</button>';
@@ -125,20 +145,23 @@
     });
 
     h.appendChild(el);
+    programarCierre(el, ev.delay);
+  }
 
-    // Segundos que dura el aviso, de la alerta. Un 0 explicito significa
-    // "hasta que lo cierren". Cualquier otra cosa que no sea un numero cae
-    // al respaldo de 10 s, el mismo del EventLatestTransformer: el campo
-    // "popup" de la alerta puede venir con el input VACIO, y entonces el
-    // transformer manda "" en vez del respaldo. Antes eso daba NaN, NaN > 0
-    // era falso y el aviso se quedaba en pantalla para siempre.
-    var delay = parseInt(ev.delay, 10);
+  /**
+   * Segundos que dura el aviso, de la alerta (canal Popup: 0 = "Fijo", hasta
+   * que lo cierren; 5 o 10 s). Cualquier cosa que no sea un numero cae al
+   * respaldo de 10 s, el mismo del EventLatestTransformer: el campo "popup"
+   * puede venir con el input VACIO y entonces llega "". Antes eso daba NaN,
+   * NaN > 0 era falso y el aviso se quedaba en pantalla para siempre.
+   * Si el aviso se repite, el temporizador anterior se cancela y se reinicia.
+   */
+  function programarCierre(el, delayRaw) {
+    var delay = parseInt(delayRaw, 10);
     if (isNaN(delay)) delay = 10;
-
+    if (el._tpnTimer) { clearTimeout(el._tpnTimer); el._tpnTimer = null; }
     if (delay > 0) {
-      setTimeout(function () {
-        cerrar(el);
-      }, delay * 1000);
+      el._tpnTimer = setTimeout(function () { cerrar(el); }, delay * 1000);
     }
   }
 
@@ -221,4 +244,8 @@
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
+
+  // Para probar los avisos desde la consola sin esperar a un evento real.
+  window.tpNotify = window.tpNotify || {};
+  window.tpNotify.show = showToast;
 })();

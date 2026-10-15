@@ -16,7 +16,9 @@ class EventLatestTransformer extends EventTransformer {
     {
         $data = $entity->attributesToArray();
         $data['time'] = Formatter::time()->convert($entity->time);
-        $data['speed'] = Formatter::speed()->format($entity->speed);
+        // Con unidad ("2 km/h"): en el aviso emergente un numero suelto tras
+        // la placa no se entendia.
+        $data['speed'] = Formatter::speed()->human($entity->speed);
         $data['altitude'] = Formatter::altitude()->format($entity->altitude);
         $data['message'] = $entity->title;
 
