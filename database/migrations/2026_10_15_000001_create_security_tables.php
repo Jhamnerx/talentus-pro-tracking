@@ -47,6 +47,7 @@ return new class extends Migration {
             $table->dateTime('calculated_at');
             $table->unique(['device_id', 'work_date', 'shift']);
             $table->index(['user_id', 'work_date']);
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('device_id')->references('id')->on('devices')->onDelete('cascade');
         });
     }
