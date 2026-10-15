@@ -342,7 +342,7 @@ php artisan security:aggregate --user=<id> --from=2026-09-01 --to=$(date +%F)
 | --- | --- |
 | km, horas de motor, horas en movimiento, paradas, máx. GPS | Pipeline de historial por turno |
 | Sobrevelocidad | Eventos de alertas (exceso y exceso en geocerca) **más** tramos calculados: dentro de geocerca manda el límite de la geocerca; fuera, el límite manual del filtro (vacío = no se cuenta). Sin duplicar |
-| Salidas de geocerca | Cada salida de cualquier geocerca del usuario (cerrada dentro del turno) |
+| Salidas de geocerca | Eventos de las alertas «Geocerca de salida» del usuario; sin alerta configurada el valor es 0 |
 | Desconexiones | Eventos `power_cut` y `offline_duration` + huecos de señal mayores al ajuste |
 | Cinturón | Solo unidades con sensor de tipo «cinturón»; sin sensor, celda vacía |
 | Estado en vivo | Última posición: vencida si supera la vigencia; movimiento ≥ 1 km/h; stand by = motor encendido |

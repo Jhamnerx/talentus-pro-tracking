@@ -14,7 +14,6 @@ use Tobuli\History\Actions\Distance;
 use Tobuli\History\Actions\DriveStop;
 use Tobuli\History\Actions\Duration;
 use Tobuli\History\Actions\EngineHours;
-use Tobuli\History\Actions\GroupGeofenceIn;
 use Tobuli\History\Actions\GroupOverspeed;
 use Tobuli\History\Actions\NoDataDuration;
 use Tobuli\History\Actions\Overspeed;
@@ -65,7 +64,7 @@ class SecurityDailyCalculator
         $history->registerActions([
             AppendSpeedLimitGeofenceOrStatic::class,
             Duration::class, Distance::class, DriveStop::class, EngineHours::class, Speed::class,
-            NoDataDuration::class, GroupGeofenceIn::class,
+            NoDataDuration::class,
             GroupOverspeed::class, Overspeed::class,
         ]);
         $history->setRange($from, $to);
@@ -75,14 +74,13 @@ class SecurityDailyCalculator
         $groups = collect($data['groups']->all());
 
         $overspeedGroups = $groups->filter(fn($g) => strpos($g->getKey(), 'overspeed') === 0);
-        $zoneExits = $groups->filter(fn($g) => strpos($g->getKey(), 'geofence_in_') === 0 && $g->getEndPosition())->count();
 
         // Solo los eventos de este usuario: las unidades se comparten entre
         // cuentas y las alertas de otro usuario no son de este tablero.
         $events = Event::where('device_id', $device->id)
             ->where('user_id', $this->user->id)
             ->where('time', '>=', $from)->where('time', '<', $to)
-            ->whereIn('type', [Event::TYPE_OVERSPEED, Event::TYPE_ZONE_OVERSPEED, Event::TYPE_POWER_CUT, Event::TYPE_OFFLINE_DURATION])
+            ->whereIn('type', [Event::TYPE_OVERSPEED, Event::TYPE_ZONE_OVERSPEED, Event::TYPE_ZONE_OUT, Event::TYPE_POWER_CUT, Event::TYPE_OFFLINE_DURATION])
             ->get(['type', 'time']);
 
         $overspeedEvents = $events->whereIn('type', [Event::TYPE_OVERSPEED, Event::TYPE_ZONE_OVERSPEED]);
@@ -110,7 +108,9 @@ class SecurityDailyCalculator
                 'overspeed_events'  => $overspeedEvents->count(),
                 'overspeed_calc'    => $overspeedGroups->count(),
                 'overspeed_total'   => $overspeedTotal,
-                'zone_exits'        => $zoneExits,
+                // Salidas de geocerca: solo los eventos de las alertas "Geocerca de
+                // salida" del usuario (decision del cliente), no cada salida del historial.
+                'zone_exits'        => $events->where('type', Event::TYPE_ZONE_OUT)->count(),
                 'disconnect_events' => $events->whereIn('type', [Event::TYPE_POWER_CUT, Event::TYPE_OFFLINE_DURATION])->count(),
                 'signal_gaps'       => (int) $this->stat($root, 'no_data_count', 0),
                 'seatbelt_alerts'   => $this->seatbeltAlerts($device, $from, $to),
