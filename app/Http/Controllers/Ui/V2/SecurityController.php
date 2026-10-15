@@ -56,7 +56,7 @@ class SecurityController extends BaseController
             ],
             'types'    => VehicleType::where('user_id', $this->user->id)->orderBy('name')->get(['id', 'name']),
             'devices'  => $this->user->devices()->clearOrdersBy()->orderBy('devices.name')->get(['devices.id', 'devices.name', 'devices.vehicle_type_id']),
-            'last_calculated' => optional(SecurityDailyStat::where('user_id', $this->user->id)->max('calculated_at')),
+            'last_calculated' => SecurityDailyStat::where('user_id', $this->user->id)->max('calculated_at'),
         ]);
     }
 
@@ -64,9 +64,14 @@ class SecurityController extends BaseController
     public function data(Request $request): JsonResponse
     {
         $this->gate('view');
-        $stats = $this->filtered($request)->with('device.vehicleType')->get();
+        $filters = $this->filters($request);
+        if ($filters instanceof JsonResponse) {
+            return $filters;
+        }
+
+        $stats = $this->filtered($filters)->with('device.vehicleType')->get();
         $summary = new SecuritySummary();
-        $devices = $this->filteredDevices($request);
+        $devices = $this->filteredDevices($filters);
 
         return response()->json([
             'ok'       => true,
@@ -124,8 +129,8 @@ class SecurityController extends BaseController
         $this->gate('edit');
 
         $validator = Validator::make($request->all(), [
-            'from' => 'required|date',
-            'to'   => 'required|date|after_or_equal:from',
+            'from' => 'required|date_format:Y-m-d',
+            'to'   => 'required|date_format:Y-m-d|after_or_equal:from',
         ]);
 
         if ($validator->fails()) {
@@ -148,28 +153,74 @@ class SecurityController extends BaseController
     public function export(Request $request)
     {
         $this->gate('view');
-        $stats = $this->filtered($request)->with('device.vehicleType')->get();
+        $filters = $this->filters($request);
+        if ($filters instanceof JsonResponse) {
+            return $filters;
+        }
 
-        return (new SecurityWorkbookExport($this->user, $stats, $this->filteredDevices($request), $request->all()))
+        $stats = $this->filtered($filters)->with('device.vehicleType')->get();
+
+        return (new SecurityWorkbookExport($this->user, $stats, $this->filteredDevices($filters), $filters))
             ->download('Dashboard_Seguridad_' . now()->format('Ymd_Hi') . '.xlsx');
     }
 
-    private function filtered(Request $request)
+    /**
+     * Filtros GET compartidos por data() y export(), validados una sola vez.
+     * Devuelve el array normalizado (from/to con defaults, ids como int, shift
+     * 'all' => null) o la respuesta 422 lista para retornar.
+     *
+     * @return array|JsonResponse
+     */
+    private function filters(Request $request)
     {
+        $validator = Validator::make($request->only(['from', 'to', 'shift', 'device_id', 'type_id']), [
+            'from'      => 'nullable|date_format:Y-m-d',
+            'to'        => 'nullable|date_format:Y-m-d',
+            'shift'     => 'nullable|in:all,day,night',
+            'device_id' => 'nullable|integer',
+            'type_id'   => 'nullable|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'errors' => $validator->errors()->toArray()], 422);
+        }
+
+        $v = $validator->validated();
+
+        return [
+            'from'      => $v['from'] ?? now()->subDays(15)->toDateString(),
+            'to'        => $v['to'] ?? now()->toDateString(),
+            'shift'     => (isset($v['shift']) && $v['shift'] !== 'all') ? $v['shift'] : null,
+            'device_id' => isset($v['device_id']) && $v['device_id'] !== '' ? (int) $v['device_id'] : null,
+            'type_id'   => isset($v['type_id']) && $v['type_id'] !== '' ? (int) $v['type_id'] : null,
+        ];
+    }
+
+    /** Subconsulta con los ids de los dispositivos actuales del usuario (opcionalmente por tipo). */
+    private function ownedDeviceIds(?int $typeId = null)
+    {
+        return $this->user->devices()->clearOrdersBy()->select('devices.id')
+            ->when($typeId, fn($q, $t) => $q->where('devices.vehicle_type_id', $t));
+    }
+
+    private function filtered(array $f)
+    {
+        // Siempre acotado a los dispositivos actuales del usuario: las filas de
+        // unidades que ya no le pertenecen no deben aparecer.
         return SecurityDailyStat::where('user_id', $this->user->id)
-            ->whereBetween('work_date', [$request->get('from', now()->subDays(15)->toDateString()), $request->get('to', now()->toDateString())])
-            ->when($request->get('shift') && $request->get('shift') !== 'all', fn($q) => $q->where('shift', $request->get('shift')))
-            ->when($request->get('device_id'), fn($q, $id) => $q->where('device_id', $id))
-            ->when($request->get('type_id'), fn($q, $t) => $q->whereIn('device_id', $this->user->devices()->clearOrdersBy()->where('vehicle_type_id', $t)->pluck('devices.id')))
+            ->whereIn('device_id', $this->ownedDeviceIds($f['type_id']))
+            ->whereBetween('work_date', [$f['from'], $f['to']])
+            ->when($f['shift'], fn($q, $s) => $q->where('shift', $s))
+            ->when($f['device_id'], fn($q, $id) => $q->where('device_id', $id))
             ->orderBy('work_date')
             ->orderBy('device_id');
     }
 
-    private function filteredDevices(Request $request)
+    private function filteredDevices(array $f)
     {
         return $this->user->devices()->clearOrdersBy()->with(['traccar', 'vehicleType'])
-            ->when($request->get('device_id'), fn($q, $id) => $q->where('devices.id', $id))
-            ->when($request->get('type_id'), fn($q, $t) => $q->where('vehicle_type_id', $t))
+            ->when($f['device_id'], fn($q, $id) => $q->where('devices.id', $id))
+            ->when($f['type_id'], fn($q, $t) => $q->where('devices.vehicle_type_id', $t))
             ->orderBy('devices.name')->get();
     }
 }
