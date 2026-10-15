@@ -285,3 +285,75 @@ admin, porque ahora sí obedecen):
   darlo por bueno.
 - No hay pruebas automatizadas del módulo (decisión del proyecto); la validación
   es manual con recálculo sobre rangos conocidos.
+
+---
+
+## 8. Módulo «Seguridad · Control de flota» (rama `seguridad`, 15-oct-2026)
+
+Entra en un merge posterior al de Operaciones. Es el dashboard que reproduce el
+Excel `Dashboard_FM_Seguridad.xlsx` del cliente: agregados diarios por unidad y
+turno, estado en vivo, gráficos y exportación al mismo Excel.
+
+### 8.1 Pasos en el servidor
+
+```bash
+git pull
+php artisan migrate --force
+```
+
+Migración `2026_10_15_000001_create_security_tables`: crea `security_settings`
+(ajustes por usuario) y `security_daily_stats` (agregados). Solo crea tablas.
+
+En el `.env`:
+
+```ini
+SECURITY_ENABLED=true
+```
+
+Es el interruptor del módulo igual que `OPERATIONS_ENABLED`: apagado, el
+comando programado no hace nada. Después, `php artisan config:cache` (o
+`config:clear` si no se cachea) y `php artisan view:clear`.
+
+No hay dependencias nuevas ni hay que compilar: los bundles de la v2 van en
+el repositorio. No hace falta tocar el crontab: `security:aggregate` ya está
+en el scheduler (cada hora, minuto 20, recalcula ayer y hoy de los usuarios
+que tengan el permiso y hayan abierto la pantalla al menos una vez).
+
+### 8.2 Permiso y carga inicial
+
+1. Admin → Usuarios → Editar → Permisos → **Seguridad** (ver, editar). Sin
+   «editar» el usuario consulta pero no cambia ajustes ni recalcula.
+2. El usuario abre **Seguridad** en el menú (eso crea sus ajustes por defecto:
+   turno Día 07:00–19:00, vigencia 10 min, parada 1 min, hueco de señal 10 min,
+   sin límite manual).
+3. Carga inicial del histórico desde consola (hasta 31 días también se puede
+   desde el botón «Recalcular» de la pantalla):
+
+```bash
+php artisan security:aggregate --user=<id> --from=2026-09-01 --to=$(date +%F)
+```
+
+### 8.3 Qué muestra y de dónde sale
+
+| Dato | Fuente |
+| --- | --- |
+| km, horas de motor, horas en movimiento, paradas, máx. GPS | Pipeline de historial por turno |
+| Sobrevelocidad | Eventos de alertas (exceso y exceso en geocerca) **más** tramos calculados: dentro de geocerca manda el límite de la geocerca; fuera, el límite manual del filtro (vacío = no se cuenta). Sin duplicar |
+| Salidas de geocerca | Cada salida de cualquier geocerca del usuario (cerrada dentro del turno) |
+| Desconexiones | Eventos `power_cut` y `offline_duration` + huecos de señal mayores al ajuste |
+| Cinturón | Solo unidades con sensor de tipo «cinturón»; sin sensor, celda vacía |
+| Estado en vivo | Última posición: vencida si supera la vigencia; movimiento ≥ 1 km/h; stand by = motor encendido |
+
+### 8.4 Verificación
+
+- La pantalla carga con 8 tarjetas, tabla de estado actual, resumen diario,
+  detalle por unidad y 4 gráficos.
+- «Exportar a Excel» descarga un libro con las hojas Seguridad, Operaciones,
+  Datos y Telemetría y los 4 gráficos; las cifras coinciden con la pantalla.
+- Cambiar el límite manual o el turno muestra el aviso de recalcular; tras
+  «Recalcular» cambian los excesos.
+
+### 8.5 Vuelta atrás
+
+`SECURITY_ENABLED=false` detiene el cálculo; `php artisan migrate:rollback --step=1 --force`
+elimina las dos tablas (se pierden los agregados, que se regeneran con el comando).
