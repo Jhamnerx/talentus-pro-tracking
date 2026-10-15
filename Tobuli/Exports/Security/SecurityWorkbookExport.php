@@ -63,7 +63,7 @@ class SecurityWorkbookExport implements WithMultipleSheets
     /** Filtros aplicados en el orden de la fila 4/5 del Excel: etiqueta => valor. */
     private function filterLabels(SecuritySetting $settings): array
     {
-        $type = $this->filters['type_id'] ? VehicleType::find($this->filters['type_id']) : null;
+        $type = $this->filters['type_id'] ? VehicleType::where('user_id', $this->user->id)->find($this->filters['type_id']) : null;
         $device = $this->filters['device_id'] ? $this->devices->firstWhere('id', $this->filters['device_id']) : null;
 
         return [

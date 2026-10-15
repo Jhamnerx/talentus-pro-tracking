@@ -42,9 +42,15 @@ class SecurityDailyCalculator
         $this->geofences = Geofence::where('user_id', $user->id)->with('vehicleSpeedLimits')->get();
     }
 
-    public function calculate(Device $device, string $workDate, string $shift): SecurityDailyStat
+    public function calculate(Device $device, string $workDate, string $shift): ?SecurityDailyStat
     {
         [$from, $to] = $this->shift->range($workDate, $shift);
+
+        // Un turno que todavia no empieza no se guarda: saldria como "Sin
+        // registro" en el detalle y en el Excel.
+        if ($from->gt(now())) {
+            return null;
+        }
 
         $history = new DeviceHistory($device);
         $history->setConfig([
@@ -71,7 +77,10 @@ class SecurityDailyCalculator
         $overspeedGroups = $groups->filter(fn($g) => strpos($g->getKey(), 'overspeed') === 0);
         $zoneExits = $groups->filter(fn($g) => strpos($g->getKey(), 'geofence_in_') === 0 && $g->getEndPosition())->count();
 
+        // Solo los eventos de este usuario: las unidades se comparten entre
+        // cuentas y las alertas de otro usuario no son de este tablero.
         $events = Event::where('device_id', $device->id)
+            ->where('user_id', $this->user->id)
             ->where('time', '>=', $from)->where('time', '<', $to)
             ->whereIn('type', [Event::TYPE_OVERSPEED, Event::TYPE_ZONE_OVERSPEED, Event::TYPE_POWER_CUT, Event::TYPE_OFFLINE_DURATION])
             ->get(['type', 'time']);
@@ -111,29 +120,53 @@ class SecurityDailyCalculator
         );
     }
 
-    /** Recalcula todas las unidades del usuario entre dos dias locales (ambos incluidos). */
-    public function calculateRange(string $fromDate, string $toDate, ?array $deviceIds = null): int
+    /**
+     * Recalcula todas las unidades del usuario entre dos dias locales (ambos
+     * incluidos). Sin $force se saltan los turnos ya cerrados y calculados
+     * despues de su fin (el proceso horario los repetiria sin cambios).
+     */
+    public function calculateRange(string $fromDate, string $toDate, ?array $deviceIds = null, bool $force = false): int
     {
         $devices = $this->user->devices()->clearOrdersBy()->when($deviceIds, fn($q) => $q->whereIn('devices.id', $deviceIds))->get();
         $n = 0;
-        for ($d = Carbon::parse($fromDate); $d->lte(Carbon::parse($toDate)); $d->addDay()) {
+        $end = Carbon::parse($toDate);
+        for ($d = Carbon::parse($fromDate); $d->lte($end); $d->addDay()) {
             foreach ($devices as $device) {
                 foreach (SecurityDailyStat::shifts() as $shift) {
+                    if (! $force && $this->isFinal($device, $d->toDateString(), $shift)) {
+                        continue;
+                    }
                     try {
-                        $this->calculate($device, $d->toDateString(), $shift);
-                        $n++;
+                        if ($this->calculate($device, $d->toDateString(), $shift)) {
+                            $n++;
+                        }
                     } catch (\PDOException $e) {
                         // 42S02 = unidad sin tabla de posiciones: se omite en silencio.
                         if ((string) $e->getCode() !== '42S02') {
                             \Log::warning('security:aggregate', ['device' => $device->id, 'error' => $e->getMessage()]);
                         }
-                        continue;
+                    } catch (\Throwable $e) {
+                        // Unidad sin traccar u otro fallo puntual: no tumba la pasada entera.
+                        \Log::warning('security:aggregate', ['device' => $device->id, 'error' => $e->getMessage()]);
                     }
                 }
             }
         }
 
         return $n;
+    }
+
+    /** Turno cerrado y calculado al menos media hora despues de su fin. */
+    private function isFinal(Device $device, string $workDate, string $shift): bool
+    {
+        [, $to] = $this->shift->range($workDate, $shift);
+        if ($to->gt(now())) {
+            return false;
+        }
+        $calculatedAt = SecurityDailyStat::where('device_id', $device->id)
+            ->where('work_date', $workDate)->where('shift', $shift)->value('calculated_at');
+
+        return $calculatedAt && Carbon::parse($calculatedAt)->gte($to->copy()->addMinutes(30));
     }
 
     /**

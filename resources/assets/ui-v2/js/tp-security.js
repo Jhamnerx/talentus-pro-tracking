@@ -500,7 +500,13 @@
     $("tp-sec-run").addEventListener("click", load);
     $("tp-sec-type").addEventListener("change", filterDevicesByType);
     $("tp-sec-export").addEventListener("click", function () {
-      window.location.href = URLS.export + "?" + qs(filters());
+      var f = filters();
+      // El servidor rechaza mas de 93 dias con un JSON; se avisa aqui, antes de navegar.
+      if (f.from && f.to && (new Date(f.to) - new Date(f.from)) / 86400000 > 93) {
+        tpModal.toast(t("ui.security_export_range_too_long"), "warning");
+        return;
+      }
+      window.location.href = URLS.export + "?" + qs(f);
     });
     $("tp-sec-validity").addEventListener("change", saveSettings);
     $("tp-sec-speed-limit").addEventListener("change", saveSettings);

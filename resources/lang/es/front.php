@@ -510,6 +510,7 @@ return [
     'operation_arrival_to' => 'Llegada a :point',
     'operation_time_at' => 'Tiempo en :point',
     'operations' => 'Operaciones',
+    'security' => 'Seguridad',
     'operation_point_geofence_missing' => 'Alguna geocerca elegida como punto no existe o no es tuya.',
     'operation_point_geofence_moving' => 'La geocerca «:name» está asignada a un vehículo (geocerca móvil) y no puede ser punto de una operación.',
     'operation_points_need_both_roles' => 'La operación necesita al menos un punto de carga y uno de descarga.',

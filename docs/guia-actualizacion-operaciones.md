@@ -311,13 +311,16 @@ SECURITY_ENABLED=true
 ```
 
 Es el interruptor del módulo igual que `OPERATIONS_ENABLED`: apagado, el
-comando programado no hace nada. Después, `php artisan config:cache` (o
+comando programado no hace nada (la pantalla sigue visible con permiso y el
+botón «Recalcular» sí calcula, porque es una acción manual del usuario). Después, `php artisan config:cache` (o
 `config:clear` si no se cachea) y `php artisan view:clear`.
 
 No hay dependencias nuevas ni hay que compilar: los bundles de la v2 van en
 el repositorio. No hace falta tocar el crontab: `security:aggregate` ya está
 en el scheduler (cada hora, minuto 20, recalcula ayer y hoy de los usuarios
-que tengan el permiso y hayan abierto la pantalla al menos una vez).
+que tengan el permiso y hayan abierto la pantalla al menos una vez). Los
+turnos ya cerrados y calculados después de su fin no se repiten; «Recalcular»
+desde la pantalla sí los rehace.
 
 ### 8.2 Permiso y carga inicial
 

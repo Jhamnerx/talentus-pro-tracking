@@ -59,7 +59,9 @@ class SecurityController extends BaseController
             ],
             'types'    => VehicleType::where('user_id', $this->user->id)->orderBy('name')->get(['id', 'name']),
             'devices'  => $this->user->devices()->clearOrdersBy()->orderBy('devices.name')->get(['devices.id', 'devices.name', 'devices.vehicle_type_id']),
-            'last_calculated' => SecurityDailyStat::where('user_id', $this->user->id)->max('calculated_at'),
+            'last_calculated' => ($lc = SecurityDailyStat::where('user_id', $this->user->id)->max('calculated_at'))
+                ? \Formatter::time()->human($lc)
+                : null,
         ]);
     }
 
@@ -148,7 +150,7 @@ class SecurityController extends BaseController
         $devices = $request->get('devices');
         $devices = is_array($devices) && count($devices) ? array_map('intval', $devices) : null;
 
-        $n = (new SecurityDailyCalculator($this->user))->calculateRange($data['from'], $data['to'], $devices);
+        $n = (new SecurityDailyCalculator($this->user))->calculateRange($data['from'], $data['to'], $devices, true);
 
         return response()->json(['ok' => true, 'rows' => $n]);
     }
