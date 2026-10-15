@@ -20,7 +20,7 @@ use Tobuli\History\Actions\NoDataDuration;
 use Tobuli\History\Actions\Overspeed;
 use Tobuli\History\Actions\Speed;
 use Tobuli\History\DeviceHistory;
-use Tobuli\Sensors\Value;
+use Illuminate\Support\Collection;
 
 /**
  * Calcula y guarda la fila (unidad, dia, turno) de security_daily_stats.
@@ -32,14 +32,14 @@ class SecurityDailyCalculator
     private User $user;
     private SecuritySetting $settings;
     private SecurityShift $shift;
-    private $geofences; // Collection<Geofence> del usuario
+    private Collection $geofences; // geocercas del usuario con sus limites por tipo/estado
 
     public function __construct(User $user)
     {
         $this->user = $user;
         $this->settings = SecuritySetting::forUser($user);
         $this->shift = new SecurityShift($this->settings, $this->timezone($user));
-        $this->geofences = Geofence::where('user_id', $user->id)->get();
+        $this->geofences = Geofence::where('user_id', $user->id)->with('vehicleSpeedLimits')->get();
     }
 
     public function calculate(Device $device, string $workDate, string $shift): SecurityDailyStat
@@ -51,7 +51,7 @@ class SecurityDailyCalculator
             'stop_speed'   => $device->min_moving_speed,
             'speed_limit'  => $this->settings->speed_limit,
             'gap_seconds'  => $this->settings->gap_minutes * 60,
-            'stop_minutes' => $this->settings->stop_minutes,
+            'stop_seconds' => $this->settings->stop_minutes * 60,
         ]);
         $history->setGeofences($this->geofences);
         // El orden importa: el limite de velocidad debe anexarse antes de
@@ -72,7 +72,7 @@ class SecurityDailyCalculator
         $zoneExits = $groups->filter(fn($g) => strpos($g->getKey(), 'geofence_in_') === 0 && $g->getEndPosition())->count();
 
         $events = Event::where('device_id', $device->id)
-            ->whereBetween('time', [$from, $to])
+            ->where('time', '>=', $from)->where('time', '<', $to)
             ->whereIn('type', [Event::TYPE_OVERSPEED, Event::TYPE_ZONE_OVERSPEED, Event::TYPE_POWER_CUT, Event::TYPE_OFFLINE_DURATION])
             ->get(['type', 'time']);
 
@@ -123,7 +123,11 @@ class SecurityDailyCalculator
                         $this->calculate($device, $d->toDateString(), $shift);
                         $n++;
                     } catch (\PDOException $e) {
-                        // Unidad sin tabla de posiciones: se omite.
+                        // 42S02 = unidad sin tabla de posiciones: se omite en silencio.
+                        if ((string) $e->getCode() !== '42S02') {
+                            \Log::warning('security:aggregate', ['device' => $device->id, 'error' => $e->getMessage()]);
+                        }
+                        continue;
                     }
                 }
             }
@@ -162,24 +166,32 @@ class SecurityDailyCalculator
 
     private function countPositions(Device $device, Carbon $from, Carbon $to): int
     {
-        return (int) $device->positions()->whereBetween('time', [$from, $to])->count();
+        return (int) $device->positions()->where('time', '>=', $from)->where('time', '<', $to)->count();
     }
 
     /**
      * Alertas de cinturon: tramos de >= 30 s con el sensor en 0 y velocidad
      * >= 1 km/h. null si la unidad no tiene sensor de tipo seatbelt.
+     *
+     * Se lee el parametro de cada trama historica con getValue($other, false):
+     * getValueCurrent() cae al valor EN VIVO del equipo cuando la trama no trae
+     * el parametro y falsearia el pasado. Una trama sin dato no cambia el
+     * estado: se arrastra el ultimo conocido (y se omite si aun no hay ninguno).
      */
     private function seatbeltAlerts(Device $device, Carbon $from, Carbon $to): ?int
     {
         $sensor = $device->getSensorByType('seatbelt');
         if (! $sensor) return null;
 
-        $alerts = 0; $openSince = null;
-        $device->positions()->whereBetween('time', [$from, $to])->orderBy('time')
-            ->chunk(2000, function ($rows) use ($sensor, &$alerts, &$openSince) {
+        $alerts = 0; $openSince = null; $buckled = null;
+        $device->positions()->where('time', '>=', $from)->where('time', '<', $to)->orderBy('time')
+            ->chunk(2000, function ($rows) use ($sensor, &$alerts, &$openSince, &$buckled) {
                 foreach ($rows as $p) {
-                    $value = $sensor->getValueCurrent($p);
-                    $buckled = $value instanceof Value ? $value->getValue() : $value;
+                    $value = $sensor->getValue($p->other, false);
+                    if ($value instanceof \Tobuli\Sensors\Value) $value = $value->getValue();
+                    if ($value !== null) $buckled = (bool) $value;
+                    if ($buckled === null) continue;
+
                     $unbuckled = ! $buckled && $p->speed >= 1;
                     if ($unbuckled && $openSince === null) {
                         $openSince = Carbon::parse($p->time);
