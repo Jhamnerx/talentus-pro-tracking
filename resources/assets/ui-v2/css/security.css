@@ -12,7 +12,10 @@
   flex-direction: column;
   gap: 14px;
   padding: 16px 18px 28px;
-  min-height: 100%;
+  /* El area de trabajo (.tp-workspace--full) oculta el desbordamiento: la
+     pagina desplaza dentro de este contenedor, como .tp-maint en Operaciones. */
+  height: 100%;
+  overflow: auto;
   transition: opacity 0.15s ease;
 }
 
@@ -214,6 +217,11 @@
   white-space: nowrap;
 }
 
+/* th y td: la regla base ".tp-table thead th" alinea a la izquierda con mas
+   especificidad que la clase sola, y las cabeceras numericas quedaban
+   desalineadas de sus cifras. */
+.tp-sec .tp-table th.tp-sec__num,
+.tp-sec .tp-table td.tp-sec__num,
 .tp-sec__num {
   text-align: right;
   font-variant-numeric: tabular-nums;
