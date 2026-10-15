@@ -1013,7 +1013,7 @@ return [
     'security_settings'                   => 'Settings',
     'security_recalculate'                => 'Recalculate',
     'security_recalculated'               => 'Recalculated: :rows rows per unit and day.',
-    'security_recalc_needed'              => 'The manual limit changed: recalculate the period to update the overspeed events.',
+    'security_recalc_needed'              => 'Settings changed: recalculate the period to update the data.',
     'security_range_too_long'             => 'On-screen recalculation allows up to 31 days; the nightly process covers the rest.',
     'security_day_end_after_start'        => 'Day shift end must be later than its start.',
     'security_no_sensor'                  => 'No sensor',

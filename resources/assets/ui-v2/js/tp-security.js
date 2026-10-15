@@ -25,6 +25,7 @@
   var charts = {}; // id -> instancia de echarts
   var meta = null;
   var lastData = null; // ultima respuesta de /data, para repintar los graficos al cambiar de tema
+  var seq = 0; // peticion de /data en vuelo: una respuesta vieja y lenta no pisa a la nueva
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return tpModal.escapeHtml(s == null ? "" : String(s)); }
@@ -52,12 +53,15 @@
     return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso;
   }
 
+  /* Devuelve texto YA escapado (el fallback pasa por esc); no volver a escapar. */
   function num(v, dec) {
     if (v == null || v === "") return "—";
     var n = Number(v);
     if (isNaN(n)) return esc(v);
     return new Intl.NumberFormat(undefined, { minimumFractionDigits: dec || 0, maximumFractionDigits: dec || 0 }).format(n);
   }
+
+  function oneDec(v) { return v == null ? "—" : num(v, 1); }
 
   function cssVar(name, fb) {
     var v = getComputedStyle(document.documentElement).getPropertyValue(name);
@@ -139,7 +143,7 @@
   /* ---------- Carga ---------- */
   function loadMeta() {
     return tpModal.fetchJSON(URLS.meta, { method: "GET" }).then(function (r) {
-      if (!r.ok || !r.data || !r.data.ok) { tpModal.errorToast(r, t("ui.load_failed")); return; }
+      if (!r.ok || !r.data || !r.data.ok) { tpModal.errorToast(r, t("ui.load_failed")); return false; }
       meta = r.data;
       fill($("tp-sec-type"), (meta.types || []).map(function (x) { return [x.id, x.name]; }));
       fill($("tp-sec-device"), (meta.devices || []).map(function (d) { return [d.id, d.name]; }));
@@ -153,7 +157,8 @@
       from.setDate(to.getDate() - 15);
       dateSet($("tp-sec-from"), ymd(from));
       dateSet($("tp-sec-to"), ymd(to));
-    });
+      return true;
+    }).catch(function () { tpModal.toast(t("ui.load_failed"), "error"); return false; });
   }
   function renderLastCalculated() {
     // Solo si llega como cadena: optional() en el servidor lo serializa como {}.
@@ -164,9 +169,12 @@
   function load() {
     if (!meta) return Promise.resolve();
     if (!dval($("tp-sec-from")) || !dval($("tp-sec-to"))) { tpModal.toast(t("ui.pick_date_range"), "error"); return Promise.resolve(); }
+    var mine = ++seq;
     root.classList.add("is-loading");
+    function done() { if (mine === seq) root.classList.remove("is-loading"); }
     return tpModal.fetchJSON(URLS.data + "?" + qs(filters()), { method: "GET" }).then(function (r) {
-      root.classList.remove("is-loading");
+      done();
+      if (mine !== seq) return; // ya hay una busqueda mas reciente
       if (!r.ok || !r.data || !r.data.ok) return tpModal.errorToast(r, t("ui.load_failed"));
       var d = lastData = r.data;
       renderCards(d.cards || {}, d.live || []);
@@ -175,6 +183,9 @@
       renderUnits(d.per_unit || []);
       renderUnitDaily(d.per_unit_daily || []);
       drawCharts(d);
+    }).catch(function () {
+      done();
+      if (mine === seq) tpModal.toast(t("ui.load_failed"), "error");
     });
   }
   function drawCharts(d) {
@@ -205,13 +216,13 @@
       { key: "moving", label: t("ui.security_units_moving"), value: num(count("moving")), tone: "moving" },
       { key: "standby", label: t("ui.security_units_standby"), value: num(count("standby")), tone: "standby" },
       { key: "expired", label: t("ui.security_units_expired"), value: num(count("expired")), tone: "expired" },
-      { key: "last", label: t("ui.security_last_reading"), value: last && last.last_time_formatted ? last.last_time_formatted : "—", tone: "info", small: true },
+      { key: "last", label: t("ui.security_last_reading"), value: last && last.last_time_formatted ? esc(last.last_time_formatted) : "—", tone: "info", small: true },
     ];
 
     $("tp-sec-cards").innerHTML = items.map(function (c) {
       return '<div class="tp-sec__card tp-sec__card--' + c.tone + '" data-card="' + c.key + '">' +
         '<span class="tp-sec__card-label">' + esc(c.label) + "</span>" +
-        '<span class="tp-sec__card-value' + (c.small ? " tp-sec__card-value--sm" : "") + '">' + esc(c.value) + "</span>" +
+        '<span class="tp-sec__card-value' + (c.small ? " tp-sec__card-value--sm" : "") + '">' + c.value + "</span>" +
         "</div>";
     }).join("");
   }
@@ -346,11 +357,11 @@
     if (!c) return;
     var rows = units.slice().sort(function (a, b) { return (b.avg_kmh || 0) - (a.avg_kmh || 0); });
     c.setOption({
-      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, valueFormatter: oneDec },
       grid: { left: 40, right: 16, top: 16, bottom: 60 },
       xAxis: Object.assign(axisBase(), { type: "category", data: rows.map(function (u) { return u.unit; }), axisLabel: { color: textColor(), rotate: rows.length > 6 ? 35 : 0, fontSize: 11 } }),
       yAxis: Object.assign(axisBase(), { type: "value", name: "km/h", nameTextStyle: { color: textColor() } }),
-      series: [{ type: "bar", data: rows.map(function (u) { return u.avg_kmh == null ? 0 : u.avg_kmh; }), barMaxWidth: 40, itemStyle: { color: cssVar("--brand-accent", "#1b99bd") }, label: { show: true, position: "top", color: textColor(), fontSize: 10 } }],
+      series: [{ type: "bar", data: rows.map(function (u) { return u.avg_kmh == null ? 0 : Math.round(Number(u.avg_kmh) * 10) / 10; }), barMaxWidth: 40, itemStyle: { color: cssVar("--brand-accent", "#1b99bd") }, label: { show: true, position: "top", color: textColor(), fontSize: 10, formatter: function (p) { return oneDec(p.value); } } }],
     }, true);
   }
 
@@ -425,8 +436,11 @@
       day_end: val("day_end").slice(0, 5),
       stop_minutes: val("stop_minutes"),
       gap_minutes: val("gap_minutes"),
-      validity_minutes: $("tp-sec-validity").value || meta.settings.validity_minutes,
-      speed_limit: $("tp-sec-speed-limit").value || null,
+    });
+    // Los cuatro campos del modal entran en el calculo diario: si cambia
+    // alguno hay que recalcular, igual que con el limite manual.
+    var changed = ["day_start", "day_end", "stop_minutes", "gap_minutes"].some(function (k) {
+      return String(body[k]) !== String(meta.settings[k]);
     });
     tpModal.setBusy(d, true);
     postSettings(body).then(function (r) {
@@ -436,7 +450,9 @@
       meta.settings = body;
       tpModal.close(d);
       tpModal.toast(t("ui.changes_saved"), "success");
-    });
+      if (changed) tpModal.toast(t("ui.security_recalc_needed"), "warning");
+      load();
+    }).catch(function () { tpModal.setBusy(d, false); tpModal.toast(t("ui.save_failed"), "error"); });
   }
 
   /* ---------- Modal de recalculo ---------- */
@@ -498,5 +514,6 @@
   }
 
   /* ---------- Arranque ---------- */
-  loadMeta().then(load).then(wire);
+  wire();
+  loadMeta().then(function (ok) { if (ok) return load(); });
 })();

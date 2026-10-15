@@ -1014,7 +1014,7 @@ return [
     'security_settings'                   => 'Ajustes',
     'security_recalculate'                => 'Recalcular',
     'security_recalculated'               => 'Recalculado: :rows filas por unidad y día.',
-    'security_recalc_needed'              => 'El límite manual cambió: recalcula el período para actualizar los excesos.',
+    'security_recalc_needed'              => 'Los ajustes cambiaron: recalcula el período para actualizar los datos.',
     'security_range_too_long'             => 'El recálculo en pantalla admite hasta 31 días; el resto lo hace el proceso nocturno.',
     'security_day_end_after_start'        => 'El fin del turno día debe ser posterior a su inicio.',
     'security_no_sensor'                  => 'Sin sensor',
