@@ -436,15 +436,30 @@
   }
 
   // Per-type attribute fields (from AlertModalHelper). { name,type,title,value,options? }
+  /** id del picker de un campo multiselect del tipo de alerta */
+  function tfPickId(name) {
+    return "tp-alert-tf-" + String(name).replace(/[^a-z0-9_-]/gi, "");
+  }
+
   function renderTypeFields(typeObj) {
     if (!typeObj || !typeObj.fields || !typeObj.fields.length) {
       return '<div class="tp-text-muted tp-text-sm">' + tpT('ui.type_needs_no_config') + '</div>';
     }
-    var html = '<div class="tp-grid-2">';
+    // Los multiselect (geocercas, sensores...) van a lo ancho: en la rejilla
+    // de dos columnas el listado queda inservible.
+    var anchos = [];
+    var cortos = [];
     typeObj.fields.forEach(function (f) {
-      html += fieldHtml(f, null, f.name);
+      (f.type === "multiselect" ? anchos : cortos).push(f);
     });
-    html += "</div>";
+
+    var html = "";
+    if (cortos.length) {
+      html += '<div class="tp-grid-2">';
+      cortos.forEach(function (f) { html += fieldHtml(f, null, f.name); });
+      html += "</div>";
+    }
+    anchos.forEach(function (f) { html += fieldHtml(f, null, f.name); });
     return html;
   }
 
@@ -459,6 +474,16 @@
       esc(f.title || f.name) +
       (f.required ? " *" : "") +
       "</label>";
+    // Multiselect: el mismo picker del resto del modal (todo / nada, buscador
+    // y casillas), como el selector multiple del legacy. Antes caia en el
+    // <select> de abajo por tener opciones y solo dejaba elegir UNA.
+    if (f.type === "multiselect") {
+      h +=
+        picklistHtml(tfPickId(f.name), f.options || [], {
+          empty: tpT('ui.no_items'),
+        }) + "</div>";
+      return h;
+    }
     if (f.type === "select" || (f.options && f.options.length)) {
       var opts = (f.options || [])
         .map(function (o) {
@@ -1298,6 +1323,46 @@
     window.tpModal.tabs(holder, tabs, { active: "devices" });
   }
 
+  /**
+   * Engancha los pickers de los campos multiselect del tipo.
+   *
+   * Hay que rellamarla cada vez que cambia el disparador, porque el
+   * contenedor se rehace con innerHTML y se lleva por delante los eventos.
+   */
+  function wireTypeFieldPicklists(dlg, typeObj) {
+    ((typeObj && typeObj.fields) || []).forEach(function (f) {
+      if (f.type !== "multiselect") return;
+      wirePicklist(dlg, tfPickId(f.name));
+      // Las geocercas del tipo y las de la pestaña "Geocercas" son la misma
+      // lista: se reflejan para que no haya dos verdades segun la pestaña.
+      if (f.name === "geofences") espejoGeocercas(dlg);
+    });
+  }
+
+  /** Mantiene marcadas las mismas geocercas en los dos sitios. */
+  function espejoGeocercas(dlg) {
+    var a = dlg.querySelector("#" + tfPickId("geofences"));
+    var b = dlg.querySelector("#tp-alert-zones");
+    if (!a || !b || a._tpEspejo) return;
+    a._tpEspejo = b._tpEspejo = true;
+
+    function copia(desde, hacia) {
+      var ids = {};
+      desde.querySelectorAll(".tp-picklist__item input[type=checkbox]:checked")
+        .forEach(function (cb) { ids[cb.value] = 1; });
+      hacia.querySelectorAll(".tp-picklist__item input[type=checkbox]")
+        .forEach(function (cb) { cb.checked = !!ids[cb.value]; });
+      updatePickCount(hacia);
+    }
+
+    // 'change' cubre las casillas; 'click' los botones de todo / nada, que
+    // cambian las casillas sin disparar change.
+    ["change", "click"].forEach(function (ev) {
+      a.addEventListener(ev, function () { setTimeout(function () { copia(a, b); }, 0); });
+      b.addEventListener(ev, function () { setTimeout(function () { copia(b, a); }, 0); });
+    });
+  }
+
   function wireFormBehaviour(dlg, meta) {
     var sel = dlg.querySelector("#tp-alert-type");
     if (sel)
@@ -1306,11 +1371,15 @@
           return x.key === sel.value;
         })[0];
         var holder = dlg.querySelector("#tp-alert-type-fields");
-        if (holder) holder.innerHTML = renderTypeFields(t);
+        if (holder) {
+          holder.innerHTML = renderTypeFields(t);
+          wireTypeFieldPicklists(dlg, t);
+        }
       });
 
     wireDevices(dlg, meta);
     wirePicklist(dlg, "tp-alert-zones");
+    wireTypeFieldPicklists(dlg, (meta.types || [])[0]);
     wireSchedule(dlg);
     wireNotifications(dlg);
     if (meta.can_command) wireCommand(dlg);
@@ -1381,6 +1450,24 @@
     })[0];
     if (typeObj)
       (typeObj.fields || []).forEach(function (f) {
+        // Multiselect: LISTA, no el value de un control. Antes caia en la
+        // rama de abajo y mandaba un escalar que pisaba data.geofences, con
+        // lo que el backend respondia "El geofences debe ser un listado".
+        if (f.type === "multiselect") {
+          var ids = picklistValues(dlg, "#" + tfPickId(f.name));
+          if (f.name === "geofences") {
+            // Los dos selectores estan reflejados; si el del tipo esta vacio
+            // -el disparador no las usa- se respeta el de la pestaña.
+            if (ids.length) {
+              data.geofences = ids;
+              data.zones = ids;
+            }
+          } else {
+            data[f.name] = ids;
+          }
+          return;
+        }
+
         var el = form.querySelector('[name="' + f.name + '"]');
         if (el && el.value !== "")
           data[f.name] = f.type === "number" ? parseFloat(el.value) : el.value;
@@ -1419,8 +1506,16 @@
     }
     var fields = item.fields || {};
     Object.keys(fields).forEach(function (n) {
+      if (fields[n] == null) return;
+      // Un multiselect no tiene .value: se marcan sus casillas.
+      var pick = dlg.querySelector("#" + tfPickId(n));
+      if (pick) {
+        checkPicklist(dlg, "#" + tfPickId(n),
+          Array.isArray(fields[n]) ? fields[n] : [fields[n]]);
+        return;
+      }
       var el = form.querySelector('[name="' + n + '"]');
-      if (el && fields[n] != null) el.value = fields[n];
+      if (el) el.value = fields[n];
     });
 
     if (item.for_all_user_devices) {
