@@ -110,7 +110,7 @@ class AlertsController extends BaseController
             'types'         => $types,
             'devices'       => $devices,
             'groups'        => $groups,
-            'geofences'     => $data['geofences']     ?? [],
+            'geofences'     => $this->geofencesForPicker($user),
             'alert_zones'   => $data['alert_zones']   ?? [],
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
             'schedules'     => $data['schedules']     ?? [],
@@ -372,7 +372,7 @@ class AlertsController extends BaseController
             'types'         => $types,
             'devices'       => $devices,
             'groups'        => $groups,
-            'geofences'     => $data['geofences']   ?? [],
+            'geofences'     => $this->geofencesForPicker($user),
             'alert_zones'   => $data['alert_zones'] ?? [],
             'notifications' => array_values((array) ($data['notifications'] ?? [])),
             'schedules'     => $data['schedules']   ?? [],
@@ -639,5 +639,27 @@ class AlertsController extends BaseController
             ];
         }
         return $out;
+    }
+
+    /**
+     * Geocercas del usuario con su grupo, para el selector multicolumna del
+     * modal (agrupado como en el legacy). group_id 0 = sin grupo.
+     */
+    private function geofencesForPicker($user): array
+    {
+        return \Tobuli\Entities\Geofence::userAccessible($user)
+            ->with('group')
+            ->orderBy('name')
+            ->get(['id', 'name', 'group_id'])
+            ->map(function ($g) {
+                return [
+                    'id'       => (int) $g->id,
+                    'name'     => (string) $g->name,
+                    'group_id' => (int) ($g->group_id ?: 0),
+                    'group'    => $g->group ? (string) $g->group->title : null,
+                ];
+            })
+            ->values()
+            ->all();
     }
 }

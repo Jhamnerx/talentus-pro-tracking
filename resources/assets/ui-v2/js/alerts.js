@@ -517,35 +517,56 @@
     return h + "</div>";
   }
 
-  /* ---------- pick lists (devices / geofences) ---------- */
+  /* ---------- pick lists (devices / geofences) ----------
+     Rejilla multicolumna (como el legacy) y, si los elementos traen group_id,
+     agrupada con una casilla por grupo que marca o desmarca todo el grupo. */
+  function picklistItemHtml(it, gid) {
+    var v = it.id != null ? it.id : it.value;
+    var label = pickName(it) + (it.plate ? " · " + it.plate : "");
+    return (
+      '<label class="tp-picklist__item"' + (gid != null ? ' data-group="' + esc(gid) + '"' : "") + '>' +
+      '<input type="checkbox" value="' + esc(v) + '"><span>' + esc(label) + "</span></label>"
+    );
+  }
+
   function picklistHtml(id, items, opts) {
     opts = opts || {};
     var searchable = items.length > 8;
+    var grouped = items.length > 0 && items[0].group_id !== undefined;
     var body;
     if (!items.length) {
       body =
         '<div class="tp-text-muted tp-text-sm" style="padding:10px;">' +
         esc(opts.empty || tpT('ui.no_items')) +
         "</div>";
+    } else if (grouped) {
+      // Grupos por nombre; "Sin grupo" al final.
+      var groups = {};
+      items.forEach(function (it) {
+        var gid = it.group_id || 0;
+        if (!groups[gid]) groups[gid] = { id: gid, name: gid ? it.group || "" : tpT('front.ungrouped'), items: [] };
+        groups[gid].items.push(it);
+      });
+      var ordered = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (x, y) {
+        if (!x.id) return 1;
+        if (!y.id) return -1;
+        return x.name.localeCompare(y.name);
+      });
+      body = ordered.map(function (g) {
+        return (
+          '<div class="tp-picklist__group" data-group="' + g.id + '">' +
+          '<label class="tp-picklist__gcheck"><input type="checkbox" data-pick-group="' + g.id + '"><span>' +
+          esc(g.name) + '</span><em>' + g.items.length + "</em></label></div>" +
+          '<div class="tp-picklist__grid" data-group="' + g.id + '">' +
+          g.items.map(function (it) { return picklistItemHtml(it, g.id); }).join("") +
+          "</div>"
+        );
+      }).join("");
     } else {
-      body = items
-        .map(function (it) {
-          var v = it.id != null ? it.id : it.value;
-          var label = pickName(it) + (it.plate ? " · " + it.plate : "");
-          return (
-            '<label class="tp-picklist__item"><input type="checkbox" value="' +
-            esc(v) +
-            '"><span>' +
-            esc(label) +
-            "</span></label>"
-          );
-        })
-        .join("");
+      body = '<div class="tp-picklist__grid">' + items.map(function (it) { return picklistItemHtml(it); }).join("") + "</div>";
     }
     return (
-      '<div class="tp-picklist" id="' +
-      id +
-      '">' +
+      '<div class="tp-picklist' + (grouped ? " tp-picklist--grouped" : "") + '" id="' + id + '">' +
       '<div class="tp-picklist__bar">' +
       (searchable
         ? '<input type="search" class="tp-input tp-input--sm tp-picklist__search" placeholder="' + tpT('ui.search_ellipsis') + '">'
@@ -588,16 +609,34 @@
 
   function updatePickCount(wrap) {
     var count = wrap.querySelector(".tp-picklist__count");
-    if (!count) return;
-    count.textContent = wrap.querySelectorAll(
-      ".tp-picklist__item input[type=checkbox]:checked",
-    ).length;
+    if (count) {
+      count.textContent = wrap.querySelectorAll(
+        ".tp-picklist__item input[type=checkbox]:checked",
+      ).length;
+    }
+    // Casilla de cada grupo: marcada, parcial o vacia segun sus elementos.
+    wrap.querySelectorAll("[data-pick-group]").forEach(function (gcb) {
+      var boxes = wrap.querySelectorAll('.tp-picklist__grid[data-group="' + gcb.getAttribute("data-pick-group") + '"] input[type=checkbox]');
+      var sel = 0;
+      boxes.forEach(function (b) { if (b.checked) sel++; });
+      gcb.checked = boxes.length > 0 && sel === boxes.length;
+      gcb.indeterminate = sel > 0 && sel < boxes.length;
+    });
   }
 
   function wirePicklist(dlg, id) {
     var wrap = dlg.querySelector("#" + id);
     if (!wrap) return;
     wrap.addEventListener("change", function (e) {
+      var gcb = e.target.closest && e.target.closest("[data-pick-group]");
+      if (gcb) {
+        // Marca o desmarca los elementos visibles del grupo.
+        wrap.querySelectorAll('.tp-picklist__grid[data-group="' + gcb.getAttribute("data-pick-group") + '"] .tp-picklist__item').forEach(function (it) {
+          if (!it.hidden) it.querySelector("input").checked = gcb.checked;
+        });
+        updatePickCount(wrap);
+        return;
+      }
       if (e.target.matches('input[type="checkbox"]')) updatePickCount(wrap);
     });
     wrap.addEventListener("click", function (e) {
@@ -624,6 +663,13 @@
         var q = this.value.toLowerCase();
         wrap.querySelectorAll(".tp-picklist__item").forEach(function (it) {
           it.hidden = q && it.textContent.toLowerCase().indexOf(q) === -1;
+        });
+        // Un grupo sin coincidencias se oculta entero.
+        wrap.querySelectorAll(".tp-picklist__group").forEach(function (g) {
+          var grid = wrap.querySelector('.tp-picklist__grid[data-group="' + g.getAttribute("data-group") + '"]');
+          var visible = grid && Array.prototype.some.call(grid.querySelectorAll(".tp-picklist__item"), function (it) { return !it.hidden; });
+          g.hidden = !visible;
+          if (grid) grid.hidden = !visible;
         });
       });
     updatePickCount(wrap);
