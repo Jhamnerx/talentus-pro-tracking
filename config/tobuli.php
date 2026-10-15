@@ -163,6 +163,7 @@ return [
     // hace ninguna consulta ni evaluacion por el modulo: es el interruptor de
     // despliegue y de vuelta atras.
     'operations_enabled' => env('OPERATIONS_ENABLED', false),
+    'security_enabled' => env('SECURITY_ENABLED', false),
     'gnss_glitch' => [
         'enabled'              => env('GNSS_GLITCH_ENABLED', true),
         'enforce'              => env('GNSS_GLITCH_ENFORCE', false), // false = modo sombra

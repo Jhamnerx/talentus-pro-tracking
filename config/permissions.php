@@ -311,6 +311,13 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+
+        // Seguridad - control de flota (dashboard F&M). Igual que operations:
+        // no se siembra; el admin lo marca por usuario.
+        'security' => [
+            'view' => 1,
+            'edit' => 1,
+        ],
         'widget_template_webhook' => [
             'view'  => 1,
             'edit'  => 0,
