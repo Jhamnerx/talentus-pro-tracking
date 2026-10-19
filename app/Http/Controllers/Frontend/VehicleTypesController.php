@@ -41,10 +41,12 @@ class VehicleTypesController extends Controller
     {
         VehicleTypeFormValidator::validate('create', $this->data);
 
-        VehicleType::create([
+        $item = VehicleType::create([
             'user_id' => $this->user->id,
             'name'    => $this->data['name'],
         ]);
+
+        $this->syncStates($item);
 
         return ['status' => 1];
     }
@@ -91,26 +93,69 @@ class VehicleTypesController extends Controller
         return $item;
     }
 
+    /**
+     * edit_state[id] actualiza/mantiene; add_state[] crea; el resto se borra.
+     * Cada estado lleva name + label (badge) + color, igual que en ui/v2
+     * (VehicleTypesController@syncStates). Se aceptan dos formas de payload:
+     *  - objeto por estado: edit_state[id] = {name, label, color} (ui/v2)
+     *  - arrays paralelos:  edit_state[id] / edit_state_label[id] /
+     *    edit_state_color[id] y add_state[] / add_state_label[] /
+     *    add_state_color[] (form legacy, que clona filas con .empty-input-add-new)
+     */
     private function syncStates(VehicleType $item): void
     {
         $kept = [];
 
-        foreach ($this->data['edit_state'] ?? [] as $id => $name) {
-            if (empty($name))
+        $editLabels = (array) ($this->data['edit_state_label'] ?? []);
+        $editColors = (array) ($this->data['edit_state_color'] ?? []);
+
+        foreach ((array) ($this->data['edit_state'] ?? []) as $id => $st) {
+            $fields = $this->stateFields($st, $editLabels[$id] ?? null, $editColors[$id] ?? null);
+
+            if ($fields === null)
                 continue;
 
-            VehicleState::where('id', $id)->where('vehicle_type_id', $item->id)->update(['name' => $name]);
+            VehicleState::where('id', $id)->where('vehicle_type_id', $item->id)->update($fields);
 
             $kept[] = $id;
         }
 
-        $item->states()->whereNotIn('id', $kept)->delete();
+        $item->states()->whereNotIn('id', $kept ?: [0])->delete();
 
-        foreach ($this->data['add_state'] ?? [] as $name) {
-            if (empty($name))
+        $addLabels = array_values((array) ($this->data['add_state_label'] ?? []));
+        $addColors = array_values((array) ($this->data['add_state_color'] ?? []));
+
+        foreach (array_values((array) ($this->data['add_state'] ?? [])) as $i => $st) {
+            $fields = $this->stateFields($st, $addLabels[$i] ?? null, $addColors[$i] ?? null);
+
+            if ($fields === null)
                 continue;
 
-            $item->states()->create(['name' => $name]);
+            $item->states()->create($fields);
         }
+    }
+
+    /** Normaliza un estado del payload -> [name, label, color] o null si vacio. */
+    private function stateFields($st, $label = null, $color = null): ?array
+    {
+        if (is_array($st)) {
+            $label = $st['label'] ?? $label;
+            $color = $st['color'] ?? $color;
+            $st = $st['name'] ?? '';
+        }
+
+        $name = trim((string) $st);
+        if ($name === '') {
+            return null;
+        }
+
+        $label = trim((string) $label);
+        $color = trim((string) $color);
+
+        return [
+            'name'  => mb_substr($name, 0, 255),
+            'label' => $label === '' ? null : mb_substr($label, 0, 24),
+            'color' => preg_match('/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/', $color) ? $color : null,
+        ];
     }
 }
