@@ -10952,6 +10952,12 @@ function Geofences() {
         break;
     }
 
+    // Sin nada dibujado todavia no hay geometria que convertir: con solo
+    // cambiar el tipo antes de dibujar, enableEdit reventaba leyendo
+    // `lng` de null (fallo 14 de la QA legacy). El dibujador ya quedo
+    // preparado para el tipo nuevo; se dibuja y listo.
+    if (!_options.coordinates && !_options.center) return;
+
     tmpItem.enableEdit(_options);
 
     _this.map().addLayer(tmpItem.getLayer());

@@ -898,13 +898,6 @@
     }, 100);
   });
 
-  /* Si el estado vino en la URL, refleja el botón activo del segmentado */
-  if (state.status) {
-    document.querySelectorAll("[data-status]").forEach(function (b) {
-      b.classList.toggle("is-active", b.getAttribute("data-status") === state.status);
-    });
-  }
-
   /* ===== Refresco automático =====
    * La lista muestra estado, velocidad y duraciones, que cambian solas. Se
    * recarga en segundo plano, pero NO mientras hay un modal abierto o filas

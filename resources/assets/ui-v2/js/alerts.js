@@ -895,9 +895,16 @@
               "tp-sched__cell" +
               (it.active ? " is-on" : "") +
               (/:00$/.test(it.id) ? " is-hour" : "");
+            // role=gridcell + aria-selected: la celda la entiende un lector
+            // de pantalla y se recorre con flechas (tabindex itinerante:
+            // solo la primera entra con Tab; ver wireSchedule).
             return (
               '<span class="' +
               cls +
+              '" role="gridcell" tabindex="-1" aria-selected="' +
+              (it.active ? "true" : "false") +
+              '" aria-label="' +
+              esc(day.title + " " + it.id) +
               '" data-day="' +
               esc(day.id) +
               '" data-time="' +
@@ -907,7 +914,7 @@
           })
           .join("");
         return (
-          '<div class="tp-sched__row">' +
+          '<div class="tp-sched__row" role="row">' +
           '<button type="button" class="tp-sched__daylabel" data-day-toggle="' +
           esc(day.id) +
           '" title="' +
@@ -931,7 +938,7 @@
       '<button type="button" data-sched-set="clear">' + tpT('global.clear') + '</button>' +
       "</div>";
 
-    return '<div class="tp-sched__scroll">' + hours + rows + "</div>" + quick;
+    return '<div class="tp-sched__scroll" role="grid" aria-label="' + esc(tpT('ui.alert_schedule_grid')) + '">' + hours + rows + "</div>" + quick;
   }
 
   function collectSchedules(dlg) {
@@ -981,6 +988,63 @@
       tip.hidden = true;
     });
 
+    // Unico punto que enciende/apaga una celda: mantiene aria-selected a
+    // la par de la clase visual.
+    function setOn(c, on) {
+      c.classList.toggle("is-on", on);
+      c.setAttribute("aria-selected", on ? "true" : "false");
+    }
+
+    // Tabindex itinerante: una sola celda entra con Tab; dentro, flechas.
+    var first = grid.querySelector(".tp-sched__cell");
+    if (first) first.tabIndex = 0;
+    function focusCell(c) {
+      if (!c) return;
+      var prev = grid.querySelector('.tp-sched__cell[tabindex="0"]');
+      if (prev) prev.tabIndex = -1;
+      c.tabIndex = 0;
+      c.focus();
+    }
+    grid.addEventListener("keydown", function (e) {
+      var c = e.target.closest(".tp-sched__cell");
+      if (!c) return;
+      var row = c.parentNode;
+      var cells = Array.prototype.slice.call(row.children);
+      var idx = cells.indexOf(c);
+      var rowEl = row.closest(".tp-sched__row");
+      var rows = Array.prototype.slice.call(grid.querySelectorAll(".tp-sched__row"));
+      var r = rows.indexOf(rowEl);
+      var target = null;
+      switch (e.key) {
+        case " ":
+        case "Enter":
+          setOn(c, !c.classList.contains("is-on"));
+          break;
+        case "ArrowRight":
+          target = cells[idx + 1];
+          break;
+        case "ArrowLeft":
+          target = cells[idx - 1];
+          break;
+        case "ArrowDown":
+          target = rows[r + 1] && rows[r + 1].querySelectorAll(".tp-sched__cell")[idx];
+          break;
+        case "ArrowUp":
+          target = rows[r - 1] && rows[r - 1].querySelectorAll(".tp-sched__cell")[idx];
+          break;
+        case "Home":
+          target = cells[0];
+          break;
+        case "End":
+          target = cells[cells.length - 1];
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+      if (target) focusCell(target);
+    });
+
     var painting = false,
       paintOn = true;
     grid.addEventListener("mousedown", function (e) {
@@ -989,12 +1053,12 @@
       e.preventDefault();
       painting = true;
       paintOn = !c.classList.contains("is-on");
-      c.classList.toggle("is-on", paintOn);
+      setOn(c, paintOn);
     });
     grid.addEventListener("mouseover", function (e) {
       if (!painting) return;
       var c = e.target.closest(".tp-sched__cell");
-      if (c) c.classList.toggle("is-on", paintOn);
+      if (c) setOn(c, paintOn);
     });
     document.addEventListener("mouseup", function () {
       painting = false;
@@ -1011,7 +1075,7 @@
           return c.classList.contains("is-on");
         });
         cells.forEach(function (c) {
-          c.classList.toggle("is-on", !allOn);
+          setOn(c, !allOn);
         });
         return;
       }
@@ -1021,19 +1085,16 @@
       var all = grid.querySelectorAll(".tp-sched__cell");
       if (mode === "clear") {
         all.forEach(function (c) {
-          c.classList.remove("is-on");
+          setOn(c, false);
         });
       } else if (mode === "always") {
         all.forEach(function (c) {
-          c.classList.add("is-on");
+          setOn(c, true);
         });
       } else {
         var days = mode === "workdays" ? WORKDAYS : WEEKEND;
         all.forEach(function (c) {
-          c.classList.toggle(
-            "is-on",
-            days.indexOf(c.getAttribute("data-day")) !== -1,
-          );
+          setOn(c, days.indexOf(c.getAttribute("data-day")) !== -1);
         });
       }
     });

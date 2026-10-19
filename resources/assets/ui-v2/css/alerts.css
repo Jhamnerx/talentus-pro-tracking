@@ -644,6 +644,12 @@ button.tp-alerts__rule-toggle:hover {
 .tp-sched__cell.is-hour {
   border-left: 1px solid var(--border-default);
 }
+.tp-sched__cell:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: 1px;
+  z-index: 1;
+  position: relative;
+}
 .tp-sched__cell:hover {
   background: var(--border-strong);
 }

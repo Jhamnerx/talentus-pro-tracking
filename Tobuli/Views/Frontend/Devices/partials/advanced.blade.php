@@ -70,11 +70,11 @@
         @endif
 
         <div class="form-group">
-            {!! Form::label('operator_sim', 'Operador SIM:') !!}
+            {!! Form::label('operator_sim', trans('front.operator_sim') . ':') !!}
             {!! Form::select(
                 'operator_sim',
                 [
-                    '' => '-- Sin operador --',
+                    '' => trans('front.no_operator'),
                     'M2M' => 'M2M',
                     'CUY' => 'CUY',
                     'IOT' => 'IOT',
@@ -160,7 +160,8 @@
                 ]) !!}
                 <small>
                     {{ trans('front.video_channels_hint') }}
-                    @unless ($videoService->isSupported($item))
+                    {{-- En el alta aun no hay protocolo: el aviso solo tiene sentido al editar. --}}
+                    @unless (!$item->exists || $videoService->isSupported($item))
                         <br><strong>{{ trans('front.video_channels_unsupported') }}</strong>
                     @endunless
                 </small>
@@ -356,13 +357,13 @@
     }
 @endphp
 <div class="form-group" id="route-colors-group">
-    {!! Form::label(null, 'Colores del recorrido — Historial:') !!}
+    {!! Form::label(null, trans('front.route_colors_history') . ':') !!}
 
     {{-- Por viajes --}}
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
         <div class="radio" style="min-width:130px;">
             <input type="radio" name="route_color_type" value="trips" {{ $rcType === 'trips' ? 'checked' : '' }}>
-            <label>Por viajes</label>
+            <label>{{ trans('front.route_color_by_trips') }}</label>
         </div>
     </div>
 
@@ -370,7 +371,7 @@
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
         <div class="radio" style="min-width:130px;">
             <input type="radio" name="route_color_type" value="single" {{ $rcType === 'single' ? 'checked' : '' }}>
-            <label>Único</label>
+            <label>{{ trans('front.route_color_single') }}</label>
         </div>
         <input type="color" name="route_color" value="{{ $rcSingle }}"
             style="width:36px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">
@@ -380,12 +381,12 @@
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
         <div class="radio" style="min-width:130px;">
             <input type="radio" name="route_color_type" value="speed" {{ $rcType === 'speed' ? 'checked' : '' }}>
-            <label>Por velocidad</label>
+            <label>{{ trans('front.route_color_by_speed') }}</label>
         </div>
         <div id="rc-bar" style="display:flex;flex:1 1 auto;max-width:260px;height:10px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.08);"></div>
-        <button type="button" class="btn btn-xs btn-default" id="rc-add-range" title="Añadir rango"
+        <button type="button" class="btn btn-xs btn-default" id="rc-add-range" title="{{ trans('front.add_range') }}"
             style="color:#16a34a;font-weight:700;">+</button>
-        <button type="button" class="btn btn-xs btn-default" id="rc-reset-ranges" title="Restaurar por defecto">&#8634;</button>
+        <button type="button" class="btn btn-xs btn-default" id="rc-reset-ranges" title="{{ trans('front.restore_defaults') }}">&#8634;</button>
     </div>
     {{-- Rangos en línea (horizontal, con wrap) --}}
     <div id="rc-ranges" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 8px 24px;"></div>
@@ -394,9 +395,9 @@
     <div style="display:flex;align-items:center;gap:10px;opacity:.55;">
         <div class="radio" style="min-width:130px;">
             <input type="radio" name="route_color_type" value="sensor" disabled {{ $rcType === 'sensor' ? 'checked' : '' }}>
-            <label>Por sensor</label>
+            <label>{{ trans('front.route_color_by_sensor') }}</label>
         </div>
-        <small>(requiere un sensor con rangos de colores por intervalo)</small>
+        <small>{{ trans('front.route_color_by_sensor_hint') }}</small>
     </div>
 
     <input type="hidden" name="route_speed_ranges" id="rc-json" value="{{ e(json_encode($rcRanges)) }}">

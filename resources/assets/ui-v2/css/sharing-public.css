@@ -1,114 +1,350 @@
 /* =====================================================================
- * sharing-public.css · Identidad v2 para la página pública de sharing
+ * sharing-public.css · Página pública de un enlace compartido
  * ---------------------------------------------------------------------
- * Esta página (el enlace que el usuario comparte con un tercero) sigue
- * montada sobre el mapa legacy: los controles conservan su marcado, sus
- * clases y sus hooks (app.mapFull(), app.zoomIn(), .icon …). Aquí solo se
- * repinta: tipografía, superficies, radios y sombras del tema v2.
+ * La página sigue montada sobre el mapa legacy (core.js + app.js:
+ * app.sharingInit, app.changeSetting, popups de Device). Lo que cambia es
+ * la piel: los controles del mapa usan el MISMO marcado, iconos SVG y
+ * tokens que la v2 (tokens.css, .tp-live__map-controls de live-ops.css),
+ * y el popup del vehículo y la etiqueta del nombre se repintan con las
+ * mismas superficies. Tema claro/oscuro por [data-theme] como la v2.
  *
- * Reescribir el mapa público con el stack v2 sería un módulo aparte
- * (marcadores en vivo, polling y capas); queda anotado en el plan.
+ * Los ganchos del JS legacy se conservan: ids de los checkboxes
+ * (clusterDevice, fitBounds, showNames, showTail, showTraffic), onclick
+ * de app.*, y el plugin de botones de Bootstrap (data-toggle="buttons"
+ * pone .active en el label). Ver Layouts/sharing.blade.php.
  * ===================================================================== */
 
-:root {
-  --tp-sh-surface: #ffffff;
-  --tp-sh-border: #e2e8f0;
-  --tp-sh-fg: #0f172a;
-  --tp-sh-muted: #64748b;
-  --tp-sh-brand: #2563eb;
-  --tp-sh-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
-}
-
+html,
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: var(--tp-sh-fg);
+  font-family: var(--font-sans, "Inter", -apple-system, "Segoe UI", Roboto, sans-serif);
+  color: var(--fg-primary);
+  background: var(--surface-app);
 }
 
-/* ── Controles del mapa ─────────────────────────────────────────────── */
-#map-controls .btn-group-vertical {
-  background: var(--tp-sh-surface);
-  border: 1px solid var(--tp-sh-border);
-  border-radius: 12px;
-  box-shadow: var(--tp-sh-shadow);
-  overflow: hidden;
+#mapWrap,
+#map {
+  background: var(--map-bg, var(--surface-sunken));
 }
 
-#map-controls .btn-group-vertical > .btn,
-#map-controls .btn-group-vertical > label.btn {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  color: var(--tp-sh-fg);
-  width: 38px;
-  height: 38px;
+/* ── Controles del mapa (mismo bloque que .tp-live__map-controls) ──── */
+#map-controls.tp-sh-controls {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
   display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md, 10px);
+  box-shadow: var(--shadow-md);
+  width: auto;
+  height: auto;
+}
+
+#map-controls.tp-sh-controls > div,
+#map-controls.tp-sh-controls .tp-sh-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.tp-sh-divider {
+  height: 1px;
+  background: var(--border-default);
+  margin: 2px 4px;
+  opacity: 0.6;
+}
+
+/* Botón: réplica de .tp-btn.tp-btn--ghost.tp-btn--icon.tp-btn--sm.
+   La especificidad con #map-controls gana al .btn del tema legacy. */
+#map-controls .tp-sh-btn,
+#map-controls label.tp-sh-btn {
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s ease, color 0.15s ease;
+  width: 32px;
+  height: 32px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm, 8px);
+  background: transparent;
+  color: var(--fg-secondary);
+  box-shadow: none;
+  cursor: pointer;
+  line-height: 1;
+  text-shadow: none;
+  transition:
+    background var(--dur-fast, 0.15s) var(--ease-out, ease),
+    color var(--dur-fast, 0.15s) var(--ease-out, ease);
 }
 
-#map-controls .btn-group-vertical > .btn + .btn,
-#map-controls .btn-group-vertical > label.btn + label.btn {
-  border-top: 1px solid var(--tp-sh-border);
+#map-controls .tp-sh-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  pointer-events: none;
 }
 
-#map-controls .btn-group-vertical > .btn:hover,
-#map-controls .btn-group-vertical > label.btn:hover {
-  background: rgba(37, 99, 235, 0.08);
-  color: var(--tp-sh-brand);
+#map-controls .tp-sh-btn:hover,
+#map-controls .tp-sh-btn:focus-visible {
+  background: var(--brand-bg-subtle, rgba(37, 99, 235, 0.1));
+  color: var(--fg-primary);
+  outline: none;
 }
 
-#map-controls .btn-group-vertical > label.btn.active {
-  background: rgba(37, 99, 235, 0.14);
-  color: var(--tp-sh-brand);
+#map-controls .tp-sh-btn:focus-visible {
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(37, 99, 235, 0.35));
 }
 
-#map-controls > div {
-  margin-bottom: 10px;
+/* Conmutador encendido: igual que [aria-pressed="true"] en la v2.
+   Bootstrap añade .active al label; :has() cubre el estado inicial que
+   el legacy fija por JS sin pasar por el plugin. */
+#map-controls label.tp-sh-btn.active,
+#map-controls label.tp-sh-btn:has(input:checked) {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  color: var(--fg-on-brand, #fff);
 }
 
-/* ── Popups y tooltips de Leaflet ───────────────────────────────────── */
-.leaflet-popup-content-wrapper {
-  border-radius: 12px;
-  box-shadow: var(--tp-sh-shadow);
-  border: 1px solid var(--tp-sh-border);
+#map-controls label.tp-sh-btn input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+  pointer-events: none;
 }
 
-.leaflet-popup-content {
-  font-size: 13px;
-  line-height: 1.5;
-  margin: 12px 14px;
-}
-
-.leaflet-popup-content b,
-.leaflet-popup-content strong {
-  color: var(--tp-sh-fg);
-}
-
+/* ── Selector de capa de Leaflet ────────────────────────────────────── */
 .leaflet-control-layers {
-  border-radius: 12px !important;
-  border: 1px solid var(--tp-sh-border) !important;
-  box-shadow: var(--tp-sh-shadow) !important;
+  background: var(--surface-raised) !important;
+  color: var(--fg-primary);
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--r-md, 10px) !important;
+  box-shadow: var(--shadow-md) !important;
+  font-family: inherit;
 }
 
 .leaflet-control-layers-list label {
   font-size: 13px;
   font-weight: 500;
+  color: var(--fg-primary);
+}
+
+.leaflet-control-layers-separator {
+  border-top-color: var(--border-default);
+}
+
+/* ── Etiqueta del vehículo (tooltip de Leaflet) ─────────────────────── */
+.leaflet-tooltip {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-pill, 999px);
+  box-shadow: var(--shadow-sm);
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.leaflet-tooltip::before {
+  display: none;
+}
+
+/* ── Popup del vehículo (marcado legacy: .popup-header / .popup-body) ── */
+.leaflet-popup-content-wrapper {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border-radius: var(--r-lg, 14px);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-default);
+  padding: 0;
+  overflow: hidden;
+}
+
+.leaflet-popup-tip {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.leaflet-popup-device .popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--surface-page);
+  border-bottom: 1px solid var(--border-default);
+  color: var(--fg-primary);
+}
+
+.leaflet-popup-device .popup-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--fg-primary);
+  padding: 0;
+  margin: 0;
+}
+
+.leaflet-popup-device .popup-header .nav-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.leaflet-popup-device .popup-header .nav-tabs > li {
+  float: none;
+  margin: 0;
+}
+
+.leaflet-popup-device .popup-header .nav-tabs > li > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--r-sm, 8px);
+  background: transparent;
+  color: var(--fg-secondary);
+}
+
+.leaflet-popup-device .popup-header .nav-tabs > li > a:hover,
+.leaflet-popup-device .popup-header .nav-tabs > li.active > a {
+  background: var(--brand-bg-subtle, rgba(37, 99, 235, 0.1));
+  color: var(--fg-primary);
+}
+
+.leaflet-popup-device .popup-body {
+  padding: 6px 12px 10px;
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.leaflet-popup-device .table {
+  margin: 0;
+  color: var(--fg-primary);
+  background: transparent;
+}
+
+.leaflet-popup-device .table > tbody > tr > th,
+.leaflet-popup-device .table > tbody > tr > td {
+  border-top: 1px solid var(--border-subtle);
+  padding: 5px 6px 5px 0;
+  background: transparent;
+  vertical-align: top;
+}
+
+.leaflet-popup-device .table > tbody > tr:first-child > th,
+.leaflet-popup-device .table > tbody > tr:first-child > td {
+  border-top: 0;
+}
+
+.leaflet-popup-device .table > tbody > tr > th {
+  color: var(--fg-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.leaflet-popup-device .table a {
+  color: var(--fg-link);
+}
+
+.leaflet-popup-device .ico-options-h,
+.leaflet-popup-device .btn.icon {
+  color: var(--fg-muted);
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.leaflet-popup-device .buttons .btn {
+  background: var(--brand-500);
+  color: var(--fg-on-brand, #fff);
+  border: 0;
+  border-radius: var(--r-sm, 8px);
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  display: none;
+}
+
+/* ── Cluster del legacy con el color de marca ───────────────────────── */
+.marker-cluster div {
+  background: var(--brand-500);
+  color: var(--fg-on-brand, #fff);
+  font-weight: 700;
+  border: 3px solid var(--surface-raised);
+}
+
+.marker-cluster {
+  background: color-mix(in srgb, var(--brand-500) 28%, transparent);
 }
 
 /* ── Cartel de carga ────────────────────────────────────────────────── */
 #loading,
 .loading {
   font-size: 13px;
-  color: var(--tp-sh-muted);
+  color: var(--fg-muted);
+  background: var(--surface-raised);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --tp-sh-surface: #0f172a;
-    --tp-sh-border: #1e293b;
-    --tp-sh-fg: #e2e8f0;
-    --tp-sh-muted: #94a3b8;
-    --tp-sh-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  }
+/* ── Atribución de Leaflet ──────────────────────────────────────────── */
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface-raised) 85%, transparent) !important;
+  color: var(--fg-muted) !important;
+  font-size: 11px;
+  border-radius: var(--r-sm, 8px) 0 0 0;
+}
+
+.leaflet-control-attribution a {
+  color: var(--fg-link) !important;
+}
+
+/* El tema legacy inyecta en linea ".light #map-controls .btn { background: var(--white) }"
+   (y su variante oscura), que gana a las reglas de arriba por especificidad.
+   Se repite con un selector mas fuerte para que mande la piel v2. */
+html #map-controls.tp-sh-controls .btn,
+html #map-controls.tp-sh-controls label.btn,
+html #map-controls.tp-sh-controls .btn:focus,
+html #map-controls.tp-sh-controls .btn:active {
+  background: transparent;
+  color: var(--fg-secondary);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+html #map-controls.tp-sh-controls .btn:hover,
+html #map-controls.tp-sh-controls .btn:focus-visible {
+  background: var(--brand-bg-subtle, rgba(37, 99, 235, 0.1));
+  color: var(--fg-primary);
+}
+
+html #map-controls.tp-sh-controls label.btn.active,
+html #map-controls.tp-sh-controls label.btn:has(input:checked) {
+  background: var(--brand-500);
+  border-color: var(--brand-500);
+  color: var(--fg-on-brand, #fff);
 }

@@ -21,8 +21,12 @@ class GeofenceFormValidator extends Validator {
             'center.lng'    => 'required_if:type,circle|lng',
             'radius'        => 'required_if:type,circle,line|numeric|min:1',
             'polygon_color' => 'required|min:7|max:7',
-            'speed_limit'   => 'numeric',
-            'vehicle_speed_limits.*.*' => 'nullable|numeric',
+            // Vacio = sin limite (el service lo pasa a null); 0 o negativo no
+            // es un limite valido. Los limites por tipo igual (fallos 4 y 9).
+            'speed_limit'   => 'nullable|numeric|min:1',
+            'vehicle_speed_limits'     => 'nullable|array',
+            'vehicle_speed_limits.*'   => 'array',
+            'vehicle_speed_limits.*.*' => 'nullable|numeric|min:1',
         ],
         'update' => [
             'name'          => 'string',
@@ -36,8 +40,12 @@ class GeofenceFormValidator extends Validator {
             'center.lng'    => 'required_if:type,circle|lng',
             'radius'        => 'required_if:type,circle,line|numeric|min:1|nullable',
             'polygon_color' => 'min:7|max:7',
-            'speed_limit'   => 'numeric',
-            'vehicle_speed_limits.*.*' => 'nullable|numeric',
+            // Vacio = sin limite (el service lo pasa a null); 0 o negativo no
+            // es un limite valido. Los limites por tipo igual (fallos 4 y 9).
+            'speed_limit'   => 'nullable|numeric|min:1',
+            'vehicle_speed_limits'     => 'nullable|array',
+            'vehicle_speed_limits.*'   => 'array',
+            'vehicle_speed_limits.*.*' => 'nullable|numeric|min:1',
         ],
     ];
 

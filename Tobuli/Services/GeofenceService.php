@@ -57,19 +57,52 @@ class GeofenceService extends ModelService
         if (!array_key_exists('vehicle_speed_limits', $data))
             return;
 
-        $geofence->vehicleSpeedLimits()->delete();
+        $limits = is_array($data['vehicle_speed_limits']) ? $data['vehicle_speed_limits'] : [];
 
-        foreach ($data['vehicle_speed_limits'] as $vehicleTypeId => $byState) {
+        // Se comprueba TODO antes de tocar la base: un tipo o estado que no
+        // sea del dueño de la geocerca (o no exista) daba un 500 por la FK
+        // con los limites ya borrados (fallo 9 de la QA legacy).
+        $rows = [];
+        $typeIds = array_filter(array_map('intval', array_keys($limits)));
+        $types = $typeIds
+            ? \Tobuli\Entities\VehicleType::where('user_id', $geofence->user_id)
+                ->whereIn('id', $typeIds)->with('states:id,vehicle_type_id')->get()->keyBy('id')
+            : collect();
+
+        foreach ($limits as $vehicleTypeId => $byState) {
+            if (!is_array($byState))
+                continue;
+
+            $type = $types->get((int) $vehicleTypeId);
+            if (!$type) {
+                throw new ValidationException(
+                    ['vehicle_speed_limits' => [trans('validation.exists', ['attribute' => trans('validation.attributes.vehicle_type_id')])]]
+                );
+            }
+
             foreach ($byState as $vehicleStateId => $speedLimit) {
                 if ($speedLimit === null || $speedLimit === '')
                     continue;
 
-                $geofence->vehicleSpeedLimits()->create([
-                    'vehicle_type_id'  => $vehicleTypeId,
-                    'vehicle_state_id' => empty($vehicleStateId) ? null : $vehicleStateId,
+                $stateId = empty($vehicleStateId) ? null : (int) $vehicleStateId;
+                if ($stateId !== null && !$type->states->contains('id', $stateId)) {
+                    throw new ValidationException(
+                        ['vehicle_speed_limits' => [trans('validation.exists', ['attribute' => trans('validation.attributes.vehicle_state_id')])]]
+                    );
+                }
+
+                $rows[] = [
+                    'vehicle_type_id'  => $type->id,
+                    'vehicle_state_id' => $stateId,
                     'speed_limit'      => $speedLimit,
-                ]);
+                ];
             }
+        }
+
+        $geofence->vehicleSpeedLimits()->delete();
+
+        foreach ($rows as $row) {
+            $geofence->vehicleSpeedLimits()->create($row);
         }
     }
 

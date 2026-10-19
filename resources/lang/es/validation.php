@@ -2,6 +2,7 @@
 return [
     'acceptable_time_from' => 'Tiempo aceptable desde',
     'accepted' => 'El :attribute debe ser aceptado.',
+    'css_color' => 'El :attribute debe ser un color válido (#rrggbb).',
     'account_sid' => 'SID de la cuenta',
     'action' => 'Acción',
     'activation_date' => 'Fecha de activacion',
@@ -81,6 +82,7 @@ return [
     'contains' => 'El :attribute debe contener :value .',
     'continuous_duration' => 'Duración continua',
     'coordinates' => 'Punto en el mapa',
+    'polygon' => 'Forma dibujada en el mapa',
     'count' => 'Contar',
     'country' => 'País',
     'created_at' => 'Creado en',
@@ -877,6 +879,7 @@ return [
         'default_login_methods' => 'Métodos de inicio de sesión predeterminados',
         'default_language' => 'Idioma predeterminado',
         'coordinates' => 'Punto del mapa',
+        'polygon' => 'Forma dibujada en el mapa',
         'map_center_latitude' => 'Latitud del centro del mapa',
         'map_center_longitude' => 'Longitud del centro del mapa',
         'map_zoom_level' => 'Nivel de zoom del mapa',

@@ -1538,4 +1538,16 @@ return [
     'video_channels' => 'Canales de vídeo a bordo',
     'video_channels_hint' => 'Cuántas cámaras lleva el vehículo (hasta 6). Con 0 el vehículo no ofrece vídeo y el widget no se muestra.',
     'video_channels_unsupported' => 'El protocolo de este equipo no lleva vídeo, así que el visor no abrirá aunque se configuren canales.',
+    // Textos del formulario legacy de dispositivo que estaban fijos en castellano (QA legacy, fallo 15)
+    'operator_sim' => 'Operador SIM',
+    'no_operator' => '-- Sin operador --',
+    'route_colors_history' => 'Colores del recorrido — Historial',
+    'route_color_by_trips' => 'Por viajes',
+    'route_color_single' => 'Único',
+    'route_color_by_speed' => 'Por velocidad',
+    'route_color_by_sensor' => 'Por sensor',
+    'route_color_by_sensor_hint' => '(requiere un sensor con rangos de colores por intervalo)',
+    'add_range' => 'Añadir rango',
+    'restore_defaults' => 'Restaurar por defecto',
+    'web_services' => 'Servicios Web',
 ];
