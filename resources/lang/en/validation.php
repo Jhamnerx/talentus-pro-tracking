@@ -3,6 +3,7 @@
 return array(
 
     'accepted' => 'The :attribute must be accepted.',
+    'css_color' => 'The :attribute must be a valid color (#rrggbb).',
     'active_url' => 'The :attribute is not a valid URL.',
     'after' => 'The :attribute must be a date after :date.',
     'alpha' => 'The :attribute may only contain letters.',
@@ -102,6 +103,7 @@ return array(
         'description' => 'Description',
         'map_icon_id' => 'Marker icon',
         'coordinates' => 'Map point',
+        'polygon' => 'Shape drawn on the map',
         'date_from' => 'Date from',
         'date_to' => 'Date to',
         'code' => 'Code',

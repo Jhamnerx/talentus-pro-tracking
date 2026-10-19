@@ -262,13 +262,13 @@
           r.disabled = !on;
         });
       });
+      // Los colores por estado solo se OCULTAN cuando el tipo no es flecha,
+      // como hace el legacy (data-disablable "hide"): siguen viajando en el
+      // guardado y se conservan al volver a "Flecha". Antes iban disabled y
+      // no se enviaban, asi que cada guardado con otro tipo los perdia (F8).
       var colors = scope.querySelector("[data-tp-icons-colors]");
       if (colors) {
-        var isArrow = type === "arrow";
-        colors.style.display = isArrow ? "" : "none";
-        Array.prototype.forEach.call(colors.querySelectorAll("select"), function (s) {
-          s.disabled = !isArrow;
-        });
+        colors.style.display = type === "arrow" ? "" : "none";
       }
     }
 

@@ -586,9 +586,10 @@ class OperationsController extends BaseController
     }
 
     /**
-     * Justifica una parada. reason_id nulo = "Otro" (nota obligatoria, no
-     * autoriza). Un motivo con `authorizes` marca la parada como autorizada
-     * y recalcula el contador del tramo. Guarda quien y cuando.
+     * Justifica una parada. reason_id nulo = "Otro" (nota obligatoria). El
+     * motivo SOLO explica; autorizar la parada es una casilla aparte
+     * (`authorized`) que marca quien justifica (decision del cliente,
+     * 19-oct-2026). Recalcula el contador del tramo y guarda quien y cuando.
      */
     public function justifyStop(Request $request, $id): JsonResponse
     {
@@ -623,8 +624,8 @@ class OperationsController extends BaseController
         $stop->justified_by = $this->user->id;
         $stop->justified_at = date('Y-m-d H:i:s');
 
-        // Autorizada si el motivo lo dice; "Otro" solo explica.
-        $stop->authorized = $reason ? (bool) $reason->authorizes : false;
+        // La casilla "Autorizar esta parada" decide; el motivo solo explica.
+        $stop->authorized = filter_var($request->get('authorized', false), FILTER_VALIDATE_BOOLEAN);
         $stop->save();
 
         if ($stop->leg) {

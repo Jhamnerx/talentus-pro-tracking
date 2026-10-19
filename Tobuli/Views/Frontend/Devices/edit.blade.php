@@ -23,7 +23,7 @@
                 Auth::User()->perm('webservice.wisetrack', 'view') ||
                 Auth::User()->perm('webservice.sidersales', 'view') ||
                 Auth::User()->perm('webservice.epscenter', 'view'))
-            <li><a href="#device-add-form-web_service" role="tab" data-toggle="tab">Servicios Web</a></li>
+            <li><a href="#device-add-form-web_service" role="tab" data-toggle="tab">{{ trans('front.web_services') }}</a></li>
         @endif
         @if (expensesTypesExist())
             <li><a href="#device-form-expenses" role="tab" data-toggle="tab"
@@ -35,7 +35,7 @@
         @if (Auth::user()->can('view', $item, 'custom_fields') && $item->hasCustomFields())
             <li><a href="#device-custom-fields" role="tab" data-toggle="tab">{!! trans('admin.custom_fields') !!}</a></li>
         @endif
-        <li><a href="#device-form-maintenances" role="tab" data-toggle="tab">Historial</a></li>
+        <li><a href="#device-form-maintenances" role="tab" data-toggle="tab">{{ trans('front.history') }}</a></li>
         @if (Auth::user()->can('edit', $item, 'tags'))
             <li><a href="#device-form-tags" role="tab" data-toggle="tab">{!!trans('front.tags')!!}</a></li>
         @endif

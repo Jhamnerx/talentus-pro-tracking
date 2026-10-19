@@ -279,8 +279,11 @@ admin, porque ahora sí obedecen):
 
 - `round` → `floor` en `StopDurationAlertCheck` (afecta a todas las alertas de
   duración de parada, no solo a Operaciones; decisión pendiente).
-- Confirmar con el cliente si cada motivo de parada **autoriza** la parada o
-  solo la explica.
+- ~~Confirmar con el cliente si cada motivo de parada **autoriza** la parada o
+  solo la explica.~~ **Decidido el 19-oct-2026:** el motivo solo explica; al
+  justificar hay una casilla «Autorizar esta parada» que es la que descuenta
+  la parada de las no autorizadas. El catálogo de motivos ya no tiene la
+  casilla «Autoriza».
 - Validar los conteos de vueltas contra el control manual del cliente antes de
   darlo por bueno.
 - No hay pruebas automatizadas del módulo (decisión del proyecto); la validación

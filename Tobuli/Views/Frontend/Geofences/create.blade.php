@@ -104,6 +104,9 @@
             var esCorredor = $form.find('select[name="type"]').val() === 'line';
 
             $form.find('.geofence-corridor-width').toggle(esCorredor);
+            // Oculto no basta: el campo seguia viajando y un poligono se
+            // guardaba con radius = 100 (fallo 13 de la QA legacy).
+            $form.find('.geofence-corridor-width input[name="radius"]').prop('disabled', !esCorredor);
         }
 
         $form.on('change', 'select[name="type"]', toggleCorridorWidth);

@@ -24,6 +24,20 @@ class DeviceFormValidator extends Validator
             'fuel_measurement_id' => 'in:1,2,3,4,5,6',
             'tail_color'          => 'css_color',
             'tail_length'         => 'numeric|min:0|max:10',
+            // Columnas nuevas (colores de recorrido/marcador, costo por km):
+            // las dos interfaces comparten este validador. Sin reglas,
+            // "abc" o -5 en cost_per_km y un route_color_type inventado
+            // entraban tal cual (QA legacy /objects, fallo 8).
+            'cost_per_km'                => 'nullable|numeric|min:0',
+            'route_color_type'           => 'nullable|in:trips,single,speed,sensor',
+            'route_color'                => 'nullable|css_color',
+            'route_sensor_id'            => 'nullable|integer',
+            'route_speed_ranges'         => 'nullable|json',
+            'marker_colors_enabled'      => 'nullable|boolean',
+            'marker_speed_ranges'        => 'nullable|json',
+            'marker_geofence_margin'     => 'nullable|numeric|min:0|max:1000',
+            'marker_geofence_near_color' => 'nullable|css_color',
+            'marker_geofence_over_color' => 'nullable|css_color',
             'max_speed'           => 'numeric|min:1',
             'video_channels'      => 'nullable|integer|between:0,6',
             'min_moving_speed'    => 'numeric|min:1|max:50',
@@ -61,6 +75,20 @@ class DeviceFormValidator extends Validator
             'fuel_measurement_id' => 'in:1,2,3,4,5,6',
             'tail_color'          => 'css_color',
             'tail_length'         => 'numeric|min:0|max:10',
+            // Columnas nuevas (colores de recorrido/marcador, costo por km):
+            // las dos interfaces comparten este validador. Sin reglas,
+            // "abc" o -5 en cost_per_km y un route_color_type inventado
+            // entraban tal cual (QA legacy /objects, fallo 8).
+            'cost_per_km'                => 'nullable|numeric|min:0',
+            'route_color_type'           => 'nullable|in:trips,single,speed,sensor',
+            'route_color'                => 'nullable|css_color',
+            'route_sensor_id'            => 'nullable|integer',
+            'route_speed_ranges'         => 'nullable|json',
+            'marker_colors_enabled'      => 'nullable|boolean',
+            'marker_speed_ranges'        => 'nullable|json',
+            'marker_geofence_margin'     => 'nullable|numeric|min:0|max:1000',
+            'marker_geofence_near_color' => 'nullable|css_color',
+            'marker_geofence_over_color' => 'nullable|css_color',
             'max_speed'           => 'numeric|min:1',
             'video_channels'      => 'nullable|integer|between:0,6',
             'min_moving_speed'    => 'numeric|min:1|max:50',

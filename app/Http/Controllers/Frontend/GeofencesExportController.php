@@ -32,9 +32,17 @@ class GeofencesExportController extends Controller
             'radius',
             'center',
             'device_id',
+            // Limites de velocidad: el por defecto, los intervalos
+            // (reports_geofleet_in) y, via decorate(), los limites por
+            // tipo/estado de vehiculo con sus NOMBRES. Antes el .gexp los
+            // perdia todos (fallo 10 de la QA legacy).
+            'speed_limit',
+            'additional',
         ];
 
-        $geofences = Geofence::userOwned($this->user)->with('group:id,title');
+        $geofences = Geofence::userOwned($this->user)
+            ->with('group:id,title')
+            ->with('vehicleSpeedLimits.vehicleType:id,name', 'vehicleSpeedLimits.vehicleState:id,name');
 
         return (new ExportManager($geofences))
             ->applyFilter($this->data['export_type'], $this->data)

@@ -63,7 +63,7 @@ Notas:
 
 | Item | Estado | Evidencia |
 | --- | --- | --- |
-| F8 Colores del icono cuando el tipo no es «Flecha» | ❌ Pendiente | `device-modal.js:265-271` sigue poniendo `disabled` a los selects de color (el legacy solo los oculta), así que `icon_colors` no viaja con tipo `icon`/`rotating` |
+| F8 Colores del icono cuando el tipo no es «Flecha» | ✅ Corregido 19-oct (rama `correcciones-oct`) | los selects de color solo se ocultan, como el legacy, y viajan siempre |
 | F9 Pestaña Sensores para todos, icono de mapeo, importar calibración | ✅ (matiz) | gate `perm('devices','edit')` en `DevicesController.php:1383`; mapeo e importación portados. Quien solo tiene «ver» no la ve |
 | F10 Modal de beacons | ✅ | `api.beacons.store/update`, `BeaconFormValidator` + `DeviceService` (19-ago) |
 | F12 `template_webhook` y `listsTranslations()` | ✅ | `DevicesController.php:3140-3158`, `device-widgets.blade.php:140`, `ShellController.php:256, 294` |
@@ -79,9 +79,9 @@ Conclusión: la Ola 0 está cerrada salvo F8 (pendiente) y F18 (parcial). Convie
 Corregido: botones sin nombre, foco, destino táctil, movimiento reducido, iconos decorativos, elementos con click (6 criterios).
 
 Pendiente:
-- Rejilla del horario de alertas (`alerts.js:920-961`): 672 celdas sin estado expuesto. Hace falta `role="grid"` con navegación por flechas. Estimación 3-4 h.
+- ~~Rejilla del horario de alertas~~ ✅ 19-oct: `role=grid/row/gridcell`, `aria-selected`, tabindex itinerante y flechas/Espacio.
 - 49 campos de formulario sin etiqueta (18 en `sensor-form.blade.php`, 31 en otros 20 blades). Aplazado.
-- Código muerto detectado: `fleet.js:899` (`[data-status]`) y `live.js:3311, 3344` (`.tp-live__paneltab`). Decidir si se borra.
+- Código muerto: `fleet.js` (`[data-status]`) borrado el 19-oct; el de `live.js` (`.tp-live__paneltab`) no se localizó en las líneas indicadas, queda por revisar.
 
 ## 5. QA legacy `/objects` · `docs/QA-LEGACY-OBJECTS-informe.md` (6-oct, 18 fallos)
 
@@ -90,19 +90,19 @@ Pendiente:
 | 1 | Corredor no se puede crear en legacy (`polyline`) | ✅ `geofences.js:86` |
 | 2 | La v2 convertía el corredor en polígono | ✅ `live-zones.js` rama `line` |
 | 3 | `suspended_at` nunca se guardaba | ✅ `DeviceModalHelper.php:557` (`forceFill`) |
-| 4 | Vaciar «Velocidad por defecto» guarda 0 | ❌ `GeofenceService::normalize` no pone null; validador `numeric` sin `nullable` |
+| 4 | Vaciar «Velocidad por defecto» guarda 0 | ✅ 19-oct: validador `nullable|numeric|min:1`; la v2 manda `null` al vaciar |
 | 5 | Admin con tipos propios borra el tipo de vehículo ajeno | 🟡 El select incluye el tipo actual (`DeviceModalHelper.php:465`), pendiente confirmar que no se pierde al guardar |
 | 6 | Editar forma con capa de geocercas oculta | ❌ Sin cambios |
 | 7 | Al legacy le faltan campos nuevos (`cost_per_km`, `marker_*`) | ❌ Sin cambios |
-| 8 | Columnas nuevas del device sin validar | ❌ `DeviceFormValidator` no tiene reglas para `cost_per_km`, `route_color_type`, `marker_*` |
-| 9 | Límites por tipo aceptan cualquier cosa; tipo inexistente da 500 | ❌ Solo `nullable|numeric`, sin `exists` |
-| 10 | Export GEXP sin límites de velocidad | ❌ `GeofencesExportController` sigue sin `speed_limit`/`vehicleSpeedLimits` |
+| 8 | Columnas nuevas del device sin validar | ✅ 19-oct: reglas para `cost_per_km`, `route_color_type`, `route_color`, rangos JSON y `marker_*` |
+| 9 | Límites por tipo aceptan cualquier cosa; tipo inexistente da 500 | ✅ 19-oct: `min:1` y comprobación de tipo/estado del dueño antes de escribir (422, sin guardado a medias) |
+| 10 | Export GEXP sin límites de velocidad | ✅ 19-oct: el `.gexp` lleva `speed_limit`, `additional` y los límites por tipo/estado por nombre; el importador los resuelve o crea los tipos |
 | 11 | Borrar geocerca usada como punto de control sin aviso | ❌ |
-| 12 | «Velocidad por tipo» descolocado en legacy | ❌ |
-| 13 | Polígono se guarda con `radius = 100` | ❌ `toggleCorridorWidth` sin `prop('disabled')` |
-| 14 | Mensajes poco claros / `TypeError` en `changeType` | ❌ |
-| 15 | Textos fijos sin `trans()` en Devices legacy | ❌ |
-| 16 | Aviso de vídeo en alta nueva | ❌ `advanced.blade.php:163` sin `!$item->exists` |
+| 12 | «Velocidad por tipo» descolocado en legacy | ✅ 19-oct |
+| 13 | Polígono se guarda con `radius = 100` | ✅ 19-oct |
+| 14 | Mensajes poco claros / `TypeError` en `changeType` | ✅ 19-oct (atributo `polygon` traducido, guardia sin geometría) |
+| 15 | Textos fijos sin `trans()` en Devices legacy | ✅ 19-oct (operador SIM, colores del recorrido, pestañas) |
+| 16 | Aviso de vídeo en alta nueva | ✅ 19-oct |
 | 17 | Primer icono de POI roto | ❌ Confirmado hoy también en el servidor de pruebas (2 iconos sin archivo) |
 | 18 | Estado del vehículo no visible en lista legacy | ❌ |
 
@@ -110,13 +110,22 @@ Pendiente:
 
 Módulo terminado y fusionado. Pendientes conocidos, no bloqueantes:
 - `round` → `floor` en `StopDurationAlertCheck` (decisión pendiente, afecta a todas las alertas de parada).
-- Confirmar con el cliente si el motivo de parada autoriza o solo explica.
+- ~~Confirmar si el motivo autoriza o solo explica~~ ✅ decidido 19-oct: solo explica; casilla «Autorizar esta parada» al justificar.
 - Validar conteo de vueltas contra el control manual del cliente.
 - Sin pruebas automatizadas (decisión del proyecto).
 
 ## 7. Revisión QA del 19-oct · `docs/qa/revision-sistema-2026-10-19.md`
 
 7 correcciones subidas (`e5410671`). Pendiente del lado del servidor: permisos del usuario de prueba (IMEI, SIM, borrar), socket 9002, recálculo de Seguridad del 4 al 19-oct. Mejoras UX sin asignar: ver sección 3 del informe.
+
+## Hecho el 19-oct (rama `correcciones-oct`)
+
+- Merge de `seguridad` en `nuevo-tema` (`e3db698e`).
+- Operaciones: el motivo solo explica y hay casilla «Autorizar esta parada».
+- F8, fallos legacy 4, 8, 9, 10, 12, 13, 14, 15, 16, rejilla de horario accesible, código muerto de `fleet.js`.
+- Página pública de Compartir con los controles, iconos y tema de la v2 (`Layouts/sharing.blade.php` + `sharing-public.css`).
+
+Siguen abiertos: fallos legacy 5, 6, 7, 11, 17 (archivos de icono en el servidor) y 18; F18 (validadores de bloqueo); 49 campos sin etiqueta.
 
 ## Orden sugerido
 

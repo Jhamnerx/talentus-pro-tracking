@@ -491,14 +491,17 @@
 
   function openJustify(stopId, cycleId) {
     loadReasons().then(function (reasons) {
+      // El motivo solo explica; autorizar es una casilla aparte (19-oct).
       var opts = reasons.map(function (r) {
-        return '<option value="' + r.id + '">' + esc(r.name) + (r.authorizes ? "" : " · " + esc(t("ui.ops_reason_explains"))) + "</option>";
+        return '<option value="' + r.id + '">' + esc(r.name) + "</option>";
       }).join("") + '<option value="">' + esc(t("ui.ops_reason_other")) + "</option>";
 
       var body = '<div class="tp-scope" style="display:grid;gap:10px;">' +
         field(t("ui.ops_reason"), '<select class="tp-input" name="reason_id" data-x-reason style="width:100%;">' + opts + "</select>") +
         field(t("ui.ops_note"), '<textarea class="tp-input" name="note" data-x-note rows="3" style="width:100%;"></textarea>' +
           '<span class="tp-ops__hint">' + esc(t("ui.ops_note_required_other")) + "</span>") +
+        '<label class="tp-ops__check"><input type="checkbox" name="authorized" data-x-authorized> ' + esc(t("ui.ops_authorize_stop")) +
+          '<span class="tp-ops__hint" style="display:block;">' + esc(t("ui.ops_authorize_stop_hint")) + "</span></label>" +
         '<div class="tp-ops__err" data-x-err></div></div>';
 
       var dlg = tpModal.open({
@@ -509,7 +512,11 @@
           { label: t("global.cancel"), variant: "ghost", close: true },
           { label: t("global.save"), variant: "primary", close: false, onClick: function (d) {
             var err = d.querySelector("[data-x-err]");
-            var payload = { reason_id: d.querySelector("[data-x-reason]").value || null, note: d.querySelector("[data-x-note]").value.trim() };
+            var payload = {
+              reason_id: d.querySelector("[data-x-reason]").value || null,
+              note: d.querySelector("[data-x-note]").value.trim(),
+              authorized: d.querySelector("[data-x-authorized]").checked ? 1 : 0,
+            };
             if (!payload.reason_id && !payload.note) { err.textContent = t("ui.ops_note_required_other"); err.classList.add("is-visible"); return false; }
             tpModal.setBusy(d, true);
             tpModal.fetchJSON(URLS.justify.replace("{id}", stopId), { method: "POST", json: payload }).then(function (res) {
@@ -533,10 +540,11 @@
   }
 
   function reasonRow(r) {
-    r = r || { name: "", authorizes: true };
-    return '<div class="tp-ops__point" data-x-reason-row' + (r.id ? ' data-id="' + r.id + '"' : "") + ' style="grid-template-columns:1fr auto auto;">' +
+    // Sin casilla "autoriza": el motivo solo explica (19-oct); la
+    // autorizacion se marca al justificar cada parada.
+    r = r || { name: "" };
+    return '<div class="tp-ops__point" data-x-reason-row' + (r.id ? ' data-id="' + r.id + '"' : "") + ' style="grid-template-columns:1fr auto;">' +
       '<input type="text" class="tp-input" data-x-rname value="' + esc(r.name) + '" placeholder="' + esc(t("ui.ops_reason_name")) + '" aria-label="' + esc(t("ui.ops_reason_name")) + '">' +
-      '<label class="tp-ops__check" style="padding:0;"><input type="checkbox" data-x-rauth' + (r.authorizes ? " checked" : "") + "> " + esc(t("ui.ops_reason_authorizes")) + "</label>" +
       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-btn--icon" data-x-remove-reason aria-label="' + esc(t("global.delete")) + '">×</button>' +
       "</div>";
   }
@@ -558,7 +566,7 @@
           { label: t("global.save"), variant: "primary", close: false, onClick: function (d) {
             var items = [];
             d.querySelectorAll("[data-x-reason-row]").forEach(function (row) {
-              var it = { name: row.querySelector("[data-x-rname]").value.trim(), authorizes: row.querySelector("[data-x-rauth]").checked ? 1 : 0 };
+              var it = { name: row.querySelector("[data-x-rname]").value.trim(), authorizes: 0 };
               if (row.getAttribute("data-id")) it.id = Number(row.getAttribute("data-id"));
               if (it.name) items.push(it);
             });

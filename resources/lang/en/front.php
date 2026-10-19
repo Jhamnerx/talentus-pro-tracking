@@ -1552,4 +1552,16 @@ return [
     'video_channels' => 'On-board video channels',
     'video_channels_hint' => 'How many cameras the vehicle carries (up to 6). With 0 the vehicle does not offer video and the widget is hidden.',
     'video_channels_unsupported' => 'This tracker protocol does not carry video, so the viewer will not open even with channels set.',
+    // Legacy device form texts that were hard-coded in Spanish (legacy QA, issue 15)
+    'operator_sim' => 'SIM operator',
+    'no_operator' => '-- No operator --',
+    'route_colors_history' => 'Route colors — History',
+    'route_color_by_trips' => 'By trips',
+    'route_color_single' => 'Single',
+    'route_color_by_speed' => 'By speed',
+    'route_color_by_sensor' => 'By sensor',
+    'route_color_by_sensor_hint' => '(requires a sensor with color ranges per interval)',
+    'add_range' => 'Add range',
+    'restore_defaults' => 'Restore defaults',
+    'web_services' => 'Web services',
 ];

@@ -1157,4 +1157,7 @@ return [
     'circle_radius_from_map'              => 'Taken from the drawn circle; to change it, edit the shape on the map.',
     'pick_an_icon'                        => 'Pick an icon for the POI.',
     'security_recalculating'              => 'Recalculating the period…',
+    'ops_authorize_stop'                  => 'Authorize this stop',
+    'ops_authorize_stop_hint'             => 'The reason only explains the stop. Tick the box so it does not count as unauthorized.',
+    'alert_schedule_grid'                 => 'Alert schedule by day and 15-minute slot',
 ];

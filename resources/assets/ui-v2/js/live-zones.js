@@ -576,8 +576,10 @@
     // OJO: 'active' NO se incluye aquí. Antes iba fijo a 1 y cada edición
     // REACTIVABA las geocercas desactivadas. Solo el create lo fija (abajo)
     // y la visibilidad se cambia con el toggle de la lista.
+    // Vacio viaja como null = quitar el limite. Antes no se enviaba y el
+    // limite guardado no se podia borrar desde la v2 (fallo 4 QA legacy).
     var sl = f.querySelector('[name="speed_limit"]').value;
-    if (sl !== "") payload.speed_limit = parseFloat(sl);
+    payload.speed_limit = sl === "" ? null : parseFloat(sl);
     // Solo el corredor tiene radio escrito a mano; el del circulo es de
     // solo lectura y viaja con la geometria.
     var rad = f.querySelector('[name="radius"]');
