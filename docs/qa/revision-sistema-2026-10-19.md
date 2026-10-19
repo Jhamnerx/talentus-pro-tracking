@@ -5,6 +5,23 @@
 - **Fecha:** 19-10-2026 · navegador integrado, tema oscuro (también se comprobó el tema claro)
 - **Alcance:** Tablero, Vehículos (alta/edición/colores), Monitoreo de grupo, Eventos, Alertas, Historial, Reportes, Enviar comando (FOTA), Compartir, Mantenimiento, Gastos, Conductores, Acciones de llamada, Geocercas, Rutas, Programaciones de ruta, Operaciones, Seguridad, POI, Ajustes de cuenta, Notificaciones.
 
+## 0. Estado de las correcciones (commit `e5410671`, 19-oct)
+
+| Hallazgo | Estado |
+| --- | --- |
+| Modal de alertas ilegible en oscuro | ✅ Corregido |
+| Radio del círculo contradictorio | ✅ Corregido (solo lectura, como legacy) |
+| POI sin icono: error silencioso | ✅ Corregido (validación + resumen) |
+| Gastos sin fecha: sin aviso | ✅ Corregido (toast) |
+| Registros de comando en UTC | ✅ Corregido (formato legacy) |
+| Fechas por defecto de reportes | ✅ Igual que legacy (hoy 00:00 → mañana 00:00) |
+| Seguridad: días con límites distintos | ✅ Al cambiar ajustes se ofrece recalcular |
+| Reporte HTML se descarga | Se mantiene (decisión) |
+| Socket 9002 | Mismo puerto que legacy; revisar `.env` / proceso node en el VPS |
+| Compartir con mapa gris | No reproducible en la segunda carga (tiles lentos) |
+| Parada en operación repetitiva | Se ignora mientras se ajustan las geocercas |
+| Permisos del usuario de prueba (IMEI/SIM/borrar) | Pendiente del admin |
+
 ## 1. Resumen
 
 | Módulo | Estado | Errores | Mejoras |
@@ -61,7 +78,6 @@
 
 - ✅ Lista por grupos, filtros por estado, búsqueda, mapa con placa + velocidad, refresco 15 s, ficha lateral con velocímetro, odómetro, horómetro, sensores, servicios, eventos recientes, bloqueo de motor, dirección (tarda unos 10 s en resolverse).
 - ⛔ **Alta de vehículo:** con este usuario los campos IMEI y Nº de SIM salen deshabilitados (no tiene permiso de edición `device.imei` ni `device.sim_number`) y ambos son obligatorios, así que es imposible crear. Es el mismo comportamiento que el legacy: configuración de permisos del admin. **Mejora v2:** ocultar «Nuevo vehículo» o avisar «No tienes permiso para registrar el IMEI» en vez de dejar un formulario que nunca se puede enviar.
-- **Bug menor:** al fallar la validación aparecen DOS toasts iguales «Revisa los campos marcados».
 - **Mejora:** «Número de SIM» es obligatorio pero vive en la pestaña Información sin asterisco (el resumen de errores sí salta al campo).
 - **Mejora (accesibilidad):** etiquetas sin `for`/`id` (Nombres, IMEI).
 - ✅ **Edición:** color de cola `#ff0000`, largo 7, recorrido «Único» `#00aaff` y comentario se guardan, se reflejan al reabrir y la cola roja se dibuja en el mapa. Colores de estado (Movimiento verde, Detenido gris, Sin conexión amarillo, Ralentí naranja, Bloqueado negro) se cargan bien; los selectores de color se deshabilitan cuando el tipo de icono no es «Flecha» (correcto). Pestaña Cola: por viajes / único / por velocidad con rangos editables / por sensor. Valores restaurados al final.
