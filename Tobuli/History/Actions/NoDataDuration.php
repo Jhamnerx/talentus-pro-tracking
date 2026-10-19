@@ -3,6 +3,7 @@
 namespace Tobuli\History\Actions;
 
 use Tobuli\History\Stats\Duration as DurationStat;
+use Tobuli\History\Stats\StatCount;
 
 /**
  * Tiempo sin datos: suma los huecos entre tramas que superan `gap_seconds`
@@ -29,12 +30,14 @@ class NoDataDuration extends ActionStat
         }
 
         $this->registerStat('no_data_duration', (new DurationStat()));
+        $this->registerStat('no_data_count', new StatCount());
     }
 
     public function proccess($position)
     {
         if ($position->duration > $this->gapSeconds) {
             $this->history->applyStat('no_data_duration', $position->duration);
+            $this->history->applyStat('no_data_count', 1);
         }
     }
 }

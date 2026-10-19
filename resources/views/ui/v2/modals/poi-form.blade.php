@@ -30,7 +30,9 @@
         </select>
     </div>
 
-    <div class="tp-field">
+    {{-- data-error-for: los radios no son un <input name> unico, asi que el
+         resumen de errores ancla aqui el "icono necesario". --}}
+    <div class="tp-field" data-error-for="map_icon_id">
         <label class="tp-field__label">{{ trans('validation.attributes.map_icon_id') }}</label>
         <div class="tp-poi-icons">
             @foreach ($mapIcons as $icon)

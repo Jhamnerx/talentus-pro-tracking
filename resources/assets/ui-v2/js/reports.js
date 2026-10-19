@@ -215,13 +215,15 @@
     if (!body) return;
 
     var today = new Date();
-    // Default: HOY completo (00:00 → 23:59) — el "hasta 00:00 de mañana"
-    // del legacy confundía al usuario.
+    var tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    // Default como el legacy: hoy 00:00 → mañana 00:00 (fin exclusivo), que
+    // cubre el dia de hoy completo. Con "hoy 00:00 → hoy 00:00" el rango
+    // salia vacio.
     var range = {
       from: item.date_from || ymd(today),
       fromTime: item.from_time || "00:00",
-      to: item.date_to || ymd(today),
-      toTime: item.to_time || "23:59",
+      to: item.date_to || ymd(tomorrow),
+      toTime: item.to_time || "00:00",
     };
 
     var groupTitles = {};
@@ -1138,7 +1140,9 @@
    * -si hay programacion, exige correo- sin que sirva para nada aqui.
    */
   function payloadDesdeItem(it) {
-    var hoy = ymd(new Date());
+    var ahora = new Date();
+    var hoy = ymd(ahora);
+    var manana = ymd(new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate() + 1));
     var devIds = (it.device_ids || []).map(Number);
 
     var p = {
@@ -1148,8 +1152,8 @@
       period: it.period || "",
       date_from: it.date_from || hoy,
       from_time: it.from_time || "00:00",
-      date_to: it.date_to || hoy,
-      to_time: it.to_time || "23:59",
+      date_to: it.date_to || manana,
+      to_time: it.to_time || "00:00",
       speed_limit: it.speed_limit == null ? "" : it.speed_limit,
       stops: it.stops || "",
       show_addresses: it.show_addresses ? 1 : 0,

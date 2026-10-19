@@ -493,25 +493,74 @@ button.tp-alerts__rule-toggle:hover {
   text-align: center;
 }
 .tp-picklist__list {
-  max-height: 240px;
+  max-height: 320px;
   overflow-y: auto;
-  padding: 4px;
+  padding: 6px;
+}
+/* Rejilla multicolumna (como el legacy): tantas columnas como quepan. */
+.tp-picklist__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px;
+  padding: 2px 2px 8px;
+}
+.tp-picklist__group {
+  display: flex;
+  align-items: center;
+  padding: 8px 6px 6px;
+  margin-top: 2px;
+  border-top: 1px solid var(--border-subtle, var(--border-default));
+}
+.tp-picklist__list > .tp-picklist__group:first-child {
+  border-top: 0;
+  margin-top: 0;
+}
+.tp-picklist__gcheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-secondary);
+}
+.tp-picklist__gcheck em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--fg-tertiary);
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 10px;
 }
 .tp-picklist__item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
-  border-radius: var(--r-sm);
+  padding: 7px 10px;
+  border: 1px solid var(--border-subtle, var(--border-default));
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
   cursor: pointer;
   font-size: 13px;
   color: var(--fg-primary);
+  transition:
+    border-color var(--dur-fast),
+    background var(--dur-fast);
 }
 .tp-picklist__item:hover {
+  border-color: var(--border-strong);
   background: var(--surface-sunken);
+}
+.tp-picklist__item:has(input:checked) {
+  border-color: var(--brand-500, var(--brand-600));
+  background: var(--brand-bg-subtle, var(--brand-50));
 }
 .tp-picklist__item input {
   flex: 0 0 auto;
+  accent-color: var(--brand-600);
 }
 .tp-picklist__item span {
   min-width: 0;
@@ -1132,7 +1181,7 @@ button.tp-alert-toggle:hover {
   color: var(--brand-700);
 }
 .tp-alert-modal .tp-picklist__item:hover {
-  background: var(--brand-bg-subtle, var(--brand-50));
+  border-color: var(--brand-500, var(--brand-600));
 }
 
 /* --- grilla de horario --- */
@@ -1187,4 +1236,28 @@ button.tp-alert-toggle:hover {
 [data-theme="dark"] .tp-alert-modal .tp-devbox__banner,
 [data-theme="dark"] .tp-alert-modal .tp-sched__quick button:hover {
   color: var(--brand-300);
+}
+
+/* Lo mismo con todo lo que usa el azul marino de marca (brand-700/800)
+   como color de TEXTO: en oscuro quedaba del color del fondo. Titulo del
+   modal, pestaña activa, cabeceras de grupo y etiquetas de dia pasan al
+   texto principal; los enlaces de accion a un azul claro. */
+[data-theme="dark"] .tp-alert-modal .tp-modal__title,
+[data-theme="dark"] .tp-alert-modal .tp-tabs__tab.is-active,
+[data-theme="dark"] .tp-alert-modal .tp-devbox__gcheck,
+[data-theme="dark"] .tp-alert-modal .tp-sched__daylabel {
+  color: var(--fg-primary);
+}
+[data-theme="dark"] .tp-alert-modal .tp-tabs__tab.is-active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+[data-theme="dark"] .tp-alert-modal .tp-tabs__tab:hover,
+[data-theme="dark"] .tp-alert-modal .tp-devbox__foot,
+[data-theme="dark"] .tp-alert-modal .tp-picklist__act:hover,
+[data-theme="dark"] .tp-alert-modal .tp-sched__daylabel:hover,
+[data-theme="dark"] .tp-alert-modal .tp-sched__quick button {
+  color: var(--brand-300);
+}
+[data-theme="dark"] .tp-alert-modal .tp-sched__cell:hover {
+  background: var(--brand-700);
 }

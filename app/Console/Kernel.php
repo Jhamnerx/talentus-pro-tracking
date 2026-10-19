@@ -78,6 +78,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\CalcVirtualOdometerCommand',
         'App\Console\Commands\RecalculateDeviceHistoryCommand',
         'App\Console\Commands\OperationsProcessCommand',
+        'App\Console\Commands\SecurityAggregateCommand',
         'App\Console\Commands\SplitDevicesCommand',
         'App\Console\Commands\FakeDevicesCommand',
         'App\Console\Commands\DropDeviceFreeTablesCommand',
@@ -179,6 +180,10 @@ class Kernel extends ConsoleKernel
             ->command('operations:process')
             ->everyMinute()
             ->withoutOverlapping();
+
+        // Seguridad: agregados de ayer y hoy, cada hora a y 20 (hoy queda
+        // parcial y se rehace en la siguiente pasada).
+        $schedule->command('security:aggregate')->hourlyAt(20)->withoutOverlapping();
 
         //WEB SERVICES JOBS — dispatch manejado por Supervisor, estos solo programan
         $schedule->job(new DispatchSutranJobs)->everyMinute()->withoutOverlapping();

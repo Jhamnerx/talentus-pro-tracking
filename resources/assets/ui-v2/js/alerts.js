@@ -436,15 +436,30 @@
   }
 
   // Per-type attribute fields (from AlertModalHelper). { name,type,title,value,options? }
+  /** id del picker de un campo multiselect del tipo de alerta */
+  function tfPickId(name) {
+    return "tp-alert-tf-" + String(name).replace(/[^a-z0-9_-]/gi, "");
+  }
+
   function renderTypeFields(typeObj) {
     if (!typeObj || !typeObj.fields || !typeObj.fields.length) {
       return '<div class="tp-text-muted tp-text-sm">' + tpT('ui.type_needs_no_config') + '</div>';
     }
-    var html = '<div class="tp-grid-2">';
+    // Los multiselect (geocercas, sensores...) van a lo ancho: en la rejilla
+    // de dos columnas el listado queda inservible.
+    var anchos = [];
+    var cortos = [];
     typeObj.fields.forEach(function (f) {
-      html += fieldHtml(f, null, f.name);
+      (f.type === "multiselect" ? anchos : cortos).push(f);
     });
-    html += "</div>";
+
+    var html = "";
+    if (cortos.length) {
+      html += '<div class="tp-grid-2">';
+      cortos.forEach(function (f) { html += fieldHtml(f, null, f.name); });
+      html += "</div>";
+    }
+    anchos.forEach(function (f) { html += fieldHtml(f, null, f.name); });
     return html;
   }
 
@@ -459,6 +474,16 @@
       esc(f.title || f.name) +
       (f.required ? " *" : "") +
       "</label>";
+    // Multiselect: el mismo picker del resto del modal (todo / nada, buscador
+    // y casillas), como el selector multiple del legacy. Antes caia en el
+    // <select> de abajo por tener opciones y solo dejaba elegir UNA.
+    if (f.type === "multiselect") {
+      h +=
+        picklistHtml(tfPickId(f.name), f.options || [], {
+          empty: tpT('ui.no_items'),
+        }) + "</div>";
+      return h;
+    }
     if (f.type === "select" || (f.options && f.options.length)) {
       var opts = (f.options || [])
         .map(function (o) {
@@ -492,35 +517,56 @@
     return h + "</div>";
   }
 
-  /* ---------- pick lists (devices / geofences) ---------- */
+  /* ---------- pick lists (devices / geofences) ----------
+     Rejilla multicolumna (como el legacy) y, si los elementos traen group_id,
+     agrupada con una casilla por grupo que marca o desmarca todo el grupo. */
+  function picklistItemHtml(it, gid) {
+    var v = it.id != null ? it.id : it.value;
+    var label = pickName(it) + (it.plate ? " · " + it.plate : "");
+    return (
+      '<label class="tp-picklist__item"' + (gid != null ? ' data-group="' + esc(gid) + '"' : "") + '>' +
+      '<input type="checkbox" value="' + esc(v) + '"><span>' + esc(label) + "</span></label>"
+    );
+  }
+
   function picklistHtml(id, items, opts) {
     opts = opts || {};
     var searchable = items.length > 8;
+    var grouped = items.length > 0 && items[0].group_id !== undefined;
     var body;
     if (!items.length) {
       body =
         '<div class="tp-text-muted tp-text-sm" style="padding:10px;">' +
         esc(opts.empty || tpT('ui.no_items')) +
         "</div>";
+    } else if (grouped) {
+      // Grupos por nombre; "Sin grupo" al final.
+      var groups = {};
+      items.forEach(function (it) {
+        var gid = it.group_id || 0;
+        if (!groups[gid]) groups[gid] = { id: gid, name: gid ? it.group || "" : tpT('front.ungrouped'), items: [] };
+        groups[gid].items.push(it);
+      });
+      var ordered = Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (x, y) {
+        if (!x.id) return 1;
+        if (!y.id) return -1;
+        return x.name.localeCompare(y.name);
+      });
+      body = ordered.map(function (g) {
+        return (
+          '<div class="tp-picklist__group" data-group="' + g.id + '">' +
+          '<label class="tp-picklist__gcheck"><input type="checkbox" data-pick-group="' + g.id + '"><span>' +
+          esc(g.name) + '</span><em>' + g.items.length + "</em></label></div>" +
+          '<div class="tp-picklist__grid" data-group="' + g.id + '">' +
+          g.items.map(function (it) { return picklistItemHtml(it, g.id); }).join("") +
+          "</div>"
+        );
+      }).join("");
     } else {
-      body = items
-        .map(function (it) {
-          var v = it.id != null ? it.id : it.value;
-          var label = pickName(it) + (it.plate ? " · " + it.plate : "");
-          return (
-            '<label class="tp-picklist__item"><input type="checkbox" value="' +
-            esc(v) +
-            '"><span>' +
-            esc(label) +
-            "</span></label>"
-          );
-        })
-        .join("");
+      body = '<div class="tp-picklist__grid">' + items.map(function (it) { return picklistItemHtml(it); }).join("") + "</div>";
     }
     return (
-      '<div class="tp-picklist" id="' +
-      id +
-      '">' +
+      '<div class="tp-picklist' + (grouped ? " tp-picklist--grouped" : "") + '" id="' + id + '">' +
       '<div class="tp-picklist__bar">' +
       (searchable
         ? '<input type="search" class="tp-input tp-input--sm tp-picklist__search" placeholder="' + tpT('ui.search_ellipsis') + '">'
@@ -563,16 +609,34 @@
 
   function updatePickCount(wrap) {
     var count = wrap.querySelector(".tp-picklist__count");
-    if (!count) return;
-    count.textContent = wrap.querySelectorAll(
-      ".tp-picklist__item input[type=checkbox]:checked",
-    ).length;
+    if (count) {
+      count.textContent = wrap.querySelectorAll(
+        ".tp-picklist__item input[type=checkbox]:checked",
+      ).length;
+    }
+    // Casilla de cada grupo: marcada, parcial o vacia segun sus elementos.
+    wrap.querySelectorAll("[data-pick-group]").forEach(function (gcb) {
+      var boxes = wrap.querySelectorAll('.tp-picklist__grid[data-group="' + gcb.getAttribute("data-pick-group") + '"] input[type=checkbox]');
+      var sel = 0;
+      boxes.forEach(function (b) { if (b.checked) sel++; });
+      gcb.checked = boxes.length > 0 && sel === boxes.length;
+      gcb.indeterminate = sel > 0 && sel < boxes.length;
+    });
   }
 
   function wirePicklist(dlg, id) {
     var wrap = dlg.querySelector("#" + id);
     if (!wrap) return;
     wrap.addEventListener("change", function (e) {
+      var gcb = e.target.closest && e.target.closest("[data-pick-group]");
+      if (gcb) {
+        // Marca o desmarca los elementos visibles del grupo.
+        wrap.querySelectorAll('.tp-picklist__grid[data-group="' + gcb.getAttribute("data-pick-group") + '"] .tp-picklist__item').forEach(function (it) {
+          if (!it.hidden) it.querySelector("input").checked = gcb.checked;
+        });
+        updatePickCount(wrap);
+        return;
+      }
       if (e.target.matches('input[type="checkbox"]')) updatePickCount(wrap);
     });
     wrap.addEventListener("click", function (e) {
@@ -599,6 +663,13 @@
         var q = this.value.toLowerCase();
         wrap.querySelectorAll(".tp-picklist__item").forEach(function (it) {
           it.hidden = q && it.textContent.toLowerCase().indexOf(q) === -1;
+        });
+        // Un grupo sin coincidencias se oculta entero.
+        wrap.querySelectorAll(".tp-picklist__group").forEach(function (g) {
+          var grid = wrap.querySelector('.tp-picklist__grid[data-group="' + g.getAttribute("data-group") + '"]');
+          var visible = grid && Array.prototype.some.call(grid.querySelectorAll(".tp-picklist__item"), function (it) { return !it.hidden; });
+          g.hidden = !visible;
+          if (grid) grid.hidden = !visible;
         });
       });
     updatePickCount(wrap);
@@ -1298,6 +1369,46 @@
     window.tpModal.tabs(holder, tabs, { active: "devices" });
   }
 
+  /**
+   * Engancha los pickers de los campos multiselect del tipo.
+   *
+   * Hay que rellamarla cada vez que cambia el disparador, porque el
+   * contenedor se rehace con innerHTML y se lleva por delante los eventos.
+   */
+  function wireTypeFieldPicklists(dlg, typeObj) {
+    ((typeObj && typeObj.fields) || []).forEach(function (f) {
+      if (f.type !== "multiselect") return;
+      wirePicklist(dlg, tfPickId(f.name));
+      // Las geocercas del tipo y las de la pestaña "Geocercas" son la misma
+      // lista: se reflejan para que no haya dos verdades segun la pestaña.
+      if (f.name === "geofences") espejoGeocercas(dlg);
+    });
+  }
+
+  /** Mantiene marcadas las mismas geocercas en los dos sitios. */
+  function espejoGeocercas(dlg) {
+    var a = dlg.querySelector("#" + tfPickId("geofences"));
+    var b = dlg.querySelector("#tp-alert-zones");
+    if (!a || !b || a._tpEspejo) return;
+    a._tpEspejo = b._tpEspejo = true;
+
+    function copia(desde, hacia) {
+      var ids = {};
+      desde.querySelectorAll(".tp-picklist__item input[type=checkbox]:checked")
+        .forEach(function (cb) { ids[cb.value] = 1; });
+      hacia.querySelectorAll(".tp-picklist__item input[type=checkbox]")
+        .forEach(function (cb) { cb.checked = !!ids[cb.value]; });
+      updatePickCount(hacia);
+    }
+
+    // 'change' cubre las casillas; 'click' los botones de todo / nada, que
+    // cambian las casillas sin disparar change.
+    ["change", "click"].forEach(function (ev) {
+      a.addEventListener(ev, function () { setTimeout(function () { copia(a, b); }, 0); });
+      b.addEventListener(ev, function () { setTimeout(function () { copia(b, a); }, 0); });
+    });
+  }
+
   function wireFormBehaviour(dlg, meta) {
     var sel = dlg.querySelector("#tp-alert-type");
     if (sel)
@@ -1306,11 +1417,15 @@
           return x.key === sel.value;
         })[0];
         var holder = dlg.querySelector("#tp-alert-type-fields");
-        if (holder) holder.innerHTML = renderTypeFields(t);
+        if (holder) {
+          holder.innerHTML = renderTypeFields(t);
+          wireTypeFieldPicklists(dlg, t);
+        }
       });
 
     wireDevices(dlg, meta);
     wirePicklist(dlg, "tp-alert-zones");
+    wireTypeFieldPicklists(dlg, (meta.types || [])[0]);
     wireSchedule(dlg);
     wireNotifications(dlg);
     if (meta.can_command) wireCommand(dlg);
@@ -1381,6 +1496,24 @@
     })[0];
     if (typeObj)
       (typeObj.fields || []).forEach(function (f) {
+        // Multiselect: LISTA, no el value de un control. Antes caia en la
+        // rama de abajo y mandaba un escalar que pisaba data.geofences, con
+        // lo que el backend respondia "El geofences debe ser un listado".
+        if (f.type === "multiselect") {
+          var ids = picklistValues(dlg, "#" + tfPickId(f.name));
+          if (f.name === "geofences") {
+            // Los dos selectores estan reflejados; si el del tipo esta vacio
+            // -el disparador no las usa- se respeta el de la pestaña.
+            if (ids.length) {
+              data.geofences = ids;
+              data.zones = ids;
+            }
+          } else {
+            data[f.name] = ids;
+          }
+          return;
+        }
+
         var el = form.querySelector('[name="' + f.name + '"]');
         if (el && el.value !== "")
           data[f.name] = f.type === "number" ? parseFloat(el.value) : el.value;
@@ -1419,8 +1552,16 @@
     }
     var fields = item.fields || {};
     Object.keys(fields).forEach(function (n) {
+      if (fields[n] == null) return;
+      // Un multiselect no tiene .value: se marcan sus casillas.
+      var pick = dlg.querySelector("#" + tfPickId(n));
+      if (pick) {
+        checkPicklist(dlg, "#" + tfPickId(n),
+          Array.isArray(fields[n]) ? fields[n] : [fields[n]]);
+        return;
+      }
       var el = form.querySelector('[name="' + n + '"]');
-      if (el && fields[n] != null) el.value = fields[n];
+      if (el) el.value = fields[n];
     });
 
     if (item.for_all_user_devices) {

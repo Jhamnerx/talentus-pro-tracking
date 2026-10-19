@@ -117,7 +117,12 @@
 
   function save(d, item) {
     var err = d.querySelector("[data-x-err]");
-    function showErr(m) { if (err) { err.textContent = m; err.style.display = "block"; } }
+    // El aviso en linea queda al final de la rejilla, fuera de la vista en
+    // pantallas bajas: sin el toast parecia que Guardar no hacia nada.
+    function showErr(m) {
+      if (err) { err.textContent = m; err.style.display = "block"; }
+      if (tpModal.toast) tpModal.toast(m, "warning");
+    }
     if (err) err.style.display = "none";
     function v(sel) { var el = d.querySelector(sel); return el ? el.value : ""; }
     // tpDate.value: el input visible muestra dd/mm/aaaa, el ISO va aparte

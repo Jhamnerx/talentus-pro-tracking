@@ -163,7 +163,13 @@
               };
               var name = val('[name="name"]').trim();
               if (!name) {
-                tpModal.toast && tpModal.toast(tpT('ui.name_required'), "warning");
+                tpModal.showFieldErrors(dialog, { name: [tpT('ui.name_required')] });
+                return false;
+              }
+              // El backend exige icono; sin esto el 422 no se veia y
+              // parecia que el boton no hacia nada.
+              if (!icon) {
+                tpModal.showFieldErrors(dialog, { map_icon_id: [tpT('ui.pick_an_icon')] });
                 return false;
               }
               var payload = {
@@ -182,7 +188,12 @@
                     tpModal.toast && tpModal.toast(id ? "POI actualizado." : "POI creado.", "success");
                     tpModal.close(dialog);
                     load(true);
-                  } else tpModal.toast && tpModal.toast(tpT('ui.save_failed'), "error");
+                  } else if (r && r.status === 422) {
+                    // Campo marcado + resumen bajo la cabecera, como el resto de modales.
+                    var errors = (r.data && r.data.errors) || {};
+                    tpModal.showFieldErrors(dialog, errors);
+                    tpModal.toast && tpModal.toast(tpModal.firstError(errors, tpT('ui.check_required_fields')), "warning");
+                  } else tpModal.errorToast(r, tpT('ui.save_failed'));
                 })
                 .catch(function () {
                   btn.disabled = false;

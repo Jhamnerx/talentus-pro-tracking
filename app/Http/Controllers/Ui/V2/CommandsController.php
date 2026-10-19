@@ -440,7 +440,8 @@ class CommandsController extends BaseController
                 'connection' => (string) $log->connection,
                 'command'    => (string) ($log->command_title ?? $log->type),
                 'status'     => (bool) $log->status,
-                'date'       => (string) $log->created_at,
+                // Como el legacy (SendCommand/table): en la zona horaria del usuario.
+                'date'       => \Formatter::time()->human($log->created_at),
                 'parameters' => (string) $log->stringifiedAttribute('parameters'),
                 'response'   => (string) $log->stringifiedAttribute('response'),
             ];
@@ -490,7 +491,7 @@ class CommandsController extends BaseController
                 'parameters' => implode(', ', $params),
                 'attempts'   => (int) $p->attempts,
                 'last_error' => (string) ($p->last_error ?? ''),
-                'date'       => (string) $p->created_at,
+                'date'       => \Formatter::time()->human($p->created_at),
             ];
         }
 
@@ -527,7 +528,8 @@ class CommandsController extends BaseController
                 'connection' => (string) $log->connection,
                 'command'    => (string) ($log->command_title ?? $log->type),
                 'status'     => (bool) $log->status,
-                'date'       => (string) $log->created_at,
+                // Como el legacy (SendCommand/table): en la zona horaria del usuario.
+                'date'       => \Formatter::time()->human($log->created_at),
                 'parameters' => (string) $log->stringifiedAttribute('parameters'),
                 'response'   => (string) $log->stringifiedAttribute('response'),
             ];

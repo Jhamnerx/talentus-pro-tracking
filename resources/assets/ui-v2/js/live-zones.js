@@ -533,10 +533,13 @@
           }).join("") +
           "</select></div>"
         : "") +
+      // Circulo: el radio es el del dibujo, como en el legacy (alli ni se
+      // muestra). Antes era editable y se mandaban dos radios: el escrito
+      // y el de la geometria, y ganaba el de la geometria sin avisar.
       (isCircle
-        ? '<div class="tp-field"><label class="tp-field__label">Radio (m)</label><input type="number" name="radius" class="tp-input" value="' +
-          (geometry ? geometry.radius : g ? Math.round(g.radius) : "") +
-          '"></div>'
+        ? '<div class="tp-field"><label class="tp-field__label">Radio (m)</label><input type="number" name="radius" class="tp-input" readonly tabindex="-1" value="' +
+          (geometry ? Math.round(geometry.radius) : g ? Math.round(g.radius) : "") +
+          '"><small class="tp-field__hint">' + tpT('ui.circle_radius_from_map') + '</small></div>'
         : "") +
       (isLine
         ? '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.distance_to_axis_m') + '</label>' +
@@ -575,8 +578,10 @@
     // y la visibilidad se cambia con el toggle de la lista.
     var sl = f.querySelector('[name="speed_limit"]').value;
     if (sl !== "") payload.speed_limit = parseFloat(sl);
+    // Solo el corredor tiene radio escrito a mano; el del circulo es de
+    // solo lectura y viaja con la geometria.
     var rad = f.querySelector('[name="radius"]');
-    if (rad && rad.value !== "") payload.radius = parseFloat(rad.value);
+    if (rad && !rad.readOnly && rad.value !== "") payload.radius = parseFloat(rad.value);
     var vsl = gatherVsl(dialog);
     if (vsl) payload.vehicle_speed_limits = vsl;
     var ivs = gatherIntervals(f);

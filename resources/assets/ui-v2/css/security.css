@@ -1,0 +1,312 @@
+/* =====================================================
+ * TalentusPro · security — Seguridad · Control de flota
+ * -----------------------------------------------------
+ * Tablero tipo Excel: cabecera con acciones, barra de filtros, ocho
+ * tarjetas, y una rejilla de paneles (tablas y graficos ECharts). Los
+ * colores de estado son los mismos tokens del mapa (--status-*), asi que
+ * el modo oscuro sale de tokens.css sin reglas propias.
+ * ===================================================== */
+
+.tp-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 28px;
+  /* El area de trabajo (.tp-workspace--full) oculta el desbordamiento: la
+     pagina desplaza dentro de este contenedor, como .tp-maint en Operaciones. */
+  height: 100%;
+  overflow: auto;
+  transition: opacity 0.15s ease;
+}
+
+.tp-sec.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* ---------- Cabecera ---------- */
+.tp-sec__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tp-sec__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+}
+
+.tp-sec__title-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--surface-sunken, #f1f5f9);
+  color: var(--brand-accent, #1b99bd);
+}
+
+.tp-sec__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---------- Filtros ---------- */
+.tp-sec__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: var(--r-lg, 12px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.tp-sec__f {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--fg-tertiary, #64748b);
+  min-width: 150px;
+}
+
+.tp-sec__f--short {
+  min-width: 120px;
+}
+
+.tp-sec__f--short .tp-input {
+  width: 120px;
+}
+
+.tp-sec__filters .tp-input {
+  min-width: 150px;
+}
+
+.tp-sec__hint {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--fg-tertiary, #64748b);
+  max-width: 220px;
+}
+
+.tp-sec__calc {
+  margin-left: auto;
+  font-size: 12px;
+  padding-bottom: 8px;
+}
+
+/* ---------- Tarjetas ---------- */
+.tp-sec__cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tp-sec__card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-left: 4px solid var(--fg-muted, #94a3b8);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  min-height: 74px;
+}
+
+.tp-sec__card-label {
+  font-size: 12px;
+  color: var(--fg-tertiary, #64748b);
+}
+
+.tp-sec__card-value {
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-sec__card-value--sm {
+  font-size: 16px;
+  padding-top: 6px;
+}
+
+.tp-sec__card--danger  { border-left-color: var(--status-alert, #ef4444); }
+.tp-sec__card--warn    { border-left-color: var(--status-idle, #f59e0b); }
+.tp-sec__card--ok      { border-left-color: var(--brand-accent, #1b99bd); }
+.tp-sec__card--moving  { border-left-color: var(--status-moving, #10b981); }
+.tp-sec__card--standby { border-left-color: var(--status-idle, #f59e0b); }
+.tp-sec__card--expired { border-left-color: var(--status-offline, #b45309); }
+.tp-sec__card--info    { border-left-color: var(--info-500, #2e63d9); }
+
+.tp-sec__card--danger .tp-sec__card-value { color: var(--status-alert, #ef4444); }
+
+/* ---------- Rejilla de paneles ---------- */
+.tp-sec__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.tp-sec__panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: var(--r-lg, 12px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.tp-sec__panel--wide {
+  grid-column: 1 / -1;
+}
+
+.tp-sec__panel-title {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+}
+
+.tp-sec__wrap {
+  overflow: auto;
+  max-height: 420px;
+}
+
+.tp-sec__note {
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: 11px;
+}
+
+.tp-sec__chart {
+  height: 280px;
+  width: 100%;
+  padding: 8px 6px 4px;
+  box-sizing: border-box;
+}
+
+/* ---------- Tablas ---------- */
+.tp-sec .tp-table {
+  width: 100%;
+}
+
+.tp-sec .tp-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-sunken, #f8fafc);
+  white-space: nowrap;
+}
+
+/* th y td: la regla base ".tp-table thead th" alinea a la izquierda con mas
+   especificidad que la clase sola, y las cabeceras numericas quedaban
+   desalineadas de sus cifras. */
+.tp-sec .tp-table th.tp-sec__num,
+.tp-sec .tp-table td.tp-sec__num,
+.tp-sec__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.tp-sec__empty {
+  text-align: center;
+  padding: 24px 12px !important;
+  color: var(--fg-tertiary, #64748b);
+}
+
+/* Filas en vivo: acento lateral con el color del estado, como la lista de flota. */
+.tp-sec__row td:first-child {
+  box-shadow: inset 3px 0 0 var(--fg-muted, #94a3b8);
+}
+.tp-sec__row--moving td:first-child  { box-shadow: inset 3px 0 0 var(--status-moving, #10b981); }
+.tp-sec__row--standby td:first-child { box-shadow: inset 3px 0 0 var(--status-idle, #f59e0b); }
+.tp-sec__row--stopped td:first-child { box-shadow: inset 3px 0 0 var(--status-stopped, #6b7280); }
+.tp-sec__row--expired td:first-child { box-shadow: inset 3px 0 0 var(--status-offline, #b45309); }
+
+/* ---------- Pildoras de estado ---------- */
+.tp-sec__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--fg-secondary, #475569);
+  background: var(--surface-sunken, #f1f5f9);
+}
+
+.tp-sec__pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tp-sec__pill--moving   { color: var(--status-moving, #10b981); }
+.tp-sec__pill--standby  { color: var(--status-idle, #f59e0b); }
+.tp-sec__pill--stopped,
+.tp-sec__pill--inactive { color: var(--status-stopped, #6b7280); }
+.tp-sec__pill--expired,
+.tp-sec__pill--no_data  { color: var(--status-offline, #b45309); }
+
+/* ---------- Formularios de los modales ---------- */
+.tp-sec__form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.tp-sec__form .tp-input {
+  width: 100%;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+  .tp-sec__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .tp-sec {
+    padding: 12px;
+  }
+  .tp-sec__grid {
+    grid-template-columns: 1fr;
+  }
+  .tp-sec__calc {
+    margin-left: 0;
+  }
+  .tp-sec__form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .tp-sec__cards {
+    grid-template-columns: 1fr;
+  }
+}

@@ -187,6 +187,7 @@ return [
     'operation_arrival_to' => 'Arrival at :point',
     'operation_time_at' => 'Time at :point',
     'operations' => 'Operations',
+    'security' => 'Security',
     'operation_point_geofence_missing' => 'A geofence chosen as a point does not exist or is not yours.',
     'operation_point_geofence_moving' => 'Geofence ":name" is attached to a vehicle (moving geofence) and cannot be an operation point.',
     'operation_points_need_both_roles' => 'The operation needs at least one loading point and one unloading point.',
