@@ -1,6 +1,8 @@
 <script>
     window.lang = {
         select_all: '{{ trans('front.select_all') }}',
+        geofence_used_by_routes: '{{ trans('front.geofence_used_by_routes') }}',
+        successfully_saved: '{{ trans('front.successfully_saved') }}',
         deselect_all: '{{ trans('front.deselect_all') }}',
         no_results_matched: '{{ trans('front.no_results_matched') }}',
         close: '{{ trans('front.close') }}',

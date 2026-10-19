@@ -137,6 +137,12 @@ class Geofence extends AbstractEntity implements DisplayInterface
         return $this->belongsTo(DiemRate::class);
     }
 
+    /** Puntos de control de rutas que usan esta geocerca (se borran en cascada). */
+    public function routeCheckpoints(): HasMany
+    {
+        return $this->hasMany(RouteCheckpoint::class, 'geofence_id');
+    }
+
     public function vehicleSpeedLimits(): HasMany
     {
         return $this->hasMany(GeofenceVehicleSpeedLimit::class);

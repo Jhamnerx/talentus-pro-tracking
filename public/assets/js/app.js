@@ -10729,6 +10729,14 @@ function Geofences() {
   _this.edit = function (id) {
     tmpItem = items[id];
 
+    // Con la capa de geocercas oculta (showGeofences = 0) la forma no esta
+    // en el mapa: al editar un circulo reventaba (layerPointToLatLng de
+    // undefined) y con poligonos no habia vertices que arrastrar. Se pinta
+    // solo la que se edita; cancelEditing la vuelve a quitar.
+    if (!_this.map().hasLayer(tmpItem.getLayer())) {
+      _this.map().addLayer(tmpItem.getLayer());
+    }
+
     tmpItem.enableEdit();
 
     let $container = $("#geofencing_edit");
@@ -10830,6 +10838,15 @@ function Geofences() {
         "app.geofences.delete(" + id + ', true, "' + modal_id + '");',
       );
 
+      // Si es punto de control de alguna ruta, avisar: al borrarla
+      // desaparece de esas rutas (ON DELETE CASCADE) sin mas.
+      var $warn = $("#deleteGeofence [data-routes-warning]");
+      var routes = items[id] ? parseInt(items[id].options().routes_count, 10) || 0 : 0;
+      $warn.toggle(routes > 0);
+      if (routes > 0 && window.lang && window.lang.geofence_used_by_routes) {
+        $warn.text(window.lang.geofence_used_by_routes.replace(":n", routes));
+      }
+
       return;
     }
 
@@ -10923,7 +10940,9 @@ function Geofences() {
 
     tmpItem.removeLayer();
 
-    if (tmpItem.id()) {
+    // Solo vuelve al mapa si la capa de geocercas esta visible; si se
+    // edito con la capa oculta, se queda oculta como las demas.
+    if (tmpItem.id() && items[tmpItem.id()].isLayerVisible()) {
       _this.map().addLayer(items[tmpItem.id()].getLayer());
     }
 

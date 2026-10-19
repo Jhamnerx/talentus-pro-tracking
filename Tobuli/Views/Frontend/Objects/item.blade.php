@@ -39,6 +39,14 @@
         @endif
         <span data-device="status" style="background-color: {{ $item->getStatusColor() }}"
             title="{{ trans('global.' . $item->getStatus()) }}">{{ $item->getStatus() }}</span>
+        {{-- Estado del vehiculo (tipo/estado): etiqueta y color, como en la v2.
+             La relacion viene cargada en DevicesSidebarController (with). --}}
+        @if ($item->relationLoaded('vehicleState') && $item->vehicleState)
+            <span data-device="vehicle_state" title="{{ $item->vehicleState->name }}"
+                style="display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;line-height:16px;color:#fff;background-color: {{ $item->vehicleState->color ?: '#64748b' }};">
+                {{ $item->vehicleState->label ?: $item->vehicleState->name }}
+            </span>
+        @endif
 
         <div class="btn-group dropleft droparrow" data-position="fixed">
             <i class="btn icon options" data-toggle="dropdown" data-position="fixed" aria-haspopup="true"

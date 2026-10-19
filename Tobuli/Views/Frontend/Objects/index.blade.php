@@ -108,6 +108,15 @@
             }
         }
 
+        // Cambiar estado del vehiculo: aviso y refresco de la lista para que
+        // la etiqueta de estado (item.blade) muestre el nuevo valor.
+        function devices_change_vehicle_state_modal_callback(res) {
+            if (res.status == 1) {
+                app.notice.success(window.lang.successfully_saved);
+                app.devices.list();
+            }
+        }
+
         function objects_delete_modal_callback(res) {
             if (res.status == 1) {
                 $('.history-tab-form .devices_list option[value="' + res.id + '"]').selectpicker('refresh');

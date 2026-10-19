@@ -702,9 +702,15 @@
         }
       });
     };
+    // Si es punto de control de rutas, decirlo: al borrarla desaparece de
+    // esas rutas sin mas aviso (ON DELETE CASCADE).
+    var zona = S.items.filter(function (z) { return String(z.id) === String(id); })[0];
+    var rutas = zona ? parseInt(zona.routes_count, 10) || 0 : 0;
+    var msg = tpT('ui.confirm_delete_geofence') +
+      (rutas > 0 ? " " + tpT('ui.geofence_used_by_routes').replace(":n", rutas) : "");
     if (tpModal.confirm)
       tpModal
-        .confirm({ title: tpT('ui.delete_geofence'), message: tpT('ui.confirm_delete_geofence'), confirmLabel: tpT('global.delete'), danger: true })
+        .confirm({ title: tpT('ui.delete_geofence'), message: msg, confirmLabel: tpT('global.delete'), danger: true })
         .then(function (ok) {
           if (ok) doDel();
         });

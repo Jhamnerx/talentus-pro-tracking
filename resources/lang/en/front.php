@@ -1563,5 +1563,11 @@ return [
     'route_color_by_sensor_hint' => '(requires a sensor with color ranges per interval)',
     'add_range' => 'Add range',
     'restore_defaults' => 'Restore defaults',
+    'marker_speed_ranges' => 'Speed ranges',
+    'marker_warn_before' => 'Warn at (:unit before)',
+    'marker_color_example' => 'With a limit of 30 and a warning of :margin, the proximity colour starts at :near and the overspeed colour from 30.',
+    'vehicle_state_label' => 'Short label (badge)',
+    'vehicle_state_color' => 'State colour',
     'web_services' => 'Web services',
+    'geofence_used_by_routes' => 'This geofence is a checkpoint of :n route(s). Deleting it removes it from those routes.',
 ];
