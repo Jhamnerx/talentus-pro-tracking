@@ -394,8 +394,10 @@
       if (!r.ok || !r.data || !r.data.ok) return tpModal.errorToast(r, t("ui.save_failed"));
       meta.settings = body;
       tpModal.toast(t("ui.changes_saved"), "success");
-      // El limite manual cambia los excesos ya calculados: hay que recalcular.
-      if (String(body.speed_limit || "") !== before) tpModal.toast(t("ui.security_recalc_needed"), "warning");
+      // El limite manual cambia los excesos ya calculados. Los dias ya
+      // cerrados guardan el resultado del limite que habia ENTONCES, asi
+      // que sin recalcular quedan dias con un limite y dias con otro.
+      if (String(body.speed_limit || "") !== before) return ofrecerRecalculo();
       // La vigencia afecta al estado en vivo: se refresca sin mas.
       load();
     });
@@ -450,9 +452,41 @@
       meta.settings = body;
       tpModal.close(d);
       tpModal.toast(t("ui.changes_saved"), "success");
-      if (changed) tpModal.toast(t("ui.security_recalc_needed"), "warning");
+      if (changed) return ofrecerRecalculo();
       load();
     }).catch(function () { tpModal.setBusy(d, false); tpModal.toast(t("ui.save_failed"), "error"); });
+  }
+
+  /**
+   * Tras cambiar un ajuste que entra en el calculo (limite manual, turno,
+   * parada, corte) se ofrece recalcular el periodo filtrado con los nuevos
+   * valores. Antes solo salia un aviso y el usuario se quedaba con dias
+   * calculados con un limite y dias con otro (125 excesos un solo dia).
+   * Si el periodo pasa de 31 dias, el backend lo rechaza y se abre el
+   * modal de recalculo para acotarlo.
+   */
+  function ofrecerRecalculo() {
+    var f = filters();
+    var pregunta = tpModal.confirm
+      ? tpModal.confirm({
+          title: t("ui.security_recalculate"),
+          message: t("ui.security_recalc_needed") + " (" + f.from + " → " + f.to + ")",
+          confirmLabel: t("ui.security_recalculate"),
+        })
+      : Promise.resolve(false);
+    return pregunta.then(function (ok) {
+      if (!ok) return load();
+      tpModal.toast(t("ui.security_recalculating"), "info");
+      return tpModal.fetchJSON(URLS.recalc, { method: "POST", json: { from: f.from, to: f.to } }).then(function (r) {
+        if (r.status === 422) {
+          tpModal.toast(t("ui.security_range_too_long"), "warning");
+          return openRecalc();
+        }
+        if (!r.ok || !r.data || !r.data.ok) return tpModal.errorToast(r, t("ui.save_failed"));
+        tpModal.toast(t("ui.security_recalculated", { rows: r.data.rows }), "success");
+        return loadMetaLight().then(load);
+      });
+    });
   }
 
   /* ---------- Modal de recalculo ---------- */

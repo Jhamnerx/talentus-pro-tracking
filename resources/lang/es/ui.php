@@ -1153,4 +1153,9 @@ return [
     'ops_trips'                           => 'Viajes',
     'ops_points_none'                     => 'Sin puntos',
     'ops_legs_open'                       => 'Tramo abierto',
+
+    // Revisión QA 19-oct-2026
+    'circle_radius_from_map'              => 'Se toma del círculo dibujado; para cambiarlo, edita la forma en el mapa.',
+    'pick_an_icon'                        => 'Elige un icono para el POI.',
+    'security_recalculating'              => 'Recalculando el período…',
 ];

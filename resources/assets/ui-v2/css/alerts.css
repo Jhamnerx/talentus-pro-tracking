@@ -1237,3 +1237,27 @@ button.tp-alert-toggle:hover {
 [data-theme="dark"] .tp-alert-modal .tp-sched__quick button:hover {
   color: var(--brand-300);
 }
+
+/* Lo mismo con todo lo que usa el azul marino de marca (brand-700/800)
+   como color de TEXTO: en oscuro quedaba del color del fondo. Titulo del
+   modal, pestaña activa, cabeceras de grupo y etiquetas de dia pasan al
+   texto principal; los enlaces de accion a un azul claro. */
+[data-theme="dark"] .tp-alert-modal .tp-modal__title,
+[data-theme="dark"] .tp-alert-modal .tp-tabs__tab.is-active,
+[data-theme="dark"] .tp-alert-modal .tp-devbox__gcheck,
+[data-theme="dark"] .tp-alert-modal .tp-sched__daylabel {
+  color: var(--fg-primary);
+}
+[data-theme="dark"] .tp-alert-modal .tp-tabs__tab.is-active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+[data-theme="dark"] .tp-alert-modal .tp-tabs__tab:hover,
+[data-theme="dark"] .tp-alert-modal .tp-devbox__foot,
+[data-theme="dark"] .tp-alert-modal .tp-picklist__act:hover,
+[data-theme="dark"] .tp-alert-modal .tp-sched__daylabel:hover,
+[data-theme="dark"] .tp-alert-modal .tp-sched__quick button {
+  color: var(--brand-300);
+}
+[data-theme="dark"] .tp-alert-modal .tp-sched__cell:hover {
+  background: var(--brand-700);
+}

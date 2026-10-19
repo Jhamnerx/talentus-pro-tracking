@@ -1152,4 +1152,9 @@ return [
     'ops_trips'                           => 'Trips',
     'ops_points_none'                     => 'No points',
     'ops_legs_open'                       => 'Open leg',
+
+    // QA review 19-Oct-2026
+    'circle_radius_from_map'              => 'Taken from the drawn circle; to change it, edit the shape on the map.',
+    'pick_an_icon'                        => 'Pick an icon for the POI.',
+    'security_recalculating'              => 'Recalculating the period…',
 ];
