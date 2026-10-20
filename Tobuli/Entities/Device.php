@@ -575,6 +575,12 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $classification ? $classification->vehicleState : null;
     }
 
+    /** Olvida la cache por usuario de classificationFor() (tras escribir una clasificacion). */
+    public function forgetClassificationCache(): void
+    {
+        $this->classificationByUser = [];
+    }
+
     /** Carga anticipada de la clasificacion de un usuario (evita N+1 en listados). */
     public function scopeWithClassificationFor($query, int $userId)
     {

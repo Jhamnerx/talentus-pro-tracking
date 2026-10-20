@@ -178,6 +178,21 @@ class Geofence extends AbstractEntity implements DisplayInterface
         return empty($this->speed_limit) ? null : (float) $this->speed_limit;
     }
 
+    /**
+     * Limite que aplica a un dispositivo en esta geocerca, usando la
+     * clasificacion (tipo/estado) que el DUEÑO de la geocerca le asigno.
+     * Otros usuarios con el dispositivo compartido no afectan al resultado.
+     */
+    public function speedLimitForDevice(Device $device): ?float
+    {
+        $ownerId = (int) $this->user_id;
+
+        return $this->speedLimitFor(
+            $device->vehicleTypeFor($ownerId),
+            $device->vehicleStateFor($ownerId)
+        );
+    }
+
     public function setPolygonAttribute($value)
     {
         if (is_array($value))
