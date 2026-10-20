@@ -95,22 +95,16 @@ class VehicleTypesController extends Controller
 
     /**
      * edit_state[id] actualiza/mantiene; add_state[] crea; el resto se borra.
-     * Cada estado lleva name + label (badge) + color, igual que en ui/v2
-     * (VehicleTypesController@syncStates). Se aceptan dos formas de payload:
-     *  - objeto por estado: edit_state[id] = {name, label, color} (ui/v2)
-     *  - arrays paralelos:  edit_state[id] / edit_state_label[id] /
-     *    edit_state_color[id] y add_state[] / add_state_label[] /
-     *    add_state_color[] (form legacy, que clona filas con .empty-input-add-new)
+     * Mismo formato que la ui/v2 (Ui/V2/VehicleTypesController@syncStates):
+     * cada estado es un objeto {name, label, color}. El formulario legacy
+     * manda exactamente eso (state_row.blade + state_rows_script.blade).
      */
     private function syncStates(VehicleType $item): void
     {
         $kept = [];
 
-        $editLabels = (array) ($this->data['edit_state_label'] ?? []);
-        $editColors = (array) ($this->data['edit_state_color'] ?? []);
-
         foreach ((array) ($this->data['edit_state'] ?? []) as $id => $st) {
-            $fields = $this->stateFields($st, $editLabels[$id] ?? null, $editColors[$id] ?? null);
+            $fields = $this->stateFields($st);
 
             if ($fields === null)
                 continue;
@@ -122,11 +116,8 @@ class VehicleTypesController extends Controller
 
         $item->states()->whereNotIn('id', $kept ?: [0])->delete();
 
-        $addLabels = array_values((array) ($this->data['add_state_label'] ?? []));
-        $addColors = array_values((array) ($this->data['add_state_color'] ?? []));
-
-        foreach (array_values((array) ($this->data['add_state'] ?? [])) as $i => $st) {
-            $fields = $this->stateFields($st, $addLabels[$i] ?? null, $addColors[$i] ?? null);
+        foreach ((array) ($this->data['add_state'] ?? []) as $st) {
+            $fields = $this->stateFields($st);
 
             if ($fields === null)
                 continue;
@@ -135,22 +126,16 @@ class VehicleTypesController extends Controller
         }
     }
 
-    /** Normaliza un estado del payload -> [name, label, color] o null si vacio. */
-    private function stateFields($st, $label = null, $color = null): ?array
+    /** Normaliza un estado {name, label, color} -> campos a guardar, o null si no hay nombre. */
+    private function stateFields($st): ?array
     {
-        if (is_array($st)) {
-            $label = $st['label'] ?? $label;
-            $color = $st['color'] ?? $color;
-            $st = $st['name'] ?? '';
-        }
-
-        $name = trim((string) $st);
+        $name  = is_array($st) ? trim((string) ($st['name'] ?? '')) : trim((string) $st);
         if ($name === '') {
             return null;
         }
 
-        $label = trim((string) $label);
-        $color = trim((string) $color);
+        $label = is_array($st) ? trim((string) ($st['label'] ?? '')) : '';
+        $color = is_array($st) ? trim((string) ($st['color'] ?? '')) : '';
 
         return [
             'name'  => mb_substr($name, 0, 255),
