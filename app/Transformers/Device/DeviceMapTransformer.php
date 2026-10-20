@@ -19,7 +19,7 @@ class DeviceMapTransformer extends DeviceTransformer
 
     protected static function requireLoads()
     {
-        return ['icon', 'traccar', 'vehicleState', 'sensors' => function ($query) {
+        return ['icon', 'traccar', 'sensors' => function ($query) {
             $types = ['speed', 'anonymizer', 'odometer'];
 
             if (Blocked::isEnabled()) {
@@ -28,6 +28,21 @@ class DeviceMapTransformer extends DeviceTransformer
 
             $query->whereIn('type', $types);
         }];
+    }
+
+    /**
+     * Clasificacion (tipo + estado de vehiculo) del usuario actuante, filtrada
+     * por su id: el mismo dispositivo puede tener distinta clasificacion para
+     * cada usuario. Sin usuario actuante no se carga nada y el transform emite
+     * nulos.
+     */
+    protected function requireUserLoads()
+    {
+        if (! $this->user) {
+            return [];
+        }
+
+        return [Device::classificationRelationFor((int) $this->user->id)];
     }
 
     /**
@@ -79,6 +94,10 @@ class DeviceMapTransformer extends DeviceTransformer
             }
         }
 
+        // Clasificacion del usuario actuante (null si no hay usuario o no clasifico).
+        $classification = $this->user ? $entity->classificationFor((int) $this->user->id) : null;
+        $vehicleState = $classification ? $classification->vehicleState : null;
+
         if ($entity->speed > 90) {
             $tailColor = '#FF0000'; // Rojo
         } elseif ($entity->speed > 60) {
@@ -111,20 +130,21 @@ class DeviceMapTransformer extends DeviceTransformer
             'blocked' => $blockedState,
             // Estado de vehículo (tipo con estados: VACÍO/CARGADO…) → badge junto
             // al nombre. label corto (fallback al name) + color (fallback gris).
-            'vehicle_state' => ($entity->vehicle_state_id && $entity->vehicleState) ? [
-                'name'  => (string) $entity->vehicleState->name,
-                'label' => (string) ($entity->vehicleState->label ?: $entity->vehicleState->name),
-                'color' => (string) ($entity->vehicleState->color ?: '#64748b'),
+            'vehicle_state' => $vehicleState ? [
+                'name'  => (string) $vehicleState->name,
+                'label' => (string) ($vehicleState->label ?: $vehicleState->name),
+                'color' => (string) ($vehicleState->color ?: '#64748b'),
             ] : null,
             // Color del marcador por velocidad. Solo viaja si la unidad lo
             // tiene activado, para no engordar el feed de 1.400 vehiculos con
             // una config que casi nadie personaliza; los valores por defecto
             // los manda la pagina una sola vez (mapConfig.markerColors).
             'marker_colors' => $this->markerColors($entity),
-            // Tipo y estado de vehiculo: el navegador los necesita para
-            // resolver el limite de la geocerca, que puede diferenciarlos.
-            'vehicle_type_id'  => $entity->vehicle_type_id ? (int) $entity->vehicle_type_id : null,
-            'vehicle_state_id' => $entity->vehicle_state_id ? (int) $entity->vehicle_state_id : null,
+            // Tipo y estado de vehiculo (clasificacion del usuario actuante): el
+            // navegador los necesita para resolver el limite de la geocerca,
+            // que puede diferenciarlos.
+            'vehicle_type_id'  => ($classification && $classification->vehicle_type_id) ? (int) $classification->vehicle_type_id : null,
+            'vehicle_state_id' => ($classification && $classification->vehicle_state_id) ? (int) $classification->vehicle_state_id : null,
             'lat' => $entity->lat,
             'lng' => $entity->lng,
             'speed' => $entity->speed,

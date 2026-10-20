@@ -44,6 +44,18 @@ class BaseTransformer extends TransformerAbstract
         return [];
     }
 
+    /**
+     * Cargas anticipadas que dependen del usuario actuante (p. ej. relaciones
+     * filtradas por su id). Solo aplican en las cargas por instancia
+     * (loadRequestedRelations); la estatica loadRelations() no conoce al usuario.
+     *
+     * @return array
+     */
+    protected function requireUserLoads()
+    {
+        return [];
+    }
+
     public function loadRequestedRelations($data, array $requested): void
     {
         if (!($data instanceof Collection || $data instanceof LengthAwarePaginator || $data instanceof CursorPaginator)) {
@@ -60,7 +72,7 @@ class BaseTransformer extends TransformerAbstract
             array_push($loads, ...(array)$this->includesLoadMap[$include]);
         }
 
-        $loads = array_merge($loads, static::requireLoads());
+        $loads = array_merge($loads, static::requireLoads(), $this->requireUserLoads());
 
         if ($loads) {
             $data->load($loads);
