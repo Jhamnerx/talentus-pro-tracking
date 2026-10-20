@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Geofence;
-use Tobuli\Entities\VehicleState;
 use Tobuli\History\Actions\Duration;
 use Tobuli\History\Actions\GroupGeofenceInOut;
 use Tobuli\History\DeviceHistory;

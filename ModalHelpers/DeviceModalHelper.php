@@ -40,7 +40,6 @@ use Tobuli\Entities\DeviceType;
 use Tobuli\Entities\Event;
 use Tobuli\Entities\UnregisteredDevice;
 use Tobuli\Entities\User;
-use Tobuli\Entities\VehicleState;
 use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\SMS\SMSGatewayManager;
@@ -370,6 +369,7 @@ class DeviceModalHelper extends ModalHelper
         $this->data['icon_colors'] = $this->setIconColors();
 
         $classification = $this->pullClassification();
+        $this->validateClassification($classification);
 
         $this->data = onlyEditables(new Device(), $this->user, $this->data);
 
@@ -550,6 +550,7 @@ class DeviceModalHelper extends ModalHelper
         $this->data['icon_colors'] = $this->setIconColors($item);
 
         $classification = $this->pullClassification();
+        $this->validateClassification($classification);
 
         $this->data = onlyEditables($item, $this->user, $this->data);
 
@@ -716,7 +717,19 @@ class DeviceModalHelper extends ModalHelper
         return $classification;
     }
 
-    /** Guarda la clasificacion del usuario que edita (si la peticion la traia). */
+    /**
+     * Valida tipo/estado ANTES de guardar el dispositivo: si son invalidos se
+     * lanza la ValidationException sin haber creado/actualizado nada.
+     */
+    private function validateClassification(?array $classification): void
+    {
+        if ($classification === null)
+            return;
+
+        $this->classificationService->validate($this->user, $classification['type_id'], $classification['state_id']);
+    }
+
+    /** Guarda la clasificacion (ya validada) del usuario que edita, si la peticion la traia. */
     private function saveClassification(Device $device, ?array $classification): void
     {
         if ($classification === null)

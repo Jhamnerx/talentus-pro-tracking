@@ -2129,7 +2129,8 @@ class DevicesController extends BaseController
             return response()->json(['ok' => false, 'message' => $message ?: trans('ui.invalid_state_for_vehicle_type')], 422);
         }
 
-        $vs = $classification->vehicleState;
+        // null: sin clasificacion del usuario y estado vacio (no-op).
+        $vs = $classification ? $classification->vehicleState : null;
 
         return response()->json([
             'ok'            => true,
