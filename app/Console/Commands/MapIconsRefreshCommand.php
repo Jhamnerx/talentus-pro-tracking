@@ -94,11 +94,8 @@ class MapIconsRefreshCommand extends Command
 
     private function generate(bool $dry): void
     {
-        if (! class_exists(\Imagick::class)) {
-            $this->error('Imagick no está disponible: no se pueden generar los pines.');
-            return;
-        }
-
+        // Los PNG van versionados en git: normalmente solo hay que dar de alta
+        // la fila en map_icons. Imagick solo hace falta si falta el fichero.
         $dir = public_path('images/map_icons');
         if (! is_dir($dir)) {
             mkdir($dir, 0775, true);
@@ -114,12 +111,19 @@ class MapIconsRefreshCommand extends Command
                 continue;
             }
 
-            $this->line("Generando {$path}");
+            $full = $dir . DIRECTORY_SEPARATOR . $file;
+            $this->line((is_file($full) ? 'Registrando ' : 'Generando ') . $path);
             if ($dry) {
                 continue;
             }
 
-            $this->drawPin($dir . DIRECTORY_SEPARATOR . $file, $hex);
+            if (! is_file($full)) {
+                if (! class_exists(\Imagick::class)) {
+                    $this->error("Falta {$path} e Imagick no está disponible para generarlo.");
+                    continue;
+                }
+                $this->drawPin($full, $hex);
+            }
 
             MapIcon::create(['path' => $path, 'width' => 32, 'height' => 40]);
             $added++;
