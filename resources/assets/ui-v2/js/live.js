@@ -1876,10 +1876,12 @@
         '<div data-lock-hist><div class="tp-text-muted" style="padding:12px;">Cargando…</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
     });
-    function load(period) {
+    // Paginado: el backend manda 50 por pagina; "Cargar mas" anexa filas.
+    var pagina = 1, filas = [];
+    function load(period, mas) {
       var box = dlg.querySelector("[data-lock-hist]");
-      box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Cargando…</div>';
-      fetch(url + "?period=" + encodeURIComponent(period), {
+      if (!mas) { pagina = 1; filas = []; box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Cargando…</div>'; }
+      fetch(url + "?period=" + encodeURIComponent(period) + "&page=" + pagina, {
         credentials: "same-origin",
         headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
       })
@@ -1891,11 +1893,13 @@
             box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">' + tpT('ui.load_failed') + '</div>';
             return;
           }
-          var items = res.items || [];
+          filas = filas.concat(res.items || []);
+          var items = filas;
           if (!items.length) {
             box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">' + tpT('ui.no_records_in_period') + '</div>';
             return;
           }
+          var hayMas = res.pages && pagina < res.pages;
           box.innerHTML =
             '<table class="tp-lock-hist"><thead><tr><th>' + tpT('ui.start') + '</th><th>' + tpT('ui.duration') + '</th><th>' + tpT('front.location') + '</th></tr></thead><tbody>' +
             items
@@ -1923,7 +1927,13 @@
                 );
               })
               .join("") +
-            "</tbody></table>";
+            "</tbody></table>" +
+            (hayMas
+              ? '<div style="text-align:center;padding:8px;"><button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-lock-more>' +
+                tpT('ui.lock_history_load_more') + " (" + items.length + "/" + res.total + ")</button></div>"
+              : "");
+          var more = box.querySelector("[data-lock-more]");
+          if (more) more.addEventListener("click", function () { pagina++; load(period, true); });
         })
         .catch(function () {
           box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">' + tpT('ui.network_error') + '</div>';

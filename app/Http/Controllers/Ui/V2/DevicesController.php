@@ -3387,8 +3387,17 @@ class DevicesController extends BaseController
 
         $type    = $request->input('type', 'gprs');
         $message = trim((string) $request->input('message', ''));
-        if ($message === '') {
-            return response()->json(['ok' => false, 'message' => trans('ui.command_empty')], 422);
+
+        // Mismas reglas que el legacy (LockStatusController@doUnlock):
+        // id existente, mensaje y tipo sms|gprs.
+        try {
+            \CustomFacades\Validators\LockStatusUnlockValidator::validate('unlock', [
+                'id'      => $device->id,
+                'message' => $message,
+                'type'    => $type,
+            ]);
+        } catch (\Tobuli\Exceptions\ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()->toArray(), 'message' => trans('ui.command_empty')], 422);
         }
 
         $svc = app(\Tobuli\Services\Commands\SendCommandService::class);
@@ -3455,6 +3464,13 @@ class DevicesController extends BaseController
         }
         $this->checkException('devices', 'show', $device);
 
+        // Mismo validador que el legacy (LockStatusController@table).
+        try {
+            \CustomFacades\Validators\LockStatusTableValidator::validate('table', ['period' => $request->get('period', 'today')]);
+        } catch (\Tobuli\Exceptions\ValidationException $e) {
+            return response()->json(['ok' => false, 'errors' => $e->getErrors()->toArray()], 422);
+        }
+
         $period = getPeriodByPhrase($request->get('period', 'today'));
 
         $history = new \Tobuli\History\DeviceHistory($device);
@@ -3477,6 +3493,20 @@ class DevicesController extends BaseController
             ];
         }, $groups);
 
-        return response()->json(['ok' => true, 'items' => $rows]);
+        // Paginado como la tabla legacy: una semana de cortes puede ser
+        // larga y antes viajaba entera en una respuesta.
+        $perPage = max(10, min(200, (int) $request->get('per_page', 50)));
+        $page    = max(1, (int) $request->get('page', 1));
+        $total   = count($rows);
+        $items   = array_slice(array_values($rows), ($page - 1) * $perPage, $perPage);
+
+        return response()->json([
+            'ok'       => true,
+            'items'    => $items,
+            'total'    => $total,
+            'page'     => $page,
+            'per_page' => $perPage,
+            'pages'    => (int) max(1, ceil($total / $perPage)),
+        ]);
     }
 }

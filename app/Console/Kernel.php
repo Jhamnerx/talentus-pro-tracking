@@ -79,6 +79,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\RecalculateDeviceHistoryCommand',
         'App\Console\Commands\OperationsProcessCommand',
         'App\Console\Commands\SecurityAggregateCommand',
+        'App\Console\Commands\MapIconsRefreshCommand',
         'App\Console\Commands\SplitDevicesCommand',
         'App\Console\Commands\FakeDevicesCommand',
         'App\Console\Commands\DropDeviceFreeTablesCommand',

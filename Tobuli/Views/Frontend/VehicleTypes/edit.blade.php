@@ -11,27 +11,19 @@
             {!! Form::text('name', $item->name, ['class' => 'form-control']) !!}
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:4px;">
             <label>{{ trans('front.vehicle_states') }}:</label>
+            <small style="display:block;">{{ trans('ui.name_badge_color') }}</small>
         </div>
 
         <div class="empty-input-items">
             @foreach ($item->states as $state)
-                <div class="form-group">
-                    <div class="input-group">
-                        {!! Form::text("edit_state[{$state->id}]", $state->name, ['class' => 'form-control', 'placeholder' => trans('validation.attributes.name')]) !!}
-                        <span class="input-group-addon"><a href="javascript:" class="delete-item"><span aria-hidden="true">&times;</span></a></span>
-                    </div>
-                </div>
+                @include('Frontend.VehicleTypes.partials.state_row', ['state' => $state])
             @endforeach
 
-            <div class="form-group empty-input-add-new">
-                <div class="input-group">
-                    {!! Form::text('add_state[]', null, ['class' => 'form-control', 'placeholder' => trans('front.add_vehicle_state')]) !!}
-                    <span class="input-group-addon"><a href="javascript:" class="delete-item"><span aria-hidden="true">&times;</span></a></span>
-                </div>
-            </div>
+            @include('Frontend.VehicleTypes.partials.state_row', ['state' => null])
         </div>
+        @include('Frontend.VehicleTypes.partials.state_rows_script')
     {!! Form::close() !!}
 @stop
 

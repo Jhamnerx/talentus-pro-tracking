@@ -1160,4 +1160,6 @@ return [
     'ops_authorize_stop'                  => 'Authorize this stop',
     'ops_authorize_stop_hint'             => 'The reason only explains the stop. Tick the box so it does not count as unauthorized.',
     'alert_schedule_grid'                 => 'Alert schedule by day and 15-minute slot',
+    'geofence_used_by_routes'             => 'This geofence is a checkpoint of :n route(s). Deleting it removes it from those routes.',
+    'lock_history_load_more'              => 'Load more',
 ];

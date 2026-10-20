@@ -52,7 +52,7 @@ class GeofencesController extends Controller
     {
         $this->checkException('geofences', 'view');
 
-        $items = Geofence::userOwned($this->user)->paginate(500);
+        $items = Geofence::userOwned($this->user)->withCount('routeCheckpoints')->paginate(500);
 
         return response()->json(
             FractalTransformer::paginate($items, GeofenceMapTransformer::class)->toArray()

@@ -1549,5 +1549,11 @@ return [
     'route_color_by_sensor_hint' => '(requiere un sensor con rangos de colores por intervalo)',
     'add_range' => 'Añadir rango',
     'restore_defaults' => 'Restaurar por defecto',
+    'marker_speed_ranges' => 'Rangos de velocidad',
+    'marker_warn_before' => 'Avisar a (:unit antes)',
+    'marker_color_example' => 'Con un límite de 30 y un aviso de :margin, el color de proximidad entra a los :near y el de exceso a partir de 30.',
+    'vehicle_state_label' => 'Label corto (badge)',
+    'vehicle_state_color' => 'Color del estado',
     'web_services' => 'Servicios Web',
+    'geofence_used_by_routes' => 'Esta geocerca es punto de control de :n ruta(s). Al borrarla desaparecerá de esas rutas.',
 ];

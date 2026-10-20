@@ -299,6 +299,19 @@
     </div>
 </div>
 
+{{-- Costo estimado por kilómetro (paridad con ui/v2 · informacion.blade): el
+     supuesto del cliente para valorar un recorrido. El costo REAL sale de Gastos. --}}
+<div class="form-group">
+    {!! Form::label('cost_per_km', trans('front.cost_per_km') . ':') !!}
+    {!! Form::number('cost_per_km', $item->cost_per_km, [
+        'class' => 'form-control',
+        'placeholder' => '0.00',
+        'step' => '0.0001',
+        'min' => 0,
+    ]) !!}
+    <small>{{ trans('front.cost_per_km_hint') }}</small>
+</div>
+
 @if (Auth::user()->can('view', $item, 'forward'))
     <div class="form-group">
         {!! Form::label(null, trans('validation.attributes.forward') . ':') !!}
@@ -355,6 +368,35 @@
             ['from' => 120, 'to' => null, 'color' => '#ef4444'],
         ];
     }
+
+    // Sensores con rangos de color por intervalo: los de tipo "route_color*"
+    // (plugin route_color). Solo al editar: en el alta aun no hay sensores.
+    $rcSensors = [];
+    if ($item->exists) {
+        $rcSensors = $item->sensors
+            ->whereIn('type', ['route_color', 'route_color_2', 'route_color_3'])
+            ->pluck('name', 'id')
+            ->all();
+    }
+
+    // ── Color del marcador por velocidad (paridad con ui/v2 · cola.blade) ──
+    // Los valores por defecto salen de config/tobuli.php, no se repiten aqui.
+    $mcDefaults = (array) config('tobuli.marker_speed_colors', []);
+    $mcDefRanges = $mcDefaults['ranges'] ?? [];
+    $mcDefGeo = $mcDefaults['geofence'] ?? [];
+
+    $mcOn = (bool) ($item->marker_colors_enabled ?? false);
+
+    $mcRanges = json_decode($item->marker_speed_ranges ?? '', true);
+    if (!is_array($mcRanges) || !$mcRanges) {
+        $mcRanges = $mcDefRanges;
+    }
+
+    $mcMargin = $item->marker_geofence_margin ?? ($mcDefGeo['margin'] ?? 5);
+    $mcNear = $item->marker_geofence_near_color ?: ($mcDefGeo['near'] ?? '#a855f7');
+    $mcOver = $item->marker_geofence_over_color ?: ($mcDefGeo['over'] ?? '#dc2626');
+
+    $unidadVel = \Formatter::speed()->getUnit();
 @endphp
 <div class="form-group" id="route-colors-group">
     {!! Form::label(null, trans('front.route_colors_history') . ':') !!}
@@ -391,85 +433,179 @@
     {{-- Rangos en línea (horizontal, con wrap) --}}
     <div id="rc-ranges" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 8px 24px;"></div>
 
-    {{-- Por sensor --}}
-    <div style="display:flex;align-items:center;gap:10px;opacity:.55;">
+    {{-- Por sensor (solo si un sensor define rangos de color por intervalo) --}}
+    <div style="display:flex;align-items:center;gap:10px;{{ empty($rcSensors) ? 'opacity:.55;' : '' }}">
         <div class="radio" style="min-width:130px;">
-            <input type="radio" name="route_color_type" value="sensor" disabled {{ $rcType === 'sensor' ? 'checked' : '' }}>
+            <input type="radio" name="route_color_type" value="sensor" {{ empty($rcSensors) ? 'disabled' : '' }}
+                {{ $rcType === 'sensor' ? 'checked' : '' }}>
             <label>{{ trans('front.route_color_by_sensor') }}</label>
         </div>
-        <small>{{ trans('front.route_color_by_sensor_hint') }}</small>
+        @if (empty($rcSensors))
+            <small>{{ trans('front.route_color_by_sensor_hint') }}</small>
+        @else
+            <select name="route_sensor_id" id="rc-sensor" class="form-control input-sm" style="width:auto;min-width:160px;">
+                <option value="">&mdash;</option>
+                @foreach ($rcSensors as $sensorId => $sensorName)
+                    <option value="{{ $sensorId }}" {{ ($item->route_sensor_id ?? null) == $sensorId ? 'selected' : '' }}>
+                        {{ $sensorName }}</option>
+                @endforeach
+            </select>
+        @endif
     </div>
 
     <input type="hidden" name="route_speed_ranges" id="rc-json" value="{{ e(json_encode($rcRanges)) }}">
 </div>
 
+{{-- ================= Color del marcador por velocidad =================
+     Mismo editor de rangos que el recorrido (ids propios: mc-*). Con el
+     interruptor apagado el bloque se atenua pero NO se deshabilitan los
+     campos: si se deshabilitaran no viajarian en el submit. --}}
+<div class="form-group" id="marker-colors-group" data-mc-defaults="{{ e(json_encode($mcDefRanges)) }}">
+    <div class="checkbox">
+        {!! Form::hidden('marker_colors_enabled', 0) !!}
+        {!! Form::checkbox('marker_colors_enabled', 1, $mcOn, ['id' => 'mc-enabled']) !!}
+        {!! Form::label('mc-enabled', trans('ui.color_marker_by_speed')) !!}
+    </div>
+    <small style="display:block;margin:0 0 8px 24px;">{{ trans('ui.marker_color_help') }}</small>
+
+    <div id="mc-body" style="margin-left:24px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+            <span style="min-width:130px;">{{ trans('front.marker_speed_ranges') }} ({{ $unidadVel }})</span>
+            <div id="mc-bar" style="display:flex;flex:1 1 auto;max-width:260px;height:10px;border-radius:6px;overflow:hidden;border:1px solid rgba(0,0,0,.08);"></div>
+            <button type="button" class="btn btn-xs btn-default" id="mc-add-range" title="{{ trans('ui.add_range') }}"
+                style="color:#16a34a;font-weight:700;">+</button>
+            <button type="button" class="btn btn-xs btn-default" id="mc-reset-ranges" title="{{ trans('ui.restore_default_ranges') }}">&#8634;</button>
+        </div>
+        <div id="mc-ranges" style="display:flex;flex-wrap:wrap;gap:6px 14px;margin:2px 0 8px 0;"></div>
+
+        {{-- Limite de la geocerca --}}
+        {!! Form::label(null, trans('ui.inside_geofence_with_limit') . ':') !!}
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="form-group">
+                    {!! Form::label('marker_geofence_margin', trans('front.marker_warn_before', ['unit' => $unidadVel]) . ':') !!}
+                    {!! Form::number('marker_geofence_margin', $mcMargin, [
+                        'class' => 'form-control input-sm',
+                        'min' => 0,
+                        'max' => 200,
+                        'step' => 1,
+                    ]) !!}
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="form-group">
+                    {!! Form::label('marker_geofence_near_color', trans('ui.color_when_near') . ':') !!}<br>
+                    <input type="color" name="marker_geofence_near_color" id="marker_geofence_near_color" value="{{ $mcNear }}"
+                        style="width:36px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="form-group">
+                    {!! Form::label('marker_geofence_over_color', trans('ui.color_when_over') . ':') !!}<br>
+                    <input type="color" name="marker_geofence_over_color" id="marker_geofence_over_color" value="{{ $mcOver }}"
+                        style="width:36px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">
+                </div>
+            </div>
+        </div>
+        <small>{{ trans('front.marker_color_example', ['margin' => (int) $mcMargin, 'near' => max(0, 30 - (int) $mcMargin)]) }}</small>
+
+        <input type="hidden" name="marker_speed_ranges" id="mc-json" value="{{ e(json_encode($mcRanges)) }}">
+    </div>
+</div>
+
 <script>
     (function () {
-        var $rows = $('#rc-ranges'), $json = $('#rc-json'), $bar = $('#rc-bar');
-        var DEFAULTS = [
-            { from: 0, to: 40, color: '#22d3ee' },
-            { from: 40, to: 60, color: '#3b82f6' },
-            { from: 60, to: 90, color: '#6366f1' },
-            { from: 90, to: 120, color: '#a855f7' },
-            { from: 120, to: null, color: '#ef4444' }
-        ];
-        var ranges;
-        try { ranges = JSON.parse($json.val() || '[]'); } catch (e) { ranges = []; }
-        if (!ranges.length) ranges = DEFAULTS.slice();
+        // Editor de rangos de velocidad compartido por el recorrido (rc-*) y
+        // el marcador (mc-*). `opts.prefix` fija los ids; `opts.onEdit` corre
+        // cuando el usuario toca un rango (el recorrido selecciona "Por velocidad").
+        function rangeEditor(opts) {
+            var p = opts.prefix;
+            var $rows = $('#' + p + '-ranges'), $json = $('#' + p + '-json'), $bar = $('#' + p + '-bar');
+            if (!$rows.length || !$json.length) return;
+            var DEFAULTS = opts.defaults;
+            var ranges;
+            try { ranges = JSON.parse($json.val() || '[]'); } catch (e) { ranges = []; }
+            if (!ranges.length) ranges = $.map(DEFAULTS, function (r) { return $.extend({}, r); });
+            var onEdit = opts.onEdit || function () {};
 
-        function normalize() {
-            ranges.sort(function (a, b) { return (a.from || 0) - (b.from || 0); });
-            var from = 0;
-            $.each(ranges, function (i, r) {
-                r.from = from;
-                if (i === ranges.length - 1) { r.to = null; }
-                else {
-                    var to = parseFloat(r.to);
-                    if (isNaN(to) || to <= from) to = from + 10;
-                    r.to = to; from = to;
-                }
+            function normalize() {
+                ranges.sort(function (a, b) { return (a.from || 0) - (b.from || 0); });
+                var from = 0;
+                $.each(ranges, function (i, r) {
+                    r.from = from;
+                    if (i === ranges.length - 1) { r.to = null; }
+                    else {
+                        var to = parseFloat(r.to);
+                        if (isNaN(to) || to <= from) to = from + 10;
+                        r.to = to; from = to;
+                    }
+                });
+            }
+            function render() {
+                normalize();
+                $json.val(JSON.stringify(ranges));
+                $rows.empty();
+                $.each(ranges, function (i, r) {
+                    var last = i === ranges.length - 1;
+                    var $row = $('<span style="display:inline-flex;align-items:center;gap:4px;">');
+                    $row.append($('<input type="number" class="form-control input-sm" disabled style="width:62px;display:inline-block;">').val(r.from));
+                    $row.append('<span>&ndash;</span>');
+                    if (last) $row.append('<span style="min-width:20px;text-align:center;">&infin;</span>');
+                    else $row.append($('<input type="number" class="form-control input-sm sr-to" data-i="' + i + '" style="width:62px;display:inline-block;">').val(r.to));
+                    $row.append($('<input type="color" class="sr-color" data-i="' + i + '" style="width:34px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">').val(r.color || '#2563eb'));
+                    if (ranges.length > 1) $row.append('<button type="button" class="btn btn-xs btn-default sr-del" data-i="' + i + '">&times;</button>');
+                    $rows.append($row);
+                });
+                // Barra preview proporcional
+                $bar.empty();
+                var maxB = ranges.length > 1 ? ranges[ranges.length - 1].from : 100;
+                var scale = maxB > 0 ? maxB : 100;
+                $.each(ranges, function (i, r) {
+                    var last = i === ranges.length - 1;
+                    var w = last ? 18 : Math.max(6, ((r.to - r.from) / scale) * 82);
+                    $bar.append('<span style="flex:0 0 ' + w + '%;background:' + (r.color || '#2563eb') + ';"></span>');
+                });
+            }
+            $rows.on('change', '.sr-to', function () { ranges[$(this).data('i')].to = parseFloat($(this).val()); onEdit(); render(); });
+            $rows.on('change', '.sr-color', function () { ranges[$(this).data('i')].color = $(this).val(); onEdit(); render(); });
+            $rows.on('click', '.sr-del', function () { ranges.splice($(this).data('i'), 1); onEdit(); render(); });
+            $('#' + p + '-add-range').on('click', function () {
+                var lastFrom = ranges.length > 1 ? ranges[ranges.length - 1].from : 0;
+                ranges.splice(ranges.length - 1, 0, { from: lastFrom, to: lastFrom + 20, color: '#94a3b8' });
+                onEdit(); render();
             });
-        }
-        function render() {
-            normalize();
-            $json.val(JSON.stringify(ranges));
-            $rows.empty();
-            $.each(ranges, function (i, r) {
-                var last = i === ranges.length - 1;
-                var $row = $('<span style="display:inline-flex;align-items:center;gap:4px;">');
-                $row.append($('<input type="number" class="form-control input-sm" disabled style="width:62px;display:inline-block;">').val(r.from));
-                $row.append('<span>&ndash;</span>');
-                if (last) $row.append('<span style="min-width:20px;text-align:center;">&infin;</span>');
-                else $row.append($('<input type="number" class="form-control input-sm rc-to" data-i="' + i + '" style="width:62px;display:inline-block;">').val(r.to));
-                $row.append($('<input type="color" class="rc-color" data-i="' + i + '" style="width:34px;height:24px;padding:0;border:1px solid #ccc;border-radius:4px;cursor:pointer;">').val(r.color || '#2563eb'));
-                if (ranges.length > 1) $row.append('<button type="button" class="btn btn-xs btn-default rc-del" data-i="' + i + '">&times;</button>');
-                $rows.append($row);
+            $('#' + p + '-reset-ranges').on('click', function () {
+                ranges = $.map(DEFAULTS, function (r) { return $.extend({}, r); });
+                render();
             });
-            // Barra preview proporcional
-            $bar.empty();
-            var maxB = ranges.length > 1 ? ranges[ranges.length - 1].from : 100;
-            var scale = maxB > 0 ? maxB : 100;
-            $.each(ranges, function (i, r) {
-                var last = i === ranges.length - 1;
-                var w = last ? 18 : Math.max(6, ((r.to - r.from) / scale) * 82);
-                $bar.append('<span style="flex:0 0 ' + w + '%;background:' + (r.color || '#2563eb') + ';"></span>');
-            });
-        }
-        function selectSpeed() {
-            $('input[name="route_color_type"][value="speed"]').prop('checked', true);
-        }
-        $rows.on('change', '.rc-to', function () { ranges[$(this).data('i')].to = parseFloat($(this).val()); selectSpeed(); render(); });
-        $rows.on('change', '.rc-color', function () { ranges[$(this).data('i')].color = $(this).val(); selectSpeed(); render(); });
-        $rows.on('click', '.rc-del', function () { ranges.splice($(this).data('i'), 1); selectSpeed(); render(); });
-        $('#rc-add-range').on('click', function () {
-            var lastFrom = ranges.length > 1 ? ranges[ranges.length - 1].from : 0;
-            ranges.splice(ranges.length - 1, 0, { from: lastFrom, to: lastFrom + 20, color: '#94a3b8' });
-            selectSpeed(); render();
-        });
-        $('#rc-reset-ranges').on('click', function () {
-            ranges = $.map(DEFAULTS, function (r) { return $.extend({}, r); });
             render();
+        }
+
+        // ── Recorrido (historial) ──
+        rangeEditor({
+            prefix: 'rc',
+            defaults: [
+                { from: 0, to: 40, color: '#22d3ee' },
+                { from: 40, to: 60, color: '#3b82f6' },
+                { from: 60, to: 90, color: '#6366f1' },
+                { from: 90, to: 120, color: '#a855f7' },
+                { from: 120, to: null, color: '#ef4444' }
+            ],
+            onEdit: function () {
+                $('input[name="route_color_type"][value="speed"]').prop('checked', true);
+            }
         });
-        render();
+
+        // ── Marcador: los rangos por defecto los sirve el servidor en el
+        //    marcado (config/tobuli.php), para no tener la tabla en dos sitios.
+        var mcDefaults = [];
+        try { mcDefaults = JSON.parse($('#marker-colors-group').attr('data-mc-defaults') || '[]'); } catch (e) { mcDefaults = []; }
+        rangeEditor({ prefix: 'mc', defaults: mcDefaults });
+
+        function mcRefresh() {
+            $('#mc-body').css('opacity', $('#mc-enabled').is(':checked') ? '' : '.5');
+        }
+        $('#mc-enabled').on('change', mcRefresh);
+        mcRefresh();
     })();
 </script>

@@ -43,6 +43,7 @@ class ZonesController extends BaseController
 
         $rows = $this->user->geofences()
             ->with('vehicleSpeedLimits')
+            ->withCount('routeCheckpoints')
             ->orderBy('name', 'asc')
             ->get();
 
@@ -66,6 +67,8 @@ class ZonesController extends BaseController
                 'device_id'     => $g->device_id ? (int) $g->device_id : null,
                 'speed_limit'   => $g->speed_limit !== null ? round(\Formatter::speed()->convert($g->speed_limit)) : null,
                 'vehicle_speed_limits' => $this->vslMap($g),
+                // Rutas que la usan como punto de control: el borrado avisa.
+                'routes_count'  => (int) ($g->route_checkpoints_count ?? 0),
             ];
         }
 
