@@ -510,14 +510,77 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasOne('Tobuli\Entities\DeviceType', 'id', 'device_type_id');
     }
 
+    /**
+     * @deprecated La clasificacion es por usuario: usar vehicleTypeFor($userId).
+     *             Columna global devices.vehicle_type_id, se mantiene por compatibilidad.
+     */
     public function vehicleType()
     {
         return $this->hasOne('Tobuli\Entities\VehicleType', 'id', 'vehicle_type_id');
     }
 
+    /**
+     * @deprecated La clasificacion es por usuario: usar vehicleStateFor($userId).
+     *             Columna global devices.vehicle_state_id, se mantiene por compatibilidad.
+     */
     public function vehicleState()
     {
         return $this->hasOne('Tobuli\Entities\VehicleState', 'id', 'vehicle_state_id');
+    }
+
+    /** Clasificaciones (tipo + estado de vehiculo) de este dispositivo, una por usuario. */
+    public function classifications(): HasMany
+    {
+        return $this->hasMany(DeviceVehicleClassification::class, 'device_id', 'id');
+    }
+
+    /** Cache por usuario de classificationFor(); false = consultado y sin fila. */
+    private array $classificationByUser = [];
+
+    /**
+     * Clasificacion que un usuario concreto asigno a este dispositivo.
+     * Si la relacion `classifications` ya esta cargada (scopeWithClassificationFor)
+     * no consulta la base.
+     */
+    public function classificationFor(int $userId): ?DeviceVehicleClassification
+    {
+        if (array_key_exists($userId, $this->classificationByUser))
+            return $this->classificationByUser[$userId] ?: null;
+
+        if ($this->relationLoaded('classifications')) {
+            $classification = $this->classifications->firstWhere('user_id', $userId);
+        } else {
+            $classification = $this->classifications()
+                ->where('user_id', $userId)
+                ->with('vehicleType', 'vehicleState')
+                ->first();
+        }
+
+        $this->classificationByUser[$userId] = $classification ?: false;
+
+        return $classification;
+    }
+
+    public function vehicleTypeFor(int $userId): ?VehicleType
+    {
+        $classification = $this->classificationFor($userId);
+
+        return $classification ? $classification->vehicleType : null;
+    }
+
+    public function vehicleStateFor(int $userId): ?VehicleState
+    {
+        $classification = $this->classificationFor($userId);
+
+        return $classification ? $classification->vehicleState : null;
+    }
+
+    /** Carga anticipada de la clasificacion de un usuario (evita N+1 en listados). */
+    public function scopeWithClassificationFor($query, int $userId)
+    {
+        return $query->with(['classifications' => function ($q) use ($userId) {
+            $q->where('user_id', $userId)->with('vehicleType', 'vehicleState');
+        }]);
     }
 
     /** Programaciones de ruta asignadas a esta unidad. */
