@@ -528,7 +528,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasOne('Tobuli\Entities\VehicleState', 'id', 'vehicle_state_id');
     }
 
-    /** Clasificaciones (tipo + estado de vehiculo) de este dispositivo, una por usuario. */
+    /**
+     * Clasificaciones (tipo + estado de vehiculo) de este dispositivo, una por usuario.
+     * No anida vehicleType/vehicleState por defecto: para cargarlas (filtradas por
+     * usuario y con sus relaciones) usar el scope withClassificationFor($userId).
+     */
     public function classifications(): HasMany
     {
         return $this->hasMany(DeviceVehicleClassification::class, 'device_id', 'id');

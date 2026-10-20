@@ -121,11 +121,16 @@ class DevicesController extends Controller
 
         $this->checkException('devices', 'edit', $item);
 
-        $states = $item->vehicle_type_id
-            ? VehicleState::where('vehicle_type_id', $item->vehicle_type_id)->pluck('name', 'id')
-            : collect();
+        // Estados del tipo con el que ESTE usuario clasifico el dispositivo.
+        $vehicleType = $item->vehicleTypeFor($this->user->id);
+        $vehicleState = $item->vehicleStateFor($this->user->id);
 
-        return view('front::Devices.vehicleStateForm', compact('item', 'states'));
+        $states = $vehicleType
+            ? $vehicleType->states()->orderBy('name')->pluck('name', 'id')
+            : collect();
+        $vehicle_state_id = $vehicleState ? $vehicleState->id : null;
+
+        return view('front::Devices.vehicleStateForm', compact('item', 'states', 'vehicle_state_id'));
     }
 
     public function changeVehicleState()

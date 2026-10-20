@@ -237,6 +237,9 @@ class DevicesController extends BaseController
         $total = (clone $query)->count();
 
         $rows = $query->with('icon')
+            // Clasificacion (tipo/estado) de ESTE usuario para el flag `vt`,
+            // en una sola consulta para toda la pagina.
+            ->withClassificationFor($this->user->id)
             ->orderBy('devices.name', 'asc')
             ->forPage($page, $limit)
             ->get();
@@ -313,7 +316,7 @@ class DevicesController extends BaseController
                 'moved_at'        => $device->moved_at,
                 'expiration_date' => $device->expiration_date,
                 // Flags para el menú de acciones (template estático + data-need):
-                'vt'              => (bool) $device->vehicle_type_id,
+                'vt'              => (bool) $device->vehicleTypeFor($this->user->id),
                 'chat'            => (bool) $device->canChat(),
                 'plans'           => (bool) $device->isPlanAble(),
                 'app_uuid'        => ! empty($device->app_uuid),
@@ -2069,7 +2072,7 @@ class DevicesController extends BaseController
      * estado se pinta en la fila/marcador/drawer.
      * ================================================================= */
 
-    /** Estados del TIPO del device + estado actual (para el selector). */
+    /** Estados del TIPO con el que este usuario clasifico el device + estado actual. */
     public function vehicleStates(Request $request, $id): JsonResponse
     {
         $device = $this->user->devices()->find((int) $id);
@@ -2079,9 +2082,12 @@ class DevicesController extends BaseController
 
         $states   = [];
         $typeName = null;
-        if ($device->vehicle_type_id && $device->vehicleType) {
-            $typeName = (string) $device->vehicleType->name;
-            $states = $device->vehicleType->states->map(function ($s) {
+        $vehicleType  = $device->vehicleTypeFor($this->user->id);
+        $vehicleState = $device->vehicleStateFor($this->user->id);
+
+        if ($vehicleType) {
+            $typeName = (string) $vehicleType->name;
+            $states = $vehicleType->states->map(function ($s) {
                 return [
                     'id'    => (int) $s->id,
                     'name'  => (string) $s->name,
@@ -2095,11 +2101,11 @@ class DevicesController extends BaseController
             'ok'      => true,
             'type'    => $typeName,
             'states'  => $states,
-            'current' => $device->vehicle_state_id ? (int) $device->vehicle_state_id : null,
+            'current' => $vehicleState ? (int) $vehicleState->id : null,
         ]);
     }
 
-    /** Cambia el estado (valida que pertenezca al tipo del device). */
+    /** Cambia el estado de la clasificacion del usuario (valida que pertenezca a su tipo). */
     public function changeVehicleState(Request $request, $id): JsonResponse
     {
         if (! $this->user->perm('devices', 'edit')) {
@@ -2112,19 +2118,18 @@ class DevicesController extends BaseController
         }
 
         $stateId = (int) $request->get('vehicle_state_id');
-        $vs      = null;
 
-        if ($stateId > 0) {
-            $vs = \Tobuli\Entities\VehicleState::where('id', $stateId)
-                ->where('vehicle_type_id', $device->vehicle_type_id)
-                ->first();
-            if (! $vs) {
-                return response()->json(['ok' => false, 'message' => trans('ui.invalid_state_for_vehicle_type')], 422);
-            }
+        try {
+            $classification = app(\Tobuli\Services\DeviceClassificationService::class)
+                ->setState($this->user, $device, $stateId > 0 ? $stateId : null);
+        } catch (ValidationException $e) {
+            $errors  = $e->getErrors();
+            $message = $errors instanceof \Illuminate\Support\MessageBag ? (string) $errors->first() : (string) $errors;
+
+            return response()->json(['ok' => false, 'message' => $message ?: trans('ui.invalid_state_for_vehicle_type')], 422);
         }
 
-        $device->vehicle_state_id = $stateId > 0 ? $stateId : null;
-        $device->save();
+        $vs = $classification->vehicleState;
 
         return response()->json([
             'ok'            => true,
