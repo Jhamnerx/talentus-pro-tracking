@@ -14,7 +14,7 @@
             @foreach($icons->toArray() as $key=>$value)
                 <div class="checkbox-inline">
                     {!!Form::radio('map_icon_id', $value['id'], null, ['data-width' => $value['width'], 'data-height' => $value['height']])!!}
-                    <label><img src="{!!asset($value['path'])!!}" alt="ICON"></label>
+                    <label><img src="{!!asset($value['path'])!!}" alt="ICON" width="32" height="32"></label>
                 </div>
             @endforeach
         </div>
