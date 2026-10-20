@@ -857,7 +857,7 @@
     if (!state.cursorMarker) { state.cursorMarker = L.marker([p.lat, p.lng], { icon: cursorIcon(course), zIndexOffset: 1000, interactive: false }).addTo(state.map); state.cursorCourse = course; }
     else { state.cursorMarker.setLatLng([p.lat, p.lng]); if (Math.abs(course - state.cursorCourse) >= 4) { state.cursorMarker.setIcon(cursorIcon(course)); state.cursorCourse = course; } }
     $("#tp-hist-cursor-time").textContent = fmtTime(p.t);
-    $("#tp-hist-cursor-speed").textContent = (p.spd != null ? Math.round(p.spd) : "—") + " " + (gUnitSpeed() || "km/h");
+    updateCursorReadout(p);
     updateHud();
     keepCursorInView();
     drawGraph();
@@ -951,6 +951,22 @@
   function gUnit() {
     var s = (state.sensorList || []).filter(function (x) { return x.id === state.sensor; })[0];
     return s && s.sufix ? s.sufix : "";
+  }
+  // Lectura junto a la fecha: valor del sensor ACTIVO en el punto del cursor
+  // (como el legacy, que muestra "99 %" en Combustible), no siempre velocidad.
+  function updateCursorReadout(p) {
+    p = p || state.positions[state.cursorIdx];
+    var el = $("#tp-hist-cursor-speed"); if (!el) return;
+    if (!p) { el.textContent = "—"; return; }
+    var val;
+    if (state.sensor === "speed") val = p.spd != null ? Math.round(p.spd) : null;
+    else if (state.sensor === "altitude") val = p.alt != null ? Math.round(p.alt) : null;
+    else {
+      var raw = p.sv && p.sv[state.sensor];
+      val = raw == null || raw === "" || isNaN(+raw) ? null : Math.round(+raw * 100) / 100;
+    }
+    var unit = gUnit() || (state.sensor === "speed" ? "km/h" : "");
+    el.textContent = (val == null ? "—" : val) + (unit ? " " + unit : "");
   }
   function drawGraph() {
     if (!gc || $("#tp-hist-bottom").hidden) return;
@@ -1324,6 +1340,7 @@
       $("#tp-hist-sensor").querySelectorAll("[data-sensor]").forEach(function (x) { x.classList.remove("is-active"); });
       b.classList.add("is-active");
       state.sensor = b.getAttribute("data-sensor");
+      updateCursorReadout();
       drawGraph();
     });
 
