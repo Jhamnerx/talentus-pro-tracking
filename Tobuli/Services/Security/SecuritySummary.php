@@ -9,12 +9,25 @@ use Tobuli\Entities\SecurityDailyStat;
  * Agrega filas de SecurityDailyStat (ya filtradas por usuario, fechas, turno,
  * tipo y unidad) en tarjetas, resumen diario y detalle por unidad.
  *
- * perUnitDaily() y perUnit() leen `$stat->device->name` y
- * `$stat->device->vehicleType->name`: el llamador debe eager-loadear
- * `device.vehicleType` (`SecurityDailyStat::with('device.vehicleType')`).
+ * perUnitDaily() y perUnit() leen `$stat->device->name` y el tipo de vehiculo
+ * que el usuario asigno al equipo (`$device->vehicleTypeFor($userId)`): el
+ * llamador debe eager-loadear `device` con `withClassificationFor($userId)`.
  */
 class SecuritySummary
 {
+    /** Usuario cuya clasificacion (tipo de vehiculo) se muestra. */
+    private int $userId;
+
+    public function __construct(int $userId)
+    {
+        $this->userId = $userId;
+    }
+
+    private function typeName($device): ?string
+    {
+        return $device ? optional($device->vehicleTypeFor($this->userId))->name : null;
+    }
+
     /** @param Collection<SecurityDailyStat> $stats */
     public function cards(Collection $stats): array
     {
@@ -62,7 +75,7 @@ class SecuritySummary
 
     /**
      * Detalle diario por unidad (hoja Seguridad, bloque fechas x unidades).
-     * Requiere `device.vehicleType` eager-loaded.
+     * Requiere `device` eager-loaded con la clasificacion del usuario.
      *
      * @param Collection<SecurityDailyStat> $stats
      */
@@ -81,7 +94,7 @@ class SecuritySummary
                     'date'      => $first->work_date->toDateString(),
                     'device_id' => $first->device_id,
                     'unit'      => optional($first->device)->name,
-                    'type'      => optional(optional($first->device)->vehicleType)->name,
+                    'type'      => $this->typeName($first->device),
                     'km'        => round($km, 1),
                     'moving_h'  => round($mh, 2),
                     'engine_h'  => round($eh, 2),
@@ -102,7 +115,7 @@ class SecuritySummary
 
     /**
      * Totales por unidad en el periodo (hoja Operaciones).
-     * Requiere `device.vehicleType` eager-loaded.
+     * Requiere `device` eager-loaded con la clasificacion del usuario.
      *
      * @param Collection<SecurityDailyStat> $stats
      */
@@ -118,7 +131,7 @@ class SecuritySummary
                 return [
                     'device_id' => $first->device_id,
                     'unit'      => optional($first->device)->name,
-                    'type'      => optional(optional($first->device)->vehicleType)->name,
+                    'type'      => $this->typeName($first->device),
                     'km'        => round($km, 1),
                     'engine_h'  => round($rows->sum('engine_seconds') / 3600, 2),
                     'moving_h'  => round($mh, 2),
