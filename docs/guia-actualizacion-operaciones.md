@@ -363,3 +363,69 @@ php artisan security:aggregate --user=<id> --from=2026-09-01 --to=$(date +%F)
 
 `SECURITY_ENABLED=false` detiene el cálculo; `php artisan migrate:rollback --step=1 --force`
 elimina las dos tablas (se pierden los agregados, que se regeneran con el comando).
+
+## 9. Clasificación de vehículo por usuario (rama `clasificacion-por-usuario`, 19-oct-2026)
+
+Hasta ahora el tipo y el estado de vehículo se guardaban en el propio
+dispositivo (`devices.vehicle_type_id` / `vehicle_state_id`), aunque los tipos
+pertenecen a cada cuenta y los vehículos se comparten entre clientes: un
+vehículo compartido solo podía llevar el tipo de uno de ellos y para el otro
+no aplicaba ningún límite por tipo. Ahora cada cuenta clasifica el vehículo
+con **sus propios** tipos y estados (tabla `device_vehicle_classifications`,
+una fila por vehículo y usuario).
+
+### 9.1 Qué cambia para el usuario
+
+- En el formulario del vehículo (legacy, v2 y API) y en «Cambiar estado» cada
+  cuenta ve y guarda **su** tipo/estado; guardar no borra el de otra cuenta.
+- Mapa, lista, ficha, enlaces públicos de Compartir y Seguridad (filtro «Tipo»,
+  tablas y Excel) muestran la clasificación de la cuenta que mira (en Compartir,
+  la del dueño del enlace).
+- Alertas de exceso en geocerca, historial, reportes de exceso en geocerca
+  (904-906 y RAG) y Seguridad resuelven el límite con la clasificación que el
+  **dueño de la geocerca** le dio al vehículo. Si el dueño no lo clasificó, se
+  usa el límite general de la geocerca, como antes.
+- Borrar un tipo de vehículo ya solo afecta a las clasificaciones de esa cuenta.
+
+### 9.2 Pasos en el servidor
+
+```bash
+git pull
+php artisan migrate --force
+php artisan view:clear
+```
+
+Migración `2026_10_20_000001_create_device_vehicle_classifications_table`: crea
+la tabla y copia la clasificación actual de cada vehículo al usuario **dueño
+del tipo** (si el estado guardado era de otro tipo, se copia sin estado). No
+hay variables de entorno ni configuración nueva; no hay que compilar assets ni
+tocar el cron. La migración es idempotente: si se vuelve a ejecutar no duplica
+filas.
+
+### 9.3 Verificación
+
+```sql
+select count(*) from device_vehicle_classifications;
+select count(*) from devices where vehicle_type_id is not null;
+```
+
+Las dos cifras deben coincidir (la segunda puede ser mayor solo si había
+vehículos con un `vehicle_type_id` que ya no existe en `vehicle_types`: esos no
+se copian). Después, con un usuario que tenga tipos definidos: editar un
+vehículo compartido y asignarle un tipo; entrar con la otra cuenta y comprobar
+que su clasificación no cambió (dos filas para el mismo `device_id`).
+
+### 9.4 Vuelta atrás
+
+`php artisan migrate:rollback --step=1 --force` elimina la tabla. No hay nada
+que restaurar en `devices`: las columnas viejas no se tocaron en la migración
+(se dejaron de escribir, pero conservan el valor que tenían), así que el código
+anterior vuelve a leerlas tal cual estaban antes del despliegue. Lo que se
+pierde son las clasificaciones hechas por otras cuentas después de desplegar.
+
+### 9.5 Columnas viejas
+
+`devices.vehicle_type_id` y `vehicle_state_id` siguen en la tabla pero el
+código **ya no las lee ni las escribe**. Se eliminarán con una migración en una
+versión posterior, cuando pruebas confirme el comportamiento. Hasta entonces no
+sirven como referencia: la clasificación vigente es la de la tabla nueva.

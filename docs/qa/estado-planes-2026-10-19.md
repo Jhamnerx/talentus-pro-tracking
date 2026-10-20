@@ -16,6 +16,7 @@ Revisión de cada plan o informe con tareas contra el código y el historial de 
 | Operaciones (control de vueltas) | 6 a 14-oct | ✅ Terminado y fusionado en `nuevo-tema` (`8b6dc288`) | 4 pendientes conocidos de la guía §7 |
 | Seguridad · Control de flota | 14 a 19-oct | 🟡 Tareas 1 a 9 hechas; Task 10 parcial | Merge a `nuevo-tema`, PDF del manual, confirmar pasos en el servidor |
 | Revisión QA del sistema (19-oct) | 19-oct | 🟡 7 correcciones subidas | Permisos del usuario de prueba, socket 9002, mejoras UX listadas |
+| Clasificación de vehículo por usuario | 19-oct | ✅ Tasks 1 a 7 hechas (rama `clasificacion-por-usuario`) | Merge a `nuevo-tema` tras pruebas · migración de borrado de `devices.vehicle_type_id`/`vehicle_state_id` (versión posterior) |
 
 ## 1. Reportes 904/905/906 · `docs/superpowers/plans/2026-06-17-overspeed-geofence-reports.md`
 
@@ -117,6 +118,20 @@ Módulo terminado y fusionado. Pendientes conocidos, no bloqueantes:
 ## 7. Revisión QA del 19-oct · `docs/qa/revision-sistema-2026-10-19.md`
 
 7 correcciones subidas (`e5410671`). Pendiente del lado del servidor: permisos del usuario de prueba (IMEI, SIM, borrar), socket 9002, recálculo de Seguridad del 4 al 19-oct. Mejoras UX sin asignar: ver sección 3 del informe.
+
+## 8. Clasificación de vehículo por usuario · `docs/superpowers/plans/2026-10-19-clasificacion-vehiculo-por-usuario.md`
+
+| Task | Estado | Evidencia |
+| --- | --- | --- |
+| 1 Migración `2026_10_20_000001` y entidad `DeviceVehicleClassification`; `Device::classifications/classificationFor/withClassificationFor` | ✅ | `5147c972`, `699f1fc4` |
+| 2 `DeviceClassificationService` (validate/set/setState/clear) y `Geofence::speedLimitForDevice` | ✅ | `0971386d` |
+| 3 Formularios legacy/v2/API y los dos «Cambiar estado» pasan por el service | ✅ | `76140c63`, `059bfe28` |
+| 4 Mapa (transformer, incl. Compartir), sidebar legacy y ficha muestran la clasificación del usuario actuante | ✅ | `cc1aadf5` |
+| 5 Seguridad: filtro «Tipo», tablas y Excel por usuario | ✅ | `c0ca0ed0` |
+| 6 Alertas, historial (`AppendSpeedLimitGeofence*`) y reportes 904-906/RAG resuelven con el dueño de la geocerca | ✅ | `81d44ec5` |
+| 7 Documentación (`CLAUDE.md`, guía §9, plan, este informe) | ✅ | commit de documentación |
+
+Regla fijada: **el dueño de la geocerca resuelve** el límite; para mostrar se usa el usuario actual. Las columnas `devices.vehicle_type_id`/`vehicle_state_id` quedan sin leer ni escribir y se borrarán en una migración posterior (preparada aparte, no incluida). Pendiente: merge a `nuevo-tema` tras la validación en pruebas y resolver de paso el fallo legacy #5 y #18 de la sección 5, que este cambio deja cubiertos (el select solo ofrece tipos propios y el badge del sidebar lee la clasificación del usuario).
 
 ## Hecho el 19-oct (rama `correcciones-oct`)
 

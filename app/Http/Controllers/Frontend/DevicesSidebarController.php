@@ -33,7 +33,8 @@ class DevicesSidebarController extends AbstractSidebarItemsController
     {
         $query = $this->user
             ->devices()
-            ->with(['traccar', 'vehicleState', 'sensors' => function (HasMany $query) {
+            ->withClassificationFor($this->user->id)
+            ->with(['traccar', 'sensors' => function (HasMany $query) {
                 $types = ['speed'];
 
                 if (Blocked::isEnabled()) {

@@ -11,8 +11,9 @@ use Tobuli\Entities\SecuritySetting;
  * Estado vigente por unidad (seccion "ESTADO ACTUAL" del Excel), calculado
  * a partir de la ultima posicion denormalizada en TraccarDevice.
  *
- * Los devices deben venir con `traccar` y `vehicleType` cargados para
- * evitar N+1.
+ * Los devices deben venir con `traccar` y la clasificacion del usuario
+ * (`withClassificationFor($userId)`) cargadas para evitar N+1: el tipo de
+ * vehiculo es el que ese usuario asigno al equipo.
  */
 class SecurityLiveStatus
 {
@@ -23,9 +24,13 @@ class SecurityLiveStatus
 
     private SecuritySetting $settings;
 
-    public function __construct(SecuritySetting $settings)
+    /** Usuario cuya clasificacion (tipo de vehiculo) se muestra. */
+    private int $userId;
+
+    public function __construct(SecuritySetting $settings, int $userId)
     {
         $this->settings = $settings;
+        $this->userId = $userId;
     }
 
     /**
@@ -47,7 +52,7 @@ class SecurityLiveStatus
             $rows[] = [
                 'device_id'           => $device->id,
                 'unit'                => $device->name,
-                'type'                => $device->vehicleType ? $device->vehicleType->name : null,
+                'type'                => optional($device->vehicleTypeFor($this->userId))->name,
                 'last_time'           => $time,
                 'last_time_formatted' => $rawTime ? \Formatter::time()->human($rawTime) : null,
                 'speed'               => $speed,

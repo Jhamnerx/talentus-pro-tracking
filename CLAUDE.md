@@ -479,27 +479,73 @@ Procesa las posiciones de un dispositivo **una por una** para construir el histo
 
 ## Tipos/Estados de Vehículo y Límites de Velocidad por Geocerca
 
-> Funcionalidad en desarrollo activo (migraciones `2026_06_19_*`). Permite límites de velocidad por geocerca diferenciados por **tipo** y **estado** de vehículo (ej. "Cisterna / cargado" vs "Cisterna / vacío").
+> Permite límites de velocidad por geocerca diferenciados por **tipo** y **estado** de vehículo
+> (ej. "Cisterna / cargado" vs "Cisterna / vacío"). Desde oct-2026 la clasificación de cada
+> vehículo es **por usuario** (rama `clasificacion-por-usuario`, migración `2026_10_20_000001`):
+> un vehículo compartido entre cuentas puede llevar un tipo/estado distinto para cada una.
 
-**Entidades nuevas:**
+**Entidades:**
 
-| Entidad                     | Tabla                            | Notas                                                              |
-| --------------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| `VehicleType`               | `vehicle_types`                  | Pertenece a un `User`; `hasMany` estados.                          |
-| `VehicleState`              | `vehicle_states`                 | Pertenece a un `VehicleType`.                                      |
-| `GeofenceVehicleSpeedLimit` | `geofence_vehicle_speed_limits`  | `unique(geofence_id, vehicle_type_id, vehicle_state_id)`; `state` nullable. |
+| Entidad                       | Tabla                             | Notas                                                              |
+| ----------------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| `VehicleType`                 | `vehicle_types`                   | Pertenece a un `User`; `hasMany` estados.                          |
+| `VehicleState`                | `vehicle_states`                  | Pertenece a un `VehicleType`.                                      |
+| `GeofenceVehicleSpeedLimit`   | `geofence_vehicle_speed_limits`   | `unique(geofence_id, vehicle_type_id, vehicle_state_id)`; `state` nullable. |
+| `DeviceVehicleClassification` | `device_vehicle_classifications`  | `(device_id, user_id, vehicle_type_id, vehicle_state_id)`; `unique(device_id, user_id)`; tipo y estado son del catálogo de `user_id`. FK cascade en device/user/tipo, `set null` en estado. |
 
-- `devices` gana `vehicle_type_id` + `vehicle_state_id` (FK `set null`). `Device::vehicleType()` / `vehicleState()`.
-- **CRUD de tipos**: `VehicleTypesController` (`Route::resource('vehicle_types')` + `vehicle_types/table`). Los estados se editan anidados en el form del tipo (`add_state[]`, `edit_state[id]`); validación con `VehicleTypeFormValidator`. Vistas en `Tobuli/Views/Frontend/VehicleTypes/`.
-- **Asignación rápida de estado a un objeto**: `DevicesController::vehicleStateForm()` + `changeVehicleState()` → `DeviceModalHelper::changeVehicleState()` (valida que el estado pertenezca al tipo del device).
+### Clasificación por usuario (modelo actual)
+
+- **Lectura en `Device`:** `classifications()` (hasMany), `classificationFor(int $userId)`,
+  `vehicleTypeFor($userId)`, `vehicleStateFor($userId)`. El resultado se memoriza por usuario en la
+  instancia (incluido el `null`) porque alertas e historial recorren geocercas de varios dueños
+  sobre el mismo device; `forgetClassificationCache()` lo limpia tras escribir.
+- **Eager load (evitar N+1):** scope `Device::withClassificationFor($userId)`. Carga una **relación
+  dinámica por usuario** `classificationForUser{N}` (registrada con `resolveRelationUsing`, hasOne
+  filtrada por `user_id` con `vehicleType`/`vehicleState` anidados; nombre vía
+  `Device::classificationRelationFor($userId)`). Una vez cargada es autoritativa: `null` = sin
+  clasificación, 0 consultas extra. La relación genérica `classifications` solo sirve de caché para
+  aciertos; si no contiene al usuario, `classificationFor()` consulta la BD.
+  ⚠️ **Serialización:** al estar cargada, `classificationForUser{N}` aparece como clave en
+  `$device->toArray()` / `toJson()`. No volcar el device entero a JSON tras `withClassificationFor`;
+  exponer los campos desde un transformer (`DeviceMapTransformer` usa `requireUserLoads()` de
+  `BaseTransformer` para cargarla con el usuario actuante).
+- **Escritura: SIEMPRE por `Tobuli\Services\DeviceClassificationService`** (nunca escribir la tabla
+  a mano): `validate($user, $typeId, $stateId)` (resuelve sin escribir: tipo del usuario, estado del
+  tipo; lanza `ValidationException` con claves `vehicle_type_id`/`vehicle_state_id`),
+  `set($user, $device, $typeId, $stateId)` (`updateOrCreate`; tipo vacío = `clear`),
+  `setState($user, $device, $stateId)` (exige clasificación previa; sin tipo y estado vacío es no-op),
+  `clear($user, $device)`. Escritores: `DeviceModalHelper` (formularios legacy, v2 y API v1: valida
+  **antes** de guardar el device y clasifica **después**, solo si las claves vienen en el request) y
+  los dos «Cambiar estado» (`DevicesController::changeVehicleState()` legacy y `Ui\V2\DevicesController`).
+- **Regla de resolución del límite: "el dueño de la geocerca resuelve".**
+  `Geofence::speedLimitForDevice(Device $device)` = `speedLimitFor($device->vehicleTypeFor($this->user_id),
+  $device->vehicleStateFor($this->user_id))`. Toda geocerca tiene dueño, así que alertas, historial,
+  reportes y Seguridad no necesitan pasar ningún usuario extra. Geocerca sin `user_id` ⇒ solo el legacy.
+- **Regla de visualización: "usuario actual".** Listas, ficha, mapa (`DeviceMapTransformer`, incluido
+  el enlace público de Compartir con el dueño del enlace como usuario actuante), sidebar legacy
+  (`Objects/item.blade.php`), Seguridad (filtro «Tipo», tablas, Excel) muestran
+  `$device->classificationFor($user->id)`. Los selects de los formularios solo ofrecen los tipos del
+  usuario que edita.
+- **Columnas deprecadas:** `devices.vehicle_type_id` / `vehicle_state_id` y los accessors
+  `Device::vehicleType()` / `vehicleState()` (marcados `@deprecated`) **ya no se escriben ni se leen**.
+  La migración copió su valor a la tabla nueva para el **dueño del tipo** (estado de otro tipo ⇒ `null`).
+  Se eliminarán en una migración posterior cuando pruebas confirme; no usarlos en código nuevo.
+- **JS espejo:** `live-zones.js` y `tp-map-layers.js` replican `speedLimitFor` con los
+  `vehicle_type_id`/`vehicle_state_id` que manda el transformer (ya son los de la clasificación del
+  usuario actuante), por eso no cambiaron.
+
+### Catálogo y límites por geocerca
+
+- **CRUD de tipos**: `VehicleTypesController` (`Route::resource('vehicle_types')` + `vehicle_types/table`). Los estados se editan anidados en el form del tipo (`add_state[]`, `edit_state[id]`); validación con `VehicleTypeFormValidator`. Vistas en `Tobuli/Views/Frontend/VehicleTypes/`. Borrar un tipo borra (cascade) solo las clasificaciones de esa cuenta.
+- **Asignación rápida de estado a un objeto**: `DevicesController::vehicleStateForm()` + `changeVehicleState()` → `DeviceModalHelper::changeVehicleState()` → `DeviceClassificationService::setState()`. El formulario ofrece los estados del tipo **de la clasificación del usuario**.
 - **En la geocerca**: partial `Geofences/partials/vehicle_speed_limits.blade.php`. El form envía `vehicle_speed_limits[<type_id>][<state_id>] = velocidad` (clave de estado `0` = límite por defecto del tipo, `vehicle_state_id` null). `GeofenceService::syncVehicleSpeedLimits()` borra y recrea los límites; `normalize()` convierte unidades.
-- **Resolución del límite → `Geofence::speedLimitFor($vehicleType, $vehicleState)`** con fallback en 3 niveles:
+- **`Geofence::speedLimitFor($vehicleType, $vehicleState)`** (lo llama `speedLimitForDevice`) con fallback en 3 niveles:
   1. límite exacto (tipo + estado),
   2. límite por defecto del tipo (estado `null`),
   3. columna legacy `geofences.speed_limit`.
-- **Consumidores** de `speedLimitFor()`: `GeofenceAlertCheck` (alertas), reportes overspeed-en-geocerca, y acciones de History `AppendSpeedLimitGeofence`, `AppendSpeedLimitGeofenceByPriority`, `AppendSpeedLimitGeofenceMulti`.
+- **Consumidores** de `speedLimitForDevice()`: `GeofenceAlertCheck` (alertas), reportes overspeed-en-geocerca (904-906, RAG), y acciones de History `AppendSpeedLimitGeofence`, `AppendSpeedLimitGeofenceByPriority` (clave de caché por dueño+geocerca, no por ids del device), `AppendSpeedLimitGeofenceMulti`. En reportes/pipeline pre-cargar la clasificación del usuario del reporte antes del bucle (una consulta por device, no una por posición).
 - **Prioridad con geocercas solapadas**: se elige la de **menor área** (`Geofence::approxAreaSqMeters()`), vía `Geofence::pickBySpeedLimitPriority()` o la acción `…ByPriority`.
-- ⚠️ **Pendiente**: el export/import GEXP de geocercas (sección 6/7) **aún no** serializa la relación `vehicleSpeedLimits` (solo el `speed_limit` legacy). Tenerlo en cuenta al exportar/importar.
+- **Export/import GEXP de geocercas** (sección 6/7): el `.gexp` lleva `speed_limit`, `additional` y los límites por tipo/estado **por nombre**; el importador los resuelve contra el catálogo del usuario o crea los tipos (19-oct-2026). La clasificación por usuario de los devices **no** viaja en el GEXP de geocercas.
 
 ---
 
@@ -571,6 +617,7 @@ $this->user->perm('geofences', 'edit')        // retorna bool
 - **Migraciones:** estilo Laravel 8 con **clase anónima** (`return new class extends Migration { … };`). Seguir ese patrón en migraciones nuevas.
 - **Posiciones por dispositivo:** no consultar una tabla `positions` global; usar `$device->positions()` (tabla dinámica por device).
 - **`speedLimitFor()` sobre colecciones cargadas:** si `vehicleSpeedLimits` ya está eager-loaded, `Geofence::speedLimitFor()` filtra en memoria; si no, consulta a BD. En reportes/pipeline, hacer `->with('vehicleSpeedLimits')` para evitar N+1.
+- **Clasificación de vehículo por usuario:** nunca leer `devices.vehicle_type_id`/`vehicle_state_id` ni `$device->vehicleType`; usar `classificationFor($userId)` (mostrar = usuario actual, resolver límite = `Geofence::speedLimitForDevice()`, es decir, el dueño de la geocerca). En listados, `withClassificationFor($userId)`; escribir solo con `DeviceClassificationService`.
 
 ---
 

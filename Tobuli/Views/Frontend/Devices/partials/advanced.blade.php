@@ -25,7 +25,7 @@
         {!! Form::select(
             'vehicle_type_id',
             ['' => trans('front.none')] + $vehicle_types->pluck('name', 'id')->all(),
-            $item->vehicle_type_id,
+            $vehicle_type_id ?? null,
             ['class' => 'form-control'],
         ) !!}
     </div>
@@ -37,7 +37,7 @@
             ['' => trans('front.no_vehicle_state')] + $vehicle_types->mapWithKeys(function ($vehicleType) {
                 return [$vehicleType->name => $vehicleType->states->pluck('name', 'id')->all()];
             })->filter()->all(),
-            $item->vehicle_state_id,
+            $vehicle_state_id ?? null,
             ['class' => 'form-control'],
         ) !!}
     </div>

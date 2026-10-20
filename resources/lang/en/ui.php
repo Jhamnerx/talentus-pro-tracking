@@ -1162,4 +1162,5 @@ return [
     'alert_schedule_grid'                 => 'Alert schedule by day and 15-minute slot',
     'geofence_used_by_routes'             => 'This geofence is a checkpoint of :n route(s). Deleting it removes it from those routes.',
     'lock_history_load_more'              => 'Load more',
+    'vehicle_state_requires_type'         => 'Assign a vehicle type to this unit first.',
 ];

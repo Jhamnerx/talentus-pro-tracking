@@ -510,14 +510,134 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasOne('Tobuli\Entities\DeviceType', 'id', 'device_type_id');
     }
 
+    /**
+     * @deprecated La clasificacion es por usuario: usar vehicleTypeFor($userId).
+     *             Columna global devices.vehicle_type_id, se mantiene por compatibilidad.
+     */
     public function vehicleType()
     {
         return $this->hasOne('Tobuli\Entities\VehicleType', 'id', 'vehicle_type_id');
     }
 
+    /**
+     * @deprecated La clasificacion es por usuario: usar vehicleStateFor($userId).
+     *             Columna global devices.vehicle_state_id, se mantiene por compatibilidad.
+     */
     public function vehicleState()
     {
         return $this->hasOne('Tobuli\Entities\VehicleState', 'id', 'vehicle_state_id');
+    }
+
+    /**
+     * Clasificaciones (tipo + estado de vehiculo) de este dispositivo, una por usuario.
+     * No anida vehicleType/vehicleState por defecto: para cargarlas (filtradas por
+     * usuario y con sus relaciones) usar el scope withClassificationFor($userId).
+     */
+    public function classifications(): HasMany
+    {
+        return $this->hasMany(DeviceVehicleClassification::class, 'device_id', 'id');
+    }
+
+    /** Cache por usuario de classificationFor(); false = consultado y sin fila. */
+    private array $classificationByUser = [];
+
+    /**
+     * Nombre de la relacion dinamica (hasOne) con la clasificacion de un usuario
+     * concreto; se registra la primera vez que se pide. Como el usuario va en el
+     * nombre, una vez cargada es autoritativa: null significa "sin clasificacion"
+     * y no hace falta volver a consultar (0 consultas extra en listados).
+     */
+    public static function classificationRelationFor(int $userId): string
+    {
+        $name = 'classificationForUser' . $userId;
+
+        if (!isset(static::$relationResolvers[static::class][$name])) {
+            static::resolveRelationUsing($name, function (Device $device) use ($userId) {
+                return $device->hasOne(DeviceVehicleClassification::class, 'device_id', 'id')
+                    ->where('user_id', $userId)
+                    ->with('vehicleType', 'vehicleState');
+            });
+        }
+
+        return $name;
+    }
+
+    /**
+     * Clasificacion que un usuario concreto asigno a este dispositivo.
+     * Si la relacion dinamica del usuario esta cargada (scopeWithClassificationFor)
+     * es autoritativa, haya fila o no. Si no, y la relacion generica
+     * `classifications` esta cargada y contiene la fila del usuario, no consulta
+     * la base; si no la contiene (p. ej. se cargo filtrada para otro usuario)
+     * consulta igualmente: esa coleccion es cache para aciertos, nunca autoridad
+     * para fallos. Alertas e historial recorren geocercas de varios dueños sobre
+     * el mismo dispositivo, por eso el resultado se memoriza por usuario (null incluido).
+     */
+    public function classificationFor(int $userId): ?DeviceVehicleClassification
+    {
+        if (array_key_exists($userId, $this->classificationByUser))
+            return $this->classificationByUser[$userId] ?: null;
+
+        $relation = static::classificationRelationFor($userId);
+
+        if ($this->relationLoaded($relation)) {
+            $classification = $this->getRelation($relation);
+            $this->classificationByUser[$userId] = $classification ?: false;
+
+            return $classification;
+        }
+
+        $classification = $this->relationLoaded('classifications')
+            ? $this->classifications->firstWhere('user_id', $userId)
+            : null;
+
+        if (!$classification) {
+            $classification = $this->classifications()
+                ->where('user_id', $userId)
+                ->with('vehicleType', 'vehicleState')
+                ->first();
+        }
+
+        $this->classificationByUser[$userId] = $classification ?: false;
+
+        return $classification;
+    }
+
+    public function vehicleTypeFor(int $userId): ?VehicleType
+    {
+        $classification = $this->classificationFor($userId);
+
+        return $classification ? $classification->vehicleType : null;
+    }
+
+    public function vehicleStateFor(int $userId): ?VehicleState
+    {
+        $classification = $this->classificationFor($userId);
+
+        return $classification ? $classification->vehicleState : null;
+    }
+
+    /**
+     * Olvida la cache por usuario de classificationFor() y las relaciones de
+     * clasificacion ya cargadas (tras escribir una clasificacion).
+     */
+    public function forgetClassificationCache(): void
+    {
+        $this->classificationByUser = [];
+
+        foreach (array_keys($this->getRelations()) as $name) {
+            if ($name === 'classifications' || strpos($name, 'classificationForUser') === 0) {
+                $this->unsetRelation($name);
+            }
+        }
+    }
+
+    /**
+     * Carga anticipada de la clasificacion de un usuario (evita N+1 en listados):
+     * relacion dinamica por usuario, con vehicleType y vehicleState anidados.
+     */
+    public function scopeWithClassificationFor($query, int $userId)
+    {
+        return $query->with(static::classificationRelationFor($userId));
     }
 
     /** Programaciones de ruta asignadas a esta unidad. */

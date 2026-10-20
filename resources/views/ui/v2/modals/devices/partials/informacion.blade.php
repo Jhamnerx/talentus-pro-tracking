@@ -79,7 +79,7 @@
             <select class="tp-input" style="width: 100%" name="vehicle_type_id" data-tp-field>
                 <option value="">{{ trans('front.none') }}</option>
                 @foreach ($vehicleTypes as $vt)
-                    <option value="{{ $vt->id }}" {{ (string) ($item->vehicle_type_id ?? '') === (string) $vt->id ? 'selected' : '' }}>
+                    <option value="{{ $vt->id }}" {{ (string) ($vehicle_type_id ?? '') === (string) $vt->id ? 'selected' : '' }}>
                         {{ $vt->name }}</option>
                 @endforeach
             </select>
@@ -94,7 +94,7 @@
                         <optgroup label="{{ $vt->name }}">
                             @foreach ($vt->states as $vs)
                                 <option value="{{ $vs->id }}"
-                                    {{ (string) ($item->vehicle_state_id ?? '') === (string) $vs->id ? 'selected' : '' }}>
+                                    {{ (string) ($vehicle_state_id ?? '') === (string) $vs->id ? 'selected' : '' }}>
                                     {{ $vs->name }}</option>
                             @endforeach
                         </optgroup>

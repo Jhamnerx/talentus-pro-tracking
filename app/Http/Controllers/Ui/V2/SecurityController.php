@@ -58,7 +58,16 @@ class SecurityController extends BaseController
                 'night' => trans('ui.security_shift_night'),
             ],
             'types'    => VehicleType::where('user_id', $this->user->id)->orderBy('name')->get(['id', 'name']),
-            'devices'  => $this->user->devices()->clearOrdersBy()->orderBy('devices.name')->get(['devices.id', 'devices.name', 'devices.vehicle_type_id']),
+            // vehicle_type_id: clasificacion del usuario actual (el filtro por flota
+            // del JS la usa); el mismo equipo puede tener otro tipo para otro usuario.
+            'devices'  => $this->user->devices()->clearOrdersBy()
+                ->withClassificationFor($this->user->id)
+                ->orderBy('devices.name')->get(['devices.id', 'devices.name'])
+                ->map(fn($d) => [
+                    'id'              => $d->id,
+                    'name'            => $d->name,
+                    'vehicle_type_id' => optional($d->vehicleTypeFor($this->user->id))->id,
+                ])->values(),
             'last_calculated' => ($lc = SecurityDailyStat::where('user_id', $this->user->id)->max('calculated_at'))
                 ? \Formatter::time()->human($lc)
                 : null,
@@ -74,8 +83,8 @@ class SecurityController extends BaseController
             return $filters;
         }
 
-        $stats = $this->filtered($filters)->with('device.vehicleType')->get();
-        $summary = new SecuritySummary();
+        $stats = $this->filtered($filters)->with($this->deviceWithClassification())->get();
+        $summary = new SecuritySummary($this->user->id);
         $devices = $this->filteredDevices($filters);
 
         return response()->json([
@@ -84,7 +93,7 @@ class SecurityController extends BaseController
             'daily'    => $summary->daily($stats),
             'per_unit_daily' => $summary->perUnitDaily($stats),
             'per_unit' => $summary->perUnit($stats),
-            'live'     => (new SecurityLiveStatus(SecuritySetting::forUser($this->user)))->rows($devices),
+            'live'     => (new SecurityLiveStatus(SecuritySetting::forUser($this->user), $this->user->id))->rows($devices),
         ]);
     }
 
@@ -167,7 +176,7 @@ class SecurityController extends BaseController
             return response()->json(['ok' => false, 'errors' => ['to' => [trans('ui.security_export_range_too_long')]]], 422);
         }
 
-        $stats = $this->filtered($filters)->with('device.vehicleType')->get();
+        $stats = $this->filtered($filters)->with($this->deviceWithClassification())->get();
 
         return (new SecurityWorkbookExport($this->user, $stats, $this->filteredDevices($filters), $filters))
             ->download('Dashboard_Seguridad_' . now()->format('Ymd_Hi') . '.xlsx');
@@ -205,11 +214,28 @@ class SecurityController extends BaseController
         ];
     }
 
+    /** Eager-load de `device` con la clasificacion (tipo/estado) del usuario actual. */
+    private function deviceWithClassification(): array
+    {
+        return ['device' => fn($q) => $q->withClassificationFor($this->user->id)];
+    }
+
+    /**
+     * Filtro por tipo de vehiculo sobre la clasificacion del usuario actual
+     * (device_vehicle_classifications), no sobre la columna global de devices.
+     */
+    private function whereVehicleType($query, int $typeId)
+    {
+        return $query->whereHas('classifications', fn($c) => $c
+            ->where('user_id', $this->user->id)
+            ->where('vehicle_type_id', $typeId));
+    }
+
     /** Subconsulta con los ids de los dispositivos actuales del usuario (opcionalmente por tipo). */
     private function ownedDeviceIds(?int $typeId = null)
     {
         return $this->user->devices()->clearOrdersBy()->select('devices.id')
-            ->when($typeId, fn($q, $t) => $q->where('devices.vehicle_type_id', $t));
+            ->when($typeId, fn($q, $t) => $this->whereVehicleType($q, $t));
     }
 
     private function filtered(array $f)
@@ -227,9 +253,10 @@ class SecurityController extends BaseController
 
     private function filteredDevices(array $f)
     {
-        return $this->user->devices()->clearOrdersBy()->with(['traccar', 'vehicleType'])
+        return $this->user->devices()->clearOrdersBy()->with('traccar')
+            ->withClassificationFor($this->user->id)
             ->when($f['device_id'], fn($q, $id) => $q->where('devices.id', $id))
-            ->when($f['type_id'], fn($q, $t) => $q->where('devices.vehicle_type_id', $t))
+            ->when($f['type_id'], fn($q, $t) => $this->whereVehicleType($q, $t))
             ->orderBy('devices.name')->get();
     }
 }

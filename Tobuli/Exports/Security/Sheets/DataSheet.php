@@ -19,10 +19,14 @@ class DataSheet extends BaseSheet
 
     private Collection $stats;
 
-    /** @param Collection<SecurityDailyStat> $stats con device.vehicleType */
-    public function __construct(Collection $stats)
+    /** Usuario cuya clasificacion (tipo de vehiculo) se muestra. */
+    private int $userId;
+
+    /** @param Collection<SecurityDailyStat> $stats con `device` cargado via withClassificationFor($userId) */
+    public function __construct(Collection $stats, int $userId)
     {
         $this->stats = $stats;
+        $this->userId = $userId;
     }
 
     public function title(): string
@@ -49,7 +53,7 @@ class DataSheet extends BaseSheet
             $this->row([
                 'A' => $s->work_date->toDateString(),
                 'B' => optional($s->device)->name,
-                'C' => optional(optional($s->device)->vehicleType)->name,
+                'C' => $s->device ? optional($s->device->vehicleTypeFor($this->userId))->name : null,
                 'D' => self::SHIFTS[$s->shift] ?? $s->shift,
                 'E' => round($s->distance_km, 1),
                 'F' => round($s->engine_seconds / 3600, 2),

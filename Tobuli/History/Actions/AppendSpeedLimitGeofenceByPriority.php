@@ -8,6 +8,9 @@ class AppendSpeedLimitGeofenceByPriority extends ActionAppend
 {
     private $limits = [];
 
+    /** @var array<int,int>|null id de geocerca => id del dueño */
+    private $owners = null;
+
     static public function required()
     {
         return [
@@ -31,7 +34,9 @@ class AppendSpeedLimitGeofenceByPriority extends ActionAppend
 
         $device = $this->getDevice();
 
-        $key = $this->candidatesKey($position->geofences) . ':' . $device->vehicle_type_id . ':' . $device->vehicle_state_id;
+        // La clasificacion del dispositivo para un dueño dado no cambia durante el
+        // recorrido, asi que la clave solo necesita (dueño, geocerca) por candidata.
+        $key = $this->candidatesKey($position->geofences);
 
         if (array_key_exists($key, $this->limits))
             return $this->limits[$key];
@@ -41,7 +46,7 @@ class AppendSpeedLimitGeofenceByPriority extends ActionAppend
             ->map(function (Geofence $geofence) use ($device) {
                 return [
                     'geofence' => $geofence,
-                    'speed_limit' => $geofence->speedLimitFor($device->vehicleType, $device->vehicleState),
+                    'speed_limit' => $geofence->speedLimitForDevice($device),
                 ];
             })
             ->filter(function (array $candidate) {
@@ -62,8 +67,27 @@ class AppendSpeedLimitGeofenceByPriority extends ActionAppend
 
     private function candidatesKey(array $geofenceIds): string
     {
-        sort($geofenceIds);
+        $parts = [];
 
-        return implode(',', $geofenceIds);
+        foreach ($geofenceIds as $id) {
+            $parts[] = $this->geofenceOwner($id) . ':' . $id;
+        }
+
+        sort($parts);
+
+        return implode(',', $parts);
+    }
+
+    private function geofenceOwner($geofenceId): int
+    {
+        if (is_null($this->owners)) {
+            $this->owners = [];
+
+            foreach ($this->history->getGeofences() ?: [] as $geofence) {
+                $this->owners[$geofence->id] = (int) $geofence->user_id;
+            }
+        }
+
+        return $this->owners[$geofenceId] ?? 0;
     }
 }

@@ -13,7 +13,7 @@
             {!! Form::select(
                 'vehicle_state_id',
                 ['' => trans('front.no_vehicle_state')] + $states->all(),
-                $item->vehicle_state_id,
+                $vehicle_state_id ?? null,
                 ['class' => 'form-control'],
             ) !!}
         </div>

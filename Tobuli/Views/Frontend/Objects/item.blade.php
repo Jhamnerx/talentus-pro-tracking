@@ -39,12 +39,15 @@
         @endif
         <span data-device="status" style="background-color: {{ $item->getStatusColor() }}"
             title="{{ trans('global.' . $item->getStatus()) }}">{{ $item->getStatus() }}</span>
-        {{-- Estado del vehiculo (tipo/estado): etiqueta y color, como en la v2.
-             La relacion viene cargada en DevicesSidebarController (with). --}}
-        @if ($item->relationLoaded('vehicleState') && $item->vehicleState)
-            <span data-device="vehicle_state" title="{{ $item->vehicleState->name }}"
-                style="display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;line-height:16px;color:#fff;background-color: {{ $item->vehicleState->color ?: '#64748b' }};">
-                {{ $item->vehicleState->label ?: $item->vehicleState->name }}
+        {{-- Estado del vehiculo (clasificacion del usuario actual): etiqueta y color,
+             como en la v2. DevicesSidebarController la carga con withClassificationFor. --}}
+        @php
+            $vehicleState = $item->vehicleStateFor(Auth::id());
+        @endphp
+        @if ($vehicleState)
+            <span data-device="vehicle_state" title="{{ $vehicleState->name }}"
+                style="display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;line-height:16px;color:#fff;background-color: {{ $vehicleState->color ?: '#64748b' }};">
+                {{ $vehicleState->label ?: $vehicleState->name }}
             </span>
         @endif
 
@@ -107,7 +110,7 @@
                         </a>
                     </li>
                 @endif
-                @if (Auth::User()->perm('devices', 'edit') && $item->vehicle_type_id)
+                @if (Auth::User()->perm('devices', 'edit') && $item->vehicleTypeFor(Auth::id()))
                     <li>
                         <a href="javascript:" data-url="{{ route('devices.vehicle_state_form', $item->id) }}"
                             data-modal="devices_change_vehicle_state">

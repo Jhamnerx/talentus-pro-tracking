@@ -31,8 +31,8 @@ class SecurityWorkbookExport implements WithMultipleSheets
     private array $filters;
 
     /**
-     * @param Collection $stats   SecurityDailyStat filtradas, con device.vehicleType
-     * @param Collection $devices Devices del usuario (filtrados), con traccar y vehicleType
+     * @param Collection $stats   SecurityDailyStat filtradas, con `device` cargado via withClassificationFor($user->id)
+     * @param Collection $devices Devices del usuario (filtrados), con traccar y withClassificationFor($user->id)
      * @param array      $filters from, to, shift, device_id, type_id (ya validados)
      */
     public function __construct(User $user, Collection $stats, Collection $devices, array $filters)
@@ -46,8 +46,8 @@ class SecurityWorkbookExport implements WithMultipleSheets
     public function sheets(): array
     {
         $settings = SecuritySetting::forUser($this->user);
-        $summary = new SecuritySummary();
-        $live = (new SecurityLiveStatus($settings))->rows($this->devices);
+        $summary = new SecuritySummary($this->user->id);
+        $live = (new SecurityLiveStatus($settings, $this->user->id))->rows($this->devices);
         $cards = $summary->cards($this->stats);
         $perUnit = $summary->perUnit($this->stats);
         $labels = $this->filterLabels($settings);
@@ -55,7 +55,7 @@ class SecurityWorkbookExport implements WithMultipleSheets
         return [
             new SecuritySheet($labels, $cards, $live, $summary->daily($this->stats), $summary->perUnitDaily($this->stats), $perUnit),
             new OperationsSheet($labels, $cards, $perUnit),
-            new DataSheet($this->stats),
+            new DataSheet($this->stats, $this->user->id),
             new TelemetrySheet($live, new SecurityShift($settings, $this->timezone())),
         ];
     }
