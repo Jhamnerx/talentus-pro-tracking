@@ -44,14 +44,17 @@
       '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.title') + '</label>' +
       '<input type="text" class="tp-input" data-grp-title placeholder="Insertar título…" value="' +
       esc(isEdit ? group.title : "") + '"></div>' +
-      '<div class="tp-field"><div class="tp-rgroup-form__bar">' +
-      '<label class="tp-field__label" style="margin:0;">' + esc(cfg.itemsLabel || "Elementos") + "</label>" +
-      '<div class="tp-rgroup-form__sel">' +
-      '<button type="button" class="tp-linkbtn" data-grp-all>' + tpT('ui.select_all_n') + '</button>' +
-      '<button type="button" class="tp-linkbtn" data-grp-none>Deseleccionar todo</button>' +
+      // Mismo esquema que el legacy: una caja con la barra (seleccionar todo,
+      // deseleccionar todo, buscador) arriba y la lista desplazable dentro.
+      '<div class="tp-field"><label class="tp-field__label">' + esc(cfg.itemsLabel || "Elementos") + "</label>" +
+      '<div class="tp-rgroup-box">' +
+      '<div class="tp-rgroup-box__bar">' +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-all>' + tpT('ui.select_all_n') + '</button>' +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-none>Deseleccionar todo</button>' +
+      '<input type="search" class="tp-input tp-input--sm" data-grp-search placeholder="' + tpT('ui.search_ellipsis') + '" aria-label="' + tpT('ui.search_ellipsis') + '">' +
+      "</div>" +
+      '<div class="tp-rgroup-list" data-grp-list></div>' +
       "</div></div>" +
-      '<div class="tp-input-wrap tp-mt-2"><input type="text" class="tp-input tp-input--sm" data-grp-search placeholder="' + tpT('ui.search_ellipsis') + '"></div>' +
-      '<div class="tp-rgroup-list" data-grp-list></div></div>' +
       "</div>";
 
     tpModal.open({

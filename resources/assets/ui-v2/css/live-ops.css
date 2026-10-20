@@ -2408,6 +2408,45 @@ table.tp-lock-hist th {
   height: 15px;
   accent-color: var(--brand-accent, #1b99bd);
 }
+/* Caja de selección al estilo del legacy: barra (seleccionar todo /
+   deseleccionar todo / buscador) y lista desplazable dentro del mismo marco. */
+.tp-rgroup-box {
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-raised, #fff);
+  overflow: hidden;
+}
+.tp-rgroup-box__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+  background: var(--surface-sunken, #f8fafc);
+}
+.tp-rgroup-box__bar .tp-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+.tp-rgroup-box__bar .tp-input {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.tp-rgroup-box .tp-rgroup-list {
+  border: 0;
+  border-radius: 0;
+  margin-top: 0;
+  min-height: 180px;
+  max-height: 260px;
+}
+@media (max-width: 480px) {
+  .tp-rgroup-box__bar {
+    flex-wrap: wrap;
+  }
+  .tp-rgroup-box__bar .tp-input {
+    flex-basis: 100%;
+  }
+}
 
 /* ===========================================================
    SEGUIR — ventana flotante con mini-mapa (kebab del device)

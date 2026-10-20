@@ -146,6 +146,9 @@
       tpModal.open({
         title: id ? tpT('ui.edit_poi') : tpT('ui.new_poi'),
         size: "md",
+        // No cerrar al clicar fuera: el usuario ya colocó el punto en el mapa y
+        // un clic accidental en el fondo le hacía perder el formulario.
+        static: true,
         body: res.data.html,
         buttons: [
           { label: tpT('global.cancel'), variant: "ghost" },
