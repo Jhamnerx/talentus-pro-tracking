@@ -23,6 +23,7 @@
 
             @include('Frontend.VehicleTypes.partials.state_row', ['state' => null])
         </div>
+        @include('Frontend.VehicleTypes.partials.state_rows_script')
     {!! Form::close() !!}
 @stop
 
