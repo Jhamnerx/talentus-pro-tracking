@@ -69,7 +69,7 @@ class DeviceClassificationService
 
         if (!$classification || !$classification->vehicleType) {
             throw new ValidationException([
-                'vehicle_state_id' => [trans('front.no_vehicle_state')],
+                'vehicle_state_id' => [trans('ui.vehicle_state_requires_type')],
             ]);
         }
 

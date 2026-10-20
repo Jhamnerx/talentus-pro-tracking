@@ -1163,4 +1163,5 @@ return [
     'alert_schedule_grid'                 => 'Horario de la alerta por día y franja de 15 minutos',
     'geofence_used_by_routes'             => 'Esta geocerca es punto de control de :n ruta(s). Al borrarla desaparecerá de esas rutas.',
     'lock_history_load_more'              => 'Cargar más',
+    'vehicle_state_requires_type'         => 'Primero asigna un tipo de vehículo a esta unidad.',
 ];

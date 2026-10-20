@@ -540,16 +540,22 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     /**
      * Clasificacion que un usuario concreto asigno a este dispositivo.
      * Si la relacion `classifications` ya esta cargada (scopeWithClassificationFor)
-     * no consulta la base.
+     * y contiene la fila del usuario, no consulta la base; si no la contiene
+     * (p. ej. se cargo filtrada para otro usuario) consulta igualmente: la
+     * coleccion cargada es cache para aciertos, nunca autoridad para fallos.
+     * Alertas e historial recorren geocercas de varios dueños sobre el mismo
+     * dispositivo, por eso el resultado se memoriza por usuario (null incluido).
      */
     public function classificationFor(int $userId): ?DeviceVehicleClassification
     {
         if (array_key_exists($userId, $this->classificationByUser))
             return $this->classificationByUser[$userId] ?: null;
 
-        if ($this->relationLoaded('classifications')) {
-            $classification = $this->classifications->firstWhere('user_id', $userId);
-        } else {
+        $classification = $this->relationLoaded('classifications')
+            ? $this->classifications->firstWhere('user_id', $userId)
+            : null;
+
+        if (!$classification) {
             $classification = $this->classifications()
                 ->where('user_id', $userId)
                 ->with('vehicleType', 'vehicleState')
