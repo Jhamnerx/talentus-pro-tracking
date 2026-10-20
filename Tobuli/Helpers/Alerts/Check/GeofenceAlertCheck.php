@@ -302,7 +302,9 @@ class GeofenceAlertCheck extends AlertCheck
 
     protected function resolveSpeedLimit($geofence): ?float
     {
-        return $geofence->speedLimitFor($this->device->vehicleType, $this->device->vehicleState);
+        // El limite se resuelve con la clasificacion que el dueño de la geocerca
+        // asigno al dispositivo (ver Geofence::speedLimitForDevice).
+        return $geofence->speedLimitForDevice($this->device);
     }
 
     protected function checkGeofence($position, $geofence)
