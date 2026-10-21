@@ -232,7 +232,7 @@ class OperationsController extends BaseController
             return response()->json(['ok' => false, 'message' => 'operation_id'], 422);
         }
 
-        $date = trim((string) $request->get('date')) ?: Formatter::date()->convert(time(), 'Y-m-d');
+        $date = trim((string) $request->get('date')) ?: Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d');
 
         $states = OperationDeviceState::where('operation_id', $operation->id)
             ->with(['device.traccar', 'currentPoint:id,name,role', 'openLeg', 'openCycle'])
@@ -732,7 +732,7 @@ class OperationsController extends BaseController
             return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_bad_date')], 422);
         }
 
-        if ($date > Formatter::date()->convert(time(), 'Y-m-d')) {
+        if ($date > Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d')) {
             return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_future')], 422);
         }
 
@@ -749,7 +749,7 @@ class OperationsController extends BaseController
         $date = trim((string) $request->get('date'));
 
         if ($date === '') {
-            return Formatter::date()->convert(time(), 'Y-m-d');
+            return Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d');
         }
 
         $parsed = \DateTime::createFromFormat('Y-m-d', $date);
