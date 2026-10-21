@@ -52,6 +52,10 @@ class Operation extends AbstractEntity implements DisplayInterface
         'min_dwell_seconds',
         'stop_threshold_seconds',
         'max_leg_hours',
+        'day_start',
+        'vehicle_type_id',
+        'loaded_state_id',
+        'empty_state_id',
         'authorized_categories',
         'worked_hours_deductions',
     ];
@@ -61,6 +65,9 @@ class Operation extends AbstractEntity implements DisplayInterface
         'min_dwell_seconds'       => 'int',
         'stop_threshold_seconds'  => 'int',
         'max_leg_hours'           => 'int',
+        'vehicle_type_id'         => 'int',
+        'loaded_state_id'         => 'int',
+        'empty_state_id'          => 'int',
         'authorized_categories'   => 'array',
         'worked_hours_deductions' => 'array',
     ];
@@ -82,6 +89,39 @@ class Operation extends AbstractEntity implements DisplayInterface
     public function shifts(): HasMany
     {
         return $this->hasMany(OperationShift::class)->orderBy('position')->orderBy('start_time');
+    }
+
+    /** Tipo de vehiculo (Seguridad) cuyo estado cambia solo segun el sentido del viaje. */
+    public function vehicleType(): BelongsTo
+    {
+        return $this->belongsTo(VehicleType::class, 'vehicle_type_id');
+    }
+
+    /** Estado que se pone al salir de carga (tramo de ida). */
+    public function loadedState(): BelongsTo
+    {
+        return $this->belongsTo(VehicleState::class, 'loaded_state_id');
+    }
+
+    /** Estado que se pone al salir de descarga (tramo de vuelta). */
+    public function emptyState(): BelongsTo
+    {
+        return $this->belongsTo(VehicleState::class, 'empty_state_id');
+    }
+
+    /**
+     * Hora local (H:i) a la que empieza el dia operativo: `day_start` o, si
+     * es nulo, el inicio del primer turno por posicion; 00:00 sin turnos.
+     */
+    public function dayStart(): string
+    {
+        if ($this->day_start) {
+            return substr((string) $this->day_start, 0, 5);
+        }
+
+        $first = $this->shifts->first();
+
+        return $first ? substr((string) $first->start_time, 0, 5) : '00:00';
     }
 
     /** Todas las versiones de todos los puntos. */

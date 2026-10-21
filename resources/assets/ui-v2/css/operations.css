@@ -193,14 +193,16 @@ tr.is-open .tp-ops__toggle {
 
 /* ---------- Modal de operación ---------- */
 .tp-ops__points,
-.tp-ops__shifts {
+.tp-ops__shifts,
+.tp-ops__breaks {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .tp-ops__point,
-.tp-ops__shift {
+.tp-ops__shift,
+.tp-ops__break {
   display: grid;
   gap: 8px;
   align-items: center;
@@ -214,9 +216,32 @@ tr.is-open .tp-ops__toggle {
   grid-template-columns: 1fr 110px 110px auto;
 }
 
+/* Descansos: nombre · turno · tipo · desde · hasta · quitar */
+.tp-ops__break {
+  grid-template-columns: 1fr 130px 170px 100px 100px auto;
+}
+
+.tp-ops__break.is-fatigue [data-x-bstart],
+.tp-ops__break.is-fatigue [data-x-bend] {
+  visibility: hidden;
+}
+
 .tp-ops__point .tp-input,
-.tp-ops__shift .tp-input {
+.tp-ops__shift .tp-input,
+.tp-ops__break .tp-input {
   width: 100%;
+}
+
+/* Estado de vehiculo automatico (Opciones avanzadas) */
+.tp-ops__vstate {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.tp-ops__vstate .tp-input:disabled {
+  opacity: 0.55;
 }
 
 .tp-ops__sub {

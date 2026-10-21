@@ -541,10 +541,17 @@
 
   function reasonRow(r) {
     // Sin casilla "autoriza": el motivo solo explica (19-oct); la
-    // autorizacion se marca al justificar cada parada.
-    r = r || { name: "" };
-    return '<div class="tp-ops__point" data-x-reason-row' + (r.id ? ' data-id="' + r.id + '"' : "") + ' style="grid-template-columns:1fr auto;">' +
+    // autorizacion se marca al justificar cada parada. "Cuenta como"
+    // (reporte de turno): una parada justificada con el motivo pasa a
+    // mantenimiento o a descanso.
+    r = r || { name: "", state: null };
+    var states = state.meta.reason_states || {};
+    var stateOpts = '<option value="">—</option>' + Object.keys(states).map(function (k) {
+      return '<option value="' + k + '"' + (r.state === k ? " selected" : "") + ">" + esc(states[k]) + "</option>";
+    }).join("");
+    return '<div class="tp-ops__point" data-x-reason-row' + (r.id ? ' data-id="' + r.id + '"' : "") + ' style="grid-template-columns:1fr 160px auto;">' +
       '<input type="text" class="tp-input" data-x-rname value="' + esc(r.name) + '" placeholder="' + esc(t("ui.ops_reason_name")) + '" aria-label="' + esc(t("ui.ops_reason_name")) + '">' +
+      '<select class="tp-input" data-x-rstate aria-label="' + esc(t("ui.ops_reason_counts_as")) + '" title="' + esc(t("ui.ops_reason_counts_as")) + '">' + stateOpts + "</select>" +
       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-btn--icon" data-x-remove-reason aria-label="' + esc(t("global.delete")) + '">×</button>' +
       "</div>";
   }
@@ -566,7 +573,7 @@
           { label: t("global.save"), variant: "primary", close: false, onClick: function (d) {
             var items = [];
             d.querySelectorAll("[data-x-reason-row]").forEach(function (row) {
-              var it = { name: row.querySelector("[data-x-rname]").value.trim(), authorizes: 0 };
+              var it = { name: row.querySelector("[data-x-rname]").value.trim(), authorizes: 0, state: row.querySelector("[data-x-rstate]").value || null };
               if (row.getAttribute("data-id")) it.id = Number(row.getAttribute("data-id"));
               if (it.name) items.push(it);
             });
@@ -647,6 +654,54 @@
       "</div>";
   }
 
+  /* Descansos (reporte de turno, fase A). Cada fila apunta a un turno del
+   * formulario por su indice de fila; al guardar se reparten en
+   * shifts[i].breaks. El de fatiga no lleva horario. */
+  function breakShiftOptions(dlg, selected) {
+    var rows = dlg.querySelectorAll("[data-x-shift]");
+    var html = "";
+    rows.forEach(function (row, i) {
+      var name = row.querySelector("[data-x-sname]").value.trim() || t("ui.ops_break_shift_n", { n: i + 1 });
+      html += '<option value="' + i + '"' + (String(selected) === String(i) ? " selected" : "") + ">" + esc(name) + "</option>";
+    });
+    return html;
+  }
+
+  function breakRow(dlg, b, shiftIndex) {
+    b = b || { name: "", kind: "scheduled", start_time: "12:00", end_time: "13:00" };
+    var kinds = state.meta.break_kinds || {};
+    var kindOpts = Object.keys(kinds).map(function (k) {
+      return '<option value="' + k + '"' + (b.kind === k ? " selected" : "") + ">" + esc(kinds[k]) + "</option>";
+    }).join("");
+    var fatigue = b.kind === "fatigue";
+    return '<div class="tp-ops__break' + (fatigue ? " is-fatigue" : "") + '" data-x-break' + (b.id ? ' data-id="' + b.id + '"' : "") + ">" +
+      '<input type="text" class="tp-input" data-x-bname value="' + esc(b.name) + '" placeholder="' + esc(t("ui.ops_break_name")) + '" aria-label="' + esc(t("ui.ops_break_name")) + '">' +
+      '<select class="tp-input" data-x-bshift aria-label="' + esc(t("ui.ops_shift")) + '">' + breakShiftOptions(dlg, shiftIndex) + "</select>" +
+      '<select class="tp-input" data-x-bkind aria-label="' + esc(t("ui.ops_break_kind")) + '">' + kindOpts + "</select>" +
+      '<input type="time" class="tp-input" data-x-bstart value="' + esc(b.start_time || "") + '" aria-label="' + esc(t("ui.ops_break_from")) + '"' + (fatigue ? " disabled" : "") + ">" +
+      '<input type="time" class="tp-input" data-x-bend value="' + esc(b.end_time || "") + '" aria-label="' + esc(t("ui.ops_break_to")) + '"' + (fatigue ? " disabled" : "") + ">" +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-btn--icon" data-x-remove aria-label="' + esc(t("global.delete")) + '">×</button>' +
+      "</div>";
+  }
+
+  /* Vuelve a rotular los turnos en cada fila de descanso (al añadir, quitar
+   * o renombrar un turno). Si el turno elegido ya no existe, se deja el primero. */
+  function refreshBreakShiftOptions(dlg) {
+    dlg.querySelectorAll("[data-x-break] [data-x-bshift]").forEach(function (sel) {
+      var cur = sel.value;
+      sel.innerHTML = breakShiftOptions(dlg, cur);
+      if (window.tpSelect && tpSelect.refresh) tpSelect.refresh(sel);
+    });
+  }
+
+  function vehicleStateOptions(typeId, selectedId) {
+    var type = (state.meta.vehicle_types || []).filter(function (vt) { return vt.id === Number(typeId); })[0];
+    var list = type ? type.states : [];
+    return '<option value="">' + esc(t("ui.select_ellipsis")) + "</option>" + list.map(function (s) {
+      return '<option value="' + s.id + '"' + (selectedId === s.id ? " selected" : "") + ">" + esc(s.name) + "</option>";
+    }).join("");
+  }
+
   function openForm(item) {
     var m = state.meta;
     var groups = m.groups || [];
@@ -677,16 +732,35 @@
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-point="load" style="margin-top:6px;">' + esc(t("ui.ops_add_point")) + "</button>", true) +
       field('<span data-x-role-title="unload">' + esc(roleLabel(kind, "unload")) + "</span>", '<div class="tp-ops__points" data-x-points="unload">' + unloads.map(function (p) { return pointRow("unload", p, kind); }).join("") + "</div>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-point="unload" style="margin-top:6px;">' + esc(t("ui.ops_add_point")) + "</button>", true) +
-      field(t("ui.ops_shifts"), '<div class="tp-ops__shifts" data-x-shifts>' + (item ? item.shifts.map(shiftRow).join("") : "") + "</div>" +
+      field(t("ui.ops_shifts"), '<div class="tp-ops__shifts" data-x-shifts data-error-for="shifts">' + (item ? item.shifts.map(shiftRow).join("") : "") + "</div>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-shift style="margin-top:6px;">' + esc(t("ui.ops_add_shift")) + "</button>" +
         '<p class="tp-ops__sub">' + esc(t("ui.ops_shift_crosses_midnight")) + "</p>", true) +
+      // Descansos de cada turno; las filas se pintan al abrir (necesitan el
+      // dialogo para leer los turnos) en fillBreaks().
+      field(t("ui.ops_breaks"), '<div class="tp-ops__breaks" data-x-breaks data-error-for="breaks"></div>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-x-add-break style="margin-top:6px;">' + esc(t("ui.ops_add_break")) + "</button>" +
+        '<p class="tp-ops__sub">' + esc(t("ui.ops_breaks_hint")) + "</p>", true) +
       '<details style="grid-column:1/-1;"><summary class="tp-ops__hint" style="cursor:pointer;">' + esc(t("ui.ops_advanced")) + "</summary>" +
         '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:8px;">' +
         field(t("ui.ops_stop_threshold"), '<input type="number" min="10" class="tp-input" name="stop_threshold_seconds" data-x-stop value="' + (item ? item.stop_threshold_seconds : 60) + '" style="width:100%;">') +
         field(t("ui.ops_min_dwell"), '<input type="number" min="0" class="tp-input" name="min_dwell_seconds" data-x-dwell value="' + (item ? item.min_dwell_seconds : 30) + '" style="width:100%;">') +
         field(t("ui.ops_max_leg_hours"), '<input type="number" min="1" class="tp-input" name="max_leg_hours" data-x-maxleg value="' + (item ? item.max_leg_hours : 6) + '" style="width:100%;">') +
+        field(t("ui.ops_day_start"), '<input type="time" class="tp-input" name="day_start" data-x-daystart value="' + esc((item && item.day_start) || "") + '" style="width:100%;">' +
+          '<span class="tp-ops__hint">' + esc(t("ui.ops_day_start_hint")) + "</span>") +
         "</div>" +
         field(t("ui.ops_authorized_categories"), '<div class="tp-ops__cats">' + catsHtml + "</div>", true) +
+        // Estado de vehiculo automatico (Seguridad): tipo del catalogo del
+        // usuario y que estado es "cargado" y cual "vacio".
+        field(t("ui.ops_vehicle_state_auto"), '<div class="tp-ops__vstate">' +
+          field(t("ui.ops_vehicle_type"), '<select class="tp-input" name="vehicle_type_id" data-x-vtype style="width:100%;">' +
+            '<option value="">' + esc(t("ui.ops_vehicle_type_none")) + "</option>" + (m.vehicle_types || []).map(function (vt) {
+              return '<option value="' + vt.id + '"' + (item && item.vehicle_type_id === vt.id ? " selected" : "") + ">" + esc(vt.name) + "</option>";
+            }).join("") + "</select>") +
+          field(t("ui.ops_loaded_state"), '<select class="tp-input" name="loaded_state_id" data-x-loaded style="width:100%;"' + (item && item.vehicle_type_id ? "" : " disabled") + ">" +
+            vehicleStateOptions(item && item.vehicle_type_id, item && item.loaded_state_id) + "</select>") +
+          field(t("ui.ops_empty_state"), '<select class="tp-input" name="empty_state_id" data-x-empty style="width:100%;"' + (item && item.vehicle_type_id ? "" : " disabled") + ">" +
+            vehicleStateOptions(item && item.vehicle_type_id, item && item.empty_state_id) + "</select>") +
+          '</div><p class="tp-ops__sub">' + esc(t("ui.ops_vehicle_state_auto_hint")) + "</p>", true) +
       "</details>" +
       // Fase 3: descuentos de las horas trabajadas netas (reporte 912).
       field(t("ui.ops_worked_hours"), '<div class="tp-ops__cats">' + Object.keys(m.deductions || {}).map(function (k) {
@@ -715,6 +789,38 @@
     dlg.querySelector("[data-x-group]").addEventListener("change", groupHint);
     groupHint();
 
+    // Descansos guardados: una fila por descanso, apuntando al indice de su turno.
+    var breaksBox = dlg.querySelector("[data-x-breaks]");
+    if (item) {
+      item.shifts.forEach(function (s, i) {
+        (s.breaks || []).forEach(function (b) { breaksBox.insertAdjacentHTML("beforeend", breakRow(dlg, b, i)); });
+      });
+    }
+
+    // Renombrar un turno re-rotula los selects de los descansos.
+    dlg.addEventListener("input", function (e) {
+      if (e.target.matches("[data-x-sname]")) refreshBreakShiftOptions(dlg);
+    });
+    dlg.addEventListener("change", function (e) {
+      if (e.target.matches("[data-x-bkind]")) {
+        var row = e.target.closest("[data-x-break]");
+        var fatigue = e.target.value === "fatigue";
+        row.classList.toggle("is-fatigue", fatigue);
+        row.querySelector("[data-x-bstart]").disabled = fatigue;
+        row.querySelector("[data-x-bend]").disabled = fatigue;
+        return;
+      }
+      if (e.target.matches("[data-x-vtype]")) {
+        var typeId = e.target.value;
+        ["[data-x-loaded]", "[data-x-empty]"].forEach(function (q) {
+          var sel = dlg.querySelector(q);
+          sel.innerHTML = vehicleStateOptions(typeId, null);
+          sel.disabled = !typeId;
+          if (window.tpSelect && tpSelect.refresh) tpSelect.refresh(sel);
+        });
+      }
+    });
+
     // Al cambiar el tipo se rotulan los dos bloques de puntos y se reordenan
     // las geocercas (primero las de la categoria que corresponde al rol).
     dlg.querySelector("[data-x-kind]").addEventListener("change", function () {
@@ -740,10 +846,20 @@
       }
       if (e.target.closest("[data-x-add-shift]")) {
         dlg.querySelector("[data-x-shifts]").insertAdjacentHTML("beforeend", shiftRow(null));
+        refreshBreakShiftOptions(dlg);
+        return;
+      }
+      if (e.target.closest("[data-x-add-break]")) {
+        if (!dlg.querySelector("[data-x-shift]")) { tpModal.toast(t("ui.ops_breaks_need_shift"), "warning"); return; }
+        dlg.querySelector("[data-x-breaks]").insertAdjacentHTML("beforeend", breakRow(dlg, null, 0));
         return;
       }
       var rm = e.target.closest("[data-x-remove]");
-      if (rm) { var row = rm.closest("[data-x-point],[data-x-shift]"); if (row) row.remove(); }
+      if (rm) {
+        var row = rm.closest("[data-x-point],[data-x-shift],[data-x-break]");
+        if (row) row.remove();
+        if (row && row.hasAttribute("data-x-shift")) refreshBreakShiftOptions(dlg);
+      }
     });
   }
 
@@ -758,10 +874,26 @@
       if (gid) points.push({ geofence_id: Number(gid), role: row.getAttribute("data-role") });
     });
     var shifts = [];
-    d.querySelectorAll("[data-x-shift]").forEach(function (row) {
-      var s = { name: row.querySelector("[data-x-sname]").value.trim(), start_time: row.querySelector("[data-x-sstart]").value, end_time: row.querySelector("[data-x-send]").value };
+    var shiftIndexByRow = {}; // indice de fila -> indice en shifts (las filas vacias se saltan)
+    d.querySelectorAll("[data-x-shift]").forEach(function (row, i) {
+      var s = { name: row.querySelector("[data-x-sname]").value.trim(), start_time: row.querySelector("[data-x-sstart]").value, end_time: row.querySelector("[data-x-send]").value, breaks: [] };
       if (row.getAttribute("data-id")) s.id = Number(row.getAttribute("data-id"));
-      if (s.name || s.start_time) shifts.push(s);
+      if (s.name || s.start_time) { shiftIndexByRow[i] = shifts.length; shifts.push(s); }
+    });
+    // Los descansos se reparten en shifts[i].breaks segun el turno elegido;
+    // uno cuyo turno ya no existe se descarta.
+    d.querySelectorAll("[data-x-break]").forEach(function (row) {
+      var idx = shiftIndexByRow[row.querySelector("[data-x-bshift]").value];
+      if (idx === undefined) return;
+      var kind = row.querySelector("[data-x-bkind]").value;
+      var b = {
+        name: row.querySelector("[data-x-bname]").value.trim(),
+        kind: kind,
+        start_time: kind === "fatigue" ? null : row.querySelector("[data-x-bstart]").value,
+        end_time: kind === "fatigue" ? null : row.querySelector("[data-x-bend]").value,
+      };
+      if (row.getAttribute("data-id")) b.id = Number(row.getAttribute("data-id"));
+      if (b.name || b.start_time) shifts[idx].breaks.push(b);
     });
     var cats = [];
     d.querySelectorAll("[data-x-cat]:checked").forEach(function (c) { cats.push(c.value); });
@@ -779,6 +911,10 @@
       stop_threshold_seconds: d.querySelector("[data-x-stop]").value,
       min_dwell_seconds: d.querySelector("[data-x-dwell]").value,
       max_leg_hours: d.querySelector("[data-x-maxleg]").value,
+      day_start: d.querySelector("[data-x-daystart]").value || null,
+      vehicle_type_id: d.querySelector("[data-x-vtype]").value || null,
+      loaded_state_id: d.querySelector("[data-x-loaded]").value || null,
+      empty_state_id: d.querySelector("[data-x-empty]").value || null,
       active: d.querySelector("[data-x-active]").checked ? 1 : 0,
     };
 

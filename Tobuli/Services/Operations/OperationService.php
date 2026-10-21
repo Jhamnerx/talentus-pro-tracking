@@ -10,7 +10,10 @@ use Tobuli\Entities\OperationDeviceState;
 use Tobuli\Entities\OperationPoint;
 use Tobuli\Entities\OperationRecalculation;
 use Tobuli\Entities\OperationShift;
+use Tobuli\Entities\OperationShiftBreak;
 use Tobuli\Entities\User;
+use Tobuli\Entities\VehicleState;
+use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Formatter\Formatter;
 use Tobuli\Services\ModelService;
@@ -21,7 +24,11 @@ use Tobuli\Services\ModelService;
  *
  * Datos que acepta (ademas de los campos de la tabla):
  *   points:  [{geofence_id, role}]          (role: load | unload)
- *   shifts:  [{id?, name, start_time, end_time}]
+ *   shifts:  [{id?, name, start_time, end_time, breaks?: [{id?, name, kind, start_time?, end_time?}]}]
+ *
+ * Reporte de turno (fase A): day_start (H:i, nulo = inicio del primer turno)
+ * y vehicle_type_id / loaded_state_id / empty_state_id (catalogo de Seguridad
+ * del usuario; sin tipo los estados se guardan nulos).
  */
 class OperationService extends ModelService
 {
@@ -49,6 +56,10 @@ class OperationService extends ModelService
             'min_dwell_seconds'      => 'integer|min:0|max:3600',
             'stop_threshold_seconds' => 'integer|min:10|max:3600',
             'max_leg_hours'          => 'integer|min:1|max:48',
+            'day_start'              => 'nullable|date_format:H:i',
+            'vehicle_type_id'        => 'nullable|integer',
+            'loaded_state_id'        => 'nullable|integer',
+            'empty_state_id'         => 'nullable|integer',
             'authorized_categories'  => 'array',
             'authorized_categories.*' => 'in:' . implode(',', Geofence::CATEGORIES),
             'worked_hours_deductions'   => 'array',
@@ -60,6 +71,11 @@ class OperationService extends ModelService
             'shifts.*.name'          => 'required|string|max:60',
             'shifts.*.start_time'    => 'required|date_format:H:i',
             'shifts.*.end_time'      => 'required|date_format:H:i',
+            'shifts.*.breaks'        => 'array',
+            'shifts.*.breaks.*.name'       => 'required|string|max:60',
+            'shifts.*.breaks.*.kind'       => 'required|in:' . implode(',', OperationShiftBreak::KINDS),
+            'shifts.*.breaks.*.start_time' => 'nullable|date_format:H:i',
+            'shifts.*.breaks.*.end_time'   => 'nullable|date_format:H:i',
         ];
 
         $this->setValidationRulesStore($rules);
@@ -90,14 +106,57 @@ class OperationService extends ModelService
             }
         }
 
-        if (! empty($data['shifts'])) {
+        if (! empty($data['shifts']) && is_array($data['shifts'])) {
             foreach ($data['shifts'] as $i => $shift) {
                 foreach (['start_time', 'end_time'] as $k) {
                     if (! empty($shift[$k]) && strlen($shift[$k]) > 5) {
                         $data['shifts'][$i][$k] = substr($shift[$k], 0, 5);
                     }
                 }
+
+                if (array_key_exists('breaks', $shift) && is_string($shift['breaks'])) {
+                    $shift['breaks'] = json_decode($shift['breaks'], true) ?: [];
+                    $data['shifts'][$i]['breaks'] = $shift['breaks'];
+                }
+
+                if (empty($shift['breaks']) || ! is_array($shift['breaks'])) {
+                    continue;
+                }
+
+                foreach ($shift['breaks'] as $j => $break) {
+                    $data['shifts'][$i]['breaks'][$j]['kind'] = $break['kind'] ?? OperationShiftBreak::KIND_SCHEDULED;
+
+                    foreach (['start_time', 'end_time'] as $k) {
+                        $value = $break[$k] ?? null;
+
+                        // El de fatiga no lleva horario; el vacio queda nulo.
+                        if (($break['kind'] ?? null) === OperationShiftBreak::KIND_FATIGUE || $value === '' || $value === null) {
+                            $data['shifts'][$i]['breaks'][$j][$k] = null;
+                            continue;
+                        }
+
+                        $data['shifts'][$i]['breaks'][$j][$k] = strlen($value) > 5 ? substr($value, 0, 5) : $value;
+                    }
+                }
             }
+        }
+
+        if (array_key_exists('day_start', $data)) {
+            $data['day_start'] = $data['day_start'] === '' || $data['day_start'] === null
+                ? null
+                : (strlen($data['day_start']) > 5 ? substr($data['day_start'], 0, 5) : $data['day_start']);
+        }
+
+        foreach (['vehicle_type_id', 'loaded_state_id', 'empty_state_id'] as $k) {
+            if (array_key_exists($k, $data)) {
+                $data[$k] = $data[$k] === '' || $data[$k] === null || (int) $data[$k] === 0 ? null : (int) $data[$k];
+            }
+        }
+
+        // Sin tipo, los estados no tienen sentido: se guardan nulos.
+        if (array_key_exists('vehicle_type_id', $data) && $data['vehicle_type_id'] === null) {
+            $data['loaded_state_id'] = null;
+            $data['empty_state_id'] = null;
         }
 
         return $data;
@@ -153,7 +212,7 @@ class OperationService extends ModelService
         }
 
         if (! empty($data['shifts'])) {
-            $shifts = array_map(fn ($s) => new OperationShift($s), $data['shifts']);
+            $shifts = array_map(fn ($s) => new OperationShift(array_diff_key($s, ['breaks' => 1, 'id' => 1])), $data['shifts']);
 
             foreach ($shifts as $i => $a) {
                 foreach ($shifts as $j => $b) {
@@ -163,10 +222,116 @@ class OperationService extends ModelService
                     }
                 }
             }
+
+            foreach (array_values($data['shifts']) as $i => $shiftData) {
+                if ($message = $this->breaksError($shifts[$i], $shiftData['breaks'] ?? [])) {
+                    $errors['breaks'] = $message;
+                    break;
+                }
+            }
         }
+
+        $this->validateVehicleStates($data, $errors);
 
         if ($errors) {
             throw new ValidationException($errors);
+        }
+    }
+
+    /**
+     * Descansos de un turno: el programado exige inicio y fin dentro del
+     * rango del turno (puede cruzar la medianoche si el turno tambien), dos
+     * programados no se solapan y hay como mucho uno de fatiga.
+     *
+     * @return string|null mensaje de error, o null si todo esta bien
+     */
+    protected function breaksError(OperationShift $shift, $breaks): ?string
+    {
+        if (empty($breaks) || ! is_array($breaks)) {
+            return null;
+        }
+
+        $scheduled = [];
+        $fatigue = 0;
+
+        foreach ($breaks as $row) {
+            $break = new OperationShiftBreak(array_diff_key((array) $row, ['id' => 1]));
+
+            if ($break->isFatigue()) {
+                $fatigue++;
+                continue;
+            }
+
+            if (! $break->start_time || ! $break->end_time) {
+                return trans('front.operation_break_times_required', ['name' => $break->name, 'shift' => $shift->name]);
+            }
+
+            // Todo medido desde el inicio del turno, asi un descanso que cruza
+            // la medianoche (23:30-00:30) cabe en un turno que tambien la
+            // cruza (18:30-06:30) y no en uno diurno. Un fin igual al inicio
+            // del turno se lee como "hasta el final del dia del turno".
+            $shiftStart = OperationShift::seconds($shift->start_time);
+            $offset = fn (string $t) => (OperationShift::seconds($t) - $shiftStart + 86400) % 86400;
+            $shiftLength = $offset($shift->end_time) ?: 86400;
+            $breakStart = $offset($break->start_time);
+            $breakEnd = $offset($break->end_time) ?: 86400;
+
+            $inside = $breakStart < $breakEnd && $breakEnd <= $shiftLength;
+
+            if (! $inside) {
+                return trans('front.operation_break_outside_shift', ['name' => $break->name, 'shift' => $shift->name]);
+            }
+
+            foreach ($scheduled as $other) {
+                if ($break->overlaps($other)) {
+                    return trans('front.operation_breaks_overlap', ['a' => $other->name, 'b' => $break->name, 'shift' => $shift->name]);
+                }
+            }
+
+            $scheduled[] = $break;
+        }
+
+        if ($fatigue > 1) {
+            return trans('front.operation_break_fatigue_once', ['shift' => $shift->name]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Tipo y estados de vehiculo (Seguridad): el tipo es del usuario y los
+     * dos estados son de ese tipo y distintos entre si. normalize() ya dejo
+     * los estados nulos cuando no hay tipo.
+     */
+    protected function validateVehicleStates(array $data, array &$errors): void
+    {
+        if (! array_key_exists('vehicle_type_id', $data) || $data['vehicle_type_id'] === null) {
+            return;
+        }
+
+        $type = VehicleType::where('user_id', $this->user->id)->find($data['vehicle_type_id']);
+
+        if (! $type) {
+            $errors['vehicle_type_id'] = trans('front.operation_vehicle_type_missing');
+
+            return;
+        }
+
+        $stateIds = VehicleState::where('vehicle_type_id', $type->id)->pluck('id')->map(fn ($id) => (int) $id)->all();
+
+        foreach (['loaded_state_id', 'empty_state_id'] as $key) {
+            $id = $data[$key] ?? null;
+
+            if ($id !== null && ! in_array((int) $id, $stateIds, true)) {
+                $errors[$key] = trans('front.operation_vehicle_state_not_of_type', ['type' => $type->name]);
+            }
+        }
+
+        $loaded = $data['loaded_state_id'] ?? null;
+        $empty = $data['empty_state_id'] ?? null;
+
+        if ($loaded !== null && $empty !== null && (int) $loaded === (int) $empty && empty($errors['empty_state_id'])) {
+            $errors['empty_state_id'] = trans('front.operation_vehicle_states_same');
         }
     }
 
@@ -245,11 +410,42 @@ class OperationService extends ModelService
 
             $shift = $shift ? tap($shift)->update($attributes) : $operation->shifts()->create($attributes);
             $keep[] = $shift->id;
+
+            $this->syncBreaks($shift, is_array($data['breaks'] ?? null) ? $data['breaks'] : []);
         }
 
         // Los turnos quitados se borran; las vueltas conservan shift_name/shift_date.
+        // Los descansos caen en cascada con su turno.
         $operation->shifts()->whereNotIn('id', $keep ?: [0])->delete();
         $operation->unsetRelation('shifts');
+    }
+
+    /** Descansos del turno: actualiza por id, crea los nuevos y borra los que no vienen. */
+    protected function syncBreaks(OperationShift $shift, array $breaks): void
+    {
+        $keep = [];
+
+        foreach (array_values($breaks) as $position => $data) {
+            $break = ! empty($data['id'])
+                ? $shift->breaks()->find($data['id'])
+                : null;
+
+            $fatigue = ($data['kind'] ?? null) === OperationShiftBreak::KIND_FATIGUE;
+
+            $attributes = [
+                'name'       => $data['name'],
+                'kind'       => $fatigue ? OperationShiftBreak::KIND_FATIGUE : OperationShiftBreak::KIND_SCHEDULED,
+                'start_time' => $fatigue || empty($data['start_time']) ? null : substr($data['start_time'], 0, 5) . ':00',
+                'end_time'   => $fatigue || empty($data['end_time']) ? null : substr($data['end_time'], 0, 5) . ':00',
+                'position'   => $position,
+            ];
+
+            $break = $break ? tap($break)->update($attributes) : $shift->breaks()->create($attributes);
+            $keep[] = $break->id;
+        }
+
+        $shift->breaks()->whereNotIn('id', $keep ?: [0])->delete();
+        $shift->unsetRelation('breaks');
     }
 
     /**
@@ -463,6 +659,7 @@ class OperationService extends ModelService
         return array_intersect_key($data, array_flip([
             'name', 'kind', 'device_group_id', 'active', 'min_dwell_seconds',
             'stop_threshold_seconds', 'max_leg_hours', 'authorized_categories', 'worked_hours_deductions',
+            'day_start', 'vehicle_type_id', 'loaded_state_id', 'empty_state_id',
         ]));
     }
 }
