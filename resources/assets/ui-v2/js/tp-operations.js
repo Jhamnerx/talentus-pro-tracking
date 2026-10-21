@@ -775,7 +775,8 @@
 
     var dlg = tpModal.open({
       title: item ? t("ui.ops_edit") : t("ui.ops_add"),
-      size: "lg",
+      // xl: con lg los relojes de turnos y descansos recortaban "07:00 AM".
+      size: "xl",
       body: body,
       buttons: [
         { label: t("global.cancel"), variant: "ghost", close: true },

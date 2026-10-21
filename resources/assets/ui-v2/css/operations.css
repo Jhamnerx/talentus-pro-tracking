@@ -212,13 +212,59 @@ tr.is-open .tp-ops__toggle {
   grid-template-columns: 1fr 130px auto;
 }
 
+/* Las horas van a 130px: con menos, el input type=time recorta "07:00 AM"
+   en los navegadores con formato de 12 h. El modal abre en tamaño xl. */
 .tp-ops__shift {
-  grid-template-columns: 1fr 110px 110px auto;
+  grid-template-columns: 1fr 130px 130px auto;
 }
 
 /* Descansos: nombre · turno · tipo · desde · hasta · quitar */
 .tp-ops__break {
-  grid-template-columns: 1fr 130px 170px 100px 100px auto;
+  grid-template-columns: 1fr 120px 150px 130px 130px auto;
+}
+
+/* Pantallas estrechas: nombre y turno/tipo en la primera fila, horas y
+   quitar en la segunda, sin que se recorten los relojes. */
+@media (max-width: 760px) {
+  .tp-ops__shift {
+    grid-template-columns: 1fr 1fr auto;
+  }
+  .tp-ops__shift [data-x-sname] {
+    grid-column: 1 / -1;
+  }
+  .tp-ops__break {
+    grid-template-columns: 1fr 1fr auto;
+  }
+  .tp-ops__break [data-x-bname] {
+    grid-column: 1 / -1;
+  }
+  .tp-ops__break [data-x-bshift],
+  .tp-ops__break [data-x-bkind] {
+    grid-column: span 1;
+  }
+  .tp-ops__break [data-x-bstart] {
+    grid-column: 1;
+  }
+  .tp-ops__break [data-x-bend] {
+    grid-column: 2;
+  }
+  .tp-ops__break [data-x-remove] {
+    grid-column: 3;
+    grid-row: 2 / span 2;
+  }
+  /* Fatiga: sin horas, la fila de relojes desaparece del todo y la × queda
+     junto al turno y el tipo. */
+  .tp-ops__break.is-fatigue [data-x-bstart],
+  .tp-ops__break.is-fatigue [data-x-bend] {
+    display: none;
+  }
+  .tp-ops__break.is-fatigue [data-x-remove] {
+    grid-row: 2;
+  }
+  /* Puntos: la etiqueta de categoria se encoge para que el select respire. */
+  .tp-ops__point {
+    grid-template-columns: 1fr auto auto;
+  }
 }
 
 .tp-ops__break.is-fatigue [data-x-bstart],
