@@ -217,6 +217,21 @@ fuera de operación).
   filas por vehículo: `max_speed, max_speed_device_id, max_speed_at, min_speed,
   min_speed_device_id, min_speed_at, avg_speed, moving_seconds`.
 
+### 3.11 Estado de vehículo (vacío / cargado) automático para Seguridad (añadido el 21-oct)
+
+Los tipos y estados de vehículo del módulo de Seguridad (por ejemplo CAMIONES: VACIO / CARGADO,
+con límite de velocidad por geocerca según el estado) hoy se cambian a mano. Operaciones ya sabe
+en cada momento si el volquete va cargado o vacío, así que lo actualiza solo:
+
+- En la operación (Opciones avanzadas) se elige el **tipo de vehículo** del catálogo del usuario
+  y qué estado corresponde a **cargado** y cuál a **vacío** (`operations.vehicle_type_id`,
+  `loaded_state_id`, `empty_state_id`, los tres opcionales). Si no se configura, no hace nada.
+- `OperationChecker`, al abrir un tramo `outbound` pone el estado «cargado» y al abrir uno
+  `inbound` pone «vacío», siempre con `DeviceClassificationService::setState()` (regla del
+  módulo de clasificación: nunca escribir la tabla a mano) y para el **dueño de la operación**.
+- Efecto: los límites de velocidad por estado de las geocercas y las alertas de exceso se
+  aplican solos según el sentido del viaje, sin que nadie cambie el estado.
+
 ---
 
 ## 4. Diseño técnico
@@ -256,8 +271,9 @@ level_before_pct, level_after_pct, refuel_pct, engine_off (bool)
 ```
 
 **Cambios en tablas existentes:** `operation_shift_breaks` (descansos por turno, programados y
-por fatiga), `operations.day_start` (hora de inicio del día operativo) y
-`operation_stop_reasons.state` (`null | maint | standby`). Los umbrales de combustible no se
+por fatiga), `operations.day_start` (hora de inicio del día operativo),
+`operations.vehicle_type_id / loaded_state_id / empty_state_id` (estado automático para
+Seguridad) y `operation_stop_reasons.state` (`null | maint | standby`). Los umbrales de combustible no se
 duplican: se leen del dispositivo.
 
 Las tres se recalculan por rango con el mismo mecanismo de `OperationRebuildService` (botón
@@ -328,13 +344,13 @@ No se toca: el módulo de Operaciones es solo UI v2 (decisión del 6-oct-2026).
 
 | Fase | Entregables | Esfuerzo | Terminada cuando |
 | ---- | ----------- | -------- | ---------------- |
-| A · Configuración | apartado «Descansos» en el modal (programados y por fatiga), `day_start` en Opciones avanzadas, marca de estado en los motivos de parada (migraciones, modal, validación); el cliente configura sus turnos y descansos; sensores de horas de motor, odómetro y nivel de combustible con sus umbrales de recarga/robo en cada vehículo; geocercas de taller fuera de mina | 2 días | El modal guarda los descansos y los vehículos del piloto tienen los sensores y umbrales asignados |
-| B · Cálculo | Migraciones de las 3 tablas, `OperationShiftSummaryService` (horómetro y odómetro por sensor, estados READY/DELAY/STANDBY/MAINT, abastecimiento reutilizando las acciones de combustible del pipeline acotadas a la parada con motor apagado, estadísticas por hora y de flota), enganche en `operations:process` y en el recálculo | 6 a 7 días | El recálculo de una semana del piloto llena las tablas; horómetro, kilometraje y abastecimientos coinciden con el control manual del cliente |
+| A · Configuración | apartado «Descansos» en el modal (programados y por fatiga), `day_start` y tipo/estados de vehículo (cargado / vacío) en Opciones avanzadas, marca de estado en los motivos de parada (migraciones, modal, validación); el cliente configura sus turnos y descansos; sensores de horas de motor, odómetro y nivel de combustible con sus umbrales de recarga/robo en cada vehículo; geocercas de taller fuera de mina | 2 días | El modal guarda los descansos y los vehículos del piloto tienen los sensores y umbrales asignados |
+| B · Cálculo | Migraciones de las 3 tablas, `OperationShiftSummaryService` (horómetro y odómetro por sensor, estados READY/DELAY/STANDBY/MAINT, abastecimiento reutilizando las acciones de combustible del pipeline acotadas a la parada con motor apagado, estadísticas por hora y de flota), cambio automático del estado de vehículo al abrir cada tramo, comando `operations:clean` enganchado a `server:autoclean`, enganche en `operations:process` y en el recálculo | 7 a 8 días | El recálculo de una semana del piloto llena las tablas; horómetro, kilometraje y abastecimientos coinciden con el control manual del cliente |
 | C · Pantalla «Turno» | Pestaña nueva con **todo en una vista**: tarjetas, cinco gráficas por hora (incluida máx/media/mín de flota con unidad y hora por punto), barra apilada de estados y las tres tablas | 5 a 6 días | El cliente ve en una sola pantalla lo mismo que en su tablero de Power BI |
 | D · Exportación | Excel con el formato del cliente y **gráficos nativos iguales a la pantalla** (PhpSpreadsheet) | 3 a 4 días | El Excel descargado se abre con las mismas tablas y gráficas que la pantalla |
 | E · Piloto y ajustes | Comparar un turno Día y uno Noche completos contra el control del cliente; ajustar umbrales (minutos para "rodando", descanso) | 2 días | Diferencias explicadas y aceptadas |
 
-**Total estimado: 18 a 21 días** de un desarrollador. Orden: A → B → C → D → E. B puede
+**Total estimado: 19 a 22 días** de un desarrollador. Orden: A → B → C → D → E. B puede
 probarse con el recálculo sobre días reales antes de que exista la pantalla.
 
 ---
@@ -362,6 +378,8 @@ Todas las preguntas quedaron respondidas; las decisiones están incorporadas en 
 | Gráfica de flota | clic en un punto abre el historial de esa unidad |
 | Pantalla | los 12 elementos en una sola vista, consulta bajo demanda sin refresco automático |
 | Excel | con gráficas, iguales a las de la pantalla |
+| Estado vacío / cargado de Seguridad | lo actualiza Operaciones al abrir cada tramo (añadido 21-oct) |
+| Purga | con la Limpieza automática del historial de Admin → Herramientas, vía `server:autoclean` |
 
 No queda nada pendiente de definir. Los umbrales de recarga y robo y el tiempo tras la parada
 se toman del dispositivo (pestaña Precisión), igual que en los reportes de combustible.
@@ -375,5 +393,10 @@ se toman del dispositivo (pestaña Precisión), igual que en los reportes de com
 - **Tramas cada 30 s:** la velocidad por hora y el reparto de un tramo entre horas dependen de
   esa frecuencia; con reportes más espaciados la curva se aplana.
 - **Volumen:** las tablas por hora crecen 24 filas por vehículo y día; con 50 vehículos son
-  440 mil filas al año. Índice por `(operation_id, hour_at)` y purga configurable (por ejemplo
-  13 meses), como ya se hace con `kept_days` en otros módulos.
+  440 mil filas al año. Índice por `(operation_id, hour_at)`. **La purga no se configura aparte
+  (decisión 21-oct):** se engancha a la «Limpieza automática del historial» de Admin →
+  Herramientas (`settings('db_clear')`, días para guardar). El comando `server:autoclean` ya
+  llama a `devices:clean`, `events:clean` y `server:reportlogclean`; se agrega
+  `operations:clean {date}` que borra de las tablas de Operaciones (resúmenes de turno,
+  estadísticas por hora, abastecimientos, y también vueltas, tramos, paradas y visitas) lo
+  anterior a esa fecha, respetando los mismos días que las posiciones.
