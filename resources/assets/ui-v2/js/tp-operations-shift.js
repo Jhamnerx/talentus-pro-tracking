@@ -456,7 +456,8 @@
       var def = defs[key];
       def.labels = labels;
       def.shifts = shifts;
-      def.onHover = setHoverAll;
+      // Sin selector de hora compartido: la linea punteada en todas las
+      // graficas a la vez confundia; solo se resalta la grafica bajo el raton.
       if (key === "fleet") def.onClick = function (si, i) { openHistory(def.series[si].meta[i]); };
 
       var legend = fig.querySelector("[data-legend]");
@@ -476,11 +477,6 @@
 
   function drawAll() {
     Object.keys(state.charts).forEach(function (k) { state.charts[k].draw(); });
-  }
-
-  function setHoverAll(i) {
-    state.hover = i;
-    Object.keys(state.charts).forEach(function (k) { state.charts[k].setHover(i); });
   }
 
   /* Historial del vehículo ±5 min alrededor del instante del punto. */
