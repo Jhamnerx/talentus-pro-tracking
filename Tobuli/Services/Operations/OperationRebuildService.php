@@ -23,7 +23,8 @@ use Tobuli\Helpers\Formatter\Formatter;
  * Borra visitas, vueltas, tramos y paradas del vehiculo desde `from`, deja la
  * fila de estado como estaba justo antes de esa hora y vuelve a recorrer las
  * posiciones. Los tramos cerrados quedan con `calculated_at` nulo para que
- * operations:process los calcule.
+ * operations:process los calcule. Al final rehace los resumenes de turno
+ * afectados (OperationShiftSummaryService::rebuildFrom).
  */
 class OperationRebuildService
 {
@@ -98,6 +99,18 @@ class OperationRebuildService
 
         $state = $writer->getState();
         $state->save();
+
+        // Reporte de turno: los resumenes de los turnos que cruzan [from, ahora]
+        // se rehacen con las vueltas y tramos nuevos. Las paradas y el ralenti
+        // de los tramos recien cerrados aun no estan (calculated_at nulo), asi
+        // que lo que depende de paradas (MAINT por motivo, parada del
+        // abastecimiento) se completa en el siguiente cierre o con
+        // operations:summaries.
+        try {
+            (new OperationShiftSummaryService())->rebuildFrom($operation, $device, $fromUtc);
+        } catch (\Throwable $e) {
+            \Log::error("Recalculo de operaciones: resumen de turno del vehiculo {$device->id}: " . $e->getMessage());
+        }
 
         return $state;
     }

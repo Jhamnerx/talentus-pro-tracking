@@ -156,6 +156,23 @@ class Operation extends AbstractEntity implements DisplayInterface
         return $this->hasMany(OperationRecalculation::class);
     }
 
+    /** Resumenes por vehiculo y turno-fecha (reporte de turno). */
+    public function shiftSummaries(): HasMany
+    {
+        return $this->hasMany(OperationShiftSummary::class);
+    }
+
+    /** Estadisticas por hora local, por vehiculo y de flota (device_id nulo). */
+    public function hourStats(): HasMany
+    {
+        return $this->hasMany(OperationHourStat::class);
+    }
+
+    public function refuelings(): HasMany
+    {
+        return $this->hasMany(OperationRefueling::class);
+    }
+
     public function scopeUserOwned(Builder $query, User $user): Builder
     {
         return $query->where('operations.user_id', $user->id);
