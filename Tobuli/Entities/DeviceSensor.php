@@ -337,6 +337,19 @@ class DeviceSensor extends AbstractEntity implements DisplayInterface
         return $this->getSensor()->getPositionValue($position);
     }
 
+    /**
+     * Valor guardado por trama (`sensors_values`), sin pasar por `other`.
+     * Necesario para leer el historico de un odometro virtual o de horas de
+     * motor virtuales: su getDataValue() devuelve el acumulado ACTUAL del
+     * sensor, no el que tenia en esa trama.
+     */
+    public function getValueStored($position)
+    {
+        $sensor = $this->getSensor();
+
+        return $sensor ? $sensor->getPositionStoredValue($position) : null;
+    }
+
     //public for positionWrite
     public function getValueParameters($position)
     {

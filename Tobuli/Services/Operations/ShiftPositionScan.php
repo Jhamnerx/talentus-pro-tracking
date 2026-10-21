@@ -233,8 +233,11 @@ class ShiftPositionScan extends ActionAppend
      */
     protected function sensorValue($sensor, $position): ?float
     {
+        // getSensor() es protegido en DeviceSensor; el acceso publico al valor
+        // guardado por trama es getValueStored() (fallaba en el servidor con
+        // «Call to undefined method DeviceSensor::getSensor()»).
         if ($sensor->type === 'odometer' && $sensor->shown_value_by === 'virtual_odometer') {
-            $value = $sensor->getSensor()->getPositionStoredValue($position);
+            $value = $sensor->getValueStored($position);
         } else {
             $value = $this->getSensorValue($sensor, $position);
         }
