@@ -80,8 +80,8 @@ descanso.
 ### 3.2 Horómetro inicial / antes / después / final + horas ineficientes (bloque 2)
 
 - **Fuente (decidido el 21-oct):** el sensor de horas de motor del vehículo (`engine_hours`).
-  Un vehículo sin ese sensor sale con el horómetro en blanco y un aviso en la fila; no se
-  calcula por ignición. Se toma el valor en la primera trama
+  Se configurará ese sensor en todos los vehículos de este usuario; el que no lo tenga sale con
+  la celda vacía. No se calcula por ignición. Se toma el valor en la primera trama
   del turno, en la última antes del descanso, en la primera después y en la última del turno.
 - **VAR:** final − inicial (igual que el Excel).
 - **Horas ineficientes (ralentí):** suma de `idle_seconds` de los tramos del turno más el
@@ -90,8 +90,9 @@ descanso.
 
 ### 3.3 Kilometraje inicial / final (bloque 3)
 
-- **Fuente:** odómetro del vehículo (`OdometerStart` / `OdometerEnd` del pipeline, que respetan
-  el sensor de odómetro o el virtual por GPS). VAR = diferencia. Se cruza con la suma de
+- **Fuente (decidido el 21-oct):** el sensor de odómetro del vehículo, igual que el horómetro:
+  valor en la primera y en la última trama del turno; sin sensor, celda vacía (no se usa el
+  odómetro virtual por GPS). VAR = diferencia. Se cruza con la suma de
   `distance_meters` de los tramos para detectar saltos de GPS.
 
 ### 3.4 Abastecimiento de combustible (bloque 4)
@@ -111,10 +112,11 @@ descanso.
 
 ### 3.6 Distancia Día / Noche / Promedio (bloque 6)
 
-Los valores de ejemplo (2.8 y 2.9) encajan con **kilómetros por vuelta**. Propuesta: distancia
-media por vuelta completada, por turno y total del día (suma de `distance_meters` de los dos
-tramos ÷ vueltas). Confirmar con el cliente; si quisieran kilómetros totales por turno, sale de
-3.3 sin trabajo adicional.
+**Decidido el 21-oct: son kilómetros totales del turno.** Día = suma de los kilómetros
+recorridos por la flota en el turno Día, Noche = lo mismo en el turno Noche, Promedio = media de
+los dos. Fuente: la diferencia de odómetro de cada vehículo en el turno (3.3) sumada por flota;
+para un vehículo sin sensor de odómetro se usa la suma de `distance_meters` de sus tramos y se
+marca como estimado.
 
 ### 3.7 Detalle de estados por equipo (bloque 7)
 
@@ -157,8 +159,10 @@ igual que la captura, y con los mismos colores (naranja, rojo, verde, amarillo).
 - Cada punto de la gráfica guarda `device_id`, placa y `at` (fecha-hora exacta). Al pasar el
   ratón o tocar el punto se muestra «CFW-813 · 14:37:12 · 42 km/h»; al hacer clic se abre el
   historial de ese vehículo en ese minuto (ya existe `?device=&from=&to=`).
-- La mínima excluye tramas detenidas (velocidad 0); si no, siempre sería 0. Umbral: la
-  velocidad mínima de movimiento del sistema (`min_moving_speed`).
+- La mínima excluye tramas detenidas; si no, siempre sería 0. **Decidido el 21-oct:** el
+  módulo está pensado para equipos que leen la velocidad del OBD del vehículo (FMC150), con
+  velocidad mínima de movimiento de **1 km/h**. Para otros equipos se usa la velocidad mínima de
+  movimiento configurada en el sistema (`min_moving_speed`).
 - Se guarda en `operation_hour_stats` por **flota** (fila con `device_id` nulo) además de las
   filas por vehículo: `max_speed, max_speed_device_id, max_speed_at, min_speed,
   min_speed_device_id, min_speed_at, avg_speed, moving_seconds`.
@@ -268,8 +272,10 @@ probarse con el recálculo sobre días reales antes de que exista la pantalla.
 
 ## 6. Preguntas para el cliente antes de empezar
 
-Ya decidido (21-oct): el horómetro sale del sensor de horas del vehículo, STANDBY es el tiempo
-parado y todas las gráficas van en una sola pantalla del módulo de Operaciones.
+Ya decidido (21-oct): horómetro y kilometraje desde los sensores del vehículo (celda vacía si
+no lo tiene), STANDBY es el tiempo parado, distancia = kilómetros totales del turno, velocidad
+desde el OBD (FMC150) con mínimo de movimiento 1 km/h, y los 12 elementos en una sola pantalla
+del módulo de Operaciones.
 
 **Turno y descanso**
 
@@ -280,51 +286,40 @@ parado y todas las gráficas van en una sola pantalla del módulo de Operaciones
 3. La hora inicial y final de cada volquete en el turno, ¿es la primera y la última vez que
    encendió el motor, o la primera y la última vez que se movió?
 
-**Horómetro y kilometraje**
-
-4. ¿Todos los volquetes reportan el horómetro del equipo al GPS? Los que no lo tengan saldrán en
-   blanco en esa tabla. ¿Quieren que para esos se muestre el calculado por ignición, marcado
-   como estimado, o que quede vacío?
-5. El kilometraje inicial y final, ¿del odómetro del vehículo o del recorrido GPS?
-
 **Estados del equipo**
 
-6. Si STANDBY es todo el tiempo parado, ¿qué queda en DELAY? Opciones: (a) vueltas más lentas que
+4. Si STANDBY es todo el tiempo parado, ¿qué queda en DELAY? Opciones: (a) vueltas más lentas que
    el ciclo esperado y pérdida de señal; (b) las paradas no autorizadas pasan a DELAY y STANDBY
    se queda solo con las autorizadas y el descanso.
-7. MAINT: ¿basta con el tiempo dentro de la zona de taller, o hay mantenimientos en campo que se
+5. MAINT: ¿basta con el tiempo dentro de la zona de taller, o hay mantenimientos en campo que se
    deben registrar a mano?
-8. ¿Qué pasa con el tiempo con motor apagado fuera de turno? Propuesta: barra gris «fuera de
+6. ¿Qué pasa con el tiempo con motor apagado fuera de turno? Propuesta: barra gris «fuera de
    operación» para que cada vehículo cierre en 24 h.
 
 **Gráficas por hora**
 
-9. «Volquete rodando»: ¿cuántos minutos de movimiento dentro de la hora hacen que cuente?
+7. «Volquete rodando»: ¿cuántos minutos de movimiento dentro de la hora hacen que cuente?
    Propuesta 5.
-10. Velocidad vacío y cargado: confirmar que cargado es el viaje de carga a descarga y vacío el
-    regreso (no hay sensor de peso).
-11. Velocidad mínima de la flota por hora: ¿se toma solo con el vehículo en movimiento (lo
-    propuesto; si no, siempre sería 0)? ¿Desde qué velocidad se considera «en movimiento»?
-12. Velocidad media de la flota: ¿promedio simple de los vehículos que se movieron en esa hora, o
-    ponderado por el tiempo que cada uno estuvo en movimiento?
-13. Al hacer clic en un punto de la gráfica (unidad y hora), ¿quieren abrir el historial de ese
+8. Velocidad vacío y cargado: confirmar que cargado es el viaje de carga a descarga y vacío el
+   regreso (no hay sensor de peso).
+9. Velocidad media de la flota: ¿promedio simple de los vehículos que se movieron en esa hora, o
+   ponderado por el tiempo que cada uno estuvo en movimiento?
+10. Al hacer clic en un punto de la gráfica (unidad y hora), ¿quieren abrir el historial de ese
     vehículo en ese momento?
-14. La pantalla única: ¿se va a proyectar en una sala (hace falta modo pantalla completa y
+11. La pantalla única: ¿se va a proyectar en una sala (hace falta modo pantalla completa y
     refresco automático) o se consulta desde el escritorio?
 
-**Distancia y combustible**
+**Combustible**
 
-15. Los valores de distancia 2,8 / 2,9 del tablero, ¿son kilómetros por vuelta o kilómetros
-    totales del turno?
-16. El abastecimiento, ¿siempre en el grifo (zona) o también con cisterna en campo? En campo
+12. El abastecimiento, ¿siempre en el grifo (zona) o también con cisterna en campo? En campo
     solo se detecta con sensor de nivel de combustible. ¿Quieren los galones cargados o solo las
     horas?
 
 **Entrega**
 
-17. ¿Necesitan el Excel con el mismo formato que `TALENTUS (1).xlsx` o les sirve la pantalla y un
+13. ¿Necesitan el Excel con el mismo formato que `TALENTUS (1).xlsx` o les sirve la pantalla y un
     Excel con tablas simples?
-18. ¿Quién recibe el reporte y con qué frecuencia (al cierre de cada turno por correo, o bajo
+14. ¿Quién recibe el reporte y con qué frecuencia (al cierre de cada turno por correo, o bajo
     demanda desde la pantalla)?
 
 ---
