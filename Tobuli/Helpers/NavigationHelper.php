@@ -195,6 +195,11 @@ function getNavigation()
                     'route' => 'admin.command_templates.index',
                     'childs' => '',
                 ],
+                [
+                    'title' => '<span class="text">' . trans('admin.command_rules') . '</span>',
+                    'route' => 'admin.command_rules.index',
+                    'childs' => '',
+                ],
             ]
         ];
 
