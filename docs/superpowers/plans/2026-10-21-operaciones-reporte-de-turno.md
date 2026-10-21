@@ -63,21 +63,27 @@ Excel con el formato del cliente.
 
 ## 3. Brechas y cómo cubrir cada bloque
 
-### 3.1 Descanso dentro del turno (afecta a 2 y 5)
+### 3.1 Descansos: apartado propio en el modal de la operación (afecta a 2 y 5)
 
-**Respuesta del cliente (21-oct):** el descanso del turno Día es de 12:00 a 13:00 (almuerzo) y
-el del turno Noche de 02:00 a 03:00. Además puede haber **más de un descanso** por fatiga y
-somnolencia.
+**Respuesta del cliente:** Día 12:00–13:00 (almuerzo), Noche 02:00–03:00, y puede haber más de
+un descanso por fatiga y somnolencia. **Decisión (21-oct):** nada de horarios en el código; los
+turnos siguen siendo los que se configuren en la operación y los descansos se configuran en un
+apartado nuevo **«Descansos»** del mismo modal, debajo de Turnos.
 
-- **Configuración:** cada turno lleva una **lista de descansos** (tabla `operation_shift_breaks`:
-  `shift_id`, `name`, `start_time`, `end_time`, `position`), editable en el modal de la operación.
-  El descanso principal (almuerzo / 02:00) es el que define las columnas «antes» y «después del
-  descanso» de las tablas 2 y 5; los demás descansos solo descuentan tiempo y cuentan como
-  STANDBY.
-- **Descansos no programados (fatiga):** una parada con **motor apagado** dentro del turno
-  cuenta como STANDBY sin configurar nada (regla del cliente en 3.7). Si quieren verlos con
-  nombre en el reporte, se justifica la parada con un motivo «Descanso por fatiga» (el catálogo
-  de motivos ya existe).
+- **Tabla `operation_shift_breaks`:** `shift_id`, `name`, `kind` (`scheduled` | `fatigue`),
+  `start_time`, `end_time` (solo para los programados), `position`.
+- **Descanso programado** (almuerzo, refrigerio): nombre + hora de inicio y fin dentro del
+  turno. El primero de la lista es el que define las columnas «antes» y «después del descanso»
+  de las tablas 2 y 5; si hay más de uno programado, se usa el más largo y los demás solo
+  descuentan tiempo.
+- **Descanso por fatiga y somnolencia:** se agrega con una casilla «Permitir descanso por
+  fatiga y somnolencia» en el apartado, sin horario. Cuenta como ese descanso toda parada con
+  **motor apagado** fuera de los descansos programados; si quieren verlo con nombre en las
+  tablas, el operador justifica la parada con el motivo «Fatiga y somnolencia» (el catálogo de
+  motivos ya existe y se puede seedear ese motivo). Todos los descansos cuentan como STANDBY.
+- **Modal:** mismo patrón de filas que Turnos (nombre, turno al que pertenece, tipo, desde,
+  hasta, botón quitar) con «+ Agregar descanso». Validación: dentro del rango del turno, sin
+  solaparse entre sí.
 
 ### 3.1b Día operativo y turnos con margen de 30 minutos
 
@@ -88,8 +94,9 @@ por eso quieren un **margen de 30 minutos**.
 - Los turnos se configuran ya con el margen: **Día 06:30–18:30** y **Noche 18:30–06:30**. Así
   no hay huecos, toda vuelta cae en un turno y el día operativo (06:30 → 06:30) es la suma de los
   dos turnos. Esto ya lo soporta `operation_shifts` sin cambios.
-- Campo nuevo en la operación: `day_start` (hora a la que empieza el día operativo, por defecto
-  el inicio del primer turno, aquí 06:30). La pantalla y el Excel del «día X» cubren de las 06:30
+- Campo nuevo en la operación (Opciones avanzadas): `day_start`, hora a la que empieza el día
+  operativo; por defecto, el inicio del primer turno configurado. Ningún horario queda fijo en
+  el código. La pantalla y el Excel del «día X» cubren de las 06:30
   del X a las 06:30 del X+1; el turno Noche del X cuenta para el día X.
 - Las tarjetas «Turno Día / Turno Noche / Total del día» usan esos cortes.
 
@@ -114,24 +121,25 @@ por eso quieren un **margen de 30 minutos**.
 ### 3.4 Abastecimiento de combustible (bloque 4)
 
 **Respuesta del cliente:** todo el abastecimiento es con **cisterna en campo** y el lugar es
-dinámico, así que no hay geocerca de grifo. Los equipos solo leen el **% del tanque**, no
-galones. La regla que pide: el equipo para y apaga motor («fuera de operación»); si al volver a
-encender el nivel subió, esa parada fue un abastecimiento.
+dinámico, así que no hay geocerca de grifo. Los equipos solo leen el **% del tanque**. Regla: el
+equipo para y apaga motor; si al volver a encender el nivel subió, esa parada fue un
+abastecimiento.
 
-- **Detección:** por cada parada con motor apagado dentro del turno se compara el % de
-  combustible de la última trama estable antes de apagar con el de la primera trama estable
-  después de encender (se promedian unas tramas para filtrar el balanceo del tanque). Si la
-  diferencia supera el salto mínimo (`refuel_min_percent`, configurable en la operación,
-  propuesta 5 puntos), la parada se registra como abastecimiento.
+- **Se reutiliza lo que ya usan los reportes de combustible** (`FuelFillingsReport`,
+  `FuelTheftsReport`): las acciones del pipeline `AppendFuelChange` → `AppendFuelFillingChange` /
+  `AppendFuelTheftChange` → `GroupFuelFilling` ya entregan, por cada subida de nivel, el nivel
+  **antes**, el nivel **después**, la diferencia y la hora. El módulo solo las acota a la parada
+  con motor apagado y las guarda por turno; no se escribe una detección nueva.
+- **Umbrales desde el vehículo, no fijos (decisión 21-oct):** el salto mínimo de recarga y de
+  robo ya se configuran en el dispositivo (pestaña Precisión: `min_fuel_fillings`,
+  `min_fuel_thefts`, y `fuel_detect_sec_after_stop` para el tiempo tras la parada). Las mismas
+  acciones del pipeline los leen de ahí (`$this->history->config('min_fuel_fillings')`), así que
+  el módulo hereda esa configuración por vehículo. No se agrega ningún umbral a la operación.
 - **Columnas:** hora inicial = apagado de motor, hora final = encendido, VAR = duración, **% al
   llegar**, **% al salir** y **recarga en puntos de %**. Fila por cada abastecimiento del turno.
-- Una subida de nivel **con motor encendido** (recarga sin apagar) también se registra, marcada
-  como «sin apagar motor».
-- Reutiliza `AppendFuelFillingChange` / `GroupFuelFilling` del pipeline (ya detectan subidas de
-  nivel) acotados a la parada con motor apagado; el margen de ruido del sensor se toma de la
-  configuración del sensor de combustible del vehículo.
-- Ese tiempo se descuenta de las horas efectivas (ya es el descuento «abastecimiento» del
-  reporte 912) y en los estados del equipo va a STANDBY (motor apagado).
+  Una subida con motor encendido también se registra, marcada «sin apagar motor».
+- El tiempo de abastecimiento se descuenta de las horas efectivas (ya es el descuento
+  «abastecimiento» del reporte 912) y en los estados del equipo va a STANDBY (motor apagado).
 
 ### 3.5 Hora inicial / final del turno por vehículo (bloque 5)
 
@@ -151,15 +159,15 @@ marca como estimado.
 
 ### 3.7 Detalle de estados por equipo (bloque 7)
 
-**Respuesta del cliente:** DELAY = equipo **encendido sin moverse**; STANDBY = refrigerio,
-descanso y parado con **motor apagado**; MAINT = paso por una geocerca de taller (los talleres
+**Respuesta del cliente:** DELAY = **ralentí** (motor encendido sin moverse); STANDBY =
+descanso o **motor apagado sin movimiento**; MAINT = paso por una geocerca de taller (los talleres
 están fuera de mina) y, si se puede, registro manual desde la laptop; el resto en gris.
 
 | Estado | Cómo se calcula, por vehículo y día operativo (24 h) |
 | ------ | --------------------------------------------------- |
 | **READY** | tiempo en movimiento (tramos: `duration − stop − idle − gap`) más el tiempo en carga y descarga en movimiento |
-| **DELAY** | tiempo con **motor encendido y sin movimiento**: ralentí en tramos (`idle_seconds`), paradas con `engine_on_seconds`, esperas en cola con motor encendido |
-| **STANDBY** | descansos configurados del turno, paradas con **motor apagado** (incluye fatiga y abastecimiento) y tiempo en geocerca de categoría descanso |
+| **DELAY** | **ralentí**: motor encendido sin movimiento, dentro o fuera de los puntos (`idle_seconds` de los tramos y `engine_on_seconds` de las paradas), con el mismo criterio que la alerta y el reporte de ralentí |
+| **STANDBY** | descansos configurados (programados y por fatiga) y cualquier parada con **motor apagado sin movimiento** dentro del turno (incluye abastecimiento) |
 | **MAINT** | tiempo dentro de una geocerca de categoría **taller** (desde que entra hasta que sale) y paradas justificadas con un motivo marcado como mantenimiento |
 | **Fuera de operación** (gris) | motor apagado fuera de turno y «sin datos» (`gap_seconds`), para que la barra cierre en 24 h |
 
@@ -243,13 +251,14 @@ max_speed, max_speed_device_id, max_speed_at, min_speed, min_speed_device_id, mi
 subida del % de tanque, o subida con motor encendido):
 
 ```
-operation_id, device_id, shift_summary_id, stop_id (nullable), started_at, ended_at,
+operation_id, device_id, shift_summary_id, stop_id (nullable), sensor_id, started_at, ended_at,
 level_before_pct, level_after_pct, refuel_pct, engine_off (bool)
 ```
 
-**Cambios en tablas existentes:** `operation_shift_breaks` (lista de descansos por turno),
-`operations.day_start` (hora de inicio del día operativo) y `operations.refuel_min_percent`,
-`operation_stop_reasons.state` (`null | maint | standby`).
+**Cambios en tablas existentes:** `operation_shift_breaks` (descansos por turno, programados y
+por fatiga), `operations.day_start` (hora de inicio del día operativo) y
+`operation_stop_reasons.state` (`null | maint | standby`). Los umbrales de combustible no se
+duplican: se leen del dispositivo.
 
 Las tres se recalculan por rango con el mismo mecanismo de `OperationRebuildService` (botón
 Recalcular ya existente), y `operations:process` cierra el turno anterior cada vez que cambia
@@ -319,8 +328,8 @@ No se toca: el módulo de Operaciones es solo UI v2 (decisión del 6-oct-2026).
 
 | Fase | Entregables | Esfuerzo | Terminada cuando |
 | ---- | ----------- | -------- | ---------------- |
-| A · Configuración | lista de descansos por turno, `day_start` y `refuel_min_percent` en la operación, marca de estado en los motivos de parada (migraciones, modal, validación); turnos Día 06:30–18:30 y Noche 18:30–06:30 con sus descansos; sensores de horas de motor, odómetro y nivel de combustible en los vehículos; geocercas de taller fuera de mina | 2 días | El modal guarda los descansos y los vehículos del piloto tienen los sensores asignados |
-| B · Cálculo | Migraciones de las 3 tablas, `OperationShiftSummaryService` (horómetro y odómetro por sensor, estados READY/DELAY/STANDBY/MAINT, abastecimiento por parada con motor apagado y salto de %, estadísticas por hora y de flota), enganche en `operations:process` y en el recálculo | 6 a 7 días | El recálculo de una semana del piloto llena las tablas; horómetro, kilometraje y abastecimientos coinciden con el control manual del cliente |
+| A · Configuración | apartado «Descansos» en el modal (programados y por fatiga), `day_start` en Opciones avanzadas, marca de estado en los motivos de parada (migraciones, modal, validación); el cliente configura sus turnos y descansos; sensores de horas de motor, odómetro y nivel de combustible con sus umbrales de recarga/robo en cada vehículo; geocercas de taller fuera de mina | 2 días | El modal guarda los descansos y los vehículos del piloto tienen los sensores y umbrales asignados |
+| B · Cálculo | Migraciones de las 3 tablas, `OperationShiftSummaryService` (horómetro y odómetro por sensor, estados READY/DELAY/STANDBY/MAINT, abastecimiento reutilizando las acciones de combustible del pipeline acotadas a la parada con motor apagado, estadísticas por hora y de flota), enganche en `operations:process` y en el recálculo | 6 a 7 días | El recálculo de una semana del piloto llena las tablas; horómetro, kilometraje y abastecimientos coinciden con el control manual del cliente |
 | C · Pantalla «Turno» | Pestaña nueva con **todo en una vista**: tarjetas, cinco gráficas por hora (incluida máx/media/mín de flota con unidad y hora por punto), barra apilada de estados y las tres tablas | 5 a 6 días | El cliente ve en una sola pantalla lo mismo que en su tablero de Power BI |
 | D · Exportación | Excel con el formato del cliente y **gráficos nativos iguales a la pantalla** (PhpSpreadsheet) | 3 a 4 días | El Excel descargado se abre con las mismas tablas y gráficas que la pantalla |
 | E · Piloto y ajustes | Comparar un turno Día y uno Noche completos contra el control del cliente; ajustar umbrales (minutos para "rodando", descanso) | 2 días | Diferencias explicadas y aceptadas |
@@ -337,16 +346,16 @@ Todas las preguntas quedaron respondidas; las decisiones están incorporadas en 
 
 | Tema | Decisión |
 | ---- | -------- |
-| Descanso | Día 12:00–13:00 (almuerzo), Noche 02:00–03:00; puede haber más de uno (fatiga, somnolencia) |
-| Día operativo | 06:30 → 06:30; turnos Día 07:00–18:00 y Noche 19:00–06:00 con margen de 30 min (se configuran 06:30–18:30 y 18:30–06:30) |
+| Descanso | se configura en un apartado «Descansos» de la operación (programados con horario, y por fatiga y somnolencia sin horario); el cliente cargará Día 12:00–13:00 y Noche 02:00–03:00 |
+| Día operativo | según los turnos que configure la operación (el cliente cargará Día 06:30–18:30 y Noche 18:30–06:30 para su margen de 30 min); inicio del día operativo configurable, sin horarios en el código |
 | Hora inicial / final del volquete | primera y última vez que se mueve en el turno |
-| DELAY | motor encendido sin moverse |
-| STANDBY | refrigerio, descanso y parado con motor apagado |
+| DELAY | ralentí (motor encendido sin moverse) |
+| STANDBY | descanso o motor apagado sin movimiento |
 | MAINT | paso por geocerca de taller (fuera de mina) y registro manual desde la laptop (motivo de parada marcado como mantenimiento) |
 | Motor apagado fuera de turno | gris «fuera de operación» para cerrar las 24 h |
 | Volquete rodando | cuenta desde que se mueve |
 | Cargado / vacío | cargado = carga → descarga, vacío = regreso |
-| Abastecimiento | cisterna en campo, lugar dinámico: parada con motor apagado + subida del % del tanque al encender; se muestra % al llegar, % al salir y recarga en % |
+| Abastecimiento | cisterna en campo, lugar dinámico: parada con motor apagado + subida del % del tanque al encender, con las mismas acciones que usan los reportes de combustible; umbrales de recarga y robo desde la configuración del vehículo; se muestra % al llegar, % al salir y recarga en % |
 | Horómetro / kilometraje | sensores del vehículo; celda vacía si no lo tiene |
 | Distancia | kilómetros totales del turno |
 | Velocidad | OBD (FMC150), mínimo de movimiento 1 km/h; media solo con unidades en movimiento |
@@ -354,9 +363,8 @@ Todas las preguntas quedaron respondidas; las decisiones están incorporadas en 
 | Pantalla | los 12 elementos en una sola vista, consulta bajo demanda sin refresco automático |
 | Excel | con gráficas, iguales a las de la pantalla |
 
-Quedan dos ajustes finos para el piloto, no bloquean el inicio: el **salto mínimo de %** que
-cuenta como recarga (propuesta 5 puntos) y cuántas tramas se promedian para leer el nivel antes
-y después de la parada.
+No queda nada pendiente de definir. Los umbrales de recarga y robo y el tiempo tras la parada
+se toman del dispositivo (pestaña Precisión), igual que en los reportes de combustible.
 
 ---
 
