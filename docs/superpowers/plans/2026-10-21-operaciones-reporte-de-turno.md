@@ -8,25 +8,36 @@ para cubrirlo.
 
 ## 1. Qué pide el cliente
 
-Todo gira alrededor del **turno** (Día / Noche) y del **vehículo** (volquete). Son ocho bloques:
+El Excel tiene **11 elementos**: 5 bloques de celdas (el selector de turno y 4 tablas) y 6
+imágenes pegadas de un tablero (Power BI). Todo va por **turno** (Día / Noche) y por
+**vehículo** (volquete). Numerados como aparecen en la hoja, de izquierda a derecha y de arriba
+abajo:
 
-| # | Bloque | Columnas / contenido | Fórmula del Excel |
-| - | ------ | -------------------- | ----------------- |
-| 1 | Horómetro | inicial · antes del descanso · después del descanso · final · VAR · horas ineficientes (ralentí) | `VAR = final − inicial` |
-| 2 | Kilometraje | inicial · final · VAR | `VAR = final − inicial` |
-| 3 | Abastecimiento de combustible | hora inicial · hora final · VAR | `VAR = final − inicial` (duración del abastecimiento) |
-| 4 | Horas del turno | hora inicial · antes del descanso · después del descanso · final · VAR | `VAR = (final − inicial) − (después − antes)` = horas efectivas sin el descanso |
-| 5 | Distancia | Día · Noche · Promedio (2.8 / 2.9 / 2.8) | — (parece km por vuelta) |
-| 6 | Detalle de estados por equipo (horas) | barra apilada por vehículo: DELAY · MAINT · READY · STANDBY, suma 24 h | — |
-| 7 | Volquetes rodando por hora | línea de 7 a 6 con la cantidad por hora · tarjetas Turno Día / Noche / Total del día | — |
-| 8 | Velocidad promedio por hora | vacío por hora · cargado por hora · ambas en una · tarjetas Día / Noche / Promedio | — |
-| 9 | Velocidad de la flota por hora (añadido el 21-oct) | una gráfica con la velocidad **máxima**, **media** y **mínima** de la flota en cada hora; cada punto guarda **qué unidad** la alcanzó y **a qué hora** exacta | — |
+| # | Elemento | Tipo en el Excel | Contenido | Fórmula del Excel |
+| - | -------- | ---------------- | --------- | ----------------- |
+| 1 | Turno | selector (B2:C2) | Día / Noche | — |
+| 2 | Horómetro | tabla (B4:H9) | inicial · antes del descanso · después del descanso · final · VAR · horas ineficientes (ralentí) | `VAR = final − inicial` |
+| 3 | Kilometraje | tabla (J4:M9) | inicial · final · VAR | `VAR = final − inicial` |
+| 4 | Abastecimiento de combustible | tabla (B12:E18) | hora inicial · hora final · VAR | `VAR = final − inicial` |
+| 5 | Horas del turno | tabla (J12:O17) | hora inicial · antes del descanso · después del descanso · final · VAR | `VAR = (final − inicial) − (después − antes)` |
+| 6 | Distancia | imagen 6 | Día · Noche · Promedio (2,8 / 2,9 / 2,8) | — |
+| 7 | Detalle de estados por equipo (horas) | imagen 5 | barra apilada por vehículo: DELAY · MAINT · READY · STANDBY, suma 24 h | — |
+| 8 | Cantidad de volquetes rodando por hora | imagen 3 | línea de 7 a 6 · tarjetas Turno Día / Noche / Total del día | — |
+| 9 | Velocidad promedio vacío por hora | imagen 1 | línea de 7 a 6 · tarjetas Turno Día / Noche / Total | — |
+| 10 | Velocidad promedio cargado por hora | imagen 2 | línea de 7 a 6 · tarjetas Turno Día / Noche / Total | — |
+| 11 | Velocidad promedio cargado y vacío por hora | imagen 4 | las dos líneas juntas · tarjetas Día / Noche / Promedio por sentido | — |
 
-El Excel solo trae las tablas 1 a 4 con un vehículo de ejemplo; los bloques 5 a 8 están en
-capturas de un tablero (parecen Power BI) y hay que reproducirlos.
+Añadido el 21-oct, fuera del Excel:
 
-**Condición añadida el 21-oct:** todas las gráficas deben verse **en una sola pantalla** dentro del
-módulo de Operaciones (un tablero, sin pestañas internas ni páginas aparte).
+| # | Elemento | Contenido |
+| - | -------- | --------- |
+| 12 | Velocidad de la flota por hora | una gráfica con la velocidad **máxima**, **media** y **mínima** de la flota en cada hora; cada punto guarda **qué unidad** la alcanzó y **a qué hora** exacta |
+
+**Condición añadida el 21-oct:** los 12 elementos deben verse **en una sola pantalla** dentro del
+módulo de Operaciones (un tablero, sin pestañas internas ni páginas aparte). El selector de turno
+(elemento 1) es el filtro de esa pantalla.
+
+En el resto del documento se usa esta numeración; las secciones 3.x la citan como «bloque N».
 
 ---
 
@@ -52,7 +63,7 @@ Excel con el formato del cliente.
 
 ## 3. Brechas y cómo cubrir cada bloque
 
-### 3.1 Descanso dentro del turno (afecta a 1 y 4)
+### 3.1 Descanso dentro del turno (afecta a 2 y 5)
 
 Hoy el turno es solo inicio y fin. El cliente necesita el momento "antes" y "después" del
 descanso.
@@ -66,7 +77,7 @@ descanso.
 - **Decisión pendiente con el cliente:** si el descanso es fijo (refrigerio a la misma hora para
   todos) o por vehículo (cuando entra a la zona de descanso).
 
-### 3.2 Horómetro inicial / antes / después / final + horas ineficientes (bloque 1)
+### 3.2 Horómetro inicial / antes / después / final + horas ineficientes (bloque 2)
 
 - **Fuente (decidido el 21-oct):** el sensor de horas de motor del vehículo (`engine_hours`).
   Un vehículo sin ese sensor sale con el horómetro en blanco y un aviso en la fila; no se
@@ -77,20 +88,20 @@ descanso.
   ralentí de las paradas (`operation_stops.engine_on_seconds`) fuera de los puntos de carga y
   descarga. Ya es uno de los descuentos del reporte 912; aquí se muestra como columna.
 
-### 3.3 Kilometraje inicial / final (bloque 2)
+### 3.3 Kilometraje inicial / final (bloque 3)
 
 - **Fuente:** odómetro del vehículo (`OdometerStart` / `OdometerEnd` del pipeline, que respetan
   el sensor de odómetro o el virtual por GPS). VAR = diferencia. Se cruza con la suma de
   `distance_meters` de los tramos para detectar saltos de GPS.
 
-### 3.4 Abastecimiento de combustible (bloque 3)
+### 3.4 Abastecimiento de combustible (bloque 4)
 
 - **Hora inicial / final:** entrada y salida a una geocerca de categoría **grifo** dentro del
   turno (el reporte 912 ya las usa para descontar). Si el vehículo tiene sensor de nivel, se
   muestra además los litros/galones cargados (`GroupFuelFilling`).
 - Si hay más de un abastecimiento en el turno, una fila por cada uno.
 
-### 3.5 Hora inicial / final del turno por vehículo (bloque 4)
+### 3.5 Hora inicial / final del turno por vehículo (bloque 5)
 
 - **Hora inicial:** primera trama con motor encendido (o primer movimiento) dentro del turno.
 - **Hora final:** última trama con motor encendido dentro del turno.
@@ -98,14 +109,14 @@ descanso.
 - **VAR:** (final − inicial) − (después − antes), como en el Excel. Es la misma idea que las
   "horas netas" del reporte 912, pero por turno y con el descanso como descuento.
 
-### 3.6 Distancia Día / Noche / Promedio (bloque 5)
+### 3.6 Distancia Día / Noche / Promedio (bloque 6)
 
 Los valores de ejemplo (2.8 y 2.9) encajan con **kilómetros por vuelta**. Propuesta: distancia
 media por vuelta completada, por turno y total del día (suma de `distance_meters` de los dos
 tramos ÷ vueltas). Confirmar con el cliente; si quisieran kilómetros totales por turno, sale de
 3.3 sin trabajo adicional.
 
-### 3.7 Detalle de estados por equipo (bloque 6)
+### 3.7 Detalle de estados por equipo (bloque 7)
 
 No existe un "estado del equipo" con esas cuatro categorías. Propuesta de equivalencia, por
 vehículo y día (24 h), construida con lo que ya se guarda:
@@ -121,14 +132,14 @@ vehículo y día (24 h), construida con lo que ya se guarda:
 Se presenta como barra apilada horizontal por vehículo con las horas dentro de cada tramo,
 igual que la captura, y con los mismos colores (naranja, rojo, verde, amarillo).
 
-### 3.8 Volquetes rodando por hora (bloque 7)
+### 3.8 Volquetes rodando por hora (bloque 8)
 
 - Por cada hora del día, cantidad de vehículos distintos que tuvieron al menos X minutos de
   movimiento en tramo (propuesta: 5 min, configurable). Fuente: `operation_legs` cruzados con la
   hora.
 - Tarjetas: promedio de las horas del turno Día, del turno Noche y del día completo.
 
-### 3.9 Velocidad promedio vacío / cargado por hora (bloque 8)
+### 3.9 Velocidad promedio vacío / cargado por hora (bloques 9, 10 y 11)
 
 - En una operación de acarreo, **cargado = tramo `outbound`** (carga → descarga) y
   **vacío = tramo `inbound`** (descarga → carga).
@@ -137,7 +148,7 @@ igual que la captura, y con los mismos colores (naranja, rojo, verde, amarillo).
   promedio del tramo), así una hora con medio tramo no se distorsiona.
 - Tarjetas: promedio del turno Día, Noche y del día, por sentido, y la gráfica combinada.
 
-### 3.10 Velocidad máxima, media y mínima de la flota por hora (bloque 9)
+### 3.10 Velocidad máxima, media y mínima de la flota por hora (bloque 12)
 
 - Por cada hora del día, sobre las posiciones **en movimiento** de todos los vehículos de la
   operación: la velocidad máxima (y qué unidad y a qué hora:minuto:segundo la alcanzó), la
@@ -212,13 +223,13 @@ Orden de arriba a abajo:
 
 1. **Tarjetas:** volquetes rodando (Día / Noche / Total), velocidad vacío y cargado (Día / Noche
    / Promedio), distancia por vuelta (Día / Noche / Promedio).
-2. **Gráficas por hora (bloques 7, 8 y 9):** volquetes rodando; velocidad vacío; velocidad
+2. **Gráficas por hora (bloques 8 a 12):** volquetes rodando; velocidad vacío; velocidad
    cargado; cargado y vacío juntas; **máxima / media / mínima de la flota** con la unidad y la
    hora exacta en cada punto (tooltip y clic al historial).
-3. **Estados por equipo (horas), bloque 6:** barras apiladas horizontales, un vehículo por fila.
-4. **Tabla «Horas y horómetro»** (bloques 1 y 4): hora y horómetro inicial, antes y después del
+3. **Estados por equipo (horas), bloque 7:** barras apiladas horizontales, un vehículo por fila.
+4. **Tabla «Horas y horómetro»** (bloques 2 y 5): hora y horómetro inicial, antes y después del
    descanso, final, horas efectivas y ralentí.
-5. **Tabla «Kilometraje»** (bloque 2) y **tabla «Abastecimientos»** (bloque 3).
+5. **Tabla «Kilometraje»** (bloque 3) y **tabla «Abastecimientos»** (bloque 4).
 
 Las gráficas se dibujan con el mismo canvas de la gráfica del historial (sin librería nueva) y
 comparten un selector de hora: al pasar por una hora se resalta esa hora en todas. Un botón
