@@ -133,7 +133,8 @@ class OperationChecker
         }
 
         $this->operation = $config['operation'];
-        $this->writer = new OperationCycleWriter($this->operation, $state, $config['points'], $config['formatter']);
+        $this->writer = (new OperationCycleWriter($this->operation, $state, $config['points'], $config['formatter']))
+            ->setLiveMode(true);
 
         return true;
     }

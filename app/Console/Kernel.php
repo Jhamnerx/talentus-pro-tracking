@@ -51,6 +51,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\CleanReportLogCommand',
         'App\Console\Commands\CleanDevicesCommand',
         'App\Console\Commands\CleanEventsCommand',
+        'App\Console\Commands\OperationsCleanCommand',
         'App\Console\Commands\CleanUnregisteredDeviceLogCommand',
         'App\Console\Commands\CleanUserCommand',
         'App\Console\Commands\CleanDeviceCamerasCommand',

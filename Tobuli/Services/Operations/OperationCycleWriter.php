@@ -3,13 +3,16 @@
 namespace Tobuli\Services\Operations;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
 use Tobuli\Entities\Operation;
 use Tobuli\Entities\OperationCycle;
 use Tobuli\Entities\OperationDeviceState;
 use Tobuli\Entities\OperationLeg;
 use Tobuli\Entities\OperationPoint;
 use Tobuli\Entities\OperationVisit;
+use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\Formatter\Formatter;
+use Tobuli\Services\DeviceClassificationService;
 
 /**
  * Maquina de estados de una vuelta para UN vehiculo:
@@ -38,6 +41,14 @@ class OperationCycleWriter
 
     protected int $dwellSeconds;
 
+    /**
+     * Modo vivo (OperationChecker): al abrir un tramo se pone al vehiculo el
+     * estado cargado/vacio configurado en la operacion. En el recalculo
+     * (OperationRebuildService) queda apagado: es historial, no debe tocar
+     * el estado actual del vehiculo.
+     */
+    protected bool $liveMode = false;
+
     /** Muestreo del segmento entre dos tramas, en metros. */
     const SEGMENT_STEP_METERS = 20;
     const SEGMENT_MAX_SAMPLES = 60;
@@ -49,6 +60,13 @@ class OperationCycleWriter
         $this->points = $points->values();
         $this->formatter = $formatter;
         $this->dwellSeconds = max(0, (int) $operation->min_dwell_seconds);
+    }
+
+    public function setLiveMode(bool $live): self
+    {
+        $this->liveMode = $live;
+
+        return $this;
     }
 
     public function getState(): OperationDeviceState
@@ -211,6 +229,10 @@ class OperationCycleWriter
             'status'        => OperationLeg::STATUS_OPEN,
         ]);
 
+        if ($this->liveMode) {
+            $this->applyVehicleState($direction);
+        }
+
         $this->state->current_point_id = null;
         $this->state->candidate_point_id = null;
         $this->state->pending_since = null;
@@ -225,6 +247,66 @@ class OperationCycleWriter
         $this->state->setRelation('openCycle', $cycle);
         $this->state->setRelation('openVisit', null);
         $this->state->setRelation('currentPoint', null);
+    }
+
+    /**
+     * Estado de vehiculo automatico (plan 3.11): ida => «cargado», vuelta =>
+     * «vacio», segun lo configurado en la operacion y para su dueño. Solo
+     * escribe si cambia; cualquier fallo se registra y no interrumpe el
+     * procesamiento de posiciones.
+     */
+    public function applyVehicleState(string $direction): bool
+    {
+        $operation = $this->operation;
+
+        if (! $operation->vehicle_type_id) {
+            return false;
+        }
+
+        $stateId = $direction === OperationLeg::DIRECTION_OUTBOUND
+            ? $operation->loaded_state_id
+            : $operation->empty_state_id;
+
+        if (! $stateId) {
+            return false;
+        }
+
+        try {
+            $user = $operation->user;
+            $device = $this->state->device;
+
+            if (! $user || ! $device) {
+                return false;
+            }
+
+            $current = $device->classificationFor($user->id);
+
+            if ($current && (int) $current->vehicle_state_id === (int) $stateId) {
+                return false;
+            }
+
+            $service = new DeviceClassificationService();
+
+            if ($current && $current->vehicle_type_id) {
+                $service->setState($user, $device, $stateId);
+            } else {
+                $service->set($user, $device, $operation->vehicle_type_id, $stateId);
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('Operaciones: no se pudo cambiar el estado del vehiculo', [
+                'operation_id' => $operation->id,
+                'device_id'    => $this->state->device_id,
+                'direction'    => $direction,
+                'state_id'     => $stateId,
+                'reason'       => $e instanceof ValidationException
+                    ? json_encode($e->getErrors(), JSON_UNESCAPED_UNICODE)
+                    : $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 
     // ------------------------------------------------------------------
