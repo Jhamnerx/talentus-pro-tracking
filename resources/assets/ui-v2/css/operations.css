@@ -283,3 +283,370 @@ tr.is-open .tp-ops__toggle {
 .tp-ops__hint--warn {
   color: #b45309;
 }
+
+/* =====================================================
+ * Pestaña «Turno» (reporte de turno, fase C)
+ * -----------------------------------------------------
+ * Una sola columna desplazable: tarjetas → gráficas por hora (canvas) →
+ * estados por equipo (barras con divs) → tablas. Los colores de las series
+ * y de los estados son los del tablero del cliente (ver tp-operations-shift.js).
+ * ===================================================== */
+
+.tp-ops-shift__bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-raised, #fff);
+}
+
+.tp-ops-shift__date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tp-ops-shift__date .tp-input {
+  min-width: 140px;
+}
+
+.tp-ops-shift__status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 16px;
+  text-align: center;
+  color: var(--fg-secondary, #475569);
+  font-size: 14px;
+}
+
+.tp-ops-shift__status[hidden],
+.tp-ops-shift__body[hidden] {
+  display: none;
+}
+
+.tp-ops-shift__status.is-error {
+  color: var(--danger-600, #dc2626);
+}
+
+.tp-ops-shift__body {
+  padding: 0 0 16px;
+}
+
+/* ---------- 1. Tarjetas ---------- */
+.tp-ops-shift__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+}
+
+.tp-ops-shift__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface-sunken, #f1f5f9);
+}
+
+.tp-ops-shift__group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg-secondary, #475569);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tp-ops-shift__group-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tp-ops-shift__kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-subtle, #eef2f6);
+}
+
+.tp-ops-shift__kpi-label {
+  font-size: 11px;
+  color: var(--fg-tertiary, #64748b);
+}
+
+.tp-ops-shift__kpi-value {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--fg-primary, #0f172a);
+  white-space: nowrap;
+}
+
+.tp-ops-shift__kpi-value small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-tertiary, #64748b);
+  margin-left: 3px;
+}
+
+/* ---------- 2. Gráficas por hora ---------- */
+.tp-ops-shift__charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+}
+
+@media (min-width: 1200px) {
+  .tp-ops-shift__charts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tp-ops-shift__chart--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.tp-ops-shift__chart {
+  margin: 0;
+  padding: 10px 12px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle, #eef2f6);
+  background: var(--surface-raised, #fff);
+  min-width: 0;
+}
+
+.tp-ops-shift__chart figcaption {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+  margin-bottom: 4px;
+}
+
+.tp-ops-shift__chart figcaption .tp-ops__hint {
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+.tp-ops-shift__canvas-wrap {
+  position: relative;
+  height: 220px;
+  width: 100%;
+}
+
+.tp-ops-shift__canvas-wrap--tall {
+  height: 280px;
+}
+
+.tp-ops-shift__canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.tp-ops-shift__canvas-wrap.is-link canvas {
+  cursor: pointer;
+}
+
+.tp-ops-shift__tip {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  background: var(--surface-inverted, #0d1018);
+  color: var(--fg-on-brand, #fff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.tp-ops-shift__tip b {
+  font-weight: 600;
+}
+
+.tp-ops-shift__tip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tp-ops-shift__dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.tp-ops-shift__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: var(--fg-secondary, #475569);
+  margin-bottom: 6px;
+}
+
+.tp-ops-shift__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tp-ops-shift__legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ---------- 3. Estados por equipo ---------- */
+.tp-ops-shift__block {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+  min-width: 0;
+}
+
+.tp-ops-shift__block:last-child {
+  border-bottom: 0;
+}
+
+.tp-ops-shift__h {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+}
+
+.tp-ops-shift__states {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tp-ops-shift__row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.tp-ops-shift__row-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-ops-shift__bar-track {
+  display: flex;
+  height: 26px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-sunken, #f1f5f9);
+}
+
+.tp-ops-shift__seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.tp-ops-shift__seg--off {
+  color: var(--fg-secondary, #475569);
+}
+
+.tp-ops-shift__scale {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.tp-ops-shift__scale-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--fg-tertiary, #64748b);
+}
+
+/* ---------- 4 y 5. Tablas ---------- */
+.tp-ops-shift__two {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+@media (min-width: 1200px) {
+  .tp-ops-shift__two {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  }
+  .tp-ops-shift__two .tp-ops-shift__block + .tp-ops-shift__block {
+    border-left: 1px solid var(--border-subtle, #eef2f6);
+  }
+}
+
+.tp-ops-shift__table td,
+.tp-ops-shift__table th {
+  white-space: nowrap;
+}
+
+.tp-ops-shift__table td.is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-ops-shift__table th.is-num {
+  text-align: right;
+}
+
+.tp-ops-shift__table td.is-muted {
+  color: var(--fg-muted, #94a3b8);
+}
+
+/* ---------- Pantalla completa ---------- */
+body.is-fullscreen .tp-rail,
+body.is-fullscreen .tp-topbar,
+body.is-fullscreen .tp-maint__head {
+  display: none !important;
+}
+
+body.is-fullscreen .tp-app {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "workspace";
+}
+
+body.is-fullscreen .tp-maint {
+  padding: 8px 10px;
+}
+
+/* ---------- Móvil ---------- */
+@media (max-width: 640px) {
+  .tp-ops-shift__group-row {
+    grid-template-columns: 1fr;
+  }
+  .tp-ops-shift__row,
+  .tp-ops-shift__scale {
+    grid-template-columns: 80px 1fr;
+  }
+  .tp-ops-shift__canvas-wrap {
+    height: 190px;
+  }
+}

@@ -22,6 +22,8 @@ use Tobuli\Entities\OperationStopReason;
 use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Services\Operations\OperationService;
+use Tobuli\Services\Operations\OperationShiftReport;
+use Tobuli\Services\Operations\OperationShiftSummaryService;
 
 /**
  * TalentusPro · OperationsController (ui/v2)
@@ -669,6 +671,90 @@ class OperationsController extends BaseController
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    // ------------------------------------------------------------------
+    // Reporte de turno (pestaña «Turno»)
+    // ------------------------------------------------------------------
+
+    /**
+     * GET operations/shift-report?operation=ID&date=Y-m-d&shift=all|<id>
+     *
+     * `date` es el dia operativo (Operation::dayStart() a +24 h). Todo sale de
+     * las tablas agregadas (OperationShiftReport); sin resumenes para ese dia
+     * responde {ok, empty:true, hint} y la pantalla ofrece «Calcular ahora».
+     */
+    public function shiftReport(Request $request): JsonResponse
+    {
+        $this->gate('view');
+
+        $operation = $this->find($request->get('operation'));
+
+        if (! $operation) {
+            abort(404);
+        }
+
+        $date = $this->operativeDate($request);
+
+        if (! $date) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_bad_date')], 422);
+        }
+
+        $shift = trim((string) $request->get('shift', 'all')) ?: 'all';
+
+        if ($shift !== 'all' && ! ctype_digit($shift)) {
+            $shift = 'all';
+        }
+
+        $report = new OperationShiftReport(app(\Tobuli\Helpers\Formatter\Formatter::class));
+
+        return response()->json($report->build($operation, $date, $shift));
+    }
+
+    /**
+     * POST operations/shift-report/build {operation, date}: calcula el dia
+     * operativo (turnos de cada vehiculo + filas de flota). No admite fechas
+     * futuras. Es sincrono: para un dia de pocos vehiculos tarda segundos.
+     */
+    public function shiftReportBuild(Request $request): JsonResponse
+    {
+        $this->gate('edit');
+
+        $operation = $this->find($request->get('operation'));
+
+        if (! $operation) {
+            abort(404);
+        }
+
+        $date = $this->operativeDate($request);
+
+        if (! $date) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_bad_date')], 422);
+        }
+
+        if ($date > Formatter::date()->convert(time(), 'Y-m-d')) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_future')], 422);
+        }
+
+        set_time_limit(600);
+
+        (new OperationShiftSummaryService())->buildDay($operation, $date);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Fecha Y-m-d valida del request (hoy en hora del usuario si no viene). */
+    private function operativeDate(Request $request): ?string
+    {
+        $date = trim((string) $request->get('date'));
+
+        if ($date === '') {
+            return Formatter::date()->convert(time(), 'Y-m-d');
+        }
+
+        $parsed = \DateTime::createFromFormat('Y-m-d', $date);
+
+        return $parsed && $parsed->format('Y-m-d') === $date ? $date : null;
     }
 
     // ------------------------------------------------------------------

@@ -97,6 +97,8 @@
       p.hidden = p.getAttribute("data-ops-panel") !== key;
     });
     if (key === "live") startLive(); else stopLive();
+    // Pestaña Turno (tp-operations-shift.js): carga el reporte la primera vez.
+    if (key === "shift" && window.tpOpsShift) tpOpsShift.activate(state.meta);
   }
 
   /* ---------- Meta ---------- */
@@ -105,6 +107,7 @@
       var d = (res && res.data) || {};
       if (!d.ok) return;
       state.meta = d;
+      if (window.tpOpsShift) tpOpsShift.setMeta(d);
 
       var ops = d.operations || [];
       var active = ops.filter(function (o) { return o.active; });

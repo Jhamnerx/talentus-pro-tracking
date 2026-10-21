@@ -26,6 +26,8 @@
         data-reasons-url="{{ route('ui.v2.api.operations.reasons') }}"
         data-justify-url="{{ url('/ui/v2/api/operations/stops') . '/{id}/justify' }}"
         data-history-url="{{ url('/ui/v2/history') }}"
+        data-shift-report-url="{{ route('ui.v2.api.operations.shift_report') }}"
+        data-shift-build-url="{{ route('ui.v2.api.operations.shift_report_build') }}"
         data-report-url="{{ url('/reports/update') }}"
         data-can-edit="{{ auth()->user()->perm('operations', 'edit') ? '1' : '0' }}"
         data-can-remove="{{ auth()->user()->perm('operations', 'remove') ? '1' : '0' }}">
@@ -53,6 +55,9 @@
                 </button>
                 <button type="button" class="tp-btn tp-btn--ghost" data-ops-tab="list" role="tab" aria-selected="false">
                     {{ trans('front.operations') }}
+                </button>
+                <button type="button" class="tp-btn tp-btn--ghost" data-ops-tab="shift" role="tab" aria-selected="false">
+                    {{ trans('ui.ops_tab_shift') }}
                 </button>
             </div>
         </header>
@@ -211,10 +216,146 @@
                 </footer>
             </div>
         </section>
+
+        {{-- ───────────────────────── Turno (reporte de turno) ───────────────────────── --}}
+        <section data-ops-panel="shift" hidden>
+            <div class="tp-maint__card tp-ops-shift" id="tp-ops-shift">
+                <div class="tp-ops__bar tp-ops-shift__bar">
+                    <label class="tp-ops__f">{{ trans('ui.ops_operation') }}
+                        <select class="tp-input" id="tp-ops-shift-operation"></select>
+                    </label>
+                    <div class="tp-ops__f">{{ trans('front.date') }}
+                        <div class="tp-ops-shift__date">
+                            <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ops-shift-prev" aria-label="{{ trans('ui.ops_shift_prev_day') }}" title="{{ trans('ui.ops_shift_prev_day') }}">◀</button>
+                            <input type="date" class="tp-input" id="tp-ops-shift-date" aria-label="{{ trans('front.date') }}">
+                            <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ops-shift-next" aria-label="{{ trans('ui.ops_shift_next_day') }}" title="{{ trans('ui.ops_shift_next_day') }}">▶</button>
+                        </div>
+                    </div>
+                    <label class="tp-ops__f">{{ trans('ui.ops_shift') }}
+                        <select class="tp-input" id="tp-ops-shift-shift">
+                            <option value="all">{{ trans('ui.ops_shift_all') }}</option>
+                        </select>
+                    </label>
+                    <button type="button" class="tp-btn tp-btn--accent" id="tp-ops-shift-refresh">{{ trans('ui.ops_shift_refresh') }}</button>
+                    <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-shift-full" aria-pressed="false">{{ trans('ui.ops_shift_fullscreen') }}</button>
+                    <span class="tp-ops__updated tp-text-muted" id="tp-ops-shift-updated" aria-live="polite"></span>
+                </div>
+
+                <div class="tp-ops-shift__status" id="tp-ops-shift-status" hidden></div>
+
+                <div class="tp-ops-shift__body" id="tp-ops-shift-body" hidden>
+                    {{-- 1. Tarjetas --}}
+                    <div class="tp-ops-shift__cards" id="tp-ops-shift-cards"></div>
+
+                    {{-- 2. Gráficas por hora --}}
+                    <div class="tp-ops-shift__charts">
+                        <figure class="tp-ops-shift__chart" data-chart="rolling">
+                            <figcaption>{{ trans('ui.ops_shift_chart_rolling') }}</figcaption>
+                            <div class="tp-ops-shift__canvas-wrap"><canvas role="img" aria-label="{{ trans('ui.ops_shift_chart_rolling') }}"></canvas><div class="tp-ops-shift__tip" hidden></div></div>
+                        </figure>
+                        <figure class="tp-ops-shift__chart" data-chart="empty">
+                            <figcaption>{{ trans('ui.ops_shift_chart_empty') }}</figcaption>
+                            <div class="tp-ops-shift__canvas-wrap"><canvas role="img" aria-label="{{ trans('ui.ops_shift_chart_empty') }}"></canvas><div class="tp-ops-shift__tip" hidden></div></div>
+                        </figure>
+                        <figure class="tp-ops-shift__chart" data-chart="loaded">
+                            <figcaption>{{ trans('ui.ops_shift_chart_loaded') }}</figcaption>
+                            <div class="tp-ops-shift__canvas-wrap"><canvas role="img" aria-label="{{ trans('ui.ops_shift_chart_loaded') }}"></canvas><div class="tp-ops-shift__tip" hidden></div></div>
+                        </figure>
+                        <figure class="tp-ops-shift__chart" data-chart="both">
+                            <figcaption>{{ trans('ui.ops_shift_chart_both') }}</figcaption>
+                            <div class="tp-ops-shift__legend" data-legend></div>
+                            <div class="tp-ops-shift__canvas-wrap"><canvas role="img" aria-label="{{ trans('ui.ops_shift_chart_both') }}"></canvas><div class="tp-ops-shift__tip" hidden></div></div>
+                        </figure>
+                        <figure class="tp-ops-shift__chart tp-ops-shift__chart--wide" data-chart="fleet">
+                            <figcaption>{{ trans('ui.ops_shift_chart_fleet') }} <span class="tp-ops__hint">{{ trans('ui.ops_shift_chart_fleet_hint') }}</span></figcaption>
+                            <div class="tp-ops-shift__legend" data-legend></div>
+                            <div class="tp-ops-shift__canvas-wrap tp-ops-shift__canvas-wrap--tall"><canvas role="img" aria-label="{{ trans('ui.ops_shift_chart_fleet') }}"></canvas><div class="tp-ops-shift__tip" hidden></div></div>
+                        </figure>
+                    </div>
+
+                    {{-- 3. Estados por equipo --}}
+                    <section class="tp-ops-shift__block">
+                        <h3 class="tp-ops-shift__h">{{ trans('ui.ops_shift_states_title') }}</h3>
+                        <div class="tp-ops-shift__legend" id="tp-ops-shift-states-legend"></div>
+                        <div class="tp-ops-shift__states" id="tp-ops-shift-states"></div>
+                    </section>
+
+                    {{-- 4. Horas y horómetro --}}
+                    <section class="tp-ops-shift__block">
+                        <h3 class="tp-ops-shift__h">{{ trans('ui.ops_shift_table_hours') }}</h3>
+                        <div class="tp-maint__wrap">
+                            <table class="tp-svc-table tp-ops-shift__table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">{{ trans('ui.vehicle') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_first') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_before') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_after') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_last') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_effective') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_idle') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_start') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_before') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_after') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_end') }}</th>
+                                        <th scope="col">{{ trans('ui.ops_shift_col_var') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tp-ops-shift-hours-rows"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    {{-- 5. Kilometraje y abastecimientos --}}
+                    <div class="tp-ops-shift__two">
+                        <section class="tp-ops-shift__block">
+                            <h3 class="tp-ops-shift__h">{{ trans('ui.ops_shift_table_odometer') }}</h3>
+                            <div class="tp-maint__wrap">
+                                <table class="tp-svc-table tp-ops-shift__table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">{{ trans('ui.vehicle') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_start') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_end') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_var') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tp-ops-shift-odo-rows"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                        <section class="tp-ops-shift__block">
+                            <h3 class="tp-ops-shift__h">{{ trans('ui.ops_shift_table_refuel') }}</h3>
+                            <div class="tp-maint__wrap">
+                                <table class="tp-svc-table tp-ops-shift__table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">{{ trans('ui.vehicle') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_started') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_ended') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_duration') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_level_before') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_level_after') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_refuel') }}</th>
+                                            <th scope="col">{{ trans('ui.ops_shift_col_engine_off') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tp-ops-shift-refuel-rows"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 @endsection
 
 @push('scripts')
     <script src="{{ asset_resource('assets/ui/v2/js/tp-chips-select.js') }}" defer></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-operations.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-operations-shift.js') }}" defer></script>
 @endpush
