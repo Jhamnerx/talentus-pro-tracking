@@ -1025,6 +1025,17 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::put('command_templates/{id?}', ['as' => 'command_templates.update', 'uses' => 'CommandTemplatesController@update']);
     Route::delete('command_templates/{id?}', ['as' => 'command_templates.destroy', 'uses' => 'CommandTemplatesController@destroy']);
 
+    // Normas de comando (consulta -> respuesta -> accion)
+    Route::get('command_rules', ['as' => 'command_rules.index', 'uses' => 'CommandRulesController@index']);
+    Route::get('command_rules/devices/{id?}', ['as' => 'command_rules.devices', 'uses' => 'CommandRulesController@devices']);
+    Route::get('command_rules/create', ['as' => 'command_rules.create', 'uses' => 'CommandRulesController@create']);
+    Route::post('command_rules', ['as' => 'command_rules.store', 'uses' => 'CommandRulesController@store']);
+    Route::get('command_rules/{id}/edit', ['as' => 'command_rules.edit', 'uses' => 'CommandRulesController@edit']);
+    Route::get('command_rules/{id}/logs', ['as' => 'command_rules.logs', 'uses' => 'CommandRulesController@logs']);
+    Route::post('command_rules/{id}/run', ['as' => 'command_rules.run', 'uses' => 'CommandRulesController@run']);
+    Route::put('command_rules/{id?}', ['as' => 'command_rules.update', 'uses' => 'CommandRulesController@update']);
+    Route::delete('command_rules/{id?}', ['as' => 'command_rules.destroy', 'uses' => 'CommandRulesController@destroy']);
+
     # Forwards
     Route::get('forwards/table', ['as' => 'forwards.table', 'uses' => 'ForwardsController@table']);
     Route::any('forwards/destroy', ['as' => 'forwards.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'ForwardsController@destroy']);

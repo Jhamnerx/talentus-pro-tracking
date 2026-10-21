@@ -96,7 +96,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\DeviceServerReconfigCommand',
         \App\Console\Commands\CacheOdometerValuesCommand::class,
         'App\Console\Commands\CleanMininterErrorsCommand',
-        'App\Console\Commands\SendGetioProbe',
+        'App\Console\Commands\RunCommandRulesCommand',
     ];
 
     /**
@@ -227,8 +227,9 @@ class Kernel extends ConsoleKernel
         // Auto-send when online: comandos GPRS en cola → enviar al reconectar
         $schedule->command('commands:dispatch-pending')->everyMinute()->withoutOverlapping();
 
-        // Caso DOUT1 (buzzer FTC921): getio periodico + auto-apagado via AutoDisableDoutListener
-        $schedule->command('dout:probe-getio')->everyFiveMinutes()->withoutOverlapping();
+        // Normas de comando (consulta -> respuesta -> accion), ej. caso DOUT1 buzzer FTC921.
+        // La respuesta la evalua CommandRuleResponseListener (PositionResultRetrieved).
+        $schedule->command('command-rules:run')->everyMinute()->withoutOverlapping();
 
         // Tareas nocturnas
         $schedule->command('backup:mysql')->hourly();
