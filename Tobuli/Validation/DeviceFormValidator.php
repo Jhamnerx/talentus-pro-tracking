@@ -57,7 +57,7 @@ class DeviceFormValidator extends Validator
             'osinergmin' => 'boolean',
             'mininter' => 'boolean',
             'consatel' => 'boolean',
-            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|regex:/^\S+$/',
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|required_if:unigis,1|regex:/^\S+$/',
             'device_type_id' => 'nullable|exists:device_types,id',
             // vehicle_type_id / vehicle_state_id no llegan aqui: DeviceModalHelper los
             // saca antes y los valida DeviceClassificationService (clasificacion por usuario).
@@ -111,7 +111,7 @@ class DeviceFormValidator extends Validator
             'osinergmin' => 'boolean',
             'mininter' => 'boolean',
             'consatel' => 'boolean',
-            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|regex:/^\S+$/',
+            'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|required_if:unigis,1|regex:/^\S+$/',
             'device_type_id' => 'nullable|exists:device_types,id',
             // vehicle_type_id / vehicle_state_id no llegan aqui: DeviceModalHelper los
             // saca antes y los valida DeviceClassificationService (clasificacion por usuario).

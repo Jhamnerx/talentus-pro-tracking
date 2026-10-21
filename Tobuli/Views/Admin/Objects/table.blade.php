@@ -102,6 +102,10 @@
                                     $webservices[] =
                                         '<span class="label label-xs" style="background:#e67e22;color:#fff;">EPS CENTER</span>';
                                 }
+                                if ($item->unigis) {
+                                    $webservices[] =
+                                        '<span class="label label-xs" style="background:#1b7f3b;color:#fff;">UNIGIS</span>';
+                                }
                             @endphp
                             @if (count($webservices) > 0)
                                 {!! implode(' ', $webservices) !!}

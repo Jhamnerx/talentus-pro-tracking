@@ -1394,6 +1394,7 @@ class DevicesController extends BaseController
                     || $this->user->perm('webservice.wisetrack', 'view')
                     || $this->user->perm('webservice.sidersales', 'view')
                     || $this->user->perm('webservice.epscenter', 'view')
+                    || $this->user->perm('webservice.unigis', 'view')
                 ),
                 // Campos personalizados: mismo gate que Devices/edit.blade del
                 // legacy — can('view', $item, 'custom_fields') (que ya considera

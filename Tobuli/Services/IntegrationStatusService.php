@@ -27,6 +27,7 @@ class IntegrationStatusService
         'consatel'   => 'comsatel',
         'mininter'   => 'mininter',
         'sidersales' => 'sidersales',
+        'unigis'     => 'unigis',
     ];
 
     /** Minutos de atraso a partir de los cuales se considera problema. */

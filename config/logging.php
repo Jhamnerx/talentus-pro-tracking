@@ -139,6 +139,13 @@ return [
             'days' => 7,
         ],
 
+        'unigis' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/unigis.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
         'epscenter' => [
             'driver' => 'daily',
             'path' => storage_path('logs/epscenter.log'),

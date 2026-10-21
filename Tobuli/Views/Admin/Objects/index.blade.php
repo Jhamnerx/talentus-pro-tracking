@@ -106,6 +106,7 @@
                             'wisetrack' => 'WISETRACK',
                             'sidersales' => 'SIDERSALES',
                             'epscenter' => 'EPS CENTER',
+                            'unigis' => 'UNIGIS',
                         ],
                         request('filter_webservices'),
                         [

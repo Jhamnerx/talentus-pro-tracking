@@ -21,6 +21,7 @@ use Tobuli\Helpers\LbsLocation\LbsManager;
 use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
 use Tobuli\Services\EventWriteService;
 use Tobuli\Services\Operations\OperationChecker;
+use Tobuli\Services\Unigis\UnigisEventMapper;
 
 class PositionsWriter
 {
@@ -739,6 +740,51 @@ class PositionsWriter
         if ($this->device->epscenter) {
             //REGISTRAR BASE DE DATOS EPS CENTER
             $this->saveDataEpsCenter($this->device, $this->position);
+        }
+
+        if ($this->device->unigis) {
+            //REGISTRAR COLA UNIGIS (Pacasmayo / Geojavar)
+            $this->saveDataUnigis($this->device, $this->position);
+        }
+    }
+
+    /**
+     * Encola la posicion para UNIGIS. Fechas en UTC tal como las guarda Traccar:
+     * fecha_hora_evento = device_time (hora del GPS), fecha_hora_recepcion =
+     * server_time (hora en que recibimos la trama). La placa se normaliza al
+     * enviar, pero se guarda ya normalizada para poder filtrar por ella.
+     */
+    public function saveDataUnigis($device, $position)
+    {
+        try {
+            $deviceTime = new DateTime($position->device_time ?: 'now', new DateTimeZone('UTC'));
+            $serverTime = new DateTime($position->server_time ?: 'now', new DateTimeZone('UTC'));
+
+            $device->dataUnigis()->create([
+                'device_id'            => $device->id,
+                'dominio'              => UnigisEventMapper::normalizePlate($device->plate_number),
+                'codigo'               => UnigisEventMapper::codeFor($position),
+                'latitud'              => $position->latitude,
+                'longitud'             => $position->longitude,
+                'altitud'              => (int) round((float) $position->altitude),
+                'velocidad'            => (int) round((float) $position->speed),
+                'rumbo'                => ((int) round((float) $position->course)) % 360,
+                'fecha_hora_evento'    => $deviceTime->format('Y-m-d H:i:s'),
+                'fecha_hora_recepcion' => $serverTime->format('Y-m-d H:i:s'),
+                'crudo'                => json_encode([
+                    'event'    => $position->getParameter('event'),
+                    'ignition' => $position->getParameter('ignition'),
+                    'motion'   => $position->getParameter('motion'),
+                    'io250'    => $position->getParameter('io250'),
+                    'io253'    => $position->getParameter('io253'),
+                ]),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::channel('unigis')->error('No se pudo encolar la posicion para UNIGIS', [
+                'device_id' => $device->id,
+                'plate'     => $device->plate_number,
+                'message'   => $e->getMessage(),
+            ]);
         }
     }
 

@@ -24,6 +24,7 @@ class LogService
         'mininter'   => 'mininter',
         'wisetrack'  => 'wisetrack',
         'epscenter'  => 'epscenter',
+        'unigis'     => 'unigis',
     ];
 
     /**
