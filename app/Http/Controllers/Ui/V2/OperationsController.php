@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 use Tobuli\Entities\DeviceGroup;
 use Tobuli\Entities\Geofence;
 use Tobuli\Entities\Operation;
@@ -21,6 +22,7 @@ use Tobuli\Entities\OperationStop;
 use Tobuli\Entities\OperationStopReason;
 use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Exports\Operations\ShiftReportExport;
 use Tobuli\Services\Operations\OperationService;
 use Tobuli\Services\Operations\OperationShiftReport;
 use Tobuli\Services\Operations\OperationShiftSummaryService;
@@ -709,6 +711,56 @@ class OperationsController extends BaseController
         $report = new OperationShiftReport(app(\Tobuli\Helpers\Formatter\Formatter::class));
 
         return response()->json($report->build($operation, $date, $shift));
+    }
+
+    /**
+     * GET operations/shift-report/export?operation=ID&date=Y-m-d&shift=all|<id>
+     *
+     * Fase D: el mismo payload de OperationShiftReport que la pantalla, en un
+     * libro Excel con el formato del cliente y graficos nativos
+     * (ShiftReportExport). Sin datos para ese dia responde 422 con mensaje.
+     */
+    public function shiftReportExport(Request $request)
+    {
+        $this->gate('view');
+
+        $operation = $this->find($request->get('operation'));
+
+        if (! $operation) {
+            abort(404);
+        }
+
+        $date = $this->operativeDate($request);
+
+        if (! $date) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_bad_date')], 422);
+        }
+
+        $shift = trim((string) $request->get('shift', 'all')) ?: 'all';
+
+        if ($shift !== 'all' && ! ctype_digit($shift)) {
+            $shift = 'all';
+        }
+
+        $report = (new OperationShiftReport(app(\Tobuli\Helpers\Formatter\Formatter::class)))->build($operation, $date, $shift);
+
+        if (! empty($report['empty'])) {
+            return response()->json(['ok' => false, 'message' => $report['hint'] ?? trans('ui.ops_shift_export_empty')], 422);
+        }
+
+        $name = 'turno_' . Str::slug($operation->name, '_') . '_' . $date;
+
+        if ($shift !== 'all') {
+            foreach ($report['shifts'] as $s) {
+                if ((int) $s['id'] === (int) $shift) {
+                    $name .= '_' . Str::slug($s['name'], '_');
+                }
+            }
+        }
+
+        set_time_limit(120);
+
+        return (new ShiftReportExport($report))->download($name . '.xlsx');
     }
 
     /**

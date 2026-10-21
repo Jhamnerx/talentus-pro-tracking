@@ -28,6 +28,7 @@
         data-history-url="{{ url('/ui/v2/history') }}"
         data-shift-report-url="{{ route('ui.v2.api.operations.shift_report') }}"
         data-shift-build-url="{{ route('ui.v2.api.operations.shift_report_build') }}"
+        data-shift-export-url="{{ route('ui.v2.api.operations.shift_report_export') }}"
         data-report-url="{{ url('/reports/update') }}"
         data-can-edit="{{ auth()->user()->perm('operations', 'edit') ? '1' : '0' }}"
         data-can-remove="{{ auth()->user()->perm('operations', 'remove') ? '1' : '0' }}">
@@ -238,6 +239,7 @@
                     </label>
                     <button type="button" class="tp-btn tp-btn--accent" id="tp-ops-shift-refresh">{{ trans('ui.ops_shift_refresh') }}</button>
                     <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-shift-full" aria-pressed="false">{{ trans('ui.ops_shift_fullscreen') }}</button>
+                    <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-shift-export" title="{{ trans('ui.ops_shift_export_hint') }}" disabled>{{ trans('ui.ops_shift_export') }}</button>
                     <span class="tp-ops__updated tp-text-muted" id="tp-ops-shift-updated" aria-live="polite"></span>
                 </div>
 

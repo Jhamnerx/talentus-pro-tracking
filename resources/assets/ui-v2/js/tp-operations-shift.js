@@ -24,6 +24,7 @@
   var URLS = {
     report: root.getAttribute("data-shift-report-url"),
     build: root.getAttribute("data-shift-build-url"),
+    export: root.getAttribute("data-shift-export-url"),
     history: root.getAttribute("data-history-url"),
   };
   var canEdit = root.getAttribute("data-can-edit") === "1";
@@ -300,15 +301,28 @@
     $("tp-ops-shift-body").hidden = !!html;
   }
 
+  /* Filtros actuales (operación, fecha y turno) como query string; los
+     comparten la consulta del reporte y la descarga del Excel. */
+  function query() {
+    return "?operation=" + encodeURIComponent($("tp-ops-shift-operation").value) +
+      "&date=" + encodeURIComponent(dateGet()) +
+      "&shift=" + encodeURIComponent($("tp-ops-shift-shift").value || "all");
+  }
+
+  /* «Exportar Excel» solo con un reporte cargado y con datos. */
+  function setExportable(on) {
+    var btn = $("tp-ops-shift-export");
+    if (btn) btn.disabled = !on;
+  }
+
   function load() {
     var opId = $("tp-ops-shift-operation").value;
     if (!opId) { setStatus(esc(t("ui.ops_pick_operation"))); return; }
     if (state.loading) return;
     state.loading = true;
+    setExportable(false);
 
-    var qs = "?operation=" + encodeURIComponent(opId) +
-      "&date=" + encodeURIComponent(dateGet()) +
-      "&shift=" + encodeURIComponent($("tp-ops-shift-shift").value || "all");
+    var qs = query();
 
     setStatus(esc(t("ui.ops_shift_loading")));
 
@@ -327,6 +341,7 @@
       if (d.empty) { renderEmpty(d); return; }
 
       setStatus("");
+      setExportable(true);
       renderCards(d);
       renderCharts(d);
       renderStates(d);
@@ -597,6 +612,13 @@
     $("tp-ops-shift-next").addEventListener("click", function () { shiftDate(1); load(); });
     $("tp-ops-shift-full").addEventListener("click", function () {
       setFullscreen(!document.body.classList.contains("is-fullscreen"));
+    });
+    /* Descarga del Excel con los filtros del reporte en pantalla (misma
+       operación, fecha y turno): es una navegación, el navegador guarda el
+       adjunto y la pestaña no cambia. */
+    $("tp-ops-shift-export").addEventListener("click", function () {
+      if (!state.loaded || !state.data || state.data.empty || !URLS.export) return;
+      window.location.assign(URLS.export + query());
     });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && document.body.classList.contains("is-fullscreen")) setFullscreen(false);

@@ -1227,6 +1227,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('operations/cycles/{id}',         ['as' => 'api.operations.cycle',               'uses' => 'Ui\V2\OperationsController@cycle'])->where('id', '[0-9]+');
         Route::get('operations/shift-report',         ['as' => 'api.operations.shift_report',         'uses' => 'Ui\V2\OperationsController@shiftReport']);
         Route::post('operations/shift-report/build',  ['as' => 'api.operations.shift_report_build',   'uses' => 'Ui\V2\OperationsController@shiftReportBuild']);
+        Route::get('operations/shift-report/export',  ['as' => 'api.operations.shift_report_export',  'uses' => 'Ui\V2\OperationsController@shiftReportExport']);
         Route::get('operations/recalculations',      ['as' => 'api.operations.recalculations',      'uses' => 'Ui\V2\OperationsController@recalculations']);
         Route::get('operations/recalculate/preview', ['as' => 'api.operations.recalculate_preview', 'uses' => 'Ui\V2\OperationsController@recalculatePreview']);
         Route::post('operations/recalculate',        ['as' => 'api.operations.recalculate',         'uses' => 'Ui\V2\OperationsController@recalculate']);
