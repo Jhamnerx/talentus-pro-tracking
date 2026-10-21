@@ -65,17 +65,33 @@ Excel con el formato del cliente.
 
 ### 3.1 Descanso dentro del turno (afecta a 2 y 5)
 
-Hoy el turno es solo inicio y fin. El cliente necesita el momento "antes" y "después" del
-descanso.
+**Respuesta del cliente (21-oct):** el descanso del turno Día es de 12:00 a 13:00 (almuerzo) y
+el del turno Noche de 02:00 a 03:00. Además puede haber **más de un descanso** por fatiga y
+somnolencia.
 
-- **Configuración:** dos campos nuevos en `operation_shifts`: `break_start` y `break_end`
-  (hora local, opcionales, pueden cruzar medianoche como el turno). Se editan en el modal de la
-  operación junto al turno.
-- **Alternativa automática:** si el turno no tiene descanso fijo, usar la primera visita del
-  vehículo a una geocerca de categoría **descanso** dentro del turno (ya existe la categoría y el
-  piloto la usa en «Cola de descarga»). Se guarda cuál de las dos se usó.
-- **Decisión pendiente con el cliente:** si el descanso es fijo (refrigerio a la misma hora para
-  todos) o por vehículo (cuando entra a la zona de descanso).
+- **Configuración:** cada turno lleva una **lista de descansos** (tabla `operation_shift_breaks`:
+  `shift_id`, `name`, `start_time`, `end_time`, `position`), editable en el modal de la operación.
+  El descanso principal (almuerzo / 02:00) es el que define las columnas «antes» y «después del
+  descanso» de las tablas 2 y 5; los demás descansos solo descuentan tiempo y cuentan como
+  STANDBY.
+- **Descansos no programados (fatiga):** una parada con **motor apagado** dentro del turno
+  cuenta como STANDBY sin configurar nada (regla del cliente en 3.7). Si quieren verlos con
+  nombre en el reporte, se justifica la parada con un motivo «Descanso por fatiga» (el catálogo
+  de motivos ya existe).
+
+### 3.1b Día operativo y turnos con margen de 30 minutos
+
+**Respuesta del cliente:** el reporte va de **06:30 a 06:30** del día siguiente. Los turnos
+normales son Día 07:00–18:00 y Noche 19:00–06:00, pero algunos días empiezan o terminan después,
+por eso quieren un **margen de 30 minutos**.
+
+- Los turnos se configuran ya con el margen: **Día 06:30–18:30** y **Noche 18:30–06:30**. Así
+  no hay huecos, toda vuelta cae en un turno y el día operativo (06:30 → 06:30) es la suma de los
+  dos turnos. Esto ya lo soporta `operation_shifts` sin cambios.
+- Campo nuevo en la operación: `day_start` (hora a la que empieza el día operativo, por defecto
+  el inicio del primer turno, aquí 06:30). La pantalla y el Excel del «día X» cubren de las 06:30
+  del X a las 06:30 del X+1; el turno Noche del X cuenta para el día X.
+- Las tarjetas «Turno Día / Turno Noche / Total del día» usan esos cortes.
 
 ### 3.2 Horómetro inicial / antes / después / final + horas ineficientes (bloque 2)
 
@@ -97,17 +113,25 @@ descanso.
 
 ### 3.4 Abastecimiento de combustible (bloque 4)
 
-- **Hora inicial / final:** entrada y salida a una geocerca de categoría **grifo** dentro del
-  turno (el reporte 912 ya las usa para descontar).
-- **Confirmación por nivel (21-oct):** los equipos solo leen el **porcentaje** del tanque, no
-  galones. Por eso cada abastecimiento se confirma con el sensor de nivel: % al entrar al grifo,
-  % al salir y la **recarga en puntos porcentuales**. Una visita al grifo sin subida de nivel se
-  muestra como «visita sin recarga»; una subida de nivel fuera del grifo (cisterna en campo) se
-  muestra como «recarga fuera de zona». La detección de la subida ya existe
-  (`AppendFuelFillingChange` / `GroupFuelFilling`).
-- Si hay más de un abastecimiento en el turno, una fila por cada uno.
-- Pendiente con el cliente: confirmar que el control es «llegada al grifo + % de recarga» y qué
-  salto mínimo de % cuenta como recarga.
+**Respuesta del cliente:** todo el abastecimiento es con **cisterna en campo** y el lugar es
+dinámico, así que no hay geocerca de grifo. Los equipos solo leen el **% del tanque**, no
+galones. La regla que pide: el equipo para y apaga motor («fuera de operación»); si al volver a
+encender el nivel subió, esa parada fue un abastecimiento.
+
+- **Detección:** por cada parada con motor apagado dentro del turno se compara el % de
+  combustible de la última trama estable antes de apagar con el de la primera trama estable
+  después de encender (se promedian unas tramas para filtrar el balanceo del tanque). Si la
+  diferencia supera el salto mínimo (`refuel_min_percent`, configurable en la operación,
+  propuesta 5 puntos), la parada se registra como abastecimiento.
+- **Columnas:** hora inicial = apagado de motor, hora final = encendido, VAR = duración, **% al
+  llegar**, **% al salir** y **recarga en puntos de %**. Fila por cada abastecimiento del turno.
+- Una subida de nivel **con motor encendido** (recarga sin apagar) también se registra, marcada
+  como «sin apagar motor».
+- Reutiliza `AppendFuelFillingChange` / `GroupFuelFilling` del pipeline (ya detectan subidas de
+  nivel) acotados a la parada con motor apagado; el margen de ruido del sensor se toma de la
+  configuración del sensor de combustible del vehículo.
+- Ese tiempo se descuenta de las horas efectivas (ya es el descuento «abastecimiento» del
+  reporte 912) y en los estados del equipo va a STANDBY (motor apagado).
 
 ### 3.5 Hora inicial / final del turno por vehículo (bloque 5)
 
@@ -127,32 +151,39 @@ marca como estimado.
 
 ### 3.7 Detalle de estados por equipo (bloque 7)
 
-No existe un "estado del equipo" con esas cuatro categorías. Propuesta de equivalencia, por
-vehículo y día (24 h), construida con lo que ya se guarda:
+**Respuesta del cliente:** DELAY = equipo **encendido sin moverse**; STANDBY = refrigerio,
+descanso y parado con **motor apagado**; MAINT = paso por una geocerca de taller (los talleres
+están fuera de mina) y, si se puede, registro manual desde la laptop; el resto en gris.
 
-| Estado del cliente | Cómo se calcula |
-| ------------------ | --------------- |
-| **READY** (productivo) | tiempo en tramo moviéndose: `duration − stop − idle − gap` de los tramos, más el tiempo en carga y descarga (`load_seconds`, `unload_seconds`) |
-| **DELAY** (demora) | propuesta: tiempo en tramo por encima del ciclo esperado (vuelta lenta) y «sin datos» (`gap_seconds`); si el cliente prefiere, las paradas no autorizadas se mueven aquí y STANDBY se queda con las autorizadas |
-| **STANDBY** (parado, decidido el 21-oct) | todo el tiempo con el vehículo **detenido** dentro del turno: paradas autorizadas y no autorizadas, ralentí, descanso y espera en cola. Queda por confirmar con el cliente qué deja eso en DELAY (ver preguntas) |
-| **MAINT** (mantenimiento) | tiempo dentro de geocercas de categoría **taller** |
-| Resto hasta 24 h | motor apagado fuera de todo lo anterior (se muestra como "Fuera de operación", en gris, para que la barra cierre en 24 h) |
+| Estado | Cómo se calcula, por vehículo y día operativo (24 h) |
+| ------ | --------------------------------------------------- |
+| **READY** | tiempo en movimiento (tramos: `duration − stop − idle − gap`) más el tiempo en carga y descarga en movimiento |
+| **DELAY** | tiempo con **motor encendido y sin movimiento**: ralentí en tramos (`idle_seconds`), paradas con `engine_on_seconds`, esperas en cola con motor encendido |
+| **STANDBY** | descansos configurados del turno, paradas con **motor apagado** (incluye fatiga y abastecimiento) y tiempo en geocerca de categoría descanso |
+| **MAINT** | tiempo dentro de una geocerca de categoría **taller** (desde que entra hasta que sale) y paradas justificadas con un motivo marcado como mantenimiento |
+| **Fuera de operación** (gris) | motor apagado fuera de turno y «sin datos» (`gap_seconds`), para que la barra cierre en 24 h |
 
-Se presenta como barra apilada horizontal por vehículo con las horas dentro de cada tramo,
-igual que la captura, y con los mismos colores (naranja, rojo, verde, amarillo).
+**Mantenimiento manual:** se aprovecha la justificación de paradas que ya existe. Al motivo de
+parada se le agrega la marca «cuenta como mantenimiento» (columna `state` en
+`operation_stop_reasons`: `null | maint | standby`); una parada justificada con ese motivo pasa a
+MAINT aunque no haya geocerca. Se registra desde la pantalla de Vueltas, en la laptop, como hoy
+se justifican las paradas. Para los talleres fuera de mina el cliente crea las geocercas con
+categoría taller y no hace falta nada más.
+
+Se presenta como barra apilada horizontal por vehículo con las horas en cada tramo, con los
+colores del tablero del cliente (naranja DELAY, rojo MAINT, verde READY, amarillo STANDBY, gris
+fuera de operación).
 
 ### 3.8 Volquetes rodando por hora (bloque 8)
 
-- Por cada hora del día, cantidad de vehículos distintos que se movieron en esa hora. Dos
-  criterios posibles, a elegir con el cliente: al menos X minutos de movimiento (propuesta 5,
-  configurable) o **desde el primer momento en que se mueve** (cualquier trama en movimiento
-  cuenta). El segundo es más simple y el que se propone por defecto. Fuente: `operation_legs` cruzados con la
+- **Respuesta del cliente:** cuenta **desde que se mueve**. Por cada hora del día, cantidad de
+  vehículos distintos con al menos una trama en movimiento (velocidad ≥ 1 km/h) en esa hora. Fuente: `operation_legs` cruzados con la
   hora.
 - Tarjetas: promedio de las horas del turno Día, del turno Noche y del día completo.
 
 ### 3.9 Velocidad promedio vacío / cargado por hora (bloques 9, 10 y 11)
 
-- En una operación de acarreo, **cargado = tramo `outbound`** (carga → descarga) y
+- Confirmado por el cliente: **cargado = tramo `outbound`** (carga → descarga) y
   **vacío = tramo `inbound`** (descarga → carga).
 - Velocidad promedio por hora = distancia recorrida en esa hora ÷ tiempo en movimiento en esa
   hora, separada por sentido. Para repartir un tramo entre horas se usan las posiciones (no el
@@ -208,11 +239,17 @@ moving_seconds, loaded_distance_m, loaded_moving_s, empty_distance_m, empty_movi
 max_speed, max_speed_device_id, max_speed_at, min_speed, min_speed_device_id, min_speed_at, avg_speed
 ```
 
-**`operation_refuelings`** — una fila por abastecimiento detectado (geocerca grifo o sensor):
+**`operation_refuelings`** — una fila por abastecimiento detectado (parada con motor apagado y
+subida del % de tanque, o subida con motor encendido):
 
 ```
-operation_id, device_id, shift_summary_id, started_at, ended_at, liters (nullable), source
+operation_id, device_id, shift_summary_id, stop_id (nullable), started_at, ended_at,
+level_before_pct, level_after_pct, refuel_pct, engine_off (bool)
 ```
+
+**Cambios en tablas existentes:** `operation_shift_breaks` (lista de descansos por turno),
+`operations.day_start` (hora de inicio del día operativo) y `operations.refuel_min_percent`,
+`operation_stop_reasons.state` (`null | maint | standby`).
 
 Las tres se recalculan por rango con el mismo mecanismo de `OperationRebuildService` (botón
 Recalcular ya existente), y `operations:process` cierra el turno anterior cada vez que cambia
@@ -252,9 +289,18 @@ comparten un selector de hora: al pasar por una hora se resalta esa hora en toda
 operación, fecha y turno, y se actualiza con el botón Refrescar; sin refresco automático ni
 modo sala.
 
-Botón **Exportar Excel** con el formato del cliente (hoja de tablas con las mismas cabeceras del
-Excel recibido y una hoja por gráfica con sus datos; los gráficos del Excel se generan con
-`PhpSpreadsheet`, ya presente en el proyecto para los reportes XLSX).
+Botón **Exportar Excel**. **Respuesta del cliente:** quieren las gráficas tanto en pantalla
+como en el Excel, y que las del Excel sean **iguales** a las de la pantalla. Por eso:
+
+- La hoja principal reproduce el formato de `TALENTUS (1).xlsx`: selector de turno, las cuatro
+  tablas con las mismas cabeceras y fórmulas (`VAR`), y las gráficas colocadas en las mismas
+  zonas.
+- Las gráficas se generan como **gráficos nativos de Excel** con `PhpSpreadsheet` (líneas con
+  etiquetas de valor para las de por hora, barra apilada horizontal para los estados), con los
+  mismos colores y títulos que la pantalla; los datos de cada gráfica van en una hoja «Datos»
+  de la que lee el gráfico, así el cliente puede ajustarlas en Excel.
+- Para que pantalla y Excel coincidan, ambas leen las mismas tablas agregadas y la misma
+  función de armado de series; la pantalla dibuja con canvas y el Excel con gráficos nativos.
 
 ### 4.4 Reportes
 
@@ -273,63 +319,44 @@ No se toca: el módulo de Operaciones es solo UI v2 (decisión del 6-oct-2026).
 
 | Fase | Entregables | Esfuerzo | Terminada cuando |
 | ---- | ----------- | -------- | ---------------- |
-| A · Configuración | `break_start/break_end` en turnos (migración, modal, validación); revisar que los vehículos del piloto tengan sensor de horas de motor, odómetro y, si lo hay, nivel de combustible; geocercas grifo y taller del cliente | 1,5 días | El modal guarda el descanso y los vehículos del piloto tienen los sensores asignados |
-| B · Cálculo | Migraciones de las 3 tablas, `OperationShiftSummaryService`, enganche en `operations:process` y en el recálculo | 5 a 6 días | El recálculo de una semana del piloto llena las tablas y el horómetro/kilometraje coincide con el control manual del cliente |
+| A · Configuración | lista de descansos por turno, `day_start` y `refuel_min_percent` en la operación, marca de estado en los motivos de parada (migraciones, modal, validación); turnos Día 06:30–18:30 y Noche 18:30–06:30 con sus descansos; sensores de horas de motor, odómetro y nivel de combustible en los vehículos; geocercas de taller fuera de mina | 2 días | El modal guarda los descansos y los vehículos del piloto tienen los sensores asignados |
+| B · Cálculo | Migraciones de las 3 tablas, `OperationShiftSummaryService` (horómetro y odómetro por sensor, estados READY/DELAY/STANDBY/MAINT, abastecimiento por parada con motor apagado y salto de %, estadísticas por hora y de flota), enganche en `operations:process` y en el recálculo | 6 a 7 días | El recálculo de una semana del piloto llena las tablas; horómetro, kilometraje y abastecimientos coinciden con el control manual del cliente |
 | C · Pantalla «Turno» | Pestaña nueva con **todo en una vista**: tarjetas, cinco gráficas por hora (incluida máx/media/mín de flota con unidad y hora por punto), barra apilada de estados y las tres tablas | 5 a 6 días | El cliente ve en una sola pantalla lo mismo que en su tablero de Power BI |
-| D · Exportación y reporte | Excel con el formato del cliente, reporte 913 en Reportes | 2 a 3 días | El Excel descargado se abre con las mismas tablas que `TALENTUS (1).xlsx` y las gráficas |
+| D · Exportación | Excel con el formato del cliente y **gráficos nativos iguales a la pantalla** (PhpSpreadsheet) | 3 a 4 días | El Excel descargado se abre con las mismas tablas y gráficas que la pantalla |
 | E · Piloto y ajustes | Comparar un turno Día y uno Noche completos contra el control del cliente; ajustar umbrales (minutos para "rodando", descanso) | 2 días | Diferencias explicadas y aceptadas |
 
-**Total estimado: 16 a 19 días** de un desarrollador. Orden: A → B → C → D → E. B puede
+**Total estimado: 18 a 21 días** de un desarrollador. Orden: A → B → C → D → E. B puede
 probarse con el recálculo sobre días reales antes de que exista la pantalla.
 
 ---
 
-## 6. Preguntas para el cliente antes de empezar
+## 6. Respuestas del cliente (21-oct-2026)
 
-Ya decidido (21-oct): horómetro y kilometraje desde los sensores del vehículo (celda vacía si
-no lo tiene); distancia = kilómetros totales del turno; velocidad desde el OBD (FMC150) con
-mínimo de movimiento 1 km/h; la velocidad media de la flota solo con las unidades en
-movimiento; clic en un punto abre el historial de esa unidad; pantalla de consulta bajo demanda
-sin refresco automático; los 12 elementos en una sola pantalla del módulo de Operaciones; el
-abastecimiento se mide en % del tanque (los equipos no leen galones).
+Todas las preguntas quedaron respondidas; las decisiones están incorporadas en las secciones 3 y
+4. Resumen:
 
-**Turno y descanso**
+| Tema | Decisión |
+| ---- | -------- |
+| Descanso | Día 12:00–13:00 (almuerzo), Noche 02:00–03:00; puede haber más de uno (fatiga, somnolencia) |
+| Día operativo | 06:30 → 06:30; turnos Día 07:00–18:00 y Noche 19:00–06:00 con margen de 30 min (se configuran 06:30–18:30 y 18:30–06:30) |
+| Hora inicial / final del volquete | primera y última vez que se mueve en el turno |
+| DELAY | motor encendido sin moverse |
+| STANDBY | refrigerio, descanso y parado con motor apagado |
+| MAINT | paso por geocerca de taller (fuera de mina) y registro manual desde la laptop (motivo de parada marcado como mantenimiento) |
+| Motor apagado fuera de turno | gris «fuera de operación» para cerrar las 24 h |
+| Volquete rodando | cuenta desde que se mueve |
+| Cargado / vacío | cargado = carga → descarga, vacío = regreso |
+| Abastecimiento | cisterna en campo, lugar dinámico: parada con motor apagado + subida del % del tanque al encender; se muestra % al llegar, % al salir y recarga en % |
+| Horómetro / kilometraje | sensores del vehículo; celda vacía si no lo tiene |
+| Distancia | kilómetros totales del turno |
+| Velocidad | OBD (FMC150), mínimo de movimiento 1 km/h; media solo con unidades en movimiento |
+| Gráfica de flota | clic en un punto abre el historial de esa unidad |
+| Pantalla | los 12 elementos en una sola vista, consulta bajo demanda sin refresco automático |
+| Excel | con gráficas, iguales a las de la pantalla |
 
-1. ¿El descanso es un horario fijo por turno (refrigerio a la misma hora para todos) o empieza
-   cuando cada volquete entra a la zona de descanso? ¿Puede haber más de un descanso por turno?
-2. El reporte del «día X», ¿va de 07:00 del día X a 07:00 del día siguiente (el turno Noche del
-   X cuenta para el X) o es el día calendario de 00:00 a 24:00?
-3. La hora inicial y final de cada volquete en el turno, ¿es la primera y la última vez que
-   encendió el motor, o la primera y la última vez que se movió?
-
-**Estados del equipo**
-
-4. ¿Cuándo consideran que un volquete está en **STANDBY** y cuándo en **DELAY**? Pedir ejemplos
-   concretos: espera en cola de carga, espera en descarga, parada por refrigerio, parada sin
-   motivo, pérdida de señal, vuelta más lenta de lo normal. Con eso se fija la regla.
-5. MAINT: ¿basta con el tiempo dentro de la zona de taller, o hay mantenimientos en campo que se
-   deben registrar a mano?
-6. ¿Qué pasa con el tiempo con motor apagado fuera de turno? Propuesta: barra gris «fuera de
-   operación» para que cada vehículo cierre en 24 h.
-
-**Gráficas por hora**
-
-7. «Volquete rodando»: ¿cuenta desde el primer momento en que se mueve dentro de la hora, o
-   recién a partir de unos minutos de movimiento (por ejemplo 5)?
-8. Velocidad vacío y cargado: confirmar que cargado es el viaje de carga a descarga y vacío el
-   regreso (no hay sensor de peso).
-
-**Combustible**
-
-9. ¿El abastecimiento se controla con la llegada a la zona del grifo y se confirma con el % del
-   tanque? Es decir, por cada abastecimiento mostrar con cuánto % llegó, con cuánto % salió y
-   cuánto fue la recarga en %. ¿Qué salto mínimo de % cuenta como recarga? ¿Hay recargas con
-   cisterna fuera del grifo?
-
-**Entrega**
-
-10. ¿Necesitan el Excel descargado con el mismo formato que `TALENTUS (1).xlsx` o les sirve la
-    pantalla y un Excel con tablas simples?
+Quedan dos ajustes finos para el piloto, no bloquean el inicio: el **salto mínimo de %** que
+cuenta como recarga (propuesta 5 puntos) y cuántas tramas se promedian para leer el nivel antes
+y después de la parada.
 
 ---
 
