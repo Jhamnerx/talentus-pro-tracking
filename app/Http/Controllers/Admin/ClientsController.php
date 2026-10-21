@@ -471,6 +471,7 @@ class ClientsController extends BaseController
                 'wisetrack' => ['active' => 0, 'token' => null, 'logs' => 0, 'url' => null],
                 'sidersales' => ['active' => 0, 'logs' => 0, 'environment' => 'prd', 'client_id' => null, 'client_secret' => null],
                 'epscenter' => ['active' => 0, 'logs' => 0],
+                'unigis' => ['active' => 0, 'logs' => 0, 'user' => null, 'password' => null, 'url' => null],
             ];
 
             foreach ($defaultServices as $service => $defaults) {
@@ -487,6 +488,16 @@ class ClientsController extends BaseController
                             $defaultServices[$service]['logs'] = $services[$service]['logs'] ?? null;
                             $defaultServices[$service]['url'] = $services[$service]['url'] ?? null;
                         }
+                    }
+                    // UNIGIS: persistir credenciales incluso si está inactivo;
+                    // contraseña vacía = conservar la almacenada.
+                    if ($service == 'unigis') {
+                        $defaultServices[$service]['user'] = $services[$service]['user'] ?? null;
+                        $defaultServices[$service]['url'] = $services[$service]['url'] ?? null;
+                        $submittedPassword = $services[$service]['password'] ?? null;
+                        $defaultServices[$service]['password'] = !empty($submittedPassword)
+                            ? $submittedPassword
+                            : ($item->services['unigis']['password'] ?? null);
                     }
                     // Sidersales: persistir credenciales incluso si está inactivo
                     if ($service == 'sidersales') {

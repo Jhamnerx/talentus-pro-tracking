@@ -58,3 +58,11 @@
         {!! Form::label('epscenter', 'EPS Center') !!}
     </div>
 @endif
+
+@if (Auth::User()->perm('webservice.unigis', 'edit'))
+    <div class="checkbox">
+        {!! Form::hidden('unigis', 0) !!}
+        {!! Form::checkbox('unigis', 1, $item->unigis) !!}
+        {!! Form::label('unigis', 'UNIGIS') !!}
+    </div>
+@endif

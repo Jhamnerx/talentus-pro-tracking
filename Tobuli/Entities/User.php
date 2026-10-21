@@ -246,6 +246,14 @@ class User extends AbstractEntity implements
                     'environment'   => 'prd',
                     'client_id'     => null,
                     'client_secret' => null,
+                ],
+                'unigis' =>
+                [
+                    'active'   => 0,
+                    'logs'     => 0,
+                    'user'     => null,
+                    'password' => null,
+                    'url'      => null,
                 ]
             ];
         }
@@ -279,6 +287,15 @@ class User extends AbstractEntity implements
                 'environment'   => 'prd',
                 'client_id'     => null,
                 'client_secret' => null,
+            ];
+        }
+        if (!isset($services['unigis'])) {
+            $services['unigis'] = [
+                'active'   => 0,
+                'logs'     => 0,
+                'user'     => null,
+                'password' => null,
+                'url'      => null,
             ];
         }
 
