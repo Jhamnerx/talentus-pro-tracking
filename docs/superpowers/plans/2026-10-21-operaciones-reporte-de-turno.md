@@ -98,9 +98,16 @@ descanso.
 ### 3.4 Abastecimiento de combustible (bloque 4)
 
 - **Hora inicial / final:** entrada y salida a una geocerca de categoría **grifo** dentro del
-  turno (el reporte 912 ya las usa para descontar). Si el vehículo tiene sensor de nivel, se
-  muestra además los litros/galones cargados (`GroupFuelFilling`).
+  turno (el reporte 912 ya las usa para descontar).
+- **Confirmación por nivel (21-oct):** los equipos solo leen el **porcentaje** del tanque, no
+  galones. Por eso cada abastecimiento se confirma con el sensor de nivel: % al entrar al grifo,
+  % al salir y la **recarga en puntos porcentuales**. Una visita al grifo sin subida de nivel se
+  muestra como «visita sin recarga»; una subida de nivel fuera del grifo (cisterna en campo) se
+  muestra como «recarga fuera de zona». La detección de la subida ya existe
+  (`AppendFuelFillingChange` / `GroupFuelFilling`).
 - Si hay más de un abastecimiento en el turno, una fila por cada uno.
+- Pendiente con el cliente: confirmar que el control es «llegada al grifo + % de recarga» y qué
+  salto mínimo de % cuenta como recarga.
 
 ### 3.5 Hora inicial / final del turno por vehículo (bloque 5)
 
@@ -136,8 +143,10 @@ igual que la captura, y con los mismos colores (naranja, rojo, verde, amarillo).
 
 ### 3.8 Volquetes rodando por hora (bloque 8)
 
-- Por cada hora del día, cantidad de vehículos distintos que tuvieron al menos X minutos de
-  movimiento en tramo (propuesta: 5 min, configurable). Fuente: `operation_legs` cruzados con la
+- Por cada hora del día, cantidad de vehículos distintos que se movieron en esa hora. Dos
+  criterios posibles, a elegir con el cliente: al menos X minutos de movimiento (propuesta 5,
+  configurable) o **desde el primer momento en que se mueve** (cualquier trama en movimiento
+  cuenta). El segundo es más simple y el que se propone por defecto. Fuente: `operation_legs` cruzados con la
   hora.
 - Tarjetas: promedio de las horas del turno Día, del turno Noche y del día completo.
 
@@ -154,11 +163,13 @@ igual que la captura, y con los mismos colores (naranja, rojo, verde, amarillo).
 
 - Por cada hora del día, sobre las posiciones **en movimiento** de todos los vehículos de la
   operación: la velocidad máxima (y qué unidad y a qué hora:minuto:segundo la alcanzó), la
-  mínima en movimiento (unidad y momento) y la media de la flota (promedio ponderado por
-  tiempo en movimiento, para que un vehículo con más tramas no pese de más).
+  mínima en movimiento (unidad y momento) y la media de la flota. **Decidido el 21-oct:** la
+  media se calcula solo con las tramas **en movimiento** de las unidades (sin paradas), ponderada
+  por el tiempo en movimiento para que un vehículo con más tramas no pese de más.
 - Cada punto de la gráfica guarda `device_id`, placa y `at` (fecha-hora exacta). Al pasar el
-  ratón o tocar el punto se muestra «CFW-813 · 14:37:12 · 42 km/h»; al hacer clic se abre el
-  historial de ese vehículo en ese minuto (ya existe `?device=&from=&to=`).
+  ratón o tocar el punto se muestra «CFW-813 · 14:37:12 · 42 km/h». **Decidido el 21-oct:** al
+  hacer clic se abre el historial de ese vehículo en ese minuto, indicando qué unidad es (ya
+  existe `?device=&from=&to=`).
 - La mínima excluye tramas detenidas; si no, siempre sería 0. **Decidido el 21-oct:** el
   módulo está pensado para equipos que leen la velocidad del OBD del vehículo (FMC150), con
   velocidad mínima de movimiento de **1 km/h**. Para otros equipos se usa la velocidad mínima de
@@ -236,8 +247,10 @@ Orden de arriba a abajo:
 5. **Tabla «Kilometraje»** (bloque 3) y **tabla «Abastecimientos»** (bloque 4).
 
 Las gráficas se dibujan con el mismo canvas de la gráfica del historial (sin librería nueva) y
-comparten un selector de hora: al pasar por una hora se resalta esa hora en todas. Un botón
-«Pantalla completa» muestra solo el tablero (sin menú lateral) para proyectarlo en sala.
+comparten un selector de hora: al pasar por una hora se resalta esa hora en todas.
+**Decidido el 21-oct:** la pantalla es de **consulta bajo demanda**: se carga al elegir
+operación, fecha y turno, y se actualiza con el botón Refrescar; sin refresco automático ni
+modo sala.
 
 Botón **Exportar Excel** con el formato del cliente (hoja de tablas con las mismas cabeceras del
 Excel recibido y una hoja por gráfica con sus datos; los gráficos del Excel se generan con
@@ -245,9 +258,10 @@ Excel recibido y una hoja por gráfica con sus datos; los gráficos del Excel se
 
 ### 4.4 Reportes
 
-Nuevo reporte **913 · Operación · resumen de turno** (XLSX, HTML, PDF) con las mismas secciones,
-para quien prefiera programarlo o recibirlo por correo con los reportes existentes. Reutiliza las
-tablas agregadas; no vuelve a leer posiciones.
+**Decidido el 21-oct:** el resumen de turno se consulta **bajo demanda desde la pantalla**
+(y se exporta a Excel desde ahí). El reporte 913 en Reportes queda como opcional para una fase
+posterior si el cliente quisiera programarlo o recibirlo por correo; reutilizaría las tablas
+agregadas sin volver a leer posiciones.
 
 ### 4.5 Legacy
 
@@ -273,9 +287,11 @@ probarse con el recálculo sobre días reales antes de que exista la pantalla.
 ## 6. Preguntas para el cliente antes de empezar
 
 Ya decidido (21-oct): horómetro y kilometraje desde los sensores del vehículo (celda vacía si
-no lo tiene), STANDBY es el tiempo parado, distancia = kilómetros totales del turno, velocidad
-desde el OBD (FMC150) con mínimo de movimiento 1 km/h, y los 12 elementos en una sola pantalla
-del módulo de Operaciones.
+no lo tiene); distancia = kilómetros totales del turno; velocidad desde el OBD (FMC150) con
+mínimo de movimiento 1 km/h; la velocidad media de la flota solo con las unidades en
+movimiento; clic en un punto abre el historial de esa unidad; pantalla de consulta bajo demanda
+sin refresco automático; los 12 elementos en una sola pantalla del módulo de Operaciones; el
+abastecimiento se mide en % del tanque (los equipos no leen galones).
 
 **Turno y descanso**
 
@@ -288,9 +304,9 @@ del módulo de Operaciones.
 
 **Estados del equipo**
 
-4. Si STANDBY es todo el tiempo parado, ¿qué queda en DELAY? Opciones: (a) vueltas más lentas que
-   el ciclo esperado y pérdida de señal; (b) las paradas no autorizadas pasan a DELAY y STANDBY
-   se queda solo con las autorizadas y el descanso.
+4. ¿Cuándo consideran que un volquete está en **STANDBY** y cuándo en **DELAY**? Pedir ejemplos
+   concretos: espera en cola de carga, espera en descarga, parada por refrigerio, parada sin
+   motivo, pérdida de señal, vuelta más lenta de lo normal. Con eso se fija la regla.
 5. MAINT: ¿basta con el tiempo dentro de la zona de taller, o hay mantenimientos en campo que se
    deben registrar a mano?
 6. ¿Qué pasa con el tiempo con motor apagado fuera de turno? Propuesta: barra gris «fuera de
@@ -298,29 +314,22 @@ del módulo de Operaciones.
 
 **Gráficas por hora**
 
-7. «Volquete rodando»: ¿cuántos minutos de movimiento dentro de la hora hacen que cuente?
-   Propuesta 5.
+7. «Volquete rodando»: ¿cuenta desde el primer momento en que se mueve dentro de la hora, o
+   recién a partir de unos minutos de movimiento (por ejemplo 5)?
 8. Velocidad vacío y cargado: confirmar que cargado es el viaje de carga a descarga y vacío el
    regreso (no hay sensor de peso).
-9. Velocidad media de la flota: ¿promedio simple de los vehículos que se movieron en esa hora, o
-   ponderado por el tiempo que cada uno estuvo en movimiento?
-10. Al hacer clic en un punto de la gráfica (unidad y hora), ¿quieren abrir el historial de ese
-    vehículo en ese momento?
-11. La pantalla única: ¿se va a proyectar en una sala (hace falta modo pantalla completa y
-    refresco automático) o se consulta desde el escritorio?
 
 **Combustible**
 
-12. El abastecimiento, ¿siempre en el grifo (zona) o también con cisterna en campo? En campo
-    solo se detecta con sensor de nivel de combustible. ¿Quieren los galones cargados o solo las
-    horas?
+9. ¿El abastecimiento se controla con la llegada a la zona del grifo y se confirma con el % del
+   tanque? Es decir, por cada abastecimiento mostrar con cuánto % llegó, con cuánto % salió y
+   cuánto fue la recarga en %. ¿Qué salto mínimo de % cuenta como recarga? ¿Hay recargas con
+   cisterna fuera del grifo?
 
 **Entrega**
 
-13. ¿Necesitan el Excel con el mismo formato que `TALENTUS (1).xlsx` o les sirve la pantalla y un
-    Excel con tablas simples?
-14. ¿Quién recibe el reporte y con qué frecuencia (al cierre de cada turno por correo, o bajo
-    demanda desde la pantalla)?
+10. ¿Necesitan el Excel descargado con el mismo formato que `TALENTUS (1).xlsx` o les sirve la
+    pantalla y un Excel con tablas simples?
 
 ---
 
