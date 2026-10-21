@@ -1,4 +1,4 @@
-# Guía de actualización — merge `operaciones` → `nuevo-tema` (12-oct-2026)
+# Guía de actualización — módulo Operaciones (merge `operaciones` → `nuevo-tema`, 12-oct-2026; §8 Seguridad, §9 Clasificación, §10 Reporte de turno)
 
 Cubre todo lo que entra con el merge commit `8b6dc288` (54 commits, 135 archivos).
 Sirve tanto para el servidor de pruebas (`nuevo-tema`) como, más adelante, para
@@ -429,3 +429,99 @@ pierde son las clasificaciones hechas por otras cuentas después de desplegar.
 código **ya no las lee ni las escribe**. Se eliminarán con una migración en una
 versión posterior, cuando pruebas confirme el comportamiento. Hasta entonces no
 sirven como referencia: la clasificación vigente es la de la tabla nueva.
+
+---
+
+## 10. Reporte de turno de Operaciones (rama `operaciones-turno`, 22-oct-2026)
+
+Pestaña **«Turno»** del módulo de Operaciones: los 11 elementos del Excel del cliente más la
+gráfica de velocidad de flota, en una sola pantalla, con exportación a Excel con gráficos
+nativos. Plan y decisiones en `docs/superpowers/plans/2026-10-21-operaciones-reporte-de-turno.md`.
+
+### 10.1 Qué cambia para el usuario
+
+- **Modal de operación:** apartado «Descansos» bajo Turnos (programados con horario, o «Fatiga y
+  somnolencia» sin horario); en Opciones avanzadas, «Inicio del día operativo» y «Estado de
+  vehículo automático (Seguridad)» (tipo de vehículo + estado cuando va cargado / vacío).
+- **Modal de motivos de parada:** select «Cuenta como» (— / Mantenimiento / Descanso). Los
+  usuarios nuevos reciben «Fatiga y somnolencia» y «Mantenimiento» ya marcados; los que ya tenían
+  catálogo los añaden a mano.
+- **Pestaña Turno:** filtros (operación, fecha con flechas, turno), tarjetas, cinco gráficas por
+  hora, estados por equipo en barra apilada, tablas de horas y horómetro, kilometraje y
+  abastecimientos; botón «Calcular ahora» cuando el día no tiene resúmenes; «Pantalla completa»;
+  «Exportar Excel». Consulta bajo demanda, sin refresco automático.
+- **Estado cargado / vacío:** si la operación tiene tipo y estados configurados, al abrir cada
+  tramo en vivo el vehículo pasa a «cargado» (carga → descarga) o «vacío» (regreso) para el dueño
+  de la operación, con `DeviceClassificationService`. El recálculo no toca estados.
+
+### 10.2 Pasos en el servidor
+
+```bash
+git fetch origin && git checkout operaciones-turno && git pull
+php artisan migrate --force          # 6 migraciones 2026_10_21_* y 2026_10_22_*
+php artisan view:clear && php artisan cache:clear
+```
+
+Sin dependencias nuevas (PhpSpreadsheet ya estaba) y sin compilar assets (los bundles van en
+la rama). Requiere `OPERATIONS_ENABLED=true` y el cron del scheduler (§2.5).
+
+Migraciones: `operation_shift_breaks`; `operations.day_start / vehicle_type_id /
+loaded_state_id / empty_state_id`; `operation_stop_reasons.state`; `operation_shift_summaries`;
+`operation_hour_stats`; `operation_refuelings`.
+
+### 10.3 Comandos y qué corre solo
+
+| Comando | ¿Automático? | Qué hace |
+| ------- | ------------ | -------- |
+| `operations:process` | Sí, cada minuto (scheduler) | Lo de siempre y, además, **cierra cada turno** entre 10 y 70 minutos después de su fin: calcula el resumen de cada vehículo y las filas de flota por hora. |
+| `operations:summaries --operation=ID --from=Y-m-d --to=Y-m-d [--device=ID]` | No, manual | Rellena o rehace los resúmenes de un rango de días operativos (histórico, o tras cambiar sensores/descansos). El botón «Calcular ahora» de la pantalla hace lo mismo para un día. El recálculo de vueltas (`OperationRebuildService`) también rehace los resúmenes afectados. |
+| `operations:clean {date}` | Sí, dentro de `server:autoclean` (diario a la 01:00) si el módulo está activo | Borra resúmenes, estadísticas por hora, abastecimientos, paradas, tramos, visitas y vueltas anteriores a la fecha. Usa los mismos «Días para guardar» de Admin → Herramientas → Limpieza automática del historial (`settings('db_clear')`). |
+
+### 10.4 Configuración funcional (por operación)
+
+1. Turnos con el margen que quiera el cliente (p. ej. Día 06:30–18:30 y Noche 18:30–06:30) y
+   sus descansos; inicio del día operativo (vacío = inicio del primer turno).
+2. Tipo de vehículo y estados cargado / vacío si quieren el cambio automático para Seguridad.
+3. En cada vehículo: sensores **horas de motor**, **odómetro** y **nivel de combustible** con los
+   umbrales de recarga y robo de la pestaña Precisión (`min_fuel_fillings`, `min_fuel_thefts`,
+   `fuel_detect_sec_after_stop`). Sin sensor, la celda sale vacía (no se estima).
+4. Geocercas de **taller** (categoría `taller`) fuera de mina; motivos de parada marcados como
+   Mantenimiento / Descanso.
+5. Relleno inicial: `php artisan operations:summaries --operation=ID --from=… --to=…`.
+
+### 10.5 De dónde sale cada dato
+
+- Resumen por vehículo y turno (`operation_shift_summaries`): una pasada por las posiciones del
+  turno (`ShiftPositionScan`, acción del pipeline) más vueltas/tramos/paradas ya calculados.
+  Horómetro y odómetro = valor del sensor en la primera trama, última antes del descanso, primera
+  después y última del turno. Hora inicial/final = primer y último movimiento.
+- Estados (24 h del día operativo): READY = en movimiento; DELAY = ralentí (motor encendido sin
+  movimiento); STANDBY = motor apagado sin movimiento y descansos; MAINT = tiempo en geocerca
+  taller + paradas con motivo «Mantenimiento» (se descuenta de STANDBY y luego de DELAY); Sin
+  datos = huecos con desplazamiento o > 1 h; Fuera de operación = resto. Un hueco entre tramas
+  sin desplazamiento y < 1 h cuenta como parado, no como «sin datos».
+- Por hora (`operation_hour_stats`): por vehículo y una fila de flota (`device_id` NULL) con
+  máx / media / mín en movimiento y qué unidad y a qué instante.
+- Abastecimientos (`operation_refuelings`): subidas de nivel del pipeline de combustible
+  (`AppendFuelFillingChange` / `GroupFuelFilling`) con % antes, % después y recarga en puntos;
+  `engine_off` si cayó dentro de una parada con motor apagado.
+- Velocidades en km/h en las tablas; la pantalla y el Excel convierten a la unidad del usuario.
+
+### 10.6 Verificación
+
+1. Operaciones → Turno, elegir operación y un día con datos: tarjetas con cifras, 5 gráficas, barra
+   de estados con todos los vehículos del grupo, 3 tablas.
+2. Pasar el ratón por la gráfica de flota: tooltip «PLACA · HH:MM:SS · velocidad»; clic en un
+   punto de máx o mín abre el historial de esa unidad ±5 min.
+3. Exportar Excel: hoja Reporte con las mismas celdas que el modelo del cliente y 6 gráficos
+   editables; hoja Datos con las series.
+4. Un día sin resúmenes: aviso y «Calcular ahora» (usuarios con permiso de edición).
+5. Tras un turno completo en vivo: a los 10–70 min del fin del turno aparece su resumen sin
+   intervención.
+6. Si la operación tiene tipo/estados: al salir de carga, el vehículo muestra el estado «cargado»
+   en Seguridad y en la ficha; al salir de descarga, «vacío».
+
+### 10.7 Vuelta atrás
+
+`git checkout nuevo-tema` y `php artisan migrate:rollback --step=6` (las seis migraciones
+tienen `down()`). Las tablas nuevas se borran; las columnas añadidas se quitan.

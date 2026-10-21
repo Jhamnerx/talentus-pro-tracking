@@ -549,6 +549,40 @@ Procesa las posiciones de un dispositivo **una por una** para construir el histo
 
 ---
 
+## Módulo Operaciones (control de vueltas y reporte de turno)
+
+Solo UI v2 (`/ui/v2/operations`, `tp-operations.js`, `tp-operations-shift.js`); el legacy solo
+recibe la categoría de geocerca. Apagado con `OPERATIONS_ENABLED=false` (`tobuli.operations_enabled`).
+Plan original en `plan de operaciones.md`; reporte de turno en
+`docs/superpowers/plans/2026-10-21-operaciones-reporte-de-turno.md`; despliegue en
+`docs/guia-actualizacion-operaciones.md` §10.
+
+- **Entidades** (`Tobuli/Entities/Operation*.php`): `Operation` (turnos, descansos, `day_start`,
+  `vehicle_type_id/loaded_state_id/empty_state_id`), `OperationShift` + `OperationShiftBreak`
+  (`scheduled|fatigue`), `OperationPoint` (versionado), `OperationCycle` → `OperationLeg`
+  (`outbound` = cargado, `inbound` = vacío) → `OperationStop` (justificada con
+  `OperationStopReason`, `state = maint|standby`), `OperationVisit`, `OperationDeviceState`
+  (estado en vivo en BD), y las agregadas `OperationShiftSummary`, `OperationHourStat`
+  (`device_id` NULL = flota), `OperationRefueling`.
+- **Servicios** (`Tobuli/Services/Operations/`): `OperationService` (CRUD + validación de turnos,
+  descansos y tipo/estados), `OperationChecker` (por lote en `PositionsWriter`, como las alertas;
+  modo vivo → cambia el estado cargado/vacío con `DeviceClassificationService`),
+  `OperationCycleWriter`, `OperationLegCalculator`, `OperationRebuildService` (recálculo, nunca
+  cambia estados), `OperationShiftSummaryService` + `ShiftPositionScan` (una pasada por las
+  posiciones del turno), `OperationShiftReport` (payload de la pestaña Turno y del Excel,
+  solo desde las tablas agregadas), `Tobuli/Exports/Operations/ShiftReportExport` (PhpSpreadsheet
+  con gráficos nativos).
+- **Comandos** (lista explícita en `app/Console/Kernel.php`): `operations:process` (cada minuto;
+  cierra turnos 10–70 min después de su fin), `operations:summaries` (manual, por rango),
+  `operations:clean` (lo llama `server:autoclean` con los días de Admin → Herramientas).
+- **Reglas que no son obvias:** descansos y día operativo se configuran en la operación (nada de
+  horarios en código); horómetro y odómetro SOLO del sensor (sin sensor, NULL); DELAY = ralentí,
+  STANDBY = motor apagado o descanso, MAINT = geocerca taller o motivo `maint`; un hueco entre
+  tramas sin desplazamiento y < 1 h es parado, no «sin datos»; abastecimiento = subida de nivel
+  del pipeline de combustible con umbrales del device; velocidades se guardan en km/h.
+
+---
+
 ## Roles y Permisos
 
 | group_id | Rol              | Descripción              |
