@@ -20,9 +20,13 @@ Todo gira alrededor del **turno** (Día / Noche) y del **vehículo** (volquete).
 | 6 | Detalle de estados por equipo (horas) | barra apilada por vehículo: DELAY · MAINT · READY · STANDBY, suma 24 h | — |
 | 7 | Volquetes rodando por hora | línea de 7 a 6 con la cantidad por hora · tarjetas Turno Día / Noche / Total del día | — |
 | 8 | Velocidad promedio por hora | vacío por hora · cargado por hora · ambas en una · tarjetas Día / Noche / Promedio | — |
+| 9 | Velocidad de la flota por hora (añadido el 21-oct) | una gráfica con la velocidad **máxima**, **media** y **mínima** de la flota en cada hora; cada punto guarda **qué unidad** la alcanzó y **a qué hora** exacta | — |
 
 El Excel solo trae las tablas 1 a 4 con un vehículo de ejemplo; los bloques 5 a 8 están en
 capturas de un tablero (parecen Power BI) y hay que reproducirlos.
+
+**Condición añadida el 21-oct:** todas las gráficas deben verse **en una sola pantalla** dentro del
+módulo de Operaciones (un tablero, sin pestañas internas ni páginas aparte).
 
 ---
 
@@ -64,8 +68,9 @@ descanso.
 
 ### 3.2 Horómetro inicial / antes / después / final + horas ineficientes (bloque 1)
 
-- **Fuente:** sensor de horas de motor del vehículo (`engine_hours`) si lo tiene; si no, el
-  acumulado virtual que ya calcula `EngineHours` (ignición). Se toma el valor en la primera trama
+- **Fuente (decidido el 21-oct):** el sensor de horas de motor del vehículo (`engine_hours`).
+  Un vehículo sin ese sensor sale con el horómetro en blanco y un aviso en la fila; no se
+  calcula por ignición. Se toma el valor en la primera trama
   del turno, en la última antes del descanso, en la primera después y en la última del turno.
 - **VAR:** final − inicial (igual que el Excel).
 - **Horas ineficientes (ralentí):** suma de `idle_seconds` de los tramos del turno más el
@@ -108,8 +113,8 @@ vehículo y día (24 h), construida con lo que ya se guarda:
 | Estado del cliente | Cómo se calcula |
 | ------------------ | --------------- |
 | **READY** (productivo) | tiempo en tramo moviéndose: `duration − stop − idle − gap` de los tramos, más el tiempo en carga y descarga (`load_seconds`, `unload_seconds`) |
-| **DELAY** (demora) | paradas **no autorizadas**, ralentí fuera de puntos y «sin datos» (`gap_seconds`) |
-| **STANDBY** (en espera) | paradas **autorizadas** (motivo que autoriza), tiempo en geocerca de categoría descanso y el descanso fijo del turno |
+| **DELAY** (demora) | propuesta: tiempo en tramo por encima del ciclo esperado (vuelta lenta) y «sin datos» (`gap_seconds`); si el cliente prefiere, las paradas no autorizadas se mueven aquí y STANDBY se queda con las autorizadas |
+| **STANDBY** (parado, decidido el 21-oct) | todo el tiempo con el vehículo **detenido** dentro del turno: paradas autorizadas y no autorizadas, ralentí, descanso y espera en cola. Queda por confirmar con el cliente qué deja eso en DELAY (ver preguntas) |
 | **MAINT** (mantenimiento) | tiempo dentro de geocercas de categoría **taller** |
 | Resto hasta 24 h | motor apagado fuera de todo lo anterior (se muestra como "Fuera de operación", en gris, para que la barra cierre en 24 h) |
 
@@ -131,6 +136,21 @@ igual que la captura, y con los mismos colores (naranja, rojo, verde, amarillo).
   hora, separada por sentido. Para repartir un tramo entre horas se usan las posiciones (no el
   promedio del tramo), así una hora con medio tramo no se distorsiona.
 - Tarjetas: promedio del turno Día, Noche y del día, por sentido, y la gráfica combinada.
+
+### 3.10 Velocidad máxima, media y mínima de la flota por hora (bloque 9)
+
+- Por cada hora del día, sobre las posiciones **en movimiento** de todos los vehículos de la
+  operación: la velocidad máxima (y qué unidad y a qué hora:minuto:segundo la alcanzó), la
+  mínima en movimiento (unidad y momento) y la media de la flota (promedio ponderado por
+  tiempo en movimiento, para que un vehículo con más tramas no pese de más).
+- Cada punto de la gráfica guarda `device_id`, placa y `at` (fecha-hora exacta). Al pasar el
+  ratón o tocar el punto se muestra «CFW-813 · 14:37:12 · 42 km/h»; al hacer clic se abre el
+  historial de ese vehículo en ese minuto (ya existe `?device=&from=&to=`).
+- La mínima excluye tramas detenidas (velocidad 0); si no, siempre sería 0. Umbral: la
+  velocidad mínima de movimiento del sistema (`min_moving_speed`).
+- Se guarda en `operation_hour_stats` por **flota** (fila con `device_id` nulo) además de las
+  filas por vehículo: `max_speed, max_speed_device_id, max_speed_at, min_speed,
+  min_speed_device_id, min_speed_at, avg_speed, moving_seconds`.
 
 ---
 
@@ -157,8 +177,9 @@ calculated_at
 **`operation_hour_stats`** — una fila por operación, vehículo y hora (fecha + hora 0-23):
 
 ```
-operation_id, device_id, hour_at (dateTime, minuto 0),
-moving_seconds, loaded_distance_m, loaded_moving_s, empty_distance_m, empty_moving_s
+operation_id, device_id (nulo = toda la flota), hour_at (dateTime, minuto 0),
+moving_seconds, loaded_distance_m, loaded_moving_s, empty_distance_m, empty_moving_s,
+max_speed, max_speed_device_id, max_speed_at, min_speed, min_speed_device_id, min_speed_at, avg_speed
 ```
 
 **`operation_refuelings`** — una fila por abastecimiento detectado (geocerca grifo o sensor):
@@ -180,23 +201,32 @@ el turno (una pasada por vehículo al cerrar, no por trama).
 - `OperationHourStatsService` queda dentro del anterior (misma pasada).
 - Enganche en `operations:process` (cierre de turno) y en `OperationRebuildService` (recálculo).
 
-### 4.3 Pantalla: pestaña «Turno» en Operaciones (UI v2)
+### 4.3 Pantalla: pestaña «Turno» en Operaciones (UI v2), todo en una sola vista
 
-Filtros: operación, fecha, turno (Día / Noche / Todos). Secciones, en este orden:
+Es una cuarta pestaña junto a En vivo, Vueltas y Operaciones. **Todas las gráficas y tablas van
+en la misma pantalla**, en una sola columna desplazable (sin sub-pestañas), con los filtros fijos
+arriba: operación, fecha y turno (Día / Noche / Todos). En pantallas anchas las gráficas por hora
+van a dos columnas; en móvil, a una.
 
-1. Tarjetas: volquetes rodando (Día / Noche / Total), velocidad vacío y cargado (Día / Noche /
-   Promedio), distancia por vuelta (Día / Noche / Promedio).
-2. Tabla «Horas y horómetro» por vehículo (bloques 1 y 4 en una sola tabla: hora y horómetro
-   inicial, antes, después, final, horas efectivas, ralentí).
-3. Tabla «Kilometraje» (bloque 2) y tabla «Abastecimientos» (bloque 3).
-4. Gráfica «Estados por equipo (horas)»: barras apiladas horizontales (bloque 6).
-5. Gráficas por hora: volquetes rodando, velocidad vacío, velocidad cargado y combinada
-   (bloques 7 y 8). Se dibujan con el mismo canvas de la gráfica del historial (sin librería
-   nueva).
+Orden de arriba a abajo:
+
+1. **Tarjetas:** volquetes rodando (Día / Noche / Total), velocidad vacío y cargado (Día / Noche
+   / Promedio), distancia por vuelta (Día / Noche / Promedio).
+2. **Gráficas por hora (bloques 7, 8 y 9):** volquetes rodando; velocidad vacío; velocidad
+   cargado; cargado y vacío juntas; **máxima / media / mínima de la flota** con la unidad y la
+   hora exacta en cada punto (tooltip y clic al historial).
+3. **Estados por equipo (horas), bloque 6:** barras apiladas horizontales, un vehículo por fila.
+4. **Tabla «Horas y horómetro»** (bloques 1 y 4): hora y horómetro inicial, antes y después del
+   descanso, final, horas efectivas y ralentí.
+5. **Tabla «Kilometraje»** (bloque 2) y **tabla «Abastecimientos»** (bloque 3).
+
+Las gráficas se dibujan con el mismo canvas de la gráfica del historial (sin librería nueva) y
+comparten un selector de hora: al pasar por una hora se resalta esa hora en todas. Un botón
+«Pantalla completa» muestra solo el tablero (sin menú lateral) para proyectarlo en sala.
 
 Botón **Exportar Excel** con el formato del cliente (hoja de tablas con las mismas cabeceras del
 Excel recibido y una hoja por gráfica con sus datos; los gráficos del Excel se generan con
-`PhpSpreadsheet` ya presente en el proyecto para los reportes XLSX).
+`PhpSpreadsheet`, ya presente en el proyecto para los reportes XLSX).
 
 ### 4.4 Reportes
 
@@ -216,32 +246,75 @@ No se toca: el módulo de Operaciones es solo UI v2 (decisión del 6-oct-2026).
 | ---- | ----------- | -------- | ---------------- |
 | A · Configuración | `break_start/break_end` en turnos (migración, modal, validación); revisar que los vehículos del piloto tengan sensor de horas de motor, odómetro y, si lo hay, nivel de combustible; geocercas grifo y taller del cliente | 1,5 días | El modal guarda el descanso y los vehículos del piloto tienen los sensores asignados |
 | B · Cálculo | Migraciones de las 3 tablas, `OperationShiftSummaryService`, enganche en `operations:process` y en el recálculo | 5 a 6 días | El recálculo de una semana del piloto llena las tablas y el horómetro/kilometraje coincide con el control manual del cliente |
-| C · Pantalla «Turno» | Pestaña nueva, tarjetas, tablas, barra apilada y gráficas por hora | 4 a 5 días | El cliente ve en la pantalla lo mismo que en su tablero de Power BI |
+| C · Pantalla «Turno» | Pestaña nueva con **todo en una vista**: tarjetas, cinco gráficas por hora (incluida máx/media/mín de flota con unidad y hora por punto), barra apilada de estados y las tres tablas | 5 a 6 días | El cliente ve en una sola pantalla lo mismo que en su tablero de Power BI |
 | D · Exportación y reporte | Excel con el formato del cliente, reporte 913 en Reportes | 2 a 3 días | El Excel descargado se abre con las mismas tablas que `TALENTUS (1).xlsx` y las gráficas |
 | E · Piloto y ajustes | Comparar un turno Día y uno Noche completos contra el control del cliente; ajustar umbrales (minutos para "rodando", descanso) | 2 días | Diferencias explicadas y aceptadas |
 
-**Total estimado: 15 a 18 días** de un desarrollador. Orden: A → B → C → D → E. B puede
+**Total estimado: 16 a 19 días** de un desarrollador. Orden: A → B → C → D → E. B puede
 probarse con el recálculo sobre días reales antes de que exista la pantalla.
 
 ---
 
 ## 6. Preguntas para el cliente antes de empezar
 
-1. **Descanso:** ¿es un horario fijo por turno (refrigerio) o se toma cuando el volquete entra a
-   una zona de descanso? ¿Puede haber más de uno?
-2. **Horómetro:** ¿quieren el valor del horómetro del equipo (sensor) o les vale el calculado por
-   ignición? Hoy el piloto reporta ignición; para el valor real hace falta que el GPS lea el
-   horómetro del vehículo.
-3. **Distancia 2.8 / 2.9:** ¿son kilómetros por vuelta (lo asumido) o kilómetros totales?
-4. **Estados DELAY / MAINT / READY / STANDBY:** ¿aceptan la equivalencia de la sección 3.7? En
-   particular, qué consideran STANDBY y si el "sin datos" va a DELAY.
-5. **"Volquete rodando":** ¿cuántos minutos de movimiento en la hora hacen que cuente? Propuesta 5.
-6. **Vacío / cargado:** confirmar que cargado es carga → descarga y vacío el regreso (no hay sensor
-   de carga).
-7. **Abastecimiento:** ¿siempre en el grifo (geocerca) o también con cisterna en campo? Si es en
-   campo, solo se detecta con sensor de nivel.
-8. **Turno Noche del día X:** ¿el reporte del "día X" es de 07:00 del X a 07:00 del X+1 (como el
-   módulo) o el día calendario?
+Ya decidido (21-oct): el horómetro sale del sensor de horas del vehículo, STANDBY es el tiempo
+parado y todas las gráficas van en una sola pantalla del módulo de Operaciones.
+
+**Turno y descanso**
+
+1. ¿El descanso es un horario fijo por turno (refrigerio a la misma hora para todos) o empieza
+   cuando cada volquete entra a la zona de descanso? ¿Puede haber más de un descanso por turno?
+2. El reporte del «día X», ¿va de 07:00 del día X a 07:00 del día siguiente (el turno Noche del
+   X cuenta para el X) o es el día calendario de 00:00 a 24:00?
+3. La hora inicial y final de cada volquete en el turno, ¿es la primera y la última vez que
+   encendió el motor, o la primera y la última vez que se movió?
+
+**Horómetro y kilometraje**
+
+4. ¿Todos los volquetes reportan el horómetro del equipo al GPS? Los que no lo tengan saldrán en
+   blanco en esa tabla. ¿Quieren que para esos se muestre el calculado por ignición, marcado
+   como estimado, o que quede vacío?
+5. El kilometraje inicial y final, ¿del odómetro del vehículo o del recorrido GPS?
+
+**Estados del equipo**
+
+6. Si STANDBY es todo el tiempo parado, ¿qué queda en DELAY? Opciones: (a) vueltas más lentas que
+   el ciclo esperado y pérdida de señal; (b) las paradas no autorizadas pasan a DELAY y STANDBY
+   se queda solo con las autorizadas y el descanso.
+7. MAINT: ¿basta con el tiempo dentro de la zona de taller, o hay mantenimientos en campo que se
+   deben registrar a mano?
+8. ¿Qué pasa con el tiempo con motor apagado fuera de turno? Propuesta: barra gris «fuera de
+   operación» para que cada vehículo cierre en 24 h.
+
+**Gráficas por hora**
+
+9. «Volquete rodando»: ¿cuántos minutos de movimiento dentro de la hora hacen que cuente?
+   Propuesta 5.
+10. Velocidad vacío y cargado: confirmar que cargado es el viaje de carga a descarga y vacío el
+    regreso (no hay sensor de peso).
+11. Velocidad mínima de la flota por hora: ¿se toma solo con el vehículo en movimiento (lo
+    propuesto; si no, siempre sería 0)? ¿Desde qué velocidad se considera «en movimiento»?
+12. Velocidad media de la flota: ¿promedio simple de los vehículos que se movieron en esa hora, o
+    ponderado por el tiempo que cada uno estuvo en movimiento?
+13. Al hacer clic en un punto de la gráfica (unidad y hora), ¿quieren abrir el historial de ese
+    vehículo en ese momento?
+14. La pantalla única: ¿se va a proyectar en una sala (hace falta modo pantalla completa y
+    refresco automático) o se consulta desde el escritorio?
+
+**Distancia y combustible**
+
+15. Los valores de distancia 2,8 / 2,9 del tablero, ¿son kilómetros por vuelta o kilómetros
+    totales del turno?
+16. El abastecimiento, ¿siempre en el grifo (zona) o también con cisterna en campo? En campo
+    solo se detecta con sensor de nivel de combustible. ¿Quieren los galones cargados o solo las
+    horas?
+
+**Entrega**
+
+17. ¿Necesitan el Excel con el mismo formato que `TALENTUS (1).xlsx` o les sirve la pantalla y un
+    Excel con tablas simples?
+18. ¿Quién recibe el reporte y con qué frecuencia (al cierre de cada turno por correo, o bajo
+    demanda desde la pantalla)?
 
 ---
 
