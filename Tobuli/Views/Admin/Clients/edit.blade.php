@@ -742,6 +742,67 @@
                     </div>
                 </div>
             </div>
+            <hr style="border-color: #052062;">
+
+            <div class="form-group">
+                <h4>UNIGIS</h4>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[unigis][active]', 1, $item->services['unigis']['active'] ?? 0, [
+                                'class' => 'checkbox-unigis',
+                            ]) !!}
+                            {!! Form::label('services[unigis][active]', 'Activar') !!}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[unigis][logs]', 1, $item->services['unigis']['logs'] ?? 0, [
+                                'class' => 'unigis-logs',
+                            ]) !!}
+                            {!! Form::label('services[unigis][logs]', 'Logs') !!}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-12 text-unigis">
+                    <div class="form-group">
+                        {!! Form::label('services[unigis][url]', 'URL del WSDL') !!}
+                        {!! Form::text('services[unigis][url]', $item->services['unigis']['url'] ?? null, [
+                            'class' => 'form-control',
+                            'placeholder' => 'https://cloud-test.unigis.com/hub_TEST/mapi/soap/gps/service.asmx?wsdl',
+                        ]) !!}
+                        <small class="text-muted">TEST: cloud-test.unigis.com/hub_TEST/… — para producción, la URL que entregue UNIGIS.</small>
+                    </div>
+                </div>
+
+                <div class="col-sm-6 text-unigis">
+                    <div class="form-group">
+                        {!! Form::label('services[unigis][user]', 'Usuario (SystemUser)') !!}
+                        {!! Form::text('services[unigis][user]', $item->services['unigis']['user'] ?? null, [
+                            'class' => 'form-control',
+                            'autocomplete' => 'off',
+                        ]) !!}
+                    </div>
+                </div>
+
+                <div class="col-sm-6 text-unigis">
+                    <div class="form-group">
+                        {!! Form::label('services[unigis][password]', 'Contraseña') !!}
+                        {!! Form::password('services[unigis][password]', [
+                            'class' => 'form-control',
+                            'autocomplete' => 'new-password',
+                            'placeholder' => !empty($item->services['unigis']['password']) ? '••••••••••••••••' : '',
+                        ]) !!}
+                        <small class="text-muted">Dejar vacío para no modificar la contraseña almacenada.</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -771,6 +832,7 @@
             toggleTextFields('.checkbox-osinergmin', '.text-osinergmin');
             toggleTextFields('.checkbox-consatel', '.text-consatel');
             toggleTextFields('.checkbox-sidersales', '.text-sidersales');
+            toggleTextFields('.checkbox-unigis', '.text-unigis');
         });
     </script>
 

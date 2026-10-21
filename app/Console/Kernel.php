@@ -11,6 +11,7 @@ use App\Jobs\DispatchWisetrackJobs;
 use App\Jobs\DispatchOsinergminJobs;
 use App\Jobs\DispatchSidersalesJobs;
 use App\Jobs\DispatchEpsCenterJobs;
+use App\Jobs\DispatchUnigisJobs;
 use App\Jobs\RenewSidersalesToken;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
@@ -25,6 +26,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         'App\Console\Commands\Inspire',
+        'App\Console\Commands\UnigisTestCommand',
         'App\Console\Commands\BootTest',
         'App\Console\Commands\Tracker\RestartCommand',
         'App\Console\Commands\Tracker\ConfigCommand',
@@ -170,6 +172,7 @@ class Kernel extends ConsoleKernel
         $schedule->job(new DispatchWisetrackJobs)->everyMinute()->withoutOverlapping();
         $schedule->job(new DispatchSidersalesJobs)->everyMinute()->withoutOverlapping();
         $schedule->job(new DispatchEpsCenterJobs)->everyMinute()->withoutOverlapping();
+        $schedule->job(new DispatchUnigisJobs)->everyMinute()->withoutOverlapping();
         $schedule->job(new RenewSidersalesToken)->everyFifteenMinutes()->withoutOverlapping();
         $schedule->job(new CleanOldLogsJob(10))->daily();
 

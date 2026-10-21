@@ -708,6 +708,7 @@ class DeviceModalHelper extends ModalHelper
             'wisetrack'  => ['label' => 'Wisetrack',   'perm' => 'webservice.wisetrack'],
             'sidersales' => ['label' => 'Sidersales',  'perm' => 'webservice.sidersales'],
             'epscenter'  => ['label' => 'EPS Center',  'perm' => 'webservice.epscenter'],
+            'unigis'     => ['label' => 'UNIGIS',      'perm' => 'webservice.unigis'],
         ];
 
         $result = [];

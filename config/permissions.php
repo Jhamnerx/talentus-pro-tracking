@@ -358,6 +358,11 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+        'webservice.unigis' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
         'webservice.epscenter' => [
             'view'  => 1,
             'edit'  => 1,

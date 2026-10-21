@@ -158,6 +158,7 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'mininter',
         'consatel',
         'wisetrack',
+        'unigis',
         'sidersales',
         'epscenter',
 
@@ -2236,6 +2237,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     public function dataWisetrack(): HasMany
     {
         return $this->hasMany('Tobuli\Entities\WiseTrack');
+    }
+
+    public function dataUnigis(): HasMany
+    {
+        return $this->hasMany('Tobuli\Entities\Unigis');
     }
 
     public function dataSidersales(): HasMany
