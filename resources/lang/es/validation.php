@@ -904,6 +904,7 @@ return [
         'wisetrack' => 'Wisetrack',
         'sidersales' => 'Sidersales (Gerdau)',
         'epscenter' => 'EPS Center',
+        'unigis' => 'UNIGIS',
         'epscenter_id_transporte' => 'EPS Center — ID Transporte',
         'epscenter_telefono' => 'EPS Center — Teléfono',
     ],
