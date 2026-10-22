@@ -26,6 +26,7 @@ use Tobuli\Entities\SmsTemplate;
 use Tobuli\Entities\Subscription;
 use Tobuli\Entities\Task;
 use Tobuli\Entities\TaskSet;
+use Tobuli\Entities\Tag;
 use Tobuli\Entities\User;
 use Tobuli\Entities\UserDriver;
 use Tobuli\Entities\Poi;
@@ -78,6 +79,7 @@ class Manager
             'routes'                      => Route::class,
             'route_groups'                => RouteGroup::class,
             'drivers'                     => UserDriver::class,
+            'tags'                        => Tag::class,
             'tasks'                       => Task::class,
             'task_sets'                   => TaskSet::class,
             'chats'                       => Chat::class,
