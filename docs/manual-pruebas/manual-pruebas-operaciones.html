@@ -19,6 +19,7 @@
   .cover .kicker { color: #1d4ed8; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 9pt; margin-bottom: 3mm; }
   .cover .sub { font-size: 13pt; color: #475569; margin-bottom: 10mm; }
   .cover table { font-size: 10pt; }
+  .new2 { display: inline-block; background: #ffedd5; color: #9a3412; font-weight: 700; font-size: 8pt; padding: 1px 6px; border-radius: 10px; vertical-align: middle; margin-left: 4px; letter-spacing: .04em; }
   .new { display: inline-block; background: #dcfce7; color: #166534; font-weight: 700; font-size: 8pt; padding: 1px 6px; border-radius: 10px; vertical-align: middle; margin-left: 4px; letter-spacing: .04em; }
   .box { border: 1px solid #cbd5e1; border-left: 4px solid #1d4ed8; background: #f8fafc; padding: 3mm 4mm; margin: 3mm 0 4mm; page-break-inside: avoid; }
   .box.warn { border-left-color: #d97706; background: #fffbeb; }
@@ -44,9 +45,9 @@
 <section class="cover">
   <div class="kicker">Plataforma de Rastreo · Talentus Technology</div>
   <h1>Manual de pruebas<br>Módulo de Operaciones (control de vueltas)</h1>
-  <div class="sub">Guía paso a paso para los usuarios de prueba: alta de unidades, geocercas, operaciones, alertas y reportes. Las novedades de esta versión están marcadas con <span class="new">NUEVO</span>.</div>
+  <div class="sub">Guía paso a paso para los usuarios de prueba: alta de unidades, geocercas, operaciones, alertas y reportes. Las novedades de la primera entrega están marcadas con <span class="new">NUEVO</span> y las de esta entrega (reporte de turno, descansos, estados) con <span class="new2">NUEVO 22-OCT</span>.</div>
   <table>
-    <tr><th style="width:32%">Versión del sistema</th><td>Rama <code>nuevo-tema</code> · entrega del 12 de octubre de 2026</td></tr>
+    <tr><th style="width:32%">Versión del sistema</th><td>Rama <code>operaciones-turno</code> · entrega del 22 de octubre de 2026 (incluye la del 12 de octubre)</td></tr>
     <tr><th>Interfaz</th><td>Interfaz nueva (v2). El panel de administración conserva la interfaz clásica.</td></tr>
     <tr><th>Público</th><td>Usuarios de prueba (supervisores de operación) y administrador de la plataforma</td></tr>
     <tr><th>Cómo reportar errores</th><td>Al final de cada capítulo hay una lista «Qué probar». Reporta: qué hiciste, qué esperabas, qué pasó, hora, vehículo y, si es posible, una captura.</td></tr>
@@ -66,7 +67,8 @@
     <li>Recalcular vueltas y catálogo de motivos <span class="new">NUEVO</span></li>
     <li>Alerta «Parada en operación» <span class="new">NUEVO</span></li>
     <li>Reportes 910 a 913 <span class="new">NUEVO</span></li>
-    <li>Otras mejoras de esta entrega (mapa, historial, monitor)</li>
+    <li>Reporte de turno: pestaña «Turno» y Excel con gráficos <span class="new2">NUEVO 22-OCT</span></li>
+    <li>Otras mejoras (mapa, historial, monitor)</li>
     <li>Lista general de verificación</li>
   </ol>
 </section>
@@ -87,6 +89,9 @@
     <li><b>Parada</b>: el vehículo estuvo quieto más del umbral configurado (por defecto 60 s) dentro de un tramo. Puede ser <b>autorizada</b> (cayó en una geocerca de categoría grifo, taller o descanso), <b>no autorizada</b> o <b>dato dudoso</b> (hubo un salto de señal).</li>
     <li><b>Vuelta incompleta</b>: el ciclo se cerró sin completar los dos tramos (por ejemplo, volvió a descarga sin pasar por carga, o se pasó el tramo máximo en horas).</li>
     <li><b>Turno</b>: franja horaria con nombre (Día, Noche). Los turnos que terminan a una hora menor que la de inicio cruzan la medianoche.</li>
+    <li><b>Descanso</b> <span class="new2">NUEVO 22-OCT</span>: pausa dentro del turno. Puede ser <b>programado</b> (almuerzo 12:00–13:00) o <b>por fatiga y somnolencia</b> (sin horario: cualquier parada con motor apagado fuera de los programados).</li>
+    <li><b>Día operativo</b> <span class="new2">NUEVO 22-OCT</span>: las 24 horas que arrancan a la hora configurada en la operación (por ejemplo 06:30). El turno Noche del día 10 cuenta para el día 10 aunque termine el 11.</li>
+    <li><b>Estados del equipo</b> <span class="new2">NUEVO 22-OCT</span>: READY (en movimiento), DELAY (ralentí: motor encendido sin moverse), STANDBY (descanso o motor apagado sin moverse), MAINT (en zona de taller o parada justificada como mantenimiento) y «fuera de operación» (el resto hasta las 24 h).</li>
   </ul>
   <div class="box">
     <b>Orden recomendado para configurar desde cero:</b> unidades y usuario (admin) → grupo de vehículos → geocercas con categoría → operación → alerta → reportes. Los capítulos siguen ese orden.
@@ -176,6 +181,7 @@
   <figure class="narrow"><img src="img/32-geocerca-nueva-chooser.png" alt="Elección del tipo de geocerca"><figcaption>Nueva geocerca: elegir polígono, círculo o corredor.</figcaption></figure>
   <figure><img src="img/31-geocerca-editar-categoria.png" alt="Formulario de geocerca con el campo Categoría"><figcaption>Formulario de la geocerca con el nuevo campo «Categoría».</figcaption></figure>
 
+  <div class="box warn"><b>Importante:</b> crear una geocerca con categoría <b>no la agrega sola a ninguna operación</b>. Si añades una zona nueva de carga, descarga, inicio o fin de ruta, entra en <b>Operaciones → Editar</b> y agrégala con «+ Agregar punto» (capítulo 5). Mientras no esté en la operación, las vueltas por esa zona no se cuentan. Las zonas de grifo, taller y descanso sí aplican solas: basta con la categoría.</div>
   <h3>4.2 Filtrar la lista por categoría</h3>
   <p>En el panel de geocercas hay un selector <b>«Todas las categorías»</b> que filtra la lista y el mapa. Úsalo para comprobar que todos los puntos de la operación tienen la categoría correcta.</p>
   <figure><img src="img/30-geocercas-lista-categoria.png" alt="Lista de geocercas con filtro de categoría"><figcaption>Panel de geocercas con el filtro de categoría y las cinco zonas de la operación de prueba.</figcaption></figure>
@@ -210,7 +216,8 @@
     <li><b>Tipo de operación</b>: Acarreo (carga / descarga) o Ruta (inicio / fin). Cambia los nombres de los bloques de puntos.</li>
     <li><b>Grupo de vehículos</b>: el grupo del capítulo 3. Debajo se muestra cuántos vehículos tiene.</li>
     <li><b>Carga</b> y <b>Descarga</b>: elige las geocercas. Solo aparecen las que tienen la categoría correspondiente. Con <b>+ Agregar punto</b> puedes poner varias (por ejemplo tres frentes de carga y una descarga). La vuelta cuenta con cualquiera de ellas.</li>
-    <li><b>Turnos</b>: nombre, hora de inicio y hora de fin. Un turno cuya hora de fin es menor o igual a la de inicio termina al día siguiente (Noche 19:00–07:00). Los turnos no pueden solaparse.</li>
+    <li><b>Turnos</b>: nombre, hora de inicio y hora de fin. Un turno cuya hora de fin es menor o igual a la de inicio termina al día siguiente (Noche 19:00–07:00). Los turnos no pueden solaparse. Si el cliente quiere un margen (empezar antes o terminar después del horario oficial), configúralo aquí: por ejemplo Día 06:30–18:30 y Noche 18:30–06:30.</li>
+    <li><b>Descansos</b> <span class="new2">NUEVO 22-OCT</span>: nombre, turno al que pertenece, tipo y horario. Tipo <b>Programado</b> con hora desde y hasta, dentro del turno (Almuerzo 12:00–13:00 en Día, Cena 02:00–03:00 en Noche). Tipo <b>Fatiga y somnolencia</b> sin horario: marca la casilla una vez por turno y el sistema toma como ese descanso cualquier parada con motor apagado fuera de los programados. El primer descanso programado de cada turno define las columnas «antes» y «después del descanso» del reporte de turno. Dos programados del mismo turno no pueden solaparse.</li>
     <li><b>Opciones avanzadas</b> (pulsa para desplegar):
       <ul>
         <li><b>Parada (segundos)</b>: a partir de cuántos segundos quieto se registra una parada. Por defecto 60.</li>
@@ -218,6 +225,8 @@
         <li><b>Tramo máximo (horas)</b>: si un tramo dura más, la vuelta se cierra como incompleta (vehículo que se fue a taller, por ejemplo). Por defecto 6.</li>
         <li><b>Paradas autorizadas en geocercas de categoría</b>: grifo, taller, descanso. Una parada dentro de una geocerca de esas categorías no cuenta como no autorizada.</li>
         <li><b>Horas trabajadas</b>: qué se descuenta de las horas de motor en el reporte «Horas trabajadas netas»: abastecimiento, ralentí y paradas no autorizadas.</li>
+        <li><b>Inicio del día operativo</b> <span class="new2">NUEVO 22-OCT</span>: hora a la que empieza el día de 24 h del reporte de turno. Vacío = inicio del primer turno.</li>
+        <li><b>Estado de vehículo automático (Seguridad)</b> <span class="new2">NUEVO 22-OCT</span>: elige el <b>tipo de vehículo</b> del catálogo (Ajustes de cuenta → Tipos de vehículo) y qué estado corresponde a <b>cargado</b> y a <b>vacío</b>. Con eso, al salir de carga el vehículo pasa a «cargado» y al salir de descarga a «vacío», y los límites de velocidad por estado de las geocercas se aplican solos. Sin tipo, no hace nada.</li>
       </ul>
     </li>
     <li><b>Operación activa</b>: desmarcada, la operación existe pero no evalúa posiciones.</li>
@@ -226,10 +235,14 @@
   <figure><img src="img/21-ops-nueva-operacion.png" alt="Modal Nueva operación"><figcaption>Nueva operación: nombre, tipo, grupo, puntos de carga y descarga, turnos.</figcaption></figure>
   <figure><img src="img/23-ops-editar-avanzado.png" alt="Editar operación con opciones avanzadas"><figcaption>Editar operación: puntos, turnos y opciones avanzadas desplegadas.</figcaption></figure>
   <figure><img src="img/24-ops-editar-horas-trabajadas.png" alt="Bloque Horas trabajadas"><figcaption>Bloque «Horas trabajadas»: descuentos que aplica el reporte 912.</figcaption></figure>
+  <figure><img src="img/27b-ops-editar-turnos.png" alt="Turnos en el modal de operación"><figcaption>Turnos Día y Noche con hora de inicio y fin.</figcaption></figure>
+  <figure><img src="img/27-ops-editar-descansos.png" alt="Descansos en el modal de operación"><figcaption><span class="new2">NUEVO 22-OCT</span> Descansos: uno programado por turno (almuerzo y cena); la fila de fatiga no lleva horario.</figcaption></figure>
+  <figure><img src="img/28-ops-editar-estado-vehiculo.png" alt="Opciones avanzadas: día operativo y estado de vehículo"><figcaption><span class="new2">NUEVO 22-OCT</span> Opciones avanzadas: inicio del día operativo y estado de vehículo automático.</figcaption></figure>
 
   <h3>5.2 Editar, desactivar y eliminar</h3>
   <ul>
     <li><b>Editar</b> cambia la configuración para las posiciones futuras. Las vueltas ya calculadas no cambian (usa Recalcular si lo necesitas).</li>
+    <li><b>Zonas nuevas</b>: cada vez que crees una geocerca de carga, descarga, inicio o fin de ruta para esta operación, vuelve a <b>Editar</b> y agrégala con «+ Agregar punto». No se agrega sola.</li>
     <li><b>Desactivar</b> deja de evaluar sin perder nada; <b>Activar</b> reanuda.</li>
     <li><b>Eliminar</b> borra la operación y sus vueltas (borrado lógico; pide confirmación).</li>
   </ul>
@@ -239,6 +252,9 @@
       <li>Turnos solapados o grupo sin vehículos: el formulario debe avisar y no guardar.</li>
       <li>Cambiar el tipo a «Ruta»: los bloques pasan a Inicio / Fin de ruta.</li>
       <li>Desactivar y volver a activar: «En vivo» deja de actualizar y vuelve.</li>
+      <li><span class="new2">NUEVO 22-OCT</span> Un descanso fuera del horario del turno o dos programados solapados: el formulario avisa y no guarda. Un descanso de fatiga no pide horas.</li>
+      <li><span class="new2">NUEVO 22-OCT</span> Con tipo CAMIONES y estados CARGADO / VACIO configurados, al salir de carga el vehículo muestra «CARGADO» en su ficha y en Seguridad; al salir de descarga, «VACIO».</li>
+      <li>Crear una geocerca de carga nueva y comprobar que NO aparece en la operación hasta agregarla con «+ Agregar punto».</li>
     </ul>
   </div>
 </section>
@@ -311,12 +327,13 @@
   <div class="box warn">Las justificaciones de paradas de las vueltas reemplazadas se pierden al recalcular. Justifica después de recalcular, no antes.</div>
 
   <h3>8.2 Catálogo de motivos de parada</h3>
-  <p>Pestaña Operaciones → <b>Motivos de parada</b>. Es la lista que aparece al justificar. Cada motivo tiene un nombre y la casilla <b>Autoriza la parada</b>. El catálogo viene con siete motivos por defecto; puedes renombrarlos, quitarlos o agregar otros.</p>
-  <figure class="narrow"><img src="img/26-ops-motivos.png" alt="Catálogo de motivos de parada"><figcaption>Motivos de parada del usuario.</figcaption></figure>
+  <p>Pestaña Operaciones → <b>Motivos de parada</b>. Es la lista que aparece al justificar. Cada motivo tiene un nombre, la casilla <b>Autoriza la parada</b> y <span class="new2">NUEVO 22-OCT</span> el selector <b>Cuenta como</b>: «Mantenimiento» (la parada suma al estado MAINT del reporte de turno) o «Descanso» (suma a STANDBY). Las cuentas nuevas traen los motivos «Mantenimiento» y «Fatiga y somnolencia» ya marcados; en una cuenta existente agrégalos tú y marca «Cuenta como».</p>
+  <figure class="narrow"><img src="img/29-ops-motivos-cuenta-como.png" alt="Catálogo de motivos con el selector Cuenta como"><figcaption>Motivos de parada con «Autoriza» y «Cuenta como».</figcaption></figure>
   <div class="box test"><b>Qué probar</b>
     <ul class="check">
       <li>Recalcular un día conocido y verificar que las vueltas vuelven a salir iguales (o con el cambio esperado si cambiaste algo).</li>
       <li>Agregar un motivo nuevo y usarlo al justificar.</li>
+      <li><span class="new2">NUEVO 22-OCT</span> Justificar una parada con un motivo «Cuenta como Mantenimiento» y ver que en la pestaña Turno la barra del vehículo gana tramo rojo (MAINT) tras recalcular o esperar el cierre del turno.</li>
     </ul>
   </div>
 </section>
@@ -374,7 +391,54 @@
 
 <!-- ===================================================================== -->
 <section class="chapter">
-  <h2>11. Otras mejoras de esta entrega</h2>
+  <h2>11. Reporte de turno: pestaña «Turno» <span class="new2">NUEVO 22-OCT</span></h2>
+  <p>Menú lateral → <b>Operaciones</b> → pestaña <b>Turno</b> (la cuarta). Reúne en <b>una sola pantalla</b> lo que el cliente llevaba en su Excel y su tablero: tarjetas, cinco gráficas por hora, estados por equipo y tres tablas. Se consulta bajo demanda: elige la operación, el día y el turno y pulsa <b>Refrescar</b>. No se actualiza sola.</p>
+
+  <h3>11.1 Cómo se llena</h3>
+  <ul>
+    <li>Cada turno se calcula solo <b>entre 10 y 70 minutos después de su hora de fin</b>. Hasta entonces el día muestra «No hay datos calculados para este día».</li>
+    <li>Para días pasados o si cambiaste sensores, descansos o turnos, pulsa <b>Calcular ahora</b> (solo usuarios con permiso de edición). Tarda unos segundos por vehículo y día.</li>
+    <li>Un recálculo de vueltas (capítulo 8) rehace también los resúmenes de los turnos afectados.</li>
+  </ul>
+  <figure><img src="img/84-ops-turno-vacio-calcular.png" alt="Día sin datos calculados con el botón Calcular ahora"><figcaption>Día sin cálculo: aviso y botón «Calcular ahora».</figcaption></figure>
+  <div class="box warn"><b>Sensores obligatorios por vehículo:</b> el horómetro sale del sensor de <b>horas de motor</b>, el kilometraje del sensor de <b>odómetro</b> y el abastecimiento del sensor de <b>nivel de combustible</b> (con los umbrales de recarga y robo de la pestaña Precisión del vehículo). Si el vehículo no tiene el sensor, la celda sale vacía; no se estima.</div>
+
+  <h3>11.2 Qué muestra la pantalla</h3>
+  <table>
+    <tr><th style="width:26%">Bloque</th><th>Contenido</th></tr>
+    <tr><td>Filtros</td><td>Operación, fecha (con flechas ◀ ▶), turno (Todos / Día / Noche), Refrescar, Pantalla completa (oculta menú y cabecera; Esc para salir) y Exportar Excel.</td></tr>
+    <tr><td>Tarjetas</td><td>Volquetes rodando (Día / Noche / Total), velocidad vacío y velocidad cargado (Día / Noche / Promedio), distancia en km totales del turno (Día / Noche / Promedio).</td></tr>
+    <tr><td>Gráficas por hora</td><td>Eje de 24 horas en orden del día operativo (07…06). (1) Volquetes rodando: vehículos con movimiento en esa hora. (2) Velocidad promedio vacío (regreso descarga → carga). (3) Velocidad promedio cargado (carga → descarga). (4) Las dos juntas. (5) <b>Velocidad de la flota</b>: máxima, media y mínima en movimiento; el tooltip dice qué unidad y a qué hora exacta, y el clic en un punto de máxima o mínima abre el Historial de esa unidad ±5 min.</td></tr>
+    <tr><td>Estados por equipo</td><td>Una barra de 24 h por vehículo: DELAY naranja, MAINT rojo, READY verde, STANDBY amarillo, sin datos gris oscuro y fuera de operación gris claro. Las horas van sobre cada tramo.</td></tr>
+    <tr><td>Tabla Horas y horómetro</td><td>Por vehículo y turno: hora inicial (primer movimiento), antes y después del descanso, hora final (último movimiento), horas efectivas (descontando el descanso), ralentí, y horómetro inicial / antes / después / final con su VAR.</td></tr>
+    <tr><td>Tabla Kilometraje</td><td>Odómetro inicial y final del turno y VAR.</td></tr>
+    <tr><td>Tabla Abastecimientos</td><td>Una fila por recarga: inicio y fin (parada con motor apagado), duración, % al llegar, % al salir, recarga en puntos de % y si fue con motor apagado. Se detecta por la subida del nivel del tanque, así que vale para cisterna en campo.</td></tr>
+  </table>
+  <figure><img src="img/80-ops-turno-vista.png" alt="Pestaña Turno"><figcaption>Pestaña Turno del 21 de octubre con la flota del cliente: filtros, tarjetas y las cuatro primeras gráficas por hora. Más abajo siguen la gráfica de flota, los estados y las tablas.</figcaption></figure>
+  <figure><img src="img/82-ops-turno-flota-tooltip.png" alt="Gráfica de velocidad de la flota con el tooltip de unidad y hora"><figcaption>Velocidad de la flota: el tooltip indica la unidad y la hora exacta del punto.</figcaption></figure>
+  <figure><img src="img/83-ops-turno-estados.png" alt="Estados por equipo"><figcaption>Estados por equipo: una barra de 24 h por vehículo con las horas de cada estado.</figcaption></figure>
+  <figure><img src="img/85-ops-turno-tabla-horas.png" alt="Tabla de horas y horómetro"><figcaption>Horas y horómetro por vehículo y turno (los vehículos sin sensor salen con «—»).</figcaption></figure>
+  <figure><img src="img/86-ops-turno-tablas-km-abastecimiento.png" alt="Tablas de kilometraje y abastecimientos"><figcaption>Kilometraje por turno y abastecimientos detectados (% al llegar, % al salir, recarga).</figcaption></figure>
+
+  <h3>11.3 Exportar Excel</h3>
+  <p>El botón <b>Exportar Excel</b> descarga <code>turno_&lt;operación&gt;_&lt;fecha&gt;.xlsx</code> con dos hojas. <b>Reporte</b> reproduce el formato del Excel del cliente (turno, tablas de horómetro, kilometraje, abastecimiento y horas con las fórmulas VAR, bloque Distancia) y lleva los <b>seis gráficos como gráficos nativos de Excel</b>, editables. <b>Datos</b> tiene las series de cada gráfica y, para la de flota, la unidad y la hora exacta de cada máximo y mínimo. El botón se activa solo cuando el día tiene datos.</p>
+
+  <div class="box test"><b>Qué probar</b>
+    <ul class="check">
+      <li>Un día ya cerrado muestra tarjetas, 5 gráficas, la barra de cada vehículo del grupo y las tres tablas; el turno Día y el turno Noche por separado cuadran con «Todos».</li>
+      <li>Comparar horómetro y kilometraje inicial y final de un vehículo con el tablero del equipo y con el control manual del cliente.</li>
+      <li>Las horas inicial y final de cada vehículo coinciden con el primer y último movimiento del Historial.</li>
+      <li>Un abastecimiento real con cisterna aparece con su % antes y después; si no aparece, revisar que el vehículo tenga sensor de nivel y umbral de recarga.</li>
+      <li>Tooltip y clic en la gráfica de flota: la unidad y la hora corresponden y el Historial abre en ese minuto.</li>
+      <li>Exportar Excel: abre en Excel sin avisos, las fórmulas VAR calculan y los seis gráficos se ven iguales que en pantalla.</li>
+      <li>Esperar al cierre de un turno real: entre 10 y 70 minutos después de su fin el día ya no pide «Calcular ahora».</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="chapter">
+  <h2>12. Otras mejoras</h2>
   <p>Entran junto con el módulo y conviene probarlas de paso.</p>
   <h3>Mapa en vivo</h3>
   <ul>
@@ -403,7 +467,7 @@
 
 <!-- ===================================================================== -->
 <section class="chapter">
-  <h2>12. Lista general de verificación</h2>
+  <h2>13. Lista general de verificación</h2>
   <p>Marca cada punto al terminar. Si algo falla, anota el número del punto en el reporte de error.</p>
   <ol class="steps">
     <li>El usuario con permiso ve «Operaciones» en el menú; sin permiso, no.</li>
@@ -418,8 +482,13 @@
     <li>Reportes 910–913 en HTML, PDF y CSV; vacíos sin error; 910 coincide con la pestaña Vueltas.</li>
     <li>Conteo de vueltas de un día completo comparado con el control manual del cliente.</li>
     <li>Mapa, historial y monitoreo: colores de estado, hora exacta, animación.</li>
+    <li><span class="new2">NUEVO 22-OCT</span> Descansos y día operativo guardados en la operación; validación de descanso fuera del turno.</li>
+    <li><span class="new2">NUEVO 22-OCT</span> Pestaña Turno con un día cerrado: tarjetas, gráficas, estados y tablas; horómetro y kilometraje cuadran con el control del cliente.</li>
+    <li><span class="new2">NUEVO 22-OCT</span> Excel exportado con las tablas del modelo y seis gráficos.</li>
+    <li><span class="new2">NUEVO 22-OCT</span> Estado cargado / vacío cambia solo al salir de carga y de descarga.</li>
+    <li>Toda geocerca nueva de carga, descarga, inicio o fin se agregó a la operación con «+ Agregar punto».</li>
   </ol>
-  <div class="box"><b>Datos de la operación de prueba (entorno de pruebas):</b> operación «Acarreo prueba», grupo «Operación prueba» con tres volquetes, puntos Carga / Carga 2 / Carga 3 y Descarga, zona de descanso «Cola de descarga», turnos Día 07:00–19:00 y Noche 19:00–07:00, umbrales 60 s / 30 s / 6 h.</div>
+  <div class="box"><b>Datos de la operación de prueba (entorno de pruebas):</b> operación «Acarreo prueba», grupo «Operación prueba» con tres volquetes, puntos Carga / Carga 2 / Carga 3 y Descarga, zona de descanso «Cola de descarga», turnos Día 07:00–19:00 y Noche 19:00–07:00, descansos Almuerzo 12:00–13:00 y fatiga (Día) y Cena 02:00–03:00 (Noche), día operativo 06:30, tipo CAMIONES con estados CARGADO / VACIO, umbrales 60 s / 30 s / 6 h.</div>
 </section>
 
 </body>
