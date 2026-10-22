@@ -1339,7 +1339,8 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         if (! $moved_at)
             return null;
 
-        if ($ack_time > $moved_at) {
+        //only when the ack is the last communication, an old ack would freeze the duration
+        if ($ack_time > $moved_at && $ack_time >= $server_time) {
             return $ack_time - $moved_at;
         }
 
