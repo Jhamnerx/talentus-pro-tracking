@@ -24,6 +24,7 @@ use Tobuli\Traits\FcmTokensTrait;
 use Illuminate\Support\Facades\DB;
 use Laravel\Passport\HasApiTokens;
 use App\Jobs\DeviceCameraDirChange;
+use App\Jobs\SyncTraccarDeviceModel;
 use App\Events\Device\DeviceEnabled;
 use App\Events\Device\DeviceDisabled;
 use Illuminate\Support\Facades\Redis;
@@ -325,6 +326,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 DeviceModelCache::setDevice($device, $device->getOriginal('imei'));
             } elseif ($isImeiDirty || $device->isDirty('model_id')) {
                 DeviceModelCache::setDevice($device);
+            }
+
+            if ($isImeiDirty || $device->isDirty('device_model')) {
+                dispatch(new SyncTraccarDeviceModel($device));
             }
 
             // if ($device->isDirty('forward'))

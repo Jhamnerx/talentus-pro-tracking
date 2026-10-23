@@ -36,6 +36,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\Tracker\RestartCommand',
         'App\Console\Commands\Tracker\ConfigCommand',
         'App\Console\Commands\Tracker\ConfigAliasCommand',
+        'App\Console\Commands\Tracker\SyncDeviceModelsCommand',
         'App\Console\Commands\Socket\SSLCertCommand',
         'App\Console\Commands\Socket\ServiceCommand',
         'App\Console\Commands\AutoCleanServerCommand',
