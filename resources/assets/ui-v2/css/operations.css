@@ -652,7 +652,9 @@ tr.is-open .tp-ops__toggle {
 .tp-ops-shift__table th {
   white-space: nowrap;
 }
-
+/* Las cabeceras numericas llevan is-num en el blade para alinearse a la
+   derecha igual que sus celdas; antes quedaban a la izquierda y el numero
+   a media pantalla de su titulo. */
 .tp-ops-shift__table td.is-num {
   text-align: right;
   font-variant-numeric: tabular-nums;

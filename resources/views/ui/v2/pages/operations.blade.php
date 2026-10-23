@@ -295,13 +295,13 @@
                                         <th scope="col">{{ trans('ui.ops_shift_col_before') }}</th>
                                         <th scope="col">{{ trans('ui.ops_shift_col_after') }}</th>
                                         <th scope="col">{{ trans('ui.ops_shift_col_last') }}</th>
-                                        <th scope="col">{{ trans('ui.ops_shift_col_effective') }}</th>
-                                        <th scope="col">{{ trans('ui.ops_shift_col_idle') }}</th>
-                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_start') }}</th>
-                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_before') }}</th>
-                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_after') }}</th>
-                                        <th scope="col">{{ trans('ui.ops_shift_col_hm_end') }}</th>
-                                        <th scope="col">{{ trans('ui.ops_shift_col_var') }}</th>
+                                        <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_effective') }}</th>
+                                        <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_idle') }}</th>
+                                        <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_hm_start') }}</th>
+                                        <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_hm_before') }}</th>
+                                        <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_hm_after') }}</th>
+                                        <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_hm_end') }}</th>
+                                        <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_var') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tp-ops-shift-hours-rows"></tbody>
@@ -319,9 +319,9 @@
                                         <tr>
                                             <th scope="col">{{ trans('ui.vehicle') }}</th>
                                             <th scope="col">{{ trans('ui.ops_shift') }}</th>
-                                            <th scope="col">{{ trans('ui.ops_shift_col_start') }}</th>
-                                            <th scope="col">{{ trans('ui.ops_shift_col_end') }}</th>
-                                            <th scope="col">{{ trans('ui.ops_shift_col_var') }}</th>
+                                            <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_start') }}</th>
+                                            <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_end') }}</th>
+                                            <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_var') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tp-ops-shift-odo-rows"></tbody>
@@ -338,10 +338,10 @@
                                             <th scope="col">{{ trans('ui.ops_shift') }}</th>
                                             <th scope="col">{{ trans('ui.ops_shift_col_started') }}</th>
                                             <th scope="col">{{ trans('ui.ops_shift_col_ended') }}</th>
-                                            <th scope="col">{{ trans('ui.ops_shift_col_duration') }}</th>
-                                            <th scope="col">{{ trans('ui.ops_shift_col_level_before') }}</th>
-                                            <th scope="col">{{ trans('ui.ops_shift_col_level_after') }}</th>
-                                            <th scope="col">{{ trans('ui.ops_shift_col_refuel') }}</th>
+                                            <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_duration') }}</th>
+                                            <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_level_before') }}</th>
+                                            <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_level_after') }}</th>
+                                            <th scope="col" class="is-num">{{ trans('ui.ops_shift_col_refuel') }}</th>
                                             <th scope="col">{{ trans('ui.ops_shift_col_engine_off') }}</th>
                                         </tr>
                                     </thead>
