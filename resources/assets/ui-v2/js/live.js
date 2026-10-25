@@ -417,8 +417,12 @@
 
     var html =
       '<span class="' + claseNombre + '"' + estiloNombre + ">" +
+      // Nombre y estado van en su propio span: el toggle "nombres" los oculta
+      // sin tirar la etiqueta entera, que puede seguir mostrando la velocidad.
+      '<span class="tp-lmarker__title">' +
       esc(d.name || "") +
       vehicleStateBadge(d.vehicle_state, "vertical-align:middle;margin-left:4px;") +
+      "</span>" +
       '<span class="tp-lmarker__speed">' + esc(spd) + "</span>" +
       "</span>" +
       halo +

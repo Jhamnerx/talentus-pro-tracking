@@ -242,11 +242,23 @@
   pointer-events: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
-/* La etiqueta del nombre es visible si están activados los nombres o la
-   velocidad (la velocidad va DENTRO de esta etiqueta, tras el nombre). */
+/* La etiqueta es visible si están activados los nombres o la velocidad (la
+   velocidad va DENTRO de esta etiqueta, tras el nombre). Con la velocidad
+   activa y los nombres apagados, el toggle "nombres" oculta solo el nombre y
+   el estado (.tp-lmarker__title) y la etiqueta queda con la velocidad. Antes
+   la velocidad mantenía visible el nombre y el toggle parecía no funcionar. */
 .tp-show-names .tp-lmarker__name,
 .tp-show-speed .tp-lmarker__name {
   display: block;
+}
+.tp-lmarker__title {
+  display: none;
+}
+.tp-show-names .tp-lmarker__title {
+  display: inline;
+}
+.leaflet-container:not(.tp-show-names) .tp-lmarker__speed {
+  margin-left: 0;
 }
 /* Preferencias de marcador (Ajustes de cuenta → Mapa) */
 /* Velocidad como sufijo dentro de la etiqueta del nombre (como el legacy) */
