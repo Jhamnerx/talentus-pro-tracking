@@ -30,3 +30,5 @@ docs/manual-pruebas/*.pdf
 
 # Claude Code: permisos locales por maquina (los enlaces de .claude/skills si se versionan)
 .claude/settings.local.json
+# Enlaces locales a .agents/skills (git en Windows los copiaba enteros; cada maquina los recrea con: npx skills add ...)
+.claude/skills/
