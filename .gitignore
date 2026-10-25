@@ -27,3 +27,6 @@ api_examples_json/
 # Salidas de Playwright y PDF generado del manual (se regenera desde el HTML)
 .playwright-mcp/
 docs/manual-pruebas/*.pdf
+
+# Claude Code: permisos locales por maquina (los enlaces de .claude/skills si se versionan)
+.claude/settings.local.json
