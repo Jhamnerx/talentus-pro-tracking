@@ -25,6 +25,7 @@ class LogService
         'wisetrack'  => 'wisetrack',
         'epscenter'  => 'epscenter',
         'unigis'     => 'unigis',
+        'securitas'  => 'securitas',
     ];
 
     /**

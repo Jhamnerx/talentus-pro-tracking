@@ -146,6 +146,13 @@ return [
             'days' => 7,
         ],
 
+        'securitas' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/securitas.log'),
+            'level' => 'info',
+            'days' => 7,
+        ],
+
         'command_rules' => [
             'driver' => 'daily',
             'path' => storage_path('logs/command_rules.log'),

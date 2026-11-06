@@ -23,7 +23,8 @@
                 Auth::User()->perm('webservice.wisetrack', 'view') ||
                 Auth::User()->perm('webservice.sidersales', 'view') ||
                 Auth::User()->perm('webservice.epscenter', 'view') ||
-                Auth::User()->perm('webservice.unigis', 'view'))
+                Auth::User()->perm('webservice.unigis', 'view') ||
+                Auth::User()->perm('webservice.securitas', 'view'))
             <li><a href="#device-add-form-web_service" role="tab" data-toggle="tab">Servicios Web</a></li>
         @endif
         @if (expensesTypesExist())
