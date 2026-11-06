@@ -28,6 +28,7 @@ class IntegrationStatusService
         'mininter'   => 'mininter',
         'sidersales' => 'sidersales',
         'unigis'     => 'unigis',
+        'securitas'  => 'securitas',
     ];
 
     /** Minutos de atraso a partir de los cuales se considera problema. */

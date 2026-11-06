@@ -107,6 +107,7 @@
                             'sidersales' => 'SIDERSALES',
                             'epscenter' => 'EPS CENTER',
                             'unigis' => 'UNIGIS',
+                            'securitas' => 'SECURITAS',
                         ],
                         request('filter_webservices'),
                         [

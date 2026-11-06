@@ -472,6 +472,7 @@ class ClientsController extends BaseController
                 'sidersales' => ['active' => 0, 'logs' => 0, 'environment' => 'prd', 'client_id' => null, 'client_secret' => null],
                 'epscenter' => ['active' => 0, 'logs' => 0],
                 'unigis' => ['active' => 0, 'logs' => 0, 'user' => null, 'password' => null, 'url' => null],
+                'securitas' => ['active' => 0, 'logs' => 0, 'url' => null, 'api_key' => null],
             ];
 
             foreach ($defaultServices as $service => $defaults) {
@@ -498,6 +499,15 @@ class ClientsController extends BaseController
                         $defaultServices[$service]['password'] = !empty($submittedPassword)
                             ? $submittedPassword
                             : ($item->services['unigis']['password'] ?? null);
+                    }
+                    // Securitas: persistir credenciales incluso si está inactivo;
+                    // API key vacía = conservar la almacenada.
+                    if ($service == 'securitas') {
+                        $defaultServices[$service]['url'] = $services[$service]['url'] ?? null;
+                        $submittedKey = $services[$service]['api_key'] ?? null;
+                        $defaultServices[$service]['api_key'] = !empty($submittedKey)
+                            ? $submittedKey
+                            : ($item->services['securitas']['api_key'] ?? null);
                     }
                     // Sidersales: persistir credenciales incluso si está inactivo
                     if ($service == 'sidersales') {

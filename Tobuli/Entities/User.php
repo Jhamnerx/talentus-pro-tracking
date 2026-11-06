@@ -254,6 +254,13 @@ class User extends AbstractEntity implements
                     'user'     => null,
                     'password' => null,
                     'url'      => null,
+                ],
+                'securitas' =>
+                [
+                    'active'  => 0,
+                    'logs'    => 0,
+                    'url'     => null,
+                    'api_key' => null,
                 ]
             ];
         }
@@ -296,6 +303,14 @@ class User extends AbstractEntity implements
                 'user'     => null,
                 'password' => null,
                 'url'      => null,
+            ];
+        }
+        if (!isset($services['securitas'])) {
+            $services['securitas'] = [
+                'active'  => 0,
+                'logs'    => 0,
+                'url'     => null,
+                'api_key' => null,
             ];
         }
 

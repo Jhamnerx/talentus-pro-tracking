@@ -66,3 +66,11 @@
         {!! Form::label('unigis', 'UNIGIS') !!}
     </div>
 @endif
+
+@if (Auth::User()->perm('webservice.securitas', 'edit'))
+    <div class="checkbox">
+        {!! Form::hidden('securitas', 0) !!}
+        {!! Form::checkbox('securitas', 1, $item->securitas) !!}
+        {!! Form::label('securitas', 'Securitas GlobalAVL') !!}
+    </div>
+@endif

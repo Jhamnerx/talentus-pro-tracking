@@ -811,6 +811,7 @@ class DeviceModalHelper extends ModalHelper
             'sidersales' => ['label' => 'Sidersales',  'perm' => 'webservice.sidersales'],
             'epscenter'  => ['label' => 'EPS Center',  'perm' => 'webservice.epscenter'],
             'unigis'     => ['label' => 'UNIGIS',      'perm' => 'webservice.unigis'],
+            'securitas'  => ['label' => 'Securitas',   'perm' => 'webservice.securitas'],
         ];
 
         $result = [];

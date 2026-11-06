@@ -106,6 +106,10 @@
                                     $webservices[] =
                                         '<span class="label label-xs" style="background:#1b7f3b;color:#fff;">UNIGIS</span>';
                                 }
+                                if ($item->securitas) {
+                                    $webservices[] =
+                                        '<span class="label label-xs" style="background:#e4002b;color:#fff;">SECURITAS</span>';
+                                }
                             @endphp
                             @if (count($webservices) > 0)
                                 {!! implode(' ', $webservices) !!}

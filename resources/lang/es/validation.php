@@ -905,6 +905,7 @@ return [
         'sidersales' => 'Sidersales (Gerdau)',
         'epscenter' => 'EPS Center',
         'unigis' => 'UNIGIS',
+        'securitas' => 'Securitas GlobalAVL',
         'epscenter_id_transporte' => 'EPS Center — ID Transporte',
         'epscenter_telefono' => 'EPS Center — Teléfono',
     ],

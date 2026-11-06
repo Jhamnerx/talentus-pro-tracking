@@ -815,6 +815,54 @@
                     </div>
                 </div>
             </div>
+            <hr style="border-color: #052062;">
+
+            <div class="form-group">
+                <h4>Securitas GlobalAVL</h4>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[securitas][active]', 1, $item->services['securitas']['active'] ?? 0, [
+                                'class' => 'checkbox-securitas',
+                            ]) !!}
+                            {!! Form::label('services[securitas][active]', 'Activar') !!}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!! Form::checkbox('services[securitas][logs]', 1, $item->services['securitas']['logs'] ?? 0) !!}
+                            {!! Form::label('services[securitas][logs]', 'Logs') !!}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-12 text-securitas">
+                    <div class="form-group">
+                        {!! Form::label('services[securitas][url]', 'URL del gateway') !!}
+                        {!! Form::text('services[securitas][url]', $item->services['securitas']['url'] ?? null, [
+                            'class' => 'form-control',
+                            'placeholder' => 'https://{client-domain}/gateway/lipv10',
+                        ]) !!}
+                    </div>
+                </div>
+
+                <div class="col-sm-12 text-securitas">
+                    <div class="form-group">
+                        {!! Form::label('services[securitas][api_key]', 'API key (X-API-Key)') !!}
+                        {!! Form::password('services[securitas][api_key]', [
+                            'class' => 'form-control',
+                            'autocomplete' => 'new-password',
+                            'placeholder' => !empty($item->services['securitas']['api_key']) ? '••••••••••••••••' : '',
+                        ]) !!}
+                        <small class="text-muted">Dejar vacío para no modificar la API key almacenada.</small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -845,6 +893,7 @@
             toggleTextFields('.checkbox-consatel', '.text-consatel');
             toggleTextFields('.checkbox-sidersales', '.text-sidersales');
             toggleTextFields('.checkbox-unigis', '.text-unigis');
+            toggleTextFields('.checkbox-securitas', '.text-securitas');
         });
     </script>
 

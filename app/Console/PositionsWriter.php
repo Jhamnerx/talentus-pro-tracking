@@ -22,6 +22,7 @@ use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
 use Tobuli\Services\EventWriteService;
 use Tobuli\Services\Operations\OperationChecker;
 use Tobuli\Services\Unigis\UnigisEventMapper;
+use Tobuli\Services\Securitas\SecuritasEventMapper;
 
 class PositionsWriter
 {
@@ -746,6 +747,11 @@ class PositionsWriter
             //REGISTRAR COLA UNIGIS (Pacasmayo / Geojavar)
             $this->saveDataUnigis($this->device, $this->position);
         }
+
+        if ($this->device->securitas) {
+            //REGISTRAR COLA SECURITAS GLOBALAVL
+            $this->saveDataSecuritas($this->device, $this->position);
+        }
     }
 
     /**
@@ -783,6 +789,31 @@ class PositionsWriter
             \Log::channel('unigis')->error('No se pudo encolar la posicion para UNIGIS', [
                 'device_id' => $device->id,
                 'plate'     => $device->plate_number,
+                'message'   => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Encola la posicion para Securitas GlobalAVL con el evento ya armado
+     * (SecuritasEventMapper). event_time = device_time en UTC.
+     */
+    public function saveDataSecuritas($device, $position)
+    {
+        try {
+            $event = SecuritasEventMapper::build($device, $position);
+            $eventTime = new DateTime($position->device_time ?: 'now', new DateTimeZone('UTC'));
+
+            $device->dataSecuritas()->create([
+                'device_id'  => $device->id,
+                'event_type' => $event['type'],
+                'event_time' => $eventTime->format('Y-m-d H:i:s'),
+                'payload'    => json_encode($event, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::channel('securitas')->error('No se pudo encolar la posicion para Securitas', [
+                'device_id' => $device->id,
+                'imei'      => $device->imei,
                 'message'   => $e->getMessage(),
             ]);
         }
