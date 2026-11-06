@@ -146,15 +146,31 @@ class SendDataSecuritasJob implements ShouldQueue
      */
     private function post(Collection $rows): int
     {
+        $startedAt = microtime(true);
+
         try {
             $status = $this->client->send($rows->map(fn (Securitas $row) => $row->event())->all());
         } catch (SecuritasTransportException $e) {
             Log::channel('securitas')->error('Sin respuesta de GlobalAVL; se reintentara', [
                 'count'   => $rows->count(),
                 'message' => $e->getMessage(),
+                'request' => $this->requestForLog(),
             ]);
             throw $e;
         }
+
+        // Evidencia del envio: peticion completa (POST + cabeceras sin secreto +
+        // JSON) y respuesta tal cual la devolvio GlobalAVL.
+        $evidence = [
+            'http'        => 'POST ' . $this->service['url'],
+            'x_api_key'   => $this->client->maskedKey(),
+            'status'      => $status,
+            'response'    => $this->client->lastResponse(),
+            'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+            'count'       => $rows->count(),
+            'devices'     => $rows->map(fn (Securitas $row) => $row->event()['device'] ?? null)->unique()->values()->all(),
+            'request'     => $this->requestForLog(),
+        ];
 
         if ($status === 200) {
             Securitas::whereIn('id', $rows->pluck('id')->all())->delete();
@@ -162,20 +178,21 @@ class SendDataSecuritasJob implements ShouldQueue
             $this->stats['sent'] += $rows->count();
 
             if (!empty($this->service['logs'])) {
-                Log::channel('securitas')->info('Lote aceptado por GlobalAVL', [
-                    'count'    => $rows->count(),
-                    'response' => $this->client->lastResponse(),
-                ]);
+                Log::channel('securitas')->info('Lote aceptado por GlobalAVL (HTTP 200)', $evidence);
             }
         } else {
-            Log::channel('securitas')->warning('GlobalAVL respondio error', [
-                'status'   => $status,
-                'count'    => $rows->count(),
-                'response' => $this->client->lastResponse(),
-            ]);
+            Log::channel('securitas')->warning("GlobalAVL respondio HTTP {$status}", $evidence);
         }
 
         return $status;
+    }
+
+    /** JSON enviado, decodificado para que el log lo muestre como objeto legible. */
+    private function requestForLog()
+    {
+        $raw = $this->client->lastRequest();
+
+        return $raw === null ? null : (json_decode($raw, true) ?? $raw);
     }
 
     /**
