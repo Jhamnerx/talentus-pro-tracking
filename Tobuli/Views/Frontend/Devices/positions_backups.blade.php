@@ -10,6 +10,11 @@
     @endif
 
     <div id="positions_backups_table">
+        <div class="form-group">
+            <label for="positions_backups_date">{{ trans('backups.filter_by_date') }}</label>
+            <input type="date" id="positions_backups_date" name="date" class="form-control" data-filter>
+        </div>
+
         <div data-table>
             @include('Frontend.Devices.positions_backups_table')
         </div>
