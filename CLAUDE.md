@@ -549,6 +549,18 @@ Procesa las posiciones de un dispositivo **una por una** para construir el histo
 
 ---
 
+## Backups (FTP + Google Drive)
+
+`Tobuli/Helpers/Backup/`. Cada archivo se genera en un temporal, se valida y se sube a cada destino
+(`BackupDestination`: `BackupFtp` con ncftpput, `DriveDestination` con rclone) desde
+`MultiDestinationUploader`. El estado por destino está en `backups.destinations`.
+
+- **Índice:** `_completo.json` en cada copia terminada; guarda el rango de posiciones por device y
+  marca la copia como completa.
+- **Retención (solo Drive):** `backup:prune`, se ejecuta tras cada backup correcto en Drive. Las copias
+  antiguas sin posiciones pasan de `backup_…` a `soloweb_…`. `.conservar` protege una carpeta.
+- **Guía de puesta en marcha:** `docs/backups-google-drive.md`.
+
 ## Roles y Permisos
 
 | group_id | Rol              | Descripción              |
