@@ -42,7 +42,7 @@ class BackupNotifier
     {
         $key = "backup_notified.{$backup->id}.$reason";
 
-        if (Cache::add($key, 1, 86400 * 7) && !$this->notify($subject, $body)) {
+        if (Cache::add($key, 1, 86400 * 35) && !$this->notify($subject, $body)) {
             Cache::forget($key); // se reintentara en la proxima pasada
         }
     }

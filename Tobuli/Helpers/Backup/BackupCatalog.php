@@ -42,7 +42,13 @@ class BackupCatalog
                 );
 
                 foreach ($folders as $folder) {
-                    $range = $this->range($destination, $folder, $traccar->id, $file);
+                    try {
+                        $range = $this->range($destination, $folder, $traccar->id, $file);
+                    } catch (\Throwable $e) {
+                        // Una carpeta con problemas no oculta las demas del destino.
+                        logger()->warning("Backup catalog: $name/$folder unavailable: " . BackupSecrets::scrub($e->getMessage()));
+                        continue;
+                    }
 
                     if ($range === null) {
                         continue;
@@ -122,7 +128,12 @@ class BackupCatalog
                 return ['from' => $device['from'], 'to' => $device['to'], 'approximate' => false];
             }
 
-            // Si el indice quedo incompleto el archivo puede existir: se comprueba abajo (rango aproximado).
+            // Indice completo y device ausente: no tiene posiciones, sin llamada remota.
+            if (empty($index['ranges_incomplete'])) {
+                return null;
+            }
+
+            // Indice incompleto: el archivo puede existir y se comprueba abajo (rango aproximado).
         }
 
         if (!$destination->exists($folder . '/' . $file)) {

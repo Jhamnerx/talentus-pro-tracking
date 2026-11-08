@@ -116,9 +116,9 @@ class BackupsController extends BaseController {
                 $settings['drive_enabled'] = !empty($input['drive_enabled']);
                 $settings['drive_remote'] = $input['drive_remote'] ?? 'gdrive';
                 $settings['drive_path'] = $input['drive_path'] ?? 'backup_plataforma/';
-                $settings['retention_daily_days'] = (int)($input['retention_daily_days'] ?? 30);
-                $settings['retention_long_term_months'] = (int)($input['retention_long_term_months'] ?? 2);
-                $settings['retention_max_days'] = (int)($input['retention_max_days'] ?? 365);
+                $settings['retention_daily_days'] = (int)($input['retention_daily_days'] ?? 0) ?: (int)($settings['retention_daily_days'] ?? 0) ?: 30;
+                $settings['retention_long_term_months'] = (int)($input['retention_long_term_months'] ?? 0) ?: (int)($settings['retention_long_term_months'] ?? 0) ?: 2;
+                $settings['retention_max_days'] = (int)($input['retention_max_days'] ?? 0) ?: (int)($settings['retention_max_days'] ?? 0) ?: 365;
 
                 settings('backups', $settings);
             }

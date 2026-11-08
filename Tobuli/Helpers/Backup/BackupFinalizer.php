@@ -138,12 +138,21 @@ class BackupFinalizer
                 $retention = new BackupRetention($drive, settings('backups') ?: []);
                 $retention->apply($retention->plan());
             }
-
-            $this->checkSpace($backup, $drive);
         } catch (\Throwable $e) {
             $this->notifier->notifyOnce(
                 $backup,
                 'prune',
+                trans('backups.mail_prune_subject'),
+                $e->getMessage()
+            );
+        }
+
+        try {
+            $this->checkSpace($backup, $drive);
+        } catch (\Throwable $e) {
+            $this->notifier->notifyOnce(
+                $backup,
+                'space_check',
                 trans('backups.mail_prune_subject'),
                 $e->getMessage()
             );

@@ -182,7 +182,15 @@ class BackupService
                 ->orderBy('created_at', 'DESC')
                 ->first();
 
-            if ($backup && !$backup->isCompleted() && $backup->processes()->whereUnfinished()->count() === 0) {
+            if (
+                $backup
+                && $backup->created_at > now()->subDays(35)
+                && $backup->message !== 'Killed'
+                && !$backup->isCompleted()
+                && $backup->processes()->whereUnfinished()->count() === 0
+                // Un proceso que acaba de actualizarse puede estar terminando: no se cierra.
+                && !$backup->processes()->where('updated_at', '>', now()->subSeconds(60))->exists()
+            ) {
                 (new BackupFinalizer(new MultiDestinationUploader($this->destinations())))->closeFailed($backup);
             }
         } catch (\Throwable $e) {

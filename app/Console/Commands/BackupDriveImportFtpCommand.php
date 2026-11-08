@@ -26,7 +26,7 @@ class BackupDriveImportFtpCommand extends Command
     {
         $folder = $this->argument('folder');
 
-        if (!preg_match('/^backup_[0-9-]+$/', $folder)) {
+        if (!preg_match('/^backup_[0-9-]+$/D', $folder)) {
             $this->error('Nombre de carpeta no válido');
 
             return 1;
@@ -51,7 +51,20 @@ class BackupDriveImportFtpCommand extends Command
         try {
             $databaseCopied = $this->copy($ftp, $drive, $folder, $databaseFile, true);
             $copied += $databaseCopied ? 1 : 0;
-            $databaseOk = $databaseCopied || $drive->exists($folder . '/' . $databaseFile);
+            $databaseOk = $databaseCopied;
+
+            if (!$databaseOk && $drive->exists($folder . '/' . $databaseFile)) {
+                // Ya estaba en Drive: se valida igual descargandolo.
+                $local = BackupTempFile::path(basename($databaseFile));
+
+                try {
+                    $drive->download($folder . '/' . $databaseFile, $local);
+                    BackupTempFile::assertValid($local, true);
+                    $databaseOk = true;
+                } finally {
+                    @unlink($local);
+                }
+            }
         } catch (\Throwable $e) {
             $this->warn("$databaseFile: " . \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage()));
         }
@@ -105,6 +118,10 @@ class BackupDriveImportFtpCommand extends Command
         }
 
         $drive->put($folder . '/' . BackupRetention::PROTECT_FILE, date('c'));
+
+        if ($copied === 0) {
+            $this->warn('AVISO: no se copio ningun archivo (todo estaba ya en Drive o no habia nada que copiar en el FTP). Revisa que sea lo esperado.');
+        }
 
         $this->info("Copiados: $copied. Carpeta protegida.");
 

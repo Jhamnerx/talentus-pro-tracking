@@ -4,6 +4,7 @@ namespace Tobuli\Helpers\Backup;
 
 use Tobuli\Entities\Backup;
 use Tobuli\Helpers\Backup\Destination\BackupDestination;
+use Tobuli\Helpers\Backup\Process\DevicesPositionsBackuper;
 
 class BackupIndex
 {
@@ -28,10 +29,17 @@ class BackupIndex
      */
     public function publish(Backup $backup, BackupDestination $destination, array $failedDevices = []): void
     {
+        $ranges = $this->ranges($backup->id);
+        $processed = (int)$backup->processes()
+            ->where('type', DevicesPositionsBackuper::class)
+            ->sum('processed');
+
         $content = json_encode([
             'backup_id'  => $backup->id,
             'created_at' => (string)$backup->created_at,
-            'devices'    => $this->ranges($backup->id),
+            'devices'    => $ranges,
+            // Menos rangos que devices procesados: el indice perdio filas y un device ausente puede tener archivo.
+            'ranges_incomplete' => count($ranges) < $processed,
             'failed_devices' => array_values($failedDevices),
         ]);
 
