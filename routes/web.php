@@ -882,11 +882,13 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::get('backups/panel', ['as' => 'backups.panel', 'uses' => 'BackupsController@panel']);
     Route::post('backups/save', ['as' => 'backups.save', 'uses' => 'BackupsController@save']);
     Route::get('backups/test', ['as' => 'backups.test', 'uses' => 'BackupsController@test']);
+    Route::get('backups/test-drive', ['as' => 'backups.test_drive', 'uses' => 'BackupsController@testDrive']);
     Route::get('backups/logs', ['as' => 'backups.logs', 'uses' => 'BackupsController@logs']);
 
     Route::get('backup', ['as' => 'backup.index', 'uses' => 'BackupController@index']);
     Route::get('backup/table', ['as' => 'backup.table', 'uses' => 'BackupController@table']);
     Route::get('backup/{id}/processes', ['as' => 'backup.processes', 'uses' => 'BackupController@processes']);
+    Route::post('backup/{id}/protect', ['as' => 'backup.protect', 'uses' => 'BackupController@protect']);
 
     # Ports
     Route::any('ports/index', ['as' => 'ports.index', 'uses' => 'PortsController@index']);
