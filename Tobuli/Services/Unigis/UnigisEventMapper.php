@@ -3,6 +3,7 @@
 namespace Tobuli\Services\Unigis;
 
 use Tobuli\Entities\TraccarPosition;
+use Tobuli\Helpers\Teltonika\TeltonikaEvents;
 
 /**
  * Traduce el evento Teltonika de una posicion al codigo acordado con UNIGIS.
@@ -65,8 +66,10 @@ class UnigisEventMapper
             case 250:
                 return ((int) $position->getParameter('io250', 0)) === 1 ? self::TRIP_START : self::TRIP_END;
 
+            // El decoder del fork no deja io253: lo pasa a alarm
+            // hardAcceleration/hardBraking/hardCornering.
             case 253:
-                switch ((int) $position->getParameter('io253', 0)) {
+                switch (TeltonikaEvents::greenDrivingType($position->parameters)) {
                     case 1:
                         return self::HARSH_ACC;
                     case 2:

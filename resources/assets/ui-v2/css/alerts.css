@@ -883,10 +883,29 @@ button.tp-alert-toggle:hover {
   color: var(--fg-primary);
   font-size: 12px;
 }
+/* Rejilla de 3 columnas como el legacy: más vehículos a la vista sin scroll.
+   Los encabezados de grupo ocupan la fila entera. */
 .tp-devbox__list {
   max-height: 340px;
   overflow-y: auto;
   padding: 4px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 4px;
+  align-content: start;
+}
+@media (max-width: 760px) {
+  .tp-devbox__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .tp-devbox__list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.tp-devbox__list > :not(.tp-devbox__item) {
+  grid-column: 1 / -1;
 }
 .tp-devbox__group {
   display: flex;
@@ -924,11 +943,18 @@ button.tp-alert-toggle:hover {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   padding: 6px 8px 6px 30px;
   border-radius: var(--r-sm);
   cursor: pointer;
   font-size: 13px;
   color: var(--fg-primary);
+}
+.tp-devbox__item > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .tp-devbox__item:hover {
   background: var(--surface-sunken);

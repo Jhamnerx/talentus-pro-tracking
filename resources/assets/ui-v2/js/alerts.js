@@ -766,7 +766,9 @@
         }
         if (collapsed[d.group_id]) return;
         html +=
-          '<label class="tp-devbox__item"><input type="checkbox" data-dev="' +
+          '<label class="tp-devbox__item" title="' +
+          esc(d.name + (d.plate ? " · " + d.plate : "")) +
+          '"><input type="checkbox" data-dev="' +
           d.id +
           '"' +
           (dlg._devSel[d.id] ? " checked" : "") +
@@ -1352,7 +1354,7 @@
     var first = meta.types && meta.types[0];
     return (
       '<div class="tp-field"><label class="tp-field__label">Disparador *</label>' +
-      '<select class="tp-input" name="type" id="tp-alert-type">' +
+      '<select class="tp-input" name="type" id="tp-alert-type" data-dd-tall>' +
       buildTypeOptions(meta.types, first && first.key) +
       "</select>" +
       '<div class="tp-field__hint">' + tpT('ui.define_trigger_event') + '</div></div>' +

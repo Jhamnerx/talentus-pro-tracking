@@ -367,6 +367,14 @@
     var r = this.btn.getBoundingClientRect();
     var p = this.panel;
     p.style.minWidth = r.width + "px";
+    // data-dd-tall: listas largas (ej. tipos de alerta). En vez del max-h-64
+    // fijo, ocupa el espacio libre bajo el botón (o encima, si hay más),
+    // hasta el 70 % del viewport y nunca menos de los 16rem por defecto.
+    if (this.sel.hasAttribute("data-dd-tall")) {
+      var space = Math.max(window.innerHeight - r.bottom, r.top) - 16;
+      var tall = Math.min(space, window.innerHeight * 0.7);
+      p.style.maxHeight = Math.max(256, Math.floor(tall)) + "px";
+    }
     p.style.left = Math.max(8, Math.min(r.left, window.innerWidth - p.offsetWidth - 8)) + "px";
     var below = r.bottom + 4;
     if (below + p.offsetHeight > window.innerHeight - 8 && r.top - p.offsetHeight - 4 > 8) {

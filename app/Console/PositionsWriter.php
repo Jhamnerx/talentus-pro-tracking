@@ -23,6 +23,7 @@ use Tobuli\Services\EventWriteService;
 use Tobuli\Services\Operations\OperationChecker;
 use Tobuli\Services\Unigis\UnigisEventMapper;
 use Tobuli\Services\Securitas\SecuritasEventMapper;
+use Tobuli\Helpers\Teltonika\TeltonikaEvents;
 
 class PositionsWriter
 {
@@ -925,34 +926,41 @@ class PositionsWriter
     public function saveDataComsatel($device, $position)
     {
         $evento = 1;
+        $params = $position->parameters;
 
-        if ($position->getParameter('event') == "239" && $position->getParameter('ignition') == true) {
-            $evento = 3;
-        } elseif ($position->getParameter('event') == "239" && $position->getParameter('ignition') == false) {
-            $evento = 2;
-        }
+        // Los parámetros vuelven del XML como texto: ignition llega "true" /
+        // "false", y en PHP "false" == true. Por eso se compara el texto.
+        // El decoder del fork no deja io246/io249/io252/io253: los pasa a
+        // alarm (tow, jamming, powerCut, hardAcceleration…) y solo cuando el
+        // valor es > 0. TeltonikaEvents lo resuelve, con io{ID} de respaldo.
+        switch ((int) $position->getParameter('event')) {
+            case 239:
+                $ignition = strtolower(trim((string) $position->getParameter('ignition')));
+                $evento = in_array($ignition, ['1', 'true'], true) ? 3 : 2;
+                break;
 
+            case 252:
+                $evento = TeltonikaEvents::isActive(252, $params) ? 7 : 6; // 7 desconectada, 6 reconectada
+                break;
 
-        if ($position->getParameter('event') == "252" && $position->getParameter('io252') == 0) {
-            $evento = 6;
-        } elseif ($position->getParameter('event') == "252" && $position->getParameter('io252') == 1) {
-            $evento = 7;
-        }
+            case 246:
+                if (TeltonikaEvents::isActive(246, $params)) {
+                    $evento = 11;
+                }
+                break;
 
-        if ($position->getParameter('event') == "246" && $position->getParameter('io246') == 1) {
-            $evento = 11;
-        }
+            case 249:
+                $evento = TeltonikaEvents::isActive(249, $params) ? 12 : 13;
+                break;
 
-        if ($position->getParameter('event') == "249" && $position->getParameter('io249') == 1) {
-            $evento = 12;
-        } elseif ($position->getParameter('event') == "249" && $position->getParameter('io249') == 0) {
-            $evento = 13;
-        }
-
-        if ($position->getParameter('event') == "253" && $position->getParameter('io253') == 1) {
-            $evento = 16;
-        } else if ($position->getParameter('event') == "253" && $position->getParameter('io253') == 2) {
-            $evento = 17;
+            case 253:
+                $type = TeltonikaEvents::greenDrivingType($params);
+                if ($type === 1) {
+                    $evento = 16;
+                } elseif ($type === 2) {
+                    $evento = 17;
+                }
+                break;
         }
 
 
