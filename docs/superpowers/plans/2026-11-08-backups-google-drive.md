@@ -2185,6 +2185,7 @@ Reemplazar `handle()`:
 namespace App\Jobs;
 
 use App\Events\NoticeEvent;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -2195,7 +2196,7 @@ use Tobuli\Helpers\Backup\BackupService;
 
 class DevicePositionsRestoreJob implements ShouldQueue
 {
-    use InteractsWithQueue, SerializesModels;
+    use Queueable, InteractsWithQueue, SerializesModels;
 
     public int $timeout = 7200;
     public int $tries = 1;

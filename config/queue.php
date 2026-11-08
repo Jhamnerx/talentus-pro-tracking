@@ -77,6 +77,14 @@ return [
             'after_commit' => false,
 		],
 
+		// Trabajos largos de backup. retry_after debe superar el --timeout de su worker.
+		'redis_backups' => [
+			'driver' => 'redis',
+			'queue'  => 'backups',
+			'retry_after' => 7500,
+			'after_commit' => false,
+		],
+
 	],
 
 	/*

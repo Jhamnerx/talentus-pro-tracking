@@ -2,10 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Events\NoticeEvent;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 use Tobuli\Entities\Device;
@@ -31,7 +33,17 @@ class DevicePositionsImportJob implements ShouldQueue
     {
         $config = $this->device->positions()->getConnection()->getConfig();
 
-        $this->import($config);
+        try {
+            $this->import($config);
+        } catch (\Throwable $e) {
+            File::delete($this->file);
+
+            if ($this->actor) {
+                event(new NoticeEvent($this->actor, NoticeEvent::TYPE_ERROR, trans('front.upload_failed')));
+            }
+
+            throw $e;
+        }
     }
 
     private function import(array $config, int $attempt = 1): void
