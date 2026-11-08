@@ -1475,7 +1475,15 @@ return [
         'ftp_password' => null,
         'ftp_port'     => null,
         'ftp_path'     => null,
+        'drive_enabled'              => false,
+        'drive_remote'               => 'gdrive',
+        'drive_path'                 => 'backup_plataforma/',
+        'retention_daily_days'       => 30,
+        'retention_long_term_months' => 2,
+        'retention_max_days'         => 365,
     ],
+
+    'backups_rclone_config' => env('BACKUP_RCLONE_CONFIG'),
 
     'exports' => [
         'formats' => [

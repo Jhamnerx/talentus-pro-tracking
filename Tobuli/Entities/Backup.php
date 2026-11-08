@@ -14,6 +14,14 @@ class Backup extends AbstractEntity
         'message',
         'details',
         'launcher',
+        'destinations',
+        'database_bytes',
+        'protected',
+    ];
+
+    protected $casts = [
+        'destinations' => 'array',
+        'protected'    => 'boolean',
     ];
 
     protected array $searchable = [
@@ -47,5 +55,24 @@ class Backup extends AbstractEntity
     public function isRunning(): bool
     {
         return (bool)$this->processes()->whereStatusReserved()->count();
+    }
+
+    public const DESTINATION_OK = 'ok';
+    public const DESTINATION_PARTIAL = 'partial';
+    public const DESTINATION_FAILED = 'failed';
+
+    public function destinationStatus(string $name): ?string
+    {
+        $state = $this->destinations[$name] ?? null;
+
+        if ($state === null) {
+            return null;
+        }
+
+        if (empty($state['failed']) && empty($state['disabled'])) {
+            return self::DESTINATION_OK;
+        }
+
+        return empty($state['uploaded']) ? self::DESTINATION_FAILED : self::DESTINATION_PARTIAL;
     }
 }
