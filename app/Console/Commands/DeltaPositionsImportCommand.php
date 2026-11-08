@@ -46,12 +46,14 @@ class DeltaPositionsImportCommand extends Command
             return 1;
         }
 
-        $this->folder = $this->chooseDeltaFolder();
+        $folder = $this->chooseDeltaFolder();
 
-        if (!$this->folder) {
+        if (!$folder) {
             $this->error('No se selecciono carpeta.');
             return 1;
         }
+
+        $this->folder = $folder;
 
         $this->info("Importando desde: {$this->folder}");
 

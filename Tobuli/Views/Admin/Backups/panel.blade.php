@@ -149,6 +149,13 @@
                         .toggleClass('alert-success', res.status == 1)
                         .toggleClass('alert-danger', res.status != 1)
                         .text(res.message);
+                },
+                error: function() {
+                    $('.test_drive_response')
+                        .show()
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .text(@json(trans('front.unexpected_error')));
                 }
             });
         }

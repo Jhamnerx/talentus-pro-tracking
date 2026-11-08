@@ -138,7 +138,7 @@ class BackupsController extends BaseController {
                 }
             }
             catch(\Exception $e) {
-                throw new ValidationException(['id' => $e->getMessage()]);
+                throw new ValidationException(['id' => \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage())]);
             }
 
             return Redirect::route('admin.backups.index')->withSuccess(trans('front.successfully_saved'));
@@ -163,7 +163,7 @@ class BackupsController extends BaseController {
             $status = 1;
         }
         catch(\Exception $e) {
-            $message = $e->getMessage();
+            $message = \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage());
             $status = 0;
         }
 
@@ -186,7 +186,7 @@ class BackupsController extends BaseController {
                 'free' => round($about['free'] / 1073741824, 1),
             ])]);
         } catch (\Exception $e) {
-            return Response::json(['status' => 0, 'message' => trans('backups.drive_failed', ['error' => $e->getMessage()])]);
+            return Response::json(['status' => 0, 'message' => trans('backups.drive_failed', ['error' => \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage())])]);
         }
     }
 

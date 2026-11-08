@@ -109,7 +109,13 @@ class BackupImportCommand extends Command
 
     private function restoreDevices(array $options): void
     {
-        $query = Device::query();
+        if (str_starts_with($this->folder, 'soloweb_')) {
+            $this->warn('Esta copia (soloweb_) no tiene posiciones; no hay nada que restaurar de los dispositivos.');
+
+            return;
+        }
+
+        $query = Device::with('traccar')->whereHas('traccar');
 
         if (isset($options['device_id_from'])) {
             $query->where('id', '>=', $options['device_id_from']);
@@ -144,12 +150,15 @@ class BackupImportCommand extends Command
         }
 
         $file = BackupTempFile::path(basename($relative));
-        $this->destination->download($remote, $file);
-        BackupTempFile::assertValid($file);
 
-        dispatch_sync(new DevicePositionsImportJob($device, $file, null));
+        try {
+            $this->destination->download($remote, $file);
+            BackupTempFile::assertValid($file);
 
-        File::delete($file);
+            dispatch_sync(new DevicePositionsImportJob($device, $file, null));
+        } finally {
+            File::delete($file);
+        }
     }
 
     private function getFtpSettings(): array

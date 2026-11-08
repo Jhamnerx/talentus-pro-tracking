@@ -35,22 +35,35 @@ class BackupDriveImportFtpCommand extends Command
         $ftp = $service->destination(BackupDestination::FTP);
         $drive = $service->destination(BackupDestination::DRIVE);
 
+        if (!$ftp->exists($folder)) {
+            $this->error("La carpeta $folder no existe en el FTP");
+
+            return 1;
+        }
+
         $copied = 0;
+        $failed = 0;
         $files = [BackupPathResolver::databaseFile(DB::getConfig()), 'images.tar.gz'];
 
         foreach ($files as $relative) {
-            $copied += $this->copy($ftp, $drive, $folder, $relative) ? 1 : 0;
+            try {
+                $copied += $this->copy($ftp, $drive, $folder, $relative) ? 1 : 0;
+            } catch (\Throwable $e) {
+                $failed++;
+                $this->warn("$relative: " . \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage()));
+            }
         }
 
         $bar = $this->output->createProgressBar(TraccarDevice::count());
 
-        TraccarDevice::orderBy('id')->chunkById(200, function ($devices) use ($ftp, $drive, $folder, $bar, &$copied) {
+        TraccarDevice::orderBy('id')->chunkById(200, function ($devices) use ($ftp, $drive, $folder, $bar, &$copied, &$failed) {
             foreach ($devices as $device) {
                 $relative = BackupPathResolver::devicePositionsFile($device);
 
                 try {
                     $copied += $this->copy($ftp, $drive, $folder, $relative) ? 1 : 0;
                 } catch (\Throwable $e) {
+                    $failed++;
                     $this->newLine();
                     $this->warn("$relative: " . \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage()));
                 }
@@ -61,6 +74,12 @@ class BackupDriveImportFtpCommand extends Command
 
         $bar->finish();
         $this->newLine();
+
+        if ($failed > 0) {
+            $this->error("Fallaron $failed archivos; la carpeta NO se protegió. Vuelve a ejecutar el comando: se saltan los que ya están en Drive.");
+
+            return 1;
+        }
 
         $drive->put($folder . '/' . BackupRetention::PROTECT_FILE, date('c'));
 

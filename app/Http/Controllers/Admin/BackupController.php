@@ -41,24 +41,33 @@ class BackupController extends BaseController
 
     public function protect(int $id)
     {
-        $backup = Backup::findOrFail($id);
-        $drive = (new BackupService(settings('backups')))->destination(BackupDestination::DRIVE);
+        try {
+            $backup = Backup::findOrFail($id);
+            $drive = (new BackupService(settings('backups')))->destination(BackupDestination::DRIVE);
 
-        // Las copias sin posiciones cambian de prefijo al aplicar la retención.
-        $folder = BackupPathResolver::backupFolder($backup);
+            // Las copias sin posiciones cambian de prefijo al aplicar la retención.
+            $folder = BackupPathResolver::backupFolder($backup);
 
-        if (!$drive->exists($folder)) {
-            $folder = 'soloweb_' . substr($folder, strlen('backup_'));
+            if (!$drive->exists($folder)) {
+                $folder = 'soloweb_' . substr($folder, strlen('backup_'));
+
+                if (!$drive->exists($folder)) {
+                    throw new \RuntimeException('La copia no existe en Google Drive; no se puede proteger.');
+                }
+            }
+
+            if ($backup->protected) {
+                $drive->deleteFile($folder . '/' . BackupRetention::PROTECT_FILE);
+            } else {
+                $drive->put($folder . '/' . BackupRetention::PROTECT_FILE, date('c'));
+            }
+
+            $backup->update(['protected' => !$backup->protected]);
+
+            return redirect()->route('admin.backup.index');
+        } catch (\Throwable $e) {
+            return redirect()->route('admin.backup.index')
+                ->withErrors(['id' => \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage())]);
         }
-
-        if ($backup->protected) {
-            $drive->deleteFile($folder . '/' . BackupRetention::PROTECT_FILE);
-        } else {
-            $drive->put($folder . '/' . BackupRetention::PROTECT_FILE, date('c'));
-        }
-
-        $backup->update(['protected' => !$backup->protected]);
-
-        return redirect()->route('admin.backup.index');
     }
 }
