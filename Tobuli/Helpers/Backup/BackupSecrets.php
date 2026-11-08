@@ -32,6 +32,15 @@ class BackupSecrets
             settings('backups.ftp_password'),
         ];
 
+        try {
+            $secrets = array_merge(
+                $secrets,
+                (new \Tobuli\Services\DatabaseService())->getDatabases()->pluck('password')->all()
+            );
+        } catch (\Throwable $e) {
+            // Sin acceso a la tabla de bases, se quedan las claves conocidas.
+        }
+
         return array_unique(array_filter($secrets, fn ($secret) => is_string($secret) && $secret !== ''));
     }
 }

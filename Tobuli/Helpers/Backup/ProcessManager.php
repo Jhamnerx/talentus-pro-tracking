@@ -51,6 +51,8 @@ class ProcessManager
 
         if ($this->backup->isCompleted()) {
             (new BackupFinalizer($this->uploader))->finalize($this->backup->refresh());
+        } elseif ($this->backup->processes()->whereUnfinished()->count() === 0) {
+            (new BackupFinalizer($this->uploader))->closeFailed($this->backup->refresh());
         }
     }
 

@@ -2,7 +2,7 @@
 
 namespace Tobuli\Helpers\Backup\Destination;
 
-use Symfony\Component\Process\Exception\ProcessFailedException;
+use Tobuli\Helpers\Backup\Exception\BackupCommandException;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Helpers\Backup\BackupCommandRunner;
 
@@ -96,7 +96,7 @@ class DriveDestination implements BackupDestination
     {
         try {
             return $this->rclone(['cat', $this->full($remotePath)])->getOutput();
-        } catch (ProcessFailedException $e) {
+        } catch (BackupCommandException $e) {
             if ($this->isNotFound($e)) {
                 return null;
             }
@@ -124,7 +124,7 @@ class DriveDestination implements BackupDestination
     {
         try {
             $this->rclone(['purge', $this->full($remotePath), '--drive-use-trash=false']);
-        } catch (ProcessFailedException $e) {
+        } catch (BackupCommandException $e) {
             if (!$this->isNotFound($e)) {
                 throw $e;
             }
@@ -135,7 +135,7 @@ class DriveDestination implements BackupDestination
     {
         try {
             $this->rclone(['deletefile', $this->full($remotePath), '--drive-use-trash=false']);
-        } catch (ProcessFailedException $e) {
+        } catch (BackupCommandException $e) {
             if (!$this->isNotFound($e)) {
                 throw $e;
             }
@@ -151,7 +151,7 @@ class DriveDestination implements BackupDestination
     {
         try {
             $output = $this->rclone(array_merge(['lsf', $this->full($path), '--max-depth', '1'], $flags))->getOutput();
-        } catch (ProcessFailedException $e) {
+        } catch (BackupCommandException $e) {
             if ($this->isNotFound($e)) {
                 return [];
             }
@@ -162,9 +162,9 @@ class DriveDestination implements BackupDestination
         return array_values(array_filter(array_map('trim', explode("\n", $output)), 'strlen'));
     }
 
-    private function isNotFound(ProcessFailedException $e): bool
+    private function isNotFound(BackupCommandException $e): bool
     {
-        return in_array($e->getProcess()->getExitCode(), self::NOT_FOUND_EXIT_CODES, true);
+        return in_array($e->getExitCode(), self::NOT_FOUND_EXIT_CODES, true);
     }
 
     private function full(string $remotePath): string

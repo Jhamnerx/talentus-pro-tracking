@@ -28,6 +28,18 @@ class BackupFinalizer
         $problems = [];
         $healthy = [];
 
+        $failedDevices = [];
+        foreach ($backup->processes as $process) {
+            foreach ($process->options['failed_items'] ?? [] as $id) {
+                $failedDevices[] = $id;
+            }
+        }
+        $failedDevices = array_values(array_unique($failedDevices));
+
+        if ($failedDevices) {
+            $problems[] = 'devices: ' . implode(', ', $failedDevices);
+        }
+
         foreach ($this->uploader->destinations() as $name => $destination) {
             $status = $backup->destinationStatus($name);
 
@@ -39,7 +51,7 @@ class BackupFinalizer
             }
 
             try {
-                $this->index->publish($backup, $destination);
+                $this->index->publish($backup, $destination, $failedDevices);
                 $healthy[] = $name;
             } catch (\Throwable $e) {
                 $problems[] = $name . ': ' . BackupSecrets::scrub($e->getMessage());
@@ -67,6 +79,33 @@ class BackupFinalizer
         if (in_array(BackupDestination::DRIVE, $healthy, true)) {
             $this->afterDriveSuccess($backup);
         }
+    }
+
+    /**
+     * Cierra un backup que terminó con algún proceso fallido: no publica índice ni aplica retención.
+     */
+    public function closeFailed(Backup $backup): void
+    {
+        $lines = [];
+
+        foreach ($this->uploader->destinations() as $name => $destination) {
+            $status = $backup->destinationStatus($name);
+
+            $lines[] = $name . ': ' . trans('backups.status_' . ($status ?: Backup::DESTINATION_FAILED))
+                . ' (' . ($backup->destinations[$name]['failed'] ?? 0) . ') '
+                . ($backup->destinations[$name]['last_error'] ?? '');
+        }
+
+        $this->index->forgetRanges($backup->id);
+
+        $this->notifier->notifyOnce(
+            $backup,
+            'problems',
+            trans('backups.mail_problems_subject', ['name' => $backup->name]),
+            BackupSecrets::scrub(
+                trans('backups.mail_problems_body', ['name' => $backup->name, 'list' => implode("\n", $lines)])
+            )
+        );
     }
 
     private function afterDriveSuccess(Backup $backup): void

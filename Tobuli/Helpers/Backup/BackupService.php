@@ -80,7 +80,7 @@ class BackupService
 
         try {
             $destinations[BackupDestination::FTP] = $this->ftp();
-        } catch (NoHiveConfigException | InvalidFtpConfigException $e) {
+        } catch (NoHiveConfigException | InvalidFtpConfigException | \GuzzleHttp\Exception\GuzzleException $e) {
             // Sin FTP configurado, el backup puede seguir solo con Drive.
         }
 

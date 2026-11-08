@@ -2,9 +2,9 @@
 
 namespace Tobuli\Helpers\Backup;
 
-use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 use Tobuli\Entities\BackupProcess;
+use Tobuli\Helpers\Backup\Exception\BackupCommandException;
 
 class BackupCommandRunner
 {
@@ -44,7 +44,7 @@ class BackupCommandRunner
         }
 
         if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
+            throw new BackupCommandException((int)$process->getExitCode(), $process->getErrorOutput());
         }
 
         return $process;

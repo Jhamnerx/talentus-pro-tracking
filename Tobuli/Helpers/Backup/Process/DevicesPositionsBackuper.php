@@ -21,12 +21,15 @@ class DevicesPositionsBackuper extends AbstractBackuper
     protected int $failOnAttempt = 3;
     protected bool $attemptsPerItem = true;
     private string $cmdBase;
+    private $currentItemId = null;
 
     /**
      * @param TraccarDevice $item
      */
     protected function backup($item): bool
     {
+        $this->currentItemId = $item->id;
+
         $positions = $item->positions();
 
         try {
@@ -116,7 +119,20 @@ class DevicesPositionsBackuper extends AbstractBackuper
             return null;
         }
 
-        return $this->isItemSpecificError($e) ? false : null;
+        if (!$this->isItemSpecificError($e)) {
+            return null;
+        }
+
+        if ($this->currentItemId !== null) {
+            $options = $this->process->options ?: [];
+            $options['failed_items'] = array_values(array_unique(
+                array_merge($options['failed_items'] ?? [], [$this->currentItemId])
+            ));
+            $this->process->options = $options;
+            $this->process->save();
+        }
+
+        return false;
     }
 
     protected function isFailureTerminal(Exception $e): bool

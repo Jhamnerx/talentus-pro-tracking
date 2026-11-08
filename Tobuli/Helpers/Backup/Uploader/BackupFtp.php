@@ -3,7 +3,7 @@
 namespace Tobuli\Helpers\Backup\Uploader;
 
 use Illuminate\Support\Facades\Cache;
-use Symfony\Component\Process\Exception\ProcessFailedException;
+use Tobuli\Helpers\Backup\Exception\BackupCommandException;
 use Tobuli\Clients\FtpHandler;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Helpers\Backup\BackupCommandRunner;
@@ -56,8 +56,8 @@ class BackupFtp implements BackupDestination
                 BackupCommandRunner::shell($command, $keepAlive);
 
                 return;
-            } catch (ProcessFailedException $e) {
-                if ($e->getProcess()->getExitCode() === self::MISSING_DIR_EXIT_CODE) {
+            } catch (BackupCommandException $e) {
+                if ($e->getExitCode() === self::MISSING_DIR_EXIT_CODE) {
                     $this->createRootFolder($remotePath);
                 }
 

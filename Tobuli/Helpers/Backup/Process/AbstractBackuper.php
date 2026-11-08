@@ -5,6 +5,7 @@ namespace Tobuli\Helpers\Backup\Process;
 use Exception;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Helpers\Backup\Uploader\BackupUploaderInterface;
+use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
 
 abstract class AbstractBackuper
 {
@@ -78,6 +79,10 @@ abstract class AbstractBackuper
 
     protected function isFailureTerminal(Exception $e): bool
     {
+        if ($e->getCode() === MultiDestinationUploader::ALL_DESTINATIONS_FAILED) {
+            return $this->process->attempt >= 3;
+        }
+
         return $this->failOnAttempt && $this->process->attempt >= $this->failOnAttempt;
     }
 

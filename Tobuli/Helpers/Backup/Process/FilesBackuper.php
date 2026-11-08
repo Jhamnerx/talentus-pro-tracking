@@ -8,7 +8,8 @@ class FilesBackuper extends AbstractBackuper
 {
     protected function backup($item): bool
     {
-        $command = 'tar -c ' . escapeshellarg($item);
+        // tar devuelve 1 si un archivo cambió mientras se leía: la copia sigue siendo válida.
+        $command = '{ tar -c --ignore-failed-read ' . escapeshellarg($item) . '; s=$?; [ $s -le 1 ]; }';
 
         $this->uploader->process($command, $this->process, $item);
 

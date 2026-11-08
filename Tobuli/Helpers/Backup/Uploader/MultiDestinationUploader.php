@@ -74,10 +74,11 @@ class MultiDestinationUploader implements BackupUploaderInterface
             }
 
             $accepted = 0;
+            $notStored = [];
 
             foreach ($this->destinations as $name => $destination) {
                 if (!empty($state[$name]['disabled'])) {
-                    $state[$name]['failed']++;
+                    $notStored[] = $name;
                     continue;
                 }
 
@@ -88,7 +89,7 @@ class MultiDestinationUploader implements BackupUploaderInterface
                     $state[$name]['consecutive'] = 0;
                     $accepted++;
                 } catch (\Throwable $e) {
-                    $state[$name]['failed']++;
+                    $notStored[] = $name;
                     $state[$name]['consecutive']++;
                     $state[$name]['last_error'] = mb_substr(
                         BackupSecrets::scrub($e->getMessage()), 0, self::MAX_ERROR_LENGTH
@@ -97,6 +98,13 @@ class MultiDestinationUploader implements BackupUploaderInterface
                     if ($state[$name]['consecutive'] >= self::MAX_CONSECUTIVE_FAILURES) {
                         $state[$name]['disabled'] = true;
                     }
+                }
+            }
+
+            // Si ningún destino aceptó, el elemento se reintentará: todavía no cuenta como fallo.
+            if ($accepted > 0) {
+                foreach ($notStored as $name) {
+                    $state[$name]['failed']++;
                 }
             }
         } finally {
@@ -115,7 +123,21 @@ class MultiDestinationUploader implements BackupUploaderInterface
     {
         $state = $backup->destinations ?: [];
 
+        $midBackup = null;
+
         foreach ($this->destinations as $name => $destination) {
+            if (!isset($state[$name])) {
+                $midBackup ??= $backup->processes()->sum('processed') > 0;
+
+                if ($midBackup) {
+                    $state[$name] = [
+                        'failed'     => 1,
+                        'disabled'   => true,
+                        'last_error' => 'Activado a mitad del backup',
+                    ];
+                }
+            }
+
             $state[$name] = ($state[$name] ?? []) + [
                 'uploaded'    => 0,
                 'failed'      => 0,

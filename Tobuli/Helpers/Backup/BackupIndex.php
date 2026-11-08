@@ -23,12 +23,13 @@ class BackupIndex
     /**
      * Sube el índice a un destino y lo deja en la caché local.
      */
-    public function publish(Backup $backup, BackupDestination $destination): void
+    public function publish(Backup $backup, BackupDestination $destination, array $failedDevices = []): void
     {
         $content = json_encode([
             'backup_id'  => $backup->id,
             'created_at' => (string)$backup->created_at,
             'devices'    => $this->ranges($backup->id),
+            'failed_devices' => array_values($failedDevices),
         ]);
 
         $folder = BackupPathResolver::backupFolder($backup);
@@ -105,7 +106,7 @@ class BackupIndex
         $dir = $this->directory() . '/' . $destination->name();
 
         if (!is_dir($dir)) {
-            mkdir($dir, 0775, true);
+            @mkdir($dir, 0775, true);
             @chmod($dir, 0775);
         }
 
@@ -117,7 +118,7 @@ class BackupIndex
         $dir = storage_path('app/backup-index');
 
         if (!is_dir($dir)) {
-            mkdir($dir, 0775, true);
+            @mkdir($dir, 0775, true);
             @chmod($dir, 0775);
         }
 
