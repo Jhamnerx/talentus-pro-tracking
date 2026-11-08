@@ -1,0 +1,108 @@
+<?php
+
+namespace Tobuli\Helpers\Backup;
+
+use Tobuli\Entities\Backup;
+use Tobuli\Helpers\Backup\Destination\BackupDestination;
+use Tobuli\Helpers\Backup\Destination\DriveDestination;
+use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
+
+class BackupFinalizer
+{
+    private const LOW_SPACE_RATIO = 0.10;
+    private const BYTES_IN_GB = 1073741824;
+
+    private MultiDestinationUploader $uploader;
+    private BackupIndex $index;
+    private BackupNotifier $notifier;
+
+    public function __construct(MultiDestinationUploader $uploader)
+    {
+        $this->uploader = $uploader;
+        $this->index = new BackupIndex();
+        $this->notifier = new BackupNotifier();
+    }
+
+    public function finalize(Backup $backup): void
+    {
+        $problems = [];
+        $healthy = [];
+
+        foreach ($this->uploader->destinations() as $name => $destination) {
+            $status = $backup->destinationStatus($name);
+
+            if ($status !== Backup::DESTINATION_OK) {
+                $problems[] = $name . ': ' . trans('backups.status_' . ($status ?: Backup::DESTINATION_FAILED))
+                    . ' (' . ($backup->destinations[$name]['failed'] ?? 0) . ') '
+                    . ($backup->destinations[$name]['last_error'] ?? '');
+                continue;
+            }
+
+            try {
+                $this->index->publish($backup, $destination);
+                $healthy[] = $name;
+            } catch (\Throwable $e) {
+                $problems[] = $name . ': ' . BackupSecrets::scrub($e->getMessage());
+            }
+        }
+
+        $this->index->forgetRanges($backup->id);
+
+        $backup->update([
+            'message' => $problems
+                ? trans('backups.completed_with_errors', ['list' => implode('; ', array_map(fn ($p) => strtok($p, ':'), $problems))])
+                : trans('front.successfully_uploaded'),
+            'details' => $problems ? BackupSecrets::scrub(implode("\n", $problems)) : null,
+        ]);
+
+        if ($problems) {
+            $this->notifier->notifyOnce(
+                $backup,
+                'problems',
+                trans('backups.mail_problems_subject', ['name' => $backup->name]),
+                trans('backups.mail_problems_body', ['name' => $backup->name, 'list' => implode("\n", $problems)])
+            );
+        }
+
+        if (in_array(BackupDestination::DRIVE, $healthy, true)) {
+            $this->afterDriveSuccess($backup);
+        }
+    }
+
+    private function afterDriveSuccess(Backup $backup): void
+    {
+        /** @var DriveDestination $drive */
+        $drive = $this->uploader->destination(BackupDestination::DRIVE);
+
+        try {
+            $retention = new BackupRetention($drive, settings('backups') ?: []);
+            $retention->apply($retention->plan());
+
+            $this->checkSpace($backup, $drive);
+        } catch (\Throwable $e) {
+            $this->notifier->notifyOnce(
+                $backup,
+                'prune',
+                trans('backups.mail_prune_subject'),
+                $e->getMessage()
+            );
+        }
+    }
+
+    private function checkSpace(Backup $backup, DriveDestination $drive): void
+    {
+        $about = $drive->about();
+
+        if ($about['total'] > 0 && $about['free'] / $about['total'] < self::LOW_SPACE_RATIO) {
+            $this->notifier->notifyOnce(
+                $backup,
+                'space',
+                trans('backups.mail_space_subject'),
+                trans('backups.mail_space_body', [
+                    'free'  => round($about['free'] / self::BYTES_IN_GB, 1),
+                    'total' => round($about['total'] / self::BYTES_IN_GB, 1),
+                ])
+            );
+        }
+    }
+}

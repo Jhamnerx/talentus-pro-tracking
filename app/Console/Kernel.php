@@ -94,6 +94,7 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\BackupManageCommand',
         'App\Console\Commands\BackupImportCommand',
         'App\Console\Commands\DeltaPositionsBackupCommand',
+        'App\Console\Commands\BackupPruneCommand',
         'App\Console\Commands\DeltaPositionsImportCommand',
         'App\Console\Commands\DeleteInvalidFuelEventsCommand',
         'App\Console\Commands\DeviceServerReconfigCommand',
