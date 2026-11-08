@@ -14,6 +14,8 @@ class DatabaseBackuper extends AbstractBackuper
             . " mysqldump"
             . " --single-transaction=TRUE"
             . " --lock-tables=false"
+            . " --routines"
+            . " --no-tablespaces"
             . " -u " . escapeshellarg($item['username'])
             . " -h " . escapeshellarg($item['host'])
             . " --port=" . escapeshellarg($item['port'])

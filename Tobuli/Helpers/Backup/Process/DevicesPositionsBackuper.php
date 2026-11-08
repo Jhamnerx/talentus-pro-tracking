@@ -6,6 +6,8 @@ use Exception;
 use Illuminate\Database\QueryException;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Entities\TraccarDevice;
+use Tobuli\Helpers\Backup\BackupIndex;
+use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
 use Tobuli\Services\DatabaseService;
 
 class DevicesPositionsBackuper extends AbstractBackuper
@@ -13,6 +15,7 @@ class DevicesPositionsBackuper extends AbstractBackuper
     private const GENERAL_ERROR_CODES = [
         1045, // Access denied for user
         2002, // Connection refused / Connection timed out
+        MultiDestinationUploader::ALL_DESTINATIONS_FAILED,
     ];
 
     protected int $failOnAttempt = 3;
@@ -43,6 +46,13 @@ class DevicesPositionsBackuper extends AbstractBackuper
         $cmd = "$this->cmdBase " . $positions->getRelated()->getTable();
 
         $this->uploader->process($cmd, $this->process, $item);
+
+        (new BackupIndex())->record(
+            $this->process->backup_id,
+            $item->id,
+            $item->positions()->min('time'),
+            $item->positions()->max('time')
+        );
 
         return true;
     }
@@ -131,7 +141,7 @@ class DevicesPositionsBackuper extends AbstractBackuper
             'type'              => static::class,
             'source'            => $source,
             'options'           => $options,
-            'duration_expire'   => 10 * $total,
+            'duration_expire'   => 20 * $total,
             'last_item_id'      => 0,
             'total'             => $total,
         ]);

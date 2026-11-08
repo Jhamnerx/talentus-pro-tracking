@@ -8,7 +8,7 @@ class FilesBackuper extends AbstractBackuper
 {
     protected function backup($item): bool
     {
-        $command = 'tar -cv ' . $item;
+        $command = 'tar -c ' . escapeshellarg($item);
 
         $this->uploader->process($command, $this->process, $item);
 
