@@ -31,9 +31,9 @@ class DevicePositionsImportJob implements ShouldQueue
 
     public function handle(): void
     {
-        $config = $this->device->positions()->getConnection()->getConfig();
-
         try {
+            $config = $this->device->positions()->getConnection()->getConfig();
+
             $this->import($config);
         } catch (\Throwable $e) {
             File::delete($this->file);
