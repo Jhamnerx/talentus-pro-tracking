@@ -50,14 +50,14 @@ en este orden:
 
    ```bash
    sudo cp -a <ruta encontrada> <ruta encontrada>.bak
-   diff <ruta encontrada> /var/www/html/current/<ruta del laravel-worker-core.ini nuevo>
+   diff <ruta encontrada> /var/www/html/current/laravel-worker-core.ini
    ```
 
    Si el `diff` solo muestra lo nuevo, copiar; si muestra ajustes propios del servidor, trasladarlos
    al archivo nuevo antes de copiar. Luego recargar supervisor:
 
    ```bash
-   sudo cp /var/www/html/current/<ruta del laravel-worker-core.ini nuevo> <ruta encontrada>
+   sudo cp /var/www/html/current/laravel-worker-core.ini <ruta encontrada>
    sudo supervisorctl reread
    sudo supervisorctl update
    sudo supervisorctl status | grep backups
