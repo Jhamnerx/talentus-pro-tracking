@@ -32,14 +32,14 @@ class BackupCommandRunner
         $process->setTimeout(null);
         $process->start();
 
-        $timer = 0;
+        $lastBeat = microtime(true);
 
         while ($process->isRunning()) {
-            sleep(1);
-            $timer++;
+            usleep(200000);
 
-            if ($keepAlive && ($timer % BackupProcess::DURATION_ALIVE === 0)) {
+            if ($keepAlive && (microtime(true) - $lastBeat) >= BackupProcess::DURATION_ALIVE) {
                 $keepAlive->updateReservation();
+                $lastBeat = microtime(true);
             }
         }
 

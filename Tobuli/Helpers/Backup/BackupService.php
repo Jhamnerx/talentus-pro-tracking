@@ -132,6 +132,8 @@ class BackupService
 
     public function auto(): bool
     {
+        $this->closeAbandonedAutoBackup();
+
         if (!$this->canStartAutoBackup()) {
             return false;
         }
@@ -167,6 +169,25 @@ class BackupService
         }
 
         return true;
+    }
+
+    /**
+     * Un backup automatico que se quedo sin procesos vivos (fallidos o caducados) y sin completar
+     * nunca llegaria a cerrarse solo: se cierra y se avisa (el aviso no se repite).
+     */
+    private function closeAbandonedAutoBackup(): void
+    {
+        try {
+            $backup = Backup::where('launcher', self::LAUNCHER_AUTO)
+                ->orderBy('created_at', 'DESC')
+                ->first();
+
+            if ($backup && !$backup->isCompleted() && $backup->processes()->whereUnfinished()->count() === 0) {
+                (new BackupFinalizer(new MultiDestinationUploader($this->destinations())))->closeFailed($backup);
+            }
+        } catch (\Throwable $e) {
+            logger()->error('Backup: cannot close abandoned backup: ' . BackupSecrets::scrub($e->getMessage()));
+        }
     }
 
     private function canStartAutoBackup(): bool

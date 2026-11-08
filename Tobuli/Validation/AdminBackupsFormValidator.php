@@ -16,11 +16,11 @@ class AdminBackupsFormValidator extends Validator {
             'ftp_path' => 'required_if:type,custom',
             'period' => 'required',
             'hour' => 'required',
-            'drive_remote' => 'required_with:drive_enabled|nullable|regex:/^[A-Za-z0-9_-]+$/',
-            'drive_path' => 'required_with:drive_enabled|nullable|regex:/^[A-Za-z0-9_\/-]+$/',
-            'retention_daily_days' => 'required_with:drive_enabled|nullable|integer|min:1',
+            'drive_remote' => 'required_with:drive_enabled|nullable|regex:/^[A-Za-z0-9_][A-Za-z0-9_-]*$/D',
+            'drive_path' => 'required_with:drive_enabled|nullable|regex:/^[A-Za-z0-9_-][A-Za-z0-9_\/-]*$/D',
+            'retention_daily_days' => 'required_with:drive_enabled|nullable|integer|min:7',
             'retention_long_term_months' => 'required_with:drive_enabled|nullable|integer|min:1|max:12',
-            'retention_max_days' => 'required_with:drive_enabled|nullable|integer|min:1',
+            'retention_max_days' => 'required_with:drive_enabled|nullable|integer|min:30|gte:retention_daily_days',
         ]
     ];
 

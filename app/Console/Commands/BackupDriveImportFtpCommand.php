@@ -17,7 +17,8 @@ use Tobuli\Helpers\Backup\Destination\BackupDestination;
  */
 class BackupDriveImportFtpCommand extends Command
 {
-    protected $signature = 'backup:drive-import-ftp {folder : Ejemplo: backup_2026-10-19-1792368061}';
+    protected $signature = 'backup:drive-import-ftp {folder : Ejemplo: backup_2026-10-19-1792368061}
+        {--allow-invalid-database : Protege la carpeta aunque el volcado de la base falte o no sea valido (copias antiguas vacias)}';
 
     protected $description = 'Copia una carpeta de backup del FTP a Google Drive y la marca como protegida';
 
@@ -43,15 +44,37 @@ class BackupDriveImportFtpCommand extends Command
 
         $copied = 0;
         $failed = 0;
-        $files = [BackupPathResolver::databaseFile(DB::getConfig()), 'images.tar.gz'];
+        $allowInvalidDatabase = (bool)$this->option('allow-invalid-database');
+        $databaseFile = BackupPathResolver::databaseFile(DB::getConfig());
+        $databaseOk = false;
 
-        foreach ($files as $relative) {
-            try {
-                $copied += $this->copy($ftp, $drive, $folder, $relative) ? 1 : 0;
-            } catch (\Throwable $e) {
+        try {
+            $databaseCopied = $this->copy($ftp, $drive, $folder, $databaseFile, true);
+            $copied += $databaseCopied ? 1 : 0;
+            $databaseOk = $databaseCopied || $drive->exists($folder . '/' . $databaseFile);
+        } catch (\Throwable $e) {
+            $this->warn("$databaseFile: " . \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage()));
+        }
+
+        if (!$databaseOk) {
+            if ($allowInvalidDatabase) {
+                $this->warn("AVISO: el volcado de la base ($databaseFile) falta o no es valido; la carpeta se protegera solo por sus posiciones.");
+            } else {
                 $failed++;
-                $this->warn("$relative: " . \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage()));
+                $this->warn("$databaseFile ausente o invalido. Usa --allow-invalid-database si solo te interesan las posiciones.");
             }
+        }
+
+        // images.tar.gz ausente solo avisa; si existe pero falla la copia, cuenta como fallo.
+        try {
+            if ($this->copy($ftp, $drive, $folder, 'images.tar.gz')) {
+                $copied++;
+            } elseif (!$ftp->exists($folder . '/images.tar.gz')) {
+                $this->warn('AVISO: images.tar.gz no esta en el FTP.');
+            }
+        } catch (\Throwable $e) {
+            $failed++;
+            $this->warn('images.tar.gz: ' . \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage()));
         }
 
         $bar = $this->output->createProgressBar(TraccarDevice::count());
@@ -88,7 +111,7 @@ class BackupDriveImportFtpCommand extends Command
         return 0;
     }
 
-    private function copy(BackupDestination $from, BackupDestination $to, string $folder, string $relative): bool
+    private function copy(BackupDestination $from, BackupDestination $to, string $folder, string $relative, bool $isDatabase = false): bool
     {
         $remote = $folder . '/' . $relative;
 
@@ -100,6 +123,7 @@ class BackupDriveImportFtpCommand extends Command
 
         try {
             $from->download($remote, $local);
+            BackupTempFile::assertValid($local, $isDatabase);
             $to->upload($local, $remote);
         } finally {
             @unlink($local);

@@ -82,6 +82,17 @@ class DriveDestination implements BackupDestination
         return $this->list($folder, ['--files-only']);
     }
 
+    /**
+     * Como listFiles, pero cualquier error de rclone (incluido "no encontrado") se propaga:
+     * para decidir borrados no basta con creer que la carpeta esta vacia.
+     *
+     * @return string[]
+     */
+    public function listFilesStrict(string $folder): array
+    {
+        return $this->list($folder, ['--files-only'], true);
+    }
+
     public function exists(string $remotePath): bool
     {
         return !empty($this->list($remotePath, []));
@@ -147,12 +158,12 @@ class DriveDestination implements BackupDestination
         $this->rclone(['moveto', $this->full($fromFolder), $this->full($toFolder)]);
     }
 
-    private function list(string $path, array $flags): array
+    private function list(string $path, array $flags, bool $strict = false): array
     {
         try {
             $output = $this->rclone(array_merge(['lsf', $this->full($path), '--max-depth', '1'], $flags))->getOutput();
         } catch (BackupCommandException $e) {
-            if ($this->isNotFound($e)) {
+            if (!$strict && $this->isNotFound($e)) {
                 return [];
             }
 

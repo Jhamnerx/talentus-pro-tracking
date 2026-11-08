@@ -5,6 +5,7 @@ namespace Tobuli\Helpers\Backup;
 use Tobuli\Entities\Backup;
 use Tobuli\Helpers\Backup\Destination\BackupDestination;
 use Tobuli\Helpers\Backup\Destination\DriveDestination;
+use Tobuli\Helpers\Backup\Process\DevicesPositionsBackuper;
 use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
 
 class BackupFinalizer
@@ -96,6 +97,24 @@ class BackupFinalizer
                 . ($backup->destinations[$name]['last_error'] ?? '');
         }
 
+        foreach ($backup->processes as $process) {
+            if ($process->isCompleted()) {
+                continue;
+            }
+
+            $lines[] = class_basename($process->type) . ': '
+                . ($process->isFailed() ? trans('global.failed') : trans('front.expired'))
+                . ($process->source ? " ({$process->source})" : '');
+        }
+
+        if (empty($backup->message)) {
+            $backup->update([
+                'message' => trans('backups.completed_with_errors', [
+                    'list' => implode('; ', array_map(fn ($line) => strtok($line, ':'), $lines)),
+                ]),
+            ]);
+        }
+
         $this->index->forgetRanges($backup->id);
 
         $this->notifier->notifyOnce(
@@ -114,8 +133,11 @@ class BackupFinalizer
         $drive = $this->uploader->destination(BackupDestination::DRIVE);
 
         try {
-            $retention = new BackupRetention($drive, settings('backups') ?: []);
-            $retention->apply($retention->plan());
+            // Sin posiciones copiadas no hay evidencia de que el backup sea bueno: no se borra nada.
+            if ($this->positionsProcessed($backup) > 0) {
+                $retention = new BackupRetention($drive, settings('backups') ?: []);
+                $retention->apply($retention->plan());
+            }
 
             $this->checkSpace($backup, $drive);
         } catch (\Throwable $e) {
@@ -126,6 +148,13 @@ class BackupFinalizer
                 $e->getMessage()
             );
         }
+    }
+
+    private function positionsProcessed(Backup $backup): int
+    {
+        return (int)$backup->processes()
+            ->where('type', DevicesPositionsBackuper::class)
+            ->sum('processed');
     }
 
     private function checkSpace(Backup $backup, DriveDestination $drive): void

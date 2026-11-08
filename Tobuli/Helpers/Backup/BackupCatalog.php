@@ -118,9 +118,11 @@ class BackupCatalog
         if ($index !== null) {
             $device = $index['devices'][$traccarId] ?? null;
 
-            return $device
-                ? ['from' => $device['from'], 'to' => $device['to'], 'approximate' => false]
-                : null;
+            if ($device) {
+                return ['from' => $device['from'], 'to' => $device['to'], 'approximate' => false];
+            }
+
+            // Si el indice quedo incompleto el archivo puede existir: se comprueba abajo (rango aproximado).
         }
 
         if (!$destination->exists($folder . '/' . $file)) {

@@ -15,7 +15,7 @@ use Tobuli\Helpers\Backup\BackupService;
 class DevicesPositionsBackupsController extends BaseController
 {
     private const PAGE_SIZE = 20;
-    private const FOLDER_RULE = 'required|regex:/^backup_[0-9-]+$/';
+    private const FOLDER_RULE = 'required|regex:/^backup_[0-9-]+$/D';
 
     private BackupService $service;
 

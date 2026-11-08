@@ -13,6 +13,8 @@ class BackupRetention
 
     private const FULL_PREFIX = 'backup_';
     private const WEB_ONLY_PREFIX = 'soloweb_';
+    private const MIN_DAILY_DAYS = 7;
+    private const MIN_MAX_DAYS = 30;
 
     private DriveDestination $drive;
     private int $dailyDays;
@@ -22,9 +24,9 @@ class BackupRetention
     public function __construct(DriveDestination $drive, array $settings)
     {
         $this->drive = $drive;
-        $this->dailyDays = max(1, (int)($settings['retention_daily_days'] ?? 30));
+        $this->dailyDays = max(self::MIN_DAILY_DAYS, (int)($settings['retention_daily_days'] ?? 30));
         $this->longTermMonths = max(1, (int)($settings['retention_long_term_months'] ?? 2));
-        $this->maxDays = max($this->dailyDays, (int)($settings['retention_max_days'] ?? 365));
+        $this->maxDays = max(self::MIN_MAX_DAYS, $this->dailyDays, (int)($settings['retention_max_days'] ?? 365));
     }
 
     /**
@@ -39,7 +41,7 @@ class BackupRetention
             $date = self::folderDate($name);
 
             if ($date) {
-                $files = $this->drive->listFiles($name);
+                $files = $this->drive->listFilesStrict($name);
 
                 $folders[$name] = [
                     'date'      => $date,
@@ -57,7 +59,11 @@ class BackupRetention
                 continue;
             }
 
-            $age = $folder['date']->diffInDays($now);
+            $age = $folder['date']->diffInDays($now, false);
+
+            if ($age < 0) {
+                continue;
+            }
 
             if ($age > $this->maxDays) {
                 $plan[] = ['action' => self::ACTION_PURGE, 'folder' => $name];
@@ -69,8 +75,8 @@ class BackupRetention
         foreach ($this->drive->listFolders(self::WEB_ONLY_PREFIX) as $name) {
             $date = self::folderDate($name);
 
-            if ($date && $date->diffInDays($now) > $this->maxDays
-                && !in_array(self::PROTECT_FILE, $this->drive->listFiles($name), true)
+            if ($date && $date->diffInDays($now, false) > $this->maxDays
+                && !in_array(self::PROTECT_FILE, $this->drive->listFilesStrict($name), true)
             ) {
                 $plan[] = ['action' => self::ACTION_PURGE, 'folder' => $name];
             }
@@ -81,17 +87,32 @@ class BackupRetention
 
     public function apply(array $plan): void
     {
+        $errors = [];
+
         foreach ($plan as $step) {
             $folder = $step['folder'];
 
-            if ($step['action'] === self::ACTION_PURGE) {
-                $this->drive->purge($folder);
-            } else {
-                $this->drive->purge($folder . '/' . BackupPathResolver::POSITIONS_ROOT);
-                $this->drive->move($folder, self::WEB_ONLY_PREFIX . substr($folder, strlen(self::FULL_PREFIX)));
-            }
+            try {
+                // Se vuelve a comprobar justo antes de borrar: pudo protegerse despues del plan.
+                if (in_array(self::PROTECT_FILE, $this->drive->listFilesStrict($folder), true)) {
+                    continue;
+                }
 
-            logger()->info("Backup retention: {$step['action']} $folder");
+                if ($step['action'] === self::ACTION_PURGE) {
+                    $this->drive->purge($folder);
+                } else {
+                    $this->drive->purge($folder . '/' . BackupPathResolver::POSITIONS_ROOT);
+                    $this->drive->move($folder, self::WEB_ONLY_PREFIX . substr($folder, strlen(self::FULL_PREFIX)));
+                }
+
+                logger()->info("Backup retention: {$step['action']} $folder");
+            } catch (\Throwable $e) {
+                $errors[] = "$folder: " . BackupSecrets::scrub($e->getMessage());
+            }
+        }
+
+        if ($errors) {
+            throw new \RuntimeException(implode("\n", $errors));
         }
     }
 
@@ -121,6 +142,12 @@ class BackupRetention
             return null;
         }
 
-        return Carbon::parse($matches[1])->startOfDay();
+        [$year, $month, $day] = array_map('intval', explode('-', $matches[1]));
+
+        if (!checkdate($month, $day, $year)) {
+            return null;
+        }
+
+        return Carbon::create($year, $month, $day)->startOfDay();
     }
 }

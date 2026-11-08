@@ -157,7 +157,7 @@ class DevicesPositionsBackuper extends AbstractBackuper
             'type'              => static::class,
             'source'            => $source,
             'options'           => $options,
-            'duration_expire'   => 20 * $total,
+            'duration_expire'   => 40 * $total,
             'last_item_id'      => 0,
             'total'             => $total,
         ]);

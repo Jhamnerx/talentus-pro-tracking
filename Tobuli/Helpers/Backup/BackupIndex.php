@@ -17,7 +17,10 @@ class BackupIndex
     {
         $line = json_encode(['id' => $traccarId, 'from' => $from, 'to' => $to]) . "\n";
 
-        file_put_contents($this->rangesPath($backupId), $line, FILE_APPEND | LOCK_EX);
+        // Un fallo del indice no debe abortar el backup: solo quedara un rango aproximado.
+        if (@file_put_contents($this->rangesPath($backupId), $line, FILE_APPEND | LOCK_EX) === false) {
+            logger()->error("Backup index: cannot write ranges for backup $backupId (device $traccarId)");
+        }
     }
 
     /**

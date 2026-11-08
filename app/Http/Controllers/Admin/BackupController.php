@@ -67,7 +67,7 @@ class BackupController extends BaseController
             return redirect()->route('admin.backup.index');
         } catch (\Throwable $e) {
             return redirect()->route('admin.backup.index')
-                ->withErrors(['id' => \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage())]);
+                ->with('error', e(\Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage())));
         }
     }
 }
