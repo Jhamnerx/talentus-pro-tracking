@@ -14,6 +14,7 @@ class BackupTempFile
 
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
+            @chmod($dir, 0775);
         }
 
         return $dir . '/' . uniqid('', true) . '-' . basename($name);

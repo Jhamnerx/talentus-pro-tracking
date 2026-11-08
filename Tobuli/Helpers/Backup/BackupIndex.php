@@ -57,7 +57,11 @@ class BackupIndex
         $cache = $this->cachePath($destination, $folder);
 
         if (is_file($cache)) {
-            return json_decode(file_get_contents($cache), true) ?: null;
+            $cached = json_decode((string)@file_get_contents($cache), true);
+
+            if (is_array($cached) && $cached) {
+                return $cached;
+            }
         }
 
         $content = $destination->read($folder . '/' . self::FILE);
@@ -93,7 +97,7 @@ class BackupIndex
 
     private function writeCache(BackupDestination $destination, string $folder, string $content): void
     {
-        file_put_contents($this->cachePath($destination, $folder), $content);
+        @file_put_contents($this->cachePath($destination, $folder), $content);
     }
 
     private function cachePath(BackupDestination $destination, string $folder): string
@@ -102,6 +106,7 @@ class BackupIndex
 
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
+            @chmod($dir, 0775);
         }
 
         return $dir . '/' . basename($folder) . '.json';
@@ -113,6 +118,7 @@ class BackupIndex
 
         if (!is_dir($dir)) {
             mkdir($dir, 0775, true);
+            @chmod($dir, 0775);
         }
 
         return $dir;

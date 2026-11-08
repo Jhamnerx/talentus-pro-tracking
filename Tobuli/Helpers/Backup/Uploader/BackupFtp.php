@@ -35,7 +35,11 @@ class BackupFtp implements BackupDestination
 
     public function check(): bool
     {
-        return $this->handler->getConn() !== false;
+        try {
+            return $this->handler->getConn() !== false;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     public function testCommand(): void
@@ -78,9 +82,9 @@ class BackupFtp implements BackupDestination
             return;
         }
 
-        $cache->put("backups.$root.root_create", 1);
-
         BackupCommandRunner::shell('echo -n | ' . $this->uploadCommand("$root/.empty"));
+
+        $cache->put("backups.$root.root_create", 1);
     }
 
     private function uploadCommand(string $remotePath): string
@@ -97,10 +101,15 @@ class BackupFtp implements BackupDestination
     {
         $rows = $this->handler->rawlist($prefix . '*') ?: [];
 
-        return array_map(
-            fn ($row) => FileMeta::fromFtpRaw($row, $this->handler->getPath())->getName(),
-            is_string($rows) ? [$rows] : $rows
+        $rows = array_filter(
+            is_string($rows) ? [$rows] : $rows,
+            fn ($row) => str_starts_with($row, 'd')
         );
+
+        return array_values(array_map(
+            fn ($row) => FileMeta::fromFtpRaw($row, $this->handler->getPath())->getName(),
+            $rows
+        ));
     }
 
     public function exists(string $remotePath): bool
