@@ -9,6 +9,10 @@ aplicación está en `/var/www/html/current`. Si tu servidor difiere, ajusta usu
 Esta versión cambia cómo se hacen los backups para todos los destinos, no solo para Drive. Ejecutar
 en este orden:
 
+0. **Desplegar el código** de la rama que uses (`nuevo-tema` o `master`) en `/var/www/html/current`
+   con tu procedimiento habitual, antes de los pasos siguientes. Las migraciones, el worker y las
+   cachés de abajo asumen que el código nuevo ya está en el servidor.
+
 1. **Espacio en disco.** Los temporales ahora se escriben a disco, hasta unos cientos de MB a la vez:
 
    ```bash
@@ -18,7 +22,7 @@ en este orden:
 2. **Elegir el momento.** Desplegar fuera de la ventana del backup o sin ninguno en curso:
 
    ```sql
-   select id, completed_at from backup_processes where completed_at is null;
+   select id, backup_id, reserved_at from backup_processes where completed_at is null and failed_at is null and DATE_ADD(created_at, INTERVAL duration_expire SECOND) > NOW();
    ```
 
    Un backup que se reanuda tras el despliegue queda como parcial.
@@ -31,16 +35,36 @@ en este orden:
    sudo -u apache mkdir -p storage/app/backup-tmp storage/app/backup-index
    ```
 
-4. **Worker nuevo `laravel-worker-backups`.** Localizar el `.ini` real que usa el servidor, instalar la
-   versión nueva y recargar supervisor:
+4. **Worker nuevo `laravel-worker-backups`.** Localizar el `.ini` real que usa el servidor:
 
    ```bash
-   grep -rl laravel-worker /etc/supervisord* /etc/supervisor* 2>/dev/null
-   sudo cp laravel-worker-core.ini <ruta encontrada>
+   grep -rl 'program:laravel-worker-tracker' /etc/supervisord* /etc/supervisor* 2>/dev/null
+   ```
+
+   - Si devuelve **un archivo**, ese es el que se actualiza con la versión nueva.
+   - Si **no devuelve ninguno**, se crea `/etc/supervisord.d/laravel-worker-core.ini`.
+   - Si devuelve **varios**, revisarlos a mano y decidir cuál es el vigente; no copiar a ciegas.
+
+   Antes de sobrescribir, hacer copia y comparar, para no perder cambios propios del servidor
+   (la ruta de origen es la del `laravel-worker-core.ini` nuevo del repositorio desplegado):
+
+   ```bash
+   sudo cp -a <ruta encontrada> <ruta encontrada>.bak
+   diff <ruta encontrada> /var/www/html/current/<ruta del laravel-worker-core.ini nuevo>
+   ```
+
+   Si el `diff` solo muestra lo nuevo, copiar; si muestra ajustes propios del servidor, trasladarlos
+   al archivo nuevo antes de copiar. Luego recargar supervisor:
+
+   ```bash
+   sudo cp /var/www/html/current/<ruta del laravel-worker-core.ini nuevo> <ruta encontrada>
    sudo supervisorctl reread
    sudo supervisorctl update
    sudo supervisorctl status | grep backups
    ```
+
+   **Aviso:** `supervisorctl update` reinicia el grupo `laravel-core`, incluidos los workers tracker.
+   Conviene hacerlo en horario de poca actividad.
 
    Esperado: `laravel-worker-backups_00` en `RUNNING`. **Sin ese worker el botón «Subir» deja de
    funcionar aunque Drive esté desactivado.**
@@ -52,6 +76,12 @@ en este orden:
    ```
 
    Ejecutar también `sudo -u apache php artisan route:cache` solo si producción usa rutas en caché.
+
+6. **Reiniciar los workers para que carguen el código nuevo** (tras `config:cache`):
+
+   ```bash
+   sudo -u apache php artisan queue:restart
+   ```
 
 ## 1. Comprobar requisitos
 
@@ -198,6 +228,11 @@ sudo -u apache php artisan config:cache
 
 ## 11. Activar
 
+**Antes de activar:** no uses un `drive_path` compartido con otros datos. La retención borra carpetas
+`backup_*` y `soloweb_*` dentro de esa ruta, y un backup correcto a Drive la aplica
+automáticamente. Para el primer ensayo, usa una carpeta de Drive **desechable** (por ejemplo
+`backup_prueba/`) y cambia a la definitiva solo cuando el resultado sea el esperado.
+
 En `/admin/backups/index`, marcar **Activar copia en Google Drive**, guardar y pulsar **Probar Drive**.
 
 ## 12. Conservar la copia más antigua del FTP
@@ -225,6 +260,16 @@ como fallo: no tenían posiciones.
 
 ## 13. Comprobar el primer backup
 
+Primero, el ensayo de retención, que no borra nada (en la carpeta de Drive desechable del paso 11):
+
+```bash
+cd /var/www/html/current
+sudo -u apache php artisan backup:prune --dry-run
+```
+
+Revisar que solo lista carpetas que esperas perder. Solo entonces lanzar el backup. Recuerda que un
+backup correcto a Drive **aplica la retención automáticamente**.
+
 Tarda varias horas; conviene lanzarlo en una sesión que no se corte y como `apache`:
 
 ```bash
@@ -243,21 +288,32 @@ Al terminar:
 ### Restaurar sin peligro
 
 **El volcado incluye `CREATE DATABASE` y ``USE `gpswox_web` ``, así que `zcat archivo | mysql otra_base`
-SOBRESCRIBE LA BASE REAL.** No lo ejecutes tal cual. Para probar una restauración, preferiblemente en
-otro servidor, quitar esas dos líneas y cargar en una base nueva:
+SOBRESCRIBE LA BASE REAL.** No lo ejecutes tal cual. Haz la prueba **preferiblemente en otro servidor**,
+nunca en el de producción.
 
-```bash
-mysql -e 'CREATE DATABASE gpswox_web_prueba'
-zcat localhost-gpswox_web-db.sql.gz | sed -e '/^CREATE DATABASE/d' -e '/^USE `/d' | mysql gpswox_web_prueba
-mysql -e 'SELECT COUNT(*) FROM gpswox_web_prueba.users'
-mysql -e 'DROP DATABASE gpswox_web_prueba'
-```
+1. Traer el archivo desde Drive (la carpeta es la del backup que quieres probar):
 
-Antes de ejecutarlo, comprobar con el archivo real que `sed` funciona; el resultado debe ser **0**:
+   ```bash
+   sudo -u apache rclone --config /etc/rclone-backups/rclone.conf copyto gdrive:backup_plataforma/<carpeta>/localhost-gpswox_web-db.sql.gz /tmp/localhost-gpswox_web-db.sql.gz
+   ```
 
-```bash
-zcat localhost-gpswox_web-db.sql.gz | sed -e '/^CREATE DATABASE/d' -e '/^USE `/d' | grep -c '^USE'
-```
+2. **Comprobar ANTES de cargar nada.** El filtro debe dejar 0 líneas peligrosas; si no da 0, no continuar:
+
+   ```bash
+   zcat /tmp/localhost-gpswox_web-db.sql.gz | sed -e '/^CREATE DATABASE/d' -e '/^USE `/d' -e '/^ALTER DATABASE/d' | grep -cE '^(USE |CREATE DATABASE|ALTER DATABASE)|DROP DATABASE'
+   ```
+
+3. Solo si dio 0, cargar en una base nueva con el mismo `sed` de tres `-e`. `sudo mysql` entra como
+   root de MySQL por socket; si tu servidor usa contraseña para root, usa `mysql -u root -p`
+   (o el usuario que corresponda) en cada comando:
+
+   ```bash
+   sudo mysql -e 'CREATE DATABASE gpswox_web_prueba'
+   zcat /tmp/localhost-gpswox_web-db.sql.gz | sed -e '/^CREATE DATABASE/d' -e '/^USE `/d' -e '/^ALTER DATABASE/d' | sudo mysql gpswox_web_prueba
+   sudo mysql -e 'SELECT COUNT(*) FROM gpswox_web_prueba.users'
+   sudo mysql -e 'DROP DATABASE gpswox_web_prueba'
+   rm /tmp/localhost-gpswox_web-db.sql.gz
+   ```
 
 ## Retención
 
@@ -265,8 +321,8 @@ Empezar siempre por `sudo -u apache php artisan backup:prune --dry-run`, que lis
 tocar nada. La retención se ejecuta sola después de cada backup correcto en Drive que haya copiado
 posiciones. El FTP no se limpia desde la aplicación.
 
-**Nunca actives Drive con un `drive_path` compartido con otros datos:** la retención borra carpetas
-`backup_*` y `soloweb_*` dentro de esa ruta. Mínimos aplicados: copias diarias 7 días y máximo 30 días.
+**Nunca actives Drive con un `drive_path` compartido con otros datos** (ver paso 11): la retención borra
+carpetas `backup_*` y `soloweb_*` dentro de esa ruta. Mínimos aplicados: copias diarias 7 días y máximo 30 días.
 
 ## Problemas frecuentes
 
