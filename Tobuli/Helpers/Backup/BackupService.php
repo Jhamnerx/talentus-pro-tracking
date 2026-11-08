@@ -12,7 +12,10 @@ use Tobuli\Helpers\Backup\Exception\NoHiveConfigException;
 use Tobuli\Helpers\Backup\Process\DatabaseBackuper;
 use Tobuli\Helpers\Backup\Process\DevicesPositionsBackuper;
 use Tobuli\Helpers\Backup\Process\FilesBackuper;
+use Tobuli\Helpers\Backup\Destination\BackupDestination;
+use Tobuli\Helpers\Backup\Destination\DriveDestination;
 use Tobuli\Helpers\Backup\Uploader\BackupFtp;
+use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
 use Tobuli\Helpers\Hive;
 use Tobuli\Services\DatabaseService;
 
@@ -24,6 +27,7 @@ class BackupService
     protected array $settings;
     protected BackupFtp $ftp;
     protected Hive $hive;
+    private ?array $destinations = null;
 
     public function __construct(array $settings)
     {
@@ -63,9 +67,57 @@ class BackupService
         );
     }
 
+    /**
+     * @return array<string, BackupDestination> los destinos configurados
+     */
+    public function destinations(): array
+    {
+        if ($this->destinations !== null) {
+            return $this->destinations;
+        }
+
+        $destinations = [];
+
+        try {
+            $destinations[BackupDestination::FTP] = $this->ftp();
+        } catch (NoHiveConfigException | InvalidFtpConfigException $e) {
+            // Sin FTP configurado, el backup puede seguir solo con Drive.
+        }
+
+        if (!empty($this->settings['drive_enabled'])) {
+            $destinations[BackupDestination::DRIVE] = new DriveDestination(
+                $this->settings['drive_remote'] ?? 'gdrive',
+                $this->settings['drive_path'] ?? 'backup_plataforma/',
+                config('tobuli.backups_rclone_config')
+            );
+        }
+
+        return $this->destinations = $destinations;
+    }
+
+    public function destination(string $name): BackupDestination
+    {
+        $destinations = $this->destinations();
+
+        if (!isset($destinations[$name])) {
+            throw new \InvalidArgumentException("Backup destination `$name` is not available");
+        }
+
+        return $destinations[$name];
+    }
+
+    public function testDrive(): DriveDestination
+    {
+        /** @var DriveDestination $drive */
+        $drive = $this->destination(BackupDestination::DRIVE);
+        $drive->test();
+
+        return $drive;
+    }
+
     public function canRestorePositions(): bool
     {
-        return !$this->isAutoSettings() || $this->hive->hasBackupServer();
+        return !$this->isAutoSettings() || $this->hive->hasBackupServer() || !empty($this->settings['drive_enabled']);
     }
 
     public function hasHiveCredentials(): bool
@@ -84,9 +136,9 @@ class BackupService
             return false;
         }
 
-        try {
-            $this->setupFtp();
-        } catch (NoHiveConfigException | InvalidFtpConfigException $e) {
+        $destinations = $this->destinations();
+
+        if (empty($destinations)) {
             $this->setNextBackup();
             return false;
         }
@@ -98,7 +150,7 @@ class BackupService
             $backup = $this->createBackup(self::LAUNCHER_AUTO);
         }
 
-        $processManager = new ProcessManager($this->ftp);
+        $processManager = new ProcessManager(new MultiDestinationUploader($destinations));
 
         try {
             $processManager->setBackup($backup)->handle();
@@ -107,13 +159,11 @@ class BackupService
                 $hive = new Hive();
                 $hive->backupServerError([
                     'code' => $e->getCode(),
-                    'error' => $e->getMessage(),
+                    'error' => BackupSecrets::scrub($e->getMessage()),
                 ]);
             }
 
             return false;
-        } finally {
-            $this->writeSettings();
         }
 
         return true;
@@ -196,7 +246,10 @@ class BackupService
 
     public function force()
     {
-        if (!$this->ftp()->check()) {
+        $destinations = $this->destinations();
+        $uploader = new MultiDestinationUploader($destinations);
+
+        if (!$destinations || !$uploader->check()) {
             throw new \Exception(trans('front.login_failed'));
         }
 
@@ -204,7 +257,7 @@ class BackupService
 
         $backup = $this->createBackup(self::LAUNCHER_FORCE);
 
-        (new ProcessManager($this->ftp))
+        (new ProcessManager($uploader))
             ->setBackup($backup)
             ->handle();
     }
@@ -269,20 +322,6 @@ class BackupService
             $this->ftp()->testCommand();
         } catch (\Exception $e) {
             throw new \Exception(trans('front.unexpected_error'));
-        }
-    }
-
-    protected function writeSettings($retry = 0)
-    {
-        try {
-            settings('backups', $this->settings);
-        } catch (\Exception $e) {
-            if ($retry > 3) {
-                throw $e;
-            }
-
-            sleep(30);
-            $this->writeSettings(++$retry);
         }
     }
 
