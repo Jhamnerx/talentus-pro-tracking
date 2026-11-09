@@ -367,10 +367,27 @@
   function ptRow(label, value) {
     return "<dt>" + label + "</dt><dd>" + (value == null || value === "" ? "-" : value) + "</dd>";
   }
+  // Lo que el sidebar, los KPI y el panel inferior (flotan sobre el mapa) le
+  // tapan al mapa: el popup se encuadra en la zona libre, si no el punto podria
+  // quedar debajo del propio registro de datos desde el que se pidio.
+  function popupPanPadding() {
+    var m = state.map.getContainer().getBoundingClientRect();
+    function rect(sel) { var el = $(sel); return el && el.offsetHeight ? el.getBoundingClientRect() : null; }
+    var side = rect("#tp-hist-side"), top = rect("#tp-hist-summary"), foot = rect("#tp-hist-bottom");
+    return {
+      autoPanPaddingTopLeft: [Math.max(0, side ? side.right - m.left : 0) + 12, Math.max(0, top ? top.bottom - m.top : 0) + 12],
+      // Abajo queda el punto, no el popup: margen para que se vea el marker entero.
+      autoPanPaddingBottomRight: [76, Math.max(0, foot ? m.bottom - foot.top : 0) + 40],
+    };
+  }
   function openPointPopup(idx, ll) {
     var p = state.positions[idx]; if (!p) return;
+    showPointPopup(p, ll);
+    moveCursor(idx);
+  }
+  function showPointPopup(p, ll) {
     ll = ll || L.latLng(p.lat, p.lng);
-    var sv = "http://maps.google.com/?q=&cbll=" + p.lat + "," + p.lng + "&cbp=12,20.09,,0,5&layer=c&hl=" + (LOCALE || "es");
+    var sv ="http://maps.google.com/?q=&cbll=" + p.lat + "," + p.lng + "&cbp=12,20.09,,0,5&layer=c&hl=" + (LOCALE || "es");
     var html =
       '<div class="tp-hist-pt">' +
       '<div class="tp-hist-pt__bar"><span class="tp-hist-pt__baric"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span></div>' +
@@ -381,7 +398,7 @@
       ptRow(T("longitude", "Longitud"), p.lng + "&deg;") +
       (p.alt != null ? ptRow(T("altitude", "Altitud"), Math.round(p.alt) + " m") : "") +
       ptRow(T("speed", "Velocidad"), Math.round(p.spd || 0) + " " + (gUnitSpeed() || "km/h")) +
-      ptRow(T("time", "Hora"), esc(fmtTime(p.t))) +
+      ptRow(T("time", "Hora"), esc(p.timeLabel || fmtTime(p.t))) +
       '<span data-pt-extra></span>' +
       "</dl>" +
       '<button type="button" class="tp-hist-pt__more" data-pt-more title="' + tpT('ui.see_all_parameters') + '"><span></span><span></span><span></span></button>' +
@@ -392,7 +409,7 @@
     // puesta y el manejador del boton de los tres puntos.
     var cont = document.createElement("div");
     cont.innerHTML = html;
-    state.pointPopup = L.popup({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }).setLatLng(ll).setContent(cont).openOn(state.map);
+    state.pointPopup = L.popup(Object.assign({ offset: [0, -6], maxWidth: 320, className: "tp-hist-pt-wrap" }, popupPanPadding())).setLatLng(ll).setContent(cont).openOn(state.map);
     if (CFG.addrOn) fetchAddr(p.lat, p.lng, function (a) {
       var el2 = state.pointPopup && state.pointPopup.getElement();
       var dd = el2 && el2.querySelector("[data-addr]");
@@ -420,7 +437,6 @@
       more.addEventListener("click", function () {
         expandPointPopup(p, more);
       });
-    moveCursor(idx);
   }
   // Modo COMPLETO: trae TODOS los parámetros del punto (XML other) con el
   // endpoint legacy history.position (como el legacy).
@@ -850,12 +866,15 @@
       state.view = { s: s2, e: s2 + span };
     }
   }
-  function moveCursor(idx) {
-    idx = Math.max(0, Math.min(state.positions.length - 1, idx | 0)); state.cursorIdx = idx;
-    var p = state.positions[idx]; if (!p) return;
+  function placeCursorMarker(p) {
     var course = p.crs != null ? p.crs : 0;
     if (!state.cursorMarker) { state.cursorMarker = L.marker([p.lat, p.lng], { icon: cursorIcon(course), zIndexOffset: 1000, interactive: false }).addTo(state.map); state.cursorCourse = course; }
     else { state.cursorMarker.setLatLng([p.lat, p.lng]); if (Math.abs(course - state.cursorCourse) >= 4) { state.cursorMarker.setIcon(cursorIcon(course)); state.cursorCourse = course; } }
+  }
+  function moveCursor(idx) {
+    idx = Math.max(0, Math.min(state.positions.length - 1, idx | 0)); state.cursorIdx = idx;
+    var p = state.positions[idx]; if (!p) return;
+    placeCursorMarker(p);
     $("#tp-hist-cursor-time").textContent = fmtTime(p.t);
     updateCursorReadout(p);
     updateHud();
@@ -1154,15 +1173,16 @@
         if (!j || !j.ok) return;
         state.dl.last = j.last || 1;
         var cols = j.columns || [];
+        state.dl.rows = j.rows || [];
         // Cabecera dinámica: base + TODOS los parámetros del XML `other`.
         // Columna de selección solo si el usuario puede borrar posiciones
         var selHead = CFG.canRemove ? '<th class="tp-datalog__sel"><input type="checkbox" data-pos-all></th>' : "";
         $("#tp-hist-datalog-head").innerHTML = "<tr>" + selHead + cols.map(function (c) { return "<th>" + esc(c.label) + "</th>"; }).join("") + "</tr>";
-        $("#tp-hist-datalog-body").innerHTML = (j.rows || []).map(function (m) {
+        $("#tp-hist-datalog-body").innerHTML = state.dl.rows.map(function (m, rowIdx) {
           var selCell = CFG.canRemove
             ? '<td class="tp-datalog__sel"><input type="checkbox" data-pos-id="' + (m.id || 0) + '"></td>'
             : "";
-          return "<tr>" + selCell + cols.map(function (c) {
+          return '<tr data-row="' + rowIdx + '">' + selCell + cols.map(function (c) {
             var v = m[c.key];
             if (c.key === "valid") v = v ? tpT('ui.yes_lower') : "no";
             return "<td>" + esc(v == null || v === "" ? "—" : v) + "</td>";
@@ -1174,6 +1194,29 @@
         $("#tp-hist-datalog-next").disabled = j.page >= j.last;
         updateFooterVar();
       }).catch(function () {});
+  }
+
+  // Clic en una fila: lleva el marker al punto y abre su ficha (paridad legacy,
+  // history.js historyPointPopup). Una fila puede no estar en el recorrido, que
+  // omite los puntos invalidos si asi se pidio: entonces se muestra con los
+  // datos de la propia fila, sin mover el cursor de la grafica.
+  function showDataLogRow(tr) {
+    var m = (state.dl.rows || [])[parseInt(tr.getAttribute("data-row"), 10)];
+    if (!m) return;
+    var lat = parseFloat(m.latitude), lng = parseFloat(m.longitude);
+    // Sensor anonimizador: la fila viene sin coordenadas.
+    if (!isFinite(lat) || !isFinite(lng)) return;
+    var prev = tr.parentNode.querySelector("tr.is-selected");
+    if (prev) prev.classList.remove("is-selected");
+    tr.classList.add("is-selected");
+    pause();
+    for (var i = 0; i < state.positions.length; i++) {
+      if (state.positions[i].id === m.id) { openPointPopup(i); return; }
+    }
+    var alt = parseFloat(m.altitude), crs = parseFloat(m.course);
+    var p = { id: m.id, lat: lat, lng: lng, alt: isFinite(alt) ? alt : null, crs: isFinite(crs) ? crs : null, spd: parseFloat(m.speed) || 0, timeLabel: m.time };
+    showPointPopup(p);
+    placeCursorMarker(p);
   }
 
   /* ===== EXPORT (endpoint legacy history.export: gsr|kml|gpx|csv) ===== */
@@ -1371,6 +1414,15 @@
     if (dlDel) dlDel.addEventListener("click", deleteSelectedPositions);
     $("#tp-hist-datalog-body").addEventListener("change", function (e) {
       if (e.target.matches("[data-pos-id]")) syncDeleteButton();
+    });
+    $("#tp-hist-datalog-body").addEventListener("click", function (e) {
+      // La casilla de borrado no selecciona, y arrastrar para copiar un valor
+      // de la tabla tampoco debe mover el mapa.
+      if (e.target.closest(".tp-datalog__sel")) return;
+      var sel = window.getSelection && window.getSelection();
+      if (sel && !sel.isCollapsed) return;
+      var tr = e.target.closest("tr[data-row]");
+      if (tr) showDataLogRow(tr);
     });
     $("#tp-hist-datalog-head").addEventListener("change", function (e) {
       if (!e.target.matches("[data-pos-all]")) return;

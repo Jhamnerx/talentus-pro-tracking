@@ -1287,8 +1287,14 @@
   color: var(--fg-primary);
   white-space: nowrap;
 }
+.tp-history__datalog tbody tr {
+  cursor: pointer;
+}
 .tp-history__datalog tbody tr:hover {
   background: var(--surface-sunken);
+}
+.tp-history__datalog tbody tr.is-selected {
+  background: color-mix(in srgb, var(--brand-accent, #1b99bd) 14%, transparent);
 }
 .tp-history__datalog-foot {
   display: flex;
