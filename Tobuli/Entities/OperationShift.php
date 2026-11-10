@@ -1,6 +1,7 @@
 <?php namespace Tobuli\Entities;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Turno de una operacion: nombre y rango horario en la hora local del dueño.
@@ -26,6 +27,12 @@ class OperationShift extends AbstractEntity
     public function operation(): BelongsTo
     {
         return $this->belongsTo(Operation::class);
+    }
+
+    /** Descansos del turno (programados y por fatiga), en el orden configurado. */
+    public function breaks(): HasMany
+    {
+        return $this->hasMany(OperationShiftBreak::class, 'shift_id')->orderBy('position')->orderBy('id');
     }
 
     public function crossesMidnight(): bool

@@ -8,11 +8,13 @@ use Tobuli\Entities\Operation;
 use Tobuli\Entities\OperationDeviceState;
 use Tobuli\Entities\OperationLeg;
 use Tobuli\Entities\OperationRecalculation;
+use Tobuli\Entities\OperationShiftSummary;
 use Tobuli\Helpers\Formatter\Formatter;
 use Tobuli\Services\Operations\OperationCycleWriter;
 use Tobuli\Services\Operations\OperationLegCalculator;
 use Tobuli\Services\Operations\OperationRebuildService;
 use Tobuli\Services\Operations\OperationService;
+use Tobuli\Services\Operations\OperationShiftSummaryService;
 
 /**
  * Trabajo por minuto del modulo de Operaciones. Todo lo pesado va aqui y no
@@ -23,6 +25,8 @@ use Tobuli\Services\Operations\OperationService;
  *  3. Marca "Sin datos" a los vehiculos en tramo sin trama en NO_DATA_SECONDS.
  *  4. Cierra como incompletos los tramos que superan max_leg_hours.
  *  5. Atiende la cola de recalculos, con tope por pasada.
+ *  6. Cierra los turnos recien terminados: resumen de turno por vehiculo y
+ *     filas de flota por hora (reporte de turno).
  */
 class OperationsProcessCommand extends Command
 {
@@ -33,6 +37,19 @@ class OperationsProcessCommand extends Command
     protected $description = 'Calcula tramos cerrados, detecta vehiculos sin datos y atiende recalculos de operaciones';
 
     const NO_DATA_SECONDS = 90;
+
+    /**
+     * Ventana, en minutos despues del fin del turno, en la que se calcula su
+     * resumen. Se espera CLOSE_SHIFT_MIN_MINUTES para que los tramos que
+     * cerraron al final del turno ya hayan pasado por calculateLegs (paradas,
+     * ralenti) y se corta en CLOSE_SHIFT_MAX_MINUTES para que un comando que
+     * estuvo caido no recalcule turnos viejos en cada pasada (eso es trabajo
+     * de operations:summaries). Como el comando corre cada minuto y salta los
+     * resumenes ya calculados despues del fin del turno, cada turno se cierra
+     * una sola vez.
+     */
+    const CLOSE_SHIFT_MIN_MINUTES = 10;
+    const CLOSE_SHIFT_MAX_MINUTES = 70;
 
     public function handle(): int
     {
@@ -50,6 +67,7 @@ class OperationsProcessCommand extends Command
         $this->detectNoData($operations);
         $this->expireLegs($operations);
         $this->runRecalculations((int) $this->option('rebuilds'));
+        $this->closeShifts($operations);
 
         return 0;
     }
@@ -144,6 +162,77 @@ class OperationsProcessCommand extends Command
                 (new OperationCycleWriter($operation, $state, collect(), $formatter))->abandon($at);
 
                 $this->line("Operacion {$operation->id}: tramo vencido del vehiculo {$state->device_id}");
+            }
+        }
+    }
+
+    /**
+     * Resumen de turno de los turnos que terminaron hace entre
+     * CLOSE_SHIFT_MIN_MINUTES y CLOSE_SHIFT_MAX_MINUTES. Se miran las fechas
+     * de turno de hoy y de ayer (hora local del dueño): un turno que cruza la
+     * medianoche termina el dia siguiente al de su shift_date.
+     */
+    protected function closeShifts($operations): void
+    {
+        $service = new OperationShiftSummaryService();
+        $now = time();
+        $minEnd = $now - self::CLOSE_SHIFT_MAX_MINUTES * 60;
+        $maxEnd = $now - self::CLOSE_SHIFT_MIN_MINUTES * 60;
+
+        foreach ($operations as $operation) {
+            $operation->loadMissing('shifts.breaks');
+
+            if ($operation->shifts->isEmpty()) {
+                continue;
+            }
+
+            $formatter = new Formatter();
+            $formatter->byUser($operation->user);
+            $today = $formatter->time()->convert(date('Y-m-d H:i:s'), 'Y-m-d');
+            $yesterday = (new \DateTime($today))->modify('-1 day')->format('Y-m-d');
+
+            $devices = null;
+
+            foreach ($operation->shifts as $shift) {
+                foreach ([$yesterday, $today] as $shiftDate) {
+                    [$startUtc, $endUtc] = $service->shiftRangeUtc($operation, $shift, $shiftDate);
+                    $endTs = strtotime($endUtc . ' UTC');
+
+                    if ($endTs < $minEnd || $endTs > $maxEnd) {
+                        continue;
+                    }
+
+                    if (is_null($devices)) {
+                        $devices = Device::whereIn('id', $operation->deviceIds())->with('sensors')->get();
+                    }
+
+                    $done = OperationShiftSummary::where('operation_id', $operation->id)
+                        ->where('shift_id', $shift->id)
+                        ->where('shift_date', $shiftDate)
+                        ->where('calculated_at', '>', $endUtc)
+                        ->pluck('device_id')
+                        ->flip();
+
+                    $built = 0;
+
+                    foreach ($devices as $device) {
+                        if ($done->has($device->id)) {
+                            continue;
+                        }
+
+                        try {
+                            $service->buildShift($operation, $device, $shift, $shiftDate);
+                            $built++;
+                        } catch (\Throwable $e) {
+                            \Log::error("operations:process resumen de turno {$shift->id}/{$shiftDate} vehiculo {$device->id}: " . $e->getMessage());
+                        }
+                    }
+
+                    if ($built) {
+                        $service->buildFleetHours($operation, $startUtc, $endUtc);
+                        $this->line("Operacion {$operation->id}: turno {$shift->name} {$shiftDate} cerrado ({$built} vehiculos)");
+                    }
+                }
             }
         }
     }

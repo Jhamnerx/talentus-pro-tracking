@@ -6,7 +6,9 @@ use Formatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 use Tobuli\Entities\DeviceGroup;
 use Tobuli\Entities\Geofence;
 use Tobuli\Entities\Operation;
@@ -15,10 +17,15 @@ use Tobuli\Entities\OperationDeviceState;
 use Tobuli\Entities\OperationLeg;
 use Tobuli\Entities\OperationPoint;
 use Tobuli\Entities\OperationRecalculation;
+use Tobuli\Entities\OperationShiftBreak;
 use Tobuli\Entities\OperationStop;
 use Tobuli\Entities\OperationStopReason;
+use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
+use Tobuli\Exports\Operations\ShiftReportExport;
 use Tobuli\Services\Operations\OperationService;
+use Tobuli\Services\Operations\OperationShiftReport;
+use Tobuli\Services\Operations\OperationShiftSummaryService;
 
 /**
  * TalentusPro · OperationsController (ui/v2)
@@ -81,6 +88,17 @@ class OperationsController extends BaseController
             'categories' => Geofence::categories(),
             'kinds'      => Operation::kinds(),
             'deductions' => Operation::deductionLabels(),
+            // Reporte de turno (fase A): tipos de descanso, marca de estado de
+            // los motivos y catalogo de tipos/estados de vehiculo (Seguridad)
+            // del usuario para el automatismo cargado/vacio.
+            'break_kinds'   => OperationShiftBreak::kindLabels(),
+            'reason_states' => OperationStopReason::stateLabels(),
+            'vehicle_types' => VehicleType::where('user_id', $this->user->id)->with('states')->orderBy('name')->get()
+                ->map(fn ($t) => [
+                    'id'     => (int) $t->id,
+                    'name'   => (string) $t->name,
+                    'states' => $t->states->sortBy('name')->map(fn ($s) => ['id' => (int) $s->id, 'name' => (string) $s->name])->values()->all(),
+                ])->values()->all(),
             // Etiquetas por tipo de operacion: roles de los puntos, categorias
             // que les corresponden y estados en vivo.
             'role_labels'     => [Operation::KIND_HAUL => Operation::roleLabels(Operation::KIND_HAUL), Operation::KIND_ROUTE => Operation::roleLabels(Operation::KIND_ROUTE)],
@@ -117,7 +135,7 @@ class OperationsController extends BaseController
         $this->gate('view');
 
         $q = Operation::userOwned($this->user)
-            ->with(['deviceGroup:id,title', 'shifts', 'currentPoints'])
+            ->with(['deviceGroup:id,title', 'shifts.breaks', 'currentPoints'])
             ->withCount('deviceStates');
 
         if ($s = trim((string) $request->get('s'))) {
@@ -145,7 +163,7 @@ class OperationsController extends BaseController
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         }
 
-        return response()->json(['ok' => true, 'item' => $this->toRow($operation->fresh(['deviceGroup', 'shifts', 'currentPoints']))]);
+        return response()->json(['ok' => true, 'item' => $this->toRow($operation->fresh(['deviceGroup', 'shifts.breaks', 'currentPoints']))]);
     }
 
     public function update(Request $request, $id): JsonResponse
@@ -164,7 +182,7 @@ class OperationsController extends BaseController
             return response()->json(['ok' => false, 'errors' => $e->getErrors()], 422);
         }
 
-        return response()->json(['ok' => true, 'item' => $this->toRow($operation->fresh(['deviceGroup', 'shifts', 'currentPoints']))]);
+        return response()->json(['ok' => true, 'item' => $this->toRow($operation->fresh(['deviceGroup', 'shifts.breaks', 'currentPoints']))]);
     }
 
     public function toggle(Request $request, $id): JsonResponse
@@ -216,7 +234,7 @@ class OperationsController extends BaseController
             return response()->json(['ok' => false, 'message' => 'operation_id'], 422);
         }
 
-        $date = trim((string) $request->get('date')) ?: Formatter::date()->convert(time(), 'Y-m-d');
+        $date = trim((string) $request->get('date')) ?: Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d');
 
         $states = OperationDeviceState::where('operation_id', $operation->id)
             ->with(['device.traccar', 'currentPoint:id,name,role', 'openLeg', 'openCycle'])
@@ -540,19 +558,36 @@ class OperationsController extends BaseController
         $items = OperationStopReason::userOwned($this->user)
             ->orderBy('position')->orderBy('name')
             ->get()
-            ->map(fn ($r) => ['id' => (int) $r->id, 'name' => (string) $r->name, 'authorizes' => (bool) $r->authorizes])
+            ->map(fn ($r) => [
+                'id'         => (int) $r->id,
+                'name'       => (string) $r->name,
+                'authorizes' => (bool) $r->authorizes,
+                'state'      => $r->state ?: null,
+            ])
             ->all();
 
         return response()->json(['ok' => true, 'items' => $items]);
     }
 
-    /** Guarda el catalogo entero: [{id?, name, authorizes}]. Los que faltan se borran. */
+    /**
+     * Guarda el catalogo entero: [{id?, name, authorizes, state?}]. Los que
+     * faltan se borran. `state` (null | maint | standby) es el estado del
+     * reporte de turno que fuerza una parada justificada con el motivo.
+     */
     public function saveReasons(Request $request): JsonResponse
     {
         $this->gate('edit');
 
         $rows = (array) $request->get('items', []);
         $keep = [];
+
+        $validator = Validator::make(['items' => $rows], [
+            'items.*.state' => 'nullable|in:' . implode(',', OperationStopReason::STATES),
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['ok' => false, 'errors' => $validator->messages()->toArray()], 422);
+        }
 
         DB::transaction(function () use ($rows, &$keep) {
             foreach (array_values($rows) as $position => $row) {
@@ -562,9 +597,12 @@ class OperationsController extends BaseController
                     continue;
                 }
 
+                $state = $row['state'] ?? null;
+
                 $attributes = [
                     'name'       => mb_substr($name, 0, 100),
                     'authorizes' => (bool) ($row['authorizes'] ?? false),
+                    'state'      => in_array($state, OperationStopReason::STATES, true) ? $state : null,
                     'position'   => $position,
                 ];
 
@@ -638,6 +676,140 @@ class OperationsController extends BaseController
     }
 
     // ------------------------------------------------------------------
+    // Reporte de turno (pestaña «Turno»)
+    // ------------------------------------------------------------------
+
+    /**
+     * GET operations/shift-report?operation=ID&date=Y-m-d&shift=all|<id>
+     *
+     * `date` es el dia operativo (Operation::dayStart() a +24 h). Todo sale de
+     * las tablas agregadas (OperationShiftReport); sin resumenes para ese dia
+     * responde {ok, empty:true, hint} y la pantalla ofrece «Calcular ahora».
+     */
+    public function shiftReport(Request $request): JsonResponse
+    {
+        $this->gate('view');
+
+        $operation = $this->find($request->get('operation'));
+
+        if (! $operation) {
+            abort(404);
+        }
+
+        $date = $this->operativeDate($request);
+
+        if (! $date) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_bad_date')], 422);
+        }
+
+        $shift = trim((string) $request->get('shift', 'all')) ?: 'all';
+
+        if ($shift !== 'all' && ! ctype_digit($shift)) {
+            $shift = 'all';
+        }
+
+        $report = new OperationShiftReport(app(\Tobuli\Helpers\Formatter\Formatter::class));
+
+        return response()->json($report->build($operation, $date, $shift));
+    }
+
+    /**
+     * GET operations/shift-report/export?operation=ID&date=Y-m-d&shift=all|<id>
+     *
+     * Fase D: el mismo payload de OperationShiftReport que la pantalla, en un
+     * libro Excel con el formato del cliente y graficos nativos
+     * (ShiftReportExport). Sin datos para ese dia responde 422 con mensaje.
+     */
+    public function shiftReportExport(Request $request)
+    {
+        $this->gate('view');
+
+        $operation = $this->find($request->get('operation'));
+
+        if (! $operation) {
+            abort(404);
+        }
+
+        $date = $this->operativeDate($request);
+
+        if (! $date) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_bad_date')], 422);
+        }
+
+        $shift = trim((string) $request->get('shift', 'all')) ?: 'all';
+
+        if ($shift !== 'all' && ! ctype_digit($shift)) {
+            $shift = 'all';
+        }
+
+        $report = (new OperationShiftReport(app(\Tobuli\Helpers\Formatter\Formatter::class)))->build($operation, $date, $shift);
+
+        if (! empty($report['empty'])) {
+            return response()->json(['ok' => false, 'message' => $report['hint'] ?? trans('ui.ops_shift_export_empty')], 422);
+        }
+
+        $name = 'turno_' . Str::slug($operation->name, '_') . '_' . $date;
+
+        if ($shift !== 'all') {
+            foreach ($report['shifts'] as $s) {
+                if ((int) $s['id'] === (int) $shift) {
+                    $name .= '_' . Str::slug($s['name'], '_');
+                }
+            }
+        }
+
+        set_time_limit(120);
+
+        return (new ShiftReportExport($report))->download($name . '.xlsx');
+    }
+
+    /**
+     * POST operations/shift-report/build {operation, date}: calcula el dia
+     * operativo (turnos de cada vehiculo + filas de flota). No admite fechas
+     * futuras. Es sincrono: para un dia de pocos vehiculos tarda segundos.
+     */
+    public function shiftReportBuild(Request $request): JsonResponse
+    {
+        $this->gate('edit');
+
+        $operation = $this->find($request->get('operation'));
+
+        if (! $operation) {
+            abort(404);
+        }
+
+        $date = $this->operativeDate($request);
+
+        if (! $date) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_bad_date')], 422);
+        }
+
+        if ($date > Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d')) {
+            return response()->json(['ok' => false, 'message' => trans('ui.ops_shift_future')], 422);
+        }
+
+        set_time_limit(600);
+
+        (new OperationShiftSummaryService())->buildDay($operation, $date);
+
+        return response()->json(['ok' => true]);
+    }
+
+    /** Fecha Y-m-d valida del request (hoy en hora del usuario si no viene). */
+    private function operativeDate(Request $request): ?string
+    {
+        $date = trim((string) $request->get('date'));
+
+        if ($date === '') {
+            return Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d');
+        }
+
+        $parsed = \DateTime::createFromFormat('Y-m-d', $date);
+
+        return $parsed && $parsed->format('Y-m-d') === $date ? $date : null;
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
 
@@ -659,6 +831,10 @@ class OperationsController extends BaseController
             'min_dwell_seconds'      => (int) $o->min_dwell_seconds,
             'stop_threshold_seconds' => (int) $o->stop_threshold_seconds,
             'max_leg_hours'          => (int) $o->max_leg_hours,
+            'day_start'              => $o->day_start ? substr((string) $o->day_start, 0, 5) : null,
+            'vehicle_type_id'        => $o->vehicle_type_id ? (int) $o->vehicle_type_id : null,
+            'loaded_state_id'        => $o->loaded_state_id ? (int) $o->loaded_state_id : null,
+            'empty_state_id'         => $o->empty_state_id ? (int) $o->empty_state_id : null,
             'authorized_categories'  => $o->authorizedCategories(),
             'worked_hours_deductions' => $o->workedHoursDeductions(),
             'points'                 => $o->currentPoints->map(fn (OperationPoint $p) => [
@@ -672,6 +848,13 @@ class OperationsController extends BaseController
                 'name'       => (string) $s->name,
                 'start_time' => substr((string) $s->start_time, 0, 5),
                 'end_time'   => substr((string) $s->end_time, 0, 5),
+                'breaks'     => $s->breaks->map(fn ($b) => [
+                    'id'         => (int) $b->id,
+                    'name'       => (string) $b->name,
+                    'kind'       => (string) $b->kind,
+                    'start_time' => $b->start_time ? substr((string) $b->start_time, 0, 5) : null,
+                    'end_time'   => $b->end_time ? substr((string) $b->end_time, 0, 5) : null,
+                ])->values()->all(),
             ])->values()->all(),
         ];
     }

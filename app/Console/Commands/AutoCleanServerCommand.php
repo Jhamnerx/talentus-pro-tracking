@@ -79,6 +79,12 @@ class AutoCleanServerCommand extends Command {
             'date' => $date->format('Y-m-d')
         ]);
 
+        if (config('tobuli.operations_enabled')) {
+            $this->call('operations:clean', [
+                'date' => $date->format('Y-m-d')
+            ]);
+        }
+
         return 0;
 	}
 }
