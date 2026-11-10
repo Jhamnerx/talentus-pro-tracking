@@ -38,6 +38,8 @@ class OperationsProcessCommand extends Command
 
     const NO_DATA_SECONDS = 90;
 
+    const HEARTBEAT_KEY = 'operations:process:heartbeat';
+
     /**
      * Ventana, en minutos despues del fin del turno, en la que se calcula su
      * resumen. Se espera CLOSE_SHIFT_MIN_MINUTES para que los tramos que
@@ -56,6 +58,10 @@ class OperationsProcessCommand extends Command
         if (! config('tobuli.operations_enabled')) {
             return 0;
         }
+
+        // Latido: la barra de progreso de la pantalla avisa si el comando
+        // dejo de correr (scheduler caido o candado de withoutOverlapping).
+        \Cache::forever(self::HEARTBEAT_KEY, time());
 
         $operations = Operation::visible()->with('user')->get();
 
@@ -91,6 +97,8 @@ class OperationsProcessCommand extends Command
             ->get();
 
         foreach ($legs as $leg) {
+            \Cache::forever(self::HEARTBEAT_KEY, time());
+
             try {
                 $calculator->calculate($leg);
             } catch (\Throwable $e) {
@@ -247,6 +255,8 @@ class OperationsProcessCommand extends Command
             ->get();
 
         foreach ($items as $item) {
+            \Cache::forever(self::HEARTBEAT_KEY, time());
+
             // Toma la fila solo si nadie la tomo entre medias.
             $taken = OperationRecalculation::where('id', $item->id)
                 ->where('status', OperationRecalculation::STATUS_PENDING)

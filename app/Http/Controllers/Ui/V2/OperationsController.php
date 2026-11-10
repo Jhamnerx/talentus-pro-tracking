@@ -527,6 +527,95 @@ class OperationsController extends BaseController
         return response()->json(['ok' => true, 'items' => $items]);
     }
 
+    /**
+     * Progreso de recalculos y del calculo de tramos, para la barra de la
+     * pantalla. Dos etapas, las dos las atiende operations:process cada minuto:
+     *
+     *  1. Recalculo: rearma vueltas y tramos de cada vehiculo (hasta 5 por pasada).
+     *  2. Calculo de tramos: paradas, ralenti, distancia (hasta 50 por pasada).
+     *     La cola de tramos es GLOBAL (todos los usuarios, por ended_at), por
+     *     eso la estimacion usa la cola completa y el ritmo medido.
+     *
+     * "Lote" = recalculos del usuario pedidos en las ultimas 12 h; el avance de
+     * tramos se cuenta desde el primero de ellos.
+     */
+    public function progress(): JsonResponse
+    {
+        $this->gate('view');
+
+        $now = time();
+        $operationIds = Operation::userOwned($this->user)->withTrashed()->pluck('id');
+
+        $recalcs = OperationRecalculation::whereIn('operation_id', $operationIds)
+            ->where('created_at', '>=', date('Y-m-d H:i:s', $now - 12 * 3600))
+            ->with('device:id,name')
+            ->get();
+
+        $byStatus = $recalcs->countBy('status');
+        $active = ($byStatus[OperationRecalculation::STATUS_PENDING] ?? 0) + ($byStatus[OperationRecalculation::STATUS_RUNNING] ?? 0);
+        $batchStart = $recalcs->min('created_at');
+
+        $userCycles = OperationCycle::whereIn('operation_id', $operationIds)->select('id');
+
+        $legsPending = OperationLeg::pendingCalculation()->whereIn('cycle_id', $userCycles)->count();
+        $legsDone = $batchStart
+            ? OperationLeg::whereIn('cycle_id', $userCycles)->where('calculated_at', '>=', $batchStart)->count()
+            : 0;
+
+        // Ritmo real de los ultimos 10 minutos (todos los usuarios).
+        $window = 10;
+        $since = date('Y-m-d H:i:s', $now - $window * 60);
+        $legsRate = OperationLeg::where('calculated_at', '>=', $since)->count() / $window;
+        $recalcRate = OperationRecalculation::whereIn('status', [OperationRecalculation::STATUS_DONE, OperationRecalculation::STATUS_FAILED])
+            ->where('updated_at', '>=', $since)->count() / $window;
+
+        $legsQueue = OperationLeg::pendingCalculation()->count();
+        $recalcQueue = OperationRecalculation::whereIn('status', [OperationRecalculation::STATUS_PENDING, OperationRecalculation::STATUS_RUNNING])->count();
+
+        // Tiempo estimado: con ritmo medido; sin ritmo aun, el nominal del comando.
+        $legsEta = (int) ceil($legsQueue / ($legsRate ?: 50));
+        $recalcEta = (int) ceil($recalcQueue / ($recalcRate ?: 5));
+
+        $heartbeat = \Cache::get(\App\Console\Commands\OperationsProcessCommand::HEARTBEAT_KEY);
+        $stalled = ($active || $legsPending) && (! $heartbeat || $now - $heartbeat > 600);
+
+        $stuck = $recalcs->filter(fn ($r) => $r->status === OperationRecalculation::STATUS_RUNNING
+            && $r->updated_at && $r->updated_at->timestamp < $now - 30 * 60);
+
+        $failed = $recalcs->where('status', OperationRecalculation::STATUS_FAILED)
+            ->map(fn ($r) => [
+                'device' => $r->device->name ?? ('#' . $r->device_id),
+                'error'  => Str::limit((string) $r->error, 300),
+            ])->values()->all();
+
+        return response()->json(['ok' => true, 'data' => [
+            'recalcs' => [
+                'total'   => $recalcs->count(),
+                'done'    => $byStatus[OperationRecalculation::STATUS_DONE] ?? 0,
+                'failed'  => $byStatus[OperationRecalculation::STATUS_FAILED] ?? 0,
+                'running' => $byStatus[OperationRecalculation::STATUS_RUNNING] ?? 0,
+                'pending' => $byStatus[OperationRecalculation::STATUS_PENDING] ?? 0,
+                'queue'   => $recalcQueue,
+                'eta_min' => $recalcEta,
+                'running_devices' => $recalcs->where('status', OperationRecalculation::STATUS_RUNNING)
+                    ->map(fn ($r) => $r->device->name ?? ('#' . $r->device_id))->values()->all(),
+            ],
+            'legs' => [
+                'pending'  => $legsPending,
+                'done'     => $legsDone,
+                'queue'    => $legsQueue,
+                'rate'     => round($legsRate, 1),
+                'eta_min'  => $legsEta,
+            ],
+            'heartbeat' => $heartbeat ? Formatter::time()->human(date('Y-m-d H:i:s', $heartbeat)) : null,
+            'heartbeat_ago' => $heartbeat ? $now - $heartbeat : null,
+            'stalled'   => $stalled,
+            'stuck'     => $stuck->map(fn ($r) => $r->device->name ?? ('#' . $r->device_id))->values()->all(),
+            'failed'    => $failed,
+            'busy'      => $active > 0 || $legsPending > 0,
+        ]]);
+    }
+
     private function recalculateInput(Request $request): array
     {
         $operation = $this->find($request->get('operation_id'));

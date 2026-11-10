@@ -698,3 +698,86 @@ body.is-fullscreen .tp-maint {
     height: 190px;
   }
 }
+
+/* =====================================================
+ * Progreso del cálculo (recálculos + tramos pendientes)
+ * ===================================================== */
+
+.tp-ops-progress {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-left: 4px solid var(--brand-accent, #1b99bd);
+  border-radius: 8px;
+  background: var(--surface-raised, #fff);
+  color: var(--fg-primary, #0f172a);
+  font-size: 13px;
+}
+
+.tp-ops-progress.is-error { border-left-color: var(--danger-500, #ef4444); }
+.tp-ops-progress.is-done  { border-left-color: var(--success-500, #10b981); }
+
+.tp-ops-progress__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tp-ops-progress__row { margin: 8px 0; }
+
+.tp-ops-progress__label {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-bottom: 4px;
+  color: var(--fg-secondary, #334155);
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-ops-progress__track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-sunken, #f1f5f9);
+  overflow: hidden;
+}
+
+.tp-ops-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--brand-accent, #1b99bd);
+  transition: width .4s ease;
+}
+
+.tp-ops-progress.is-done .tp-ops-progress__fill { background: var(--success-500, #10b981); }
+
+.tp-ops-progress__hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--fg-tertiary, #64748b);
+}
+
+.tp-ops-progress__hint strong { color: var(--fg-primary, #0f172a); }
+
+.tp-ops-progress__alert {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.tp-ops-progress__alert.is-error {
+  background: var(--danger-soft, #fef2f2);
+  color: var(--danger-600, #dc2626);
+}
+
+[data-theme="dark"] .tp-ops-progress__alert.is-error { background: var(--danger-soft-dark, #2e1414); }
+
+.tp-ops-progress__failed { margin-top: 8px; font-size: 12px; }
+.tp-ops-progress__failed summary { cursor: pointer; color: var(--danger-600, #dc2626); }
+.tp-ops-progress__failed ul { margin: 6px 0 0; padding-left: 18px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tp-ops-progress__fill { transition: none; }
+}

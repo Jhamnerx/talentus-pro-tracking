@@ -25,6 +25,7 @@
     recalcPreview: root.getAttribute("data-recalc-preview-url"),
     recalc: root.getAttribute("data-recalc-url"),
     recalcs: root.getAttribute("data-recalcs-url"),
+    progress: root.getAttribute("data-progress-url"),
     reasons: root.getAttribute("data-reasons-url"),
     justify: root.getAttribute("data-justify-url"),
     history: root.getAttribute("data-history-url"),
@@ -1030,8 +1031,111 @@
       if (!res.ok || !res.data || !res.data.ok) { err.textContent = (res.data && res.data.message) || t("ui.save_failed"); err.classList.add("is-visible"); return; }
       tpModal.close(d);
       tpModal.toast(t("ui.ops_recalc_queued", { count: res.data.queued }), "success");
+      loadProgress();
     });
   }
+
+  /* ---------- Progreso del cálculo ----------
+     Dos etapas que atiende operations:process cada minuto: recálculo de
+     vueltas por vehículo y cálculo de tramos. Con trabajo se consulta cada
+     15 s; sin trabajo, cada minuto (para ver recálculos pedidos por otro). */
+  var progress = { timer: null, wasBusy: false, dismissed: false };
+
+  function fmtMinutes(n) {
+    if (!n || n < 1) return t("ui.ops_progress_less_min");
+    if (n < 60) return t("ui.ops_progress_minutes", { n: n });
+    return t("ui.ops_progress_hours", { h: Math.floor(n / 60), m: n % 60 });
+  }
+
+  function progressBar(label, value, pct) {
+    pct = Math.max(0, Math.min(100, Math.round(pct)));
+    return '<div class="tp-ops-progress__row">' +
+      '<div class="tp-ops-progress__label"><span>' + esc(label) + "</span><span>" + esc(value) + " · " + pct + "%</span></div>" +
+      '<div class="tp-ops-progress__track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="' + esc(label) + '">' +
+      '<div class="tp-ops-progress__fill" style="width:' + pct + '%"></div></div></div>';
+  }
+
+  function renderProgress(p) {
+    var box = $("tp-ops-progress");
+    if (!box) return;
+    var r = p.recalcs, l = p.legs;
+    var active = r.pending + r.running;
+    var problems = p.stalled || p.stuck.length || (p.failed.length && r.total);
+    var busy = active > 0 || l.pending >= 20;
+
+    if (busy || problems) progress.dismissed = false;
+    var finished = !busy && !problems && progress.wasBusy;
+    if (busy) progress.wasBusy = true;
+
+    if ((!busy && !problems && !finished) || progress.dismissed) { box.hidden = true; return; }
+
+    var html = '<div class="tp-ops-progress__head"><strong>' +
+      esc(t(busy ? "ui.ops_progress_title" : "ui.ops_progress_done_title")) + "</strong>" +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-progress-close aria-label="' + esc(t("global.close")) + '">×</button></div>';
+
+    if (p.stalled) {
+      html += '<p class="tp-ops-progress__alert is-error">' + esc(p.heartbeat
+        ? t("ui.ops_progress_stalled", { time: p.heartbeat })
+        : t("ui.ops_progress_stalled_never")) + "</p>";
+    }
+    if (p.stuck.length) {
+      html += '<p class="tp-ops-progress__alert is-error">' + esc(t("ui.ops_progress_stuck", { devices: p.stuck.join(", ") })) + "</p>";
+    }
+
+    if (r.total) {
+      html += progressBar(t("ui.ops_progress_recalcs"),
+        t("ui.ops_progress_recalcs_val", { done: r.done + r.failed, total: r.total }),
+        (r.done + r.failed) * 100 / r.total);
+      if (r.running_devices.length) {
+        var names = r.running_devices.slice(0, 5).join(", ") + (r.running_devices.length > 5 ? "…" : "");
+        html += '<p class="tp-ops-progress__hint">' + esc(t("ui.ops_progress_running", { devices: names })) + "</p>";
+      }
+    }
+
+    if (l.done + l.pending) {
+      html += progressBar(t("ui.ops_progress_legs"),
+        t("ui.ops_progress_legs_val", { done: l.done, pending: l.pending }),
+        l.done * 100 / (l.done + l.pending));
+    }
+
+    if (busy) {
+      var eta = l.eta_min + (active ? r.eta_min : 0);
+      html += '<p class="tp-ops-progress__hint"><strong>' + esc(t("ui.ops_progress_eta", { time: fmtMinutes(eta) })) + "</strong>" +
+        (active ? " · " + esc(t("ui.ops_progress_eta_wait")) : "") + "</p>";
+      html += '<p class="tp-ops-progress__hint">' + esc(t("ui.ops_progress_rate", { rate: l.rate, queue: l.queue })) +
+        (p.heartbeat ? " · " + esc(t("ui.ops_progress_heartbeat", { time: p.heartbeat })) : "") + "</p>";
+    } else if (finished) {
+      html += '<p class="tp-ops-progress__hint">' + esc(t("ui.ops_progress_finished")) + "</p>";
+    }
+
+    if (p.failed.length && r.total) {
+      html += '<details class="tp-ops-progress__failed"><summary>' + esc(t("ui.ops_progress_failed")) + " (" + p.failed.length + ")</summary><ul>" +
+        p.failed.map(function (f) { return "<li><strong>" + esc(f.device) + ":</strong> " + esc(f.error) + "</li>"; }).join("") +
+        "</ul></details>";
+    }
+
+    box.innerHTML = html;
+    box.classList.toggle("is-error", !!(p.stalled || p.stuck.length));
+    box.classList.toggle("is-done", !busy && !problems);
+    box.hidden = false;
+  }
+
+  function loadProgress() {
+    if (!URLS.progress) return;
+    clearTimeout(progress.timer);
+    tpModal.fetchJSON(URLS.progress, { method: "GET" }).then(function (res) {
+      var p = res && res.ok && res.data && res.data.data;
+      if (p) renderProgress(p);
+      progress.timer = setTimeout(loadProgress, p && (p.busy || p.stalled) ? 15000 : 60000);
+    });
+  }
+
+  root.addEventListener("click", function (e) {
+    if (!e.target.closest("[data-progress-close]")) return;
+    progress.dismissed = true;
+    progress.wasBusy = false;
+    $("tp-ops-progress").hidden = true;
+  });
 
   /* ---------- Arranque ---------- */
   dateSet("tp-ops-live-date", today());
@@ -1042,4 +1146,5 @@
     loadList();
     startLive();
   });
+  loadProgress();
 })();

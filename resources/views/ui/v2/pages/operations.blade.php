@@ -23,6 +23,7 @@
         data-recalc-preview-url="{{ route('ui.v2.api.operations.recalculate_preview') }}"
         data-recalc-url="{{ route('ui.v2.api.operations.recalculate') }}"
         data-recalcs-url="{{ route('ui.v2.api.operations.recalculations') }}"
+        data-progress-url="{{ route('ui.v2.api.operations.progress') }}"
         data-reasons-url="{{ route('ui.v2.api.operations.reasons') }}"
         data-justify-url="{{ url('/ui/v2/api/operations/stops') . '/{id}/justify' }}"
         data-history-url="{{ url('/ui/v2/history') }}"
@@ -62,6 +63,9 @@
                 </button>
             </div>
         </header>
+
+        {{-- Progreso de recalculos y calculo de tramos (lo pinta tp-operations.js). --}}
+        <div class="tp-ops-progress" id="tp-ops-progress" role="status" aria-live="polite" hidden></div>
 
         {{-- ───────────────────────── En vivo ───────────────────────── --}}
         <section data-ops-panel="live">
