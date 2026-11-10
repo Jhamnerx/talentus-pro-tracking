@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Manual de usuario · Operaciones y Seguridad · Plataforma de Rastreo</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+  * { box-sizing: border-box; }
+  html { font-size: 10.5pt; }
+  body { font-family: "Segoe UI", Arial, Helvetica, sans-serif; color: #1f2937; line-height: 1.45; margin: 0; }
+  h1 { font-size: 24pt; margin: 0 0 4mm; color: #0f172a; }
+  h2 { font-size: 16pt; margin: 0 0 4mm; padding-bottom: 2mm; border-bottom: 2px solid #1d4ed8; color: #1e3a8a; page-break-after: avoid; }
+  h3 { font-size: 12.5pt; margin: 6mm 0 2mm; color: #0f172a; page-break-after: avoid; }
+  h4 { font-size: 11pt; margin: 4mm 0 1.5mm; color: #1e3a8a; page-break-after: avoid; }
+  p, li { margin: 0 0 2.2mm; }
+  ol, ul { padding-left: 6mm; margin: 0 0 3mm; }
+  li { page-break-inside: avoid; }
+  .part { page-break-before: always; display: flex; flex-direction: column; justify-content: center; min-height: 200mm; }
+  .part h1 { color: #1e3a8a; }
+  .chapter { page-break-before: always; }
+  .cover { page-break-after: always; display: flex; flex-direction: column; justify-content: center; min-height: 240mm; }
+  .cover .kicker, .part .kicker { color: #1d4ed8; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; font-size: 9pt; margin-bottom: 3mm; }
+  .cover .sub, .part .sub { font-size: 13pt; color: #475569; margin-bottom: 10mm; }
+  .box { border: 1px solid #cbd5e1; border-left: 4px solid #1d4ed8; background: #f8fafc; padding: 3mm 4mm; margin: 3mm 0 4mm; page-break-inside: avoid; }
+  .box.warn { border-left-color: #d97706; background: #fffbeb; }
+  .box.tip { border-left-color: #16a34a; background: #f0fdf4; }
+  .box b { color: #0f172a; }
+  figure { margin: 3mm 0 5mm; page-break-inside: avoid; }
+  figure img { width: auto; max-width: 100%; max-height: 100mm; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 4px; display: block; }
+  figure.small img { max-height: 70mm; }
+  figure.tall img { max-height: 235mm; }
+  figcaption { font-size: 9pt; color: #475569; margin-top: 1.5mm; text-align: center; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 4mm; font-size: 9.5pt; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid #cbd5e1; padding: 1.6mm 2.2mm; vertical-align: top; text-align: left; }
+  th { background: #eff6ff; color: #1e3a8a; }
+  .toc { columns: 2; column-gap: 10mm; }
+  .toc li { margin-bottom: 1mm; break-inside: avoid; }
+  .steps li { margin-bottom: 2.5mm; }
+  .muted { color: #64748b; font-size: 9pt; }
+  .pill { display: inline-block; font-size: 8.5pt; font-weight: 700; padding: 0 6px; border-radius: 8px; color: #fff; }
+  .p-ready { background: #16a34a; } .p-delay { background: #f59e0b; } .p-standby { background: #eab308; color:#1f2937; } .p-maint { background: #dc2626; } .p-nodata { background: #4b5563; } .p-off { background: #c4cad6; color:#1f2937; }
+  .p-move { background: #10b981; } .p-idle { background: #f59e0b; } .p-stop { background: #6b7280; } .p-offline { background: #b45309; }
+  code { font-family: Consolas, monospace; font-size: 9pt; background: #f1f5f9; padding: 0 3px; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kicker">Plataforma de Rastreo · Talentus Technology</div>
+  <h1>Manual de usuario<br>Operaciones y Seguridad</h1>
+  <div class="sub">Cómo configurar y usar el control de vueltas, el reporte de turno y el control de flota, y cómo se calcula cada cifra y cada gráfica.</div>
+  <table>
+    <tr><th style="width:32%">Versión</th><td>Noviembre de 2026 · interfaz nueva (v2)</td></tr>
+    <tr><th>Módulos</th><td>Operaciones (pestañas En vivo, Vueltas, Operaciones y Turno) y Seguridad · Control de flota</td></tr>
+    <tr><th>Público</th><td>Supervisores de operación, jefes de flota y administradores de la cuenta</td></tr>
+    <tr><th>Capturas</th><td>Tomadas en el servidor de pruebas con la operación «Acarreo prueba» y datos reales de la flota</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Contenido</h2>
+  <ol class="toc">
+    <li><b>Parte 1 · Operaciones</b></li>
+    <li>1. Qué es una operación y cómo se cuenta una vuelta</li>
+    <li>2. Antes de empezar: permisos, grupo y geocercas</li>
+    <li>3. Crear y editar una operación (cada campo y cada casilla)</li>
+    <li>4. Pestaña En vivo</li>
+    <li>5. Pestaña Vueltas: vueltas y tramos completos e incompletos</li>
+    <li>6. Paradas, justificación y motivos</li>
+    <li>7. Recalcular vueltas</li>
+    <li>8. Pestaña Turno: tarjetas, gráficas y tablas</li>
+    <li>9. Alerta y reportes de Operaciones</li>
+    <li>10. Cuándo se calcula cada cosa</li>
+    <li>11. Problemas frecuentes y cómo resolverlos</li>
+    <li><b>Parte 2 · Seguridad</b></li>
+    <li>12. Qué es y cómo se accede</li>
+    <li>13. Filtros y turnos</li>
+    <li>14. Tarjetas</li>
+    <li>15. Tablas y gráficas</li>
+    <li>16. Ajustes, recálculo y exportación</li>
+    <li>17. Avisos y comportamientos no obvios</li>
+  </ol>
+</section>
+
+<!-- =================================================================== -->
+<section class="part">
+  <div class="kicker">Parte 1</div>
+  <h1>Operaciones</h1>
+  <div class="sub">Control de vueltas entre puntos de carga y descarga, paradas en ruta y reporte de turno.</div>
+</section>
+
+<section class="chapter">
+  <h2>1. Qué es una operación y cómo se cuenta una vuelta</h2>
+  <p>Una <b>operación</b> es un trabajo repetitivo entre dos tipos de punto: <b>carga</b> y <b>descarga</b> (en una operación de tipo Ruta se llaman <b>inicio de ruta</b> y <b>fin de ruta</b>; las reglas son las mismas). Cada punto es una geocerca. El sistema sigue a cada vehículo del grupo de la operación y registra sus <b>vueltas</b>.</p>
+
+  <h3>1.1 El ciclo</h3>
+  <table>
+    <tr><th style="width:22%">Momento</th><th>Qué registra el sistema</th></tr>
+    <tr><td>Sale de carga</td><td>Abre una <b>vuelta</b> nueva, guarda el tiempo que estuvo en carga y abre el tramo <b>Ida</b> (va cargado).</td></tr>
+    <tr><td>Llega a descarga</td><td>Cierra la Ida. Si el punto es de descarga, la Ida queda <b>completa</b>.</td></tr>
+    <tr><td>Sale de descarga</td><td>Guarda el tiempo en descarga y abre el tramo <b>Vuelta</b> (regresa vacío).</td></tr>
+    <tr><td>Llega a carga</td><td>Cierra el tramo Vuelta y <b>cierra la vuelta</b>. Si los dos tramos fueron completos, la vuelta es <b>Completa</b>.</td></tr>
+  </table>
+
+  <h3>1.2 Cuándo cuenta que el vehículo «llegó» o «salió»</h3>
+  <ul>
+    <li><b>Llegada:</b> la primera posición dentro de la geocerca deja el punto como candidato. La llegada se confirma cuando otra posición, también dentro, llega al menos <b>«Permanencia mínima»</b> segundos después (por defecto 30). La hora registrada es la de la primera posición dentro. Si sale antes, se descarta (rebote en el borde).</li>
+    <li><b>Salida:</b> igual, al revés. La primera posición fuera inicia la salida; si vuelve a entrar antes de la permanencia mínima, la salida se cancela.</li>
+    <li><b>Paso rozando:</b> si entre dos posiciones seguidas, ambas fuera, el trayecto atraviesa una geocerca (en saltos de 40 m o más), se registra la entrada y la salida con hora calculada. Así no se pierde una visita rápida entre dos reportes del GPS.</li>
+    <li>Se ignoran las posiciones no válidas y las de menos de 4 satélites.</li>
+  </ul>
+  <div class="box warn">Hacen falta <b>dos posiciones dentro</b> de la geocerca para confirmar una visita, aunque la permanencia mínima sea 0. Un equipo que reporta cada 2 minutos y pasa 1 minuto por una geocerca pequeña puede no registrar la visita.</div>
+
+  <h3>1.3 Tramo completo y tramo incompleto</h3>
+  <table>
+    <tr><th style="width:24%">Tramo</th><th>Completo cuando…</th><th>Incompleto cuando…</th></tr>
+    <tr><td><b>Ida</b> (carga → descarga)</td><td>llega a <b>cualquier</b> punto de descarga.</td><td>vuelve a un punto de carga sin pasar por descarga, o se cierra por cualquiera de las causas de abajo.</td></tr>
+    <tr><td><b>Vuelta</b> (descarga → carga)</td><td>llega a <b>cualquier</b> punto de carga.</td><td>vuelve a un punto de descarga, o se cierra por cualquiera de las causas de abajo.</td></tr>
+  </table>
+  <p>Causas que cierran como incompleto el tramo y la vuelta abiertos:</p>
+  <ul>
+    <li><b>Tramo vencido:</b> el tramo dura más que el <b>«Tramo máximo (horas)»</b> (por defecto 6). Se corta en la hora límite.</li>
+    <li>El vehículo se <b>quita del grupo</b> de la operación.</li>
+    <li>La operación se <b>desactiva o elimina</b>.</li>
+  </ul>
+  <p>Después de un cierre por estas causas, el vehículo queda en «Sin estado» hasta su próxima visita confirmada a un punto.</p>
+
+  <h3>1.4 Vuelta completa, incompleta y en curso</h3>
+  <ul>
+    <li><b>Completa:</b> tiene una Ida completa y una Vuelta completa.</li>
+    <li><b>Incompleta:</b> le falta alguno de los dos tramos completos. Casos típicos: volvió a carga sin descargar; la vuelta empezó estando en descarga (el sistema empezó a contar con el vehículo ya en descarga) y no tiene Ida; un tramo venció por tiempo.</li>
+    <li><b>En curso:</b> todavía abierta.</li>
+  </ul>
+
+  <h3>1.5 Varios puntos de carga y de descarga</h3>
+  <p><b>No hace falta emparejar puntos.</b> Una operación admite cualquier número de puntos de cada tipo (por ejemplo 3 cargas y 2 descargas). Cuenta solo el <b>tipo</b>: cualquier carga con cualquier descarga. Cada tramo guarda de qué punto salió y a cuál llegó.</p>
+  <p>Si dos puntos se solapan en el mapa, manda el punto donde el vehículo ya estaba. Si no estaba en ninguno, gana el primero de la lista que contenga la posición.</p>
+  <div class="box warn"><b>Lo que sí rompe las vueltas:</b> que los vehículos carguen o descarguen en un sitio que <b>no es punto de la operación</b>. El sistema los ve salir de un punto y nunca llegar a otro, y a las 6 horas cierra la vuelta como incompleta. Ver el capítulo 11.</div>
+
+  <h3>1.6 Número de vuelta, día y turno</h3>
+  <ul>
+    <li>El número de vuelta es correlativo por vehículo y por <b>día de inicio</b> de la vuelta (hora local), y cuenta también las incompletas.</li>
+    <li>El turno se asigna por la hora de inicio de la vuelta. Si no cae en ningún turno, se muestra «Fuera de turno». Cambiar los turnos después no reasigna las vueltas ya registradas, salvo que se recalculen.</li>
+  </ul>
+</section>
+
+<section class="chapter">
+  <h2>2. Antes de empezar: permisos, grupo y geocercas</h2>
+  <ol class="steps">
+    <li><b>Permiso «Operaciones»:</b> lo activa el administrador por usuario (Admin → Usuarios → Editar → Permisos). «Ver» permite consultar; «Editar» crear, modificar, justificar, recalcular y «Calcular ahora»; «Eliminar» borrar operaciones.</li>
+    <li><b>Grupo de vehículos:</b> la operación sigue a los vehículos de un grupo. Si agregas o quitas un vehículo del grupo, la operación lo toma o lo suelta en menos de un minuto. Un grupo que usa una operación no se puede borrar.</li>
+    <li><b>Geocercas de los puntos:</b> crea una geocerca por cada frente de carga y cada punto de descarga. La <b>categoría</b> (Carga, Descarga, Inicio de ruta, Fin de ruta) solo ordena las listas al elegir puntos; cualquier geocerca fija puede ser punto. Las geocercas asignadas a un vehículo (móviles) no pueden ser punto.</li>
+    <li><b>Geocercas de paradas autorizadas:</b> grifos, talleres y zonas de descanso con su categoría (Grifo, Taller, Descanso). Una parada dentro de cualquiera de ellas no cuenta como no autorizada.</li>
+    <li><b>Sensores de cada vehículo</b> (para el reporte de turno): ignición (ralentí y motor apagado), horas de motor (horómetro), odómetro (kilometraje) y nivel de combustible con sus umbrales de recarga y robo en la pestaña Precisión del vehículo (abastecimientos). Sin el sensor, esa columna queda vacía.</li>
+  </ol>
+  <div class="box warn"><b>Una geocerca nueva no entra sola a la operación.</b> Aunque tenga categoría Carga o Descarga, hay que editar la operación y agregarla con «+ Agregar punto». Mientras no esté agregada, las vueltas que pasan por ella no se cuentan bien.</div>
+  <div class="box">Un vehículo solo puede estar en <b>una operación activa</b> a la vez. Si ya pertenece a otra operación activa, esta no lo toma; la columna «Vehículos» de la lista de operaciones muestra los realmente tomados.</div>
+</section>
+
+<section class="chapter">
+  <h2>3. Crear y editar una operación</h2>
+  <p>Menú lateral → <b>Operaciones</b> → pestaña <b>Operaciones</b>. La lista muestra nombre y tipo, grupo, vehículos tomados, puntos, turnos y si está activa, con las acciones Editar, Activar/Desactivar y Eliminar. Arriba: <b>Motivos de parada</b>, <b>Recalcular vueltas</b> y <b>＋ Nueva operación</b>.</p>
+  <figure><img src="img/ops-30-lista-operaciones.png" alt="Lista de operaciones"><figcaption>Pestaña Operaciones.</figcaption></figure>
+  <figure class="tall"><img src="img/ops-31-modal-operacion.png" alt="Modal de operación completo"><figcaption>Modal «Editar operación» con las opciones avanzadas abiertas.</figcaption></figure>
+
+  <h3>3.1 Datos principales</h3>
+  <table>
+    <tr><th style="width:26%">Campo</th><th>Qué hace</th></tr>
+    <tr><td>Nombre *</td><td>Obligatorio, hasta 255 caracteres.</td></tr>
+    <tr><td>Tipo de operación</td><td>«Acarreo (carga / descarga)» o «Ruta (inicio / fin)». Solo cambia los nombres de los puntos y de los estados; el conteo es igual.</td></tr>
+    <tr><td>Grupo de vehículos *</td><td>Grupo propio. Debajo indica cuántos vehículos tiene.</td></tr>
+    <tr><td>Carga / Descarga</td><td>Una o varias geocercas por bloque, con «+ Agregar punto» y × para quitar. Cada opción se muestra como «nombre · categoría». Debe haber al menos un punto de cada tipo.</td></tr>
+    <tr><td>Turnos</td><td>Nombre, inicio y fin. Un turno cuya hora de fin es menor o igual a la de inicio termina al día siguiente (Noche 19:00–07:00). No pueden solaparse. Son opcionales, pero sin turnos no hay reporte de turno.</td></tr>
+    <tr><td>Descansos</td><td>Nombre, turno al que pertenece, tipo y horario. Ver 3.2.</td></tr>
+    <tr><td>Horas trabajadas</td><td>Casillas <b>Abastecimiento</b>, <b>Ralentí</b> y <b>Paradas no autorizadas</b>: qué se descuenta de las horas de motor en el reporte 912 «Horas trabajadas netas». No afectan a nada más.</td></tr>
+    <tr><td>Operación activa</td><td>Desmarcada, la operación deja de evaluar posiciones, cierra como incompletos los tramos abiertos y libera los vehículos. Al reactivarla empiezan en «Sin estado».</td></tr>
+  </table>
+
+  <h3>3.2 Descansos</h3>
+  <ul>
+    <li><b>Programado</b> (almuerzo, cena): con hora desde y hasta, dentro del horario de su turno. Dos programados del mismo turno no pueden solaparse. El <b>primer</b> descanso programado de cada turno define las columnas «Antes del descanso» y «Después del descanso» del reporte de turno, y se descuenta de las horas efectivas.</li>
+    <li><b>Fatiga y somnolencia</b>: sin horario, uno por turno como máximo.</li>
+    <li>No se pueden agregar descansos si la operación no tiene turnos.</li>
+  </ul>
+  <div class="box warn">Hoy el descanso de fatiga y somnolencia se guarda pero <b>todavía no interviene en ningún cálculo</b>. Las paradas con motor apagado ya cuentan como STANDBY por sí mismas en el reporte de turno.</div>
+
+  <h3>3.3 Opciones avanzadas</h3>
+  <table>
+    <tr><th style="width:26%">Campo</th><th style="width:14%">Por defecto</th><th>Qué hace</th></tr>
+    <tr><td>Parada (segundos)</td><td>60 (10 a 3600)</td><td>Tiempo detenido dentro de un tramo para que cuente como parada. También decide cuándo En vivo marca «Detenido».</td></tr>
+    <tr><td>Permanencia mínima (segundos)</td><td>30 (0 a 3600)</td><td>Tiempo para confirmar una llegada o una salida de un punto (1.2).</td></tr>
+    <tr><td>Tramo máximo (horas)</td><td>6 (1 a 48)</td><td>Un tramo más largo se cierra como incompleto.</td></tr>
+    <tr><td>Inicio del día operativo</td><td>vacío</td><td>Hora a la que empieza el día de 24 h del reporte de turno. Vacío = inicio del primer turno.</td></tr>
+    <tr><td>Paradas autorizadas en geocercas de categoría</td><td>Grifo, Taller, Descanso</td><td>Una parada dentro de cualquier geocerca tuya de esas categorías no cuenta como no autorizada.</td></tr>
+    <tr><td>Estado de vehículo automático (Seguridad)</td><td>sin tipo</td><td>Tipo de vehículo, estado cuando va cargado y estado cuando va vacío. Al salir de carga el vehículo pasa a «cargado» y al salir de descarga a «vacío», así los límites de velocidad por estado de las geocercas se aplican solos. Solo en vivo; un recálculo no cambia estados. Los dos estados deben ser del tipo elegido y distintos.</td></tr>
+  </table>
+  <div class="box tip">Si al guardar cambiaste los puntos, la pantalla ofrece recalcular las vueltas desde una fecha. Ver el capítulo 7.</div>
+</section>
+
+<section class="chapter">
+  <h2>4. Pestaña En vivo</h2>
+  <p>Estado actual de cada vehículo de la operación. Se actualiza sola cada 20 segundos mientras la pestaña está abierta. Elige <b>Operación</b> y <b>Fecha</b>.</p>
+  <figure><img src="img/ops-10-en-vivo.png" alt="Pestaña En vivo"><figcaption>En vivo: tarjetas y estado por vehículo.</figcaption></figure>
+  <h3>4.1 Tarjetas</h3>
+  <table>
+    <tr><th style="width:26%">Tarjeta</th><th>Cómo se calcula</th></tr>
+    <tr><td>Vueltas hoy</td><td>Vueltas <b>completas</b> que empezaron en la fecha elegida.</td></tr>
+    <tr><td>Ciclo promedio</td><td>Duración media de esas vueltas completas.</td></tr>
+    <tr><td>Vehículos en ciclo</td><td>Vehículos en un tramo o dentro de un punto en este momento.</td></tr>
+    <tr><td>Paradas no autorizadas</td><td>Suma de paradas no autorizadas de los tramos de las vueltas de la fecha.</td></tr>
+  </table>
+  <h3>4.2 Columnas y estados</h3>
+  <ul>
+    <li><b>Estado:</b> «Sin estado» (aún no visitó ningún punto, o se cerró su vuelta por tiempo), «En carga» / «En descarga» (dentro, con la llegada confirmada, con el nombre del punto), «Ida», «Vuelta», y «Sin datos» (tiene un tramo abierto y no reporta hace más de 90 segundos). Si está detenido en un tramo más del umbral de parada, se añade «Detenido» con el tiempo: en rojo si está fuera de una zona autorizada, en gris si está dentro.</li>
+    <li><b>Vueltas</b> y <b>Último ciclo</b>: vueltas completas del día y duración de la última.</li>
+    <li><b>Detenido</b> y <b>Ralentí</b>: suma del día más la parada en curso. Ralentí necesita sensor de ignición; sin él se ve «—».</li>
+    <li><b>No autorizadas</b> y <b>Última trama</b>.</li>
+  </ul>
+  <p>Al hacer clic en una fila se abre la pestaña Vueltas filtrada por ese vehículo y esa fecha.</p>
+</section>
+
+<section class="chapter">
+  <h2>5. Pestaña Vueltas: vueltas y tramos completos e incompletos</h2>
+  <figure><img src="img/ops-20-vueltas-lista.png" alt="Lista de vueltas"><figcaption>Vueltas del 4 de noviembre: filtros, una fila por vuelta y su estado.</figcaption></figure>
+  <h3>5.1 Filtros</h3>
+  <ul>
+    <li><b>Desde / Hasta:</b> por el día de <b>inicio</b> de la vuelta.</li>
+    <li><b>Operación</b>, <b>Vehículo</b> y <b>Turno</b> (el turno aparece al elegir operación; incluye «Fuera de turno»).</li>
+    <li><b>Solo vueltas con paradas no autorizadas.</b></li>
+    <li>Pulsa <b>Búsqueda</b>. La lista trae 25 vueltas por página; si hay recálculos en curso, avisa que las vueltas pueden cambiar.</li>
+  </ul>
+  <h3>5.2 Columnas</h3>
+  <p>Número de vuelta, vehículo, salida, turno, <b>Ciclo</b> (duración total), <b>Ida</b>, <b>Vuelta</b>, <b>Detenido</b>, <b>Ralentí</b>, <b>No autorizadas</b> y <b>Estado</b>: «Completa», «Incompleta» o «En curso», más «Pendiente de cálculo» si las paradas de algún tramo aún no se calcularon (se calculan en el minuto siguiente al cierre del tramo).</p>
+
+  <h3>5.3 Cómo ver si una vuelta y sus tramos están completos</h3>
+  <ol class="steps">
+    <li>La columna <b>Estado</b> de cada fila dice si la <b>vuelta</b> es Completa, Incompleta o En curso.</li>
+    <li>Pulsa la flecha <b>›</b> de la fila para abrir el detalle. Cada tramo muestra <b>«origen → destino»</b>. Así se identifica el tramo incompleto:
+      <ul>
+        <li><b>Ida completa:</b> sale de carga y llega a descarga (por ejemplo «Carga 3 → Descarga»).</li>
+        <li><b>Vuelta completa:</b> sale de descarga y llega a carga («Descarga → Carga 3»).</li>
+        <li><b>Tramo incompleto:</b> llega al mismo tipo de punto («Carga 2 → Carga 2»), no tiene destino («→ ?»), o dura exactamente el tramo máximo (6 h, cerrado por tiempo).</li>
+      </ul>
+    </li>
+    <li>Cada tramo muestra además inicio, fin, duración, distancia, tiempo sin datos y <b>Ver tramo en mapa</b>, que abre el Historial de ese vehículo con el rango exacto del tramo. Debajo, sus paradas.</li>
+  </ol>
+  <figure><img src="img/ops-21-vuelta-completa.png" alt="Detalle de una vuelta completa"><figcaption>Vuelta completa: Ida «Carga 3 → Descarga» y Vuelta «Descarga → Carga 3», sin paradas.</figcaption></figure>
+  <figure><img src="img/ops-22-vuelta-incompleta.png" alt="Detalle de una vuelta incompleta"><figcaption>Vuelta incompleta: la Ida sale de Carga 2 y vuelve a Carga 2 tras 9 km y seis paradas no autorizadas. El camión descargó en un sitio que no es punto de la operación.</figcaption></figure>
+  <div class="box warn">Hoy la lista <b>no tiene filtro por estado</b> (Completa / Incompleta) y el detalle no rotula cada tramo como completo o incompleto: se deduce por «origen → destino» como en el paso 2. Para revisar solo vueltas con problemas en ruta, usa la casilla «Solo vueltas con paradas no autorizadas» o el reporte 910.</div>
+  <h3>5.4 Exportar</h3>
+  <p>El botón <b>Exportar</b> (visible con permiso de reportes) genera el reporte 910 «Control de vueltas» con las fechas, la operación, el vehículo y la casilla de no autorizadas. El filtro de turno no se envía al reporte.</p>
+</section>
+
+<section class="chapter">
+  <h2>6. Paradas, justificación y motivos</h2>
+  <h3>6.1 Cómo se calculan las paradas</h3>
+  <ul>
+    <li>Solo hay paradas <b>dentro de un tramo</b>; el tiempo dentro de un punto de carga o descarga no es parada.</li>
+    <li>Una parada es estar por debajo de la velocidad mínima de movimiento del vehículo al menos <b>«Parada (segundos)»</b>. Los huecos de más de 90 segundos sin posiciones se descuentan como «Sin datos»; si sin ellos la parada no llega al umbral, se descarta.</li>
+    <li>Se calculan una vez cerrado el tramo, en el minuto siguiente («Pendiente de cálculo» mientras tanto).</li>
+  </ul>
+  <table>
+    <tr><th style="width:22%">Estado</th><th>Cuándo</th></tr>
+    <tr><td>Autorizada</td><td>Cae en cualquier geocerca tuya de las categorías autorizadas de la operación (por defecto Grifo, Taller, Descanso). Se muestra el nombre de la geocerca.</td></tr>
+    <tr><td>Dato dudoso</td><td>La posición final de la parada trae un salto de posición (posible GPS congelado). No cuenta como no autorizada.</td></tr>
+    <tr><td>No autorizada</td><td>El resto. Es la única que suma en «No autorizadas».</td></tr>
+  </table>
+  <p>Motor encendido y motor apagado de cada parada necesitan sensor de ignición; sin él se ve «—».</p>
+
+  <h3>6.2 Justificar una parada</h3>
+  <ol class="steps">
+    <li>En el detalle de la vuelta, en la fila de la parada, pulsa <b>Justificar</b> (requiere permiso de edición).</li>
+    <li>Elige el <b>Motivo</b> del catálogo o «Otro (escribir motivo)»; con «Otro» el comentario es obligatorio.</li>
+    <li>Marca <b>«Autorizar esta parada»</b> si no debe contar como no autorizada. El motivo solo explica; la casilla es lo que autoriza.</li>
+    <li>Guarda. Queda registrado quién la justificó y cuándo, y se recuenta «No autorizadas» del tramo.</li>
+  </ol>
+  <div class="box warn">Si justificas una parada que ya estaba autorizada por geocerca y <b>no</b> marcas la casilla, pasa a contar como no autorizada. Marca la casilla siempre que la parada sea válida.</div>
+
+  <h3>6.3 Catálogo de motivos</h3>
+  <p>Pestaña Operaciones → <b>Motivos de parada</b>. Cada motivo tiene nombre y <b>«Cuenta como»</b>:</p>
+  <ul>
+    <li><b>Mantenimiento:</b> la duración de las paradas justificadas con ese motivo suma al estado MAINT del reporte de turno (se refleja cuando el turno se vuelve a calcular).</li>
+    <li><b>Descanso:</b> se guarda; hoy no cambia ningún cálculo.</li>
+    <li><b>—:</b> solo explica.</li>
+  </ul>
+  <p>La cuenta trae por defecto: Tráfico o vía bloqueada, Espera en cola, Falla mecánica, Neumático, Indicación de supervisión o seguridad, Alimentación, Clima, Fatiga y somnolencia (Descanso) y Mantenimiento (Mantenimiento). Al eliminar un motivo, las paradas ya justificadas conservan su comentario y se muestran como «Otro».</p>
+  <figure class="small"><img src="img/ops-33-motivos.png" alt="Motivos de parada"><figcaption>Catálogo de motivos con el selector «Cuenta como».</figcaption></figure>
+</section>
+
+<section class="chapter">
+  <h2>7. Recalcular vueltas</h2>
+  <p>Rehace las vueltas del pasado con la configuración actual. Úsalo después de agregar o quitar puntos, mover una geocerca, cambiar umbrales o turnos, o al crear una operación cuando los vehículos ya llevaban días trabajando.</p>
+  <figure class="small"><img src="img/ops-32-recalcular.png" alt="Modal Recalcular vueltas"><figcaption>Recalcular vueltas: operación, desde el día, vehículos y ubicación de los puntos.</figcaption></figure>
+  <table>
+    <tr><th style="width:26%">Campo</th><th>Qué hace</th></tr>
+    <tr><td>Operación</td><td>La operación a recalcular.</td></tr>
+    <tr><td>Desde el día</td><td>Se rehace desde las 00:00 de ese día hasta hoy.</td></tr>
+    <tr><td>Vehículos</td><td>Vacío = todos los del grupo. Se ignoran los que no son del grupo.</td></tr>
+    <tr><td>Ubicación de los puntos</td><td><b>La vigente en cada momento</b> (por defecto): usa la forma que tenía cada geocerca en cada fecha; un punto agregado hoy vale también para el pasado, uno quitado deja de valer desde que se quitó. <b>La actual</b>: usa los puntos de hoy con su forma de hoy para todo el rango; conviene cuando una geocerca estaba mal dibujada y la corrección debe aplicar hacia atrás.</td></tr>
+  </table>
+  <ul>
+    <li>El aviso indica cuántas vueltas se reemplazarán y hasta cuántos días atrás hay posiciones guardadas.</li>
+    <li>El recálculo se encola y lo ejecuta el servidor en el minuto siguiente (hasta 5 vehículos por minuto). Mientras tanto, Vueltas avisa que hay recálculos pendientes.</li>
+    <li>Rehace vueltas, tramos, paradas y los resúmenes del reporte de turno desde esa fecha. No cambia el estado de vehículo de Seguridad.</li>
+  </ul>
+  <div class="box warn"><b>Se pierden las justificaciones</b> de las paradas de las vueltas reemplazadas. Recalcula primero y justifica después.</div>
+  <h3>7.1 Al mover, renombrar o borrar una geocerca que es punto</h3>
+  <ul>
+    <li>Cambiar la forma de la geocerca crea una nueva versión del punto desde ese momento; las vueltas anteriores conservan la forma vieja salvo que recalcules con «La actual».</li>
+    <li>Renombrar sin mover la forma no actualiza el nombre que muestra el punto.</li>
+    <li>Una geocerca que es punto vigente no se puede borrar; primero quítala de la operación.</li>
+  </ul>
+</section>
+
+<section class="chapter">
+  <h2>8. Pestaña Turno: tarjetas, gráficas y tablas</h2>
+  <p>Resumen de un <b>día operativo</b> por turno, en una sola vista: tarjetas, cinco gráficas por hora, estados por equipo y tres tablas. Es de consulta: no se actualiza sola; pulsa <b>Refrescar</b>.</p>
+  <figure><img src="img/ops-40-turno-barra.png" alt="Barra de filtros de Turno"><figcaption>Filtros: operación, fecha con flechas, turno, Refrescar, Pantalla completa (Esc para salir) y Exportar Excel.</figcaption></figure>
+
+  <h3>8.1 Cuándo hay datos</h3>
+  <ul>
+    <li>Cada turno se calcula solo <b>entre 10 y 70 minutos después de su hora de fin</b>. Mientras el turno está en curso, sus horas no tienen datos: no significa que no haya movimiento.</li>
+    <li><b>Calcular ahora</b> aparece cuando el día no tiene ningún dato calculado (con permiso de edición). Calcula los turnos del día que ya empezaron; uno en curso queda calculado parcialmente hasta ese instante. No se puede calcular un día futuro.</li>
+    <li>Un recálculo de vueltas también rehace estos resúmenes.</li>
+    <li>Si el servidor estuvo detenido más de 70 minutos tras el fin de un turno, ese turno no se calcula solo: usa Calcular ahora.</li>
+  </ul>
+  <h3>8.2 Día operativo y eje de horas</h3>
+  <ul>
+    <li>Un turno pertenece al día D si empieza a la hora de «Inicio del día operativo» o después; el turno Noche del día 8 cuenta para el día 8 aunque termine el 9.</li>
+    <li>El eje de 24 horas empieza en la hora en punto del primer turno (con turnos 07:00 y 19:00 va de 07 a 06).</li>
+    <li>Las horas que no pertenecen al turno elegido no se dibujan.</li>
+  </ul>
+
+  <h3>8.3 Qué cuenta como «en movimiento»</h3>
+  <p>Todas las cifras por hora parten de recorrer las posiciones de cada vehículo una por una y clasificar el tiempo entre cada posición y la anterior:</p>
+  <table>
+    <tr><th style="width:18%">Estado</th><th>Cuándo</th></tr>
+    <tr><td><span class="pill p-ready">READY</span></td><td>En movimiento: velocidad igual o mayor a la <b>velocidad mínima de movimiento</b> del vehículo (configurada en el vehículo; 6 km/h si no tiene).</td></tr>
+    <tr><td><span class="pill p-delay">DELAY</span></td><td>Ralentí: parado con motor encendido.</td></tr>
+    <tr><td><span class="pill p-standby">STANDBY</span></td><td>Parado con motor apagado. Sin sensor de ignición, parado cuenta como apagado.</td></tr>
+    <tr><td><span class="pill p-maint">MAINT</span></td><td>Tiempo dentro de geocercas de categoría Taller más paradas justificadas con un motivo «Mantenimiento». Se descuenta primero de STANDBY y luego de DELAY.</td></tr>
+    <tr><td><span class="pill p-nodata">Sin datos</span></td><td>Huecos de más de 90 segundos entre posiciones. Excepción: si el vehículo estaba quieto (no se movió más de 100 m) y el hueco dura 1 hora o menos, se trata como parado, porque los equipos detenidos reportan cada pocos minutos.</td></tr>
+    <tr><td><span class="pill p-off">Fuera de operación</span></td><td>El resto hasta completar las 24 horas.</td></tr>
+  </table>
+  <p>El tiempo de la primera posición del turno no se cuenta (solo su velocidad). Si un intervalo cruza el cambio de hora, se reparte entre las dos horas. <b>Cargado</b> y <b>vacío</b> salen del tramo abierto en cada posición: en la Ida va cargado y en la Vuelta vacío; fuera de un tramo no suma a ninguno.</p>
+
+  <h3>8.4 Tarjetas</h3>
+  <figure class="small"><img src="img/ops-41-turno-tarjetas.png" alt="Tarjetas de Turno"><figcaption>Tarjetas del 8 de noviembre.</figcaption></figure>
+  <p>«Día» es el primer turno de la operación y «Noche» el segundo.</p>
+  <table>
+    <tr><th style="width:22%">Tarjeta</th><th>Cómo se calcula</th></tr>
+    <tr><td>Volquetes rodando</td><td>Para cada hora del turno, cuántos vehículos tuvieron <b>al menos un segundo en movimiento</b>; la tarjeta es el <b>promedio</b> de esas horas. Total = promedio de todas las horas del día.</td></tr>
+    <tr><td>Velocidad vacío / cargado</td><td>Distancia recorrida en tramos de Vuelta (vacío) o de Ida (cargado) dividida entre el tiempo en movimiento en ellos. Promedio = el mismo cálculo con los dos turnos juntos.</td></tr>
+    <tr><td>Distancia</td><td>Kilómetros totales del turno de todos los vehículos (distancia GPS). Promedio = media de Día y Noche.</td></tr>
+  </table>
+
+  <h3>8.5 Gráficas por hora</h3>
+  <figure><img src="img/ops-42-rodando.png" alt="Volquetes rodando por hora"><figcaption>Volquetes rodando por hora.</figcaption></figure>
+  <ul>
+    <li><b>Volquetes rodando por hora:</b> número de vehículos con algún segundo en movimiento en esa hora. Un vehículo que se movió 30 segundos cuenta igual que uno que rodó la hora completa. Un 0 en una hora del turno es que nadie se movió; una hora sin punto es que aún no se calculó o no pertenece al turno elegido.</li>
+    <li><b>Velocidad promedio vacío por hora</b> y <b>cargado por hora:</b> distancia entre tiempo en movimiento de toda la flota, por sentido, en esa hora. Sin punto si nadie circuló en ese sentido.</li>
+    <li><b>Velocidad promedio cargado y vacío por hora:</b> las dos series juntas.</li>
+    <li><b>Velocidad de la flota por hora:</b> <b>máxima</b> y <b>mínima</b> de las posiciones en movimiento (la mínima nunca es 0) y <b>media</b> ponderada por el tiempo en movimiento. El cuadro al pasar el ratón dice qué unidad y a qué hora exacta; un clic en un punto de máxima o mínima abre el Historial de esa unidad 5 minutos antes y después.</li>
+  </ul>
+  <figure><img src="img/ops-43-vacio.png" alt="Velocidad vacío por hora"><figcaption>Velocidad promedio vacío por hora.</figcaption></figure>
+  <figure><img src="img/ops-44-cargado.png" alt="Velocidad cargado por hora"><figcaption>Velocidad promedio cargado por hora.</figcaption></figure>
+  <figure><img src="img/ops-45-cargado-vacio.png" alt="Cargado y vacío por hora"><figcaption>Cargado y vacío en la misma gráfica.</figcaption></figure>
+  <figure><img src="img/ops-46b-flota-tooltip.png" alt="Velocidad de la flota con tooltip"><figcaption>Velocidad de la flota: a las 21:00 la máxima fue T8I-070 a 32 km/h a las 21:04:39.</figcaption></figure>
+
+  <h3>8.6 Estados por equipo</h3>
+  <figure><img src="img/ops-47-estados.png" alt="Estados por equipo"><figcaption>Una barra de 24 horas por vehículo con las horas de cada estado.</figcaption></figure>
+  <p>Cada barra suma 24 horas del día operativo aunque se elija un solo turno. Los descansos programados no se descuentan de los estados: el tiempo parado en el almuerzo aparece como DELAY o STANDBY según el motor.</p>
+
+  <h3>8.7 Tablas</h3>
+  <table>
+    <tr><th style="width:24%">Tabla</th><th>Contenido</th></tr>
+    <tr><td>Horas y horómetro</td><td><b>Hora inicial / final:</b> primer y último movimiento del vehículo en el turno. <b>Antes / Después del descanso:</b> horario programado del primer descanso. <b>Horas efectivas</b> = final − inicial − la parte del descanso que cae entre ambas. <b>Ralentí</b> = DELAY. <b>Horómetro</b> inicial, antes, después, final y VAR, leídos del sensor de horas de motor; sin sensor, «—».</td></tr>
+    <tr><td>Kilometraje</td><td>Odómetro inicial, final y VAR del sensor de odómetro (también el virtual); sin sensor, «—».</td></tr>
+    <tr><td>Abastecimientos</td><td>Solo con sensor de nivel de combustible. Una fila por cada subida de nivel que supera el umbral de recarga del vehículo: inicio, fin, duración, % al llegar, % al salir, recarga en puntos y si fue con motor apagado. Sirve para cisterna en campo.</td></tr>
+  </table>
+  <figure><img src="img/ops-48-horometro.png" alt="Tabla de horas y horómetro"><figcaption>Horas y horómetro por vehículo y turno.</figcaption></figure>
+  <figure><img src="img/ops-49-km-abastecimiento.png" alt="Kilometraje y abastecimientos"><figcaption>Kilometraje y abastecimientos detectados.</figcaption></figure>
+  <h3>8.8 Exportar Excel</h3>
+  <p>Descarga <code>turno_&lt;operación&gt;_&lt;fecha&gt;.xlsx</code>. La hoja <b>Reporte</b> tiene el formato del cliente (turno, horómetro, kilometraje, abastecimiento y horas con fórmulas VAR, bloque Distancia) y seis gráficos de Excel editables. La hoja <b>Datos</b> tiene las series de cada gráfica, las tarjetas y, en la de flota, la unidad y hora de cada máxima y mínima.</p>
+</section>
+
+<section class="chapter">
+  <h2>9. Alerta y reportes de Operaciones</h2>
+  <h3>9.1 Alerta «Parada en operación»</h3>
+  <p>Menú → Alertas → Nueva alerta → Disparador <b>Parada en operación</b>, con «Parada mayor a (segundos)» (por defecto 60). Dispara cuando un vehículo con un tramo abierto en una operación activa lleva detenido al menos ese tiempo fuera de las geocercas autorizadas. El evento indica la operación, el sentido y el número de vuelta.</p>
+  <h3>9.2 Reportes</h3>
+  <table>
+    <tr><th style="width:8%">ID</th><th style="width:24%">Reporte</th><th>Qué muestra</th></tr>
+    <tr><td>910</td><td>Control de vueltas</td><td>Una fila por vuelta con salidas y llegadas, tiempos en carga y descarga, ida, vuelta, ciclo, detenido, ralentí, motor apagado, no autorizadas y estado. Totales por día calendario o por turno. Opción «solo vueltas con paradas no autorizadas».</td></tr>
+    <tr><td>911</td><td>Paradas en operación</td><td>Una fila por parada con vuelta, tramo, ubicación, motor, estado, motivo y quién justificó.</td></tr>
+    <tr><td>912</td><td>Horas trabajadas netas</td><td>Por vehículo y día: horas de motor menos los descuentos marcados en la operación (tiempo en grifo, ralentí, paradas no autorizadas) y consumo por hora si hay sensor de combustible.</td></tr>
+    <tr><td>913</td><td>Abastecimiento</td><td>Visitas a geocercas de categoría Grifo con entrada, salida y duración. Para cisterna en campo, usa la tabla de Abastecimientos de la pestaña Turno.</td></tr>
+  </table>
+</section>
+
+<section class="chapter">
+  <h2>10. Cuándo se calcula cada cosa</h2>
+  <table>
+    <tr><th style="width:32%">Qué</th><th>Cuándo</th></tr>
+    <tr><td>Estado en vivo, visitas, tramos y vueltas</td><td>Con cada posición que llega, en tiempo real.</td></tr>
+    <tr><td>Paradas de un tramo</td><td>En el minuto siguiente a que el tramo se cierre.</td></tr>
+    <tr><td>«Sin datos» y tramos vencidos</td><td>Cada minuto.</td></tr>
+    <tr><td>Recálculos pedidos</td><td>Cada minuto, hasta 5 vehículos por pasada.</td></tr>
+    <tr><td>Reporte de turno</td><td>Entre 10 y 70 minutos después del fin de cada turno, o con «Calcular ahora».</td></tr>
+    <tr><td>Limpieza de datos antiguos</td><td>Cada noche a la 01:00, con los «Días para guardar» de la limpieza automática del historial (Admin → Herramientas).</td></tr>
+  </table>
+</section>
+
+<section class="chapter">
+  <h2>11. Problemas frecuentes y cómo resolverlos</h2>
+  <table>
+    <tr><th style="width:34%">Síntoma</th><th>Causa probable y solución</th></tr>
+    <tr><td>Muchas vueltas incompletas con tramos «Carga X → Carga X» o «Descarga → ?»</td><td>Los vehículos cargan o descargan en un sitio que no es punto de la operación. Revisa en el Historial dónde paran (enlace «Ver tramo en mapa»), crea la geocerca, agrégala a la operación y recalcula desde la fecha en que empezó.</td></tr>
+    <tr><td>Tramos que duran exactamente 6 h</td><td>Cerrados por «Tramo máximo». Mismo origen que el anterior, o el vehículo se fue a taller sin una geocerca Taller.</td></tr>
+    <tr><td>Vueltas incompletas muy cortas (1 a 15 min) «Descarga → Descarga»</td><td>El vehículo sale al borde de la geocerca y vuelve a entrar. Agranda un poco la geocerca o sube la «Permanencia mínima».</td></tr>
+    <tr><td>Muchos vehículos «Sin estado» en En vivo</td><td>No han tocado ningún punto confirmado: trabajan en frentes que no son puntos, o la geocerca es tan pequeña que no caen dos posiciones dentro.</td></tr>
+    <tr><td>La pestaña Turno sale en 0 desde cierta hora</td><td>El turno aún no termina o no se ha cerrado. Espera 10 minutos tras el fin o pulsa Calcular ahora.</td></tr>
+    <tr><td>Horómetro, kilometraje o abastecimientos vacíos</td><td>El vehículo no tiene el sensor correspondiente configurado.</td></tr>
+    <tr><td>Un vehículo del grupo no aparece</td><td>Ya pertenece a otra operación activa.</td></tr>
+  </table>
+</section>
+
+<!-- =================================================================== -->
+<section class="part">
+  <div class="kicker">Parte 2</div>
+  <h1>Seguridad · Control de flota</h1>
+  <div class="sub">Excesos de velocidad, cinturón, salidas de geocerca, uso y estado de la flota por día y por turno.</div>
+</section>
+
+<section class="chapter">
+  <h2>12. Qué es y cómo se accede</h2>
+  <ul>
+    <li>Menú lateral → <b>Seguridad</b>. Requiere el permiso «Seguridad» que el administrador activa por usuario: «Ver» permite consultar y exportar; «Editar» cambiar ajustes y recalcular.</li>
+    <li>Los datos se calculan por <b>vehículo, día y turno</b> y se guardan; la pantalla los suma según los filtros. El cálculo automático corre cada hora a y 20 (ayer y hoy; hoy queda parcial hasta el día siguiente).</li>
+  </ul>
+  <div class="box warn">El cálculo automático solo incluye a los usuarios que ya abrieron la página de Seguridad alguna vez. Un usuario nuevo debe entrar una vez y, si quiere el pasado, pulsar Recalcular.</div>
+  <figure class="tall"><img src="img/sec-00-pagina.png" alt="Página de Seguridad completa"><figcaption>Seguridad del 25 de octubre al 9 de noviembre.</figcaption></figure>
+</section>
+
+<section class="chapter">
+  <h2>13. Filtros y turnos</h2>
+  <figure><img src="img/sec-01-filtros.png" alt="Filtros de Seguridad"><figcaption>Barra de filtros.</figcaption></figure>
+  <table>
+    <tr><th style="width:24%">Filtro</th><th>Efecto</th></tr>
+    <tr><td>Flota</td><td>Todos o un tipo de vehículo. Usa el tipo que <b>tú</b> asignaste a cada vehículo; los que no tienen tipo desaparecen al elegir una flota.</td></tr>
+    <tr><td>Turno</td><td>Ambos, Día o Noche.</td></tr>
+    <tr><td>Desde / Hasta</td><td>Días de trabajo. Por defecto los últimos 15 días.</td></tr>
+    <tr><td>Dispositivo</td><td>Todos o una unidad.</td></tr>
+    <tr><td>Búsqueda</td><td>Aplica los filtros. Cambiar un desplegable no recarga nada hasta pulsarla.</td></tr>
+  </table>
+  <div class="box"><b>Vigencia (min)</b> y <b>Límite manual (km/h)</b> están en la barra pero <b>no son filtros</b>: son ajustes que se guardan al cambiarlos y requieren permiso de edición. Ver el capítulo 16.</div>
+  <h3>13.1 Turno Día y Noche</h3>
+  <ul>
+    <li><b>Día:</b> de «Inicio turno día» a «Fin turno día» (por defecto 07:00 a 19:00).</li>
+    <li><b>Noche:</b> del fin del turno día hasta el inicio del día siguiente, y se atribuye al día en que empieza.</li>
+    <li>Cada cifra se calcula con las posiciones y eventos dentro del rango de su turno. Un turno que aún no empezó no se guarda.</li>
+  </ul>
+</section>
+
+<section class="chapter">
+  <h2>14. Tarjetas</h2>
+  <figure><img src="img/sec-02-tarjetas.png" alt="Tarjetas de Seguridad"><figcaption>Tres tarjetas del período y cinco de estado en vivo.</figcaption></figure>
+  <h3>14.1 Tarjetas del período (dependen de fechas y turno)</h3>
+  <table>
+    <tr><th style="width:24%">Tarjeta</th><th>Cómo se calcula</th></tr>
+    <tr><td>Eventos de sobrevelocidad</td><td>Tramos de exceso calculados más los eventos de tus alertas de exceso que caen fuera de esos tramos (sin contar dos veces). Un tramo de exceso es una racha de posiciones con velocidad <b>estrictamente mayor</b> que el límite. El límite en cada posición: dentro de geocercas tuyas con límite, manda la de <b>menor área</b>, y dentro de ella el límite por tipo y estado del vehículo, luego por tipo, luego el límite propio de la geocerca. Fuera de geocercas, el <b>Límite manual</b>; si está vacío, fuera de geocercas no se evalúa.</td></tr>
+    <tr><td>Alertas de cinturón</td><td>Solo unidades con sensor de cinturón. Cuenta rachas de <b>30 segundos o más</b> con el cinturón suelto y velocidad de 1 km/h o más. Una racha que sigue abierta al cerrar el turno no cuenta. Sin sensor: «Sin sensor» y no suma.</td></tr>
+    <tr><td>Salidas de geocerca</td><td>Eventos de tus alertas de tipo «Geocerca de salida». Sin esa alerta configurada, siempre es 0.</td></tr>
+  </table>
+  <h3>14.2 Tarjetas en vivo (no dependen de fechas ni turno)</h3>
+  <p>Respetan Flota y Dispositivo. Se basan en la última posición de cada unidad:</p>
+  <table>
+    <tr><th style="width:24%">Estado</th><th>Regla (en este orden)</th></tr>
+    <tr><td><span class="pill p-offline">Sin lectura vigente</span></td><td>La última lectura es más antigua que la <b>Vigencia</b> (por defecto 10 min).</td></tr>
+    <tr><td><span class="pill p-move">En movimiento</span></td><td>Velocidad de 1 km/h o más.</td></tr>
+    <tr><td><span class="pill p-idle">Stand by</span></td><td>Motor encendido.</td></tr>
+    <tr><td><span class="pill p-stop">Detenido / motor apagado</span></td><td>El resto.</td></tr>
+  </table>
+  <p>«Unidades con lectura vigente» son todas menos las «Sin lectura vigente». «Última lectura de la flota» es la fecha de la lectura más reciente.</p>
+</section>
+
+<section class="chapter">
+  <h2>15. Tablas y gráficas</h2>
+  <h3>15.1 Estado actual · última lectura vigente por unidad</h3>
+  <p>Vehículo, tipo, última lectura, velocidad GPS, motor, antigüedad en minutos y estado en vivo (reglas de 14.2). A su lado, la gráfica <b>Estado de unidades</b> con cuántas unidades hay en cada estado.</p>
+  <figure><img src="img/sec-03-estado-actual.png" alt="Estado actual"><figcaption>Estado actual por unidad.</figcaption></figure>
+  <figure><img src="img/sec-04-grafica-estado.png" alt="Gráfica estado de unidades"><figcaption>Estado de unidades · lectura vigente.</figcaption></figure>
+
+  <h3>15.2 Resumen diario · flota filtrada</h3>
+  <p>Una fila por día (con «Ambos», el día y la noche de esa fecha juntos):</p>
+  <ul>
+    <li><b>Km:</b> distancia entre todas las posiciones del día, también las de maniobras lentas.</li>
+    <li><b>Horas movimiento:</b> tiempo con motor encendido y velocidad igual o mayor a la velocidad mínima de movimiento del vehículo (6 km/h por defecto), hasta que lleva más de «Parada mínima» sin moverse.</li>
+    <li><b>Vel. media:</b> km ÷ horas en movimiento. Como los km incluyen maniobras, puede salir algo alta.</li>
+    <li><b>Vel. máx.:</b> la mayor velocidad GPS de las posiciones.</li>
+    <li><b>Movimiento:</b> unidades con algo de tiempo en movimiento ese día. <b>Stand by*:</b> unidades con horas de motor pero 0 horas de movimiento (no es el estado actual).</li>
+    <li><b>Excesos:</b> eventos de sobrevelocidad del día.</li>
+  </ul>
+  <figure><img src="img/sec-05-resumen-diario.png" alt="Resumen diario"><figcaption>Resumen diario.</figcaption></figure>
+
+  <h3>15.3 Gráficas del período</h3>
+  <ul>
+    <li><b>Unidades por estado diario:</b> por cada día, cuántas unidades estuvieron en Movimiento, Stand by* y Sin actividad (estado diario, ver 15.4).</li>
+    <li><b>Velocidad media por unidad · período filtrado:</b> km ÷ horas en movimiento de cada unidad en todo el período, de mayor a menor.</li>
+    <li><b>Eventos de sobrevelocidad por día.</b></li>
+  </ul>
+  <figure><img src="img/sec-06-estado-diario.png" alt="Unidades por estado diario"><figcaption>Unidades por estado diario.</figcaption></figure>
+  <figure><img src="img/sec-07-vel-media-unidad.png" alt="Velocidad media por unidad"><figcaption>Velocidad media por unidad.</figcaption></figure>
+  <figure><img src="img/sec-08-excesos-dia.png" alt="Excesos por día"><figcaption>Eventos de sobrevelocidad por día.</figcaption></figure>
+
+  <h3>15.4 Operaciones · resultado por unidad y Detalle diario por unidad</h3>
+  <ul>
+    <li><b>Resultado por unidad:</b> km, horas de motor, horas en movimiento, paradas, registros (posiciones recibidas), excesos y velocidad media de todo el período.</li>
+    <li><b>Detalle diario por unidad:</b> lo mismo por día, más velocidad máxima, cinturón y <b>Estado</b> diario: «Sin registro» (no hubo posiciones), «Movimiento» (hubo horas en movimiento), «Stand by*» (solo horas de motor) o «Sin actividad».</li>
+    <li><b>Horas de motor:</b> diferencia del sensor de horas de motor si existe; si no, tiempo con motor encendido.</li>
+    <li><b>Paradas:</b> número de veces que la unidad pasa a parada (más de «Parada mínima» sin moverse). Si al empezar el turno ya estaba parada, cuenta una.</li>
+  </ul>
+  <figure><img src="img/sec-09-por-unidad.png" alt="Resultado por unidad"><figcaption>Operaciones · resultado por unidad.</figcaption></figure>
+  <figure><img src="img/sec-10-detalle-diario.png" alt="Detalle diario por unidad"><figcaption>Detalle diario por unidad.</figcaption></figure>
+</section>
+
+<section class="chapter">
+  <h2>16. Ajustes, recálculo y exportación</h2>
+  <h3>16.1 Ajustes</h3>
+  <figure class="small"><img src="img/sec-11-ajustes.png" alt="Ajustes de Seguridad"><figcaption>Botón Ajustes.</figcaption></figure>
+  <table>
+    <tr><th style="width:24%">Ajuste</th><th style="width:14%">Por defecto</th><th>Afecta a</th></tr>
+    <tr><td>Inicio / Fin turno día</td><td>07:00 / 19:00</td><td>Los rangos de los turnos Día y Noche y, por tanto, todas las cifras diarias. El fin debe ser posterior al inicio.</td></tr>
+    <tr><td>Parada mínima (min)</td><td>1 (1 a 120)</td><td>Cuándo una unidad pasa a parada: horas en movimiento, paradas, estado diario y velocidad media.</td></tr>
+    <tr><td>Corte de señal (min)</td><td>10 (1 a 240)</td><td>Huecos de señal que cuentan como desconexión (columna del Excel).</td></tr>
+    <tr><td>Vigencia (min) <span class="muted">(en la barra)</span></td><td>10 (1 a 1440)</td><td>Solo el estado en vivo: cuándo una unidad pasa a «Sin lectura vigente». No requiere recalcular.</td></tr>
+    <tr><td>Límite manual (km/h) <span class="muted">(en la barra)</span></td><td>vacío</td><td>Excesos fuera de geocercas. Dentro de una geocerca manda su límite.</td></tr>
+  </table>
+  <p>Al cambiar un ajuste que afecta al cálculo, la pantalla pregunta si quieres recalcular el período filtrado. Si no aceptas, los días ya calculados conservan las cifras anteriores.</p>
+  <h3>16.2 Recalcular</h3>
+  <figure class="small"><img src="img/sec-12-recalcular.png" alt="Recalcular Seguridad"><figcaption>Recalcular: hasta 31 días por vez.</figcaption></figure>
+  <ul>
+    <li>Rehace todas las unidades del usuario en el rango, aunque haya un filtro de flota o dispositivo. Se hace en el momento y puede tardar según unidades y días.</li>
+    <li>Rangos de más de 31 días: divídelos o deja que los haga el proceso automático.</li>
+    <li>«Datos calculados hasta» indica la hora del último cálculo, no la última fecha con datos.</li>
+  </ul>
+  <h3>16.3 Exportar a Excel</h3>
+  <p>Hasta 93 días. Archivo <code>Dashboard_Seguridad_AAAAMMDD_HHMM.xlsx</code> con cuatro hojas:</p>
+  <ul>
+    <li><b>Seguridad:</b> filtros, tarjetas, estado actual, resumen diario, detalle diario por unidad y cuatro gráficos.</li>
+    <li><b>Operaciones:</b> distancia, horas de motor, horas en movimiento, paradas y resultado por unidad.</li>
+    <li><b>Datos:</b> una fila por unidad, fecha y turno con distancia, motor, movimiento, sobrevelocidad, cinturón, salidas de geocerca, paradas, <b>desconexiones</b> (eventos de corte de energía o fuera de línea más huecos de señal) y velocidad máxima.</li>
+    <li><b>Telemetría:</b> última lectura de cada unidad.</li>
+  </ul>
+</section>
+
+<section class="chapter">
+  <h2>17. Avisos y comportamientos no obvios</h2>
+  <ul>
+    <li><b>Vehículos sin tipo:</b> aparecen con «—» y quedan fuera al filtrar por flota. Asígnales un tipo en su ficha.</li>
+    <li><b>Límite manual vacío:</b> fuera de geocercas no se calculan excesos; solo suman los eventos de tus alertas de exceso.</li>
+    <li><b>Salidas de geocerca y excesos por alerta</b> solo existen si tienes configuradas esas alertas.</li>
+    <li><b>Unidades compartidas:</b> solo cuentan los eventos de tus propias alertas.</li>
+    <li><b>Ajustes hacia atrás:</b> cambiar un ajuste no modifica lo ya calculado hasta que recalcules.</li>
+    <li><b>Días sin fila calculada</b> no aparecen en las tablas.</li>
+    <li><b>Seguridad y Operaciones</b> calculan «en movimiento» con la misma velocidad mínima del vehículo, pero Seguridad corta por «Parada mínima» y Operaciones por posición; por eso sus horas pueden diferir un poco.</li>
+  </ul>
+</section>
+
+</body>
+</html>
