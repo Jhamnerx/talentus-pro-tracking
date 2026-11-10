@@ -49,6 +49,9 @@ class Geofence extends AbstractEntity implements DisplayInterface
     // Operaciones de ruta: el punto donde empieza y donde termina la vuelta.
     const CATEGORY_ROUTE_START = 'inicio_ruta';
     const CATEGORY_ROUTE_END = 'fin_ruta';
+    // Zona de trabajo (la mina): salir de ella y volver es una «salida del
+    // area de operacion» (reporte 915, combustible al salir y al volver).
+    const CATEGORY_OPERATION_AREA = 'area_operacion';
 
     const CATEGORIES = [
         self::CATEGORY_LOAD,
@@ -58,6 +61,7 @@ class Geofence extends AbstractEntity implements DisplayInterface
         self::CATEGORY_FUEL,
         self::CATEGORY_WORKSHOP,
         self::CATEGORY_REST,
+        self::CATEGORY_OPERATION_AREA,
     ];
 
     public static string $displayField = 'name';

@@ -554,6 +554,43 @@ tr.is-open .tp-ops__toggle {
   border-radius: 3px;
 }
 
+/* Leyenda de estados como filtro (clic = solo ese estado). */
+.tp-ops-shift__legend--filter { gap: 4px 6px; }
+
+.tp-ops-shift__legend-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, opacity .15s;
+}
+
+.tp-ops-shift__legend-btn:hover { background: var(--surface-sunken, #f1f5f9); }
+.tp-ops-shift__legend-btn:focus-visible { outline: 2px solid var(--brand-500, #2e63d9); outline-offset: 1px; }
+.tp-ops-shift__legend-btn.is-on {
+  border-color: var(--fg-secondary, #475569);
+  background: var(--surface-sunken, #f1f5f9);
+  font-weight: 600;
+}
+.tp-ops-shift__legend-btn.is-off { opacity: .45; }
+.tp-ops-shift__legend-all { color: var(--brand-500, #2e63d9); font-weight: 600; }
+
+.tp-ops-shift__row-total {
+  align-self: center;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-secondary, #475569);
+  white-space: nowrap;
+}
+
 /* ---------- 3. Estados por equipo ---------- */
 .tp-ops-shift__block {
   padding: 12px 14px;

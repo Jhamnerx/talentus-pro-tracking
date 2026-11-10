@@ -121,6 +121,8 @@ class ReportManager
         911 => Reports\OperationStopsReport::class,
         912 => Reports\OperationWorkHoursReport::class,
         913 => Reports\RefuelingVisitsReport::class,
+        914 => Reports\OperationShiftReportPdf::class,
+        915 => Reports\OperationAreaExitsReport::class,
 
     ];
 

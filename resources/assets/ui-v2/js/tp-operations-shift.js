@@ -48,6 +48,7 @@
     data: null,
     charts: {},
     hover: -1,
+    stateFilter: {},
   };
 
   function $(id) { return document.getElementById(id); }
@@ -496,26 +497,42 @@
   }
 
   /* ---------- 3. Estados por equipo ---------- */
+  /* Filtro por leyenda: clic en un estado deja solo ese (o los marcados);
+     sin ninguno marcado se ven todos. Se conserva al cambiar de día. */
+  function stateFilterActive() { return Object.keys(state.stateFilter).length > 0; }
+
   function renderStates(d) {
     var st = d.states || {}, legend = st.legend || [], rows = st.rows || [];
     var total = st.total_seconds || 86400;
+    var filtering = stateFilterActive();
+    var shown = legend.filter(function (l) { return !filtering || state.stateFilter[l.key]; });
+    var hShort = t("ui.ops_shift_hours_short");
 
     $("tp-ops-shift-states-legend").innerHTML = legend.map(function (l) {
-      return "<span><i style=\"background:" + esc(l.color) + '"></i>' + esc(l.label) + "</span>";
-    }).join("");
+      var on = !!state.stateFilter[l.key];
+      return '<button type="button" class="tp-ops-shift__legend-btn' + (on ? " is-on" : "") + (filtering && !on ? " is-off" : "") + '" ' +
+        'data-state-key="' + esc(l.key) + '" aria-pressed="' + (on ? "true" : "false") + '">' +
+        "<i style=\"background:" + esc(l.color) + '"></i>' + esc(l.label) + "</button>";
+    }).join("") + (filtering
+      ? '<button type="button" class="tp-ops-shift__legend-btn tp-ops-shift__legend-all" data-state-key="*">' + esc(t("ui.ops_shift_states_show_all")) + "</button>"
+      : "");
 
     var html = rows.map(function (r) {
-      var segs = legend.map(function (l) {
+      var sum = 0;
+      var segs = shown.map(function (l) {
         var sec = r[l.key] || 0;
         if (sec <= 0) return "";
+        sum += sec;
         var pct = sec / total * 100;
         var hrs = num(sec / 3600, 1);
         return '<div class="tp-ops-shift__seg tp-ops-shift__seg--' + esc(l.key) + '" style="width:' + pct.toFixed(2) + "%;background:" + esc(l.color) + '" ' +
-          'title="' + esc(l.label) + ": " + hrs + " " + t("ui.ops_shift_hours_short") + " (" + hms(sec) + ")\">" +
-          (pct >= 5 ? hrs : "") + "</div>";
+          'title="' + esc(l.label) + ": " + hrs + " " + hShort + " (" + hms(sec) + ")\">" +
+          (pct >= (filtering ? 2.5 : 5) ? hrs : "") + "</div>";
       }).join("");
+      // Con filtro, el total de lo marcado al final de la barra.
+      var tot = filtering ? '<span class="tp-ops-shift__row-total">' + num(sum / 3600, 1) + " " + hShort + "</span>" : "";
       return '<div class="tp-ops-shift__row"><div class="tp-ops-shift__row-name" title="' + esc(r.name) + '">' + esc(r.name) + "</div>" +
-        '<div class="tp-ops-shift__bar-track" role="img" aria-label="' + esc(r.name) + '">' + segs + "</div></div>";
+        '<div class="tp-ops-shift__bar-track" role="img" aria-label="' + esc(r.name) + '">' + segs + tot + "</div></div>";
     }).join("");
 
     if (!html) html = '<div class="tp-text-muted">' + esc(t("ui.ops_no_vehicles")) + "</div>";
@@ -618,6 +635,15 @@
     });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && document.body.classList.contains("is-fullscreen")) setFullscreen(false);
+    });
+    $("tp-ops-shift-states-legend").addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-state-key]");
+      if (!btn) return;
+      var key = btn.getAttribute("data-state-key");
+      if (key === "*") state.stateFilter = {};
+      else if (state.stateFilter[key]) delete state.stateFilter[key];
+      else state.stateFilter[key] = true;
+      if (state.data && !state.data.empty) renderStates(state.data);
     });
 
     var resizeTimer = null;

@@ -12,7 +12,7 @@ class GeofenceFormValidator extends Validator {
         'create' => [
             'name'          => 'required|string',
             'type'          => 'required|in:polygon,circle,line',
-            'category'      => 'nullable|in:carga,descarga,inicio_ruta,fin_ruta,grifo,taller,descanso',
+            'category'      => 'nullable|in:carga,descarga,inicio_ruta,fin_ruta,grifo,taller,descanso,area_operacion',
             'polygon'       => 'required_if:type,polygon,line|array|min:2',
             'polygon.*.lat' => 'required_if:type,polygon,line|lat',
             'polygon.*.lng' => 'required_if:type,polygon,line|lng',
@@ -31,7 +31,7 @@ class GeofenceFormValidator extends Validator {
         'update' => [
             'name'          => 'string',
             'type'          => 'in:polygon,circle,line',
-            'category'      => 'nullable|in:carga,descarga,inicio_ruta,fin_ruta,grifo,taller,descanso',
+            'category'      => 'nullable|in:carga,descarga,inicio_ruta,fin_ruta,grifo,taller,descanso,area_operacion',
             'polygon'       => 'required_if:type,polygon,line|array|min:2',
             'polygon.*.lat' => 'required_if:type,polygon,line|lat',
             'polygon.*.lng' => 'required_if:type,polygon,line|lng',

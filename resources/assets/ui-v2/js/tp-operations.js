@@ -715,7 +715,7 @@
 
     var cats = m.categories || {};
     var auth = item ? item.authorized_categories : ["grifo", "taller", "descanso"];
-    var catsHtml = Object.keys(cats).filter(function (k) { return ["carga", "descarga", "inicio_ruta", "fin_ruta"].indexOf(k) < 0; }).map(function (k) {
+    var catsHtml = Object.keys(cats).filter(function (k) { return ["carga", "descarga", "inicio_ruta", "fin_ruta", "area_operacion"].indexOf(k) < 0; }).map(function (k) {
       return '<label><input type="checkbox" data-x-cat value="' + k + '"' + (auth.indexOf(k) >= 0 ? " checked" : "") + "> " + esc(cats[k]) + "</label>";
     }).join("");
 

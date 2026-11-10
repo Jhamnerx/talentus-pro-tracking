@@ -177,6 +177,7 @@ return [
     'geofence_category_none' => 'No category',
     'geofence_category_inicio_ruta' => 'Route start',
     'geofence_category_fin_ruta' => 'Route end',
+    'geofence_category_area_operacion' => 'Operation area',
     'operation_kind_haul' => 'Hauling (loading / unloading)',
     'operation_kind_route' => 'Route (start / end)',
     'operation_route_start' => 'Route start',

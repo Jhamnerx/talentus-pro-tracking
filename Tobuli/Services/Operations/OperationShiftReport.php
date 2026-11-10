@@ -228,12 +228,19 @@ class OperationShiftReport
     {
         $rows = [];
 
+        // Tiempo abasteciendo por vehiculo (inicio de la subida -> pico).
+        $refuelByDevice = OperationRefueling::whereIn('summary_id', $summaries->pluck('id'))
+            ->get(['device_id', 'started_at', 'ended_at'])
+            ->groupBy('device_id')
+            ->map(fn ($items) => (int) $items->sum(fn (OperationRefueling $r) => (int) $r->durationSeconds()));
+
         foreach ($summaries->groupBy('device_id') as $deviceId => $items) {
             $ready = (int) $items->sum('moving_seconds');
             $delay = (int) $items->sum('idle_seconds');
             $standby = (int) $items->sum('stop_engine_off_seconds');
             $maint = (int) $items->sum('maint_seconds');
             $noData = (int) $items->sum('gap_seconds');
+            $refuel = (int) $refuelByDevice->get($deviceId, 0);
 
             // Mantenimiento ya esta contado en standby (motor apagado) o en
             // ralenti: se descuenta de ahi para no sumarlo dos veces.
@@ -241,7 +248,14 @@ class OperationShiftReport
             $standby -= $fromStandby;
             $delay -= min($maint - $fromStandby, $delay);
 
-            $used = $ready + $delay + $standby + $maint + $noData;
+            // Igual con el abastecimiento: se hace parado, con el motor
+            // apagado (standby) o en ralenti (delay). Nunca mas de lo que hay.
+            $refuel = min($refuel, $standby + $delay);
+            $fromStandby = min($refuel, $standby);
+            $standby -= $fromStandby;
+            $delay -= min($refuel - $fromStandby, $delay);
+
+            $used = $ready + $delay + $standby + $maint + $refuel + $noData;
 
             $rows[] = [
                 'device_id' => (int) $deviceId,
@@ -250,6 +264,7 @@ class OperationShiftReport
                 'delay'     => $delay,
                 'standby'   => $standby,
                 'maint'     => $maint,
+                'refuel'    => $refuel,
                 'no_data'   => $noData,
                 'off'       => max(0, self::DAY_SECONDS - $used),
             ];
@@ -272,6 +287,7 @@ class OperationShiftReport
             ['key' => 'maint',   'label' => trans('ui.ops_shift_state_maint'),   'color' => '#dc2626'],
             ['key' => 'ready',   'label' => trans('ui.ops_shift_state_ready'),   'color' => '#16a34a'],
             ['key' => 'standby', 'label' => trans('ui.ops_shift_state_standby'), 'color' => '#eab308'],
+            ['key' => 'refuel',  'label' => trans('ui.ops_shift_state_refuel'),  'color' => '#0891b2'],
             ['key' => 'no_data', 'label' => trans('ui.ops_shift_state_no_data'), 'color' => '#4b5563'],
             ['key' => 'off',     'label' => trans('ui.ops_shift_state_off'),     'color' => '#c4cad6'],
         ];

@@ -500,6 +500,7 @@ return [
     'geofence_category_none' => 'Sin categoría',
     'geofence_category_inicio_ruta' => 'Inicio de ruta',
     'geofence_category_fin_ruta' => 'Fin de ruta',
+    'geofence_category_area_operacion' => 'Área de operación',
     'operation_kind_haul' => 'Acarreo (carga / descarga)',
     'operation_kind_route' => 'Ruta (inicio / fin)',
     'operation_route_start' => 'Inicio de ruta',

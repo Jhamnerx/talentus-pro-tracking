@@ -281,8 +281,8 @@
 
                     {{-- 3. Estados por equipo --}}
                     <section class="tp-ops-shift__block">
-                        <h3 class="tp-ops-shift__h">{{ trans('ui.ops_shift_states_title') }}</h3>
-                        <div class="tp-ops-shift__legend" id="tp-ops-shift-states-legend"></div>
+                        <h3 class="tp-ops-shift__h">{{ trans('ui.ops_shift_states_title') }} <span class="tp-ops__hint">{{ trans('ui.ops_shift_states_filter_hint') }}</span></h3>
+                        <div class="tp-ops-shift__legend tp-ops-shift__legend--filter" id="tp-ops-shift-states-legend" role="group" aria-label="{{ trans('ui.ops_shift_states_title') }}"></div>
                         <div class="tp-ops-shift__states" id="tp-ops-shift-states"></div>
                     </section>
 
