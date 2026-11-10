@@ -237,7 +237,11 @@ class OperationShiftSummaryService
                 continue;
             }
 
-            $stop = $this->stopCovering($stops, $start->time, $end->time);
+            // El grupo marca solo la trama del pico (inicio = fin). La subida
+            // empezo en fuel_started_at; sin ese dato queda el pico.
+            $startedAt = $group->fuel_started_at ?? $start->time;
+
+            $stop = $this->stopCovering($stops, $startedAt, $end->time);
             $sensorId = null;
 
             foreach ($device->sensors as $sensor) {
@@ -253,7 +257,7 @@ class OperationShiftSummaryService
                 'summary_id'       => $summary->id,
                 'stop_id'          => $stop ? $stop->id : null,
                 'sensor_id'        => $sensorId,
-                'started_at'       => $start->time,
+                'started_at'       => $startedAt,
                 'ended_at'         => $end->time,
                 'level_before_pct' => $this->numericStat($group, 'fuel_level_previous'),
                 'level_after_pct'  => $this->numericStat($group, 'fuel_level_current'),

@@ -3,6 +3,7 @@
 namespace Tobuli\Reports\Reports;
 
 
+use Formatter;
 use Tobuli\History\Actions\GroupFuelFilling;
 use Tobuli\History\Group;
 use Tobuli\Reports\DeviceHistoryReport;
@@ -38,7 +39,7 @@ class FuelFillingsReport extends DeviceHistoryReport
 
         foreach ($data['groups']->all() as $group)
         {
-            $rows[] = $this->getDataFromGroup($group, [
+            $row = $this->getDataFromGroup($group, [
                 'start_at',
                 'location',
                 'fuel_level_previous',
@@ -46,6 +47,18 @@ class FuelFillingsReport extends DeviceHistoryReport
                 'fuel_level_difference',
                 'sensor_name',
             ]);
+
+            // El grupo se marca en el pico del nivel (start_at). La subida
+            // empezo en fuel_started_at (GroupFuelFilling).
+            $startedAt = $group->fuel_started_at ?? null;
+            $peak = $group->getStartPosition();
+
+            $row['filling_start_at'] = $startedAt ? Formatter::time()->human($startedAt) : null;
+            $row['filling_duration'] = ($startedAt && $peak)
+                ? Formatter::duration()->human(max(0, strtotime($peak->time) - strtotime($startedAt)))
+                : null;
+
+            $rows[] = $row;
         }
 
         return [

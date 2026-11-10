@@ -57,6 +57,8 @@ class AppendFuelFillingChange extends ActionAppend
                 'sensor_id' => $sensor->id,
                 'name'      => $sensor->name,
                 'previous'  => $prevTank,
+                // Inicio real de la subida (el grupo se marca al final).
+                'start_time' => $change['start']->time,
                 'current'   => $prevTank + $diff,
                 'diff'      => $diff,
                 'unit'      => $sensor->unit_of_measurement
