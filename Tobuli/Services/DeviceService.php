@@ -109,6 +109,29 @@ class DeviceService
                 ->toDateString();
         }
 
+        if (array_key_exists('has_camera', $data)) {
+            $data['has_camera'] = empty($data['has_camera']) ? 0 : 1;
+
+            // Los checkboxes desmarcados no se envian: sin camara o sin marcar, sin canales.
+            $data['camera_channels'] = $data['has_camera'] ? ($data['camera_channels'] ?? []) : [];
+        }
+
+        if (array_key_exists('camera_channels', $data)) {
+            $channels = array_map('intval', (array)$data['camera_channels']);
+            $channels = array_unique(array_filter($channels, fn ($c) => $c >= 1 && $c <= Device::VIDEO_MAX_CHANNELS));
+            sort($channels);
+            $data['camera_channels'] = array_values($channels);
+        }
+
+        if (array_key_exists('camera_channel_roles', $data)) {
+            $data['camera_channel_roles'] = array_filter(
+                (array)$data['camera_channel_roles'],
+                fn ($role, $channel) => in_array($role, Device::VIDEO_CHANNEL_ROLES)
+                    && $channel >= 1 && $channel <= Device::VIDEO_MAX_CHANNELS,
+                ARRAY_FILTER_USE_BOTH
+            );
+        }
+
         if ($forwardIP = Arr::get($data, 'forward.ip')) {
             //clear empty
             $data['forward']['ip'] = implode(';', semicol_explode($forwardIP));

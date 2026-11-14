@@ -289,9 +289,9 @@ class DevicesController extends BaseController
             }
         }
 
-        // Una sola instancia para toda la pagina: la regla del video es la
-        // misma para todos los vehiculos.
-        $videoService = new \Tobuli\Services\DeviceVideoService();
+        // Video: camara con canales, protocolo con video y permiso device_video
+        // (el permiso es del usuario, se mira una vez).
+        $canVideo = $this->user->perm('device_video', 'view');
 
         $items = [];
         foreach ($rows as $device) {
@@ -321,10 +321,8 @@ class DevicesController extends BaseController
                 'plans'           => (bool) $device->isPlanAble(),
                 'app_uuid'        => ! empty($device->app_uuid),
                 'general'         => (bool) $device->isGeneral(),
-                // Misma regla que el widget y que el visor. Antes esta lista
-                // de protocolos se habia quedado corta respecto a la del
-                // servicio (le faltaba jt1078).
-                'video'           => $videoService->isEnabled($device) && $device->traccar_device_id,
+                // Misma regla que el legacy (Objects/item) y que el reproductor: Device::hasVideo().
+                'video'           => $canVideo && $device->hasVideo() && $device->traccar_device_id,
 
                 // Campos extra para las columnas configurables (catálogo
                 // config('tobuli.listview_fields')). Solo los que salen del
@@ -3247,9 +3245,9 @@ class DevicesController extends BaseController
         // El widget SOLO en vehiculos con video: protocolo compatible y
         // canales configurados. Antes bastaba con tener el widget activado y
         // salia en toda la flota, incluidos 1.429 equipos sin una sola camara.
-        if ($has('live_video') && (new \Tobuli\Services\DeviceVideoService())->isEnabled($device)) {
-            $data['video_live_url']     = url('/device_video/' . $device->id . '/live/modal');
-            $data['video_playback_url'] = url('/device_video/' . $device->id . '/playback/modal');
+        if ($has('live_video') && $this->user->perm('device_video', 'view') && $device->hasVideo()) {
+            $data['video_channels'] = array_values(array_map('intval', (array)$device->camera_channels));
+            $data['video_roles']    = (array)$device->camera_channel_roles;
         }
 
         // Widget de bloqueo de motor. Tres condiciones: estar en la lista de

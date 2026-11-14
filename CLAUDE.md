@@ -549,6 +549,31 @@ Procesa las posiciones de un dispositivo **una por una** para construir el histo
 
 ---
 
+## Vídeo JT1078 (cámaras de a bordo)
+
+Portado de master-tracking (14-nov-2026; plan `docs/superpowers/plans/2026-11-14-video-jt1078-ui-v2.md`,
+documentación de la fuente en `docs/video/`). Exige el **fork de Traccar** (rama `talentus`): la web manda
+comandos (`videoStart`, `videoResourceQuery`, `videoPlayback`, `videoFileUpload`…) y lee `api/stream/imei/...`.
+
+- **Equipo:** `has_camera`, `camera_channels` (json `[1,2,…]`, máx. `Device::VIDEO_MAX_CHANNELS` = 8),
+  `camera_channel_roles` (`{canal: rol}`), `camera_attributes` (0x1003). `Device::supportsVideo()` (protocolo en
+  `config('video.protocols')`, por defecto `jt808`) y `Device::hasVideo()` (cámara + canales + protocolo).
+  `devices.video_channels` está **deprecada** (migrada a `has_camera`/`camera_channels`); no usarla.
+- **Permiso `device_video`** (view/edit), no se da a todos: la migración lo concedió a dueños de equipos con
+  cámara, sus managers, sus planes y admins. Gatea endpoints, menú, widget y la pestaña Vídeo de la ficha
+  (`DevicePropertiesPolicy` ⇒ `has_camera`/`camera_channels`/`camera_channel_roles`).
+- **Backend:** `Tobuli\Services\DeviceVideoService` (espectadores en Redis `process`, URLs FLV firmadas HMAC,
+  hablar, grabaciones, FTP 0x9206) + `DeviceVideoController` (rutas `devices/video/{id}/*`, también en `api.php`
+  para la app). Descargas: `DeviceVideoDownload`, jobs `RecordVideoDownload`/`FtpVideoDownload` en la cola
+  **`video`** (worker propio en `Kernel`, `--timeout=3900`), `video:clean-downloads`, `video:ftp-user`.
+  Config en `config/video.php` (`VIDEO_*`).
+- **Howen:** el adaptador viejo (`api/howen/*`, `streamProxy`, rutas `device_video/*`) se eliminó. Howen entrará por el
+  fork con el mismo contrato: se activa con `VIDEO_PROTOCOLS=jt808,howen` (no va por defecto).
+- **UI:** el reproductor es uno solo, `DeviceVideo/player.blade.php` (iframe). Legacy: `controller/deviceVideo.js`
+  (`app.deviceVideo.open/recordings`, bundle `app.js`). v2: `ui-v2/js/tp-device-video.js`
+  (`tpDeviceVideo.open/recordings`, lee `devices/video/{id}/config`) + `css/device-video.css`; kebab
+  `data-act="device_video(_recordings)"`, widget del drawer `data-tp-video`, pestaña `modals/devices/partials/video`.
+
 ## Backups (FTP + Google Drive)
 
 `Tobuli/Helpers/Backup/`. Cada archivo se genera en un temporal, se valida y se sube a cada destino

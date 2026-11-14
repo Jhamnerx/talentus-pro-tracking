@@ -148,6 +148,11 @@ class DeviceFullTransformer extends BaseTransformer
             'power'         => '-',
             'address'       => '-',
             'protocol'      => $this->canView($entity, 'protocol', '-'),
+            // Video JT1078 para la app (ver docs/video/API-MOVIL.md).
+            'camera_channels' => $entity->has_camera && $entity->supportsVideo()
+                && $this->user && $this->user->perm('device_video', 'view') && $this->canView($entity, 'camera_channels')
+                ? array_values(array_map('intval', (array)$entity->camera_channels))
+                : [],
             'driver'        => ($driver ? $driver->name : '-'),
             'driver_data'   => $driver ? $driver : [
                 'id' => NULL,

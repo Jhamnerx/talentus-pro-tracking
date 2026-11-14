@@ -37,6 +37,8 @@
         'trip_start', 'type', 'ungrouped', 'vehicle_state', 'vehicle_states',
         'week', 'yesterday',
     ];
+    // Video JT1078 (tp-device-video.js): 'channel' y todas las front.video_*.
+    $tpFront = array_merge($tpFront, ['channel'], preg_grep('/^video_/', array_keys(trans('front'))));
             $tpGlobal = [ 'add', 'always', 'apply', 'cancel', 'clear', 'close',
         'confirm', 'delete', 'edit', 'failed', 'from', 'no', 'not_found', 'save',
         'to', 'user', 'yes',

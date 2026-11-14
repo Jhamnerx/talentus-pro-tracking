@@ -211,6 +211,31 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::any('devices/commands', ['as' => 'devices.commands', 'uses' => 'SendCommandController@getCommands']);
     Route::get('devices/do_destroy/{id}', ['as' => 'devices.do_destroy', 'uses' => 'DevicesController@doDestroy']);
     Route::put('devices/update', ['as' => 'devices.update', 'uses' => 'DevicesController@update']);
+
+    # Device video (JT1078)
+    Route::get('devices/video/{id}/player', ['as' => 'devices.video.player', 'uses' => 'DeviceVideoController@player']);
+    // Configuracion del reproductor en JSON (la usa la UI v2; la app movil tiene su par en api.php).
+    Route::get('devices/video/{id}/config', ['as' => 'devices.video.config', 'uses' => 'DeviceVideoController@config']);
+    Route::post('devices/video/{id}/start', ['as' => 'devices.video.start', 'uses' => 'DeviceVideoController@start']);
+    Route::post('devices/video/{id}/ping', ['as' => 'devices.video.ping', 'uses' => 'DeviceVideoController@ping']);
+    Route::post('devices/video/{id}/stop', ['as' => 'devices.video.stop', 'uses' => 'DeviceVideoController@stop']);
+    Route::get('devices/video/{id}/status', ['as' => 'devices.video.status', 'uses' => 'DeviceVideoController@status']);
+    Route::get('devices/video/{id}/recordings', ['as' => 'devices.video.recordings', 'uses' => 'DeviceVideoController@recordings']);
+    Route::post('devices/video/{id}/recordings/query', ['as' => 'devices.video.recordings.query', 'uses' => 'DeviceVideoController@recordingsQuery']);
+    Route::get('devices/video/{id}/recordings/list', ['as' => 'devices.video.recordings.list', 'uses' => 'DeviceVideoController@recordingsList']);
+    Route::post('devices/video/{id}/playback/start', ['as' => 'devices.video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
+    Route::post('devices/video/{id}/playback/control', ['as' => 'devices.video.playback.control', 'uses' => 'DeviceVideoController@playbackControl']);
+    Route::post('devices/video/{id}/talk/start', ['as' => 'devices.video.talk.start', 'uses' => 'DeviceVideoController@talkStart']);
+    Route::post('devices/video/{id}/talk/ping', ['as' => 'devices.video.talk.ping', 'uses' => 'DeviceVideoController@talkPing']);
+    Route::post('devices/video/{id}/talk/stop', ['as' => 'devices.video.talk.stop', 'uses' => 'DeviceVideoController@talkStop']);
+    Route::post('devices/video/{id}/attributes', ['as' => 'devices.video.attributes.query', 'uses' => 'DeviceVideoController@attributesQuery']);
+    Route::get('devices/video/{id}/attributes', ['as' => 'devices.video.attributes', 'uses' => 'DeviceVideoController@attributes']);
+    Route::get('devices/video/{id}/downloads', ['as' => 'devices.video.downloads', 'uses' => 'DeviceVideoController@downloads']);
+    Route::post('devices/video/{id}/downloads', ['as' => 'devices.video.downloads.create', 'uses' => 'DeviceVideoController@downloadCreate']);
+    Route::get('devices/video/{id}/downloads/{downloadId}', ['as' => 'devices.video.downloads.file', 'uses' => 'DeviceVideoController@downloadFile']);
+    Route::delete('devices/video/{id}/downloads/{downloadId}', ['as' => 'devices.video.downloads.delete', 'uses' => 'DeviceVideoController@downloadDelete']);
+    Route::get('devices/video/{id}/stream/{channel}/{file}', ['as' => 'devices.video.stream', 'uses' => 'DeviceVideoController@stream'])
+        ->where(['channel' => '[1-8]', 'file' => '(history-)?\d+\.ts|(live|history)\.m3u8']);
     Route::get('devices/do_reset_app_uuid/{id}', ['as' => 'devices.do_reset_app_uuid', 'uses' => 'DevicesController@doResetAppUuid']);
     Route::put('devices/reset_app_uuid/{id}', ['as' => 'devices.reset_app_uuid', 'uses' => 'DevicesController@resetAppUuid']);
     Route::get('devices/subscriptions', ['as' => 'devices.subscriptions', 'uses' => 'DeviceSubscriptionController@index']);
@@ -443,20 +468,6 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::put('device_camera/update', ['as' => 'device_camera.update', 'uses' => 'DeviceCamerasController@update']);
     Route::resource('device_camera', 'DeviceCamerasController', ['only' => ['store', 'edit', 'destroy']]);
 
-    # Device video (Howen / JT808 live video via commands/send + HLS proxy)
-    Route::post('device_video/{device_id}/live/start', ['as' => 'device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
-    Route::post('device_video/{device_id}/live/stop', ['as' => 'device_video.live.stop', 'uses' => 'DeviceVideoController@liveStop']);
-    Route::post('device_video/{device_id}/audio/start', ['as' => 'device_video.audio.start', 'uses' => 'DeviceVideoController@audioStart']);
-    Route::post('device_video/{device_id}/audio/stop', ['as' => 'device_video.audio.stop', 'uses' => 'DeviceVideoController@audioStop']);
-    Route::get('device_video/{device_id}/live/modal', ['as' => 'device_video.live.modal', 'uses' => 'DeviceVideoController@liveModal']);
-    Route::get('device_video/{device_id}/stream/{file}', ['as' => 'device_video.stream.proxy', 'uses' => 'DeviceVideoController@streamProxy'])
-        ->where('file', '.*');
-    Route::get('device_video/{device_id}/playback/modal', ['as' => 'device_video.playback.modal', 'uses' => 'DeviceVideoController@playbackModal']);
-    Route::post('device_video/{device_id}/playback/search', ['as' => 'device_video.playback.search', 'uses' => 'DeviceVideoController@playbackSearch']);
-    Route::get('device_video/{device_id}/playback/files/{session}', ['as' => 'device_video.playback.poll', 'uses' => 'DeviceVideoController@playbackPoll']);
-    Route::post('device_video/{device_id}/playback/start', ['as' => 'device_video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
-    Route::post('device_video/{device_id}/playback/stop', ['as' => 'device_video.playback.stop', 'uses' => 'DeviceVideoController@playbackStop']);
-    Route::get('device_video/{device_id}/playback/route', ['as' => 'device_video.playback.route', 'uses' => 'DeviceVideoController@playbackRoute']);
 
     # SMS gateway
     Route::get('sms_gateway/test_sms', ['as' => 'sms_gateway.test_sms', 'uses' => 'SmsGatewayController@testSms']);

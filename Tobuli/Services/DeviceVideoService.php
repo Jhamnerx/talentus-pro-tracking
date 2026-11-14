@@ -2,230 +2,452 @@
 
 namespace Tobuli\Services;
 
+use Illuminate\Support\Facades\Redis;
 use Tobuli\Entities\Device;
 use Tobuli\Helpers\Tracker;
 
+/**
+ * Video en vivo JT1078 a través del tracker (fork de traccar).
+ *
+ * Cada ventana del reproductor es un "viewer". El comando videoStart se envía al abrir
+ * y videoStop solo cuando se cierra el último viewer del canal, para no cortar
+ * el video a otro usuario que esté mirando el mismo canal.
+ */
 class DeviceVideoService
 {
-    private Tracker $tracker;
+    const STOP_COMMANDS = ['videoStop', 'videoPlaybackControl', 'videoFileUploadControl'];
+
+    /** Un viewer sin señales durante este tiempo se considera cerrado (s). */
+    const VIEWER_TTL = 120;
+
+    const TYPE_LIVE = 'live';
+    const TYPE_HISTORY = 'history';
+
+    /** Acciones de videoPlaybackControl (JT/T 1078 0x9202). */
+    const PLAYBACK_PLAY = 0;
+    const PLAYBACK_PAUSE = 1;
+    const PLAYBACK_STOP = 2;
+
+    /** @var Tracker */
+    private $tracker;
 
     public function __construct()
     {
         $this->tracker = new Tracker();
     }
 
-    /** Tope de canales por equipo. */
-    public const MAX_CHANNELS = 6;
-
-    /** Protocolos cuyo decoder trae video a bordo. */
-    public const PROTOCOLS = ['howen', 'jt808', 'jt1078'];
-
-    public function isSupported(Device $device): bool
+    public function channels(Device $device): array
     {
-        return in_array(strtolower($device->protocol ?? ''), self::PROTOCOLS, true);
+        if ( ! $device->has_camera)
+            return [];
+
+        return array_values(array_map('intval', (array)$device->camera_channels));
+    }
+
+    public function hasChannel(Device $device, int $channel): bool
+    {
+        return in_array($channel, $this->channels($device));
     }
 
     /**
-     * Si este vehiculo tiene video, y por tanto si se le ofrece.
-     *
-     * Dos condiciones, y las dos hacen falta: el protocolo tiene que traer
-     * video (si no, el visor no puede funcionar) y alguien tiene que haber
-     * dicho cuantas camaras lleva el vehiculo. Sin lo segundo el widget salia
-     * en toda la flota -- 1.429 equipos sin una sola camara.
-     *
-     * Es la UNICA regla: la usan el widget, el menu del vehiculo y el propio
-     * visor, que antes cada uno comprobaba lo suyo (y el menu se habia quedado
-     * con una lista de protocolos mas corta que la del servicio).
+     * @param bool $audio pedir audio y video (JT1078 tipo de dato 0) en vez de solo video
+     * @param bool $subStream flujo secundario (SD), más liviano para la cuadrícula o redes lentas
      */
-    public function isEnabled(Device $device): bool
+    public function start(Device $device, int $channel, string $viewer, bool $audio = false, bool $subStream = false): array
     {
-        return $this->isSupported($device) && $this->channels($device) > 0;
+        $this->touchViewer($device, $channel, $viewer);
+
+        return $this->command($device, 'videoStart', [
+            'index'      => $channel,
+            'audio'      => $audio,
+            'streamType' => $subStream ? 1 : 0,
+        ]);
     }
 
-    /** Canales configurados en el vehiculo, recortados al tope soportado. */
-    public function channels(Device $device): int
+    /**
+     * URLs firmadas para el modo tiempo real (FLV) y el audio, o null si no está configurado.
+     */
+    public function realtimeUrls(Device $device, int $channel): ?array
     {
-        $canales = (int) ($device->video_channels ?? 0);
+        $base = rtrim((string)config('video.stream_url'), '/');
+        $secret = (string)config('video.stream_secret');
 
-        if ($canales < 1) {
-            return 0;
+        if ( ! $base || ! $secret)
+            return null;
+
+        $expires = time() + config('video.stream_token_ttl', 600);
+        $token = $expires . '.' . hash_hmac('sha256', "{$device->imei}:{$channel}:{$expires}", $secret);
+        $path = $base . '/' . rawurlencode($device->imei) . '/' . $channel;
+
+        return [
+            'flv'     => $path . '/live.flv?token=' . $token,
+            'audio'   => $path . '/live.audio?token=' . $token,
+            'talk'    => $path . '/talk?token=' . $token,
+            'expires' => $expires,
+        ];
+    }
+
+    /** Un operador habla con el equipo a la vez; el bloqueo se renueva con talkPing. */
+    const TALK_LOCK_TTL = 30;
+
+    public function talkChannel(): int
+    {
+        return (int)config('video.talk_channel', 36);
+    }
+
+    /**
+     * Abre la conversación: el equipo conecta su canal de audio y envía el micrófono de la cabina.
+     */
+    public function talkStart(Device $device, string $viewer): array
+    {
+        $redis = Redis::connection('process');
+        $key = $this->talkKey($device);
+
+        $owner = $redis->get($key);
+        if ($owner && $owner !== $viewer)
+            return ['ok' => false, 'error' => trans('front.video_talk_busy')];
+
+        $redis->setex($key, self::TALK_LOCK_TTL, $viewer);
+
+        $result = $this->command($device, 'videoStart', [
+            'index'    => $this->talkChannel(),
+            'dataType' => 2,
+        ]);
+
+        if ( ! $result['ok'])
+            $redis->del($key);
+
+        return $result;
+    }
+
+    public function talkPing(Device $device, string $viewer): bool
+    {
+        $redis = Redis::connection('process');
+        $key = $this->talkKey($device);
+
+        if ($redis->get($key) !== $viewer)
+            return false;
+
+        $redis->expire($key, self::TALK_LOCK_TTL);
+
+        return true;
+    }
+
+    public function talkStop(Device $device, string $viewer): bool
+    {
+        $redis = Redis::connection('process');
+        $key = $this->talkKey($device);
+
+        $owner = $redis->get($key);
+        if ($owner && $owner !== $viewer)
+            return false;
+
+        $redis->del($key);
+        $this->command($device, 'videoStop', [
+            'index'   => $this->talkChannel(),
+            'control' => 4,
+        ]);
+
+        return true;
+    }
+
+    private function talkKey(Device $device): string
+    {
+        return "video.talk.{$device->id}";
+    }
+
+    /**
+     * Mantiene vivo al viewer mientras el reproductor sigue abierto.
+     */
+    public function touchViewer(Device $device, int $channel, string $viewer): void
+    {
+        $key = $this->viewersKey($device, $channel);
+
+        Redis::connection('process')->zadd($key, time(), $viewer);
+        Redis::connection('process')->expire($key, self::VIEWER_TTL * 2);
+    }
+
+    /**
+     * @return bool true si se envió videoStop (no quedan viewers).
+     */
+    public function stop(Device $device, int $channel, ?string $viewer): bool
+    {
+        $redis = Redis::connection('process');
+        $key = $this->viewersKey($device, $channel);
+
+        if ($viewer)
+            $redis->zrem($key, $viewer);
+
+        $redis->zremrangebyscore($key, '-inf', time() - self::VIEWER_TTL);
+
+        if ($redis->zcard($key) > 0)
+            return false;
+
+        $redis->del($key);
+        $this->command($device, 'videoStop', ['index' => $channel]);
+
+        return true;
+    }
+
+    /**
+     * Playlist (.m3u8) o segmento (.ts) del canal, servido por el tracker.
+     *
+     * @return \Illuminate\Http\Client\Response
+     */
+    public function streamFile(Device $device, int $channel, string $file)
+    {
+        return $this->tracker->get("api/stream/imei/{$device->imei}/{$channel}/{$file}");
+    }
+
+    /**
+     * Estado del stream en el tracker: connected, codec, lastFrameTime, segments, rejectedTime (ms).
+     */
+    public function status(Device $device, int $channel, string $type = self::TYPE_LIVE): ?array
+    {
+        $response = $this->tracker->get("api/stream/imei/{$device->imei}/{$channel}/status?type={$type}");
+
+        return $response->successful() ? $response->json() : null;
+    }
+
+    /**
+     * Pide al equipo su lista de grabaciones (0x9205). Canal 0 = todos.
+     * Devuelve el instante del pedido (ms) para reconocer la respuesta nueva.
+     *
+     * @param string $from instante UTC ISO-8601
+     * @param string $to instante UTC ISO-8601
+     */
+    public function queryRecordings(Device $device, int $channel, string $from, string $to): array
+    {
+        return $this->command($device, 'videoResourceQuery', [
+            'index' => $channel,
+            'from'  => $from,
+            'to'    => $to,
+        ]);
+    }
+
+    /**
+     * Última lista de grabaciones recibida: fresh si llegó después de $seq, nak si el equipo rechazó la consulta.
+     */
+    public function recordings(Device $device, int $seq): array
+    {
+        $response = $this->tracker->get("api/stream/imei/{$device->imei}/resources");
+
+        if ( ! $response->successful())
+            return ['ok' => false, 'error' => trans('front.video_err_platform')];
+
+        $data = $response->json();
+
+        return [
+            'ok'    => true,
+            'fresh' => ! empty($data['time']) && $data['time'] >= $seq,
+            'nak'   => ! empty($data['rejectedTime']) && $data['rejectedTime'] >= $seq,
+            'items' => (array)($data['items'] ?? []),
+        ];
+    }
+
+    /** Tipos de carga JT/T 1078 (tabla 12) más comunes en cámaras. */
+    const CODECS = [
+        6  => 'G.711A',
+        7  => 'G.711U',
+        8  => 'G.726',
+        19 => 'AAC',
+        24 => 'AAC-LC',
+        25 => 'MP3',
+        26 => 'ADPCMA',
+        28 => 'AMR',
+        98 => 'H.264',
+        99 => 'H.265',
+    ];
+
+    public static function codecName(?int $payloadType): ?string
+    {
+        if ($payloadType === null)
+            return null;
+
+        return self::CODECS[$payloadType] ?? "#{$payloadType}";
+    }
+
+    /**
+     * Pide al equipo sus capacidades de audio/video (0x9003); la respuesta 0x1003 llega de forma asíncrona.
+     */
+    public function queryAttributes(Device $device): array
+    {
+        return $this->command($device, 'videoAttributes', []);
+    }
+
+    /**
+     * Últimas capacidades recibidas; si son posteriores a $seq se guardan en el equipo.
+     */
+    public function attributes(Device $device, int $seq): array
+    {
+        $response = $this->tracker->get("api/stream/imei/{$device->imei}/attributes");
+
+        if ( ! $response->successful())
+            return ['ok' => false, 'error' => trans('front.video_err_platform')];
+
+        $data = $response->json();
+        $fresh = ! empty($data['time']) && $data['time'] >= $seq && ! empty($data['attributes']);
+
+        if ($fresh) {
+            $device->forceFill(['camera_attributes' => $data['attributes']])->save();
         }
 
-        return min($canales, self::MAX_CHANNELS);
-    }
-
-    /** Lista de canales para el visor: [1, 2, ... n]. */
-    public function channelList(Device $device): array
-    {
-        $canales = $this->channels($device);
-
-        return $canales ? range(1, $canales) : [];
+        return [
+            'ok'         => true,
+            'fresh'      => $fresh,
+            'nak'        => ! empty($data['rejectedTime']) && $data['rejectedTime'] >= $seq,
+            'attributes' => $fresh ? $this->describeAttributes($data['attributes']) : null,
+        ];
     }
 
     /**
-     * Sends 0x4010 live-view start to the device via commands/send.
-     * Uses uniqueId (IMEI) — CommandResource resuelve el deviceId internamente.
-     *
-     * Returns:
-     *   hls_url       — URL del stream HLS
-     *   connected     — si el device tenía conexión activa al momento del envío
-     *   initial_delay — ms que debe esperar el cliente antes del primer intento HLS
+     * Capacidades guardadas, con los nombres de los códecs para mostrarlas.
      */
-    public function startLive(Device $device, int $channel = 1): array
+    public function describeAttributes(?array $attributes): ?array
     {
-        $isConnected = $device->isConnected();
+        if (empty($attributes))
+            return null;
 
-        $result = $this->tracker->api('api/commands/send', [
-            'deviceId'   => 0,
-            'uniqueId'   => (string) $device->imei,
-            'type'       => 'videoStart',
-            'attributes' => ['index' => $channel],
+        $audioCodec = self::codecName($attributes['audioEncoding'] ?? null);
+        $videoCodec = self::codecName($attributes['videoEncoding'] ?? null);
+
+        $summary = trans('front.video_attributes_summary', [
+            'audio'    => $audioCodec ?: '-',
+            'rate'     => $attributes['audioSampleRate'] ?? '-',
+            'frame'    => $attributes['audioFrameLength'] ?? '-',
+            'speaker'  => ! empty($attributes['audioOutput']) ? trans('global.yes') : trans('global.no'),
+            'video'    => $videoCodec ?: '-',
+            'channels' => $attributes['maxVideoChannels'] ?? '-',
+        ]);
+
+        return $attributes + [
+            'audioCodec' => $audioCodec,
+            'videoCodec' => $videoCodec,
+            'summary'    => $summary,
+        ];
+    }
+
+    /** Acciones de videoFileUploadControl (JT/T 1078 0x9207). */
+    const UPLOAD_PAUSE = 0;
+    const UPLOAD_CONTINUE = 1;
+    const UPLOAD_CANCEL = 2;
+
+    public static function ftpEnabled(): bool
+    {
+        return config('video.ftp.enabled') && config('video.ftp.host') && config('video.ftp.password');
+    }
+
+    /**
+     * Pide al equipo que suba por FTP la grabación del rango (0x9206). La carpeta identifica la tarea.
+     */
+    public function ftpUploadStart(Device $device, int $channel, string $from, string $to, string $path): array
+    {
+        return $this->command($device, 'videoFileUpload', [
+            'server'      => config('video.ftp.host'),
+            'port'        => (int)config('video.ftp.port', 21),
+            'ftpUser'     => config('video.ftp.username'),
+            'ftpPassword' => config('video.ftp.password'),
+            'ftpPath'     => $path,
+            'index'       => $channel,
+            'from'        => $from,
+            'to'          => $to,
+        ]);
+    }
+
+    /**
+     * Tarea de subida con esa carpeta según el tracker: serial, result (null en curso, 0 éxito, 1 falla).
+     */
+    public function ftpUpload(Device $device, string $path): ?array
+    {
+        $response = $this->tracker->get("api/stream/imei/{$device->imei}/uploads");
+
+        if ( ! $response->successful())
+            return null;
+
+        return collect((array)$response->json())->where('path', $path)->sortByDesc('requestTime')->first();
+    }
+
+    public function ftpUploadControl(Device $device, int $serial, int $action): array
+    {
+        return $this->command($device, 'videoFileUploadControl', [
+            'serial' => $serial,
+            'action' => $action,
+        ]);
+    }
+
+    public function playbackStart(Device $device, int $channel, string $from, string $to): array
+    {
+        return $this->command($device, 'videoPlayback', [
+            'index' => $channel,
+            'from'  => $from,
+            'to'    => $to,
+            'speed' => 0,
+        ]);
+    }
+
+    public function playbackControl(Device $device, int $channel, int $action): array
+    {
+        return $this->command($device, 'videoPlaybackControl', [
+            'index'  => $channel,
+            'action' => $action,
+        ]);
+    }
+
+    /**
+     * @return array ok, error y seq (ms en que se envió; sirve para reconocer respuestas/rechazos posteriores)
+     */
+    private function command(Device $device, string $type, array $attributes): array
+    {
+        // Margen para pequeñas diferencias de reloj entre la web y el tracker.
+        $seq = (int)round(microtime(true) * 1000) - 2000;
+
+        if ( ! $device->supportsVideo())
+            return ['ok' => false, 'error' => $this->protocolError($device->protocol), 'seq' => $seq];
+
+        // Un equipo desconectado no puede transmitir: se avisa en vez de esperar el timeout. Detener sí se permite.
+        if ( ! in_array($type, self::STOP_COMMANDS) && $device->getStatus() === Device::STATUS_OFFLINE)
+            return ['ok' => false, 'error' => trans('front.video_err_offline'), 'seq' => $seq];
+
+        $result = $this->tracker->sendCommand([
+            'uniqueId'   => $device->imei,
+            'type'       => $type,
+            // Sin atributos (p. ej. videoAttributes) json_encode daría [] y traccar espera un objeto {}.
+            'attributes' => $attributes ?: new \stdClass(),
         ]);
 
         return [
-            'hls_url'       => url("device_video/{$device->id}/stream/live.m3u8") . '?channel=' . $channel,
-            'connected'     => $isConnected,
-            // Si el device está conectado el stream arranca en ~6 s;
-            // si está offline el comando queda en cola y puede tardar hasta 60 s.
-            'initial_delay' => $isConnected ? 6000 : 20000,
-            'cmd_status'    => $result['status'] ?? 0,
-            'cmd_message'   => $result['message'] ?? null,
+            'ok'    => (bool)$result['status'],
+            'error' => $result['status'] ? null : $this->trackerError($result['message']),
+            'seq'   => $seq,
         ];
     }
 
-    /**
-     * Sends 0x4010 live-view stop to the device via commands/send.
-     */
-    public function stopLive(Device $device, int $channel = 1): void
+    private function protocolError(?string $protocol): string
     {
-        $this->tracker->api('api/commands/send', [
-            'deviceId'   => 0,
-            'uniqueId'   => (string) $device->imei,
-            'type'       => 'videoStop',
-            'attributes' => ['index' => $channel],
-        ]);
+        return trans('front.video_protocol_unsupported', ['protocol' => $protocol ?: '-']);
     }
 
     /**
-     * Sends audioListen command to the device.
-     * mode: 0 = listen only, 1 = intercom (two-way), 2 = broadcast
+     * El tracker devuelve la excepción Java completa ("Failed (java.lang...: mensaje at org.traccar...)"):
+     * se deja solo el mensaje, y el caso de protocolo sin video se traduce.
      */
-    public function startAudio(Device $device, int $channel = 1, int $mode = 0): void
+    private function trackerError(?string $message): string
     {
-        $this->tracker->api('api/commands/send', [
-            'deviceId'   => 0,
-            'uniqueId'   => (string) $device->imei,
-            'type'       => 'audioListen',
-            'attributes' => ['index' => $channel, 'mode' => $mode],
-        ]);
+        if ( ! $message)
+            return trans('front.video_err_platform');
+
+        if (preg_match('/not supported in protocol (\w+)/', $message, $match))
+            return $this->protocolError($match[1]);
+
+        $message = preg_replace('/^Failed \(/', '', $message);
+        $message = preg_split('/\s+at\s+[\w$.]+\(/', $message)[0];
+        $message = preg_replace('/^[\w.]+(Exception|Error):\s*/', '', trim($message, " )"));
+
+        return mb_substr($message, 0, 200) ?: trans('front.video_err_platform');
     }
 
-    /**
-     * Sends audioStop command to the device.
-     */
-    public function stopAudio(Device $device, int $channel = 1): void
+    private function viewersKey(Device $device, int $channel): string
     {
-        $this->tracker->api('api/commands/send', [
-            'deviceId'   => 0,
-            'uniqueId'   => (string) $device->imei,
-            'type'       => 'audioStop',
-            'attributes' => ['index' => $channel],
-        ]);
-    }
-
-    public function getUrl(): string
-    {
-        return $this->tracker->getUrl();
-    }
-
-    /**
-     * Hace una petición HTTP al API de Traccar (GET o POST).
-     * Devuelve el body decodificado como array o null en caso de error.
-     */
-    private function traccarRequest(string $method, string $endpoint, array $body = []): ?array
-    {
-        $config = config('tracker');
-        $url    = $this->tracker->getUrl() . ':' . $config['web.port'] . '/' . ltrim($endpoint, '/');
-        $auth   = base64_encode('admin:' . config('app.admin_user'));
-
-        $ch = curl_init($url);
-        $opts = [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT        => 30,
-            CURLOPT_HTTPHEADER     => [
-                'Authorization: Basic ' . $auth,
-                'Accept: application/json',
-                'Content-Type: application/json',
-            ],
-        ];
-
-        if (strtoupper($method) === 'POST') {
-            $opts[CURLOPT_POST]       = true;
-            $opts[CURLOPT_POSTFIELDS] = json_encode($body);
-        }
-
-        curl_setopt_array($ch, $opts);
-        $raw  = curl_exec($ch);
-        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($code < 200 || $code >= 300 || $raw === false) {
-            return null;
-        }
-
-        return json_decode($raw, true) ?? [];
-    }
-
-    /**
-     * Inicia la búsqueda de archivos en el dispositivo (0x4060).
-     * Devuelve ['session' => '...'] o null si el dispositivo no está conectado.
-     */
-    public function searchFiles(Device $device, array $params): ?array
-    {
-        return $this->traccarRequest('POST', 'api/howen/0/files/search?uniqueId=' . urlencode($device->imei), $params);
-    }
-
-    /**
-     * Polling de resultados de búsqueda de archivos (0x1060).
-     */
-    public function pollFileResults(Device $device, string $session): array
-    {
-        $result = $this->traccarRequest('GET', 'api/howen/0/files/' . urlencode($session) . '?uniqueId=' . urlencode($device->imei));
-        return $result['files'] ?? [];
-    }
-
-    /**
-     * Inicia la reproducción remota de un archivo grabado (0x4070).
-     */
-    public function startPlayback(Device $device, array $params): ?array
-    {
-        return $this->traccarRequest('POST', 'api/howen/0/playback/start?uniqueId=' . urlencode($device->imei), $params);
-    }
-
-    /**
-     * Detiene el stream de reproducción (reutiliza videoStop por canal).
-     */
-    public function stopPlayback(Device $device, int $channel = 1): void
-    {
-        $this->stopLive($device, $channel);
-    }
-
-    /**
-     * Devuelve las posiciones GPS del dispositivo para el rango de tiempo dado.
-     * $from y $to son cadenas en formato 'Y-m-d H:i:s' en la zona del usuario.
-     */
-    public function getRoute(Device $device, string $from, string $to): array
-    {
-        return $device->positions()
-            ->whereBetween('time', [$from, $to])
-            ->orderBy('time', 'asc')
-            ->get(['latitude', 'longitude', 'time', 'speed'])
-            ->map(fn($p) => [
-                'lat'   => (float) $p->latitude,
-                'lng'   => (float) $p->longitude,
-                'time'  => $p->time,
-                'speed' => (float) ($p->speed ?? 0),
-            ])
-            ->toArray();
+        return "video.viewers.{$device->id}.{$channel}";
     }
 }

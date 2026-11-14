@@ -757,6 +757,9 @@ function Device(data) {
         if (app.settings.showStreetView)
             nav += '<li data-toggle="tooltip" data-placement="top" title="" role="presentation" data-original-title="Street View"><a href="#gps-device-street-view" aria-controls="gps-device-street-view" role="tab" data-toggle="tab"><i class="fa fa-road fa-1"></i></a></li>';
 
+        if (app.deviceVideo && options.camera_channels && options.camera_channels.length)
+            nav += '<li data-toggle="tooltip" data-placement="top" title="' + window.lang.video_live + '"><a href="javascript:" onclick="app.deviceVideo.open(' + options.id + ', ' + JSON.stringify(options.camera_channels) + ');"><i class="fa fa-video-camera fa-1"></i></a></li>';
+
         nav += '<li data-toggle="tooltip" data-placement="top" title="" role="presentation" class="active" data-original-title="Parameters"><a href="#gps-device-parameters" aria-controls="gps-device-parameters" role="tab" data-toggle="tab"><i class="fa fa-bars fa-1"></i></a></li>';
         nav += '<li data-toggle="tooltip" data-placement="top" title="Close"><a href="javascript:" data-dismiss="popup"><i class="fa fa-times fa-1"></i></a></li>';
         nav += '</ul>';

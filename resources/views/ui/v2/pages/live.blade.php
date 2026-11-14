@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/live-ops.css') }}">
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-video.css') }}">
     {{-- Leaflet (mismo motor que el legacy) — migración desde MapLibre --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
@@ -813,6 +814,7 @@
     <script src="{{ asset_resource('assets/ui/v2/js/tp-device-config.js') }}"></script>
     {{-- Galería de medios del vehículo (kebab) --}}
     <script src="{{ asset_resource('assets/ui/v2/js/tp-device-media.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-device-video.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-silent-devices.js') }}" defer></script>
     <script src="{{ asset_resource('assets/ui/v2/js/live.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-groups.js') }}"></script>

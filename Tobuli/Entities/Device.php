@@ -99,6 +99,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     const STOP_DURATION_OFFSET = 10;
 
+    /** Video JT1078: canales posibles y roles de cada canal. */
+    const VIDEO_MAX_CHANNELS = 8;
+    const VIDEO_CHANNEL_ROLES = ['front', 'driver', 'cabin', 'rear', 'left', 'right', 'other'];
+
     public static array $displayField = ['imei', 'name'];
 
     protected $table = 'devices';
@@ -124,8 +128,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'sim_number',
         'operator_sim',
         'device_model',
-        // Canales de video a bordo: 0 = el vehiculo no lleva video
-        'video_channels',
+        // Video JT1078: camara, canales habilitados ([1, 2, ...]) y rol de cada canal.
+        // `video_channels` (numero de canales) esta deprecada: se migro a estas columnas.
+        'has_camera',
+        'camera_channels',
+        'camera_channel_roles',
         'plate_number',
         'vin',
         'registration_number',
@@ -202,6 +209,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'currents' => 'array',
         'icon_colors' => 'array',
         'custom_data' => 'array',
+        'has_camera' => 'boolean',
+        'camera_channels' => 'array',
+        'camera_channel_roles' => 'array',
+        'camera_attributes' => 'array',
     ];
 
     protected $searchable = [
@@ -1180,6 +1191,27 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     public function getProtocolAttribute()
     {
         return $this->traccar->protocol ?? null;
+    }
+
+    /**
+     * Video JT1078 solo en protocolos que lo implementan en el fork del tracker (config video.protocols, por
+     * defecto jt808; Howen se activa anadiendo `howen` a VIDEO_PROTOCOLS cuando el fork lo soporte).
+     * Si el equipo nunca se conecto todavia no hay protocolo y se permite configurarlo.
+     */
+    public function supportsVideo(): bool
+    {
+        $protocol = $this->protocol;
+
+        return ! $protocol || in_array($protocol, (array)config('video.protocols', ['jt808']));
+    }
+
+    /**
+     * El equipo ofrece video: camara con canales y protocolo con video en el fork (supportsVideo()).
+     * No mira permisos: eso lo hace cada pantalla con perm('device_video', 'view').
+     */
+    public function hasVideo(): bool
+    {
+        return $this->has_camera && ! empty($this->camera_channels) && $this->supportsVideo();
     }
 
     public function getDeviceTime()

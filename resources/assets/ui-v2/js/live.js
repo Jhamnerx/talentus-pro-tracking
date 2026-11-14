@@ -2482,18 +2482,14 @@
       if (act === "history")
         location.href = "/ui/v2/history?device=" + id + "&range=" + (it.getAttribute("data-range") || "today");
       else if (act === "follow") openFollow(id);
-      else if (act === "device_video") {
-        // Pendiente: reproducción en vivo y grabaciones (decoder JT808/Howen).
-        if (window.tpModal) {
-          tpModal.open({
-            title: tpT('ui.onboard_video'),
-            size: "sm",
-            body:
-              '<p class="tp-text-sm" style="margin:0 0 8px;">' + tpT('ui.video_protocol_note') + '</p>' +
-              '<p class="tp-text-sm tp-text-muted" style="margin:0;">' + tpT('ui.video_decoder_note') + '</p>',
-            buttons: [{ label: "Entendido", variant: "primary", close: true }],
-          });
+      else if (act === "device_video" || act === "device_video_recordings") {
+        var dVi = null;
+        for (var iVi = 0; iVi < state.devices.length; iVi++) {
+          if (state.devices[iVi].id === id) { dVi = state.devices[iVi]; break; }
         }
+        var recs = act === "device_video_recordings";
+        if (window.tpDeviceVideo)
+          tpDeviceVideo[recs ? "recordings" : "open"](id, { name: dVi && dVi.name });
       }
       else if (act === "device_media") {
         var dMe = null;

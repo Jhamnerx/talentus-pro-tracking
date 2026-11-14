@@ -98,6 +98,12 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+        // Video JT1078 en vivo y grabaciones (ver config/video.php). No se da a todos: ver la migracion 2026_11_14_000002.
+        'device_video' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 0,
+        ],
         'tasks' => [
             'view'  => 1,
             'edit'  => 1,

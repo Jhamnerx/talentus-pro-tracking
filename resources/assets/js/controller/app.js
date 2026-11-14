@@ -24,6 +24,7 @@ var app = {
     alerts:      new Alerts(),
     events:      new DeviceEvents(),
     deviceMedia: new DeviceMedia(),
+    deviceVideo: new DeviceVideo(),
     silentDevices: new SilentDevices(),
     chat:        new Chat(),
     dashboard:   new Dashboard(),
@@ -371,6 +372,7 @@ var app = {
         this.events.init();
         this.chat.init();
         this.deviceMedia.init();
+        this.deviceVideo.init();
         this.silentDevices.events();
 
         app.widgets = $('#widgets');

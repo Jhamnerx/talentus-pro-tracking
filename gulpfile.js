@@ -122,6 +122,7 @@ var scripts = {
     "resources/assets/js/controller/notifications.js",
     "resources/assets/js/controller/commands.js",
     "resources/assets/js/controller/deviceMedia.js",
+    "resources/assets/js/controller/deviceVideo.js",
 
     "resources/assets/js/model/device.js",
     "resources/assets/js/model/alert.js",

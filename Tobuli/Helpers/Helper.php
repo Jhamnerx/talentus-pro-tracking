@@ -1735,6 +1735,7 @@ function getJsConfig()
             'deviceSendGprsCommand' => route('send_command.gprs'),
             'deviceWidgetLocation' => route('device.widgets.location') . '/',
             'deviceWidgetCameras' => route('device.widgets.cameras') . '/',
+            'deviceVideo' => url('devices/video') . '/',
             'deviceWidgetImage' => route('device.widgets.image') . '/',
             'deviceWidgetUploadImage' => route('device.image.store') . '/',
             'deviceWidgetFuelGraph' => route('device.widgets.fuel_graph') . '/',

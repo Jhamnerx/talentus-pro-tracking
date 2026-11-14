@@ -89,10 +89,10 @@
         <span>{{ trans('front.follow') }}</span>
     </button>
 
-    {{-- Vídeo a bordo: visible solo en equipos con protocolo compatible
-         (data-need="video" ⇒ jt808/howen). La reproducción llega con la
-         integración del decoder; por ahora la opción avisa de eso. --}}
-    @if ($u->perm('camera', 'view'))
+    {{-- Vídeo a bordo (JT1078, fork del tracker): data-need="video" ⇒ cámara con
+         canales y protocolo con vídeo (Device::hasVideo()). Permiso propio
+         device_video, igual que el legacy (Objects/item.blade). --}}
+    @if ($u->perm('device_video', 'view'))
         <button type="button" class="tp-row-menu__item" data-act="device_video" data-need="video">
             <span class="tp-row-menu__icon">{!! $ic['video'] !!}</span>
             <span>{{ trans('front.live_video') }}</span>
@@ -193,10 +193,11 @@
         </button>
     @endif
 
-    <div class="tp-row-menu__sep" data-need="video"></div>
-    <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="playback"
-        data-need="video" data-url="{{ route('device_video.playback.modal', '__ID__') }}">
-        <span class="tp-row-menu__icon">{!! $ic['playback'] !!}</span>
-        <span>{{ trans('front.playback') }}</span>
-    </button>
+    @if ($u->perm('device_video', 'view'))
+        <div class="tp-row-menu__sep" data-need="video"></div>
+        <button type="button" class="tp-row-menu__item" data-act="device_video_recordings" data-need="video">
+            <span class="tp-row-menu__icon">{!! $ic['playback'] !!}</span>
+            <span>{{ trans('front.video_recordings') }}</span>
+        </button>
+    @endif
 </div>
