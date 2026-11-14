@@ -2059,3 +2059,51 @@ select.tp-input:disabled {
   outline-offset: -2px;
   border-radius: var(--r-sm, 6px);
 }
+
+/* ============================================================
+   tp-datepicker (tp-datepicker.js): día/mes/año elegido, "hoy" y
+   botones Borrar/Hoy. Clases propias con más especificidad que el
+   reset ".tp-scope button" y que las utilidades de Tailwind.
+   ============================================================ */
+.tp-dp__panel button.tp-dp__sel,
+.tp-dp__panel button.tp-dp__sel:hover {
+  background: var(--brand-600, #1f5fbf);
+  color: #fff;
+  font-weight: 600;
+}
+.tp-dp__panel button.tp-dp__today {
+  box-shadow: inset 0 0 0 1px var(--brand-400, #6b9be6);
+  color: var(--brand-600, #1f5fbf);
+  font-weight: 600;
+}
+.tp-dp__panel button.tp-dp__link {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong, #94a3b8);
+  border-radius: 6px;
+  background: var(--surface-raised, #fff);
+  color: var(--fg-primary, #0f172a);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+.tp-dp__panel button.tp-dp__link:hover {
+  background: var(--surface-sunken, #f1f5f9);
+  color: var(--fg-primary, #0f172a);
+}
+.tp-dp__panel button.tp-dp__link[data-dp-today] {
+  background: var(--brand-600, #1f5fbf);
+  border-color: var(--brand-600, #1f5fbf);
+  color: #fff;
+}
+.tp-dp__panel button.tp-dp__link[data-dp-today]:hover {
+  background: var(--brand-700, #194f9f);
+  border-color: var(--brand-700, #194f9f);
+}
