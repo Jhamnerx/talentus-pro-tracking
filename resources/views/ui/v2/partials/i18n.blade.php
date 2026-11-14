@@ -37,6 +37,8 @@
         'stopped', 'street_view', 'time', 'today', 'top_speed', 'trip_end',
         'trip_start', 'type', 'unexpected_error', 'ungrouped', 'vehicle_state', 'vehicle_states',
         'week', 'yesterday',
+        // Popup y ficha del vehiculo: atajos de historial y reporte de rutas
+        'last_hour', 'show_history', 'device_routes_report', 'generate',
     ];
     // Video JT1078 (tp-device-video.js): 'channel' y todas las front.video_*.
     $tpFront = array_merge($tpFront, ['channel'], preg_grep('/^video_/', array_keys(trans('front'))));

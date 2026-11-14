@@ -55,27 +55,31 @@ class DrivesStopsReport extends DeviceHistoryReport
         return $list;
     }
 
+    protected function getTableKeys(): array
+    {
+        return [
+            'group_key',
+            'status',
+            'start_at',
+            'end_at',
+            'duration',
+            'distance',
+            'engine_idle',
+            'drivers',
+            'speed_max',
+            'speed_avg',
+            'location',
+            'fuel_consumption',
+            'geofences_in',
+        ];
+    }
+
     protected function getTable($data)
     {
         $rows = [];
 
-        foreach ($data['groups']->all() as $group)
-        {
-            $rows[] = $this->getDataFromGroup($group, [
-                'group_key',
-                'status',
-                'start_at',
-                'end_at',
-                'duration',
-                'distance',
-                'engine_idle',
-                'drivers',
-                'speed_max',
-                'speed_avg',
-                'location',
-                'fuel_consumption',
-                'geofences_in'
-            ]);
+        foreach ($data['groups']->all() as $group) {
+            $rows[] = $this->getDataFromGroup($group, $this->getTableKeys());
         }
 
         return [

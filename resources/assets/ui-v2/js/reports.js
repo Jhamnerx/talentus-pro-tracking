@@ -955,10 +955,65 @@
    * Va por POST y no por GET a proposito: con muchos vehiculos elegidos la
    * querystring se pasa del limite del servidor.
    */
-  function postDescarga(url, campos) {
+  // Reportes marcados como visibles en el sistema (Report::$viewable, p. ej.
+  // Paradas): en HTML se abren en un visor a pantalla completa en vez de
+  // descargarse. PDF y el resto de formatos siguen descargandose.
+  function esVisible(type, format) {
+    if (String(format) !== "html" || !META) return false;
+    return (META.templates || []).some(function (t) {
+      return String(t.id) === String(type) && t.viewable;
+    });
+  }
+
+  function tituloTipo(type) {
+    var t = ((META && META.templates) || []).filter(function (x) {
+      return String(x.id) === String(type);
+    })[0];
+    return t ? t.title : "";
+  }
+
+  var visorSeq = 0;
+
+  // Abre el visor y devuelve el name del iframe al que se envia el form.
+  function abrirVisor(titulo) {
+    var nombre = "tp_report_viewer_" + ++visorSeq;
+    var iframe = document.createElement("iframe");
+    iframe.name = nombre;
+    iframe.src = "about:blank";
+    iframe.title = titulo || "";
+    tpModal.open({
+      title: titulo,
+      className: "tp-modal--viewer",
+      body: iframe,
+      onClose: function () {
+        // Corta cualquier carga en curso al cerrar.
+        iframe.src = "about:blank";
+      },
+    });
+    return nombre;
+  }
+
+  // Envia el reporte: descarga en esta pestaña o, si el tipo es visible en
+  // el sistema y el formato HTML, lo pinta en el visor (view=1 hace que la
+  // ruta devuelva $report->view() en lugar de la descarga).
+  function generarReporte(url, campos) {
+    if (esVisible(campos.type, campos.format)) {
+      campos.view = 1;
+      postDescarga(url, campos, abrirVisor(tituloTipo(campos.type)));
+      return;
+    }
+    delete campos.view;
+    // Un reporte grande tarda, y al descargarse no cambia nada en pantalla:
+    // sin este aviso el usuario vuelve a pulsar Generar.
+    if (tpModal.toast) tpModal.toast(tpT("ui.generating_report"), "info");
+    postDescarga(url, campos);
+  }
+
+  function postDescarga(url, campos, target) {
     var form = document.createElement("form");
     form.method = "POST";
     form.action = url;
+    if (target) form.target = target;
     form.style.display = "none";
 
     function campo(nombre, valor) {
@@ -1008,16 +1063,11 @@
     }
 
     payload.generate = 1;
-    // Sin `view`: con el, la ruta devuelve $report->view() -la vista, sin
-    // cabecera de descarga- y el reporte se abria en una pestaña. Sin el
-    // entra por $report->download(), que es lo que hace el legacy. Ademas
-    // view() no tiene caso para 'csv', asi que ese formato salia en blanco.
-
-    // Un reporte grande tarda, y al descargarse no cambia nada en pantalla:
-    // sin este aviso el usuario vuelve a pulsar Generar.
-    if (tpModal.toast) tpModal.toast(tpT("ui.generating_report"), "info");
-
-    postDescarga(META.generateUrl, payload);
+    // Sin `view` salvo en los reportes visibles en el sistema (generarReporte):
+    // con el, la ruta devuelve $report->view() -la vista, sin cabecera de
+    // descarga-. Sin el entra por $report->download(), que es lo que hace el
+    // legacy. Ademas view() no tiene caso para 'csv'.
+    generarReporte(META.generateUrl, payload);
   }
 
   function doSave(dialog, id) {
@@ -1230,14 +1280,12 @@
 
   // Abrir una definicion guardada es generarla: tambien se descarga.
   function openSaved(id) {
-    if (tpModal.toast) tpModal.toast(tpT("ui.generating_report"), "info");
-
     tpModal
       .fetchJSON(URLS.item.replace("{id}", id), { method: "GET" })
       .then(function (r) {
         var it = r.ok && r.data && r.data.ok ? r.data.item : null;
         if (!it) throw new Error("item");
-        postDescarga(META.generateUrl, payloadDesdeItem(it));
+        generarReporte(META.generateUrl, payloadDesdeItem(it));
       })
       .catch(function () {
         tpModal.toast(tpT("ui.load_failed"), "error");

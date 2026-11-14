@@ -14,6 +14,13 @@
 @php
     $u = Auth::user();
 
+    // «Reporte de rutas» (tipo 43) del popup legacy: perm reports.view y el
+    // tipo habilitado para la cuenta. live.blade ya lo calcula; si el parcial
+    // se incluye en otra pagina se resuelve aqui.
+    $tpRouteReport = $tpRouteReport ?? ($u->perm('reports', 'view')
+        && array_key_exists(\Tobuli\Reports\Reports\RoutesReport::TYPE_ID,
+            (new \Tobuli\Reports\ReportManager())->setUser($u)->getUsableList($u)));
+
     // Iconos (SVG inline, estilo trazo 16px — consistente con la UI v2).
     $ic = [
         'last_hour' => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
@@ -40,6 +47,7 @@
         'reset'     => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>',
         'camera'    => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"/><circle cx="12" cy="13" r="3"/></svg>',
         'video'     => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>',
+        'route_report' => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>',
         'playback'  => '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m10 9 5 3-5 3Z"/></svg>',
     ];
 @endphp
@@ -58,6 +66,17 @@
             <span class="tp-row-menu__icon">{!! $ic['yesterday'] !!}</span>
             <span>{{ trans('front.show_history') }} ({{ mb_strtolower(trans('front.yesterday')) }})</span>
         </button>
+    @endif
+
+    @if ($tpRouteReport)
+        {{-- Reporte de rutas (tipo 43) del device en HTML, pestaña nueva --}}
+        <button type="button" class="tp-row-menu__item" data-act="route_report">
+            <span class="tp-row-menu__icon">{!! $ic['route_report'] !!}</span>
+            <span>{{ trans('front.device_routes_report') }}</span>
+        </button>
+    @endif
+
+    @if ($u->perm('history', 'view') || $tpRouteReport)
         <div class="tp-row-menu__sep"></div>
     @endif
 

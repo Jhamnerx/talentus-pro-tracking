@@ -41,6 +41,9 @@ abstract class Report implements Arrayable
     protected $deviceless = false;
     protected bool $allDevices = false;
 
+    /** HTML result may be shown inside the system instead of being downloaded */
+    protected bool $viewable = false;
+
     /** @var User */
     protected $user;
 
@@ -323,6 +326,16 @@ abstract class Report implements Arrayable
     public function getFormat()
     {
         return $this->format;
+    }
+
+    public function isViewable(): bool
+    {
+        return $this->viewable;
+    }
+
+    public function canViewInline(): bool
+    {
+        return $this->isViewable() && $this->format === 'html';
     }
 
     public function getDateFrom()

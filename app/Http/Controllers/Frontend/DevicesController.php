@@ -19,6 +19,8 @@ use Tobuli\Entities\Geofence;
 use Tobuli\History\Actions\Duration;
 use Tobuli\History\Actions\GroupGeofenceInOut;
 use Tobuli\History\DeviceHistory;
+use Tobuli\Reports\ReportManager;
+use Tobuli\Reports\Reports\RoutesReport;
 use Tobuli\Services\DeviceImageService;
 use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 use Tobuli\Services\EntityLoader\UserDevicesLoader;
@@ -177,6 +179,26 @@ class DevicesController extends Controller
         return view('front::Devices.follow_map', [
             'item' => FractalTransformer::setSerializer(WithoutDataArraySerializer::class)
                 ->item($item, DeviceMapTransformer::class)->toArray()
+        ]);
+    }
+
+    /**
+     * Small modal (opened from the device map popup) asking the date range
+     * for a Routes report (RoutesReport::TYPE_ID) of a single device.
+     */
+    public function routeReport($device_id)
+    {
+        $item = Device::find($device_id);
+
+        $this->checkException('devices', 'show', $item);
+        $this->checkException('reports', 'view');
+
+        $reportManager = (new ReportManager())->setUser($this->user);
+
+        return view('front::Devices.route_report', [
+            'item'    => $item,
+            'type'    => RoutesReport::TYPE_ID,
+            'enabled' => array_key_exists(RoutesReport::TYPE_ID, $reportManager->getUsableList($this->user)),
         ]);
     }
 

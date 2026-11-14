@@ -163,6 +163,21 @@ class ReportManager
         return $list;
     }
 
+    /**
+     * Whether the HTML result of a report type is shown inside the system instead of downloaded
+     * (Report::$viewable). Read from the class defaults so no report has to be built.
+     */
+    public static function isViewableType($type): bool
+    {
+        $class = self::$types[$type] ?? null;
+
+        if (!$class || !class_exists($class)) {
+            return false;
+        }
+
+        return (bool) ((new \ReflectionClass($class))->getDefaultProperties()['viewable'] ?? false);
+    }
+
     public static function getFormats(): array
     {
         return [

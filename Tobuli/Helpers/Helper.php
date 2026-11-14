@@ -1678,6 +1678,10 @@ function getJsConfig()
             'showHistoryArrow' => Arr::get($user->map_controls, 'history_control_arrows', $mapControls['showHistoryArrow'] ?? null),
             'showHistoryStop' => Arr::get($user->map_controls, 'history_control_stops ', $mapControls['showHistoryStop'] ?? null),
             'showHistoryEvent' => Arr::get($user->map_controls, 'history_control_events', $mapControls['showHistoryEvent'] ?? null),
+            // history shortcuts (last hour / today / yesterday) in the device map popup, same rule as the sidebar menu
+            'showHistoryShortcuts' => (bool) ($user && $user->perm('history', 'view')),
+            // routes report shortcut in the device map popup
+            'showReportShortcut' => (bool) ($user && $user->perm('reports', 'view')),
             'keys' => [
                 'google_maps_key' => settings('main_settings.google_maps_key'),
                 'here_api_key' => settings('main_settings.here_api_key'),
@@ -1708,6 +1712,8 @@ function getJsConfig()
 
             'events' => route('events.index'),
             'eventDoDelete' => route('events.do_destroy'),
+
+            'deviceRouteReport' => route('devices.route_report').'/',
 
             'history' => route('history.index'),
             'historyExport' => route('history.export'),

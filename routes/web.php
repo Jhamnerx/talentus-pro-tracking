@@ -208,6 +208,7 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('devices/{id}/vehicle_state', ['as' => 'devices.vehicle_state_form', 'uses' => 'DevicesController@vehicleStateForm']);
     Route::post('devices/change_vehicle_state', ['as' => 'devices.change_vehicle_state', 'uses' => 'DevicesController@changeVehicleState']);
     Route::get('devices/follow_map/{id?}', ['as' => 'devices.follow_map', 'uses' => 'DevicesController@followMap']);
+    Route::get('devices/route_report/{id?}', ['as' => 'devices.route_report', 'uses' => 'DevicesController@routeReport']);
     Route::any('devices/commands', ['as' => 'devices.commands', 'uses' => 'SendCommandController@getCommands']);
     Route::get('devices/do_destroy/{id}', ['as' => 'devices.do_destroy', 'uses' => 'DevicesController@doDestroy']);
     Route::put('devices/update', ['as' => 'devices.update', 'uses' => 'DevicesController@update']);

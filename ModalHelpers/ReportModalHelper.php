@@ -286,9 +286,13 @@ class ReportModalHelper extends ModalHelper
             unset($data['from_time']);
             unset($data['to_time']);
 
+            $report = $this->reportManager->report($data['type']);
+            $report->setFormat($data['format'] ?? '');
+
             return [
                 'status' => 3,
-                'url' => route($this->api ? 'api.generate_report' : 'reports.update').'?'.http_build_query($data + ['generate' => 1], '', '&')
+                'url' => route($this->api ? 'api.generate_report' : 'reports.update').'?'.http_build_query($data + ['generate' => 1], '', '&'),
+                'view' => $report->canViewInline(),
             ];
         }
 

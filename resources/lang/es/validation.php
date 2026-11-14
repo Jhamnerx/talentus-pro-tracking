@@ -899,6 +899,7 @@ return [
         'google_play_link' => 'Enlace de GooglePlay',
         'apple_store_link' => 'Enlace AppleStore',
         'date_from' => 'Fecha desde',
+        'date_to' => 'Fecha hasta',
         'mtc' => 'Sutran',
         'sutran' => 'Sutran',
         'osinergmin' => 'Osinergmin',

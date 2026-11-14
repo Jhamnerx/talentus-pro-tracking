@@ -23,6 +23,12 @@
     pollInterval: parseInt(root.getAttribute("data-poll-interval"), 10) || 15000,
     // 'standart' (975h 30min 44s) o 'hh:mm:ss' (975:30:44), de la cuenta.
     durationFormat: root.getAttribute("data-duration-format") || "standart",
+    // Atajos del popup/ficha (paridad popup legacy): perm history.view y
+    // reporte de rutas (tipo 43) con perm reports.view + tipo habilitado.
+    canHistory: root.getAttribute("data-can-history") === "1",
+    routeReportType: root.getAttribute("data-route-report-type") || "",
+    reportsUpdateUrl: root.getAttribute("data-reports-update-url") || "/reports/update",
+    today: root.getAttribute("data-today") || "",
   };
 
   // Reenvíos disponibles para el modal de grupos (inyectados por el blade;
@@ -849,6 +855,7 @@
       '</dd><dt>' + tpT('front.location') + '</dt><dd data-pop-addr class="' +
       (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
       '">Cargando…</dd></dl>' +
+      devShortcutsHtml() +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>' + tpT('ui.see_details') + '</button></div>';
     if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
     state.popup.setLatLng([parseFloat(d.lat), parseFloat(d.lng)]).setContent(html).openOn(state.map);
@@ -863,6 +870,153 @@
       btn.addEventListener("click", function () {
         selectDevice(id);
       });
+    bindDevShortcuts(el, id);
+  }
+
+  /* ===========================================================
+   * ATAJOS DEL VEHICULO — historial (ultima hora / hoy / ayer) y
+   * «Reporte de rutas» (tipo 43 en HTML, pestaña nueva, solo este
+   * device). Paridad del popup legacy (model/device.js) y del modal
+   * Devices/route_report.blade; mismos permisos.
+   * =========================================================== */
+  var HIST_RANGES = [
+    ["last_hour", "front.last_hour"],
+    ["today", "front.today"],
+    ["yesterday", "front.yesterday"],
+  ];
+
+  function goHistory(id, range) {
+    location.href = "/ui/v2/history?device=" + id + "&range=" + (range || "today");
+  }
+
+  function devShortcutsHtml() {
+    var h = "";
+    if (CFG.canHistory) {
+      h += '<div class="tp-dev-shortcuts" role="group">';
+      HIST_RANGES.forEach(function (r) {
+        h +=
+          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-hist-range="' + r[0] + '" title="' +
+          esc(tpT("front.show_history") + " (" + tpT(r[1]) + ")") + '">' + esc(tpT(r[1])) + "</button>";
+      });
+      h += "</div>";
+    }
+    if (CFG.routeReportType)
+      h +=
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full tp-dev-shortcuts__report" data-route-report>' +
+        esc(tpT("front.device_routes_report")) + "</button>";
+    return h;
+  }
+
+  function bindDevShortcuts(el, id) {
+    if (!el) return;
+    Array.prototype.forEach.call(el.querySelectorAll("[data-hist-range]"), function (b) {
+      b.disabled = false;
+      b.onclick = function () {
+        goHistory(id, b.getAttribute("data-hist-range"));
+      };
+    });
+    var rr = el.querySelector("[data-route-report]");
+    if (rr)
+      rr.onclick = function () {
+        openRouteReport(id);
+      };
+  }
+
+  function pad2(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function isoMasUnDia(iso) {
+    var p = String(iso).split("-");
+    var d = new Date(+p[0], +p[1] - 1, +p[2] + 1);
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  // Modal de fechas → GET a reports/update con generate=1&view=1&format=html
+  // en una pestaña nueva (target _blank): la ruta pinta el reporte en linea.
+  // La generacion web arma la consulta de devices desde selected_devices[]
+  // (campo;estado;valor), no desde devices[]: van los dos, como el legacy.
+  function openRouteReport(id) {
+    if (!CFG.routeReportType || !window.tpModal) return;
+    var d = state.index[id] || {};
+    var now = new Date();
+    var hoy = CFG.today || now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate());
+    var manana = isoMasUnDia(hoy);
+
+    function horas() {
+      var o = "";
+      for (var i = 0; i < 96; i++) {
+        var h = pad2(Math.floor(i / 4)) + ":" + pad2((i % 4) * 15);
+        o += '<option value="' + h + '">' + h + "</option>";
+      }
+      return o;
+    }
+    function fechaHora(label, nDate, nTime, val) {
+      return (
+        '<label class="tp-form__field"><span class="tp-form__label">' + esc(label) + "</span>" +
+        '<div style="display:flex;gap:6px;">' +
+        '<input type="date" name="' + nDate + '" value="' + esc(val) + '" style="flex:1;min-width:0;">' +
+        '<select class="tp-input" name="' + nTime + '" style="width:96px;flex:0 0 auto;">' + horas() + "</select>" +
+        "</div></label>"
+      );
+    }
+
+    var body =
+      '<form class="tp-form" data-route-report-form onsubmit="return false">' +
+      '<div class="tp-form__grid tp-form__grid--2">' +
+      fechaHora(tpT("date_from"), "date_from", "from_time", hoy) +
+      fechaHora(tpT("date_to"), "date_to", "to_time", manana) +
+      "</div></form>";
+
+    tpModal.open({
+      title: tpT("front.device_routes_report") + (d.name ? " - " + d.name : ""),
+      size: "sm",
+      body: body,
+      onMount: function (dlg) {
+        if (window.tpDate && tpDate.init) tpDate.init(dlg);
+      },
+      buttons: [
+        { label: tpT("global.cancel"), variant: "ghost" },
+        {
+          label: tpT("front.generate"),
+          variant: "accent",
+          onClick: function (dlg) {
+            var src = dlg.querySelector("[data-route-report-form]");
+            var fd = new FormData(src);
+            var form = document.createElement("form");
+            form.method = "GET";
+            form.action = CFG.reportsUpdateUrl;
+            form.target = "_blank";
+            form.style.display = "none";
+            var campos = [
+              ["id", ""],
+              ["type", CFG.routeReportType],
+              ["format", "html"],
+              ["devices[]", id],
+              ["selected_devices[]", "id;true;" + id],
+              ["generate", "1"],
+              ["view", "1"],
+              ["date_from", fd.get("date_from") || hoy],
+              ["from_time", fd.get("from_time") || "00:00"],
+              ["date_to", fd.get("date_to") || manana],
+              ["to_time", fd.get("to_time") || "00:00"],
+            ];
+            campos.forEach(function (c) {
+              var i = document.createElement("input");
+              i.type = "hidden";
+              i.name = c[0];
+              i.value = c[1];
+              form.appendChild(i);
+            });
+            document.body.appendChild(form);
+            form.submit();
+            setTimeout(function () {
+              if (form.parentNode) form.parentNode.removeChild(form);
+            }, 0);
+          },
+        },
+      ],
+    });
   }
   function refreshMarkerIcon(id) {
     var m = state.markers[id];
@@ -1016,11 +1170,13 @@
     if (d) fillDrawer(d);
     loadDrawerWidgets(id);
     loadVehicleState(id);
-    var histBtn = document.getElementById("tp-drawer-history");
-    if (histBtn) {
-      histBtn.disabled = false;
-      histBtn.onclick = function () {
-        location.href = "/ui/v2/history?device=" + id + "&range=today";
+    var histBox = document.getElementById("tp-drawer-history");
+    if (histBox) bindDevShortcuts(histBox, id);
+    var rrBtn = document.getElementById("tp-drawer-route-report");
+    if (rrBtn) {
+      rrBtn.disabled = false;
+      rrBtn.onclick = function () {
+        openRouteReport(id);
       };
     }
   }
@@ -2479,8 +2635,8 @@
       if (!it) return;
       var act = it.getAttribute("data-act");
       closeRowMenu();
-      if (act === "history")
-        location.href = "/ui/v2/history?device=" + id + "&range=" + (it.getAttribute("data-range") || "today");
+      if (act === "history") goHistory(id, it.getAttribute("data-range"));
+      else if (act === "route_report") openRouteReport(id);
       else if (act === "follow") openFollow(id);
       else if (act === "device_video" || act === "device_video_recordings") {
         var dVi = null;

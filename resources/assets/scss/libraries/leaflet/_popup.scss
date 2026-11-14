@@ -77,3 +77,15 @@
     }
   }
 }
+// History shortcut buttons at the bottom of the device popup
+.popup-actions {
+  margin-top: $popup-inner-padding;
+
+  .btn {
+    white-space: nowrap;
+
+    .icon {
+      margin-right: 3px;
+    }
+  }
+}

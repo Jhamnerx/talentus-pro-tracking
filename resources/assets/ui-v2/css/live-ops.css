@@ -1609,6 +1609,28 @@ table.tp-lock-hist th {
   word-break: break-word;
 }
 
+/* Atajos del vehiculo (popup y ficha): historial ultima hora/hoy/ayer y
+   «Reporte de rutas». Paridad del popup legacy (model/device.js). */
+.tp-dev-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 0 6px;
+}
+.tp-dev-shortcuts .tp-btn {
+  justify-content: center;
+  min-width: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tp-dev-shortcuts__report {
+  margin: 0 0 6px;
+  justify-content: center;
+}
+
 /* Acciones del popup de POI */
 .tp-poi-popup__actions {
   display: flex;

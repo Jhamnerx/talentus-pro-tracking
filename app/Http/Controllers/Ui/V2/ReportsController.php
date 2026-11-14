@@ -55,7 +55,12 @@ class ReportsController extends BaseController
 
         $templates = [];
         foreach ($manager->getUserEnabledNameList($this->user) as $id => $title) {
-            $templates[] = ['id' => (int) $id, 'title' => (string) $title];
+            $templates[] = [
+                'id'       => (int) $id,
+                'title'    => (string) $title,
+                // HTML abierto en el visor del sistema en lugar de descargarse (Report::$viewable)
+                'viewable' => ReportManager::isViewableType($id),
+            ];
         }
 
         $formats = [];

@@ -15313,6 +15313,33 @@ function Device(data) {
             });
         }
         parametersHTML += '</tbody></table></div>';
+        // History shortcuts, same actions as the sidebar device menu (inline onclick survives updatePopup() re-render)
+        if (app.settings.showHistoryShortcuts) {
+            var shortcuts = [
+                {period: 'last_hour', icon: 'last-hour', text: window.lang.last_hour},
+                {period: 'today',     icon: 'today',     text: window.lang.today},
+                {period: 'yesterday', icon: 'yesterday', text: window.lang.yesterday}
+            ];
+
+            parametersHTML += '<div class="popup-actions btn-group btn-group-justified" role="group">';
+            $.each(shortcuts, function (index, shortcut) {
+                parametersHTML += '<a href="javascript:" class="btn btn-default btn-xs" ' +
+                    'title="' + window.lang.show_history + ' (' + shortcut.text + ')" ' +
+                    'onclick="app.map.closePopup(); app.history.device(' + options.id + ', \'' + shortcut.period + '\');">' +
+                    '<span class="icon ' + shortcut.icon + '"></span> ' + shortcut.text + '</a>';
+            });
+            parametersHTML += '</div>';
+        }
+
+        // Routes report (type 43) for this device: small modal asking the date range, result opens as HTML in a new tab
+        if (app.settings.showReportShortcut && app.urls.deviceRouteReport) {
+            parametersHTML += '<div class="popup-actions btn-group btn-group-justified" role="group">' +
+                '<a href="javascript:" class="btn btn-default btn-xs" data-modal="device_route_report" ' +
+                'data-url="' + app.urls.deviceRouteReport + options.id + '" title="' + window.lang.device_routes_report + '">' +
+                '<span class="icon reports"></span> ' + window.lang.device_routes_report + '</a>' +
+                '</div>';
+        }
+
         parametersHTML += '<div class="text-center"><i class="btn icon ico-options-h" data-toggle="collapse" data-target="#device-side-params"></i></div>';
         parametersHTML += '</div>';
 

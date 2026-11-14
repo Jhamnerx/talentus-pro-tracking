@@ -3,6 +3,7 @@
 namespace Tobuli\Reports;
 
 use Formatter;
+use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceGroup;
 
 abstract class DeviceReport extends Report
@@ -97,6 +98,30 @@ abstract class DeviceReport extends Report
         }
 
         return $device->{$attribute};
+    }
+
+    /**
+     * Data needed to draw the device on a report map: its name plus the icon as the live map shows it.
+     * The icon is resolved with the "ack" (ignition off / stopped) status because the rows that use it describe stops.
+     */
+    protected function getDeviceMarker($device): array
+    {
+        $icon = $device->getRelationValue('icon');
+
+        if ($icon) {
+            $icon = clone $icon;
+            $icon->setStatus(Device::STATUS_ACK);
+        }
+
+        return [
+            'name' => $device->name,
+            'icon' => $icon ? [
+                'url'    => asset($icon->path),
+                'width'  => (float) $icon->width,
+                'height' => (float) $icon->height,
+                'type'   => $icon->type,
+            ] : null,
+        ];
     }
 
     protected function precheckError($device)

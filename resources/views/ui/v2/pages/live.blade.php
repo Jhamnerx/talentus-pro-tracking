@@ -33,6 +33,19 @@
         data-zones-export-url="{{ route('geofences.export_create') }}"
         data-pois-export-url="{{ route('pois.export.store') }}"
         data-poll-interval="5000"
+        {{-- Atajos del popup y la ficha (paridad popup legacy, model/device.js):
+             historial con perm history.view; «Reporte de rutas» (tipo 43, HTML en
+             pestaña nueva) con perm reports.view y el tipo habilitado en la cuenta. --}}
+        @php
+            $tpLiveUser = Auth::user();
+            $tpRouteReport = $tpLiveUser->perm('reports', 'view')
+                && array_key_exists(\Tobuli\Reports\Reports\RoutesReport::TYPE_ID,
+                    (new \Tobuli\Reports\ReportManager())->setUser($tpLiveUser)->getUsableList($tpLiveUser));
+        @endphp
+        data-can-history="{{ $tpLiveUser->perm('history', 'view') ? '1' : '' }}"
+        data-route-report-type="{{ $tpRouteReport ? \Tobuli\Reports\Reports\RoutesReport::TYPE_ID : '' }}"
+        data-reports-update-url="{{ route('reports.update') }}"
+        data-today="{{ Formatter::time()->convert(date('Y-m-d H:i:s'), 'Y-m-d') }}"
         {{-- Mismo origen que app.settings.durationFormat del legacy
              (Helper::getJsConfig): 'standart' o 'hh:mm:ss'. --}}
         data-duration-format="{{ \Formatter::duration()->getFormat() }}">
@@ -767,15 +780,25 @@
                         </svg>
                         {{ trans('ui.center_on_map') }}
                     </button>
-                    <button class="tp-btn tp-btn--ghost tp-btn--block" id="tp-drawer-history" type="button" disabled>
-                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M3 12a9 9 0 1 0 9-9 9.74 9.74 0 0 0-7 3.3L3 8" />
-                            <path d="M3 3v5h5" />
-                            <path d="M12 7v5l4 2" />
-                        </svg>
-                        {{ trans('ui.see_history') }}
-                    </button>
+                    {{-- Historial: mismos atajos que el popup (paridad legacy), con perm history.view --}}
+                    @if ($tpLiveUser->perm('history', 'view'))
+                        <div class="tp-dev-shortcuts" id="tp-drawer-history" role="group" aria-label="{{ trans('ui.see_history') }}">
+                            <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" data-hist-range="last_hour" disabled>{{ trans('front.last_hour') }}</button>
+                            <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" data-hist-range="today" disabled>{{ trans('front.today') }}</button>
+                            <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" data-hist-range="yesterday" disabled>{{ trans('front.yesterday') }}</button>
+                        </div>
+                    @endif
+                    @if ($tpRouteReport)
+                        <button class="tp-btn tp-btn--ghost tp-btn--block" id="tp-drawer-route-report" type="button" disabled>
+                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <path d="M14 2v6h6" />
+                                <path d="M8 13h8M8 17h5" />
+                            </svg>
+                            {{ trans('front.device_routes_report') }}
+                        </button>
+                    @endif
                 </div>
             </div>
         </aside>
