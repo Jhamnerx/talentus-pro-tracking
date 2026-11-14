@@ -209,6 +209,47 @@
     return dlg;
   }
 
+
+  /**
+   * «Probar FTP» (paridad con Reports/create.blade.php legacy, test_ftp()):
+   * POST a la ruta legacy ftp.test con la URL; sube un fichero de prueba y
+   * devuelve {status, message}. El mensaje se pinta en verde o rojo.
+   */
+  function bindFtpTest(form) {
+    var btn = form.querySelector("[data-rep-ftp-test]");
+    var msg = form.querySelector("[data-rep-ftp-msg]");
+    var input = form.querySelector('input[name="send_to_ftp"]');
+    if (!btn || !msg || !input) return;
+    function show(ok, text) {
+      msg.hidden = false;
+      msg.textContent = text || tpT('front.unexpected_error');
+      msg.style.color = ok ? "var(--success-700,#15803d)" : "var(--danger-700,#b91c1c)";
+      msg.style.background = ok ? "var(--success-50,#f0fdf4)" : "var(--danger-50,#fef2f2)";
+    }
+    btn.addEventListener("click", function () {
+      var label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = tpT('ui.testing');
+      msg.hidden = true;
+      var body = new FormData();
+      body.append("_token", tpModal.csrf());
+      body.append("url", (input.value || "").trim());
+      fetch(META.ftpTestUrl, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+        body: body,
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (res) {
+          var text = res.message;
+          if (res.errors) { var k = Object.keys(res.errors)[0]; if (k) text = [].concat(res.errors[k])[0]; }
+          show(!!res.status, text);
+        })
+        .catch(function () { show(false, tpT('front.unexpected_error')); })
+        .then(function () { btn.disabled = false; btn.textContent = label; });
+    });
+  }
   function buildModal(dlg, meta, item) {
     item = item || {};
     var body = dlg.querySelector(".tp-modal__body");
@@ -361,7 +402,11 @@
       '<div data-rep-emails style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>' +
       (meta.showFtp
         ? '<div class="tp-form__field" style="margin-top:8px;"><span class="tp-form__label">Enviar a FTP</span>' +
-          '<input type="text" name="send_to_ftp" value="' + esc(item.ftp || "") + '" placeholder="ftp://usuario:contraseña@host:puerto">' +
+          '<div style="display:flex;gap:6px;align-items:stretch;">' +
+          '<input type="text" name="send_to_ftp" value="' + esc(item.ftp || "") + '" placeholder="ftp://usuario:contraseña@host:puerto" style="flex:1;min-width:0;">' +
+          (meta.ftpTestUrl ? '<button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-rep-ftp-test style="white-space:nowrap;">' + esc(tpT('ui.test_ftp')) + '</button>' : "") +
+          "</div>" +
+          '<div data-rep-ftp-msg role="status" hidden style="margin-top:6px;font-size:12px;padding:6px 8px;border-radius:6px;"></div>' +
           '<small class="tp-form__hint">' + tpT('ui.ftp_url_help') + '</small></div>'
         : "") +
       "</div>" +
@@ -504,6 +549,7 @@
         .join("");
     }
     renderEmails();
+    bindFtpTest(form);
     form.querySelector("[data-rep-email-add]").addEventListener("click", function () {
       var v = emailInput.value.trim();
       if (!v) return;

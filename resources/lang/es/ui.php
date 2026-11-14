@@ -1289,4 +1289,11 @@ return [
     'video_columns'                       => 'Columnas',
     'video_duration'                      => 'Duración',
     'video_no_channels'                   => 'Este vehículo no tiene canales de cámara configurados.',
+
+    // Paridad legacy: Probar FTP (Reportes) y conductores
+    'test_ftp'                            => 'Probar FTP',
+    'testing'                             => 'Probando…',
+    'edit_selected'                       => 'Editar seleccionados',
+    'edit_selected_drivers'               => 'Editar :count conductores',
+    'drivers_updated'                     => ':count conductores actualizados',
 ];

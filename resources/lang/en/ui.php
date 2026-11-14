@@ -1288,4 +1288,11 @@ return [
     'video_columns'                       => 'Columns',
     'video_duration'                      => 'Duration',
     'video_no_channels'                   => 'This vehicle has no camera channels configured.',
+
+    // Legacy parity: Test FTP (Reports) and drivers
+    'test_ftp'                            => 'Test FTP',
+    'testing'                             => 'Testing…',
+    'edit_selected'                       => 'Edit selected',
+    'edit_selected_drivers'               => 'Edit :count drivers',
+    'drivers_updated'                     => ':count drivers updated',
 ];

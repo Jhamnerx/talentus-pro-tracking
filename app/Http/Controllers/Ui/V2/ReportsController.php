@@ -123,6 +123,8 @@ class ReportsController extends BaseController
             'typeUrl'     => url('/reports/types') . '/{type}',
             'generateUrl' => url('/reports/update'),
             'showFtp'     => (bool) config('addon.report_send_to_ftp'),
+            // «Probar FTP»: misma ruta que el legacy (FtpController@test)
+            'ftpTestUrl'  => route('ftp.test'),
         ]);
     }
 

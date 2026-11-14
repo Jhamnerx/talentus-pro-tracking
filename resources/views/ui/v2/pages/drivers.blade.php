@@ -16,6 +16,8 @@
         data-meta-url="{{ route('ui.v2.api.drivers.meta') }}"
         data-store-url="{{ route('ui.v2.api.drivers.store') }}"
         data-item-url="{{ url('/ui/v2/api/drivers') . '/{id}' }}"
+        data-activity-url="{{ url('/ui/v2/api/drivers') . '/{id}/activity-log' }}"
+        data-multiple-url="{{ route('ui.v2.api.drivers.update_multiple') }}"
         data-can-edit="{{ !empty($canEdit) ? 1 : 0 }}"
         data-can-remove="{{ !empty($canRemove) ? 1 : 0 }}">
 
@@ -39,6 +41,13 @@
                     <option value="with">{{ trans('ui.with_devices') }}</option>
                     <option value="without">{{ trans('ui.without_devices') }}</option>
                 </select>
+                @if (!empty($canEdit))
+                    {{-- Edición múltiple (paridad UserDrivers/editMultiple legacy) --}}
+                    <button type="button" class="tp-btn tp-btn--secondary" id="tp-drivers-edit-multi" disabled
+                        style="white-space: nowrap;">
+                        {{ trans('ui.edit_selected') }} <span id="tp-drivers-sel-count"></span>
+                    </button>
+                @endif
                 <button type="button" class="tp-btn tp-btn--accent" id="tp-drivers-add">＋</button>
             </div>
         </header>
@@ -48,6 +57,12 @@
                 <table class="tp-svc-table" id="tp-drivers-table">
                     <thead>
                         <tr>
+                            @if (!empty($canEdit))
+                                <th style="width: 34px;">
+                                    <input type="checkbox" class="tp-choice-input" id="tp-drivers-chk-all"
+                                        aria-label="{{ trans('front.select_all') }}">
+                                </th>
+                            @endif
                             <th>{{ trans('validation.attributes.name') }}</th>
                             <th>{{ trans('front.current_device') }}</th>
                             <th>RFID</th>
@@ -60,7 +75,7 @@
                     </thead>
                     <tbody id="tp-drivers-rows">
                         <tr>
-                            <td colspan="8" class="tp-svc-table__empty">…</td>
+                            <td colspan="{{ !empty($canEdit) ? 9 : 8 }}" class="tp-svc-table__empty">…</td>
                         </tr>
                     </tbody>
                 </table>

@@ -24,6 +24,8 @@
     meta: root.getAttribute("data-meta-url"),
     store: root.getAttribute("data-store-url"),
     item: root.getAttribute("data-item-url"),
+    activity: root.getAttribute("data-activity-url"),
+    multiple: root.getAttribute("data-multiple-url"),
   };
   var canEdit = root.getAttribute("data-can-edit") === "1";
   var canRemove = root.getAttribute("data-can-remove") === "1";
@@ -429,6 +431,150 @@
       });
   }
 
+  /* ================= Registro de actividad ================= */
+
+  // Paridad con UserDrivers/activityLog legacy: filtro por inicio
+  // desde/hasta + tabla Dispositivo / Inicio / Fin paginada (15 por pág.).
+  function openActivityLog(id, name) {
+    var st = { page: 1, from: "", to: "", last: 1 };
+    var dlg = tpModal.open({
+      title: tpT('front.activity_log') + (name ? " - " + name : ""),
+      size: "lg",
+      body:
+        '<div class="tp-form">' +
+        '<div class="tp-form__grid tp-form__grid--2">' +
+        '<label class="tp-form__field"><span class="tp-form__label">' + esc(tpT('front.start') + " " + tpT('front.from')) + '</span>' +
+        '<input type="datetime-local" data-drv-log-from></label>' +
+        '<label class="tp-form__field"><span class="tp-form__label">' + esc(tpT('front.start') + " " + tpT('global.to')) + '</span>' +
+        '<input type="datetime-local" data-drv-log-to></label>' +
+        "</div></div>" +
+        '<div class="tp-maint__wrap" style="margin-top:12px;">' +
+        '<table class="tp-svc-table"><thead><tr>' +
+        "<th>" + esc(tpT('front.device')) + "</th><th>" + esc(tpT('front.start')) + "</th><th>" + esc(tpT('front.end')) + "</th>" +
+        '</tr></thead><tbody data-drv-log-rows><tr><td colspan="3" class="tp-svc-table__empty">…</td></tr></tbody></table></div>' +
+        '<div class="tp-svc-list__pager" style="display:flex;justify-content:flex-end;align-items:center;gap:6px;margin-top:10px;">' +
+        '<span data-drv-log-range>—</span>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-drv-log-prev aria-label="' + esc(tpT('front.previous')) + '">‹</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-drv-log-next aria-label="' + esc(tpT('front.next')) + '">›</button>' +
+        "</div>",
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
+    });
+
+    var rows = dlg.querySelector("[data-drv-log-rows]");
+    var range = dlg.querySelector("[data-drv-log-range]");
+    var prev = dlg.querySelector("[data-drv-log-prev]");
+    var next = dlg.querySelector("[data-drv-log-next]");
+
+    function loadLog() {
+      rows.innerHTML = '<tr><td colspan="3" class="tp-svc-table__empty">…</td></tr>';
+      var q = URLS.activity.replace("{id}", id) +
+        "?page=" + st.page +
+        "&start_from=" + encodeURIComponent(st.from) +
+        "&start_to=" + encodeURIComponent(st.to);
+      tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
+        if (!res.ok || !res.data || !res.data.ok) {
+          rows.innerHTML = '<tr><td colspan="3" class="tp-svc-table__empty">' + tpT('ui.load_failed') + "</td></tr>";
+          return;
+        }
+        var d = res.data;
+        st.last = d.last || 1;
+        rows.innerHTML = (d.items || []).length
+          ? d.items.map(function (r) {
+              return "<tr><td>" + esc(r.device || "–") + "</td><td>" + esc(r.start || "–") + "</td><td>" + esc(r.end || "–") + "</td></tr>";
+            }).join("")
+          : '<tr><td colspan="3" class="tp-svc-table__empty">' + tpT('front.nothing_found_request') + "</td></tr>";
+        var from = d.total ? (d.page - 1) * d.per + 1 : 0;
+        range.textContent = from + "–" + Math.min(d.page * d.per, d.total) + " / " + d.total;
+        prev.disabled = d.page <= 1;
+        next.disabled = d.page >= st.last;
+      });
+    }
+
+    dlg.querySelector("[data-drv-log-from]").addEventListener("change", function (e) { st.from = e.target.value; st.page = 1; loadLog(); });
+    dlg.querySelector("[data-drv-log-to]").addEventListener("change", function (e) { st.to = e.target.value; st.page = 1; loadLog(); });
+    prev.addEventListener("click", function () { if (st.page > 1) { st.page--; loadLog(); } });
+    next.addEventListener("click", function () { if (st.page < st.last) { st.page++; loadLog(); } });
+    loadLog();
+  }
+
+  /* ================= Edición múltiple ================= */
+
+  // Paridad con UserDrivers/editMultiple legacy: una fila por conductor
+  // con Nombre*, RFID, Teléfono, Email y Descripción (el device_id está
+  // comentado en el legacy y tampoco se edita aquí).
+  function openMultiEdit(drivers, onSaved) {
+    var FIELDS = [
+      { k: "name", label: tpT('ui.name') + " *" },
+      { k: "rfid", label: "RFID" },
+      { k: "phone", label: tpT('attr.phone') },
+      { k: "email", label: "Email" },
+      { k: "description", label: tpT('attr.description') },
+    ];
+    var body =
+      '<form class="tp-form tp-driver-multi" style="display:flex;flex-direction:column;gap:10px;">' +
+      drivers.map(function (d, i) {
+        return (
+          '<div data-drv-multi-row="' + d.id + '" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding-bottom:10px;border-bottom:1px solid var(--border-default,#eef2f7);">' +
+          FIELDS.map(function (f) {
+            var attr = 'data-k="' + f.k + '" data-error-for="items.' + i + "." + f.k + '"';
+            var input = f.k === "description"
+              ? "<textarea rows=\"1\" " + attr + ">" + esc(d[f.k] || "") + "</textarea>"
+              : '<input type="text" ' + attr + ' value="' + esc(d[f.k] || "") + '">';
+            return '<label class="tp-form__field"><span class="tp-form__label">' + esc(f.label) + "</span>" + input + "</label>";
+          }).join("") +
+          "</div>"
+        );
+      }).join("") +
+      "</form>";
+
+    tpModal.open({
+      title: tpT('ui.edit_selected_drivers', { count: drivers.length }),
+      size: "xl",
+      static: true,
+      body: body,
+      buttons: [
+        { label: tpT('global.cancel'), variant: "ghost", close: true },
+        {
+          label: tpT('global.save'),
+          variant: "primary",
+          close: false,
+          onClick: function (dialog) {
+            var items = Array.prototype.map.call(dialog.querySelectorAll("[data-drv-multi-row]"), function (row) {
+              var it = { id: +row.getAttribute("data-drv-multi-row") };
+              Array.prototype.forEach.call(row.querySelectorAll("[data-k]"), function (el) {
+                it[el.getAttribute("data-k")] = el.value.trim();
+              });
+              return it;
+            });
+            tpModal.setBusy(dialog, true);
+            tpModal.fetchJSON(URLS.multiple, { method: "PUT", json: { items: items } })
+              .then(function (res) {
+                tpModal.setBusy(dialog, false);
+                if (res.status === 422) {
+                  var errors = (res.data && res.data.errors) || {};
+                  tpModal.showFieldErrors(dialog, errors);
+                  tpModal.toast(tpModal.firstError(errors, (res.data && res.data.message) || tpT('ui.check_the_fields')), "warning");
+                  return;
+                }
+                if (!res.ok || !res.data || !res.data.ok) {
+                  tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
+                  return;
+                }
+                tpModal.toast(tpT('ui.drivers_updated', { count: res.data.count || items.length }), "success");
+                tpModal.close(dialog);
+                if (typeof onSaved === "function") onSaved();
+              })
+              .catch(function () {
+                tpModal.setBusy(dialog, false);
+                tpModal.toast(tpT('ui.network_error'), "error");
+              });
+            return false;
+          },
+        },
+      ],
+    });
+  }
+
   /* ================= Página ================= */
 
   var rowsEl = document.getElementById("tp-drivers-rows");
@@ -439,12 +585,33 @@
   var prevBtn = document.getElementById("tp-drivers-prev");
   var nextBtn = document.getElementById("tp-drivers-next");
   var addBtn = document.getElementById("tp-drivers-add");
+  var multiBtn = document.getElementById("tp-drivers-edit-multi");
+  var selCount = document.getElementById("tp-drivers-sel-count");
+  var chkAll = document.getElementById("tp-drivers-chk-all");
+  var COLS = canEdit ? 9 : 8;
+  // Selección para la edición múltiple: id → fila (se conserva al paginar)
+  var selected = {};
+  var pageRows = [];
+
+  function syncSelection() {
+    var n = Object.keys(selected).length;
+    if (multiBtn) multiBtn.disabled = !n;
+    if (selCount) selCount.textContent = n ? "(" + n + ")" : "";
+    if (chkAll) {
+      var on = pageRows.filter(function (r) { return selected[r.id]; }).length;
+      chkAll.checked = pageRows.length > 0 && on === pageRows.length;
+      chkAll.indeterminate = on > 0 && on < pageRows.length;
+    }
+  }
 
   var state = { page: 1, per: 20, s: "", assigned: "", last: 1, total: 0 };
   var timer = null;
 
   function kebab(row) {
-    var items = "";
+    // Registro de actividad: el legacy lo ofrece a todo el que ve la lista
+    var items =
+      '<button type="button" role="menuitem" data-drv-log="' + row.id + '" data-name="' + esc(row.name) + '">' +
+      '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> ' + tpT('front.activity_log') + '</button>';
     if (canEdit)
       items +=
         '<button type="button" role="menuitem" data-drv-edit="' + row.id + '">' +
@@ -472,17 +639,21 @@
       "&per_page=" + state.per;
     tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
       if (!res.ok || !res.data || !res.data.ok) {
-        rowsEl.innerHTML = '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
+        rowsEl.innerHTML = '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpT('ui.load_failed') + '</td></tr>';
         return;
       }
       state.last = res.data.last || 1;
       state.total = res.data.total || 0;
       var items = res.data.items || [];
+      pageRows = items;
       rowsEl.innerHTML = items.length
         ? items
             .map(function (r) {
               return (
                 "<tr>" +
+                (canEdit
+                  ? '<td><input type="checkbox" class="tp-choice-input" data-drv-sel="' + r.id + '"' + (selected[r.id] ? " checked" : "") + ' aria-label="' + esc(r.name) + '"></td>'
+                  : "") +
                 "<td>" + esc(r.name) + "</td>" +
                 "<td>" + esc(r.current_device || "–") + "</td>" +
                 "<td>" + esc(r.rfid || "–") + "</td>" +
@@ -495,12 +666,13 @@
               );
             })
             .join("")
-        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0;
       var to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;
       prevBtn.disabled = state.page <= 1;
       nextBtn.disabled = state.page >= state.last;
+      syncSelection();
     });
   }
 
@@ -538,7 +710,42 @@
     openForm(null, load);
   });
 
+  rowsEl.addEventListener("change", function (e) {
+    var chk = e.target.closest("[data-drv-sel]");
+    if (!chk) return;
+    var id = chk.getAttribute("data-drv-sel");
+    var row = pageRows.filter(function (r) { return String(r.id) === id; })[0];
+    if (chk.checked && row) selected[id] = row;
+    else delete selected[id];
+    syncSelection();
+  });
+  if (chkAll)
+    chkAll.addEventListener("change", function () {
+      pageRows.forEach(function (r) {
+        if (chkAll.checked) selected[r.id] = r;
+        else delete selected[r.id];
+      });
+      Array.prototype.forEach.call(rowsEl.querySelectorAll("[data-drv-sel]"), function (c) {
+        c.checked = chkAll.checked;
+      });
+      syncSelection();
+    });
+  if (multiBtn)
+    multiBtn.addEventListener("click", function () {
+      var list = Object.keys(selected).map(function (k) { return selected[k]; });
+      if (!list.length) return;
+      openMultiEdit(list, function () {
+        selected = {};
+        load();
+      });
+    });
+
   rowsEl.addEventListener("click", function (e) {
+    var log = e.target.closest("[data-drv-log]");
+    if (log) {
+      openActivityLog(log.getAttribute("data-drv-log"), log.getAttribute("data-name"));
+      return;
+    }
     var edit = e.target.closest("[data-drv-edit]");
     if (edit) {
       openForm(edit.getAttribute("data-drv-edit"), load);
@@ -559,6 +766,7 @@
           tpModal.fetchJSON(URLS.item.replace("{id}", did), { method: "DELETE" }).then(function (res) {
             if (res.ok && res.data && res.data.ok) {
               tpModal.toast(tpT('ui.driver_deleted'), "success");
+              delete selected[did];
               load();
             } else {
               tpModal.toast(tpT('ui.delete_failed'), "error");

@@ -177,6 +177,13 @@ class HistoryController extends BaseController
                         'v'   => isset($p['valid']) ? (int) (bool) $p['valid'] : 1,
                         'sv'  => $sv ?: null,
                     ];
+                    // Relleno / robo de combustible en esta posición (mismo
+                    // cálculo que marca la gráfica del legacy).
+                    foreach (['fill', 'theft'] as $fk) {
+                        if (! empty($p[$fk])) {
+                            $positions[count($positions) - 1][$fk] = $p[$fk];
+                        }
+                    }
                 }
                 if ($status === self::S_DRIVE) $drives++; else $stops++;
             } elseif ($status === self::S_EVENT) {

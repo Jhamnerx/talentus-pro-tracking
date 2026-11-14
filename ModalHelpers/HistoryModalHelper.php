@@ -264,22 +264,7 @@ class HistoryModalHelper extends ModalHelper
                             // poder marcarlos sobre la curva del grafico. Es lo
                             // que distingue "bajo porque iba andando" de "bajo
                             // parado a las 3 de la manana".
-                            foreach (['fill' => 'fuel_filling', 'theft' => 'fuel_theft'] as $clave => $campo) {
-                                if (empty($position->$campo)) {
-                                    continue;
-                                }
-
-                                $evento = $position->$campo;
-
-                                $data[$clave] = [
-                                    'sensor' => 's' . $evento['sensor_id'],
-                                    'name'   => $evento['name'],
-                                    'diff'   => round((float) $evento['diff'], 2),
-                                    'from'   => round((float) $evento['previous'], 2),
-                                    'to'     => round((float) $evento['current'], 2),
-                                    'unit'   => $evento['unit'],
-                                ];
-                            }
+                            $data = array_merge($data, $this->fuelEventsOf($position));
 
                             return $data;
                         },
@@ -851,7 +836,37 @@ class HistoryModalHelper extends ModalHelper
 
             'other_arr' => parseXML($position->other),
             'sensors_data' => $sensor_data,
-        ];
+        ] + $this->fuelEventsOf($position);
+    }
+
+    /**
+     * Relleno y robo detectados en la posicion (AppendFuelFilling /
+     * AppendFuelTheft), para marcarlos sobre la curva del grafico. Es lo que
+     * distingue "bajo porque iba andando" de "bajo parado a las 3 de la
+     * manana". Lo usan get() (legacy) y getApi() (UI v2).
+     */
+    protected function fuelEventsOf($position): array
+    {
+        $data = [];
+
+        foreach (['fill' => 'fuel_filling', 'theft' => 'fuel_theft'] as $clave => $campo) {
+            if (empty($position->$campo)) {
+                continue;
+            }
+
+            $evento = $position->$campo;
+
+            $data[$clave] = [
+                'sensor' => 's' . $evento['sensor_id'],
+                'name'   => $evento['name'],
+                'diff'   => round((float) $evento['diff'], 2),
+                'from'   => round((float) $evento['previous'], 2),
+                'to'     => round((float) $evento['current'], 2),
+                'unit'   => $evento['unit'],
+            ];
+        }
+
+        return $data;
     }
 
     protected function getGroupMetas($group, $keys)
