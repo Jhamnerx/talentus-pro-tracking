@@ -24,11 +24,14 @@
 <div class="tp-form__grid">
     <label class="tp-form__field tp-form__field--checkbox">
         <input type="hidden" name="has_camera" value="0" {{ $videoDisabled }}>
-        <input type="checkbox" name="has_camera" value="1" {{ $item->has_camera ? 'checked' : '' }} {{ $videoDisabled }}>
+        <input type="checkbox" name="has_camera" value="1" {{ $item->has_camera ? 'checked' : '' }} {{ $videoDisabled }}
+            data-tp-video-toggle>
         <span class="tp-form__label">{{ trans('validation.attributes.has_camera') }}</span>
     </label>
 
-    <div class="tp-form__field">
+    {{-- Como el legacy (data-disabler "#camera-channels-group;hide-disable"):
+         los canales solo se ven y se envían con «Tiene cámara» marcado. --}}
+    <div class="tp-form__field" data-tp-video-channels @unless ($item->has_camera) hidden @endunless>
         <span class="tp-form__label">{{ trans('validation.attributes.camera_channels') }}</span>
         <div class="tp-dv-channels">
             @for ($channel = 1; $channel <= \Tobuli\Entities\Device::VIDEO_MAX_CHANNELS; $channel++)

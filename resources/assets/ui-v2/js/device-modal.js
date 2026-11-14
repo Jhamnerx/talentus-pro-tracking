@@ -154,6 +154,32 @@
     refresh();
   }
 
+  // Vídeo: los canales solo se muestran (y se envían) con «Tiene cámara»
+  // marcado — paridad con data-disabler "#camera-channels-group;hide-disable"
+  // del legacy. Lo que ya venía deshabilitado por permiso se respeta.
+  function wireVideoChannels(scope) {
+    var chk = scope.querySelector("[data-tp-video-toggle]");
+    var box = scope.querySelector("[data-tp-video-channels]");
+    if (!chk || !box) return;
+    var fields = box.querySelectorAll("input, select");
+    Array.prototype.forEach.call(fields, function (el) {
+      if (el.disabled) el.setAttribute("data-perm-disabled", "1");
+    });
+    function apply() {
+      var on = chk.checked;
+      box.hidden = !on;
+      Array.prototype.forEach.call(fields, function (el) {
+        if (el.getAttribute("data-perm-disabled") === "1") return;
+        el.disabled = !on;
+        if (el.tagName === "SELECT" && el._tpdd && window.tpSelect && tpSelect.refresh) {
+          try { tpSelect.refresh(el); } catch (e) {}
+        }
+      });
+    }
+    chk.addEventListener("change", apply);
+    apply();
+  }
+
   // "Detección de motor ON/OFF por" (detect_engine) solo aplica cuando
   // "Detección de ignición" = sensor engine_hours; se muestra/oculta según el
   // valor de engine_hours (paridad legacy .ignition_detection_engine en app.js).
@@ -2480,6 +2506,7 @@
           ["iconsTab", wireIconsTab],
           ["expiration", wireExpiration],
           ["enablers", wireEnablers],
+          ["videoChannels", wireVideoChannels],
           ["ignitionEngine", wireIgnitionEngine],
           ["fuelLabels", wireFuelLabels],
           ["routeColors", wireRouteColors],
