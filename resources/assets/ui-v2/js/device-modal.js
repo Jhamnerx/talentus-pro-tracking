@@ -513,7 +513,6 @@
     var url = root.getAttribute("data-users-url");
     var listEl = root.querySelector("[data-users-list]");
     var searchEl = root.querySelector("[data-users-search]");
-    var pagEl = root.querySelector("[data-users-pagination]");
     var deltasEl = root.querySelector("[data-users-deltas]");
     var selAllBtn = root.querySelector("[data-users-select-all]");
     var deselAllBtn = root.querySelector("[data-users-deselect-all]");
@@ -522,6 +521,8 @@
     var lastPage = 1;
     var search = "";
     var timer = null;
+    var loading = false;
+    var reqId = 0; // descarta respuestas de una búsqueda anterior
     // Modelo de selección estilo EntityLoader:
     //   mode null → estado BD (base) + overrides individuales
     //   mode 'all'/'none' → "s;1;"/"s;0;" + overrides posteriores
@@ -543,9 +544,9 @@
     function rowHtml(row) {
       var uid = String(row.id);
       return (
-        '<label class="tp-choice-row" style="display:flex;align-items:center;gap:9px;padding:5px 2px;cursor:pointer;">' +
-        '<input type="checkbox" class="tp-choice-input" data-user-id="' + uid + '"' + (isChecked(uid) ? " checked" : "") + ">" +
-        '<span style="font-size:13px;">' + esc(row.name) + "</span>" +
+        '<label class="tp-users-box__row" title="' + esc(row.name) + '">' +
+        '<input type="checkbox" data-user-id="' + uid + '"' + (isChecked(uid) ? " checked" : "") + ">" +
+        "<span>" + esc(row.name) + "</span>" +
         "</label>"
       );
     }
@@ -569,28 +570,22 @@
         .join("");
     }
 
-    function renderPagination() {
-      if (!pagEl) return;
-      if (lastPage <= 1) {
-        pagEl.hidden = true;
-        return;
-      }
-      pagEl.hidden = false;
-      var html = '<button type="button" data-users-page="' + (page - 1) + '"' + (page <= 1 ? " disabled" : "") + ">‹</button>";
-      var start = Math.max(1, page - 3);
-      var end = Math.min(lastPage, start + 6);
-      for (var p = start; p <= end; p++) {
-        html += '<button type="button" data-users-page="' + p + '" class="' + (p === page ? "is-current" : "") + '">' + p + "</button>";
-      }
-      html += '<button type="button" data-users-page="' + (page + 1) + '"' + (page >= lastPage ? " disabled" : "") + ">›</button>";
-      pagEl.innerHTML = html;
+    function msgHtml(text, cls) {
+      return '<div class="tp-users-box__msg ' + (cls || "tp-text-muted") + '">' + text + "</div>";
     }
 
-    function fetchPage() {
+    // Carga la página `page`. append=false reemplaza la lista (búsqueda nueva),
+    // append=true la añade al final (scroll infinito, como el selectpicker
+    // ajax del legacy).
+    function fetchPage(append) {
+      var my = ++reqId;
+      loading = true;
       var q = url + (url.indexOf("?") < 0 ? "?" : "&") + "s=" + encodeURIComponent(search) + "&page=" + page;
       tpModal.fetchJSON(q, { method: "GET" }).then(function (res) {
+        if (my !== reqId) return;
+        loading = false;
         if (!res.ok || !res.data) {
-          listEl.innerHTML = '<div class="tp-text-error" style="padding:10px 4px;font-size:13px;">' + tpT('ui.list_load_failed') + '</div>';
+          if (!append) listEl.innerHTML = msgHtml(tpT('ui.list_load_failed'), "tp-text-error");
           return;
         }
         var rows = res.data.data || [];
@@ -598,10 +593,30 @@
         rows.forEach(function (r) {
           if (base[String(r.id)] == null) base[String(r.id)] = !!+r.selected;
         });
-        listEl.innerHTML =
-          rows.map(rowHtml).join("") ||
-          '<div class="tp-text-muted" style="padding:10px 4px;font-size:13px;">' + tpT('ui.no_results') + '</div>';
-        renderPagination();
+        var html = rows.map(rowHtml).join("");
+        if (append) {
+          listEl.insertAdjacentHTML("beforeend", html);
+        } else {
+          listEl.scrollTop = 0;
+          listEl.innerHTML = html || msgHtml(tpT('ui.no_results'));
+        }
+        // Si la página no llena la caja no habrá scroll: pedir la siguiente.
+        maybeLoadMore();
+      });
+    }
+
+    function maybeLoadMore() {
+      if (loading || page >= lastPage) return;
+      // Con la pestaña oculta las medidas valen 0: no encadenar páginas.
+      if (!listEl.offsetParent) return;
+      if (listEl.scrollTop + listEl.clientHeight < listEl.scrollHeight - 40) return;
+      page += 1;
+      fetchPage(true);
+    }
+
+    function refreshChecks() {
+      listEl.querySelectorAll("[data-user-id]").forEach(function (chk) {
+        chk.checked = isChecked(chk.getAttribute("data-user-id"));
       });
     }
 
@@ -613,14 +628,12 @@
       syncDeltas();
     });
 
-    if (pagEl)
-      pagEl.addEventListener("click", function (e) {
-        var btn = e.target.closest("[data-users-page]");
-        if (!btn || btn.disabled) return;
-        var p = parseInt(btn.getAttribute("data-users-page"), 10);
-        if (p < 1 || p > lastPage || p === page) return;
-        page = p;
-        fetchPage();
+    listEl.addEventListener("scroll", maybeLoadMore);
+    // Al mostrar la pestaña, completar la caja si la 1ª página no la llena.
+    var usersTabBtn = scope.querySelector('[data-tp-tab="usuarios"]');
+    if (usersTabBtn)
+      usersTabBtn.addEventListener("click", function () {
+        setTimeout(maybeLoadMore, 0);
       });
 
     if (selAllBtn)
@@ -628,7 +641,7 @@
         mode = "all";
         overrides = {};
         syncDeltas();
-        fetchPage();
+        refreshChecks();
       });
 
     if (deselAllBtn)
@@ -636,7 +649,7 @@
         mode = "none";
         overrides = {};
         syncDeltas();
-        fetchPage();
+        refreshChecks();
       });
 
     if (searchEl)
@@ -645,11 +658,11 @@
         timer = setTimeout(function () {
           search = searchEl.value.trim();
           page = 1;
-          fetchPage();
+          fetchPage(false);
         }, 300);
       });
 
-    fetchPage();
+    fetchPage(false);
   }
 
   // --------------------------------------------------------------------------
