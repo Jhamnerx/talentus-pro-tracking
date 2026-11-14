@@ -698,6 +698,20 @@
   // Tabla del device + form en modal ANIDADO (tpModal apila <dialog>).
   // CRUD contra los endpoints v2 que delegan en SensorModalHelper.
   // --------------------------------------------------------------------------
+  // Editar / eliminar como iconos en línea (como Sensors/index y
+  // Services/table del legacy). Mismos atributos data-* que el kebab, así que
+  // los manejadores de cada pestaña no cambian.
+  function devlistActions(editAttr, delAttr, id) {
+    var e = tpModal.escapeHtml(tpT("global.edit"));
+    var d = tpModal.escapeHtml(tpT("global.delete"));
+    return (
+      '<td class="tp-devlist__actions">' +
+      '<button type="button" class="tp-devlist__icon" ' + editAttr + '="' + id + '" title="' + e + '" aria-label="' + e + '">' + K_EDIT + "</button>" +
+      '<button type="button" class="tp-devlist__icon tp-devlist__icon--danger" ' + delAttr + '="' + id + '" title="' + d + '" aria-label="' + d + '">' + K_TRASH + "</button>" +
+      "</td>"
+    );
+  }
+
   function wireSensorsTab(scope) {
     var root = scope.querySelector("[data-tp-sensors]");
     if (!root) return;
@@ -744,20 +758,10 @@
       return out;
     }
 
-    // Editar / eliminar como iconos en línea (como Sensors/index del legacy).
-    function actionsCell(id) {
-      return (
-        '<td class="tp-sensors__actions">' +
-        '<button type="button" class="tp-sensors__icon" data-sensor-edit="' + id + '" title="' + esc(tpT('global.edit')) + '" aria-label="' + esc(tpT('global.edit')) + '">' + K_EDIT + "</button>" +
-        '<button type="button" class="tp-sensors__icon tp-sensors__icon--danger" data-sensor-del="' + id + '" title="' + esc(tpT('global.delete')) + '" aria-label="' + esc(tpT('global.delete')) + '">' + K_TRASH + "</button>" +
-        "</td>"
-      );
-    }
-
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-sensors-empty><td colspan="3" class="tp-sensors__empty">' + tpT('front.no_sensors') + '</td></tr>';
+          '<tr data-sensors-empty><td colspan="3" class="tp-devlist__empty">' + tpT('front.no_sensors') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -766,7 +770,7 @@
             '<tr data-sensor-id="' + s.id + '">' +
             "<td>" + esc(s.name) + "</td>" +
             "<td>" + esc(s.type) + "</td>" +
-            actionsCell(s.id) + "</tr>"
+            devlistActions("data-sensor-edit", "data-sensor-del", s.id) + "</tr>"
           );
         })
         .join("");
@@ -852,7 +856,7 @@
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-services-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
+          '<tr data-services-empty><td colspan="3" class="tp-devlist__empty">' + tpT('front.no_services') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -862,7 +866,7 @@
             '<tr data-service-id="' + s.id + '">' +
             "<td>" + esc(s.name || "") + "</td>" +
             "<td>" + esc(exp) + "</td>" +
-            '<td style="text-align:right;">' + kebabCell("data-service-edit", "data-service-del", s.id) + "</td></tr>"
+            devlistActions("data-service-edit", "data-service-del", s.id) + "</tr>"
           );
         })
         .join("");
@@ -2397,6 +2401,8 @@
       title: (opts.kind === "beacon" ? (isEdit ? tpT('ui.edit_beacon') : tpT('ui.new_beacon')) : (isEdit ? tpT('ui.edit_vehicle') : tpT('ui.new_vehicle'))),
       // Mismo ancho que el modal legacy (600px): ver .tp-modal--device en device-modal.css
       className: "tp-modal--device",
+      // Icono de navegación delante del título, como el header del legacy
+      icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>',
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: (isEdit && CFG.canRemove ? [deleteBtn] : []).concat([

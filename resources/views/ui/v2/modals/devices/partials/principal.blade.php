@@ -53,7 +53,18 @@
 
     @if (Auth::user()->can('view', $item, 'imei'))
         <label class="tp-form__field tp-form__field--required">
-            <span class="tp-form__label">{{ trans('front.device_imei') }} / {{ trans('front.tracker_id') }}</span>
+            {{-- Ayudas "?" con imagen, como tooltipMarkImei() del legacy --}}
+            <span class="tp-form__label">
+                {{ trans('front.device_imei') }}
+                <span class="tp-help" tabindex="0" aria-label="{{ trans('front.tracker_imei_info') }}"
+                    data-tp-help-text="{{ trans('front.tracker_imei_info') }}"
+                    data-tp-help-img="{{ asset('assets/ui/v2/img/help-tracker-imei.svg') }}">?</span>
+                /
+                {{ trans('front.tracker_id') }}
+                <span class="tp-help" tabindex="0" aria-label="{{ trans('front.tracker_id_info') }}"
+                    data-tp-help-text="{{ trans('front.tracker_id_info') }}"
+                    data-tp-help-img="{{ asset('assets/ui/v2/img/help-tracker-id.svg') }}">?</span>
+            </span>
             <input type="text" name="imei" required maxlength="32" placeholder="{{ trans('front.imei_placeholder') }}"
                 value="{{ $item->imei ?? '' }}" data-tp-field
                 {{ Auth::user()->can('edit', $item, 'imei') ? '' : 'disabled' }}>

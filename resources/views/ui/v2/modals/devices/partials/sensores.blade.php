@@ -36,16 +36,16 @@
 
         {{-- Barra de acciones como el legacy (action-block): "+ Agregar sensor"
              a la izquierda; buscador y "Copiar a…" (extras de la v2) a la derecha. --}}
-        <div class="tp-sensors__bar">
-            <button type="button" class="tp-sensors__add" data-sensor-add>
+        <div class="tp-devlist__bar">
+            <button type="button" class="tp-devlist__add" data-sensor-add>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
                     stroke-linecap="round"><path d="M12 5v14M5 12h14" /></svg>
                 {{ trans('front.add_sensor') }}
             </button>
             {{-- Copiar la configuracion de sensores a otros vehiculos: dar de
                  alta una flota igual obligaba a repetirla uno a uno. --}}
-            <button type="button" class="tp-sensors__add tp-sensors__add--ghost" data-sensors-copy>Copiar a…</button>
-            <span class="tp-sensors__search">
+            <button type="button" class="tp-devlist__add tp-devlist__add--ghost" data-sensors-copy>Copiar a…</button>
+            <span class="tp-devlist__search">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="7" />
@@ -56,12 +56,12 @@
             </span>
         </div>
 
-        <table class="tp-sensors__table">
+        <table class="tp-devlist__table">
             <thead>
                 <tr>
                     <th>{{ trans('validation.attributes.sensor_name') }}</th>
                     <th>{{ trans('validation.attributes.sensor_template') }}</th>
-                    <th class="tp-sensors__actions-col"></th>
+                    <th class="tp-devlist__actions-col"></th>
                 </tr>
             </thead>
             <tbody data-sensors-rows>
@@ -69,13 +69,13 @@
                     <tr data-sensor-id="{{ $s['id'] }}">
                         <td>{{ $s['name'] }}</td>
                         <td>{{ $s['type'] }}</td>
-                        <td class="tp-sensors__actions">
-                            <button type="button" class="tp-sensors__icon" data-sensor-edit="{{ $s['id'] }}"
+                        <td class="tp-devlist__actions">
+                            <button type="button" class="tp-devlist__icon" data-sensor-edit="{{ $s['id'] }}"
                                 title="{{ trans('global.edit') }}" aria-label="{{ trans('global.edit') }}">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" /></svg>
                             </button>
-                            <button type="button" class="tp-sensors__icon tp-sensors__icon--danger" data-sensor-del="{{ $s['id'] }}"
+                            <button type="button" class="tp-devlist__icon tp-devlist__icon--danger" data-sensor-del="{{ $s['id'] }}"
                                 title="{{ trans('global.delete') }}" aria-label="{{ trans('global.delete') }}">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
@@ -84,7 +84,7 @@
                     </tr>
                 @empty
                     <tr data-sensors-empty>
-                        <td colspan="3" class="tp-sensors__empty">{{ trans('front.no_sensors') }}</td>
+                        <td colspan="3" class="tp-devlist__empty">{{ trans('front.no_sensors') }}</td>
                     </tr>
                 @endforelse
             </tbody>

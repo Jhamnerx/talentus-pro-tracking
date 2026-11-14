@@ -208,6 +208,25 @@
 .tp-modal.tp-modal--device .tp-modal__inner {
   max-height: calc(100vh - 60px);
 }
+/* Header como el legacy: icono de navegación + título más grande */
+.tp-modal--device .tp-modal__head {
+  padding: 14px 16px;
+}
+.tp-modal--device .tp-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fg-primary, #0f172a);
+}
+.tp-modal__title-icon {
+  display: inline-flex;
+  color: var(--brand-600, #1f5fbf);
+}
+[data-theme="dark"] .tp-modal__title-icon {
+  color: var(--brand-400, #6b9be6);
+}
 
 .tp-device-form .tp-tabs__nav {
   position: sticky;
@@ -231,7 +250,7 @@
   background: transparent;
   border: 0;
   border-radius: 0;
-  padding: 10px 12px 9px;
+  padding: 10px 14px 9px;
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -247,14 +266,19 @@
     color 0.12s ease,
     box-shadow 0.12s ease;
 }
+/* Hover como el legacy: caja gris clara detrás del texto; activa con
+   texto de marca y subrayado de 3px. */
 .tp-device-form .tp-tabs__tab:hover {
   color: var(--fg-primary, #0f172a);
-  background: transparent;
+  background: var(--surface-sunken, #eef2f6);
 }
 .tp-device-form .tp-tabs__tab.is-active {
-  color: var(--brand-500, #2e63d9);
+  color: var(--brand-600, #1f5fbf);
   background: transparent;
-  box-shadow: inset 0 -2px 0 var(--brand-500, #2e63d9);
+  box-shadow: inset 0 -3px 0 var(--brand-600, #1f5fbf);
+}
+.tp-device-form .tp-tabs__tab.is-active:hover {
+  background: var(--surface-sunken, #eef2f6);
 }
 
 /* Campos a una columna (como el legacy). Excepciones, que en el legacy
@@ -320,6 +344,9 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--fg-secondary, #475569);
+}
+.tp-form .tp-form__field--checkbox {
+  gap: 7px;
 }
 .tp-form .tp-form__field--checkbox .tp-form__label,
 .tp-form label.tp-form__field--checkbox {
@@ -392,14 +419,14 @@
   -moz-appearance: none;
   appearance: none;
   flex: 0 0 auto;
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
   margin: 0;
   padding: 0;
   vertical-align: middle;
-  background: var(--surface-sunken, #f5f7fa) center / 11px 11px no-repeat;
+  background: var(--surface-sunken, #f5f7fa) center / 14px 14px no-repeat;
   border: 1px solid var(--border-strong, #c3ccd8);
-  border-radius: 4px;
+  border-radius: 5px;
   cursor: pointer;
   transition:
     background-color 0.12s ease,
@@ -424,7 +451,7 @@
 .tp-modal .tp-choice-input[type="checkbox"]:checked {
   background-color: var(--brand-600, #1f5fbf);
   border-color: var(--brand-600, #1f5fbf);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 6.3l2.3 2.3 4.7-5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23fff' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.3 6.2l2.5 2.5 4.9-5.2'/%3E%3C/svg%3E");
 }
 .tp-form input[type="checkbox"]:indeterminate {
   background-color: var(--brand-600, #1f5fbf);
@@ -434,7 +461,7 @@
 .tp-form input[type="radio"]:checked,
 .tp-modal .tp-choice-input[type="radio"]:checked {
   border-color: var(--brand-600, #1f5fbf);
-  background: radial-gradient(circle, var(--brand-600, #1f5fbf) 0 4px, var(--surface-raised, #fff) 4.5px);
+  background: radial-gradient(circle, var(--brand-600, #1f5fbf) 0 5px, var(--surface-raised, #fff) 5.5px);
 }
 .tp-form input[type="checkbox"]:disabled,
 .tp-form input[type="radio"]:disabled,
@@ -1259,19 +1286,20 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Pestaña Sensores: como Devices/partials/sensors + Sensors/index del legacy —
+ * Listas de las pestañas Sensores y Servicios (tp-devlist): como
+ * Devices/partials/sensors|services + Sensors/index|Services/table del legacy —
  * botón "+ Agregar sensor" arriba, tabla Nombre / Plantilla con editar y
  * eliminar como iconos en línea. Buscador y "Copiar a…" (extras v2) a la
  * derecha de la misma barra.
  * ------------------------------------------------------------------------- */
-.tp-device-form .tp-sensors__bar {
+.tp-device-form .tp-devlist__bar {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
-.tp-device-form .tp-sensors__add {
+.tp-device-form .tp-devlist__add {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1286,42 +1314,42 @@
   font-weight: 600;
   cursor: pointer;
 }
-.tp-device-form .tp-sensors__add:hover {
+.tp-device-form .tp-devlist__add:hover {
   background: var(--brand-700, #194f9f);
   border-color: var(--brand-700, #194f9f);
 }
-.tp-device-form .tp-sensors__add--ghost {
+.tp-device-form .tp-devlist__add--ghost {
   background: var(--surface-raised, #fff);
   border-color: var(--border-default, #cbd5e1);
   color: var(--fg-primary, #0f172a);
 }
-.tp-device-form .tp-sensors__add--ghost:hover {
+.tp-device-form .tp-devlist__add--ghost:hover {
   background: var(--surface-sunken, #f1f5f9);
   border-color: var(--border-default, #cbd5e1);
 }
-.tp-device-form .tp-sensors__search {
+.tp-device-form .tp-devlist__search {
   position: relative;
   display: flex;
   align-items: center;
   flex: 0 1 200px;
   margin-left: auto;
 }
-.tp-device-form .tp-sensors__search svg {
+.tp-device-form .tp-devlist__search svg {
   position: absolute;
   left: 10px;
   pointer-events: none;
   color: var(--fg-muted, #94a3b8);
 }
-.tp-device-form .tp-sensors__search input[type="search"] {
+.tp-device-form .tp-devlist__search input[type="search"] {
   padding-left: 30px;
 }
 
-.tp-device-form .tp-sensors__table {
+.tp-device-form .tp-devlist__table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
 }
-.tp-device-form .tp-sensors__table th {
+.tp-device-form .tp-devlist__table th {
   padding: 8px 10px;
   text-align: left;
   font-weight: 700;
@@ -1329,23 +1357,23 @@
   border-bottom: 2px solid var(--border-default, #e2e8f0);
   white-space: nowrap;
 }
-.tp-device-form .tp-sensors__table td {
+.tp-device-form .tp-devlist__table td {
   padding: 7px 10px;
   color: var(--fg-primary, #0f172a);
   border-bottom: 1px solid var(--border-subtle, #eef2f6);
   vertical-align: middle;
 }
-.tp-device-form .tp-sensors__table tbody tr:hover td {
+.tp-device-form .tp-devlist__table tbody tr:hover td {
   background: var(--surface-sunken, #f5f7fa);
 }
-.tp-device-form .tp-sensors__actions-col {
+.tp-device-form .tp-devlist__actions-col {
   width: 76px;
 }
-.tp-device-form .tp-sensors__actions {
+.tp-device-form .tp-devlist__actions {
   text-align: right;
   white-space: nowrap;
 }
-.tp-device-form .tp-sensors__icon {
+.tp-device-form .tp-devlist__icon {
   display: inline-grid;
   place-items: center;
   width: 28px;
@@ -1358,14 +1386,18 @@
   color: var(--fg-secondary, #475569);
   cursor: pointer;
 }
-.tp-device-form .tp-sensors__icon:hover {
+.tp-device-form .tp-devlist__icon svg {
+  width: 15px;
+  height: 15px;
+}
+.tp-device-form .tp-devlist__icon:hover {
   background: var(--surface-sunken, #f1f5f9);
   color: var(--brand-600, #1f5fbf);
 }
-.tp-device-form .tp-sensors__icon--danger:hover {
+.tp-device-form .tp-devlist__icon--danger:hover {
   color: var(--danger-500, #ef4444);
 }
-.tp-device-form .tp-sensors__empty {
+.tp-device-form .tp-devlist__empty {
   padding: 14px 10px;
   color: var(--fg-muted, #94a3b8);
   text-align: center;
