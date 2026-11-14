@@ -1402,3 +1402,9 @@
   color: var(--fg-muted, #94a3b8);
   text-align: center;
 }
+
+/* Vídeo: los canales se ocultan sin «Tiene cámara» (el display:flex de
+   .tp-form__field ganaba al atributo hidden). */
+.tp-form [data-tp-video-channels][hidden] {
+  display: none;
+}
