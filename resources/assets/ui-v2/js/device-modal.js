@@ -2372,7 +2372,8 @@
 
     var dlg = tpModal.open({
       title: (opts.kind === "beacon" ? (isEdit ? tpT('ui.edit_beacon') : tpT('ui.new_beacon')) : (isEdit ? tpT('ui.edit_vehicle') : tpT('ui.new_vehicle'))),
-      size: "lg",
+      // Mismo ancho que el modal legacy (600px): ver .tp-modal--device en device-modal.css
+      className: "tp-modal--device",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
       buttons: (isEdit && CFG.canRemove ? [deleteBtn] : []).concat([

@@ -193,42 +193,48 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Pestañas del modal device — estilo "caja" de la referencia: rejilla de
- * celdas bordeadas, inactivas con fondo hundido, activa blanca con
- * subrayado de marca. Anula el estilo global uppercase de modal.css.
+ * Modal de vehículo con la MISMA métrica que el legacy (Devices/edit.blade):
+ * 600px de ancho, pestañas como enlaces de texto en línea que pasan a otra
+ * fila al llenarse, y campos a una columna con la etiqueta encima. Se
+ * mantienen los colores/tokens de la v2 (claro y oscuro).
  * ------------------------------------------------------------------------- */
+.tp-modal.tp-modal--device {
+  max-width: 600px;
+  /* Anclado arriba como el modal Bootstrap del legacy (30px): al cambiar de
+     pestaña cambia la altura y, centrado, el modal "saltaba" de sitio. */
+  margin-top: 30px;
+  max-height: calc(100vh - 60px);
+}
+.tp-modal.tp-modal--device .tp-modal__inner {
+  max-height: calc(100vh - 60px);
+}
+
 .tp-device-form .tp-tabs__nav {
   position: sticky;
   /* full-bleed: compensa el padding del .tp-modal__body para quedar
      pegado al header del modal (sin franja por la que se vea contenido) */
   top: calc(var(--sp-4, 16px) * -1);
-  margin: calc(var(--sp-4, 16px) * -1) calc(var(--sp-4, 16px) * -1) 18px;
+  margin: calc(var(--sp-4, 16px) * -1) calc(var(--sp-4, 16px) * -1) 16px;
+  padding: 6px var(--sp-4, 16px) 0;
   z-index: 5;
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 0;
-  background: var(--surface-sunken, #f1f5f9);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 4px;
+  background: var(--surface-raised, #fff);
   border: 0;
   border-bottom: 1px solid var(--border-default, #e2e8f0);
   border-radius: 0;
-  overflow: hidden;
-}
-@media (max-width: 640px) {
-  .tp-device-form .tp-tabs__nav {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  overflow: visible;
 }
 .tp-device-form .tp-tabs__tab {
   appearance: none;
   background: transparent;
   border: 0;
-  border-right: 1px solid var(--border-default, #e2e8f0);
-  border-bottom: 1px solid var(--border-default, #e2e8f0);
   border-radius: 0;
-  padding: 11px 8px;
+  padding: 10px 12px 9px;
   font-family: inherit;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.2;
   letter-spacing: 0;
   text-transform: none;
@@ -236,23 +242,69 @@
   color: var(--fg-secondary, #475569);
   cursor: pointer;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  box-shadow: inset 0 -3px 0 transparent;
+  box-shadow: inset 0 -2px 0 transparent;
   transition:
     color 0.12s ease,
-    background 0.12s ease,
     box-shadow 0.12s ease;
 }
 .tp-device-form .tp-tabs__tab:hover {
   color: var(--fg-primary, #0f172a);
-  background: var(--surface-raised, #fff);
+  background: transparent;
 }
 .tp-device-form .tp-tabs__tab.is-active {
   color: var(--brand-500, #2e63d9);
-  background: var(--surface-raised, #fff);
-  box-shadow: inset 0 -3px 0 var(--brand-500, #2e63d9);
-  font-weight: 600;
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--brand-500, #2e63d9);
+}
+
+/* Campos a una columna (como el legacy). Excepciones, que en el legacy
+   también van en columnas: Avanzado/Información (col-sm-6) e Historial. Las
+   filas --3 (combustible, colores de cola) se quedan como están. */
+.tp-device-form
+  .tp-tabs__panel:not([data-tp-panel="informacion"]):not([data-tp-panel="historial"])
+  .tp-form__grid--2 {
+  grid-template-columns: 1fr;
+}
+.tp-device-form .tp-form__grid {
+  gap: 12px 16px;
+}
+
+/* Métrica de campo del legacy: inputs algo más bajos y texto de 13px. */
+.tp-device-form input[type="text"],
+.tp-device-form input[type="password"],
+.tp-device-form input[type="email"],
+.tp-device-form input[type="tel"],
+.tp-device-form input[type="search"],
+.tp-device-form input[type="date"],
+.tp-device-form input[type="time"],
+.tp-device-form input[type="datetime-local"],
+.tp-device-form input[type="number"],
+.tp-device-form input[type="color"],
+.tp-device-form select {
+  height: 34px;
+  font-size: 13px;
+}
+.tp-device-form textarea {
+  font-size: 13px;
+}
+.tp-device-form .tp-form__field {
+  font-size: 13px;
+}
+
+/* Video: canales a 2 columnas con el check encima y el rol a todo el ancho
+   (como Devices/partials/video.blade del legacy, col-xs-6). */
+.tp-device-form .tp-dv-channels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+.tp-device-form .tp-dv-channels__item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.tp-device-form .tp-dv-channels__item > * {
+  width: 100%;
+  min-width: 0;
 }
 .tp-device-form .tp-tabs__panel {
   display: none;
