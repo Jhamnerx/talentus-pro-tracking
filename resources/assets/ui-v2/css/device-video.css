@@ -1,0 +1,163 @@
+/* =====================================================
+   TalentusPro · device-video.css
+   Video JT1078 del vehiculo (tp-device-video.js): cuadricula en vivo,
+   grabaciones y descargas. El reproductor es un iframe del legacy
+   (DeviceVideo/player.blade.php), que trae sus propios estilos.
+   ===================================================== */
+.tp-dv {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.tp-dv__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-2) var(--sp-3);
+}
+
+.tp-dv__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--fg-secondary);
+}
+
+.tp-dv__field .tp-input {
+  height: 32px;
+  width: auto;
+  min-width: 140px;
+}
+
+.tp-dv__spacer {
+  flex: 1;
+}
+
+.tp-dv__grid {
+  display: grid;
+  gap: 4px;
+  background: #000;
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.tp-dv__cell {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  min-height: 180px;
+}
+
+.tp-dv__grid[data-count="1"] .tp-dv__cell {
+  min-height: 0;
+  max-height: 68vh;
+}
+
+.tp-dv__cell iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.tp-dv__player {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.tp-dv__player-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--fs-sm);
+  background: var(--surface-sunken);
+}
+
+.tp-dv__cell--player {
+  max-height: 56vh;
+  border-radius: 0;
+}
+
+.tp-dv__status {
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  color: var(--fg-primary);
+}
+
+.tp-dv__status--info {
+  border-color: var(--info-500);
+}
+
+.tp-dv__status--success {
+  border-color: var(--success-500);
+}
+
+.tp-dv__status--warning {
+  border-color: var(--warning-500);
+}
+
+.tp-dv__status--error {
+  border-color: var(--danger-500);
+  color: var(--danger-600);
+}
+
+.tp-dv__actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.tp-dv__actions .tp-btn + .tp-btn {
+  margin-left: 4px;
+}
+
+.tp-dv__subtitle {
+  margin: var(--sp-2) 0;
+}
+
+.tp-dv .tp-table-wrap {
+  max-height: 40vh;
+  overflow: auto;
+}
+
+/* Ficha del vehiculo: canales y roles (modals/devices/partials/video.blade.php) */
+.tp-dv-channels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-2) var(--sp-4);
+}
+
+.tp-dv-channels__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.tp-dv-channels__item label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 84px;
+  font-size: var(--fs-sm);
+}
+
+.tp-dv-channels__item select {
+  flex: 1;
+  height: 32px;
+}
+
+@media (max-width: 560px) {
+  .tp-dv__field,
+  .tp-dv__field .tp-input {
+    width: 100%;
+  }
+}

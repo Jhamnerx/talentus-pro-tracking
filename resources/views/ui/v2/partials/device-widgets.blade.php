@@ -419,8 +419,8 @@
         </section>
     @endisset
 
-    {{-- Video en vivo --}}
-    @isset($video_live_url)
+    {{-- Video en vivo: JT1078 con el reproductor de la v2 (tp-device-video.js). --}}
+    @isset($video_channels)
         <section class="tp-card tp-card--flat">
             <h4 class="tp-h6 tp-dw__card-head">
                 <span class="tp-dw__card-title">
@@ -434,8 +434,19 @@
             </h4>
             <div class="tp-dw__card-body tp-dw__card-body--center">
                 <div class="tp-stack" style="gap:8px;">
-                    <a class="tp-btn tp-btn--secondary tp-btn--block" href="{{ $video_live_url }}" target="_blank" rel="noopener">{{ trans('ui.live') }}</a>
-                    <a class="tp-btn tp-btn--ghost tp-btn--block" href="{{ $video_playback_url }}" target="_blank" rel="noopener">{{ trans('front.playback') }}</a>
+                        @if (count($video_channels) > 1)
+                            <div class="tp-row" style="gap:6px;flex-wrap:wrap;justify-content:center;">
+                                @foreach ($video_channels as $vch)
+                                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tp-video="live"
+                                        data-device-id="{{ $device->id }}" data-channel="{{ $vch }}"
+                                        title="{{ trans('front.channel') }} {{ $vch }}{{ !empty($video_roles[$vch]) ? ' · ' . trans('front.video_role_' . $video_roles[$vch]) : '' }}">{{ $vch }}</button>
+                                @endforeach
+                            </div>
+                        @endif
+                        <button type="button" class="tp-btn tp-btn--secondary tp-btn--block" data-tp-video="live"
+                            data-device-id="{{ $device->id }}">{{ trans('ui.live') }}</button>
+                        <button type="button" class="tp-btn tp-btn--ghost tp-btn--block" data-tp-video="recordings"
+                            data-device-id="{{ $device->id }}">{{ trans('front.video_recordings') }}</button>
                 </div>
             </div>
         </section>

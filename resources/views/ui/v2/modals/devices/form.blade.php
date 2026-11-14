@@ -31,6 +31,8 @@
         ['key' => 'webservices', 'label' => trans('ui.web_services'), 'if' => !empty($caps['can_view_webservices'])],
         ['key' => 'gastos', 'label' => trans('front.expenses'), 'if' => !empty($caps['has_expenses'])],
         ['key' => 'camaras', 'label' => trans('front.cameras'), 'if' => !empty($caps['can_view_cameras'])],
+        // Video JT1078: mismo gate que el legacy (Devices/edit.blade ⇒ can('view', $item, 'has_camera') ⇒ device_video.view)
+        ['key' => 'video', 'label' => trans('front.video'), 'if' => auth()->user()->can('view', $item, 'has_camera')],
         // Campos personalizados: mismo gate que el legacy (Devices/edit.blade)
         ['key' => 'personalizados', 'label' => trans('admin.custom_fields'), 'if' => !empty($caps['has_custom_fields'])],
         // Historial de mantenimientos/suspensiones (solo en edición, como el legacy)

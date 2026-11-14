@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
     {{-- Kebab compartido + modales de Servicios (tab Servicios del modal device) --}}
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-video.css') }}">
 @endpush
 
 @section('workspace-class', 'tp-workspace--full')
@@ -210,6 +211,7 @@
 
 @push('scripts')
     <script src="{{ asset_resource('assets/ui/v2/js/device-modal.js') }}"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-device-video.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/fleet.js') }}" defer></script>
     <script>

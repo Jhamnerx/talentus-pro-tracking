@@ -1285,4 +1285,8 @@ return [
     'ops_shift_yes'                       => 'Sí',
     'ops_shift_no'                        => 'No',
     'ops_shift_hours_short'               => 'h',
+    // Video JT1078 (tp-device-video.js)
+    'video_columns'                       => 'Columnas',
+    'video_duration'                      => 'Duración',
+    'video_no_channels'                   => 'Este vehículo no tiene canales de cámara configurados.',
 ];
