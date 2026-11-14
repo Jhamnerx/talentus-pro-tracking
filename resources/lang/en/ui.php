@@ -1284,4 +1284,11 @@ return [
     'ops_shift_yes'                       => 'Yes',
     'ops_shift_no'                        => 'No',
     'ops_shift_hours_short'               => 'h',
+
+    // Legacy parity: Test FTP (Reports) and drivers
+    'test_ftp'                            => 'Test FTP',
+    'testing'                             => 'Testing…',
+    'edit_selected'                       => 'Edit selected',
+    'edit_selected_drivers'               => 'Edit :count drivers',
+    'drivers_updated'                     => ':count drivers updated',
 ];

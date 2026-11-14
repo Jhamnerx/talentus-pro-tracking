@@ -11,7 +11,7 @@
 @php
     // Claves del legacy que la v2 reusa desde JS. Lista explicita: mandar
     // front.php entero serian ~1.500 claves en cada pagina.
-            $tpFront = [ 'add_schedule', 'add_service', 'address', 'all', 'altitude',
+            $tpFront = [ 'activity_log', 'add_schedule', 'add_service', 'address', 'all', 'altitude',
         'attempts', 'auto_send_when_online', 'change_password', 'close',
         'command', 'command_schedule', 'command_sent', 'country', 'daily',
         'date', 'day', 'delivery', 'deselect_all', 'device', 'devices',
@@ -19,13 +19,14 @@
         'driver', 'drivers', 'email_semicolon', 'end', 'engine',
         'engine_hours', 'event', 'events', 'exact_time', 'expiration_date',
         'export', 'export_active', 'export_inactive', 'export_single',
-        'format', 'forwards', 'from', 'fuel_consumption', 'gprs',
+        'format', 'forwards', 'from', 'fuel_consumption', 'fuel_fillings',
+        'fuel_thefts', 'gprs',
         'gprs_templates', 'group', 'groups', 'hour', 'hour_short', 'hourly',
         'idle',
         'import', 'inactive', 'latitude', 'loading', 'location', 'logout',
         'logs', 'longitude', 'map', 'minute', 'minute_short', 'model', 'month', 'monthly',
         'blocked', 'expired', 'offline',
-        'move', 'move_duration', 'new', 'next', 'no_data', 'no_routes', 'operations',
+        'move', 'move_duration', 'new', 'next', 'no_data', 'nothing_found_request', 'no_routes', 'operations',
         'no_services', 'none', 'overspeed', 'playback', 'points', 'preview',
         'previous', 'protocol', 'queued', 'queued_for_online', 'report',
         'response', 'results', 'route', 'route_length', 'routes',
@@ -34,7 +35,7 @@
         'service', 'services', 'show_traffic', 'sms', 'sms_gateway_disabled',
         'sms_templates', 'speed', 'start', 'status', 'stop', 'stop_duration',
         'stopped', 'street_view', 'time', 'today', 'top_speed', 'trip_end',
-        'trip_start', 'type', 'ungrouped', 'vehicle_state', 'vehicle_states',
+        'trip_start', 'type', 'unexpected_error', 'ungrouped', 'vehicle_state', 'vehicle_states',
         'week', 'yesterday',
     ];
             $tpGlobal = [ 'add', 'always', 'apply', 'cancel', 'clear', 'close',

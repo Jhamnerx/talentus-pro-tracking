@@ -1501,6 +1501,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('drivers',        ['as' => 'api.drivers.store',   'uses' => 'Ui\V2\DriversController@store']);
         Route::put('drivers/{id}',    ['as' => 'api.drivers.update',  'uses' => 'Ui\V2\DriversController@update'])->where('id', '[0-9]+');
         Route::delete('drivers/{id}', ['as' => 'api.drivers.destroy', 'uses' => 'Ui\V2\DriversController@destroy'])->where('id', '[0-9]+');
+        Route::get('drivers/{id}/activity-log', ['as' => 'api.drivers.activity_log',     'uses' => 'Ui\V2\DriversController@activityLog'])->where('id', '[0-9]+');
+        Route::put('drivers/multiple',          ['as' => 'api.drivers.update_multiple', 'uses' => 'Ui\V2\DriversController@updateMultiple']);
 
         // Tareas (CRUD sobre TaskUserService legacy)
         Route::get('tasks',         ['as' => 'api.tasks',         'uses' => 'Ui\V2\TasksController@data']);

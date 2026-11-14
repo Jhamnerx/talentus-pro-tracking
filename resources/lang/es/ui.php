@@ -1285,4 +1285,11 @@ return [
     'ops_shift_yes'                       => 'Sí',
     'ops_shift_no'                        => 'No',
     'ops_shift_hours_short'               => 'h',
+
+    // Paridad legacy: Probar FTP (Reportes) y conductores
+    'test_ftp'                            => 'Probar FTP',
+    'testing'                             => 'Probando…',
+    'edit_selected'                       => 'Editar seleccionados',
+    'edit_selected_drivers'               => 'Editar :count conductores',
+    'drivers_updated'                     => ':count conductores actualizados',
 ];

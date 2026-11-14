@@ -880,6 +880,15 @@
     updateHud();
     keepCursorInView();
     drawGraph();
+    syncFuelTip();
+  }
+  // El cursor (mapa / reproduccion / click) sobre un relleno o robo muestra
+  // su etiqueta, igual que al pasar el raton por la linea.
+  function syncFuelTip() {
+    if (!gc || state.fuelHover) return;
+    var ev = nearestFuelEvent(state.cursorIdx, 3);
+    var r = gc.getBoundingClientRect(), span = Math.max(1, state.view.e - state.view.s);
+    showFuelTip(ev, ev ? 44 + (r.width - 54) * (ev.idx - state.view.s) / span + 12 : 0);
   }
   // HUD de reproduccion: circulo de velocidad (color por estado) + brujula
   function updateHud() {
@@ -947,6 +956,45 @@
 
   /* ===== GRÁFICA (canvas) ===== */
   var gc = $("#tp-hist-graph");
+  // Rellenos y robos de combustible (paridad con historyGraph.js legacy:
+  // buildMarkings / nearestFuelEvent). El pipeline ya los calcula
+  // (AppendFuelFilling / AppendFuelTheft); aqui solo se pintan.
+  var FUEL_COLORS = { fill: "#2e7d32", theft: "#c62828" };
+  function buildFuelEvents() {
+    state.fuelEvents = [];
+    (state.positions || []).forEach(function (p, i) {
+      ["fill", "theft"].forEach(function (kind) {
+        if (p[kind]) state.fuelEvents.push(Object.assign({ kind: kind, idx: i, t: p.t }, p[kind]));
+      });
+    });
+  }
+  function fuelLabel(ev) {
+    return (ev.kind === "fill" ? tpT('front.fuel_fillings') : tpT('front.fuel_thefts'));
+  }
+  // Evento mas cercano a un indice, dentro de `tolPx` pixeles de la grafica
+  function nearestFuelEvent(idx, tolPx) {
+    var evs = state.fuelEvents || []; if (!evs.length || !gc) return null;
+    var w = gc.getBoundingClientRect().width - 54; if (w <= 0) return null;
+    var span = Math.max(1, state.view.e - state.view.s), tol = tolPx * span / w;
+    var best = null, bd = Infinity;
+    evs.forEach(function (ev) { var d = Math.abs(ev.idx - idx); if (d <= tol && d < bd) { bd = d; best = ev; } });
+    return best;
+  }
+  function fuelTip() {
+    var el = $("#tp-hist-fuel-tip");
+    if (!el && gc) { el = document.createElement("div"); el.id = "tp-hist-fuel-tip"; el.className = "tp-history__fuel-tip"; el.hidden = true; gc.parentElement.appendChild(el); }
+    return el;
+  }
+  function showFuelTip(ev, x) {
+    var el = fuelTip(); if (!el) return;
+    if (!ev) { el.hidden = true; return; }
+    el.innerHTML = '<strong style="color:' + FUEL_COLORS[ev.kind] + '">' + esc(fuelLabel(ev)) + "</strong> " +
+      esc(ev.diff) + " " + esc(ev.unit || "") + " <span>(" + esc(ev.from) + " → " + esc(ev.to) + ")</span>" +
+      '<div class="tp-history__fuel-tip-time">' + esc(fmtTime(ev.t)) + (ev.name ? " · " + esc(ev.name) : "") + "</div>";
+    el.hidden = false;
+    var wrapW = gc.parentElement.clientWidth, tw = el.offsetWidth;
+    el.style.left = Math.max(4, Math.min(wrapW - tw - 4, x - tw / 2)) + "px";
+  }
   // Tabs de sensores del gráfico: Velocidad/Altitud + sensores del device con
   // "add_to_graph" (los entrega el pipeline legacy en `sensors`).
   function renderSensorTabs() {
@@ -1033,6 +1081,18 @@
     ctx.beginPath(); ctx.moveTo(xAt(vs), yAt(gVal(P[vs])));
     for (var m2 = vs + 1; m2 <= ve; m2++) ctx.lineTo(xAt(m2), yAt(gVal(P[m2])));
     ctx.strokeStyle = lineC; ctx.lineWidth = 1.5; ctx.stroke();
+    // Rellenos / robos de combustible: linea vertical + triangulo arriba
+    (state.fuelEvents || []).forEach(function (ev) {
+      if (ev.idx < vs || ev.idx > ve) return;
+      var fx = xAt(ev.idx), col = FUEL_COLORS[ev.kind];
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.globalAlpha = .9;
+      ctx.beginPath(); ctx.moveTo(fx, padT); ctx.lineTo(fx, padT + gh); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = col; ctx.beginPath();
+      if (ev.kind === "fill") { ctx.moveTo(fx - 5, padT + 7); ctx.lineTo(fx + 5, padT + 7); ctx.lineTo(fx, padT); }
+      else { ctx.moveTo(fx - 5, padT); ctx.lineTo(fx + 5, padT); ctx.lineTo(fx, padT + 7); }
+      ctx.closePath(); ctx.fill();
+    });
+    ctx.lineWidth = 1.5;
     // Crosshair del cursor (si está en la ventana)
     if (state.cursorIdx >= vs && state.cursorIdx <= ve) {
       var cx = xAt(state.cursorIdx);
@@ -1058,6 +1118,15 @@
     gc.addEventListener("mousedown", function (e) {
       gDrag = { x: e.clientX, s: state.view.s, e: state.view.e, moved: false };
     });
+    gc.addEventListener("mousemove", function (e) {
+      if (gDrag || !(state.fuelEvents || []).length) return;
+      var ev = nearestFuelEvent(graphIdxAt(e.clientX), 6);
+      state.fuelHover = !!ev;
+      if (ev) showFuelTip(ev, e.clientX - gc.getBoundingClientRect().left + 12);
+      else syncFuelTip();
+      gc.style.cursor = ev ? "pointer" : "";
+    });
+    gc.addEventListener("mouseleave", function () { state.fuelHover = false; syncFuelTip(); gc.style.cursor = ""; });
     window.addEventListener("mousemove", function (e) {
       if (!gDrag) return;
       var dx = e.clientX - gDrag.x;
@@ -1082,6 +1151,8 @@
       if (gcSuppressClick) { gcSuppressClick = false; return; }
       var idx = graphIdxAt(e.clientX);
       if (idx < 0) return;
+      // Click sobre la linea de un relleno/robo: el cursor salta al evento
+      var fev = nearestFuelEvent(idx, 6); if (fev) idx = fev.idx;
       pause();
       moveCursor(idx);
       var p = state.positions[idx];
@@ -1296,6 +1367,7 @@
         state.routeSingle = rc.color || "#2563eb";
         state.routeRanges = rc.ranges && rc.ranges.length ? rc.ranges : null;
         state.positions = b.positions || []; state.timeline = b.timeline || []; state.summary = b.summary || {}; state.sensors = b.sensors || [];
+        buildFuelEvents();
         buildSegments();
         clearAll();
         if (!state.positions.length) { renderTimeline(); $("#tp-hist-summary").hidden = true; $("#tp-hist-bottom").hidden = true; toast(T("no_data", tpT('front.no_data')), "info"); return; }
@@ -1319,7 +1391,8 @@
   }
   function clearHistory() {
     pause(); clearAll();
-    state.positions = []; state.timeline = []; state.segments = []; state.summary = null;
+    state.positions = []; state.timeline = []; state.segments = []; state.summary = null; state.fuelEvents = [];
+    showFuelTip(null);
     renderTimeline(); $("#tp-hist-summary").hidden = true; $("#tp-hist-bottom").hidden = true; updateFooterVar();
     $("#tp-hist-download").disabled = true; $("#tp-hist-clear").disabled = true;
   }
