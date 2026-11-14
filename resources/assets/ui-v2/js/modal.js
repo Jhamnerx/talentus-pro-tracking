@@ -2,7 +2,7 @@
  * TalentusPro · tp-modal · Phase 11
  * Native <dialog> modal + toast helpers.
  * Global: window.tpModal
- *   open({ title, sub, body, size, buttons, onMount, onClose })
+ *   open({ title, icon, sub, body, size, buttons, onMount, onClose })
  *   confirm({ title, message, danger }) -> Promise<bool>
  *   alert({ title, message })            -> Promise<void>
  *   toast(message, type='info')
@@ -106,6 +106,9 @@
       '<header class="tp-modal__head">' +
       "<div>" +
       '<h2 class="tp-modal__title">' +
+      // Icono opcional delante del título (SVG de confianza, lo pasa el
+      // propio código; NO viene de datos del usuario).
+      (opts.icon ? '<span class="tp-modal__title-icon" aria-hidden="true">' + opts.icon + "</span>" : "") +
       escapeHtml(opts.title || "") +
       "</h2>" +
       (opts.sub
@@ -650,4 +653,61 @@
       },
     };
   }
+
+  // --------------------------------------------------------------------------
+  // Ayuda "?" con imagen (paridad tooltipMarkImei del legacy): un
+  // <span class="tp-help" data-tp-help-img="url" data-tp-help-text="…">
+  // muestra al pasar el ratón (o con foco) una tarjeta con el texto a la
+  // izquierda y la imagen a la derecha. Se pinta en el <dialog> abierto (o
+  // en body) con position:fixed para que el overflow del modal no la corte.
+  // --------------------------------------------------------------------------
+  var helpPop = null;
+  var helpFor = null;
+
+  function hideHelp() {
+    if (helpPop && helpPop.parentNode) helpPop.parentNode.removeChild(helpPop);
+    helpPop = null;
+    helpFor = null;
+  }
+
+  function showHelp(mark) {
+    if (helpFor === mark) return;
+    hideHelp();
+    helpFor = mark;
+    var pop = document.createElement("div");
+    pop.className = "tp-help-pop";
+    pop.setAttribute("role", "tooltip");
+    var img = mark.getAttribute("data-tp-help-img");
+    if (img) pop.style.backgroundImage = 'url("' + img.replace(/"/g, "%22") + '")';
+    else pop.classList.add("tp-help-pop--text");
+    var txt = document.createElement("span");
+    txt.className = "tp-help-pop__text";
+    txt.textContent = mark.getAttribute("data-tp-help-text") || "";
+    pop.appendChild(txt);
+    (mark.closest("dialog") || document.body).appendChild(pop);
+    helpPop = pop;
+
+    var r = mark.getBoundingClientRect();
+    var w = pop.offsetWidth;
+    var h = pop.offsetHeight;
+    var left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8));
+    var top = r.top - h - 8;
+    if (top < 8) top = r.bottom + 8;
+    pop.style.left = left + "px";
+    pop.style.top = top + "px";
+  }
+
+  document.addEventListener("mouseover", function (e) {
+    var mark = e.target.closest && e.target.closest("[data-tp-help-text]");
+    if (mark) showHelp(mark);
+    else if (helpFor) hideHelp();
+  });
+  document.addEventListener("focusin", function (e) {
+    var mark = e.target.closest && e.target.closest("[data-tp-help-text]");
+    if (mark) showHelp(mark);
+  });
+  document.addEventListener("focusout", function (e) {
+    if (helpFor && e.target === helpFor) hideHelp();
+  });
+  document.addEventListener("scroll", hideHelp, true);
 })();
