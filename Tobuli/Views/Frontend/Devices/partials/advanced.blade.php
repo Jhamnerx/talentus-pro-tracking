@@ -143,30 +143,7 @@
             </div>
         @endif
 
-        {{-- Video a bordo. Es el interruptor del widget "Video en vivo" y del
-             visor: con 0 el vehiculo no ofrece video. El tope lo pone el
-             servicio (DeviceVideoService::MAX_CHANNELS). --}}
-        @if (Auth::User()->perm('device_camera', 'view'))
-            @php
-                $videoService = app(\Tobuli\Services\DeviceVideoService::class);
-            @endphp
-
-            <div class="form-group">
-                {!! Form::label('video_channels', trans('front.video_channels') . ':') !!}
-                {!! Form::number('video_channels', $item->video_channels ?? 0, [
-                    'class' => 'form-control',
-                    'min' => 0,
-                    'max' => \Tobuli\Services\DeviceVideoService::MAX_CHANNELS,
-                ]) !!}
-                <small>
-                    {{ trans('front.video_channels_hint') }}
-                    {{-- En el alta aun no hay protocolo: el aviso solo tiene sentido al editar. --}}
-                    @unless (!$item->exists || $videoService->isSupported($item))
-                        <br><strong>{{ trans('front.video_channels_unsupported') }}</strong>
-                    @endunless
-                </small>
-            </div>
-        @endif
+        {{-- Video a bordo: ahora en la pestaña Video (Devices/partials/video.blade.php). --}}
     </div>
     <div class="col-sm-6">
         @if ($additional_fields_on && Auth::user()->can('view', $item, 'installation_date'))

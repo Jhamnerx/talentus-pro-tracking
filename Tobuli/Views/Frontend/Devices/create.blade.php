@@ -17,6 +17,9 @@
         @endif
         <li><a href="#device-add-form-accuracy" role="tab" data-toggle="tab">{!! trans('front.accuracy') !!}</a></li>
         <li><a href="#device-add-form-tail" role="tab" data-toggle="tab">{!! trans('front.tail') !!}</a></li>
+        @if (Auth::user()->can('view', $item, 'has_camera'))
+            <li><a href="#device-add-form-video" role="tab" data-toggle="tab">{!! trans('front.video') !!}</a></li>
+        @endif
         @if (Auth::User()->perm('webservice.consatel', 'view') ||
                 Auth::User()->perm('webservice.mininter', 'view') ||
                 Auth::User()->perm('webservice.sutran', 'view') ||
@@ -71,6 +74,12 @@
         <div id="device-add-form-tail" class="tab-pane">
             @include('Frontend.Devices.partials.tail')
         </div>
+
+        @if (Auth::user()->can('view', $item, 'has_camera'))
+            <div id="device-add-form-video" class="tab-pane">
+                @include('Frontend.Devices.partials.video')
+            </div>
+        @endif
 
         <div id="device-add-form-web_service" class="tab-pane">
             @include('Frontend.Devices.partials.webservices')

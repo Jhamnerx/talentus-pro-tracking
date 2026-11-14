@@ -226,21 +226,24 @@
                     </li>
                 @endif
 
-                {{-- Misma regla que el widget y el visor: protocolo compatible
-                     y canales de video configurados en el vehiculo. --}}
-                @if (app(\Tobuli\Services\DeviceVideoService::class)->isEnabled($item) && $item->traccar_device_id)
+                {{-- Video JT1078 (fork): camara con canales, protocolo con video y permiso device_video. --}}
+                @if (Auth::User()->perm('device_video', 'view') && $item->hasVideo())
                     <li>
-                        <a href="javascript:" data-url="{{ route('device_video.live.modal', $item->id) }}"
-                            data-modal="device_video_live_{{ $item->id }}" role="button">
-                            <span class="icon play"></span>
-                            <span class="text">{{ trans('front.live_video') }}</span>
+                        <a href="javascript:"
+                           onclick="app.deviceVideo.open({{ $item->id }}, {{ json_encode(array_values((array)$item->camera_channels)) }});"
+                           role="button"
+                        >
+                            <span class="icon camera"></span>
+                            <span class="text">{{ trans('front.video_live') }}</span>
                         </a>
                     </li>
                     <li>
-                        <a href="javascript:" data-url="{{ route('device_video.playback.modal', $item->id) }}"
-                            data-modal="device_video_playback_{{ $item->id }}" role="button">
+                        <a href="javascript:"
+                           onclick="app.deviceVideo.recordings({{ $item->id }});"
+                           role="button"
+                        >
                             <span class="icon history"></span>
-                            <span class="text">Reproducción</span>
+                            <span class="text">{{ trans('front.video_recordings') }}</span>
                         </a>
                     </li>
                 @endif
