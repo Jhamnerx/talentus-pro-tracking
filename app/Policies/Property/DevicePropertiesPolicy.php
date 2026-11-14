@@ -34,6 +34,9 @@ class DevicePropertiesPolicy extends PropertyPolicy
         'max_speed',
         'lbs',
         'tags',
+        'has_camera',
+        'camera_channels',
+        'camera_channel_roles',
     ];
 
     protected $viewable = [
@@ -61,6 +64,9 @@ class DevicePropertiesPolicy extends PropertyPolicy
         'max_speed',
         'lbs',
         'tags',
+        'has_camera',
+        'camera_channels',
+        'camera_channel_roles',
     ];
 
     protected function expirationDateEditPolicy(User $user, Model $model)
@@ -114,6 +120,38 @@ class DevicePropertiesPolicy extends PropertyPolicy
     protected function lbsEditPolicy()
     {
         return config('addon.lbs');
+    }
+
+    // Video JT1078: configurable con el permiso device_video.
+
+    protected function hasCameraViewPolicy(User $user, Model $model)
+    {
+        return $user->perm('device_video', 'view');
+    }
+
+    protected function hasCameraEditPolicy(User $user, Model $model)
+    {
+        return $user->perm('device_video', 'edit');
+    }
+
+    protected function cameraChannelsViewPolicy(User $user, Model $model)
+    {
+        return $user->perm('device_video', 'view');
+    }
+
+    protected function cameraChannelsEditPolicy(User $user, Model $model)
+    {
+        return $user->perm('device_video', 'edit');
+    }
+
+    protected function cameraChannelRolesViewPolicy(User $user, Model $model)
+    {
+        return $user->perm('device_video', 'view');
+    }
+
+    protected function cameraChannelRolesEditPolicy(User $user, Model $model)
+    {
+        return $user->perm('device_video', 'edit');
     }
 
     protected function tagsViewPolicy()

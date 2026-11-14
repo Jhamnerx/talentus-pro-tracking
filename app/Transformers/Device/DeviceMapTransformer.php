@@ -160,7 +160,11 @@ class DeviceMapTransformer extends DeviceTransformer
             // Video a bordo: lo necesita el widget "Video en vivo", que es una
             // sola caja compartida y reacciona al vehiculo seleccionado, asi
             // que no puede decidirlo en servidor como hace el menu del objeto.
-            'video' => app(\Tobuli\Services\DeviceVideoService::class)->isEnabled($entity),
+            // Canales solo con permiso device_video (canView => DevicePropertiesPolicy).
+            'camera_channels' => $entity->hasVideo() && $this->canView($entity, 'camera_channels')
+                ? array_values(array_map('intval', (array)$entity->camera_channels))
+                : [],
+            'video' => $entity->hasVideo() && $this->canView($entity, 'camera_channels'),
 
             'moved_timestamp'    => (int)$entity->moved_timestamp,
             'stop_duration_sec'  => $entity->getStopDuration(),

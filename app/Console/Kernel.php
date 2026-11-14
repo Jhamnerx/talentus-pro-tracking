@@ -58,6 +58,8 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\CleanUnregisteredDeviceLogCommand',
         'App\Console\Commands\CleanUserCommand',
         'App\Console\Commands\CleanDeviceCamerasCommand',
+        'App\Console\Commands\CleanVideoDownloadsCommand',
+        'App\Console\Commands\VideoFtpUserCommand',
         'App\Console\Commands\CleanExpiredSharingsCommand',
         'App\Console\Commands\CleanModelCommand',
         'App\Console\Commands\ReportsDailyCommand',
@@ -122,6 +124,11 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping();
 
+        // Descargas de video JT1078: cada job dura lo que la grabacion (ver RecordVideoDownload).
+        $schedule->command('queue:work redis --sleep=3 --tries=1 --timeout=3900 --queue=' . config('video.downloads_queue', 'video'))
+            ->everyMinute()
+            ->withoutOverlapping();
+
         $schedule
             ->exec('systemctl restart supervisord')
             ->hourlyAt(3);
@@ -159,6 +166,10 @@ class Kernel extends ConsoleKernel
 
         $schedule
             ->command('camera:clean')
+            ->daily();
+
+        $schedule
+            ->command('video:clean-downloads')
             ->daily();
 
         $schedule

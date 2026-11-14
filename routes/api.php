@@ -53,9 +53,25 @@ Route::group(['middleware' => ['auth.api', 'active_subscription'], 'namespace' =
     Route::get('devices/{device_id}/media/file/{filename}', ['as' => 'api.device.media.get', 'uses' => 'DeviceMediaController@getFile']);
     Route::delete('devices/{device_id}/media/{filename?}', ['as' => 'api.device.media.delete', 'uses' => 'DeviceMediaController@remove']);
 
-    # Device video (Howen / JT808 live video via commands/send)
-    Route::post('devices/{device_id}/video/live/start', ['as' => 'api.device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
-    Route::post('devices/{device_id}/video/live/stop', ['as' => 'api.device_video.live.stop', 'uses' => 'DeviceVideoController@liveStop']);
+    # Device video (JT1078): mismos endpoints que la web, más la configuración del reproductor para la app.
+    Route::get('devices/video/{id}/config', ['as' => 'api.devices.video.config', 'uses' => 'DeviceVideoController@config']);
+    Route::post('devices/video/{id}/start', ['as' => 'api.devices.video.start', 'uses' => 'DeviceVideoController@start']);
+    Route::post('devices/video/{id}/ping', ['as' => 'api.devices.video.ping', 'uses' => 'DeviceVideoController@ping']);
+    Route::post('devices/video/{id}/stop', ['as' => 'api.devices.video.stop', 'uses' => 'DeviceVideoController@stop']);
+    Route::get('devices/video/{id}/status', ['as' => 'api.devices.video.status', 'uses' => 'DeviceVideoController@status']);
+    Route::post('devices/video/{id}/recordings/query', ['as' => 'api.devices.video.recordings.query', 'uses' => 'DeviceVideoController@recordingsQuery']);
+    Route::get('devices/video/{id}/recordings/list', ['as' => 'api.devices.video.recordings.list', 'uses' => 'DeviceVideoController@recordingsList']);
+    Route::post('devices/video/{id}/playback/start', ['as' => 'api.devices.video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
+    Route::post('devices/video/{id}/playback/control', ['as' => 'api.devices.video.playback.control', 'uses' => 'DeviceVideoController@playbackControl']);
+    Route::post('devices/video/{id}/talk/start', ['as' => 'api.devices.video.talk.start', 'uses' => 'DeviceVideoController@talkStart']);
+    Route::post('devices/video/{id}/talk/ping', ['as' => 'api.devices.video.talk.ping', 'uses' => 'DeviceVideoController@talkPing']);
+    Route::post('devices/video/{id}/talk/stop', ['as' => 'api.devices.video.talk.stop', 'uses' => 'DeviceVideoController@talkStop']);
+    Route::get('devices/video/{id}/downloads', ['as' => 'api.devices.video.downloads', 'uses' => 'DeviceVideoController@downloads']);
+    Route::post('devices/video/{id}/downloads', ['as' => 'api.devices.video.downloads.create', 'uses' => 'DeviceVideoController@downloadCreate']);
+    Route::get('devices/video/{id}/downloads/{downloadId}', ['as' => 'api.devices.video.downloads.file', 'uses' => 'DeviceVideoController@downloadFile']);
+    Route::delete('devices/video/{id}/downloads/{downloadId}', ['as' => 'api.devices.video.downloads.delete', 'uses' => 'DeviceVideoController@downloadDelete']);
+    Route::get('devices/video/{id}/stream/{channel}/{file}', ['as' => 'api.devices.video.stream', 'uses' => 'DeviceVideoController@stream'])
+        ->where(['channel' => '[1-8]', 'file' => '(history-)?\d+\.ts|(live|history)\.m3u8']);
 });
 
 Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
