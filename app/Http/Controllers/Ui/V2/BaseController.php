@@ -24,25 +24,11 @@ abstract class BaseController extends Controller
     /** users.settings: 'v2' | 'legacy' — decide a qué UI entra el usuario. */
     public const PREF_UI_VERSION = 'ui_version';
 
-    public function __construct()
-    {
-        parent::__construct();
-
-        // Recordar la preferencia de UI: cualquier request al shell v2 marca
-        // ui_version='v2' (así el usuario "siempre ve la v2": el legacy
-        // ObjectsController@index redirige acá cuando la preferencia es v2).
-        // "Versión anterior" la revierte en ShellController@legacy — esa ruta
-        // se excluye para no pisarla. Solo escribe cuando el valor cambia.
-        $this->middleware(function ($request, $next) {
-            $user = \Illuminate\Support\Facades\Auth::user();
-            if ($user && ! $request->routeIs('ui.v2.legacy')
-                && $user->getSettings(self::PREF_UI_VERSION) !== 'v2') {
-                $user->setSettings(self::PREF_UI_VERSION, 'v2');
-            }
-
-            return $next($request);
-        });
-    }
+    // Preferencia de UI (users.settings.ui_version): SOLO se escribe por elección
+    // explícita — ShellController@switchToV2 (botón «Nueva UI» del legacy) y
+    // ShellController@legacy («Versión anterior»). Los usuarios nuevos nacen en
+    // v2 (UserService). Antes cualquier request a /ui/v2/* la ponía en 'v2', y un
+    // enlace profundo deshacía la elección de «legacy».
 
     /**
      * Build the map provider config consumed by every map-bearing page

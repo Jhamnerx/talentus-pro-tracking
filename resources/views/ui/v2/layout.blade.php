@@ -17,8 +17,21 @@
     $user = auth()->user();
     $userName = $user ? trim($user->name ?? ($user->email ?? 'User')) : 'Guest';
     $userInit = $user ? strtoupper(mb_substr(preg_replace('/\s+/', '', $userName), 0, 2)) : 'G';
-    $theme = request()->cookie('tp_theme', 'dark');
-    $density = request()->cookie('tp_density', 'comfortable');
+    // Preferencia guardada en la cuenta (ShellController@preferences) > cookie > defecto.
+    // La de la cuenta manda también sobre el localStorage (ver script anti-FOUC).
+    $prefTheme = null;
+    $prefDensity = null;
+    if ($user && ! isDemoUser()) {
+        try {
+            $prefTheme = $user->getSettings('tp_theme');
+            $prefDensity = $user->getSettings('tp_density');
+        } catch (\Throwable $e) {
+        }
+    }
+    $prefTheme = in_array($prefTheme, ['light', 'dark'], true) ? $prefTheme : null;
+    $prefDensity = in_array($prefDensity, ['comfortable', 'compact'], true) ? $prefDensity : null;
+    $theme = $prefTheme ?: request()->cookie('tp_theme', 'dark');
+    $density = $prefDensity ?: request()->cookie('tp_density', 'comfortable');
     $rail = trim($__env->yieldContent('rail-active', 'live'));
 @endphp
 <!DOCTYPE html>
@@ -50,6 +63,11 @@
         // Apply persisted theme/density before paint (no FOUC)
         (function() {
             try {
+                // Lo guardado en la cuenta gana al localStorage (que puede venir
+                // de otra sesión en este navegador); se resincroniza aquí.
+                var st = @json($prefTheme), sd = @json($prefDensity);
+                if (st) localStorage.setItem('tp_theme', st);
+                if (sd) localStorage.setItem('tp_density', sd);
                 var t = localStorage.getItem('tp_theme');
                 var d = localStorage.getItem('tp_density');
                 var r = localStorage.getItem('tp_rail');

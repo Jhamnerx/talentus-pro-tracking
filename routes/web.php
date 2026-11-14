@@ -1182,6 +1182,7 @@ Route::get('/icons', ['as' => 'icons', 'uses' => function () {
 Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], function () {
     // Cross-cutting shell endpoints
     Route::get('legacy',    ['as' => 'legacy',    'uses' => 'Ui\V2\ShellController@legacy']);
+    Route::get('switch',    ['as' => 'switch',    'uses' => 'Ui\V2\ShellController@switchToV2']);
 
     // Per-domain controllers under App\Http\Controllers\Ui\V2\*
     Route::get('live',      ['as' => 'live',      'uses' => 'Ui\V2\DevicesController@live']);

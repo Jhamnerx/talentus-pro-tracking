@@ -41,6 +41,19 @@ class ShellController extends BaseController
     }
 
     /**
+     * Elección explícita de la UI v2 (botón «Nueva UI» del header legacy):
+     * guarda ui_version='v2' para que ObjectsController@index redirija aquí.
+     */
+    public function switchToV2()
+    {
+        if ($this->user && $this->user->getSettings(self::PREF_UI_VERSION) !== 'v2') {
+            $this->user->setSettings(self::PREF_UI_VERSION, 'v2');
+        }
+
+        return redirect()->route('ui.v2.live');
+    }
+
+    /**
      * Global Command Palette search across devices, geofences, POIs.
      */
     public function search(Request $request): JsonResponse
@@ -235,11 +248,16 @@ class ShellController extends BaseController
             return response()->json(['ok' => true, 'demo' => true]);
         }
 
+        // users.settings (clave plana, como ui_version): así la preferencia sigue al
+        // usuario en otro navegador/dispositivo. El layout la lee al renderizar.
         $user = $this->user;
-        if ($user && method_exists($user, 'setSetting')) {
+        if ($user) {
             try {
-                $user->setSetting('ui.v2.' . $key, $value);
+                if ($user->getSettings($key) !== $value) {
+                    $user->setSettings($key, $value);
+                }
             } catch (\Throwable $e) {
+                report($e);
             }
         }
 
