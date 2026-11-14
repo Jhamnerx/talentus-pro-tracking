@@ -744,10 +744,20 @@
       return out;
     }
 
+    // Editar / eliminar como iconos en línea (como Sensors/index del legacy).
+    function actionsCell(id) {
+      return (
+        '<td class="tp-sensors__actions">' +
+        '<button type="button" class="tp-sensors__icon" data-sensor-edit="' + id + '" title="' + esc(tpT('global.edit')) + '" aria-label="' + esc(tpT('global.edit')) + '">' + K_EDIT + "</button>" +
+        '<button type="button" class="tp-sensors__icon tp-sensors__icon--danger" data-sensor-del="' + id + '" title="' + esc(tpT('global.delete')) + '" aria-label="' + esc(tpT('global.delete')) + '">' + K_TRASH + "</button>" +
+        "</td>"
+      );
+    }
+
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-sensors-empty><td colspan="3" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
+          '<tr data-sensors-empty><td colspan="3" class="tp-sensors__empty">' + tpT('front.no_sensors') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -756,7 +766,7 @@
             '<tr data-sensor-id="' + s.id + '">' +
             "<td>" + esc(s.name) + "</td>" +
             "<td>" + esc(s.type) + "</td>" +
-            '<td style="text-align:right;">' + kebabCell("data-sensor-edit", "data-sensor-del", s.id) + "</td></tr>"
+            actionsCell(s.id) + "</tr>"
           );
         })
         .join("");

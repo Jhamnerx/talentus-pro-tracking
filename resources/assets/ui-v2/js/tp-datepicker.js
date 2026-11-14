@@ -77,12 +77,14 @@
     day:
       "appearance-none border-0 bg-transparent cursor-pointer h-8 rounded-lg text-[13px] " +
       "text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700",
-    daySel: "bg-brand-600 text-white font-semibold hover:bg-brand-600 dark:hover:bg-brand-600",
-    dayToday: "ring-1 ring-inset ring-brand-400",
+    // Selección y "hoy" con clases propias (components.css): con utilidades,
+    // bg-transparent sale después de bg-brand-600 en tailwind.css y el
+    // reset ".tp-scope button {color:inherit}" pisa text-white, así que el
+    // día elegido no se marcaba.
+    daySel: "tp-dp__sel",
+    dayToday: "tp-dp__today",
     foot: "flex items-center justify-between mt-2 pt-2 border-t border-solid border-slate-100 dark:border-slate-700",
-    link:
-      "appearance-none border-0 bg-transparent cursor-pointer p-0 text-[13px] font-semibold " +
-      "text-brand-600 hover:underline dark:text-brand-400",
+    link: "tp-dp__link",
   };
 
   function pad2(n) {
