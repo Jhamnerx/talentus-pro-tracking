@@ -268,10 +268,23 @@
         return g && !g.hidden;
       });
   }
+  // Contador global de ids: numerar por la posición entre los visibles
+  // repetía ids (las acciones ya tenían opt-0… y los resultados recibían
+  // los mismos), y aria-activedescendant apuntaba al oculto.
+  var optSeq = 0;
   function setActive(el) {
     var input = document.getElementById("tp-cmdk-input");
 
-    getItems().forEach(function (i, n) {
+    // Quitar el resaltado también de los ítems de grupos ocultos: si no,
+    // la acción activa al abrir conservaba is-active y Enter la ejecutaba.
+    panel.querySelectorAll(".tp-cmdk__item.is-active").forEach(function (i) {
+      if (i !== el) {
+        i.classList.remove("is-active");
+        i.setAttribute("aria-selected", "false");
+      }
+    });
+
+    getItems().forEach(function (i) {
       var on = i === el;
       i.classList.toggle("is-active", on);
       // El resaltado vivia solo en la clase: aria-selected es lo unico que
@@ -279,7 +292,7 @@
       i.setAttribute("aria-selected", on ? "true" : "false");
       // Hace falta un id al que apuntar; se pone aqui y no en cada sitio
       // que pinta elementos, que son once.
-      if (!i.id) i.id = "tp-cmdk-opt-" + n;
+      if (!i.id) i.id = "tp-cmdk-opt-" + optSeq++;
     });
 
     // El foco NO se mueve: sigue en la caja de texto, que es donde se
@@ -304,7 +317,12 @@
     updateActive(items[idx]);
   }
   function activateActive() {
-    var el = panel.querySelector(".tp-cmdk__item.is-active") || getItems()[0];
+    // Solo entre los visibles: un ítem de un grupo oculto nunca es el destino.
+    var items = getItems();
+    var el =
+      items.filter(function (i) {
+        return i.classList.contains("is-active");
+      })[0] || items[0];
     if (el) activateItem(el);
   }
 

@@ -2517,6 +2517,10 @@ table.tp-lock-hist th {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* En oscuro --brand-800 casi no se ve sobre la cabecera oscura. */
+[data-theme="dark"] .tp-follow__title {
+  color: var(--fg-primary);
+}
 .tp-follow__close {
   border: 0;
   background: transparent;

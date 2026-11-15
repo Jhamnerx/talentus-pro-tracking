@@ -64,18 +64,29 @@
     danger: SVG('<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'),
   };
 
-  function fmtTime(iso) {
-    if (!iso) return "";
-    try {
-      var d = new Date(iso);
-      var diff = (Date.now() - d.getTime()) / 1000;
-      if (diff < 60) return "hace " + Math.floor(diff) + "s";
-      if (diff < 3600) return "hace " + Math.floor(diff / 60) + "m";
-      if (diff < 86400) return "hace " + Math.floor(diff / 3600) + "h";
-      return d.toLocaleString();
-    } catch (e) {
-      return iso;
+  // Relativo («hace 5 min») en el idioma de la página; pasadas 24 h, la
+  // hora que ya manda el servidor con la zona y el formato del usuario
+  // (n.time), la misma que Eventos. toLocaleString() usaba la zona y el
+  // formato del navegador.
+  var relFmt = null;
+  try {
+    relFmt = new Intl.RelativeTimeFormat(document.documentElement.lang || undefined, {
+      numeric: "auto",
+      style: "short",
+    });
+  } catch (e) {}
+  function fmtTime(n) {
+    var iso = n.created_at;
+    if (!iso) return n.time || "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return n.time || iso;
+    var diff = Math.max(0, (Date.now() - d.getTime()) / 1000);
+    if (diff < 86400 && relFmt) {
+      if (diff < 60) return relFmt.format(-Math.floor(diff), "second");
+      if (diff < 3600) return relFmt.format(-Math.floor(diff / 60), "minute");
+      return relFmt.format(-Math.floor(diff / 3600), "hour");
     }
+    return n.time || d.toLocaleString();
   }
 
   function render() {
@@ -123,7 +134,7 @@
               "</div>"
             : "") +
           '<div class="tp-notif-item__time">' +
-          fmtTime(n.created_at) +
+          escapeHtml(fmtTime(n)) +
           "</div>" +
           "</div>" +
           "</div>"

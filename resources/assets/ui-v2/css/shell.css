@@ -47,9 +47,19 @@ body.tp-app-body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* components.css declara .tp-topbar__kbd absoluto para el antiguo
+   .tp-topbar__search (relative). Este boton es static, asi que el atajo se
+   anclaba a toda la pagina y flotaba a media altura en el borde derecho.
+   Aqui va en linea dentro del boton; la caja la pone cada <kbd>. */
 .tp-topbar__kbd {
+  position: static;
+  transform: none;
   display: inline-flex;
+  flex-shrink: 0;
   gap: 2px;
+  padding: 0;
+  background: none;
+  border: 0;
 }
 .tp-topbar__kbd kbd {
   display: inline-flex;

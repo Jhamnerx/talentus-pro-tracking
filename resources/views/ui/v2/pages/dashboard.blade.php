@@ -10,7 +10,7 @@
 @section('workspace-class', 'tp-workspace--scroll')
 
 @section('workspace')
-    <div class="tp-dash" id="tp-dash" data-data-url="{{ route('ui.v2.api.dashboard') }}" data-poll-interval="60000"
+    <div class="tp-dash is-booting" aria-busy="true" id="tp-dash" data-data-url="{{ route('ui.v2.api.dashboard') }}" data-poll-interval="60000"
         data-user-today="{{ date('Y-m-d', \Formatter::time()->now()) }}">
 
         <header class="tp-dash__head">

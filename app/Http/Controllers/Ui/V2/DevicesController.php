@@ -236,11 +236,31 @@ class DevicesController extends BaseController
 
         $total = (clone $query)->count();
 
+        // Orden de las cabeceras de la tabla, sobre TODA la flota (antes la
+        // tabla reordenaba solo la página de 100 que tenía cargada). El
+        // nombre desempata para que paginar sea estable.
+        $dir  = strtolower((string) $request->get('dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $sort = (string) $request->get('sort', 'name');
+        switch ($sort) {
+            case 'plate':
+                // Sin placa, al final en los dos sentidos.
+                $query->orderByRaw("(devices.plate_number IS NULL OR devices.plate_number = '') ASC")
+                    ->orderBy('devices.plate_number', $dir);
+                break;
+            case 'speed':
+                $query->traccarJoin()->orderBy('traccar_devices.speed', $dir);
+                break;
+            default:
+                $sort = 'name';
+                break;
+        }
+        $query->orderBy('devices.name', $sort === 'name' ? $dir : 'asc')
+            ->orderBy('devices.id', 'asc');
+
         $rows = $query->with('icon')
             // Clasificacion (tipo/estado) de ESTE usuario para el flag `vt`,
             // en una sola consulta para toda la pagina.
             ->withClassificationFor($this->user->id)
-            ->orderBy('devices.name', 'asc')
             ->forPage($page, $limit)
             ->get();
 
@@ -3017,7 +3037,11 @@ class DevicesController extends BaseController
                 'status'      => $device->getStatus(),
                 'status_text' => $this->estadoTexto($device->getStatus()),
                 'address'     => $address['address'] ?? null,
-                'time'        => $device->time ? \Formatter::time()->format($device->time) : null,
+                // Device::getTimeAttribute() ya devuelve la hora formateada con
+                // la zona del usuario, o un texto de estado («Desactivado»,
+                // «No conectado»…). Volver a pasarla por format() convertía ese
+                // texto en 01-01-1970. Igual que la lista (:351).
+                'time'        => $device->time ? (string) $device->time : null,
                 'coords'      => ($device->lat && $device->lng)
                     ? number_format((float) $device->lat, 5) . ', ' . number_format((float) $device->lng, 5)
                     : null,

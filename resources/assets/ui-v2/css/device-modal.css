@@ -433,7 +433,10 @@
     border-color 0.12s ease,
     box-shadow 0.12s ease;
 }
-.tp-form input[type="radio"] {
+/* El radio es redondo también sin marcar: .tp-modal .tp-choice-input pone
+   5px a todos los tipos y el radio sin marcar parecía una casilla. */
+.tp-form input[type="radio"],
+.tp-modal .tp-choice-input[type="radio"] {
   border-radius: 50%;
 }
 .tp-form input[type="checkbox"]:hover,

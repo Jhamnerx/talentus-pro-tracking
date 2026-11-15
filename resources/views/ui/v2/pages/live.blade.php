@@ -712,7 +712,7 @@
         </main>
 
         {{-- DEVICE DRAWER (right) --}}
-        <aside class="tp-live__drawer" id="tp-live-drawer" aria-hidden="true">
+        <aside class="tp-live__drawer" id="tp-live-drawer" aria-hidden="true" inert>
             <header class="tp-live__drawer-head">
                 <div class="tp-row" style="gap:12px; align-items:center; min-width:0;">
                     <span class="tp-dot" id="tp-drawer-dot"></span>

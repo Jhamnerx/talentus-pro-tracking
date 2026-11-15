@@ -531,7 +531,13 @@
     setDateInput("tp-dash-to", r.to);
   })();
 
-  load("all");
+  // Primera carga: la API tarda varios segundos y, sin datos, el panel
+  // parecía roto («—» y donuts vacíos). `is-booting` pinta esqueletos
+  // (dashboard.css) hasta que llega la respuesta, buena o mala.
+  load("all").then(function () {
+    root.classList.remove("is-booting");
+    root.removeAttribute("aria-busy");
+  });
   load("driving");
   // Polling: solo refresca la data EN VIVO (donuts/KPIs), el rango se mantiene.
   setInterval(function () { load("live"); }, POLL);

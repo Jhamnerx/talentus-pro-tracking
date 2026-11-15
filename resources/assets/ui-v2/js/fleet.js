@@ -1,7 +1,7 @@
 /* =====================================================
    TalentusPro · Fleet · Phase 4
    - Server-side paginated table
-   - Client-side sort/select on current page
+   - Server-side sort (sort/dir); client-side select on current page
    - Debounced search + status segmented filter
    - CSV export of current page
    ===================================================== */
@@ -92,24 +92,6 @@
   function pillFor(group) {
     var label = STATUS_LABELS[group] || group;
     return '<span class="tp-pill tp-pill--' + group + '">' + label + "</span>";
-  }
-
-  function sortItems(items) {
-    var key = state.sort,
-      dir = state.dir === "desc" ? -1 : 1;
-    return items.slice().sort(function (a, b) {
-      var av = a[key],
-        bv = b[key];
-      if (key === "status") {
-        av = a.status_group;
-        bv = b.status_group;
-      }
-      if (av == null) av = "";
-      if (bv == null) bv = "";
-      if (typeof av === "number" && typeof bv === "number")
-        return (av - bv) * dir;
-      return String(av).localeCompare(String(bv)) * dir;
-    });
   }
 
   /* ===== Columnas configurables (paridad ObjectsList) =====
@@ -269,8 +251,9 @@
   function renderHead() {
     var thead = $table.querySelector("thead tr");
     if (!thead) return;
-    // El sort del backend solo cubre estas claves.
-    var SORTABLE = { name: "name", status: "status", plate_number: "plate", speed: "speed" };
+    // El sort del backend (fleetData) solo cubre estas claves. El estado se
+    // calcula por vehículo y no se puede ordenar en SQL: no se ofrece.
+    var SORTABLE = { name: "name", plate_number: "plate", speed: "speed" };
 
     thead.innerHTML =
       '<th class="tp-fleet__th-check"><input type="checkbox" id="tp-fleet-check-all" aria-label="' + tpT('ui.select_all_n') + '"></th>' +
@@ -542,7 +525,8 @@
   }
 
   function render() {
-    var items = sortItems(state.items);
+    // Ya vienen ordenados del servidor (sort/dir): no se reordena aquí.
+    var items = state.items;
     if (!items.length) {
       $tbody.innerHTML =
         '<tr><td colspan="' + (columnsState.selected.length + 2) + '" class="tp-text-muted tp-text-center" style="padding:32px;">' + tpT('ui.no_results') + '</td></tr>';
@@ -607,7 +591,8 @@
       $sel.hidden = true;
     }
 
-    // Master checkbox
+    // Master checkbox. Se busca cada vez: renderHead() lo vuelve a crear.
+    $all = document.getElementById("tp-fleet-check-all");
     if ($all) {
       var visibleIds = state.items.map(function (d) {
         return d.id;
@@ -626,8 +611,12 @@
     }
   }
 
+  var loadSeq = 0;
   function load(opts) {
     var silent = !!(opts && opts.silent);
+    // Solo vale la respuesta de la ultima peticion: al cambiar orden o
+    // filtro durante una carga, la vieja no debe pisar a la nueva.
+    var seq = ++loadSeq;
     state.loading = true;
     // En el refresco automático no se toca el pie: parpadear "Cargando…" cada
     // 30 s distrae y no aporta nada.
@@ -640,6 +629,8 @@
       group: state.group,
       model: state.model,
       protocol: state.protocol,
+      sort: state.sort,
+      dir: state.dir,
     };
     // Las opciones de los desplegables solo se piden una vez: no cambian al
     // paginar y salen de consultas DISTINCT sobre toda la flota.
@@ -655,6 +646,7 @@
         return r.json();
       })
       .then(function (p) {
+        if (seq !== loadSeq) return;
         if (!p || !p.ok) return;
         state.items = p.items || [];
         state.total = p.total || 0;
@@ -664,6 +656,7 @@
         render();
       })
       .catch(function (err) {
+        if (seq !== loadSeq) return;
         state.loading = false;
         console.warn("[fleet] load failed", err);
       });
@@ -772,17 +765,22 @@
     load();
   });
 
-  // Sort
-  $table.querySelectorAll("thead th[data-sort]").forEach(function (th) {
-    th.addEventListener("click", function () {
-      var k = th.getAttribute("data-sort");
-      if (state.sort === k) state.dir = state.dir === "asc" ? "desc" : "asc";
-      else {
-        state.sort = k;
-        state.dir = "asc";
-      }
-      render();
-    });
+  // Sort. Delegado en la tabla: renderHead() vuelve a pintar la cabecera al
+  // cargar las columnas y los <th> con manejador propio desaparecían. El
+  // orden lo hace el servidor sobre toda la flota, así que se recarga desde
+  // la página 1.
+  $table.addEventListener("click", function (e) {
+    var th = e.target.closest("thead th[data-sort]");
+    if (!th || !$table.contains(th)) return;
+    var k = th.getAttribute("data-sort");
+    if (state.sort === k) state.dir = state.dir === "asc" ? "desc" : "asc";
+    else {
+      state.sort = k;
+      state.dir = "asc";
+    }
+    state.page = 1;
+    render();
+    load();
   });
 
   // Selection (delegated)
@@ -794,7 +792,10 @@
     else state.selected.delete(id);
     render();
   });
-  $all.addEventListener("change", function () {
+  // Delegado: el checkbox maestro se vuelve a pintar con la cabecera.
+  $table.addEventListener("change", function (e) {
+    if (!e.target || e.target.id !== "tp-fleet-check-all") return;
+    $all = e.target;
     if ($all.checked)
       state.items.forEach(function (d) {
         state.selected.add(d.id);

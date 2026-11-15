@@ -184,9 +184,17 @@ class ShellController extends BaseController
                 'variant'     => $this->eventSeverity((string) $event->type),
                 'category'    => 'alerts',
                 'read'        => false, // lo resuelve el cliente (last-seen)
-                'created_at'  => optional($event->created_at)->toIso8601String(),
+                // Instante del evento en UTC real. `events.created_at` no sirve:
+                // lo escribe MySQL con la hora local del servidor (19:13 de Lima)
+                // y, con la app en UTC, salía «…T19:13+00:00»: el navegador
+                // restaba otras 5 h. `time` está en UTC, como en Eventos.
+                'created_at'  => $event->time
+                    ? \Carbon\Carbon::parse((string) $event->time, 'UTC')->toIso8601String()
+                    : optional($event->created_at)->toIso8601String(),
                 // Datos para el popup en el mapa (DÓNDE ocurrió el evento).
-                'time'        => $event->time ? \Formatter::time()->format($event->time) : null,
+                // human() convierte de UTC a la zona del usuario; format() solo
+                // cambiaba el formato y dejaba la hora en UTC (00:13 en vez de 19:13).
+                'time'        => $event->time ? \Formatter::time()->human($event->time) : null,
                 'device_id'   => $event->device_id ? (int) $event->device_id : null,
                 'device_name' => $deviceName,
                 'lat'         => $event->latitude !== null ? (float) $event->latitude : null,

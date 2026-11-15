@@ -245,6 +245,12 @@
   flex: 0 0 auto;
 }
 
+/* Titulo: --brand-800 es azul marino en claro y casi invisible sobre el
+   fondo oscuro (1,24:1). Mismo arreglo que .tp-dash__head h1. */
+[data-theme="dark"] .tp-mon__head h1 {
+  color: var(--fg-primary);
+}
+
 /* Cabecera de grupo del selector: en oscuro, texto claro sobre el tinte. */
 [data-theme="dark"] .tp-mon__pickgroup {
   color: var(--brand-300);

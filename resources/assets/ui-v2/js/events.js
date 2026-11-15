@@ -518,9 +518,21 @@
       });
   }
 
+  // Cada carga lleva un numero; solo pinta la ultima. Antes, una recarga
+  // (reset) durante otra carga se descartaba con `if (state.loading) return`
+  // y la busqueda o el filtro nuevos no se llegaban a pedir.
+  var loadSeq = 0;
+  var loadCtrl = null;
   function load(reset) {
-    if (state.loading) return;
+    // «Cargar mas» (scroll) si espera a la carga en curso; una recarga no:
+    // cancela la anterior y pide con los filtros actuales.
+    if (state.loading && !reset) return;
     if (!reset && !state.hasMore) return;
+    if (loadCtrl) {
+      try { loadCtrl.abort(); } catch (e) {}
+    }
+    loadCtrl = window.AbortController ? new AbortController() : null;
+    var seq = ++loadSeq;
     state.loading = true;
     if (reset) {
       state.offset = 0;
@@ -537,12 +549,14 @@
     var q = searchEl ? searchEl.value.trim() : "";
     fetch(
       DATA_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + rangeQS() + "&offset=" + state.offset + "&_=" + Date.now(),
-      { credentials: "same-origin", headers: { Accept: "application/json" } },
+      { credentials: "same-origin", headers: { Accept: "application/json" }, signal: loadCtrl ? loadCtrl.signal : undefined },
     )
       .then(function (r) {
         return r.json();
       })
       .then(function (res) {
+        if (seq !== loadSeq) return;
+        loadCtrl = null;
         state.loading = false;
         var rows = (res && res.events) || [];
         rows.forEach(function (ev) {
@@ -562,6 +576,9 @@
         if (reset && state.riskOn) loadRisk();
       })
       .catch(function () {
+        // Una carga cancelada (o superada por otra) no toca el estado.
+        if (seq !== loadSeq) return;
+        loadCtrl = null;
         state.loading = false;
         if (statusEl) statusEl.textContent = tpT('ui.load_error');
       });
@@ -603,6 +620,9 @@
   }
   function pollLive() {
     if (state.loading) return;
+    // Si mientras tanto cambia el filtro (nueva carga), esta respuesta es de
+    // otra consulta y no se mezcla.
+    var seq = loadSeq;
     var hours = hoursSel ? hoursSel.value : 0;
     var type = typeSel ? typeSel.value : "";
     var deviceId = deviceSel ? deviceSel.value : "";
@@ -613,6 +633,7 @@
     )
       .then(function (r) { return r.json(); })
       .then(function (res) {
+        if (seq !== loadSeq || state.loading) return;
         var rows = (res && res.events) || [];
         var fresh = rows.filter(function (ev) { return ev.id > state.maxId; });
         if (!fresh.length) return;

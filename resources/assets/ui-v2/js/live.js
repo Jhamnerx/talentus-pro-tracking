@@ -1166,7 +1166,11 @@
       state.map.setView([parseFloat(d.lat), parseFloat(d.lng)], Math.max(state.map.getZoom(), 14));
     root.setAttribute("data-drawer-open", "true");
     var drawer = document.getElementById("tp-live-drawer");
-    if (drawer) drawer.setAttribute("aria-hidden", "false");
+    if (drawer) {
+      drawer.setAttribute("aria-hidden", "false");
+      // Cerrado lleva `inert` (fuera del orden de tabulacion): ver el cierre.
+      drawer.removeAttribute("inert");
+    }
     if (d) fillDrawer(d);
     loadDrawerWidgets(id);
     loadVehicleState(id);
@@ -3664,6 +3668,19 @@
       dc.addEventListener("click", function () {
         root.removeAttribute("data-drawer-open");
         root.removeAttribute("data-bottombar-open");
+        // Cerrado es invisible (opacity 0) y silenciado (aria-hidden): con
+        // `inert` sus botones dejan tambien de recibir el foco con Tab.
+        var dw = document.getElementById("tp-live-drawer");
+        if (dw) {
+          // El foco estaba dentro (el boton Cerrar): se devuelve al mapa
+          // (Leaflet le da tabindex=0) antes de volver inerte el panel.
+          if (dw.contains(document.activeElement)) {
+            var back = document.getElementById("tp-live-map");
+            if (back && back.focus) back.focus({ preventScroll: true });
+          }
+          dw.setAttribute("aria-hidden", "true");
+          dw.setAttribute("inert", "");
+        }
         var prev = state.selectedId;
         state.selectedId = null;
         markSelectedRow(null);
