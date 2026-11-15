@@ -152,7 +152,7 @@
   }
 
   function emptyRow(cols, text) {
-    return '<tr><td colspan="' + cols + '" class="tp-svc-table__empty">' + esc(text || T("not_found")) + "</td></tr>";
+    return '<tr><td colspan="' + cols + '" class="tp-svc-table__empty">' + esc(text || tpEmpty(!!(state.q || state.conn), "ui.no_records_yet")) + "</td></tr>";
   }
 
   function pagedClient(items) {
@@ -200,7 +200,7 @@
         .map(function (r) {
           return (
             "<tr><td>" + esc(r.device) + "</td><td>" + esc(r.command) + "</td><td>" +
-            esc(r.parameters || "-") + "</td><td>" + r.attempts + "</td>" +
+            esc(r.parameters || "—") + "</td><td>" + r.attempts + "</td>" +
             '<td class="text-slate-500">' + esc(r.last_error || "—") + "</td><td>" + esc(r.date) + "</td>" +
             '<td class="tp-svc-table__actions"><button type="button" class="tp-svc-kebab__btn" data-pend-del="' +
             r.id + '" title="' + esc(T("delete")) + '" style="color:var(--danger-500,#ef4444);">' + TRASH + "</button></td></tr>"
@@ -227,7 +227,7 @@
         .map(function (r) {
           return (
             "<tr><td>" + esc(r.connection) + "</td><td>" + esc(r.command) + "</td><td>" +
-            esc(r.parameters || "-") + "</td><td>" + esc(r.schedule_at || "-") + "</td><td>" +
+            esc(r.parameters || "—") + "</td><td>" + esc(r.schedule_at || "—") + "</td><td>" +
             esc(T(r.type, r.type)) + '</td><td class="tp-svc-table__actions">' + kebab(r.id, true) + "</td></tr>"
           );
         })
@@ -366,7 +366,7 @@
                       '<td class="tp-svc-table__actions">' + viewBtn("data-slog-view", i) + "</td></tr>"
                     );
                   })
-                  .join("") || '<tr><td colspan="6" class="tp-svc-table__empty">' + esc(T("not_found")) + "</td></tr>";
+                  .join("") || '<tr><td colspan="6" class="tp-svc-table__empty">' + esc(tpEmpty(false, "ui.no_records_yet")) + "</td></tr>";
               d.querySelector("[data-slog-range]").textContent = data.total
                 ? (data.page - 1) * pg.limit + 1 + "–" + Math.min(data.page * pg.limit, data.total) + " / " + data.total
                 : "0";
@@ -414,7 +414,7 @@
         .map(function (r) {
           return (
             "<tr><td>" + esc(r.title) + "</td><td>" + esc(r.adapted_title) + "</td>" +
-            (showProto ? "<td>" + esc(r.protocol || "-") + "</td>" : "") +
+            (showProto ? "<td>" + esc(r.protocol || "—") + "</td>" : "") +
             '<td class="tp-svc-table__actions">' + kebab(r.id) + "</td></tr>"
           );
         })
@@ -1044,18 +1044,10 @@
 
   /* ============================ Tabs + toolbar ============================ */
 
-  // Tabs subrayadas a lo ancho (estilo referencia): activa = blanca con
-  // subrayado teal; inactivas = gris sobre fondo suave.
-  var TAB_BASE =
-    "appearance-none cursor-pointer border-0 flex-1 max-w-[250px] py-3 px-4 text-[13px] font-semibold text-center transition-colors ";
-  var TAB_ON =
-    TAB_BASE +
-    "bg-white text-[color:var(--brand-600,#0d9488)] " +
-    "shadow-[inset_0_-2px_0_0_var(--brand-500,#0d9488)] dark:bg-slate-800 dark:text-[color:var(--brand-400,#2dd4bf)]";
-  var TAB_OFF =
-    TAB_BASE +
-    "bg-slate-50 text-slate-500 hover:text-slate-700 " +
-    "shadow-[inset_0_-1px_0_0_theme(colors.slate.200)] dark:bg-slate-800/60 dark:text-slate-400 dark:shadow-[inset_0_-1px_0_0_theme(colors.slate.600)]";
+  // Pestañas con el subrayado común de la v2 (.tp-tabs__tab, modal.css;
+  // QA V5). Antes eran Tailwind a lo ancho con fondo gris.
+  var TAB_ON = "tp-tabs__tab is-active";
+  var TAB_OFF = "tp-tabs__tab";
 
   function styleTabs() {
     document.querySelectorAll("[data-hub-tab]").forEach(function (b) {

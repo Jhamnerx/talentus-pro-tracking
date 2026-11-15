@@ -33,6 +33,20 @@
     $theme = $prefTheme ?: request()->cookie('tp_theme', 'dark');
     $density = $prefDensity ?: request()->cookie('tp_density', 'comfortable');
     $rail = trim($__env->yieldContent('rail-active', 'live'));
+    // Formato de fecha/hora del usuario para el JS (tpFmt, modal.js): el
+    // mismo que usa Formatter en el servidor, para que Eventos, Flota, la
+    // bandeja y el tablero pinten las fechas igual (QA V10).
+    $tpDateTime = ['date' => 'Y-m-d', 'time' => 'H:i:s', 'offset' => 0];
+    try {
+        $tpNowUtc = date('Y-m-d H:i:s');
+        $tpDateTime = [
+            'date'   => \Formatter::date()->getFormat(),
+            'time'   => \Formatter::dtime()->getFormat(),
+            // Minutos entre la hora del servidor y la zona del usuario.
+            'offset' => (int) round((strtotime(\Formatter::time()->convert($tpNowUtc)) - strtotime($tpNowUtc)) / 60),
+        ];
+    } catch (\Throwable $e) {
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" data-theme="{{ $theme }}" data-density="{{ $density }}" data-rail="compact"
@@ -86,6 +100,7 @@
                 preferences: '{{ url('/ui/v2/api/preferences') }}',
             },
             locale: '{{ app()->getLocale() }}',
+            datetime: @json($tpDateTime),
             // Tiempo real: mismo servidor y mismo canal que el legacy.
             // Los puertos por defecto son los de socket/socket.js (9001/9002),
             // NO 3000/3001: con esos la v2 no conectaba con nada.
@@ -144,6 +159,8 @@
     <script src="{{ asset_resource('assets/ui/v2/js/tp-account.js') }}" defer></script>
     {{-- Enviar comando (modal compartido; se abre desde rail y kebab de Live) --}}
     <script src="{{ asset_resource('assets/ui/v2/js/tp-commands.js') }}" defer></script>
+    {{-- Galería de medios del vehículo: kebab de Live y «Cámara / Medios» del rail --}}
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-device-media.js') }}" defer></script>
     {{-- Hitos kilométricos (capa Leaflet compartida por páginas con mapa) --}}
     <script src="{{ asset_resource('assets/ui/v2/js/tp-hitos.js') }}" defer></script>
     <script src="{{ asset_resource('assets/ui/v2/js/shell.js') }}" defer></script>

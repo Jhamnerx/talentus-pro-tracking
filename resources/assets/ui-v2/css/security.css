@@ -217,6 +217,16 @@
   white-space: nowrap;
 }
 
+/* «Estado actual» vive en media columna: con las cabeceras en una línea la
+   tabla medía 840 px en una tarjeta de 651 y cortaba los valores, con la
+   barra horizontal escondida al final del scroll vertical (QA O4). Aquí las
+   cabeceras parten en dos líneas para que la tabla quepa. */
+.tp-sec #tp-sec-live thead th {
+  white-space: normal;
+  vertical-align: bottom;
+  line-height: 1.25;
+}
+
 /* th y td: la regla base ".tp-table thead th" alinea a la izquierda con mas
    especificidad que la clase sola, y las cabeceras numericas quedaban
    desalineadas de sus cifras. */

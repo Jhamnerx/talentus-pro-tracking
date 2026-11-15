@@ -51,7 +51,7 @@
                 <input type="text" class="tp-input" data-maint-notas maxlength="2000" placeholder="Opcional">
             </label>
             <div class="tp-form__field tp-col-2" style="align-items:flex-end;">
-                <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-maint-save>
+                <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-maint-save>
                     {{ trans('ui.save_record_plus') }}
                 </button>
             </div>

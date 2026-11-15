@@ -16,15 +16,11 @@
 
 .tp-mon__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 14px;
   flex-wrap: wrap;
 }
-.tp-mon__head h1 {
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  color: var(--brand-800, #0e2157);
-}
+/* Título: el común .tp-maint__title (components.css, QA V1). */
 
 /* --- selector de tamaño --- */
 .tp-mon__sizes {
@@ -247,10 +243,6 @@
 
 /* Titulo: --brand-800 es azul marino en claro y casi invisible sobre el
    fondo oscuro (1,24:1). Mismo arreglo que .tp-dash__head h1. */
-[data-theme="dark"] .tp-mon__head h1 {
-  color: var(--fg-primary);
-}
-
 /* Cabecera de grupo del selector: en oscuro, texto claro sobre el tinte. */
 [data-theme="dark"] .tp-mon__pickgroup {
   color: var(--brand-300);

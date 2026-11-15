@@ -37,28 +37,26 @@
         <script type="application/json" id="tp-device-modal-config">@json($tpDeviceModalConfig)</script>
 
 
-        {{-- Cabecera de página: título a la izquierda, acciones a la derecha
-             (mismo reparto que la referencia del ERP). --}}
-        <header class="tp-fleet__page-head">
-            <h1 class="tp-fleet__page-title">{{ trans('front.objects') }}</h1>
+        {{-- Cabecera de página común (QA V1): icono en cuadro + título a la
+             izquierda; acciones a la derecha, la principal al final (QA V2). Los
+             botones de página van a la altura normal (QA V4). --}}
+        <header class="tp-maint__head tp-fleet__page-head">
+            <h1 class="tp-maint__title tp-fleet__page-title">
+                <span class="tp-maint__title-ico" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 3h15v13H1z" />
+                        <path d="M16 8h4l3 3v5h-7V8z" />
+                        <circle cx="5.5" cy="18.5" r="2.5" />
+                        <circle cx="18.5" cy="18.5" r="2.5" />
+                    </svg>
+                </span>
+                {{ trans('front.objects') }}
+            </h1>
 
             <div class="tp-fleet__page-actions">
-                @if (!empty($canCreate))
-                    <button class="tp-btn tp-btn--accent tp-btn--sm" type="button" id="tp-fleet-create-device">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        <span>{{ trans('global.add') . ' ' . mb_strtolower(trans('front.object')) }}</span>
-                    </button>
-                @endif
-                {{-- Alta de beacon (plugin beacons): kind aparte, form reducido --}}
-                @if (!empty($canCreate) && settings('plugins.beacons.status') && Auth::user()->perm('beacons', 'edit'))
-                    <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-create-beacon"
-                        title="Beacon">＋ Beacon</button>
-                @endif
                 {{-- Columnas configurables (ajuste compartido con la lista clásica) --}}
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" type="button" id="tp-fleet-columns">
+                <button class="tp-btn tp-btn--ghost" type="button" id="tp-fleet-columns">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" aria-hidden="true">
                         <rect x="3" y="4" width="18" height="16" rx="2" />
@@ -66,7 +64,7 @@
                     </svg>
                     <span>{{ trans('front.columns') }}</span>
                 </button>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-fleet-export" title="{{ trans('front.export') }}">
+                <button class="tp-btn tp-btn--ghost" id="tp-fleet-export" title="{{ trans('front.export') }}">
                     <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -75,7 +73,7 @@
                     </svg>
                     <span>{{ trans('front.export') }}</span>
                 </button>
-                <button class="tp-btn tp-btn--ghost tp-btn--sm tp-btn--icon" id="tp-fleet-refresh"
+                <button class="tp-btn tp-btn--ghost tp-btn--icon" id="tp-fleet-refresh"
                     title="Actualizar" aria-label="Actualizar">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
@@ -83,6 +81,20 @@
                         <path d="M21 3v5h-5" />
                     </svg>
                 </button>
+                {{-- Alta de beacon (plugin beacons): kind aparte, form reducido --}}
+                @if (!empty($canCreate) && settings('plugins.beacons.status') && Auth::user()->perm('beacons', 'edit'))
+                    <button class="tp-btn tp-btn--ghost" type="button" id="tp-fleet-create-beacon"
+                        title="Beacon">＋ Beacon</button>
+                @endif
+                @if (!empty($canCreate))
+                    <button class="tp-btn tp-btn--primary" type="button" id="tp-fleet-create-device">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                        <span>{{ trans('global.add') . ' ' . mb_strtolower(trans('front.object')) }}</span>
+                    </button>
+                @endif
             </div>
         </header>
 

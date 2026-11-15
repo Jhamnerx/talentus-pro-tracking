@@ -401,24 +401,23 @@
   border-color: var(--brand-bg-hover);
 }
 
-/* Accent (teal) — botón de crear (+), matching the legacy brand accent */
+/* Accent: alias del primario (QA V3). Antes era turquesa (--brand-accent) y
+   convivía con el azul marino de Guardar/Aplicar en la misma pantalla. Hay
+   un solo color de acción principal: el de marca. La clase se mantiene
+   porque la usan muchas vistas y JS (y setBusy la busca). */
 .tp-btn--accent {
-  background: var(--brand-accent, #1b99bd);
-  color: #fff;
-  border-color: var(--brand-accent, #1b99bd);
-  border-radius: var(--r-md);
+  background: var(--brand-bg-solid);
+  color: var(--brand-fg-solid);
+  border-color: var(--brand-bg-solid);
 }
 .tp-btn--accent:hover {
-  background: var(--brand-accent-hover, #178aac);
-  border-color: var(--brand-accent-hover, #178aac);
-  color: #fff;
+  background: var(--brand-bg-hover);
+  border-color: var(--brand-bg-hover);
+  color: var(--brand-fg-solid);
 }
-/* Garantiza icono + texto BLANCOS en botones de acento (evita el caso
-   icono oscuro sobre fondo teal). currentColor de los SVG hereda este color. */
-.tp-btn--accent,
 .tp-btn--accent > svg,
 .tp-btn--accent > span {
-  color: #fff;
+  color: inherit;
 }
 
 .tp-btn--secondary {
@@ -989,6 +988,76 @@ select.tp-input:disabled {
   50% {
     opacity: 0.55;
   }
+}
+
+/* ============================================================
+   CABECERA DE PÁGINA (QA V1)
+   Un solo patrón para todas las páginas de la v2: icono en cuadro tintado
+   (34 px) + título de 18 px a la izquierda; herramientas y acción principal
+   («+ Nuevo …», icono + texto) a la derecha. Antes vivía en services.css y
+   las páginas que no lo cargaban (Flota, Monitoreo, Enviar comando) tenían
+   cada una su cabecera.
+   ============================================================ */
+.tp-maint__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.tp-maint__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-xl, 17px);
+  font-weight: var(--fw-semibold, 600);
+  color: var(--fg-primary, #0f172a);
+  margin: 0;
+}
+.tp-maint__title-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand-bg-subtle, var(--brand-50));
+  color: var(--brand-600, #0d9488);
+}
+.tp-maint__tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tp-maint__tools .tp-input {
+  width: 240px;
+}
+[data-theme="dark"] .tp-maint__title-ico {
+  color: var(--brand-400);
+}
+@media (max-width: 767px) {
+  .tp-maint__head {
+    align-items: stretch;
+  }
+  .tp-maint__tools {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .tp-maint__tools .tp-input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Estado vacío común (QA V7): mismo aspecto en todas las tablas y listas
+   (Flota, Eventos, tablas CRUD, ficha). Texto: tpEmpty() → «Sin resultados.»
+   si hay filtro, «Todavía no hay X.» si no hay nada. Antes vivía solo en
+   services.css. */
+.tp-svc-table__empty {
+  text-align: center;
+  color: var(--fg-muted, #94a3b8);
+  padding: 22px 12px;
 }
 
 /* ============================================================
@@ -1605,54 +1674,36 @@ select.tp-input:disabled {
   background-clip: content-box;
   border: 2px solid transparent;
 }
+/* Esquina donde se cruzan las dos barras (tablas con scroll en ambos
+   ejes): sin regla, Chromium la pinta blanca también en oscuro (QA V12). */
+.tp-scope ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Barras nativas (Firefox, y las que usan scrollbar-width) y la esquina que
+   dibuja el navegador: que sigan el tema. color-scheme hace que el UA pinte
+   sus controles en oscuro; scrollbar-color solo donde no hay
+   ::-webkit-scrollbar, porque en Chromium 121+ anularía los estilos de
+   arriba. */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .tp-scope * {
+    scrollbar-color: var(--border-default) transparent;
+  }
+}
 
 /* ============================================================
    Ajustes de cuenta · modal con tabs (tp-account)
    ============================================================ */
+/* Pestañas del modal de cuenta: las comunes .tp-tabs__nav/.tp-tabs__tab
+   (subrayado, modal.css; QA V5). Antes eran píldoras. */
 .tp-acc__tabs {
-  display: flex;
-  gap: 6px;
   flex-wrap: wrap;
-  padding-bottom: 14px;
   margin-bottom: 16px;
-  border-bottom: 1px solid var(--border-default, #e2e8f0);
-}
-/* Tabs como pills: inactivo con fondo sutil + borde; activo relleno de marca */
-.tp-scope .tp-acc__tab {
-  appearance: none;
-  cursor: pointer;
-  padding: 7px 14px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: var(--r-pill, 999px);
-  border: 1px solid var(--border-default, #e2e8f0);
-  background: var(--surface-sunken, #f1f5f9);
-  color: var(--fg-secondary, #475569);
-  transition:
-    color var(--dur-fast, 0.12s) var(--ease-out, ease),
-    background var(--dur-fast, 0.12s) var(--ease-out, ease),
-    border-color var(--dur-fast, 0.12s) var(--ease-out, ease);
-}
-.tp-scope .tp-acc__tab:hover {
-  color: var(--fg-primary, #0f172a);
-  border-color: var(--border-strong, #cbd5e1);
-  background: var(--surface-raised, #fff);
-}
-.tp-scope .tp-acc__tab.is-active {
-  color: #fff;
-  background: var(--brand-500, #2e63d9);
-  border-color: var(--brand-500, #2e63d9);
-  box-shadow: 0 1px 2px rgba(46, 99, 217, 0.35);
-}
-.tp-scope .tp-acc__tab.is-active:hover {
-  color: #fff;
-  background: var(--brand-600, #1d4ed8);
-  border-color: var(--brand-600, #1d4ed8);
-}
-[data-theme="dark"] .tp-scope .tp-acc__tab {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
 }
 .tp-acc__panel {
   min-height: 260px;

@@ -48,7 +48,11 @@
                         {{ trans('ui.edit_selected') }} <span id="tp-drivers-sel-count"></span>
                     </button>
                 @endif
-                <button type="button" class="tp-btn tp-btn--accent" id="tp-drivers-add">＋</button>
+                <button type="button" class="tp-btn tp-btn--primary" id="tp-drivers-add">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    <span>{{ trans('ui.new_driver') }}</span>
+                </button>
             </div>
         </header>
 

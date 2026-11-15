@@ -27,7 +27,7 @@
         <script type="application/json" data-cameras-cfg>@json($camerasCfg)</script>
 
         <div class="tp-group-box__head">
-            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-camera-add
+            <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-camera-add
                 style="margin-left: auto;">＋ {{ trans('front.add_camera') }}</button>
         </div>
 
@@ -58,8 +58,8 @@
                         </tr>
                     @empty
                         <tr data-cameras-empty>
-                            <td colspan="4" class="tp-text-muted" style="padding: 14px 12px; font-size: 13px;">
-                                {{ trans('front.no_data') }}
+                            <td colspan="4" class="tp-svc-table__empty">
+                                {{ trans('ui.no_records_yet') }}
                             </td>
                         </tr>
                     @endforelse

@@ -33,18 +33,25 @@
                 </span>
                 {{ trans('front.reports') }}
             </h2>
+            @if (!empty($canCreate))
+                {{-- Acción principal en la cabecera, icono + texto (QA V2) --}}
+                <div class="tp-maint__tools">
+                    <button type="button" class="tp-btn tp-btn--primary" id="tp-rep-add">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                        <span>{{ trans('ui.new_report') }}</span>
+                    </button>
+                </div>
+            @endif
         </header>
 
         {{-- Tabs: definiciones guardadas | logs de programados enviados --}}
-        <div role="tablist" aria-label="{{ trans('front.reports') }}"
-            style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
-            <button type="button" class="tp-rep-tab is-active" role="tab" id="tp-rep-tab-saved"
-                aria-selected="true" aria-controls="tp-rep-panel-saved" data-rep-tab="saved"
-                style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:600;">
+        <div class="tp-tabs__nav tp-tabs__nav--page" role="tablist" aria-label="{{ trans('front.reports') }}">
+            <button type="button" class="tp-tabs__tab tp-rep-tab is-active" role="tab" id="tp-rep-tab-saved"
+                aria-selected="true" aria-controls="tp-rep-panel-saved" data-rep-tab="saved">
                 {{ trans('ui.generated_reports') }}</button>
-            <button type="button" class="tp-rep-tab" role="tab" id="tp-rep-tab-logs"
-                aria-selected="false" aria-controls="tp-rep-panel-logs" data-rep-tab="logs"
-                style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:500;">
+            <button type="button" class="tp-tabs__tab tp-rep-tab" role="tab" id="tp-rep-tab-logs"
+                aria-selected="false" aria-controls="tp-rep-panel-logs" data-rep-tab="logs">
                 {{ trans('ui.scheduled_logs') }}</button>
         </div>
 
@@ -53,9 +60,6 @@
                 <input type="text" class="tp-input" id="tp-rep-search" placeholder="{{ trans('front.search') }}…"
                     autocomplete="off" style="max-width: 240px; border-radius: 999px;">
                 <select class="tp-input" id="tp-rep-type-filter" style="width: 260px"></select>
-                @if (!empty($canCreate))
-                    <button type="button" class="tp-btn tp-btn--accent" id="tp-rep-add" style="margin-left:auto;">＋</button>
-                @endif
             </div>
 
             <div class="tp-maint__wrap" role="tabpanel" id="tp-rep-panel-saved" aria-labelledby="tp-rep-tab-saved" data-rep-panel="saved">

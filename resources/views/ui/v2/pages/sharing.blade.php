@@ -37,7 +37,11 @@
                 <input type="text" class="tp-input" id="tp-sharing-search"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 <select class="tp-input" id="tp-sharing-device" style="width: 200px"></select>
-                <button type="button" class="tp-btn tp-btn--accent" id="tp-sharing-add">＋</button>
+                <button type="button" class="tp-btn tp-btn--primary" id="tp-sharing-add">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    <span>{{ trans('ui.new_share_link') }}</span>
+                </button>
             </div>
         </header>
 

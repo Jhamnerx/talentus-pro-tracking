@@ -6,16 +6,7 @@
  * detalle desplegable de una vuelta (tramos y paradas).
  * ===================================================== */
 
-.tp-ops__tabs {
-  display: flex;
-  gap: 6px;
-}
-
-.tp-ops__tabs .tp-btn.is-active {
-  background: var(--surface-sunken, #f1f5f9);
-  color: var(--fg-primary, #0f172a);
-  font-weight: 600;
-}
+/* Pestañas: las comunes .tp-tabs__nav/.tp-tabs__tab (modal.css, QA V5). */
 
 .tp-ops__bar {
   display: flex;
@@ -353,6 +344,22 @@ tr.is-open .tp-ops__toggle {
 
 .tp-ops-shift__date .tp-input {
   min-width: 140px;
+}
+
+/* tp-select se enhancea con la pestaña oculta (no puede medir) y el control
+   se quedaba al ancho de la etiqueta (~60 px). Ancho mínimo para los selects
+   de las barras y uno mayor para «Operación» del Turno (QA O3). */
+.tp-ops__bar .tp-ops__f .tp-dd {
+  min-width: 150px;
+}
+
+.tp-ops-shift__bar {
+  column-gap: 16px;
+}
+
+.tp-ops-shift__bar > .tp-ops__f:first-child .tp-dd,
+.tp-ops-shift__bar .tp-ops-shift__operation {
+  min-width: 220px;
 }
 
 .tp-ops-shift__status {
@@ -708,7 +715,8 @@ tr.is-open .tp-ops__toggle {
 /* ---------- Pantalla completa ---------- */
 body.is-fullscreen .tp-rail,
 body.is-fullscreen .tp-topbar,
-body.is-fullscreen .tp-maint__head {
+body.is-fullscreen .tp-maint__head,
+body.is-fullscreen .tp-ops__tabs {
   display: none !important;
 }
 

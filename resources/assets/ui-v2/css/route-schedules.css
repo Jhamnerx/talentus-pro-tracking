@@ -5,16 +5,7 @@
  * las pestañas, la barra de filtros, el editor de puntos y las vueltas.
  * ===================================================== */
 
-.tp-rsch__tabs {
-  display: flex;
-  gap: 6px;
-}
-
-.tp-rsch__tabs .tp-btn.is-active {
-  background: var(--surface-sunken, #f1f5f9);
-  color: var(--fg-primary, #0f172a);
-  font-weight: 600;
-}
+/* Pestañas: las comunes .tp-tabs__nav/.tp-tabs__tab (modal.css, QA V5). */
 
 .tp-rsch__bar {
   display: flex;

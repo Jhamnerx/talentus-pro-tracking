@@ -153,28 +153,11 @@
       size: "xl",
       static: true,
       body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
-      // Mismo orden y jerarquia que el legacy: Generar es la accion
-      // principal -es la que descarga el reporte, lo que se viene a hacer-
-      // y Guardar solo deja la definicion para mas tarde. Estaban al reves.
+      // Generar es la accion principal -es la que descarga el reporte, lo
+      // que se viene a hacer- y Guardar solo deja la definicion para mas
+      // tarde. Orden comun del pie (QA V9): secundarios, Cancelar y la
+      // principal a la derecha del todo (modal.js la coloca ahi).
       buttons: [
-        {
-          label: "Generar",
-          variant: "primary",
-          close: false,
-          onClick: function (dialog) {
-            doGenerate(dialog);
-            return false;
-          },
-        },
-        {
-          label: tpT('global.save'),
-          variant: "outline",
-          close: false,
-          onClick: function (dialog) {
-            doSave(dialog, id);
-            return false;
-          },
-        },
         {
           // "Nuevo" del legacy: limpia para volver a generar o guardar sin
           // arrastrar lo anterior. Se reabre el modal en vez de resetear
@@ -189,7 +172,25 @@
             return false;
           },
         },
+        {
+          label: tpT('global.save'),
+          variant: "secondary",
+          close: false,
+          onClick: function (dialog) {
+            doSave(dialog, id);
+            return false;
+          },
+        },
         { label: tpT('global.cancel'), variant: "ghost", close: true },
+        {
+          label: tpT('front.generate'),
+          variant: "primary",
+          close: false,
+          onClick: function (dialog) {
+            doGenerate(dialog);
+            return false;
+          },
+        },
       ],
     });
 
@@ -1169,16 +1170,16 @@
               // Espacio en click. Sin esto la fila solo responde al raton.
               '<tr data-rep-row="' + r.id + '" data-format="' + esc(r.format.toLowerCase()) +
               '" role="button" tabindex="0" style="cursor:pointer;">' +
-              "<td>" + esc(r.title || "–") + "</td>" +
+              "<td>" + esc(r.title || "—") + "</td>" +
               "<td>" + esc(r.type_label) + "</td>" +
               "<td>" + esc(r.format) + "</td>" +
               "<td>" + r.devices_count + "</td>" +
               "<td>" + r.geofences_count + "</td>" +
-              "<td>" + esc(r.schedule || "–") + "</td>" +
+              "<td>" + esc(r.schedule || "—") + "</td>" +
               '<td class="tp-svc-table__actions">' + kebab(acts) + "</td></tr>"
             );
           }).join("")
-        : '<tr><td colspan="7" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+        : '<tr><td colspan="7" class="tp-svc-table__empty">' + tpEmpty(!!(state.s || state.type), 'ui.no_reports_yet') + '</td></tr>';
       updatePager("saved");
     });
   }
@@ -1207,7 +1208,7 @@
             return (
               '<tr data-log-row="' + esc(r.download) +
               '" role="button" tabindex="0" style="cursor:pointer;">' +
-              "<td>" + esc(r.title || "–") + "</td>" +
+              "<td>" + esc(r.title || "—") + "</td>" +
               "<td>" + esc(r.type_label) + "</td>" +
               "<td>" + esc(r.format) + "</td>" +
               "<td>" + esc(r.size) + "</td>" +
@@ -1215,7 +1216,7 @@
               '<td class="tp-svc-table__actions">' + kebab(acts) + "</td></tr>"
             );
           }).join("")
-        : '<tr><td colspan="6" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+        : '<tr><td colspan="6" class="tp-svc-table__empty">' + tpEmpty(!!(state.s || state.type), 'ui.no_records_yet') + '</td></tr>';
       updatePager("logs");
     });
   }
@@ -1302,9 +1303,6 @@
         // La clase cambia el aspecto; el atributo es lo unico que oye un
         // lector de pantalla. Van juntos para que no se separen.
         b.setAttribute("aria-selected", on ? "true" : "false");
-        b.style.borderBottomColor = on ? "var(--brand-500,#2e63d9)" : "transparent";
-        b.style.color = on ? "var(--brand-500,#2e63d9)" : "";
-        b.style.fontWeight = on ? "600" : "500";
       });
       Array.prototype.forEach.call(document.querySelectorAll("[data-rep-panel]"), function (p) {
         p.hidden = p.getAttribute("data-rep-panel") !== state.tab;

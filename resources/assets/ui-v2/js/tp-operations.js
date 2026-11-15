@@ -98,6 +98,8 @@
       p.hidden = p.getAttribute("data-ops-panel") !== key;
     });
     if (key === "live") startLive(); else stopLive();
+    // Vueltas: la primera vez carga sola con las fechas por defecto (hoy).
+    if (key === "cycles" && !state.cycles.loaded) loadCycles();
     // Pestaña Turno (tp-operations-shift.js): carga el reporte la primera vez.
     if (key === "shift" && window.tpOpsShift) tpOpsShift.activate(state.meta);
   }
@@ -205,6 +207,7 @@
       tpSelect.refresh($("tp-ops-filter-operation"));
       tpSelect.refresh($("tp-ops-filter-device"));
     }
+    state.cycles.loaded = true; // la carga va justo debajo, con estos filtros
     showTab("cycles");
     state.cycles.page = 1;
     loadCycles();
@@ -228,6 +231,7 @@
   }
 
   function loadCycles() {
+    state.cycles.loaded = true;
     var rows = $("tp-ops-cycle-rows");
     if (!dateGet("tp-ops-from") || !dateGet("tp-ops-to")) {
       rows.innerHTML = '<tr><td colspan="12" class="tp-svc-table__empty">' + esc(t("ui.pick_date_range")) + "</td></tr>";

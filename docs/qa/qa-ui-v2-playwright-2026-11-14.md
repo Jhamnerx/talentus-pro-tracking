@@ -95,17 +95,20 @@ No salió **ninguna clave i18n cruda** ni ningún 4xx/5xx en las 18 páginas, en
 - **Causa:** `command-palette.js:282`: `if (!i.id) i.id = "tp-cmdk-opt-" + n;` numera según la posición entre los ítems **visibles**. Las acciones ya tienen `opt-0…` de la primera apertura, y los resultados reciben los mismos números.
 
 ### BAJA · S5 · Logo del topbar: «P» blanca invisible en claro y suelta en oscuro
+- **Estado: Corregido** (`resources/views/ui/v2/partials/topbar.blade.php:25`): se quitó el `<span class="tp-rail__logo">` del topbar; queda solo el nombre de la marca (sin hueco en claro ni «P» suelta en oscuro). El logo del rail no se tocó.
 - **Observado:** junto al nombre de la marca hay un `<span class="tp-rail__logo">P</span>` de 26 px con texto blanco y sin fondo. En claro deja un hueco en blanco; en oscuro se ve una «P» suelta.
 - **Captura:** `fleet-1440-dark.png`, `monitor-1440-dark.png` (arriba a la izquierda).
 - **Causa:** `resources/views/ui/v2/partials/topbar.blade.php:26` reutiliza la clase del rail (`components.css:1300`), que da el fondo en otro contexto.
 
 ### BAJA · S6 · Menú de cuenta: el email aparece dos veces y el foco no entra en el menú
+- **Estado: Corregido** (`resources/views/ui/v2/partials/topbar.blade.php:4` y `:160`; `resources/assets/ui-v2/js/shell.js:101`): el usuario no tiene `name`, así que la cabecera muestra el email una sola vez (el subtítulo solo sale si hay un nombre distinto). Al abrir, el foco pasa al primer `menuitem`; flechas/Inicio/Fin recorren el menú, Esc lo cierra y devuelve el foco al botón «AD», Tab lo cierra.
 - **Observado:**
   - la cabecera del menú repite «admin@talentustechnology.com» como nombre y como subtítulo;
   - al abrir con el ratón el foco se queda en el botón «AD». Es un `role="menu"`, así que debería pasar al primer `menuitem`.
 - **Captura:** `shell-user-menu.png`.
 
 ### BAJA · S7 · «Cámara / Medios» en el rail no abre nada
+- **Estado: Corregido** (`resources/views/ui/v2/partials/rail.blade.php:30`, `:77`; `resources/assets/ui-v2/js/tp-device-media.js:223` `tpDeviceMedia.pick()`; `app/Http/Controllers/Ui/V2/DevicesController.php:1186` + `routes/web.php:1400` `GET /ui/v2/api/devices/media-devices`; `resources/views/ui/v2/layout.blade.php:148`): «Cámara / Medios» abre un selector de vehículo (buscador por nombre o placa, Enter abre el primero) y luego la galería de fotos con `tpDeviceMedia.open(id, nombre)`. Sigue con `perm('camera','view')` (rail y endpoint). `tp-device-media.js` se carga ahora en el layout (todas las páginas con rail) y se quitó de `live.blade.php` para no cargarlo dos veces. Ya no hay ítems «pendientes» en el rail.
 - **Pasos:** pulsar «Cámara / Medios» en el rail.
 - **Observado:** el enlace (`href="#"`) solo muestra el toast «Disponible próximamente en la nueva UI.». Las fotos del equipo existen por otras vías.
 - **Captura:** `rail-camara-medios.png`.
@@ -146,6 +149,7 @@ No salió **ninguna clave i18n cruda** ni ningún 4xx/5xx en las 18 páginas, en
 - **Causa:** `fleet.css:588-591` fija `tbody td { padding-top:13px; padding-bottom:13px }` sin variante por `[data-density]`.
 
 ### BAJA · F4 · Paginación sin espacio y plural fijo
+- **Estado: Corregido** (`resources/assets/ui-v2/js/fleet.js:579-581`, `tp-expenses.js:56`, `tp-route-schedules.js:115`; claves `ui.page_of`, `ui.page_short_of`, `ui.devices_count_one|other` en `resources/lang/{es,en}/ui.php`): «Página 1 / 16», «Pág. 1 / 1» y «1 dispositivo» / «N dispositivos» con marcadores traducidos.
 - **Observado:**
   - «Página1 / 16» en Flota;
   - «Pág1 / 1» en Gastos y Programaciones de ruta;
@@ -154,6 +158,7 @@ No salió **ninguna clave i18n cruda** ni ningún 4xx/5xx en las 18 páginas, en
 - **Causa:** `fleet.js:598`, `tp-expenses.js:56` y `tp-route-schedules.js:115` concatenan `tpT('ui.page'|'ui.page_short') + n` sin espacio. `tp-operations.js:243,420` sí lo pone.
 
 ### BAJA · F5 · Nombres con espacio inicial se ordenan los primeros
+- **Estado: Corregido** (`app/Http/Controllers/Ui/V2/DevicesController.php:259` orden SQL por `TRIM(devices.name)` y `:326` nombre recortado; `app/Http/Controllers/Ui/V2/HistoryController.php:88`; `resources/assets/ui-v2/js/live.js:1742` y `monitor.js:570` comparan con `trim()`). El dato de origen no se cambió.
 - **Observado:** «␠BLP-880 ECORTA», «␠CEE-797…» van antes de «-PRUEBA CAMARA» y de «320685» con «NOMBRES ↑».
 - **Causa:** es un dato de origen (el nombre tiene espacios), pero la API (`/ui/v2/api/fleet`) y la lista podrían usar `trim()`. Pasa igual en `/ui/v2/api/history/devices`.
 
@@ -182,17 +187,20 @@ No salió **ninguna clave i18n cruda** ni ningún 4xx/5xx en las 18 páginas, en
 - **Causa:** `resources/views/ui/v2/pages/live.blade.php:702` y `resources/assets/ui-v2/js/live.js:1015` solo cambian `aria-hidden`. Hace falta `inert` (o `visibility:hidden`) mientras está cerrado.
 
 ### BAJA · L3 · Barra de widgets del drawer
+- **Estado: Corregido** (`resources/assets/ui-v2/js/live.js:1435` mide la barra con `ResizeObserver` y publica `--tp-bb-offset`; `resources/assets/ui-v2/css/live-ops.css:1484` el chip «Actualizando cada 15s» y `:1980` los controles inferiores de Leaflet suben por encima de la barra; `:2002` la fila de widgets ya no desplaza en horizontal: las cards se encogen hasta 240 px y bajan de fila, con alto máximo y scroll vertical; `:2074` el cuerpo de cada card parte el texto en vez de desplazar en horizontal; `:2117` «Añadir servicio» con el azul de marca). No verificado en navegador.
 - **Observado:**
   - los widgets «Servicios» y «Eventos recientes» tapan el chip «Actualizando cada 15s» y la atribución de Leaflet, y tienen su propio scroll horizontal;
   - el botón «Añadir servicio» es gris pizarra, cuando en el resto de la v2 la acción principal es azul de marca o turquesa.
 - **Captura:** `live-drawer-341.png`.
 
 ### BAJA · L4 · Kebab del vehículo: «Video» sin tilde
+- **Estado: Corregido** (`resources/lang/es/front.php:1093-1095`, `:1637-1708` y `resources/lang/es/ui.php` `live_video`): «Vídeo en vivo», «Grabaciones de vídeo», pestaña «Vídeo» y el resto de textos `video_*` en castellano con tilde (los marcadores `:video` intactos). Afecta también al legacy, que usa las mismas claves.
 - **Observado:** «Video en vivo», «Grabaciones de video» y la pestaña «Video» de la ficha. La documentación y el resto de la UI usan «Vídeo».
 - **Captura:** `live-kebab-341.png`.
 - El kebab funciona: menú completo, posición correcta y sin errores.
 
 ### BAJA · L5 · El filtro «Desconec…» sale cortado a 1440 px
+- **Estado: Corregido** (`resources/assets/ui-v2/css/live-ops.css:701-726`): la etiqueta del filtro ya no se trunca (sin `ellipsis`, no encoge); si etiqueta + contador no caben en la celda, el contador baja de línea dentro del mismo botón.
 - **Captura:** `live-1440-light.png`.
 
 ---
@@ -209,6 +217,7 @@ Las 13 pestañas (Principal, Usuarios, Iconos, Información, Sensores, Servicios
 - **Causa:** `resources/assets/ui-v2/css/device-modal.css:417-429`: `.tp-modal .tp-choice-input { border-radius:5px }` vale para todos los tipos. El `50%` de los radios solo está en `.tp-form input[type=radio]` y en `…[type=radio]:checked` (`:436`, `:462`).
 
 ### BAJA · D2 · Resumen de errores con el «?» de las ayudas
+- **Estado: Corregido** (`resources/assets/ui-v2/js/modal.js:367` `textoDeEtiqueta()` lee la etiqueta sin `.tp-help`/iconos; `:443` `showFieldErrors()` pone `aria-invalid="true"` + `aria-describedby` al mensaje y los quita al corregir, marca con punto rojo la pestaña con errores (`resources/assets/ui-v2/css/modal.css:296`) y abre y enfoca el primer campo de la primera pestaña con error). Es el helper compartido: vale para vehículo, conductor y alerta. No verificado en navegador.
 - **Pasos:** «Agregar objeto» → «Guardar» vacío.
 - **Observado:**
   - la caja dice «**IMEI del dispositivo ? / ID de rastreador ?**: Necesario», porque se cuela el texto de los iconos de ayuda;
@@ -217,6 +226,7 @@ Las 13 pestañas (Principal, Usuarios, Iconos, Información, Sensores, Servicios
 - **Captura:** `validation-device-new.png`. La 422 por campo funciona: `POST /ui/v2/api/devices` → 422, con mensajes inline y el toast «Revisa los campos marcados.».
 
 ### BAJA · D3 · Pestaña Vídeo: controles de canales y botón «Detectar desde el equipo»
+- **Estado: Corregido** (`resources/assets/ui-v2/js/device-modal.js:184`: el rol de un canal desmarcado queda deshabilitado y se reactiva al marcarlo; `resources/views/ui/v2/modals/devices/partials/video.blade.php:68` + `resources/assets/ui-v2/css/device-video.css:165`: «Detectar desde el equipo» pasa a botón `secondary` con borde e icono; `resources/assets/ui-v2/js/tp-device-video.js:456`: lo sugerido por el equipo dispara `change`, antes el grupo de canales seguía oculto/deshabilitado y no se enviaba; `:445` un fallo de red ya no deja el botón deshabilitado). Las pestañas «Video»/«Cámaras» no se renombraron. No verificado en navegador.
 - **Observado:**
   - los selects de rol de los canales 3 a 8 siguen activos aunque su casilla esté desmarcada;
   - «Detectar desde el equipo» es un `tp-btn--ghost` de 28 px que parece texto suelto dentro de un campo.
@@ -224,6 +234,7 @@ Las 13 pestañas (Principal, Usuarios, Iconos, Información, Sensores, Servicios
 - **Captura:** `device-modal-tab-8.png`, `device-modal-tab-11.png`.
 
 ### BAJA · D4 · Diálogos sin nombre accesible y pestañas en tres filas
+- **Estado: Corregido** (`resources/assets/ui-v2/js/modal.js:108`: `aria-labelledby` al `id` único del título; `resources/assets/ui-v2/css/device-modal.css:240`: pestañas en una fila sin salto, con scroll horizontal fino; `resources/assets/ui-v2/js/device-modal.js:87` trae la pestaña activa a la vista). Pendiente: el salto de altura entre pestañas y la separación de «Eliminar». No verificado en navegador.
 - **Observado:**
   - los `<dialog>` de `tpModal` no tienen `aria-labelledby` (`resources/assets/ui-v2/js/modal.js:77`, `document.createElement("dialog")`);
   - en el modal de 600 px las 13 pestañas ocupan tres líneas, y la altura del modal salta de 382 a 840 px al cambiar de pestaña;
@@ -244,6 +255,7 @@ Las 13 pestañas (Principal, Usuarios, Iconos, Información, Sensores, Servicios
 - **Captura:** `dashboard-1440-light.png` (a los 4 s) y `dashboard-1440-light-loaded-full.png` (cargado).
 
 ### BAJA · DB2 · La séptima tarjeta KPI queda sola en una fila
+- **Estado: Corregido** (`resources/assets/ui-v2/css/dashboard.css:108-133`): rejilla explícita sin huecos — 7 columnas desde 1280 px, 4 entre 720 y 1279 (con «Flota total» a dos columnas: 2+2 / 4) y 2 por debajo («Flota total» a toda la fila). Icono, etiqueta y valor alineados a la izquierda (`:135`). Sin `@container` porque clean-css 4 se come la at-rule.
 - **Observado:** «UTILIZACIÓN» ocupa sola la segunda fila de la rejilla de 6 columnas. El valor de los KPI va alineado a la izquierda y la etiqueta y el icono centrados.
 - **Captura:** `dashboard-1440-light-loaded-full.png`.
 
@@ -267,6 +279,7 @@ Las 13 pestañas (Principal, Usuarios, Iconos, Información, Sensores, Servicios
 - Distinto del #9 del informe anterior («la búsqueda no encuentra nada»): ahora sí busca, pero se queda con la consulta anterior.
 
 ### BAJA · E2 · Buscador sin icono y pie de lista apretado
+- **Estado: Corregido** (`resources/views/ui/v2/pages/events.blade.php:70` lupa `tp-input-wrap__icon` como en Live; `resources/assets/ui-v2/css/events.css:103-131` pie con `gap` y `flex-wrap`, contador en una línea y «Borrar todo» en rojo; `resources/assets/ui-v2/js/events.js` contador con `ui.events_count_one|other`).
 - **Observado:**
   - el input tiene `padding-left:36px`, pero `.tp-input-wrap` no lleva lupa y queda un hueco;
   - el pie muestra «50 / eventos / (+)» en tres líneas, y «Borrar todo» (destructivo) tiene el mismo estilo que «Refrescar».
@@ -283,6 +296,7 @@ Las 13 pestañas (Principal, Usuarios, Iconos, Información, Sensores, Servicios
 - **Causa:** `resources/assets/ui-v2/css/monitor.css:23-27` (`color: var(--brand-800)`) no tiene la variante oscura que sí tiene el tablero (`dashboard.css:745`). Revisar también `monitor.css:194` y `live-ops.css:2493` (`.tp-follow__title`), que usan el mismo token.
 
 ### BAJA · M2 · «Elige hasta9vehículos»
+- **Estado: Corregido** (`resources/assets/ui-v2/js/monitor.js:490` y `:495`; `resources/lang/{es,en}/ui.php` `monitor_grid_note` = «Elige hasta :count vehículos — …» y `vehicles_up_to` = «:count vehículos, hasta :cols columnas»): espacios correctos y el `title` de los botones de tamaño ya va traducido.
 - **Observado:** faltan los espacios alrededor del número. El `title` de los botones de tamaño dice «9vehículos, hasta3 columnas», con «columnas» escrito a mano.
 - **Causa:** `resources/assets/ui-v2/js/monitor.js:490` y `:495` concatenan `tpT('ui.pick_up_to') + state.size + tpT('ui.monitor_grid_note')` sin espacios (las cadenas de `resources/lang/es/ui.php:688` y `:517` no los llevan).
 
@@ -302,11 +316,13 @@ No hubo errores de consola ni de red al abrir:
 - los paneles de Geocercas, Rutas y POI.
 
 ### BAJA · C1 · Alertas: chips de canal con contraste bajo
+- **Estado: Corregido** (`resources/assets/ui-v2/css/alerts.css:775`: la fila inactiva ya no usa `opacity:.55`, se atenúa con `--fg-tertiary`/`--fg-secondary` y chips con borde discontinuo; `:418` chips a 11 px con `--fg-secondary`; `:394` `.tp-alerts__rule-type` es `inline-block`, así «Evento personalizado» es una sola caja a 375 px). No verificado en navegador.
 - **Observado:** «Sonido», «Push», «Color», «Popup» y «Siempre» en las reglas inactivas: 2,0:1 en claro y 2,6:1 en oscuro, con 10 px de letra.
 - A 375 px los badges «Evento personalizado» se parten en dos cajas.
 - **Captura:** `alerts-1440-light.png`, `alerts-375-light.png`.
 
 ### BAJA · C2 · Textos mezclados es/en
+- **Estado: Corregido** (`app/Http/Controllers/Ui/V2/AccountController.php:156` «Reloj de 24 horas» con `ui.clock_24h`; `resources/assets/ui-v2/js/tp-account.js` pestaña y casilla de la pasarela SMS, «Cabeceras», «Vaciar cola», ayuda de variables y nombres de pestañas con `tpT()`; `resources/views/ui/v2/pages/copilot.blade.php:24` título con `ui.copilot_title` y el resto de textos de la página con `trans()`; `resources/lang/es/ui.php:214` «Ver tablero»; `resources/lang/es/front.php:931` «No hay rutas.»; `alerts.js:210` «Restringido» con `ui.alert_schedule_restricted`). Claves nuevas en `resources/lang/{es,en}/ui.php`. No verificado en navegador.
 - «24 hour clock» y «SMS gateway» en Ajustes de cuenta (`modal-account-settings.png`).
 - En Copiloto:
   - «Insights & recomendaciones» y «Ver dashboard» (`resources/lang/es/ui.php:214`);
@@ -330,16 +346,19 @@ Detalles de la pasada:
 ### BAJA · O1 · El botón de filtrar dice «Búsqueda» (sustantivo) en vez de «Buscar»
 - **Dónde:** Seguridad (`#tp-sec-run`) y la pestaña Vueltas de Operaciones (`#tp-ops-run`).
 - **Causa:** usan `trans('front.search')`, que en castellano es «Búsqueda» (`resources/lang/es/front.php:1164`). Está en `resources/views/ui/v2/pages/security.blade.php:67` y `operations.blade.php:141`. En el resto de la v2 la acción equivalente es «Aplicar», «Mostrar historial» o «Generar».
+- **Estado: Corregido** (`security.blade.php:67`, `operations.blade.php:141`): los dos botones usan la clave nueva `ui.search_action` («Buscar» / «Search»).
 
 ### BAJA · O2 · Operaciones › Vueltas: «Elige el rango de fechas.» con las fechas ya puestas
 - **Pasos:** abrir la pestaña Vueltas. «Desde» y «Hasta» ya vienen con el día de hoy.
 - **Observado:** la tabla dice «Elige el rango de fechas.» hasta que se pulsa el botón, y la paginación muestra «—». El mensaje debería pedir que se pulse buscar, o la tabla debería cargarse con las fechas por defecto.
 - **Captura:** `operations-tab-vueltas.png`. El texto está en `resources/lang/es/ui.php:679` (`pick_date_range`).
+- **Estado: Corregido** (`tp-operations.js:101-102`, `:210`, `:234`; `operations.blade.php:166,172,174`): la pestaña Vueltas carga sola la primera vez que se abre, con las fechas por defecto; la tabla arranca en «Cargando…» y el total y la paginación salen vacíos hasta la primera carga (ya no «—»). «Elige el rango de fechas.» solo aparece si se borran las fechas.
 
 ### BAJA · O3 · Operaciones › Turno: el select «Operación» sale vacío y estrecho
 - **Observado:** el select `#tp-ops-shift-operation` (`operations.blade.php:230`) mide unos 60 px, no tiene texto de ejemplo y no muestra ninguna opción; la etiqueta «Fecha» queda pegada a «Operación». En En vivo, el mismo selector tiene el texto «Elige una operación para ver sus vehículos.».
 - «Exportar Excel» está desactivado sin explicar por qué.
 - **Captura:** `operations-tab-turno.png`.
+- **Estado: Corregido** (`operations.blade.php:230-232,248`; `tp-operations-shift.js:316-319,324-329,612-618`; `operations.css:358-373`): el select tiene la opción «Elige una operación» y se rellena con las operaciones del meta (antes no se rellenaba si ya tenía opciones); mínimo 220 px (150 px el resto de selects de las barras: tp-select se enhancea con la pestaña oculta y no podía medir) y más separación entre filtros. Sin operación sale «Elige una operación para ver su reporte de turno.» o «Todavía no hay operaciones.». «Exportar Excel» desactivado lleva el title «Disponible cuando hay un reporte de turno cargado y con datos.».
 
 ### BAJA · O4 · Seguridad: la columna «Antigüedad (min)» queda cortada
 - **Observado:**
@@ -347,10 +366,12 @@ Detalles de la pasada:
   - la barra de scroll horizontal está al final de un contenedor con scroll vertical, así que no se ve hasta bajar del todo;
   - la columna «TIPO» sale «—» en todos los vehículos (el admin no tiene clasificación: es correcto, pero ocupa sitio).
 - **Captura:** `security-1440-light.png`.
+- **Estado: Corregido** (`security.css:220-229`, `tp-security.js:246-260`): en «Estado actual» las cabeceras parten en dos líneas para que la tabla quepa en su media columna, y la columna «Tipo» se omite cuando ningún vehículo tiene clasificación.
 
 ### BAJA · O5 · Acciones de llamada: la cabecera «PARAR EN»
 - **Observado:** la columna de la hora de la llamada se titula «PARAR EN».
 - **Causa:** `resources/views/ui/v2/pages/call-actions.blade.php:49` usa `validation.attributes.called_at`, traducida como «Parar en» (`resources/lang/es/validation.php:697`). Debería decir algo como «Llamado el» u «Hora de la llamada».
+- **Estado: Corregido** (`call-actions.blade.php:49`): la cabecera usa `ui.call_time` («Hora de la llamada» / «Call time»).
 
 ### BAJA · O6 · Iconos repetidos en el rail
 - **Observado:**
@@ -358,6 +379,7 @@ Detalles de la pasada:
   - Operaciones usa el mismo icono que el elemento de Copiloto;
   - con estos tres módulos el rail tiene 22 entradas y a 900 px de alto se corta abajo.
 - Se suma a V11.
+- **Estado: Corregido** (`partials/rail.blade.php:40-42`, `partials/icons.blade.php:267-293`): Seguridad usa un escudo (`shield`), Operaciones un ciclo (`cycle`, antes compartía `route` con Rutas) y Programaciones de ruta un calendario (`calendar`). Ya no hay iconos repetidos en el rail. El alto del rail (22 entradas) no se ha tocado.
 
 ---
 
@@ -367,18 +389,18 @@ Todas son **BAJA**, pero juntas son lo que más se nota al pasar de un módulo a
 
 | # | Inconsistencia | Ejemplos (capturas a 1440) |
 |---|----------------|----------------------------|
-| V1 | **Cabecera de página**: icono en cuadro tintado y título de 18 px (Reportes, Conductores, Gastos, Programaciones) / icono suelto y título más pequeño (Enviar comando) / sin icono y título grande (Vehículos) / título de 16 px (Monitoreo) | `reports-`, `commands-`, `fleet-`, `monitor-1440-light.png` |
-| V2 | **Acción principal**: «+» solo icono (Reportes, Conductores, Gastos) / con texto («Nueva regla», «Agregar objeto», «Nueva programación») / dentro de la tarjeta a la izquierda (Programaciones) | `reports-`, `drivers-`, `route-schedules-1440-light.png` |
-| V3 | **Color del botón principal**: turquesa `--accent` (Agregar objeto, Mostrar historial, Enviar comando) / azul marino de marca (Guardar, Preguntar, Aplicar) / gris pizarra (Añadir servicio) | `device-modal-tab-11.png` («Agregar cámara» turquesa junto a «Guardar» azul marino) |
-| V4 | **Altura de botón**: 28 px (`tp-btn--sm`: Columnas, Exportar, Cancelar y Enviar del modal de comando) / 36 px («+» de Conductores, Guardar de la ficha) | — |
-| V5 | **Pestañas**, cuatro estilos: subrayado y texto (ficha del vehículo) / anchas en toda la fila (Enviar comando) / texto plano (Reportes) / píldoras (Ajustes de cuenta, Programaciones) | `modal-account-settings.png`, `commands-1440-light.png` |
-| V6 | **Cabecera de tabla**: MAYÚSCULAS grises de 11 px (Flota, Reportes, Conductores) / tipo título en negrita oscura (Enviar comando, tabla de Cámaras) | `commands-1440-light.png` |
-| V7 | **Estado vacío**: «No encontrado» / «Sin gastos.» / «Todavía no hay programaciones.» / «Sin datos» / «Sin geocercas» | varias |
-| V8 | **Valor vacío en celdas**: «-» (Mantenimiento, Conductores) / «—» (Flota, drawer) | `maintenance-1440-dark.png` |
-| V9 | **Orden del pie de modal**: primario a la izquierda (ficha: Guardar · Cancelar · Eliminar) / a la derecha (Enviar comando: Cancelar · Enviar) / cuatro botones (Reporte: Generar · Guardar · Nuevo · Cancelar) | `device-modal-principal.png`, `modal-send-command.png` |
-| V10 | **Formato de fecha**: «2026-11-07 19:13:02» (Eventos) / «07-11-2026 19:13:31» (Flota) / «7/11/2026, 14:13:02» (bandeja) / «11-07 19:13» (tablero) | — |
-| V11 | Rail: **el mismo icono de reloj** para Historial y Programaciones de ruta | barra lateral |
-| V12 | Tema oscuro: **la esquina del scroll** de las tablas sale blanca | `fleet-768-dark.png` (abajo a la derecha) |
+| V1 | **Cabecera de página**: icono en cuadro tintado y título de 18 px (Reportes, Conductores, Gastos, Programaciones) / icono suelto y título más pequeño (Enviar comando) / sin icono y título grande (Vehículos) / título de 16 px (Monitoreo) | `reports-`, `commands-`, `fleet-`, `monitor-1440-light.png` · **Corregido**: patrón único `.tp-maint__head/__title/__title-ico` movido a `components.css:994` (antes solo en services.css); migrados Enviar comando (`pages/commands.blade.php:90`), Vehículos (`pages/fleet.blade.php:43`), Monitoreo (`pages/monitor.blade.php:23`), Tablero y Seguridad |
+| V2 | **Acción principal**: «+» solo icono (Reportes, Conductores, Gastos) / con texto («Nueva regla», «Agregar objeto», «Nueva programación») / dentro de la tarjeta a la izquierda (Programaciones) | `reports-`, `drivers-`, `route-schedules-1440-light.png` · **Corregido**: icono + texto a la derecha de la cabecera, `tp-btn--primary`: «Nuevo reporte» (`pages/reports.blade.php:39`, sale de la tarjeta), «Nuevo conductor», «Nuevo gasto», «Nueva programación» (a la cabecera), «Nueva regla», «Nueva tarea»/«Nuevo conjunto», «Nuevo enlace», «Nueva acción de llamada», «Agregar ruta», «Agregar objeto» al final. Claves `ui.new_report/new_rule/new_share_link` |
+| V3 | **Color del botón principal**: turquesa `--accent` (Agregar objeto, Mostrar historial, Enviar comando) / azul marino de marca (Guardar, Preguntar, Aplicar) / gris pizarra (Añadir servicio) | `device-modal-tab-11.png` («Agregar cámara» turquesa junto a «Guardar» azul marino) · **Corregido**: `.tp-btn--accent` es alias del primario de marca (`components.css:404`); el pie de modal ya no usa degradado (`modal.css`, `alerts.css`, `device-modal.css`). «Agregar cámara», «+ gasto», «Guardar mantenimiento», «Añadir servicio/sensor» de la ficha pasan a secundarios; «Enviar comando», «Mostrar historial» y «Agregar objeto» quedan como principales de su página, con el mismo color |
+| V4 | **Altura de botón**: 28 px (`tp-btn--sm`: Columnas, Exportar, Cancelar y Enviar del modal de comando) / 36 px («+» de Conductores, Guardar de la ficha) | — · **Corregido**: botones del pie de modal a 36 px (`modal.js:91`, ya no fuerza `tp-btn--sm`) y acciones de cabecera de página a 36 px (Flota, Alertas, Mantenimiento). `--sm` queda para barras densas (paneles de Live/Historial, rango del tablero, paginadores, filas, barras de pestaña de la ficha) |
+| V5 | **Pestañas**, cuatro estilos: subrayado y texto (ficha del vehículo) / anchas en toda la fila (Enviar comando) / texto plano (Reportes) / píldoras (Ajustes de cuenta, Programaciones) | `modal-account-settings.png`, `commands-1440-light.png` · **Corregido**: un solo estilo, subrayado de marca (`.tp-tabs__nav/.tp-tabs__tab`, `modal.css:245`), en modales (ficha, alertas, buildTabs, Ajustes de cuenta) y páginas (Reportes, Tareas, Enviar comando, Programaciones, Operaciones; las de las dos últimas salen de la cabecera). Píldora/segmentado solo en conmutadores (Live, Monitoreo, rango del tablero, Gráfico/Registro) |
+| V6 | **Cabecera de tabla**: MAYÚSCULAS grises de 11 px (Flota, Reportes, Conductores) / tipo título en negrita oscura (Enviar comando, tabla de Cámaras) | `commands-1440-light.png` · **Corregido**: MAYÚSCULAS 11 px gris en Enviar comando (se quita el override de `commands.css`), Cámaras/tablas embebidas de la ficha (`device-modal.css:769`), listas de sensores/servicios (`device-modal.css:1339`), registro de Historial y bloqueos |
+| V7 | **Estado vacío**: «No encontrado» / «Sin gastos.» / «Todavía no hay programaciones.» / «Sin datos» / «Sin geocercas» | varias · **Corregido**: `tpEmpty(filtrado, clave)` (`modal.js:970`) → «Sin resultados.» con búsqueda/filtro, «Todavía no hay X.» sin datos; textos `ui.no_*` unificados y `ui.no_*_yet` nuevos (es/en). Mismo componente visual `.tp-svc-table__empty` (`components.css:1053`) en tablas CRUD, Flota, Eventos, tablero y ficha |
+| V8 | **Valor vacío en celdas**: «-» (Mantenimiento, Conductores) / «—» (Flota, drawer) | `maintenance-1440-dark.png` · **Corregido**: «—» en las celdas vacías de Mantenimiento, Conductores, Tareas, Reportes, Acciones de llamada, Compartir, Enviar comando, Historial y vídeo (JS) y en `ServicesController.php:190-192` |
+| V9 | **Orden del pie de modal**: primario a la izquierda (ficha: Guardar · Cancelar · Eliminar) / a la derecha (Enviar comando: Cancelar · Enviar) / cuatro botones (Reporte: Generar · Guardar · Nuevo · Cancelar) | `device-modal-principal.png`, `modal-send-command.png` · **Corregido** en `tpModal.open` (`modal.js:91`): Eliminar a la izquierda separado (`.tp-modal__foot-start`), luego secundarios y Cancelar, y la principal a la derecha del todo, sea cual sea el orden del array. Ficha sin `order` CSS; Reporte = Nuevo · Guardar · Cancelar · Generar |
+| V10 | **Formato de fecha**: «2026-11-07 19:13:02» (Eventos) / «07-11-2026 19:13:31» (Flota) / «7/11/2026, 14:13:02» (bandeja) / «11-07 19:13» (tablero) | — · **Corregido**: `tpFmt.datetime/date/fromDate` (`modal.js:858`) con `date_format`/`time_format` y desfase del usuario inyectados en `window.Talentus.datetime` (`layout.blade.php:103`). Usado en Eventos, Flota (hora y último evento), bandeja de avisos, tablero e Historial |
+| V11 | Rail: **el mismo icono de reloj** para Historial y Programaciones de ruta. **Corregido** con O6: Programaciones usa `calendar` | barra lateral |
+| V12 | Tema oscuro: **la esquina del scroll** de las tablas sale blanca | `fleet-768-dark.png` (abajo a la derecha) · **Corregido**: `::-webkit-scrollbar-corner` transparente, `color-scheme` según tema y `scrollbar-color` con tokens donde no hay `::-webkit-scrollbar` (`components.css:1679`) |
 
 ---
 

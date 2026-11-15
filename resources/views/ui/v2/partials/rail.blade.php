@@ -25,7 +25,9 @@
         // Reportes: entra con el modal de generar abierto (?create=1)
         ['key' => 'reports', 'label' => trans('front.reports'), 'icon' => 'layers', 'url' => url('/ui/v2/reports?create=1'), 'can' => $u->perm('reports', 'view')],
         ['key' => 'send_command', 'label' => trans('front.send_command'), 'icon' => 'send', 'url' => url('/ui/v2/commands'), 'can' => $u->perm('send_command', 'view')],
-        ['key' => 'media', 'label' => trans('front.camera'), 'icon' => 'camera', 'pending' => true, 'can' => $u->perm('camera', 'view')],
+        // Cámara / Medios: abre un selector de vehículo y luego su galería
+        // (tpDeviceMedia.pick, cargado en el layout para todas las páginas).
+        ['key' => 'media', 'label' => trans('front.camera'), 'icon' => 'camera', 'trigger' => 'media', 'can' => $u->perm('camera', 'view')],
         ['key' => 'sharing', 'label' => trans('front.sharing'), 'icon' => 'share', 'url' => url('/ui/v2/sharing'), 'can' => $u->perm('sharing', 'view')],
         ['key' => 'maintenance', 'label' => trans('front.maintenance'), 'icon' => 'wrench', 'url' => url('/ui/v2/maintenance'), 'can' => $u->perm('maintenance', 'view')],
         ['key' => 'expenses', 'label' => trans('front.expenses'), 'icon' => 'money', 'url' => url('/ui/v2/expenses'), 'can' => $u->perm('device_expenses', 'view')],
@@ -35,9 +37,9 @@
         ['key' => 'call_actions', 'label' => trans('ui.call_actions'), 'icon' => 'phone', 'url' => url('/ui/v2/call-actions'), 'can' => $u->perm('call_actions', 'view') && $u->perm('events', 'view')],
         ['key' => 'zones', 'label' => trans('front.geofences'), 'icon' => 'geofence', 'url' => url('/ui/v2/live?panel=zones'), 'can' => $u->perm('geofences', 'view')],
         ['key' => 'routes', 'label' => trans('front.routes'), 'icon' => 'route', 'url' => url('/ui/v2/live?panel=routes'), 'can' => $u->perm('routes', 'view')],
-        ['key' => 'route_schedules', 'label' => trans('ui.route_schedules'), 'icon' => 'history', 'url' => url('/ui/v2/route-schedules'), 'can' => $u->perm('routes', 'view')],
-        ['key' => 'operations', 'label' => trans('front.operations'), 'icon' => 'route', 'url' => url('/ui/v2/operations'), 'can' => $u->perm('operations', 'view')],
-        ['key' => 'security', 'label' => trans('ui.security'), 'icon' => 'alerts', 'url' => url('/ui/v2/security'), 'can' => $u->perm('security', 'view')],
+        ['key' => 'route_schedules', 'label' => trans('ui.route_schedules'), 'icon' => 'calendar', 'url' => url('/ui/v2/route-schedules'), 'can' => $u->perm('routes', 'view')],
+        ['key' => 'operations', 'label' => trans('front.operations'), 'icon' => 'cycle', 'url' => url('/ui/v2/operations'), 'can' => $u->perm('operations', 'view')],
+        ['key' => 'security', 'label' => trans('ui.security'), 'icon' => 'shield', 'url' => url('/ui/v2/security'), 'can' => $u->perm('security', 'view')],
         ['key' => 'pois', 'label' => trans('front.poi'), 'icon' => 'mappin', 'url' => url('/ui/v2/live?panel=pois'), 'can' => $u->perm('poi', 'view')],
     ];
 
@@ -72,6 +74,7 @@
                 data-tooltip="{{ $it['label'] }}" aria-label="{{ $it['label'] }}"
                 @if (!empty($it['pending'])) data-rail-pending="1" @endif
                 @if (($it['trigger'] ?? null) === 'commands') data-tp-commands @endif
+                @if (($it['trigger'] ?? null) === 'media') data-tp-media-pick role="button" aria-haspopup="dialog" @endif
                 @if ($active === $it['key']) aria-current="page" @endif>
                 <span class="tp-rail__icon">@include('ui.v2.partials.icons', ['name' => $it['icon']])</span>
                 <span class="tp-rail__label">{{ $it['label'] }}</span>

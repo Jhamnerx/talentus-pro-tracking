@@ -468,8 +468,12 @@ table.tp-lock-hist td {
   border-bottom: 1px solid var(--border-default);
 }
 table.tp-lock-hist th {
+  /* Cabecera de tabla común (QA V6) */
+  font-size: 11px;
   font-weight: 600;
-  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-tertiary);
 }
 
 /* Dirección del popup: paridad plugin legacy device_widget_full_address
@@ -700,17 +704,21 @@ table.tp-lock-hist th {
 }
 .tp-segmented--grid2 .tp-segmented__item {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 7px 8px;
+  gap: 2px 5px;
+  padding: 7px 6px;
   min-width: 0;
 }
+/* QA L5: la etiqueta nunca se trunca («Desconec…» a 1440 px con 4 cifras).
+   Si etiqueta + contador no caben en la celda, el contador baja de línea. */
 .tp-segmented--grid2 .tp-segmented__label {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-width: 0;
+  flex: 0 0 auto;
+  max-width: 100%;
   font-size: 12px;
   line-height: 1.2;
 }
@@ -718,9 +726,6 @@ table.tp-lock-hist th {
   flex: 0 0 auto;
 }
 .tp-segmented--grid2 .tp-segmented__text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .tp-segmented--grid2 .tp-segmented__count {
@@ -1480,10 +1485,12 @@ table.tp-lock-hist th {
   letter-spacing: 0.05em;
 }
 
-/* Live pulse tag (bottom-left of map) */
+/* Live pulse tag (bottom-left of map). Sube por encima de la barra de
+   widgets cuando está abierta (--tp-bb-offset lo pone live.js, QA L3). */
 .tp-live__pulse-tag {
   position: absolute;
-  bottom: var(--sp-3);
+  bottom: calc(var(--sp-3) + var(--tp-bb-offset, 0px));
+  transition: bottom var(--dur-fast, 0.15s) var(--ease-out, ease);
   left: var(--sp-3);
   z-index: 4;
   display: inline-flex;
@@ -1973,6 +1980,12 @@ table.tp-lock-hist th {
 }
 
 /* ── Bottom widget cards strip (Live) ────────────────────────── */
+/* Controles inferiores de Leaflet (atribución, escala) por encima de la
+   barra de widgets abierta (QA L3). */
+.tp-live .leaflet-bottom {
+  bottom: var(--tp-bb-offset, 0px);
+  transition: bottom var(--dur-fast, 0.15s) var(--ease-out, ease);
+}
 .tp-live__bottombar {
   position: absolute;
   left: 12px;
@@ -1993,8 +2006,13 @@ table.tp-lock-hist th {
 .tp-live__bottombar-cards {
   display: flex;
   gap: 12px;
-  overflow-x: auto;
-  overflow-y: hidden;
+  /* QA L3: sin scroll horizontal. Con muchos widgets las cards bajan de
+     fila (el padre alinea al fondo, así que crece hacia arriba); el alto máximo
+     deja mapa a la vista y, si no caben, desplaza en vertical. */
+  flex-wrap: wrap;
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: min(424px, 55vh);
   /* No estirar a todo el ancho: así el área de mapa libre a la derecha sigue
      siendo clicable, y cuando hay muchos widgets el contenedor se encoge y
      habilita el scroll horizontal. */
@@ -2009,7 +2027,7 @@ table.tp-lock-hist th {
   pointer-events: auto;
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  overscroll-behavior-x: contain;
+  overscroll-behavior: contain;
 }
 .tp-live__bottombar-cards::-webkit-scrollbar {
   height: 6px;
@@ -2024,8 +2042,10 @@ table.tp-lock-hist th {
 /* Card del bottombar = header fijo (título + icono + acción) + cuerpo scrolleable */
 .tp-live__bottombar-cards > .tp-card {
   pointer-events: auto;
-  flex: 0 0 auto;
+  flex: 0 1 320px;
   width: 320px;
+  min-width: 240px;
+  max-width: 100%;
   margin: 0;
   /* Altura FIJA uniforme para todas las cards (paridad legacy). */
   height: 200px;
@@ -2058,8 +2078,20 @@ table.tp-lock-hist th {
 .tp-live__bottombar-cards > .tp-card > .tp-dw__card-body {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
+  /* Servicios / Eventos recientes: el texto largo parte línea, sin scroll
+     horizontal propio dentro de la card (QA L3). */
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
   padding: 12px;
+}
+.tp-live__bottombar-cards > .tp-card .tp-defs {
+  min-width: 0;
+}
+.tp-live__bottombar-cards > .tp-card .tp-defs dd {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 /* Widgets de acción (Comando GPRS, Bloqueo de motor, Video): centran su
    contenido verticalmente en la altura fija de la card. */
@@ -2086,29 +2118,26 @@ table.tp-lock-hist th {
   white-space: nowrap;
 }
 
-/* Botón de acción del widget (p. ej. "+ Añadir servicio") — slate sólido
-   profesional con texto blanco (colores fijos: no depende de vars de tema para
-   evitar el caso fondo-oscuro/texto-invisible). Resalta sobre la card sin usar
-   el celeste de acento. */
+/* Botón de acción del widget (p. ej. "+ Añadir servicio"): acción principal
+   con el azul de marca, como el resto de la v2 (QA L3; antes slate). */
 .tp-scope .tp-dw__add,
 .tp-scope .tp-dw__add:link,
-.tp-scope .tp-dw__add:visited,
-.tp-scope .tp-dw__add:hover {
-  background: #334155;
-  border: 1px solid #334155;
-  color: #ffffff;
+.tp-scope .tp-dw__add:visited {
+  background: var(--brand-bg-solid);
+  border: 1px solid var(--brand-bg-solid);
+  color: var(--brand-fg-solid);
   font-weight: 600;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
   transition: background var(--dur-fast, 0.15s) var(--ease-out, ease);
 }
 .tp-scope .tp-dw__add:hover {
-  background: #1e293b;
-  border-color: #1e293b;
+  background: var(--brand-bg-hover);
+  border-color: var(--brand-bg-hover);
+  color: var(--brand-fg-solid);
 }
-.tp-scope .tp-dw__add,
 .tp-scope .tp-dw__add > svg,
 .tp-scope .tp-dw__add > span {
-  color: #ffffff;
+  color: inherit;
 }
 .tp-live__bottombar .tp-dw__streetview img,
 .tp-live__bottombar .tp-dw__cam img {

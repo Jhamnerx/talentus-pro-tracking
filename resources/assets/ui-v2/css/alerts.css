@@ -389,6 +389,12 @@ button.tp-alerts__rule-toggle:hover {
   letter-spacing: normal;
 }
 .tp-alerts__rule-type {
+  /* inline-block: a 375 px «Evento personalizado» se partía en dos cajas
+     (un inline que salta de línea repite borde y fondo). Así es UNA caja
+     que, si no cabe, parte el texto dentro (QA C1). */
+  display: inline-block;
+  max-width: 100%;
+  line-height: 1.35;
   font-size: 11px;
   font-weight: 600;
   color: var(--fg-secondary);
@@ -408,9 +414,11 @@ button.tp-alerts__rule-toggle:hover {
   margin-top: 5px;
 }
 .tp-alerts__chan {
-  font-size: 10px;
+  /* 11 px y --fg-secondary: con --fg-tertiary sobre --surface-sunken daba
+     4,3:1 y, en reglas inactivas (opacidad de la fila), 2,0:1 (QA C1). */
+  font-size: 11px;
   font-weight: 600;
-  color: var(--fg-tertiary);
+  color: var(--fg-secondary);
   background: var(--surface-sunken);
   padding: 1px 6px;
   border-radius: 4px;
@@ -762,8 +770,21 @@ button.tp-alerts__rule-toggle:hover {
 .tp-alerts__trow {
   cursor: pointer;
 }
+/* Regla inactiva: antes opacity .55 en toda la fila, que bajaba los chips
+   de canal y «Siempre» a 2,0:1 (claro) / 2,6:1 (oscuro). Ahora se atenúa
+   con colores de texto que siguen por encima de 4,5:1 (QA C1). */
 .tp-alerts__trow.is-off {
-  opacity: 0.55;
+  color: var(--fg-tertiary);
+}
+.tp-alerts__trow.is-off .tp-alerts__tname {
+  color: var(--fg-secondary);
+  font-weight: 500;
+}
+.tp-alerts__trow.is-off .tp-alerts__rule-type,
+.tp-alerts__trow.is-off .tp-alerts__chan {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+  color: var(--fg-secondary);
 }
 .tp-alerts__tname {
   font-weight: 600;
@@ -1034,25 +1055,7 @@ button.tp-alert-toggle:hover {
   border-top: 1px solid var(--border-subtle);
   padding: 14px 22px;
 }
-.tp-alert-modal .tp-modal__foot .tp-btn--primary {
-  background: linear-gradient(135deg, var(--brand-600), var(--brand-500));
-  border: 0;
-  color: #fff;
-  font-weight: 600;
-  padding: 9px 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(46, 99, 217, 0.35);
-  transition: filter var(--dur-fast), transform var(--dur-fast);
-}
-.tp-alert-modal .tp-modal__foot .tp-btn--primary:hover {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
-}
-.tp-alert-modal .tp-modal__foot .tp-btn--ghost {
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  color: var(--fg-secondary);
-}
+/* Botones del pie: los comunes de modal.css (QA V3/V9). */
 
 /* --- cabecera del form: nombre + switch Activa --- */
 .tp-alert-modal .tp-alert-head {
@@ -1122,36 +1125,9 @@ button.tp-alert-toggle:hover {
   transform: translateX(17px);
 }
 
-/* --- tabs píldora (reemplazan la banda gris) --- */
+/* --- pestañas: las comunes de modal.css (subrayado, QA V5) --- */
 .tp-alert-modal .tp-tabs__nav {
   margin: 0 0 16px;
-  padding: 4px;
-  background: var(--brand-bg-subtle, var(--brand-50));
-  border: 1px solid var(--brand-100);
-  border-bottom: 1px solid var(--brand-100);
-  border-radius: 12px;
-  gap: 4px;
-}
-.tp-alert-modal .tp-tabs__tab {
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--fg-secondary);
-  border: 0;
-  border-radius: 9px;
-  padding: 9px 16px;
-  flex: 1 1 auto;
-  text-align: center;
-}
-.tp-alert-modal .tp-tabs__tab:hover {
-  color: var(--brand-600);
-}
-.tp-alert-modal .tp-tabs__tab.is-active {
-  background: var(--surface-page);
-  color: var(--brand-700);
-  border: 0;
-  box-shadow: 0 1px 4px rgba(6, 11, 52, 0.12);
 }
 
 /* --- devbox (tab Vehículos) --- */
@@ -1275,15 +1251,10 @@ button.tp-alert-toggle:hover {
    modal, pestaña activa, cabeceras de grupo y etiquetas de dia pasan al
    texto principal; los enlaces de accion a un azul claro. */
 [data-theme="dark"] .tp-alert-modal .tp-modal__title,
-[data-theme="dark"] .tp-alert-modal .tp-tabs__tab.is-active,
 [data-theme="dark"] .tp-alert-modal .tp-devbox__gcheck,
 [data-theme="dark"] .tp-alert-modal .tp-sched__daylabel {
   color: var(--fg-primary);
 }
-[data-theme="dark"] .tp-alert-modal .tp-tabs__tab.is-active {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-}
-[data-theme="dark"] .tp-alert-modal .tp-tabs__tab:hover,
 [data-theme="dark"] .tp-alert-modal .tp-devbox__foot,
 [data-theme="dark"] .tp-alert-modal .tp-picklist__act:hover,
 [data-theme="dark"] .tp-alert-modal .tp-sched__daylabel:hover,

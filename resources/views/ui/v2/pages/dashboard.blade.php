@@ -15,7 +15,19 @@
 
         <header class="tp-dash__head">
             <div>
-                <h1 class="tp-h4 tp-mb-0">{{ trans('ui.control_panel') }}</h1>
+                {{-- Título común de página (QA V1) --}}
+                <h1 class="tp-maint__title">
+                    <span class="tp-maint__title-ico" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="9" rx="1" />
+                            <rect x="14" y="3" width="7" height="5" rx="1" />
+                            <rect x="14" y="12" width="7" height="9" rx="1" />
+                            <rect x="3" y="16" width="7" height="5" rx="1" />
+                        </svg>
+                    </span>
+                    {{ trans('ui.control_panel') }}
+                </h1>
                 <p class="tp-text-muted tp-mb-0">{{ trans('ui.dashboard_subtitle') }}</p>
             </div>
             {{-- Toolbar de rango (estilo Wialon: Hoy / Ayer / Semana / Mes) --}}

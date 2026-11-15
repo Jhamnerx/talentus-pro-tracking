@@ -28,7 +28,7 @@
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 {{-- Plantillas de listas de verificación (addon checklists) --}}
                 @if (config('addon.checklists') && Auth::user()->perm('checklist_template', 'view'))
-                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-maint-checklist-templates"
+                    <button type="button" class="tp-btn tp-btn--ghost" id="tp-maint-checklist-templates"
                         onclick="window.tpChecklists && tpChecklists.templates()">{{ trans('front.template_webhook') }}</button>
                 @endif
             </div>

@@ -32,13 +32,6 @@
                 <input type="text" class="tp-input" id="tp-routes-tbl-search"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 @if (auth()->user()->perm('routes', 'edit'))
-                    <button type="button" class="tp-btn tp-btn--accent tp-btn--icon" id="tp-routes-tbl-new"
-                        title="{{ trans('front.add_route') }}" aria-label="{{ trans('front.add_route') }}">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                    </button>
                     <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon" id="tp-routes-tbl-export"
                         title="{{ trans('front.export') }}" aria-label="{{ trans('front.export') }}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -52,6 +45,12 @@
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 15V3M7 10l5 5 5-5M5 21h14" />
                         </svg>
+                    </button>
+                    {{-- Acción principal: icono + texto, a la derecha (QA V2) --}}
+                    <button type="button" class="tp-btn tp-btn--primary" id="tp-routes-tbl-new">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                        <span>{{ trans('front.add_route') }}</span>
                     </button>
                 @endif
             </div>

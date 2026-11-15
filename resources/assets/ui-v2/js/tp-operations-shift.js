@@ -313,12 +313,20 @@
   /* «Exportar Excel» solo con un reporte cargado y con datos. */
   function setExportable(on) {
     var btn = $("tp-ops-shift-export");
-    if (btn) btn.disabled = !on;
+    if (!btn) return;
+    btn.disabled = !on;
+    // Desactivado, el title explica por qué (sin reporte con datos).
+    btn.title = t(on ? "ui.ops_shift_export_hint" : "ui.ops_shift_export_disabled");
   }
 
   function load() {
     var opId = $("tp-ops-shift-operation").value;
-    if (!opId) { setStatus(esc(t("ui.ops_pick_operation"))); return; }
+    if (!opId) {
+      setExportable(false);
+      var none = state.meta && !(state.meta.operations || []).length;
+      setStatus(esc(t(none ? "ui.ops_no_operations_yet" : "ui.ops_shift_pick_operation")));
+      return;
+    }
     if (state.loading) return;
     state.loading = true;
     setExportable(false);
@@ -601,10 +609,13 @@
     if (!meta) return;
     state.meta = meta;
     var sel = $("tp-ops-shift-operation");
-    if (sel.options.length) return;
+    // La opción vacía («Elige una operación») viene del blade: solo cuenta
+    // como rellenado si ya hay alguna operación real.
+    var filled = Array.prototype.some.call(sel.options, function (o) { return o.value !== ""; });
+    if (filled) return;
     var ops = meta.operations || [];
     var active = ops.filter(function (o) { return o.active; });
-    fillSelect(sel, ops, (active[0] || ops[0] || {}).id);
+    fillSelect(sel, [{ id: "", name: t("ui.ops_pick_operation_short") }].concat(ops), (active[0] || ops[0] || {}).id || "");
     // Si la pestaña ya estaba abierta esperando la lista, carga ahora.
     if (state.inited && !state.loaded && !panel.hidden) load();
   }

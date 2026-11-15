@@ -1,11 +1,11 @@
 {{-- Topbar · brand + workspace switcher + global search + status + notifications + user --}}
 @php
     $user = auth()->user();
-    $userName = $user ? trim($user->name ?? ($user->email ?? 'User')) : 'Guest';
+    // name puede venir vacío (no solo null): entonces se usa el email.
+    $userName = $user ? (trim((string) ($user->name ?? '')) ?: trim((string) ($user->email ?? 'User'))) : 'Guest';
     $userInit = $user ? strtoupper(mb_substr(preg_replace('/\s+/', '', $userName), 0, 2)) : 'G';
     // Marca (white-label): mismo ajuste que el <title> del layout maestro.
     $brandName = Appearance::getSetting('server_name') ?: 'TalentusPro';
-    $brandInit = strtoupper(mb_substr(preg_replace('/\s+/', '', $brandName), 0, 1)) ?: 'T';
 @endphp
 
 <header class="tp-topbar">
@@ -22,9 +22,10 @@
     </button>
 
     <div class="tp-topbar__brand">
-        <a href="{{ url('/ui/v2/live') }}" class="tp-row" style="text-decoration:none; color:inherit; gap:8px;">
-            <span class="tp-rail__logo" style="width:26px; height:26px; font-size:12px;">{{ $brandInit }}</span>
-            <span style="font-weight:600;">{{ $brandName }}</span>
+        {{-- Solo el nombre: la «P» con la clase del rail no tenía fondo aquí
+             (hueco en claro, letra suelta en oscuro). --}}
+        <a href="{{ url('/ui/v2/live') }}" class="tp-row" style="text-decoration:none; color:inherit;">
+            <span style="font-weight:600; white-space:nowrap;">{{ $brandName }}</span>
         </a>
     </div>
 
@@ -156,8 +157,11 @@
 
     <div class="tp-menu tp-menu--right" id="tp-user-menu" role="menu" hidden>
         <div class="tp-menu__head">
+            {{-- Sin nombre propio, $userName ya es el email: se pinta una sola vez. --}}
             <div class="tp-text-strong">{{ $userName }}</div>
-            <div class="tp-text-xs tp-text-muted">{{ $user->email ?? '' }}</div>
+            @if (!empty($user->email) && mb_strtolower(trim($user->email)) !== mb_strtolower($userName))
+                <div class="tp-text-xs tp-text-muted">{{ $user->email }}</div>
+            @endif
         </div>
         <button class="tp-menu__item" role="menuitem" data-tp-account>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"

@@ -48,21 +48,23 @@
                 {{ trans('front.operations') }}
             </h2>
 
-            <div class="tp-ops__tabs" role="tablist">
-                <button type="button" class="tp-btn tp-btn--ghost is-active" data-ops-tab="live" role="tab" aria-selected="true">
-                    {{ trans('ui.ops_tab_live') }}
-                </button>
-                <button type="button" class="tp-btn tp-btn--ghost" data-ops-tab="cycles" role="tab" aria-selected="false">
-                    {{ trans('ui.ops_tab_cycles') }}
-                </button>
-                <button type="button" class="tp-btn tp-btn--ghost" data-ops-tab="list" role="tab" aria-selected="false">
-                    {{ trans('front.operations') }}
-                </button>
-                <button type="button" class="tp-btn tp-btn--ghost" data-ops-tab="shift" role="tab" aria-selected="false">
-                    {{ trans('ui.ops_tab_shift') }}
-                </button>
-            </div>
         </header>
+
+        {{-- Pestañas: el subrayado común (.tp-tabs__nav, QA V5) --}}
+        <div class="tp-tabs__nav tp-tabs__nav--page tp-ops__tabs" role="tablist">
+            <button type="button" class="tp-tabs__tab is-active" data-ops-tab="live" role="tab" aria-selected="true">
+                {{ trans('ui.ops_tab_live') }}
+            </button>
+            <button type="button" class="tp-tabs__tab" data-ops-tab="cycles" role="tab" aria-selected="false">
+                {{ trans('ui.ops_tab_cycles') }}
+            </button>
+            <button type="button" class="tp-tabs__tab" data-ops-tab="list" role="tab" aria-selected="false">
+                {{ trans('front.operations') }}
+            </button>
+            <button type="button" class="tp-tabs__tab" data-ops-tab="shift" role="tab" aria-selected="false">
+                {{ trans('ui.ops_tab_shift') }}
+            </button>
+        </div>
 
         {{-- Progreso de recalculos y calculo de tramos (lo pinta tp-operations.js). --}}
         <div class="tp-ops-progress" id="tp-ops-progress" role="status" aria-live="polite" hidden></div>
@@ -138,7 +140,7 @@
                         <input type="checkbox" id="tp-ops-only-unauthorized">
                         {{ trans('ui.ops_only_unauthorized') }}
                     </label>
-                    <button type="button" class="tp-btn tp-btn--accent" id="tp-ops-run">{{ trans('front.search') }}</button>
+                    <button type="button" class="tp-btn tp-btn--accent" id="tp-ops-run">{{ trans('ui.search_action') }}</button>
                     @if (auth()->user()->perm('reports', 'view'))
                         <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-export">{{ trans('front.export') }}</button>
                     @endif
@@ -163,15 +165,15 @@
                             </tr>
                         </thead>
                         <tbody id="tp-ops-cycle-rows">
-                            <tr><td colspan="12" class="tp-svc-table__empty">{{ trans('ui.pick_date_range') }}</td></tr>
+                            <tr><td colspan="12" class="tp-svc-table__empty">{{ trans('front.loading') }}…</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <footer class="tp-maint__foot">
-                    <span class="tp-text-muted" id="tp-ops-cycles-total">—</span>
+                    <span class="tp-text-muted" id="tp-ops-cycles-total"></span>
                     <div class="tp-svc-list__pager">
-                        <span id="tp-ops-cycles-range">—</span>
+                        <span id="tp-ops-cycles-range"></span>
                         <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ops-cycles-prev" aria-label="{{ trans('front.previous') }}">‹</button>
                         <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-ops-cycles-next" aria-label="{{ trans('front.next') }}">›</button>
                     </div>
@@ -227,7 +229,9 @@
             <div class="tp-maint__card tp-ops-shift" id="tp-ops-shift">
                 <div class="tp-ops__bar tp-ops-shift__bar">
                     <label class="tp-ops__f">{{ trans('ui.ops_operation') }}
-                        <select class="tp-input" id="tp-ops-shift-operation"></select>
+                        <select class="tp-input tp-ops-shift__operation" id="tp-ops-shift-operation">
+                            <option value="">{{ trans('ui.ops_pick_operation_short') }}</option>
+                        </select>
                     </label>
                     <div class="tp-ops__f">{{ trans('front.date') }}
                         <div class="tp-ops-shift__date">
@@ -243,7 +247,7 @@
                     </label>
                     <button type="button" class="tp-btn tp-btn--accent" id="tp-ops-shift-refresh">{{ trans('ui.ops_shift_refresh') }}</button>
                     <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-shift-full" aria-pressed="false">{{ trans('ui.ops_shift_fullscreen') }}</button>
-                    <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-shift-export" title="{{ trans('ui.ops_shift_export_hint') }}" disabled>{{ trans('ui.ops_shift_export') }}</button>
+                    <button type="button" class="tp-btn tp-btn--ghost" id="tp-ops-shift-export" title="{{ trans('ui.ops_shift_export_disabled') }}" disabled>{{ trans('ui.ops_shift_export') }}</button>
                     <span class="tp-ops__updated tp-text-muted" id="tp-ops-shift-updated" aria-live="polite"></span>
                 </div>
 

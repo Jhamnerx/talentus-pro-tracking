@@ -37,7 +37,7 @@
             <div class="tp-maint__tools" style="display:flex; gap:10px; align-items:center;">
                 <input aria-label="{{ trans('ui.search_rule') }}" type="search" class="tp-input" id="tp-alerts-search" placeholder="{{ trans('ui.search_rule') }}"
                     autocomplete="off" style="min-width:220px;">
-                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-alerts-refresh" title="Actualizar">
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon" id="tp-alerts-refresh" title="{{ trans('ui.refresh') }}" aria-label="{{ trans('ui.refresh') }}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 11-3-6.7L21 8" />
                         <path d="M21 3v5h-5" />
@@ -49,7 +49,11 @@
                     @if (isAdmin())
                         <button type="button" class="tp-btn tp-btn--ghost" id="tp-alerts-templates">{{ trans('front.template_webhook') }}</button>
                     @endif
-                    <button type="button" class="tp-btn tp-btn--accent" id="tp-alerts-new">{{ trans('ui.new_rule_plus') }}</button>
+                    <button type="button" class="tp-btn tp-btn--primary" id="tp-alerts-new">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    <span>{{ trans('ui.new_rule') }}</span>
+                </button>
                 @endif
             </div>
         </header>

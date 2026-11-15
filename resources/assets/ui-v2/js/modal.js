@@ -59,6 +59,7 @@
    * @returns {HTMLDialogElement}
    */
   var _ultimaApertura = { titulo: null, t: 0 };
+  var _modalSeq = 0;
 
   function open(opts) {
     opts = opts || {};
@@ -87,13 +88,38 @@
       // Clase extra opcional para restyles scopeados por consumidor.
       (opts.className ? " " + opts.className : "");
 
+    // Orden único del pie (QA V9), sea cual sea el orden en que lo pase cada
+    // módulo: destructivo (Eliminar) a la izquierda y separado, luego
+    // Cancelar y el resto, y la acción principal a la derecha del todo.
+    // "Destructivo" = danger/critical cuando además hay una principal (en un
+    // confirm() el botón rojo ES la principal y se queda a la derecha), o
+    // b.destructive explícito. data-tp-btn conserva el índice original:
+    // los manejadores de abajo lo buscan por él.
+    // Altura: la normal de .tp-btn (36 px), igual que las acciones de página
+    // (QA V4); --sm queda para barras densas y filas de tabla.
+    var btnList = opts.buttons || [];
+    var isMain = function (b) {
+      return b.variant === "primary" || b.variant === "accent" || b.variant === "success";
+    };
+    var hasMain = btnList.some(isMain);
+    var isDestructive = function (b) {
+      return b.destructive === true ||
+        (hasMain && (b.variant === "danger" || b.variant === "critical"));
+    };
+    var ordered = btnList.map(function (b, idx) {
+      return { b: b, idx: idx, rank: isDestructive(b) ? 0 : isMain(b) ? 2 : 1 };
+    }).sort(function (x, y) {
+      return x.rank - y.rank || x.idx - y.idx;
+    });
     var buttonsHtml = "";
-    (opts.buttons || []).forEach(function (b, idx) {
+    ordered.forEach(function (o) {
+      var b = o.b;
       buttonsHtml +=
         '<button type="button" class="tp-btn tp-btn--' +
         (b.variant || "ghost") +
-        ' tp-btn--sm" data-tp-btn="' +
-        idx +
+        (o.rank === 0 ? " tp-modal__foot-start" : "") +
+        '" data-tp-btn="' +
+        o.idx +
         '"' +
         (b.disabled ? " disabled" : "") +
         ">" +
@@ -101,11 +127,16 @@
         "</button>";
     });
 
+    // Nombre accesible del dialogo: su titulo (QA D4). Id unico por dialogo
+    // porque pueden apilarse varios (p.ej. confirmar encima de la ficha).
+    var titleId = "tp-modal-title-" + ++_modalSeq;
+    dlg.setAttribute("aria-labelledby", titleId);
+
     dlg.innerHTML =
       '<div class="tp-modal__inner">' +
       '<header class="tp-modal__head">' +
       "<div>" +
-      '<h2 class="tp-modal__title">' +
+      '<h2 class="tp-modal__title" id="' + titleId + '">' +
       // Icono opcional delante del título (SVG de confianza, lo pasa el
       // propio código; NO viene de datos del usuario).
       (opts.icon ? '<span class="tp-modal__title-icon" aria-hidden="true">' + opts.icon + "</span>" : "") +
@@ -115,7 +146,9 @@
         ? '<div class="tp-modal__sub">' + escapeHtml(opts.sub) + "</div>"
         : "") +
       "</div>" +
-      '<button type="button" class="tp-modal__close" aria-label="Cerrar" data-tp-close>' +
+      '<button type="button" class="tp-modal__close" aria-label="' +
+      escapeHtml(typeof tpT === "function" ? tpT("global.close") : "Cerrar") +
+      '" data-tp-close>' +
       ICON_CLOSE +
       "</button>" +
       "</header>" +
@@ -342,7 +375,7 @@
     if (input) {
       var holder = input.closest(".tp-field") || input.closest(".tp-form__field") || input.closest("label");
       var lab = holder && holder.querySelector(".tp-form__label, .tp-field__label, label");
-      var txt = lab && lab.textContent.replace(/\s+/g, " ").replace(/[*:]\s*$/, "").trim();
+      var txt = lab && textoDeEtiqueta(lab);
       if (txt) return txt;
     }
     var base = key.indexOf(".") > 0 ? key.slice(0, key.indexOf(".")) : key;
@@ -351,13 +384,77 @@
     return base.replace(/_/g, " ");
   }
 
+  /**
+   * Texto de una etiqueta SIN las ayudas «?» (.tp-help), iconos ni errores
+   * que lleve dentro. Antes el resumen decia «IMEI del dispositivo ? / ID de
+   * rastreador ?» porque se colaba el texto del icono de ayuda (QA D2).
+   */
+  function textoDeEtiqueta(lab) {
+    var copia = lab.cloneNode(true);
+    copia
+      .querySelectorAll(".tp-help, [data-tp-help-text], [aria-hidden='true'], svg, .tp-field__error, input, select, textarea")
+      .forEach(function (n) {
+        n.parentNode.removeChild(n);
+      });
+    return copia.textContent
+      .replace(/\s+/g, " ")
+      .replace(/\s+([\/,])/g, " $1")
+      .replace(/[*:]\s*$/, "")
+      .trim();
+  }
+
+  /** Pestaña (boton) del modal que contiene el control, o null. */
+  function pestanaDe(dlg, input) {
+    var panel = input && input.closest("[data-tp-panel]");
+    if (!panel) return null;
+    var key = panel.getAttribute("data-tp-panel");
+    return dlg.querySelector('[data-tp-tab="' + key + '"]');
+  }
+
   /** Activa la pestaña del modal que contiene el control (si hay pestañas). */
   function mostrarPestanaDe(dlg, input) {
-    var panel = input.closest("[data-tp-panel]");
-    if (!panel) return;
-    var key = panel.getAttribute("data-tp-panel");
-    var btn = dlg.querySelector('[data-tp-tab="' + key + '"]');
+    var btn = pestanaDe(dlg, input);
     if (btn && !btn.classList.contains("is-active")) btn.click();
+  }
+
+  /** Control enfocable de un campo de error (el propio input o el primero que contenga). */
+  function controlDe(input) {
+    if (!input) return null;
+    if (input.matches("input,select,textarea")) return input;
+    return input.querySelector("input:not([type=hidden]),select,textarea,button") || input;
+  }
+
+  var _errSeq = 0;
+
+  /** Marca/desmarca una pestaña con errores: punto rojo + texto para lectores. */
+  function marcaPestana(btn, on) {
+    if (!btn) return;
+    btn.classList.toggle("has-error", !!on);
+    var dot = btn.querySelector(".tp-tabs__err");
+    if (on && !dot) {
+      dot = document.createElement("span");
+      dot.className = "tp-tabs__err";
+      // El punto es visual; el texto oculto lo lee el lector de pantalla.
+      var sr = document.createElement("span");
+      sr.className = "tp-sr-only";
+      sr.textContent = " (" + (typeof tpT === "function" ? tpT("ui.tab_has_errors") : "errores") + ")";
+      dot.appendChild(sr);
+      btn.appendChild(dot);
+    } else if (!on && dot) {
+      dot.parentNode.removeChild(dot);
+    }
+  }
+
+  /** Quita aria-invalid y la referencia al mensaje de error de un control. */
+  function limpiaAria(ctl, errId) {
+    if (!ctl) return;
+    ctl.removeAttribute("aria-invalid");
+    ctl.removeAttribute("data-tp-invalid");
+    var ids = (ctl.getAttribute("aria-describedby") || "").split(/\s+/).filter(function (t) {
+      return t && (errId ? t !== errId : t.indexOf("tp-err-") !== 0);
+    });
+    if (ids.length) ctl.setAttribute("aria-describedby", ids.join(" "));
+    else ctl.removeAttribute("aria-describedby");
   }
 
   /**
@@ -375,6 +472,12 @@
     });
     dlg.querySelectorAll(".is-invalid").forEach(function (n) {
       n.classList.remove("is-invalid");
+    });
+    dlg.querySelectorAll("[data-tp-invalid]").forEach(function (n) {
+      limpiaAria(n);
+    });
+    dlg.querySelectorAll("[data-tp-tab].has-error").forEach(function (b) {
+      marcaPestana(b, false);
     });
     var previo = dlg.querySelector(".tp-modal__errors");
     if (previo) previo.remove();
@@ -397,10 +500,25 @@
       input.classList.add("is-invalid");
       var err = document.createElement("div");
       err.className = "tp-field__error";
+      err.id = "tp-err-" + ++_errSeq;
       err.textContent = msg;
       var holder =
         input.closest(".tp-field") || input.closest(".tp-form__field") || input.parentNode;
       holder.appendChild(err);
+
+      // Accesibilidad: el control anuncia que es invalido y cual es el
+      // mensaje (vale para vehiculo, conductor, alerta... todos pasan por aqui).
+      var ctl = controlDe(input);
+      if (ctl) {
+        ctl.setAttribute("aria-invalid", "true");
+        ctl.setAttribute("data-tp-invalid", "1");
+        var desc = (ctl.getAttribute("aria-describedby") || "").trim();
+        ctl.setAttribute("aria-describedby", (desc ? desc + " " : "") + err.id);
+      }
+
+      // La pestaña que contiene el campo se marca con un punto rojo.
+      var tab = pestanaDe(dlg, input);
+      marcaPestana(tab, true);
 
       // El aviso desaparece en cuanto se corrige el campo. Antes seguia
       // visible hasta el siguiente envio, asi que parecia que el
@@ -408,6 +526,12 @@
       var limpia = function () {
         input.classList.remove("is-invalid");
         if (err.parentNode) err.parentNode.removeChild(err);
+        limpiaAria(ctl, err.id);
+        // La pestaña deja de marcarse cuando ya no le quedan campos con error.
+        if (tab) {
+          var panel = input.closest("[data-tp-panel]");
+          if (!panel || !panel.querySelector(".is-invalid")) marcaPestana(tab, false);
+        }
         input.removeEventListener("input", limpia);
         input.removeEventListener("change", limpia);
       };
@@ -454,9 +578,27 @@
     caja.appendChild(lista);
     if (head && head.parentNode) head.parentNode.insertBefore(caja, head.nextSibling);
     else body.insertBefore(caja, body.firstChild);
-    // Y se abre la pestaña del primer campo con error, si esta en otra.
-    var primero = resumen.filter(function (r) { return r.input; })[0];
-    if (primero) mostrarPestanaDe(dlg, primero.input);
+    // Y se abre la PRIMERA pestaña (en el orden de las pestañas, no en el
+    // de las claves del servidor) que tenga un campo con error, y se enfoca
+    // ese campo. Si la pestaña activa ya tiene errores, se queda en ella.
+    var conInput = resumen.filter(function (r) { return r.input; });
+    var primero = conInput[0];
+    var tabs = dlg.querySelectorAll("[data-tp-tab]");
+    if (tabs.length && conInput.length) {
+      var activa = dlg.querySelector("[data-tp-tab].is-active.has-error");
+      var destino = activa || dlg.querySelector("[data-tp-tab].has-error");
+      if (destino) {
+        var enDestino = conInput.filter(function (r) { return pestanaDe(dlg, r.input) === destino; })[0];
+        if (enDestino) primero = enDestino;
+      }
+    }
+    if (primero) {
+      mostrarPestanaDe(dlg, primero.input);
+      var foco = controlDe(primero.input);
+      if (foco && typeof foco.focus === "function") {
+        try { foco.focus({ preventScroll: true }); } catch (e) { foco.focus(); }
+      }
+    }
   }
 
   /* ── Teclado para controles que no son <button> ──────────────────────
@@ -710,4 +852,124 @@
     if (helpFor && e.target === helpFor) hideHelp();
   });
   document.addEventListener("scroll", hideHelp, true);
+})();
+
+/* =====================================================
+ * tpFmt · fechas con el formato del usuario (QA V10)
+ * -----------------------------------------------------
+ * Una sola forma de pintar fechas en la v2: la que el usuario eligió en
+ * Ajustes (date_format + time_format, los mismos que usa Formatter en el
+ * servidor). window.Talentus.datetime lo inyecta layout.blade.php.
+ *
+ *   tpFmt.datetime("2026-11-07 19:13:02")  → "07-11-2026 19:13:02"
+ *   tpFmt.datetime(valor, { seconds: false }) → sin segundos (tablero)
+ *   tpFmt.date("2026-11-07")               → "07-11-2026"
+ *   tpFmt.fromDate(new Date(iso))          → pasa a la zona del usuario
+ *
+ * Las cadenas "Y-m-d H:i:s" que manda el servidor ya vienen en la zona del
+ * usuario (Formatter::time()->convert): solo se reordenan. Lo que no tenga
+ * esa forma (ya formateado, texto) se devuelve tal cual.
+ * ===================================================== */
+(function () {
+  "use strict";
+
+  var CFG = (window.Talentus && window.Talentus.datetime) || {};
+  var DATE_FMT = CFG.date || "Y-m-d";
+  var TIME_FMT = CFG.time || "H:i:s";
+  var OFFSET = Number(CFG.offset) || 0;
+  var RX = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?$/;
+  // ISO con zona («…Z», «…+00:00»): es un instante absoluto, no una hora local.
+  var RX_ZONED = /^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:?\d{2})$/;
+
+  function pad(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  // Subconjunto de date() de PHP: lo que ofrecen config('tobuli.date_formats')
+  // y time_formats (Y m d H i s h A), más j n y G g a por si acaso.
+  function render(fmt, p) {
+    var out = "";
+    for (var i = 0; i < fmt.length; i++) {
+      var c = fmt.charAt(i);
+      var h12 = p.H % 12 || 12;
+      switch (c) {
+        case "Y": out += p.Y; break;
+        case "y": out += String(p.Y).slice(-2); break;
+        case "m": out += pad(p.m); break;
+        case "n": out += p.m; break;
+        case "d": out += pad(p.d); break;
+        case "j": out += p.d; break;
+        case "H": out += pad(p.H); break;
+        case "G": out += p.H; break;
+        case "h": out += pad(h12); break;
+        case "g": out += h12; break;
+        case "i": out += pad(p.i); break;
+        case "s": out += pad(p.s); break;
+        case "A": out += p.H < 12 ? "AM" : "PM"; break;
+        case "a": out += p.H < 12 ? "am" : "pm"; break;
+        case "\\": i++; out += fmt.charAt(i); break;
+        default: out += c;
+      }
+    }
+    return out;
+  }
+
+  function timeFmt(seconds) {
+    if (seconds !== false) return TIME_FMT;
+    // "H:i:s" → "H:i", "h:i:s A" → "h:i A"
+    return TIME_FMT.replace(/:s/, "");
+  }
+
+  function parts(value) {
+    var m = RX.exec(String(value == null ? "" : value).trim());
+    if (!m) return null;
+    return {
+      Y: +m[1], m: +m[2], d: +m[3],
+      H: m[4] != null ? +m[4] : null,
+      i: m[5] != null ? +m[5] : 0,
+      s: m[6] != null ? +m[6] : 0,
+    };
+  }
+
+  function datetime(value, opts) {
+    if (value == null || value === "") return "—";
+    var str = String(value).trim();
+    if (RX_ZONED.test(str)) return fromDate(new Date(str), opts);
+    var p = parts(str);
+    if (!p) return str;
+    if (p.H == null) return render(DATE_FMT, p);
+    return render(DATE_FMT + " " + timeFmt(opts && opts.seconds), p);
+  }
+
+  function date(value) {
+    if (value == null || value === "") return "—";
+    var p = parts(value);
+    return p ? render(DATE_FMT, p) : String(value);
+  }
+
+  // Date (instante absoluto) → zona del usuario con el desfase del servidor.
+  function fromDate(d, opts) {
+    if (!(d instanceof Date) || isNaN(d.getTime())) return "—";
+    var u = new Date(d.getTime() + OFFSET * 60000);
+    var p = {
+      Y: u.getUTCFullYear(), m: u.getUTCMonth() + 1, d: u.getUTCDate(),
+      H: u.getUTCHours(), i: u.getUTCMinutes(), s: u.getUTCSeconds(),
+    };
+    return render(DATE_FMT + " " + timeFmt(opts && opts.seconds), p);
+  }
+
+  window.tpFmt = { datetime: datetime, date: date, fromDate: fromDate };
+
+  /* ---------------------------------------------------------------
+   * tpEmpty · texto de estado vacío (QA V7)
+   *   tpEmpty(filtrado, "ui.no_expenses")
+   *   - con búsqueda o filtro activos → «Sin resultados.»
+   *   - sin nada que mostrar          → «Todavía no hay X.» (clave propia
+   *     del módulo o, si no se pasa, «Todavía no hay registros.»)
+   * --------------------------------------------------------------- */
+  window.tpEmpty = function (filtered, noneKey) {
+    var t = typeof window.tpT === "function" ? window.tpT : function (k) { return k; };
+    if (filtered) return t("ui.no_results");
+    return t(noneKey || "ui.no_records_yet");
+  };
 })();

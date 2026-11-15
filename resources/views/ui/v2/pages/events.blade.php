@@ -67,6 +67,10 @@
                     @endforeach
                 </select>
                 <div class="tp-input-wrap">
+                    <span class="tp-input-wrap__icon" aria-hidden="true">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" /></svg>
+                    </span>
                     <input aria-label="{{ trans('ui.search_event') }}" type="text" class="tp-input tp-input--with-icon" id="tp-events-search"
                         placeholder="{{ trans('ui.search_event') }}" autocomplete="off">
                 </div>
@@ -77,12 +81,12 @@
             </div>
 
             <footer class="tp-events__foot">
-                <span class="tp-text-xs tp-text-muted" id="tp-events-status">—</span>
-                <div class="tp-row" style="gap:6px;">
+                <span class="tp-text-xs tp-text-muted tp-events__status" id="tp-events-status">—</span>
+                <div class="tp-row tp-events__foot-actions">
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-export" type="button">{{ trans('front.export') }}</button>
                     <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-refresh" type="button">{{ trans('ui.refresh') }}</button>
                     @if (Auth::user()->perm('events', 'remove'))
-                        <button class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-clear" type="button"
+                        <button class="tp-btn tp-btn--ghost tp-btn--sm tp-events__clear" id="tp-events-clear" type="button"
                             title="{{ trans('ui.delete_all_my_events') }}">{{ trans('ui.delete_all') }}</button>
                     @endif
                 </div>

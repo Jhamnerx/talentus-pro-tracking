@@ -150,7 +150,11 @@ class AccountController extends BaseController
                 'units_of_altitude' => $this->kv(['mt' => trans('front.meter'), 'ft' => trans('front.feet')]),
                 'duration_formats'  => $this->kv((array) config('tobuli.duration_formats')),
                 'date_formats'      => $this->kv((array) config('tobuli.date_formats')),
-                'time_formats'      => $this->kv((array) config('tobuli.time_formats')),
+                // config('tobuli.time_formats') trae «24 hour clock» en inglés (QA C2).
+                'time_formats'      => $this->kv(array_replace(
+                    (array) config('tobuli.time_formats'),
+                    array_intersect_key(['H:i:s' => trans('ui.clock_24h')], (array) config('tobuli.time_formats'))
+                )),
                 'week_start_days'   => $this->kv(getWeekStartDays()),
                 'timezones'         => $this->kv(TimezoneRepo::order()->pluck('title', 'id')->all()),
                 'dst_types'         => $this->kv(getDSTTypes()),

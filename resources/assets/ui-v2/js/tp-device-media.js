@@ -207,8 +207,114 @@
     });
   }
 
+  /* Selector de vehículo para la entrada «Cámara / Medios» del rail: lista
+     los vehículos visibles, filtra en cliente y abre la galería del elegido. */
+  var LIMIT_PICK = 200;
+  var cacheDevices = null;
+
+  function norm(s) {
+    return String(s == null ? "" : s)
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "");
+  }
+
+  function pick() {
+    if (!window.tpModal) return;
+
+    tpModal.open({
+      title: tpT('ui.media_pick_device'),
+      sub: tpT('ui.media_pick_device_hint'),
+      size: "sm",
+      body:
+        '<div class="tp-input-wrap" style="margin-bottom:10px;">' +
+        '<span class="tp-input-wrap__icon" aria-hidden="true">' +
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>' +
+        "</span>" +
+        '<input type="search" class="tp-input" data-media-pick-q autocomplete="off" placeholder="' + esc(tpT('ui.media_search_device')) + '" aria-label="' + esc(tpT('ui.media_search_device')) + '">' +
+        "</div>" +
+        '<div data-media-pick-list role="listbox" aria-label="' + esc(tpT('ui.media_pick_device')) + '" style="max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;">' +
+        '<div class="tp-text-muted tp-text-sm">' + esc(tpT('front.loading')) + "</div>" +
+        "</div>",
+      buttons: [{ label: tpT('global.cancel'), variant: "ghost", close: true }],
+      onMount: function (dialog) {
+        var q = dialog.querySelector("[data-media-pick-q]");
+        var list = dialog.querySelector("[data-media-pick-list]");
+        var items = [];
+
+        function paint() {
+          var term = norm(q.value);
+          var hits = term
+            ? items.filter(function (d) { return norm(d.name).indexOf(term) !== -1 || norm(d.plate).indexOf(term) !== -1; })
+            : items;
+          if (!hits.length) {
+            list.innerHTML = '<div class="tp-text-muted tp-text-sm" style="padding:8px 4px;">' +
+              esc(items.length ? tpT('ui.media_no_devices_match') : tpT('ui.no_devices')) + "</div>";
+            return;
+          }
+          list.innerHTML = hits.slice(0, LIMIT_PICK).map(function (d) {
+            return '<button type="button" class="tp-menu__item" role="option" data-media-pick-id="' + d.id + '"' +
+              ' data-media-pick-name="' + esc(d.name) + '" style="justify-content:space-between;width:100%;">' +
+              '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(d.name) + "</span>" +
+              (d.plate ? '<span class="tp-text-xs tp-text-muted" style="flex:0 0 auto;">' + esc(d.plate) + "</span>" : "") +
+              "</button>";
+          }).join("");
+        }
+
+        function ready(rows) {
+          items = rows || [];
+          paint();
+          q.focus();
+        }
+
+        if (cacheDevices) {
+          ready(cacheDevices);
+        } else {
+          tpModal.fetchJSON(BASE + "/media-devices").then(function (res) {
+            if (!res.ok || !res.data || !res.data.ok) {
+              list.innerHTML = '<div class="tp-text-muted tp-text-sm">' + esc(tpT('front.unexpected_error')) + "</div>";
+              return;
+            }
+            cacheDevices = res.data.items || [];
+            ready(cacheDevices);
+          });
+        }
+
+        q.addEventListener("input", paint);
+        // Enter en el buscador abre el primer resultado.
+        q.addEventListener("keydown", function (e) {
+          if (e.key === "Enter") {
+            var first = list.querySelector("[data-media-pick-id]");
+            if (first) { e.preventDefault(); first.click(); }
+          } else if (e.key === "ArrowDown") {
+            var f = list.querySelector("[data-media-pick-id]");
+            if (f) { e.preventDefault(); f.focus(); }
+          }
+        });
+        list.addEventListener("click", function (e) {
+          var b = e.target.closest("[data-media-pick-id]");
+          if (!b) return;
+          var id = parseInt(b.getAttribute("data-media-pick-id"), 10);
+          var name = b.getAttribute("data-media-pick-name") || "";
+          tpModal.close(dialog);
+          open(id, name);
+        });
+      },
+    });
+  }
+
+  // Rail «Cámara / Medios»: delegado, porque el rail se pinta antes que este script.
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("[data-tp-media-pick]");
+    if (!a) return;
+    e.preventDefault();
+    pick();
+  });
+
   window.tpDeviceMedia = {
     open: open,
+    pick: pick,
 
     /** Recarga la galeria si la que esta abierta es la de ese vehiculo. */
     refresh: function (deviceId) {

@@ -33,7 +33,11 @@
                 <select class="tp-input" id="tp-exp-device" style="width:200px"><option value="">{{ trans('ui.all_vehicles') }}</option></select>
                 <input type="date" class="tp-input" id="tp-exp-from" title="{{ trans('front.from') }}">
                 <input type="date" class="tp-input" id="tp-exp-to" title="{{ trans('global.to') }}">
-                <button type="button" class="tp-btn tp-btn--accent" id="tp-exp-add">＋</button>
+                <button type="button" class="tp-btn tp-btn--primary" id="tp-exp-add">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    <span>{{ trans('ui.new_expense') }}</span>
+                </button>
             </div>
         </header>
 

@@ -84,9 +84,9 @@
     return rows;
   }
 
-  /* Celdas <pct-bar> + <left> para un tipo; "-" si el servicio no es de ese tipo. */
+  /* Celdas <pct-bar> + <left> para un tipo; "—" si el servicio no es de ese tipo. */
   function typeCells(r, type) {
-    if (r.expiration_by !== type) return "<td>-</td><td>-</td>";
+    if (r.expiration_by !== type) return "<td>—</td><td>—</td>";
     var pct = r.percentage || 0;
     var cls = tpServices.barClass(pct);
     return (
@@ -119,7 +119,7 @@
     if (!html)
       html =
         '<tr><td colspan="9" class="tp-svc-table__empty">' +
-        esc(tpServices.t("no_services")) + "</td></tr>";
+        esc(tpEmpty(!!state.q, "ui.no_services_yet")) + "</td></tr>";
     els.rows.innerHTML = html;
 
     els.range.textContent = total

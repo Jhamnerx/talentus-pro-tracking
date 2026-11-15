@@ -39,7 +39,7 @@
                 <input aria-label="{{ trans('front.search') }}" type="search" class="tp-input" data-expenses-search placeholder="{{ trans('front.search') }}"
                     autocomplete="off">
             </span>
-            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-expense-add
+            <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-expense-add
                 style="margin-left: auto;">＋ {{ trans('global.add') }}</button>
         </div>
 
@@ -69,8 +69,8 @@
                         </tr>
                     @empty
                         <tr data-expenses-empty>
-                            <td colspan="6" class="tp-text-muted" style="padding: 14px 12px; font-size: 13px;">
-                                {{ trans('front.no_data') }}
+                            <td colspan="6" class="tp-svc-table__empty">
+                                {{ trans('ui.no_expenses') }}
                             </td>
                         </tr>
                     @endforelse

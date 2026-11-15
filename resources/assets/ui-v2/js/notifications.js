@@ -86,7 +86,7 @@
       if (diff < 3600) return relFmt.format(-Math.floor(diff / 60), "minute");
       return relFmt.format(-Math.floor(diff / 3600), "hour");
     }
-    return n.time || d.toLocaleString();
+    return n.time || tpFmt.fromDate(d);
   }
 
   function render() {

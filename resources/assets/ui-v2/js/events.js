@@ -264,7 +264,7 @@
       '</span><span class="tp-events__row-sub">' +
       esc(ev.device_name || "#" + (ev.device_id || "")) +
       " · " +
-      esc(ev.time) +
+      esc(tpFmt.datetime(ev.time)) +
       "</span>" +
       (ADDR_ON
         ? '<span class="tp-events__addr" data-id="' + ev.id + '">' + addr + "</span>"
@@ -295,7 +295,7 @@
       '">' +
       esc(evTitle(ev)) +
       '</div><dl class="tp-ev-popup__defs"><dt>' + tpT('front.hour') + '</dt><dd>' +
-      esc(ev.time) +
+      esc(tpFmt.datetime(ev.time)) +
       "</dd>" +
       (ADDR_ON ? "<dt>" + tpT('front.location') + "</dt><dd data-ev-addr>" + esc(addr) + "</dd>" : "") +
       (ev.speed != null ? "<dt>" + tpT('front.speed') + "</dt><dd>" + Math.round(ev.speed) + " km/h</dd>" : "") +
@@ -567,11 +567,11 @@
         state.offset = res && res.offset != null ? res.offset : state.offset + rows.length;
         state.hasMore = !!(res && res.has_more);
         if (reset && !state.events.length) {
-          listEl.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:12px;">' + tpT('ui.no_events_in_range') + '</div>';
+          listEl.innerHTML = '<div class="tp-svc-table__empty">' + tpT('ui.no_events_in_range') + '</div>';
         } else {
           appendRows(rows);
         }
-        if (statusEl) statusEl.textContent = state.events.length + " eventos" + (state.hasMore ? " (+)" : "");
+        if (statusEl) statusEl.textContent = tpT(state.events.length === 1 ? 'ui.events_count_one' : 'ui.events_count_other', { count: state.events.length }) + (state.hasMore ? " (+)" : "");
         // Si el mapa de riesgo está activo, refréscalo con el mismo filtro.
         if (reset && state.riskOn) loadRisk();
       })
@@ -650,7 +650,7 @@
           var ref = listEl.firstChild;
           while (frag.firstChild) { var n = frag.firstChild; listEl.insertBefore(n, ref); if (io && n.getAttribute) io.observe(n); }
         }
-        if (statusEl) statusEl.textContent = state.events.length + " eventos" + (state.hasMore ? " (+)" : "");
+        if (statusEl) statusEl.textContent = tpT(state.events.length === 1 ? 'ui.events_count_one' : 'ui.events_count_other', { count: state.events.length }) + (state.hasMore ? " (+)" : "");
         if (state.riskOn) loadRisk();
         if (window.tpModal && window.tpModal.toast) window.tpModal.toast(fresh.length + tpT('ui.new_events_count'), crit ? "warning" : "info");
       })
@@ -697,7 +697,7 @@
             .bindPopup(
               '<div class="tp-ev-popup"><div class="tp-ev-popup__title">' + esc(p.device_name || "") + "</div>" +
               '<div class="tp-ev-popup__type tp-ev-popup__type--' + sevClass(p.severity) + '">' + esc(evTitle(p)) + "</div>" +
-              '<dl class="tp-ev-popup__defs"><dt>' + tpT('front.hour') + '</dt><dd>' + esc(p.time) + "</dd><dt>Coordenadas</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
+              '<dl class="tp-ev-popup__defs"><dt>' + tpT('front.hour') + '</dt><dd>' + esc(tpFmt.datetime(p.time)) + "</dd><dt>Coordenadas</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
             )
             .addTo(g);
         });

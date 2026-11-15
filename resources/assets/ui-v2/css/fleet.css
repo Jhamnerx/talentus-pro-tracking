@@ -360,13 +360,7 @@
   flex-wrap: wrap;
   margin: 16px 18px 12px;
 }
-.tp-fleet__page-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--fg-primary);
-}
+/* Título: el común .tp-maint__title (18 px + icono en cuadro, QA V1). */
 .tp-fleet__page-actions {
   display: flex;
   align-items: center;

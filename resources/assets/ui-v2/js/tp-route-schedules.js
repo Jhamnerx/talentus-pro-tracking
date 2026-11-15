@@ -110,9 +110,9 @@
 
       $("tp-rsch-rows").innerHTML = items.length
         ? items.map(rowHtml).join("")
-        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('ui.no_schedules_yet') + '</td></tr>';
+        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpEmpty(!!state.s, 'ui.no_schedules_yet') + '</td></tr>';
 
-      $("tp-rsch-range").textContent = tpT('ui.page_short') + (d.page || 1) + " / " + (d.pages || 1);
+      $("tp-rsch-range").textContent = tpT('ui.page_short_of', { page: d.page || 1, pages: d.pages || 1 });
       $("tp-rsch-total").textContent = (d.total || 0) + " programaciones";
 
       // El filtro de la otra pestaña se alimenta de lo mismo

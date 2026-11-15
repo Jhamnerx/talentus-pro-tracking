@@ -65,8 +65,10 @@
                 {{ $videoAttributes['summary'] ?? trans('front.video_attributes_none') }}
             </p>
             @if ($videoEditable)
+                {{-- Botón con borde (secondary): el ghost de 28 px parecía texto suelto (QA D3). --}}
                 <div>
-                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tp-video-attrs-detect>
+                    <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm tp-dv-detect" data-tp-video-attrs-detect>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
                         {{ trans('front.video_attributes_detect') }}
                     </button>
                 </div>

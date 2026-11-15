@@ -81,9 +81,8 @@
   function fmtDate(iso) {
     if (!iso) return "—";
     try {
-      var d = new Date(iso.replace(" ", "T"));
-      if (isNaN(d.getTime())) return "—";
-      return d.toLocaleString();
+      // Formato del usuario (tpFmt, modal.js; QA V10)
+      return window.tpFmt ? tpFmt.datetime(iso) : iso;
     } catch (e) {
       return "—";
     }
@@ -144,7 +143,7 @@
       return d.speed != null ? Number(d.speed).toFixed(1) : "—";
     },
     time: function (d) {
-      return escapeHtml(d.time || "—");
+      return escapeHtml(d.time ? fmtDate(d.time) : "—");
     },
     active: function (d) {
       return d.active ? tpT('ui.yes') : "No";
@@ -172,7 +171,7 @@
   COL_RENDER.ignition_duration = function (d) { return escapeHtml(d.ignition_duration || "—"); };
   COL_RENDER.last_event_title = function (d) { return escapeHtml(d.last_event_title || "—"); };
   COL_RENDER.last_event_type = function (d) { return escapeHtml(d.last_event_type || "—"); };
-  COL_RENDER.last_event_time = function (d) { return escapeHtml(d.last_event_time || "—"); };
+  COL_RENDER.last_event_time = function (d) { return escapeHtml(d.last_event_time ? fmtDate(d.last_event_time) : "—"); };
   COL_RENDER.address = function (d) {
     if (d.lat == null || d.lng == null) return "—";
     var key = Number(d.lat).toFixed(5) + "," + Number(d.lng).toFixed(5);
@@ -529,7 +528,7 @@
     var items = state.items;
     if (!items.length) {
       $tbody.innerHTML =
-        '<tr><td colspan="' + (columnsState.selected.length + 2) + '" class="tp-text-muted tp-text-center" style="padding:32px;">' + tpT('ui.no_results') + '</td></tr>';
+        '<tr><td colspan="' + (columnsState.selected.length + 2) + '" class="tp-svc-table__empty">' + tpT('ui.no_results') + '</td></tr>';
     } else {
       var html = "";
       for (var i = 0; i < items.length; i++) {
@@ -576,10 +575,9 @@
     // Footer
     $count.textContent =
       state.total > 0
-        ? state.total.toLocaleString() + " dispositivos"
+        ? tpT(state.total === 1 ? 'ui.devices_count_one' : 'ui.devices_count_other', { count: state.total.toLocaleString() })
         : tpT('ui.no_devices');
-    $page.textContent =
-      tpT('ui.page') + state.page + " / " + Math.max(1, state.pages);
+    $page.textContent = tpT('ui.page_of', { page: state.page, pages: Math.max(1, state.pages) });
     $prev.disabled = state.page <= 1 || state.loading;
     $next.disabled = state.page >= state.pages || state.loading;
 

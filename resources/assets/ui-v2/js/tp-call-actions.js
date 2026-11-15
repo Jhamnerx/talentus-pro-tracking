@@ -37,9 +37,9 @@
 
   /** Una fecha anterior al 2000 es un epoch guardado por error: no se pinta. */
   function fechaOEmpty(v) {
-    if (!v) return "–";
+    if (!v) return "—";
     var a = parseInt(String(v).slice(0, 4), 10);
-    return a && a >= 2000 ? v : "–";
+    return a && a >= 2000 ? v : "—";
   }
 
   function esc(s) { return tpModal.escapeHtml(s); }
@@ -227,13 +227,13 @@
       state.last = res.data.last || 1; state.total = res.data.total || 0;
       var items = res.data.items || [];
       rowsEl.innerHTML = items.length ? items.map(function (r) {
-        return "<tr><td>" + esc(r.device || "–") + "</td>" +
-          '<td title="' + esc(r.event) + '" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.event || "–") + "</td>" +
+        return "<tr><td>" + esc(r.device || "—") + "</td>" +
+          '<td title="' + esc(r.event) + '" style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.event || "—") + "</td>" +
           "<td>" + respChip(r) + "</td><td>" + esc(fechaOEmpty(r.called_at)) + "</td>" +
-          '<td title="' + esc(r.remarks) + '" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.remarks || "–") + "</td>" +
-          "<td>" + esc(r.user || "–") + "</td>" +
+          '<td title="' + esc(r.remarks) + '" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.remarks || "—") + "</td>" +
+          "<td>" + esc(r.user || "—") + "</td>" +
           '<td class="tp-svc-table__actions">' + kebab(r) + "</td></tr>";
-      }).join("") : '<tr><td colspan="7" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+      }).join("") : '<tr><td colspan="7" class="tp-svc-table__empty">' + tpEmpty(!!(state.s || state.device_id || state.response_type), 'ui.no_call_actions_yet') + '</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0, to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;
       prevBtn.disabled = state.page <= 1; nextBtn.disabled = state.page >= state.last;

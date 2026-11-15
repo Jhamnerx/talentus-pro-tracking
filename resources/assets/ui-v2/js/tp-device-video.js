@@ -66,7 +66,7 @@
   }
 
   function mb(size) {
-    return size ? (size / 1048576).toFixed(1) + " MB" : "-";
+    return size ? (size / 1048576).toFixed(1) + " MB" : "—";
   }
 
   function channelTitle(cfg, channel) {
@@ -441,9 +441,14 @@
             if (a.nak) return done(tpT("front.video_attributes_rejected"));
             if (attempt + 1 >= 10) return done(tpT("front.video_attributes_timeout"));
             poll(attempt + 1);
+          }).catch(function () {
+            // Un fallo de red dejaba el boton deshabilitado para siempre.
+            done(tpT("front.video_err_platform"));
           });
         }, 3000);
       })(0);
+    }).catch(function () {
+      done(tpT("front.video_err_platform"));
     });
   });
 
@@ -454,8 +459,18 @@
     var boxes = form.querySelectorAll('input[name="camera_channels[]"]');
     if ([].some.call(boxes, function (b) { return b.checked; })) return;
     var has = form.querySelector('input[type="checkbox"][name="has_camera"]');
-    if (has) has.checked = true;
-    boxes.forEach(function (b) { if (+b.value <= count) b.checked = true; });
+    // Sin el evento change el grupo de canales seguia oculto y deshabilitado
+    // (device-modal.js wireVideoChannels), asi que lo sugerido no se enviaba.
+    if (has && !has.checked) {
+      has.checked = true;
+      has.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    boxes.forEach(function (b) {
+      if (+b.value <= count && !b.checked && !b.disabled) {
+        b.checked = true;
+        b.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    });
   }
 
   window.tpDeviceVideo = { open: open, recordings: recordings, stopPlayers: stopPlayers };

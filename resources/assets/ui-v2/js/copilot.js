@@ -180,7 +180,7 @@
     // Typing indicator
     var typing = document.createElement("div");
     typing.className = "tp-copilot__bubble tp-copilot__bubble--bot";
-    typing.innerHTML = '<em class="tp-text-muted">pensando…</em>';
+    typing.innerHTML = '<em class="tp-text-muted">' + tpT('ui.cp_thinking') + '</em>';
     $("#cp-chat").hidden = false;
     $("#cp-chat").appendChild(typing);
     $("#cp-chat").scrollTop = $("#cp-chat").scrollHeight;

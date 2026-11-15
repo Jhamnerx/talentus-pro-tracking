@@ -133,7 +133,7 @@
         { label: T("cancel", "Cancelar"), variant: "ghost" },
         {
           label: T("send_command", "Enviar comando"),
-          variant: "accent",
+          variant: "primary",
           close: false,
           onClick: function (dlg) {
             confirmSend(dlg);

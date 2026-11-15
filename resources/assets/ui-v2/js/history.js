@@ -65,7 +65,8 @@
   function toast(m, k) { if (window.tpModal && tpModal.toast) tpModal.toast(m, k || "info"); else if (k === "warning" || k === "error") alert(m); }
   function assetPath(p) { if (!p) return ""; if (/^https?:\/\//.test(p) || p.charAt(0) === "/") return p; return "/" + p; }
   function csrf() { return (window.Talentus && window.Talentus.csrf) || (document.querySelector('meta[name="csrf-token"]') || {}).content || ""; }
-  function fmtTime(t) { try { return new Date(String(t).replace(" ", "T")).toLocaleString(); } catch (e) { return t; } }
+  // Formato del usuario (tpFmt, QA V10), no el del navegador.
+  function fmtTime(t) { return window.tpFmt ? tpFmt.datetime(t) : t; }
   function fmtClock(t) { try { var d = new Date(String(t).replace(" ", "T")); return pad2(d.getHours()) + ":" + pad2(d.getMinutes()); } catch (e) { return ""; } }
   function fmtDur(sec) { sec = Math.max(0, Math.floor(sec)); var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60; if (h > 0) return h + "h " + pad2(m) + "m"; if (m > 0) return m + "m " + pad2(s) + "s"; return s + "s"; }
 
@@ -365,7 +366,7 @@
   function onRouteClick(e) { if (rulerState.on) return; var idx = nearestIdxToLatLng(e.latlng); if (idx >= 0) openPointPopup(idx, e.latlng); }
   function nearestIdxToLatLng(ll) { var best = -1, bd = Infinity; for (var i = 0; i < state.positions.length; i++) { var p = state.positions[i], d = (p.lat - ll.lat) * (p.lat - ll.lat) + (p.lng - ll.lng) * (p.lng - ll.lng); if (d < bd) { bd = d; best = i; } } return best; }
   function ptRow(label, value) {
-    return "<dt>" + label + "</dt><dd>" + (value == null || value === "" ? "-" : value) + "</dd>";
+    return "<dt>" + label + "</dt><dd>" + (value == null || value === "" ? "—" : value) + "</dd>";
   }
   // Lo que el sidebar, los KPI y el panel inferior (flotan sobre el mapa) le
   // tapan al mapa: el popup se encuadra en la zona libre, si no el punto podria
@@ -413,7 +414,7 @@
     if (CFG.addrOn) fetchAddr(p.lat, p.lng, function (a) {
       var el2 = state.pointPopup && state.pointPopup.getElement();
       var dd = el2 && el2.querySelector("[data-addr]");
-      if (dd) dd.textContent = a || "-";
+      if (dd) dd.textContent = a || "—";
       if (state.pointPopup) state.pointPopup.update();
     });
     // Referencia vial "PE-1N · km 557" bajo la dirección (toggle hitos activo)
@@ -512,28 +513,28 @@
     var r = "";
     if (it.status === S_DRIVE) {
       r += ptRow(T("start", "Inicio"), esc(it.from)) + ptRow(T("end", "Fin"), esc(it.to));
-      r += ptRow(T("driver", "Conductor"), esc(it.driver || "-"));
+      r += ptRow(T("driver", "Conductor"), esc(it.driver || "—"));
       if (it.top_speed != null) r += ptRow(T("top_speed", tpT('ui.max_speed')), it.top_speed + " " + (gUnitSpeed() || "km/h"));
       if (it.distance != null) r += ptRow(T("route_length", "Longitud de ruta"), it.distance + " km");
-      r += ptRow(T("duration", tpT('ui.duration')), esc(it.duration || "-"));
+      r += ptRow(T("duration", tpT('ui.duration')), esc(it.duration || "—"));
       if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
       if (it.engine_hours != null) r += ptRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
     } else if (it.status === S_STOP) {
       r += ptRow(T("start", "Inicio"), esc(it.from)) + ptRow(T("end", "Fin"), esc(it.to));
-      r += ptRow(T("driver", "Conductor"), esc(it.driver || "-"));
-      r += ptRow(T("duration", tpT('ui.duration')), esc(it.duration || "-"));
+      r += ptRow(T("driver", "Conductor"), esc(it.driver || "—"));
+      r += ptRow(T("duration", tpT('ui.duration')), esc(it.duration || "—"));
       if (it.fuel_consumption != null) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
       if (it.engine_hours != null) r += ptRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
     } else if (it.status === S_START || it.status === S_END) {
-      r += ptRow(T("driver", "Conductor"), esc(tripDriver() || "-"));
-      r += ptRow(T("route_length", "Longitud de ruta"), esc(sum.distance || "-"));
-      r += ptRow(T("move_duration", tpT('ui.moving_duration')), esc(sum.move_duration || "-"));
-      r += ptRow(T("stop_duration", tpT('ui.parked_duration')), esc(sum.stop_duration || "-"));
-      r += ptRow(T("top_speed", tpT('ui.max_speed')), esc(sum.top_speed || "-"));
+      r += ptRow(T("driver", "Conductor"), esc(tripDriver() || "—"));
+      r += ptRow(T("route_length", "Longitud de ruta"), esc(sum.distance || "—"));
+      r += ptRow(T("move_duration", tpT('ui.moving_duration')), esc(sum.move_duration || "—"));
+      r += ptRow(T("stop_duration", tpT('ui.parked_duration')), esc(sum.stop_duration || "—"));
+      r += ptRow(T("top_speed", tpT('ui.max_speed')), esc(sum.top_speed || "—"));
       if (sum.fuel) r += ptRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", esc(sum.fuel));
       if (sum.engine_hours) r += ptRow(T("engine_hours", "Horas del motor"), esc(sum.engine_hours));
     } else {
-      r += ptRow(T("time", "Hora"), esc(it.from)) + ptRow(T("event", "Evento"), esc(it.message || "-"));
+      r += ptRow(T("time", "Hora"), esc(it.from)) + ptRow(T("event", "Evento"), esc(it.message || "—"));
     }
     return r;
   }
@@ -699,7 +700,7 @@
   function tlRow(label, value, extra) {
     return (
       '<div class="tp-hist-tl__row' + (extra ? " tp-hist-tl__row--extra" : "") + '">' +
-      "<span>" + label + ":</span><strong>" + esc(value == null || value === "" ? "-" : value) + "</strong></div>"
+      "<span>" + label + ":</span><strong>" + esc(value == null || value === "" ? "—" : value) + "</strong></div>"
     );
   }
   function renderTimeline() {
@@ -708,7 +709,7 @@
     var sum = state.summary || {};
     // Fila de la CABECERA (fechas junto al riel de puntos)
     function hRow(label, value) {
-      return '<span class="tp-hist-tl__hrow"><span>' + label + ':</span><strong>' + esc(value == null || value === "" ? "-" : value) + "</strong></span>";
+      return '<span class="tp-hist-tl__hrow"><span>' + label + ':</span><strong>' + esc(value == null || value === "" ? "—" : value) + "</strong></span>";
     }
     host.innerHTML = state.timeline.map(function (it, i) {
       var m = statusMeta(it.status);

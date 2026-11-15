@@ -254,7 +254,9 @@ class DevicesController extends BaseController
                 $sort = 'name';
                 break;
         }
-        $query->orderBy('devices.name', $sort === 'name' ? $dir : 'asc')
+        // TRIM: los nombres con espacio inicial (dato de origen) no deben ir
+        // los primeros. $dir solo puede ser asc|desc, así que el raw es seguro.
+        $query->orderByRaw('TRIM(devices.name) ' . ($sort === 'name' ? $dir : 'asc'))
             ->orderBy('devices.id', 'asc');
 
         $rows = $query->with('icon')
@@ -321,7 +323,7 @@ class DevicesController extends BaseController
 
             $items[] = [
                 'id'              => $device->id,
-                'name'            => $device->name,
+                'name'            => trim((string) $device->name),
                 'imei'            => $device->imei,
                 'plate'           => $device->plate_number,
                 'model'           => $device->device_model,
@@ -1175,6 +1177,34 @@ class DevicesController extends BaseController
      * DeviceCameraMedia. Aquí solo se expone en JSON; servir, descargar y
      * borrar sigue en las rutas legacy, que ya resuelven rutas y permisos.
      * ================================================================= */
+
+    /**
+     * Lista ligera para el selector «Cámara / Medios» del rail: los
+     * vehículos que el usuario ve (id, nombre, placa). Mismo gate que la
+     * galería; la galería vuelve a comprobar el device al abrirse.
+     */
+    public function mediaDevices(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('camera', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $rows = $this->user->devices()->clearOrdersBy()
+            ->orderByRaw('TRIM(devices.name) asc')
+            ->get(['devices.id', 'devices.name', 'devices.plate_number']);
+
+        $items = [];
+        foreach ($rows as $d) {
+            $name = trim((string) $d->name);
+            $items[] = [
+                'id'    => (int) $d->id,
+                'name'  => $name !== '' ? $name : ('#' . $d->id),
+                'plate' => trim((string) ($d->plate_number ?? '')),
+            ];
+        }
+
+        return response()->json(['ok' => true, 'items' => $items]);
+    }
 
     public function deviceMedia(Request $request, $id): JsonResponse
     {

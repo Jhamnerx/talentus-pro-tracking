@@ -103,25 +103,20 @@
   background: var(--surface-page);
   flex-shrink: 0;
 }
-/* Botón primario del footer: gradiente de marca (consistente con el modal
-   de alertas); ghost con borde sutil. */
-.tp-modal__foot .tp-btn--primary {
-  background: linear-gradient(135deg, var(--brand-600), var(--brand-500));
-  border: 0;
-  color: #fff;
-  font-weight: 600;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(46, 99, 217, 0.35);
-  transition: filter var(--dur-fast), transform var(--dur-fast);
+/* Pie único (QA V9): modal.js ordena Eliminar · … · Cancelar · Principal.
+   El destructivo se separa a la izquierda; el resto va a la derecha. Los
+   botones usan la altura normal (36 px) y el primario el color de marca
+   de .tp-btn--primary, igual que en las páginas (QA V3/V4). Cancelar y
+   demás secundarios llevan borde para leerse como botón. */
+.tp-modal__foot .tp-modal__foot-start {
+  margin-right: auto;
 }
-.tp-modal__foot .tp-btn--primary:hover {
-  filter: brightness(1.06);
-  transform: translateY(-1px);
+.tp-modal__foot .tp-btn {
+  font-weight: var(--fw-semibold);
 }
 .tp-modal__foot .tp-btn--ghost {
-  border: 1px solid var(--border-subtle);
-  border-radius: 10px;
-  color: var(--fg-secondary);
+  border-color: var(--border-default);
+  color: var(--fg-primary);
 }
 
 /* ---------- FORM PRIMITIVES (used by tp-modal forms) ---------- */
@@ -247,15 +242,23 @@
   height: 100%;
   min-height: 0;
 }
-/* Tabs píldora (antes: banda gris surface-sunken con mayúsculas). */
+/* Pestañas: UN solo estilo en toda la v2 (QA V5) — texto + subrayado de
+   marca, el de la ficha del vehículo. Lo usan los modales (buildTabs, ficha,
+   alertas) y las páginas con pestañas (Reportes, Tareas, Enviar comando,
+   Programaciones, Operaciones). Antes había píldoras, pestañas anchas y
+   texto plano. Las píldoras/segmentados (.tp-segmented) quedan para
+   conmutadores reales (filtros, tamaño de rejilla). */
 .tp-tabs__nav {
   display: flex;
-  gap: 4px;
-  border: 1px solid var(--brand-100);
-  background: var(--brand-bg-subtle, var(--brand-50));
-  border-radius: 12px;
-  padding: 4px;
+  flex-wrap: nowrap;
+  gap: 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--border-default);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scrollbar-width: none;
   flex-shrink: 0;
   margin: 0 0 var(--sp-3);
@@ -263,28 +266,62 @@
 .tp-tabs__nav::-webkit-scrollbar {
   display: none;
 }
+/* En página, separada de la tarjeta de debajo como el resto de bloques. */
+.tp-tabs__nav--page {
+  margin-bottom: var(--sp-4);
+}
 .tp-tabs__tab {
   appearance: none;
+  flex: 0 0 auto;
   background: transparent;
   border: 0;
-  border-radius: 9px;
+  border-radius: 0;
   color: var(--fg-secondary);
-  font: 600 13px/1 inherit;
-  padding: 9px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  padding: 10px 14px 9px;
   cursor: pointer;
   white-space: nowrap;
+  box-shadow: inset 0 -2px 0 transparent;
   transition:
     color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
     background var(--dur-fast) var(--ease-out);
   position: relative;
 }
 .tp-tabs__tab:hover {
-  color: var(--brand-600);
+  color: var(--fg-primary);
+  background: var(--surface-sunken);
 }
 .tp-tabs__tab.is-active {
-  background: var(--surface-page);
-  color: var(--brand-700);
-  box-shadow: 0 1px 4px rgba(6, 11, 52, 0.12);
+  color: var(--brand-600);
+  background: transparent;
+  box-shadow: inset 0 -3px 0 var(--brand-600);
+}
+.tp-tabs__tab.is-active:hover {
+  background: var(--surface-sunken);
+}
+[data-theme="dark"] .tp-tabs__tab.is-active {
+  color: var(--brand-400);
+  box-shadow: inset 0 -3px 0 var(--brand-400);
+}
+/* Pestaña con campos en error (modal.js showFieldErrors): punto rojo. */
+.tp-tabs__nav .tp-tabs__tab.has-error:not(.is-active) {
+  color: var(--danger-600, #dc2626);
+}
+[data-theme="dark"] .tp-tabs__nav .tp-tabs__tab.has-error:not(.is-active) {
+  color: var(--danger-500, #ef4444);
+}
+.tp-tabs__tab .tp-tabs__err {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--danger-500, #ef4444);
+  vertical-align: middle;
 }
 .tp-tabs__tab .tp-tabs__badge {
   margin-left: 6px;

@@ -83,14 +83,14 @@
     var dis = META.caps.edit_sms ? "" : " disabled";
     return (
       '<form class="tp-form tp-acc-form" data-acc-tab="sms">' +
-      '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="sms_gateway" value="1"' + (S.enabled ? " checked" : "") + dis + "> Habilitar SMS gateway</label>" +
+      '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="sms_gateway" value="1"' + (S.enabled ? " checked" : "") + dis + "> " + tpT('ui.enable_sms_gateway') + "</label>" +
       '<div class="tp-form__grid tp-form__grid--2">' +
       field(tpT('ui.request_method'), '<select class="tp-input" name="request_method"' + dis + " data-acc-sms-method>" + options(LS.request_methods, S.request_method) + "</select>") +
       '<div data-acc-sms="post">' + field(tpT('ui.encoding'), '<select class="tp-input" name="encoding"' + dis + ">" + options(LS.encodings, S.encoding) + "</select>") + "</div>" +
       '<div data-acc-sms="get post">' + field(tpT('ui.authentication'), '<select class="tp-input" name="authentication"' + dis + " data-acc-sms-auth>" + options(LS.authentications, S.authentication) + "</select>") + "</div>" +
       '<div data-acc-sms="get post" data-acc-sms-authblock>' + field(tpT('ui.username'), '<input type="text" name="username" value="' + esc(S.username) + '"' + dis + " data-tp-field>") + "</div>" +
       '<div data-acc-sms="get post" data-acc-sms-authblock>' + field(tpT('attr.password'), '<input type="password" name="password" autocomplete="new-password"' + dis + " data-tp-field>") + "</div>" +
-      '<div class="tp-col-2" data-acc-sms="get post">' + field("Cabeceras", '<textarea name="custom_headers" rows="2"' + dis + " data-tp-field>" + esc(S.custom_headers) + "</textarea>", false, false) +
+      '<div class="tp-col-2" data-acc-sms="get post">' + field(tpT('ui.custom_headers'), '<textarea name="custom_headers" rows="2"' + dis + " data-tp-field>" + esc(S.custom_headers) + "</textarea>", false, false) +
       '<small class="tp-form__hint">' + tpT('ui.semicolon_list_help') + '</small></div>' +
       '<div class="tp-col-2" data-acc-sms="get post">' + field(tpT('ui.gateway_url'), '<textarea name="sms_gateway_url" rows="2"' + dis + " data-tp-field>" + esc(S.url) + "</textarea>", false, false) + "</div>" +
       '<div data-acc-sms="plivo">' + field("Auth ID", '<input type="text" name="auth_id" value="' + esc(S.auth_id) + '"' + dis + " data-tp-field>") + "</div>" +
@@ -98,13 +98,13 @@
       '<div data-acc-sms="plivo">' + field(tpT('ui.sender_phone'), '<input type="text" name="senders_phone" value="' + esc(S.senders_phone) + '"' + dis + " data-tp-field>") + "</div>" +
       "</div>" +
       '<div class="tp-col-2" style="margin-top:10px;padding:10px 12px;background:var(--brand-bg-subtle,#eef3fb);border-radius:8px;font-size:12px;color:var(--fg-secondary,#475569);">' +
-      "Variables: %NUMBER%, %MESSAGE%. Ejemplo: http://SMS_GATEWAY/sendsms.php?username=USER&password=PASS&number=%NUMBER%&message=%MESSAGE%" +
+      esc(tpT('ui.sms_gateway_variables', { example: "http://SMS_GATEWAY/sendsms.php?username=USER&password=PASS&number=%NUMBER%&message=%MESSAGE%" })) +
       '<div data-acc-sms="app" style="margin-top:6px;">' + tpT('ui.sms_in_queue') + ' <b>' + S.queue_count + "</b></div></div>" +
       // Acciones del gateway (paridad legacy: "Enviar SMS de prueba" y "Vaciar cola")
       (META.caps.edit_sms
         ? '<div class="tp-row" style="gap:8px;margin-top:12px;flex-wrap:wrap;">' +
           '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-test>' + tpT('ui.send_test_sms') + '</button>' +
-          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-clear>Vaciar cola</button></div>'
+          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-acc-sms-clear>' + tpT('ui.clear_queue') + '</button></div>'
         : "") +
       "</form>"
     );
@@ -242,7 +242,7 @@
                 ).replace("<tr>", '<tr data-acc-item="' + esc(JSON.stringify(r)) + '" role="button" tabindex="0">');
               })
               .join("")
-          : '<tr><td colspan="' + colspan + '" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+          : '<tr><td colspan="' + colspan + '" class="tp-svc-table__empty">' + tpEmpty(false) + '</td></tr>';
       });
     }
 
@@ -449,7 +449,7 @@
       itemUrl: function (id) { return API + "/drivers/" + id; },
       cols: [tpT('ui.name'), "RFID", tpT('attr.phone'), "Email"],
       row: function (r) {
-        return "<td>" + esc(r.name) + "</td><td>" + esc(r.rfid || "–") + "</td><td>" + esc(r.phone || "–") + "</td><td>" + esc(r.email || "–") + "</td>";
+        return "<td>" + esc(r.name) + "</td><td>" + esc(r.rfid || "—") + "</td><td>" + esc(r.phone || "—") + "</td><td>" + esc(r.email || "—") + "</td>";
       },
       delTitle: tpT('ui.delete_driver'),
       delMsg: tpT('ui.confirm_delete_driver'),
@@ -510,7 +510,7 @@
           var c = /^#[0-9a-fA-F]{6}/.test(s.color || "") ? s.color : "#64748b";
           return '<span style="display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:700;color:#fff;background:' + esc(c) + ';margin:1px 4px 1px 0;" title="' + esc(s.name) + '">' + esc(s.label || s.name) + "</span>";
         }).join("");
-        return "<td>" + esc(r.name) + "</td><td>" + (st || "–") + "</td>";
+        return "<td>" + esc(r.name) + "</td><td>" + (st || "—") + "</td>";
       },
       delTitle: tpT('ui.delete_vehicle_type'),
       delMsg: tpT('ui.confirm_delete_vehicle_type'),
@@ -899,20 +899,20 @@
   }
 
   var TABS = [
-    { key: "locale", label: "Principal", build: tabLocale, save: "locale" },
+    { key: "locale", label: tpT('ui.acc_tab_main'), build: tabLocale, save: "locale" },
     { key: "groups", label: tpT('ui.vehicle_groups'), build: tabGroups, wire: wireGroups },
-    { key: "drivers", label: "Conductores", build: tabDrivers, wire: wireDrivers, cap: "view_drivers" },
+    { key: "drivers", label: tpT('front.drivers'), build: tabDrivers, wire: wireDrivers, cap: "view_drivers" },
     { key: "vtypes", label: tpT('ui.vehicle_types'), build: tabVehicleTypes, wire: wireVehicleTypes },
     { key: "events", label: tpT('front.events'), build: tabEvents, wire: wireEvents, cap: "view_custom_events" },
-    { key: "sms", label: "SMS gateway", build: tabSms, save: "sms", cap: "view_sms" },
+    { key: "sms", label: tpT('ui.sms_gateway'), build: tabSms, save: "sms", cap: "view_sms" },
     { key: "tpl_sms", label: tpT('ui.sms_templates'), build: function () { return tabTemplates("sms"); }, wire: function (p) { wireTemplates(p, "sms"); }, cap: "view_sms_templates" },
     { key: "tpl_gprs", label: tpT('ui.gprs_templates'), build: function () { return tabTemplates("gprs"); }, wire: function (p) { wireTemplates(p, "gprs"); }, cap: "view_gprs_templates" },
     { key: "widgets", label: "Widgets", build: tabWidgets, save: "widgets" },
-    { key: "dashboard", label: "Tablero", build: tabDashboard, save: "dashboard" },
-    { key: "client", label: "Cliente", build: tabClient, save: "client", cap: "view_client" },
+    { key: "dashboard", label: tpT('ui.acc_tab_dashboard'), build: tabDashboard, save: "dashboard" },
+    { key: "client", label: tpT('ui.acc_tab_client'), build: tabClient, save: "client", cap: "view_client" },
     { key: "media_cats", label: tpT('ui.media_categories'), build: tabMediaCats, wire: wireMediaCats, cap: "view_media_cats" },
-    { key: "secondary", label: "Credenciales secundarias", build: tabSecondary, wire: wireSecondary, cap: "view_secondary" },
-    { key: "map", label: "Mapa", build: tabMap, save: "map" },
+    { key: "secondary", label: tpT('ui.acc_tab_secondary'), build: tabSecondary, wire: wireSecondary, cap: "view_secondary" },
+    { key: "map", label: tpT('front.map'), build: tabMap, save: "map" },
   ];
 
   function visibleTabs() {
@@ -948,11 +948,11 @@
     var body = dlg.querySelector(".tp-modal__body");
     body.innerHTML =
       '<div class="tp-acc">' +
-      '<div class="tp-acc__tabs" role="tablist">' +
+      '<div class="tp-tabs__nav tp-acc__tabs" role="tablist">' +
       tabs.map(function (t) {
         // role + id: el panel de abajo apunta a la pestaña activa con
         // aria-labelledby, que es lo que da contexto al leerlo.
-        return '<button type="button" class="tp-acc__tab" role="tab"' +
+        return '<button type="button" class="tp-tabs__tab tp-acc__tab" role="tab"' +
           ' id="tp-acc-tab-' + esc(t.key) + '" aria-selected="false"' +
           ' aria-controls="tp-acc-panel" data-acc-go="' + t.key + '">' + esc(t.label) + "</button>";
       }).join("") +

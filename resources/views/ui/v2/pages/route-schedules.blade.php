@@ -32,15 +32,27 @@
                 {{ trans('front.route_schedules') }}
             </h2>
 
-            <div class="tp-rsch__tabs" role="tablist">
-                <button type="button" class="tp-btn tp-btn--ghost is-active" data-rsch-tab="list" role="tab" aria-selected="true">
-                    {{ trans('front.route_schedules') }}
-                </button>
-                <button type="button" class="tp-btn tp-btn--ghost" data-rsch-tab="adherence" role="tab" aria-selected="false">
-                    {{ trans('front.route_adherence') }}
-                </button>
-            </div>
+            @if (auth()->user()->perm('routes', 'edit'))
+                {{-- Acción principal en la cabecera, icono + texto (QA V2) --}}
+                <div class="tp-maint__tools">
+                    <button type="button" class="tp-btn tp-btn--primary" id="tp-rsch-add">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                        <span>{{ trans('front.route_schedule_add') }}</span>
+                    </button>
+                </div>
+            @endif
         </header>
+
+        {{-- Pestañas: el subrayado común (.tp-tabs__nav, QA V5) --}}
+        <div class="tp-tabs__nav tp-tabs__nav--page tp-rsch__tabs" role="tablist">
+            <button type="button" class="tp-tabs__tab is-active" data-rsch-tab="list" role="tab" aria-selected="true">
+                {{ trans('front.route_schedules') }}
+            </button>
+            <button type="button" class="tp-tabs__tab" data-rsch-tab="adherence" role="tab" aria-selected="false">
+                {{ trans('front.route_adherence') }}
+            </button>
+        </div>
 
         {{-- ───────────────────────── Programaciones ───────────────────────── --}}
         <section data-rsch-panel="list">
@@ -48,11 +60,6 @@
                 <div class="tp-rsch__bar">
                     <input type="text" class="tp-input" id="tp-rsch-search"
                         placeholder="{{ trans('front.search') }}…" autocomplete="off">
-                    @if (auth()->user()->perm('routes', 'edit'))
-                        <button type="button" class="tp-btn tp-btn--accent" id="tp-rsch-add">
-                            ＋ {{ trans('front.route_schedule_add') }}
-                        </button>
-                    @endif
                 </div>
 
                 <div class="tp-maint__wrap">

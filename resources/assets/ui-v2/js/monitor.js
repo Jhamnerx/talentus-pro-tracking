@@ -487,13 +487,12 @@
       cajaTam.innerHTML = LAYOUTS.map(function (l) {
         return '<button type="button" class="tp-segmented__item" data-size="' + l.n + '"' +
           (l.n === state.size ? ' aria-selected="true"' : "") +
-          ' title="' + l.n + tpT('ui.vehicles_up_to') + l.cols + ' columnas">' + l.n + "</button>";
+          ' title="' + tpT('ui.vehicles_up_to', { count: l.n, cols: l.cols }) + '">' + l.n + "</button>";
       }).join("");
     }
 
     if (pista) {
-      pista.textContent = tpT('ui.pick_up_to') + state.size +
-        tpT('ui.monitor_grid_note');
+      pista.textContent = tpT('ui.monitor_grid_note', { count: state.size });
     }
   }
 
@@ -568,7 +567,7 @@
           if (gb === 0) return 1;
           return String(groupsMap[ga] || "").localeCompare(String(groupsMap[gb] || ""));
         }
-        return String(a.name || "").localeCompare(String(b.name || ""));
+        return String(a.name || "").trim().localeCompare(String(b.name || "").trim());
       });
       var html = "", lastG = null, shown = 0;
       list.forEach(function (d) {

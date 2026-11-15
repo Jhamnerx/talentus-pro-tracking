@@ -85,12 +85,15 @@ class HistoryController extends BaseController
             return response()->json(['ok' => false], 403);
         }
 
-        $rows = $this->user->devices()->orderBy('name', 'asc')->get(['id', 'name', 'plate_number']);
+        // TRIM: los nombres con espacio inicial no se ordenan los primeros.
+        $rows = $this->user->devices()->clearOrdersBy()->orderByRaw('TRIM(devices.name) asc')
+            ->get(['devices.id', 'devices.name', 'devices.plate_number']);
         $items = [];
         foreach ($rows as $d) {
+            $name = trim((string) $d->name);
             $items[] = [
                 'id'    => (int) $d->id,
-                'name'  => (string) ($d->name ?: ('#' . $d->id)),
+                'name'  => $name !== '' ? $name : ('#' . $d->id),
                 'plate' => (string) ($d->plate_number ?? ''),
             ];
         }

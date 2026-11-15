@@ -143,7 +143,7 @@
         '<td class="tp-svc-table__actions">' + kebabHtml(r) + "</td></tr>";
     });
     if (!html)
-      html = '<tr><td colspan="4" class="tp-svc-table__empty">' + esc(T("no_routes", "No hay rutas.")) + "</td></tr>";
+      html = '<tr><td colspan="4" class="tp-svc-table__empty">' + esc(tpEmpty(!!state.q, "ui.no_routes_yet")) + "</td></tr>";
     els.rows.innerHTML = html;
 
     els.range.textContent = total

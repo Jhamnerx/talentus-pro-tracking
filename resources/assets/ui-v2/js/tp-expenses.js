@@ -52,8 +52,8 @@
       items.forEach(function (e) { state.byId[e.id] = e; });
       $("tp-exp-rows").innerHTML = items.length
         ? items.map(rowHtml).join("")
-        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpT('ui.no_expenses') + '</td></tr>';
-      $("tp-exp-range").textContent = tpT('ui.page_short') + (d.page || 1) + " / " + (d.pages || 1);
+        : '<tr><td colspan="8" class="tp-svc-table__empty">' + tpEmpty(!!(state.s || state.device || state.from || state.to), 'ui.no_expenses') + '</td></tr>';
+      $("tp-exp-range").textContent = tpT('ui.page_short_of', { page: d.page || 1, pages: d.pages || 1 });
       $("tp-exp-total").textContent = (d.total || 0) + " gastos";
     });
   }

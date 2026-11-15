@@ -251,7 +251,7 @@
           '<span class="tp-note__body"><span class="tp-note__dev">' + escapeHtml(t.title || "#" + t.id) + "</span>" +
           '<span class="tp-note__msg">' + escapeHtml(t.device || "") +
           (t.status_label ? " · " + escapeHtml(t.status_label) : "") + "</span></span>" +
-          '<span class="tp-note__time">' + escapeHtml(t.delivery_to ? String(t.delivery_to).slice(5, 16) : "") + "</span>" +
+          '<span class="tp-note__time">' + escapeHtml(t.delivery_to ? tpFmt.datetime(t.delivery_to, { seconds: false }) : "") + "</span>" +
           "</li>"
         );
       })
@@ -267,7 +267,7 @@
     }
     el.innerHTML = rows
       .map(function (r) {
-        var t = r.time ? r.time.slice(5, 16) : "";
+        var t = r.time ? tpFmt.datetime(r.time, { seconds: false }) : "";
         return (
           '<li class="tp-note">' +
           '<span class="tp-note__dot" style="background:' + (r.color || "#cbd5e1") + '"></span>' +
@@ -285,7 +285,7 @@
     var tbody = $("#tp-dash-top-table tbody");
     if (!tbody) return;
     if (!top || !top.length) {
-      tbody.innerHTML = '<tr><td colspan="4" class="tp-text-muted tp-text-center">' + tpT('ui.no_data_dot') + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="tp-svc-table__empty">' + tpEmpty(false) + '</td></tr>';
       return;
     }
     var labels = { moving: tpT('front.move'), idle: tpT('front.idle'), stopped: tpT('front.stopped'), offline: tpT('front.no_data') };

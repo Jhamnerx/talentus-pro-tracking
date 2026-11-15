@@ -291,7 +291,7 @@
 .tp-hist__actions .tp-btn {
   height: 42px;
 }
-/* "Mostrar historial" grande en acento teal (como la referencia).
+/* "Mostrar historial" grande, con el primario de marca (QA V3).
    Texto SIEMPRE blanco (otra regla lo teñía de azul en estado normal). */
 .tp-hist__actions .tp-btn--accent,
 .tp-hist__actions .tp-btn--accent:link,
@@ -302,7 +302,7 @@
   font-size: 13.5px;
   font-weight: 700;
   color: #fff;
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--brand-accent, #1b99bd) 35%, transparent);
+  box-shadow: none; /* sin halo turquesa: mismo primario que el resto (QA V3) */
 }
 .tp-hist__actions .tp-btn--icon {
   width: 42px;
@@ -1088,9 +1088,15 @@
 .tp-gtab:hover {
   color: var(--fg-primary);
 }
+/* Mismo subrayado de marca que .tp-tabs__tab (QA V5). Gráfico/Registro
+   (.tp-history__bottom-tab) es un conmutador de vista y sigue en píldora. */
 .tp-gtab.is-active {
-  color: var(--brand-accent, #1b99bd);
-  border-bottom-color: var(--brand-accent, #1b99bd);
+  color: var(--brand-600);
+  border-bottom-color: var(--brand-600);
+}
+[data-theme="dark"] .tp-gtab.is-active {
+  color: var(--brand-400);
+  border-bottom-color: var(--brand-400);
 }
 /* Grupo derecho del encabezado */
 .tp-history__bottom-right {
@@ -1273,7 +1279,11 @@
   position: sticky;
   top: 0;
   background: var(--surface-sunken);
-  color: var(--fg-secondary);
+  /* Cabecera de tabla común (QA V6) */
+  color: var(--fg-tertiary);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   font-weight: 600;
   text-align: left;
   padding: 8px 10px;

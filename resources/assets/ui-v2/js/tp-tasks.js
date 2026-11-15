@@ -682,16 +682,16 @@
                     (sel[r.id] ? " checked" : "") + "></td>"
                   : "") +
                 '<td title="' + esc(addrs) + '">' + esc(r.title) + "</td>" +
-                "<td>" + esc(r.device || "–") + "</td>" +
+                "<td>" + esc(r.device || "—") + "</td>" +
                 "<td>" + statusChip(r) + "</td>" +
-                "<td>" + esc(r.priority_name || "–") + "</td>" +
-                "<td>" + esc(r.invoice || "–") + "</td>" +
+                "<td>" + esc(r.priority_name || "—") + "</td>" +
+                "<td>" + esc(r.invoice || "—") + "</td>" +
                 '<td class="tp-svc-table__actions">' + kebab(r) + "</td>" +
                 "</tr>"
               );
             })
             .join("")
-        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpEmpty(!!(state.s || state.device_id || state.status), 'ui.no_tasks') + '</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0;
       var to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;
@@ -965,13 +965,13 @@
               return (
                 "<tr>" +
                 "<td>" + esc(r.title) + "</td>" +
-                "<td>" + esc(r.device || "–") + "</td>" +
+                "<td>" + esc(r.device || "—") + "</td>" +
                 '<td class="tp-svc-table__actions">' + setKebab(r) + "</td>" +
                 "</tr>"
               );
             })
             .join("")
-        : '<tr><td colspan="3" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+        : '<tr><td colspan="3" class="tp-svc-table__empty">' + tpEmpty(!!setsState.s, 'ui.no_task_sets_yet') + '</td></tr>';
       var from = setsState.total ? (setsState.page - 1) * setsState.per + 1 : 0;
       var to = Math.min(setsState.page * setsState.per, setsState.total);
       setsRange.textContent = from + "–" + to + " / " + setsState.total;
@@ -1078,10 +1078,11 @@
       var on = b.getAttribute("data-tsk-tab") === tab;
       b.classList.toggle("is-active", on);
       b.setAttribute("aria-selected", on ? "true" : "false");
-      b.style.borderBottomColor = on ? "var(--brand-500,#2e63d9)" : "transparent";
-      b.style.color = on ? "var(--brand-500,#2e63d9)" : "";
-      b.style.fontWeight = on ? "600" : "500";
     });
+    // El aspecto lo da .tp-tabs__tab.is-active (QA V5). La acción principal
+    // de la cabecera dice qué crea en cada pestaña (QA V2).
+    var addLabel = root.querySelector("[data-tsk-add-label]");
+    if (addLabel) addLabel.textContent = tpT(tab === "sets" ? "ui.new_set" : "ui.new_task");
     Array.prototype.forEach.call(root.querySelectorAll("[data-tsk-panel]"), function (p) {
       p.style.display = p.getAttribute("data-tsk-panel") === tab ? "" : "none";
     });

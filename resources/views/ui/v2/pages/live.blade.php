@@ -835,8 +835,7 @@
     <script src="{{ asset_resource('assets/ui/v2/js/tp-device-alerts.js') }}"></script>
     {{-- Configuración remota del GPS por SMS (kebab) --}}
     <script src="{{ asset_resource('assets/ui/v2/js/tp-device-config.js') }}"></script>
-    {{-- Galería de medios del vehículo (kebab) --}}
-    <script src="{{ asset_resource('assets/ui/v2/js/tp-device-media.js') }}"></script>
+    {{-- Galería de medios del vehículo (kebab): ya la carga el layout. --}}
     <script src="{{ asset_resource('assets/ui/v2/js/tp-device-video.js') }}"></script>
     <script src="{{ asset_resource('assets/ui/v2/js/tp-silent-devices.js') }}" defer></script>
     <script src="{{ asset_resource('assets/ui/v2/js/live.js') }}"></script>

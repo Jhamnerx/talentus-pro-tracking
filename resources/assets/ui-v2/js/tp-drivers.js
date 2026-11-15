@@ -480,9 +480,9 @@
         st.last = d.last || 1;
         rows.innerHTML = (d.items || []).length
           ? d.items.map(function (r) {
-              return "<tr><td>" + esc(r.device || "–") + "</td><td>" + esc(r.start || "–") + "</td><td>" + esc(r.end || "–") + "</td></tr>";
+              return "<tr><td>" + esc(r.device || "—") + "</td><td>" + esc(r.start || "—") + "</td><td>" + esc(r.end || "—") + "</td></tr>";
             }).join("")
-          : '<tr><td colspan="3" class="tp-svc-table__empty">' + tpT('front.nothing_found_request') + "</td></tr>";
+          : '<tr><td colspan="3" class="tp-svc-table__empty">' + tpEmpty(!!(st.from || st.to), 'ui.no_records_yet') + "</td></tr>";
         var from = d.total ? (d.page - 1) * d.per + 1 : 0;
         range.textContent = from + "–" + Math.min(d.page * d.per, d.total) + " / " + d.total;
         prev.disabled = d.page <= 1;
@@ -655,18 +655,18 @@
                   ? '<td><input type="checkbox" class="tp-choice-input" data-drv-sel="' + r.id + '"' + (selected[r.id] ? " checked" : "") + ' aria-label="' + esc(r.name) + '"></td>'
                   : "") +
                 "<td>" + esc(r.name) + "</td>" +
-                "<td>" + esc(r.current_device || "–") + "</td>" +
-                "<td>" + esc(r.rfid || "–") + "</td>" +
-                "<td>" + esc(r.phone || "–") + "</td>" +
-                "<td>" + esc(r.email || "–") + "</td>" +
-                "<td>" + esc(r.description || "–") + "</td>" +
-                "<td>" + esc(r.devices || "–") + "</td>" +
+                "<td>" + esc(r.current_device || "—") + "</td>" +
+                "<td>" + esc(r.rfid || "—") + "</td>" +
+                "<td>" + esc(r.phone || "—") + "</td>" +
+                "<td>" + esc(r.email || "—") + "</td>" +
+                "<td>" + esc(r.description || "—") + "</td>" +
+                "<td>" + esc(r.devices || "—") + "</td>" +
                 '<td class="tp-svc-table__actions">' + kebab(r) + "</td>" +
                 "</tr>"
               );
             })
             .join("")
-        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+        : '<tr><td colspan="' + COLS + '" class="tp-svc-table__empty">' + tpEmpty(!!(state.s || state.assigned), 'ui.no_drivers_yet') + '</td></tr>';
       var from = state.total ? (state.page - 1) * state.per + 1 : 0;
       var to = Math.min(state.page * state.per, state.total);
       rangeEl.textContent = from + "–" + to + " / " + state.total;

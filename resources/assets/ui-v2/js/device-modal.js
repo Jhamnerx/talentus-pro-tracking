@@ -84,6 +84,15 @@
             p.getAttribute("data-tp-panel") === key,
           );
         });
+        // Las pestañas van en una fila desplazable (QA D4): trae la activa a
+        // la vista solo moviendo la fila, sin desplazar el cuerpo del modal.
+        var nav = btn.parentNode;
+        if (nav && nav.scrollWidth > nav.clientWidth) {
+          var nr = nav.getBoundingClientRect();
+          var br = btn.getBoundingClientRect();
+          if (br.left < nr.left) nav.scrollLeft -= nr.left - br.left + 16;
+          else if (br.right > nr.right) nav.scrollLeft += br.right - nr.right + 16;
+        }
       });
     });
   }
@@ -170,13 +179,24 @@
       box.hidden = !on;
       Array.prototype.forEach.call(fields, function (el) {
         if (el.getAttribute("data-perm-disabled") === "1") return;
-        el.disabled = !on;
+        var enabled = on;
+        // El rol de un canal solo tiene sentido con su casilla marcada: un
+        // canal desmarcado no se graba y su select quedaba activo (QA D3).
+        if (enabled && el.tagName === "SELECT") {
+          var item = el.closest(".tp-dv-channels__item");
+          var cb = item && item.querySelector('input[type="checkbox"]');
+          if (cb && !cb.checked) enabled = false;
+        }
+        el.disabled = !enabled;
         if (el.tagName === "SELECT" && el._tpdd && window.tpSelect && tpSelect.refresh) {
           try { tpSelect.refresh(el); } catch (e) {}
         }
       });
     }
     chk.addEventListener("change", apply);
+    box.addEventListener("change", function (e) {
+      if (e.target && e.target.type === "checkbox") apply();
+    });
     apply();
   }
 
@@ -882,7 +902,7 @@
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-services-empty><td colspan="3" class="tp-devlist__empty">' + tpT('front.no_services') + '</td></tr>';
+          '<tr data-services-empty><td colspan="3" class="tp-devlist__empty">' + tpT('ui.no_services_yet') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -1132,7 +1152,7 @@
     function renderRows(items) {
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-cameras-empty><td colspan="4" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
+          '<tr data-cameras-empty><td colspan="4" class="tp-svc-table__empty">' + tpEmpty(false) + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items
@@ -1284,7 +1304,7 @@
       });
       if (!items.length) {
         rowsEl.innerHTML =
-          '<tr data-expenses-empty><td colspan="6" class="tp-text-muted" style="padding:14px 12px;font-size:13px;">' + tpT('front.no_data') + '</td></tr>';
+          '<tr data-expenses-empty><td colspan="6" class="tp-svc-table__empty">' + tpEmpty(false, 'ui.no_expenses') + '</td></tr>';
         return;
       }
       rowsEl.innerHTML = items

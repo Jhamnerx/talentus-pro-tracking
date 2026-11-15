@@ -102,10 +102,33 @@
 }
 .tp-events__foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 8px 12px;
   padding: 10px 14px;
   border-top: 1px solid var(--border, #eef0f4);
+}
+/* QA E2: el contador iba en tres líneas («50 / eventos / (+)»). Una línea;
+   si no cabe con los botones, los botones bajan de fila. */
+.tp-events__status {
+  flex: 1 0 auto;
+  white-space: nowrap;
+}
+.tp-events__foot-actions {
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+/* «Borrar todo» es destructivo: no se parece a «Refrescar». */
+.tp-events__clear,
+.tp-scope button.tp-events__clear {
+  color: var(--danger-500, #e5484d);
+}
+.tp-events__clear:hover,
+.tp-scope button.tp-events__clear:hover {
+  color: var(--danger-600, #dc2626);
+  background: color-mix(in srgb, var(--danger-500, #e5484d) 10%, transparent);
 }
 
 /* Mapa */

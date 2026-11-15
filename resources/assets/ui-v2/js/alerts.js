@@ -207,7 +207,7 @@
       if (!chHtml) chHtml = '<span class="tp-text-muted tp-text-sm">—</span>';
 
       var sched = r.schedule
-        ? '<span class="tp-alerts__rule-type">Restringido</span>'
+        ? '<span class="tp-alerts__rule-type">' + tpT('ui.alert_schedule_restricted') + '</span>'
         : '<span class="tp-text-muted tp-text-sm">' + tpT('global.always') + '</span>';
 
       var toggle = CAN_EDIT

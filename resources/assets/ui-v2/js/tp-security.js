@@ -244,15 +244,18 @@
   function seatbelt(v) { return v == null ? '<span class="tp-text-muted">' + esc(t("ui.security_no_sensor")) + "</span>" : num(v); }
 
   function renderLive(live) {
-    var heads = [
-      { label: t("ui.vehicle") }, { label: t("front.type") }, { label: t("ui.security_last_time") },
+    // Sin ningún vehículo clasificado la columna «Tipo» sería toda «—»: se
+    // omite para que la tabla quepa en su media columna (QA O4).
+    var withType = live.some(function (l) { return l.type != null && l.type !== ""; });
+    var heads = [{ label: t("ui.vehicle") }].concat(withType ? [{ label: t("front.type") }] : [], [
+      { label: t("ui.security_last_time") },
       { label: t("ui.security_gps_speed"), num: true }, { label: t("front.engine") },
       { label: t("ui.security_age_minutes"), num: true }, { label: t("ui.security_state") },
-    ];
+    ]);
     var rows = live.map(function (l) {
       var engine = l.engine == null ? "—" : (l.engine ? t("ui.security_on") : t("ui.security_off"));
       return '<tr class="tp-sec__row tp-sec__row--' + esc(l.state) + '">' +
-        td(esc(l.unit)) + td(typeName(l.type)) + td(esc(l.last_time_formatted || "—")) +
+        td(esc(l.unit)) + (withType ? td(typeName(l.type)) : "") + td(esc(l.last_time_formatted || "—")) +
         td(num(l.speed), true) + td(esc(engine)) + td(num(l.age_minutes), true) +
         td(pill(l.state, liveStateLabel(l.state))) + "</tr>";
     });

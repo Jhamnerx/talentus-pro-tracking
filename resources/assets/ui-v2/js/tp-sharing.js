@@ -493,7 +493,7 @@
         state.total = res.data.total || 0;
         var items = res.data.items || [];
         if (!items.length) {
-          rowsEl.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">' + tpT('front.no_data') + '</td></tr>';
+          rowsEl.innerHTML = '<tr><td colspan="6" class="tp-svc-table__empty">' + tpEmpty(!!state.s, 'ui.no_share_links_yet') + '</td></tr>';
         } else {
           rowsEl.innerHTML = items
             .map(function (r) {
@@ -504,7 +504,7 @@
                 '<td><a href="' + esc(r.link) + '" target="_blank" rel="noopener" style="color:var(--brand-500,#2e63d9);text-decoration:none;">' +
                 esc(r.link) + "</a></td>" +
                 "<td>" + badge(r.expired ? tpT('ui.yes') : "No", r.expired ? "bad" : "ok") + "</td>" +
-                "<td>" + (r.expiration_date ? esc(r.expiration_date) : "–") + "</td>" +
+                "<td>" + (r.expiration_date ? esc(r.expiration_date) : "—") + "</td>" +
                 '<td class="tp-svc-table__actions">' + kebab(r) + "</td>" +
                 "</tr>"
               );

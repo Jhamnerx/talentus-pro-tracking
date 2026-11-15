@@ -18,8 +18,20 @@
 
         <script type="application/json" id="tp-monitor-map-config">@json($mapConfig)</script>
 
+        {{-- Cabecera común (QA V1): icono en cuadro + título de 18 px. --}}
         <header class="tp-mon__head">
-            <h1 class="tp-h5 tp-mb-0">{{ trans('ui.group_monitor') }}</h1>
+            <h1 class="tp-maint__title">
+                <span class="tp-maint__title-ico" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                </span>
+                {{ trans('ui.group_monitor') }}
+            </h1>
             <span class="tp-text-muted tp-text-sm" id="tp-mon-hint"></span>
 
             {{-- Capas del mapa: las mismas que ofrece Live, aplicadas a todas

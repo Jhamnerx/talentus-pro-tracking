@@ -262,41 +262,8 @@
   padding: 20px 24px;
   background: var(--surface-base, #f1f5f9);
 }
-.tp-maint__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-.tp-maint__title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: var(--fs-xl, 17px);
-  font-weight: var(--fw-semibold, 600);
-  color: var(--fg-primary, #0f172a);
-  margin: 0;
-}
-.tp-maint__title-ico {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--brand-bg-subtle, var(--brand-50));
-  color: var(--brand-600, #0d9488);
-}
-.tp-maint__tools {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.tp-maint__tools .tp-input {
-  width: 240px;
-}
+/* Cabecera de página (.tp-maint__head/__title/__title-ico/__tools): vive en
+   components.css, compartida por todas las páginas (QA V1). */
 .tp-maint__card {
   background: var(--surface-raised, #fff);
   border: 1px solid var(--border-default, #e2e8f0);
@@ -334,12 +301,6 @@
   font-weight: var(--fw-medium, 500);
 }
 
-/* El icono del titulo usa el acento teal; en oscuro se aclara para que siga
-   destacando sobre el tinte oscuro. */
-[data-theme="dark"] .tp-maint__title-ico {
-  color: var(--brand-accent, #1b99bd);
-}
-
 /* ------------------------------------------------------------------
    Movil: la cabecera de .tp-maint (titulo + herramientas) dejaba fuera
    de pantalla los botones de la derecha ("Plantillas", "+ Nueva
@@ -352,17 +313,4 @@
     padding: 14px 12px;
   }
 
-  .tp-maint__head {
-    align-items: stretch;
-  }
-
-  .tp-maint__tools {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .tp-maint__tools .tp-input {
-    width: 100%;
-    min-width: 0;
-  }
 }

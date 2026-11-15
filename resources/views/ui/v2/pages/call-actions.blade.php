@@ -34,7 +34,11 @@
                 <input type="text" class="tp-input" id="tp-ca-search" placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 <select class="tp-input" id="tp-ca-device" style="width:200px"><option value="">{{ trans('ui.all_vehicles') }}</option></select>
                 <select class="tp-input" id="tp-ca-response" style="width:170px"><option value="">Toda respuesta</option></select>
-                <button type="button" class="tp-btn tp-btn--accent" id="tp-ca-add">＋</button>
+                <button type="button" class="tp-btn tp-btn--primary" id="tp-ca-add">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    <span>{{ trans('ui.new_call_action') }}</span>
+                </button>
             </div>
         </header>
 
@@ -46,7 +50,7 @@
                             <th>{{ trans('validation.attributes.device_id') }}</th>
                             <th>{{ trans('validation.attributes.event') }}</th>
                             <th>{{ trans('validation.attributes.response') }}</th>
-                            <th>{{ trans('validation.attributes.called_at') }}</th>
+                            <th>{{ trans('ui.call_time') }}</th>
                             <th>{{ trans('validation.attributes.remarks') }}</th>
                             <th>{{ trans('validation.attributes.user') }}</th>
                             <th class="tp-svc-table__actions"></th>

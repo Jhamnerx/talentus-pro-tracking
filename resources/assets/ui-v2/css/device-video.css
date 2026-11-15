@@ -155,6 +155,20 @@
   height: 32px;
 }
 
+/* Rol de un canal desmarcado: deshabilitado (device-modal.js wireVideoChannels). */
+.tp-dv-channels__item select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* «Detectar desde el equipo»: botón con borde e icono, no texto suelto. */
+.tp-dv-detect {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+}
+
 @media (max-width: 560px) {
   .tp-dv__field,
   .tp-dv__field .tp-input {

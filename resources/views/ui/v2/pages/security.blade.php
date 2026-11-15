@@ -21,8 +21,8 @@
         data-export-url="{{ route('ui.v2.api.security.export') }}">
 
         <header class="tp-sec__head">
-            <h1 class="tp-sec__title">
-                <span class="tp-sec__title-ico" aria-hidden="true">
+            <h1 class="tp-maint__title">
+                <span class="tp-maint__title-ico" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -33,7 +33,7 @@
             <div class="tp-sec__actions">
                 <button type="button" class="tp-btn tp-btn--ghost" id="tp-sec-settings">{{ trans('ui.security_settings') }}</button>
                 <button type="button" class="tp-btn tp-btn--ghost" id="tp-sec-recalc">{{ trans('ui.security_recalculate') }}</button>
-                <button type="button" class="tp-btn tp-btn--accent" id="tp-sec-export">{{ trans('ui.security_export_excel') }}</button>
+                <button type="button" class="tp-btn tp-btn--primary" id="tp-sec-export">{{ trans('ui.security_export_excel') }}</button>
             </div>
         </header>
 
@@ -64,7 +64,7 @@
                 <input type="number" class="tp-input" id="tp-sec-speed-limit" min="1" max="300" placeholder="—">
                 <small class="tp-sec__hint">{{ trans('ui.security_speed_limit_hint') }}</small>
             </label>
-            <button type="button" class="tp-btn tp-btn--accent" id="tp-sec-run">{{ trans('front.search') }}</button>
+            <button type="button" class="tp-btn tp-btn--accent" id="tp-sec-run">{{ trans('ui.search_action') }}</button>
             <span class="tp-sec__calc tp-text-muted" id="tp-sec-last-calc" aria-live="polite"></span>
         </section>
 

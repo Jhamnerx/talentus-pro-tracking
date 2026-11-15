@@ -377,7 +377,7 @@
           '<td class="tp-svc-table__actions">' + kebabHtml(r) + "</td></tr>";
       });
       if (!html)
-        html = '<tr><td colspan="3" class="tp-svc-table__empty">' + esc(T("no_services")) + "</td></tr>";
+        html = '<tr><td colspan="3" class="tp-svc-table__empty">' + esc(tpEmpty(!!state.q, "ui.no_services_yet")) + "</td></tr>";
       d.querySelector("[data-svc-rows]").innerHTML = html;
 
       d.querySelector("[data-svc-range]").textContent = total

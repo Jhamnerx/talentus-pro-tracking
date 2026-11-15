@@ -60,6 +60,10 @@
 .tp-dash__range {
   --seg-bg: var(--brand-50, #f2f5fd);
 }
+/* En oscuro brand-50 es casi blanco y el texto secundario no se lee. */
+[data-theme="dark"] .tp-dash__range {
+  --seg-bg: var(--surface-sunken);
+}
 .tp-scope .tp-dash__range-btn:nth-child(-n + 4) {
   background: var(--seg-bg);
 }
@@ -105,18 +109,42 @@
   margin: -8px 0 0;
 }
 
-/* ---------- KPI row ---------- */
+/* ---------- KPI row ----------
+   QA DB2: son 7 KPI y con auto-fit a 1440 salían 6 + 1 suelto. Rejilla
+   explícita sin huecos: 7 columnas en ancho; 4 con «Flota total» a dos
+   columnas (2+2 / 4); 2 con «Flota total» a toda la fila (1 / 2 / 2 / 2).
+   Sin @container: clean-css 4 se come la at-rule (ver live-ops.css). */
 .tp-dash__kpis {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+.tp-dash__kpis > .tp-kpi[data-kpi="total"] {
+  grid-column: span 2;
+}
+@media (min-width: 720px) {
+  .tp-dash__kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .tp-dash__kpis {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+  .tp-dash__kpis > .tp-kpi[data-kpi="total"] {
+    grid-column: auto;
+  }
 }
 
 .tp-kpi {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 13px;
+  /* Icono, etiqueta y valor alineados a la izquierda (components.css pone
+     la columna; antes align-items:center centraba icono y etiqueta y el
+     valor quedaba a la izquierda). */
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   padding: 16px;
   background: var(--surface-raised);
   border: 1px solid var(--border-subtle);
@@ -177,6 +205,9 @@
   text-overflow: ellipsis;
 }
 .tp-kpi__value {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 25px;
   font-weight: 800;
   color: var(--fg-primary);

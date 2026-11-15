@@ -85,30 +85,42 @@
         ], JSON_UNESCAPED_UNICODE) !!}
         </script>
 
-        {{-- Título --}}
-        <div class="flex items-center gap-2.5 mb-4">
-            <span class="text-[color:var(--brand-500,#0d9488)]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 2L11 13" />
-                    <path d="M22 2l-7 20-4-9-9-4 20-7z" />
-                </svg>
-            </span>
-            <h2 class="m-0 text-[16px] font-bold text-slate-900 dark:text-white">
-                {{ trans('front.send_command') }}</h2>
+        {{-- Cabecera común (QA V1): icono en cuadro + título; la acción
+             principal «Enviar comando» a la derecha (QA V2). --}}
+        <header class="tp-maint__head">
+            <h2 class="tp-maint__title">
+                <span class="tp-maint__title-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 2L11 13" />
+                        <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                </span>
+                {{ trans('front.send_command') }}
+            </h2>
+            <div class="tp-maint__tools">
+                <button type="button" class="tp-btn tp-btn--primary" data-tp-commands>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M22 2L11 13" />
+                        <path d="M22 2l-7 20-4-9-9-4 20-7z" />
+                    </svg>
+                    {{ trans('front.send_command') }}
+                </button>
+            </div>
+        </header>
+
+        {{-- Pestañas: el subrayado común (.tp-tabs__nav, QA V5) --}}
+        <div class="tp-tabs__nav tp-tabs__nav--page" role="tablist" id="tp-cmdhub-tabs">
+            <button type="button" class="tp-tabs__tab" role="tab" data-hub-tab="schedule">{{ trans('front.schedule') }}</button>
+            <button type="button" class="tp-tabs__tab" role="tab" data-hub-tab="logs">{{ trans('front.logs') }}</button>
+            <button type="button" class="tp-tabs__tab" role="tab" data-hub-tab="pending">{{ trans('front.queued') }}</button>
+            <button type="button" class="tp-tabs__tab" role="tab" data-hub-tab="gprs">{{ trans('front.gprs_templates') }}</button>
+            <button type="button" class="tp-tabs__tab" role="tab" data-hub-tab="sms">{{ trans('front.sms_templates') }}</button>
         </div>
 
-        {{-- Tabs subrayadas a lo ancho (estilo referencia) --}}
-        <div class="flex border-0 border-b border-solid border-slate-200 dark:border-slate-600 mb-4"
-            role="tablist" id="tp-cmdhub-tabs">
-            <button type="button" data-hub-tab="schedule">{{ trans('front.schedule') }}</button>
-            <button type="button" data-hub-tab="logs">{{ trans('front.logs') }}</button>
-            <button type="button" data-hub-tab="pending">{{ trans('front.queued') }}</button>
-            <button type="button" data-hub-tab="gprs">{{ trans('front.gprs_templates') }}</button>
-            <button type="button" data-hub-tab="sms">{{ trans('front.sms_templates') }}</button>
-        </div>
-
-        {{-- Toolbar: búsqueda + acciones (labels visibles en desktop) --}}
+        {{-- Toolbar: búsqueda + alta de la pestaña (secundaria: la principal
+             de la página es «Enviar comando», QA V3) --}}
         <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <div class="flex items-center gap-2.5">
                 <input type="text" class="tp-input" style="max-width:260px;" id="tp-cmdhub-search"
@@ -121,16 +133,10 @@
                 </select>
             </div>
             <div class="flex items-center gap-2.5">
-                <button type="button" id="tp-cmdhub-add" hidden
-                    class="appearance-none cursor-pointer h-9 px-4 rounded-lg text-[13px] font-semibold bg-white
-                           border border-solid border-[color:var(--brand-500,#0d9488)]
-                           text-[color:var(--brand-600,#0d9488)]
-                           hover:bg-[color:var(--brand-50,#f0fdfa)]
-                           dark:bg-transparent dark:hover:bg-slate-700/40">
+                <button type="button" id="tp-cmdhub-add" hidden class="tp-btn tp-btn--secondary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
                     <span id="tp-cmdhub-add-label"></span>
-                </button>
-                <button type="button" class="tp-btn tp-btn--accent" data-tp-commands>
-                    {{ trans('front.send_command') }}
                 </button>
             </div>
         </div>

@@ -72,21 +72,22 @@
                         </svg>
                     </button>
                 @endif
-                <button type="button" class="tp-btn tp-btn--accent" id="tp-tasks-add">＋</button>
+                <button type="button" class="tp-btn tp-btn--primary" id="tp-tasks-add">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                    <span data-tsk-add-label>{{ trans('ui.new_task') }}</span>
+                </button>
             </div>
         </header>
 
         {{-- Tabs: tareas | conjuntos de tareas --}}
-        <div role="tablist" aria-label="{{ trans('front.tasks') }}"
-            style="display: flex; gap: 2px; border-bottom: 1px solid var(--border-default, #e2e8f0); margin-bottom: 14px;">
-            <button type="button" class="tp-tsk-tab is-active" role="tab" id="tp-tsk-tab-tasks"
-                aria-selected="true" aria-controls="tp-tsk-panel-tasks" data-tsk-tab="tasks"
-                style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:600;">
+        <div class="tp-tabs__nav tp-tabs__nav--page" role="tablist" aria-label="{{ trans('front.tasks') }}">
+            <button type="button" class="tp-tabs__tab tp-tsk-tab is-active" role="tab" id="tp-tsk-tab-tasks"
+                aria-selected="true" aria-controls="tp-tsk-panel-tasks" data-tsk-tab="tasks">
                 {{ trans('front.tasks') }}</button>
             @if (!empty($canTaskSets))
-                <button type="button" class="tp-tsk-tab" role="tab" id="tp-tsk-tab-sets"
-                    aria-selected="false" aria-controls="tp-tsk-panel-sets" data-tsk-tab="sets"
-                    style="appearance:none;border:0;border-bottom:2px solid transparent;background:transparent;cursor:pointer;padding:10px 16px;font:inherit;font-size:13px;font-weight:500;">
+                <button type="button" class="tp-tabs__tab tp-tsk-tab" role="tab" id="tp-tsk-tab-sets"
+                    aria-selected="false" aria-controls="tp-tsk-panel-sets" data-tsk-tab="sets">
                     {{ trans('front.task_sets') }}</button>
             @endif
         </div>

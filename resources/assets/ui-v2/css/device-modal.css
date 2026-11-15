@@ -236,14 +236,37 @@
   margin: calc(var(--sp-4, 16px) * -1) calc(var(--sp-4, 16px) * -1) 16px;
   padding: 6px var(--sp-4, 16px) 0;
   z-index: 5;
+  /* Una sola fila desplazable en horizontal: con 13 pestañas en 600 px se
+     partían en tres líneas (QA D4). La pestaña activa se trae a la vista
+     desde device-modal.js (wireTabs). */
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0 4px;
   background: var(--surface-raised, #fff);
   border: 0;
   border-bottom: 1px solid var(--border-default, #e2e8f0);
   border-radius: 0;
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scroll-padding-inline: var(--sp-4, 16px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong, #cbd5e1) transparent;
+}
+.tp-device-form .tp-tabs__nav::-webkit-scrollbar {
+  display: block;
+  height: 4px;
+}
+.tp-device-form .tp-tabs__nav::-webkit-scrollbar-thumb {
+  background: var(--border-strong, #cbd5e1);
+  border-radius: 4px;
+}
+.tp-device-form .tp-tabs__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tp-device-form .tp-tabs__tab {
+  flex: 0 0 auto;
 }
 .tp-device-form .tp-tabs__tab {
   appearance: none;
@@ -473,49 +496,9 @@
   cursor: not-allowed;
 }
 
-/* Pie: botones a la izquierda como el legacy */
-.tp-modal--device .tp-modal__foot,
-.tp-modal:has(.tp-form) .tp-modal__foot {
-  justify-content: flex-start;
-  gap: 10px;
-}
-.tp-modal--device .tp-modal__foot .tp-btn,
-.tp-modal:has(.tp-form) .tp-modal__foot .tp-btn {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  transform: none;
-  filter: none;
-}
-.tp-modal--device .tp-modal__foot .tp-btn--primary,
-.tp-modal:has(.tp-form) .tp-modal__foot .tp-btn--primary {
-  order: 1;
-  background: var(--brand-600, #1f5fbf);
-  border: 1px solid var(--brand-600, #1f5fbf);
-  box-shadow: none;
-}
-.tp-modal--device .tp-modal__foot .tp-btn--primary:hover,
-.tp-modal:has(.tp-form) .tp-modal__foot .tp-btn--primary:hover {
-  background: var(--brand-700, #194f9f);
-  border-color: var(--brand-700, #194f9f);
-}
-.tp-modal--device .tp-modal__foot .tp-btn--ghost,
-.tp-modal:has(.tp-form) .tp-modal__foot .tp-btn--ghost {
-  order: 2;
-  background: var(--surface-raised, #fff);
-  border: 1px solid var(--border-default, #cbd5e1);
-  color: var(--fg-primary, #0f172a);
-}
-.tp-modal--device .tp-modal__foot .tp-btn--ghost:hover,
-.tp-modal:has(.tp-form) .tp-modal__foot .tp-btn--ghost:hover {
-  background: var(--surface-sunken, #f1f5f9);
-}
-.tp-modal--device .tp-modal__foot .tp-btn--danger,
-.tp-modal:has(.tp-form) .tp-modal__foot .tp-btn--danger {
-  order: 3;
-}
+/* Pie: orden y aspecto únicos para todos los modales (modal.css + modal.js,
+   QA V9): Eliminar a la izquierda, Cancelar y Guardar a la derecha. Antes
+   aquí se ponía Guardar a la izquierda con `order`. */
 
 /* ---------------------------------------------------------------------------
  * Pestaña Usuarios: como el selectpicker "multiexpand half" del legacy —
@@ -783,14 +766,18 @@
   border-collapse: collapse;
   font-size: 13px;
 }
+/* Cabecera de tabla común (QA V6): MAYÚSCULAS 11 px gris, como .tp-svc-table. */
 .tp-form .tp-embed-box thead th {
   text-align: left;
   padding: 8px 12px;
-  font-size: var(--fs-sm, 12px);
-  font-weight: 600;
-  color: var(--fg-secondary, #475569);
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide, 0.04em);
+  color: var(--fg-tertiary, #64748b);
   background: var(--surface-sunken, #f8fafc);
   border-bottom: 1px solid var(--border-default, #e2e8f0);
+  white-space: nowrap;
 }
 .tp-form .tp-embed-box tbody td {
   padding: 7px 12px;
@@ -1302,33 +1289,30 @@
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
+/* «+ Añadir servicio/sensor» de las pestañas: secundario y a la altura de
+   las barras de herramientas (tp-btn--secondary tp-btn--sm). El único
+   primario del modal es Guardar, en el pie (QA V3/V4). */
 .tp-device-form .tp-devlist__add {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  background: var(--brand-600, #1f5fbf);
-  border: 1px solid var(--brand-600, #1f5fbf);
-  border-radius: 6px;
-  color: #fff;
+  height: 28px;
+  padding: 0 var(--sp-3, 12px);
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #cbd5e1);
+  border-radius: var(--r-sm, 4px);
+  color: var(--fg-primary, #0f172a);
   font: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--fs-sm, 12px);
+  font-weight: var(--fw-medium, 500);
   cursor: pointer;
 }
 .tp-device-form .tp-devlist__add:hover {
-  background: var(--brand-700, #194f9f);
-  border-color: var(--brand-700, #194f9f);
+  background: var(--surface-sunken, #f1f5f9);
+  border-color: var(--border-strong, #cbd5e1);
 }
 .tp-device-form .tp-devlist__add--ghost {
-  background: var(--surface-raised, #fff);
-  border-color: var(--border-default, #cbd5e1);
-  color: var(--fg-primary, #0f172a);
-}
-.tp-device-form .tp-devlist__add--ghost:hover {
-  background: var(--surface-sunken, #f1f5f9);
-  border-color: var(--border-default, #cbd5e1);
+  background: transparent;
 }
 .tp-device-form .tp-devlist__search {
   position: relative;
@@ -1352,12 +1336,17 @@
   border-collapse: collapse;
   font-size: 13px;
 }
+/* Cabecera de tabla común (QA V6). */
 .tp-device-form .tp-devlist__table th {
   padding: 8px 10px;
   text-align: left;
-  font-weight: 700;
-  color: var(--fg-primary, #0f172a);
-  border-bottom: 2px solid var(--border-default, #e2e8f0);
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide, 0.04em);
+  color: var(--fg-tertiary, #64748b);
+  background: var(--surface-sunken, #f8fafc);
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
   white-space: nowrap;
 }
 .tp-device-form .tp-devlist__table td {

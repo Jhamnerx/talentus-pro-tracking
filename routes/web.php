@@ -1397,7 +1397,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('checklist-rows/{id}/image',   ['as' => 'api.checklist_rows.image',        'uses' => 'Ui\V2\ChecklistsController@uploadRowImage'])->where('id', '[0-9]+');
         Route::delete('checklist-images/{id}',     ['as' => 'api.checklist_images.destroy',    'uses' => 'Ui\V2\ChecklistsController@destroyRowImage'])->where('id', '[0-9]+');
         // Galería de medios del vehículo (fotos de cámara en disco)
-        Route::get('devices/{id}/media',    ['as' => 'api.devices.media',         'uses' => 'Ui\V2\DevicesController@deviceMedia'])->where('id', '[0-9]+');
+        Route::get('devices/media-devices', ['as' => 'api.devices.media_devices', 'uses' => 'Ui\V2\DevicesController@mediaDevices']);
+        Route::get('devices/{id}/media',    ['as' => 'api.devices.media',        'uses' => 'Ui\V2\DevicesController@deviceMedia'])->where('id', '[0-9]+');
         Route::delete('devices/{id}/media', ['as' => 'api.devices.media.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceMedia'])->where('id', '[0-9]+');
         // Columnas configurables de la lista de flota (ajuste compartido con el legacy)
         Route::get('fleet/columns',  ['as' => 'api.fleet.columns',        'uses' => 'Ui\V2\DevicesController@fleetColumns']);

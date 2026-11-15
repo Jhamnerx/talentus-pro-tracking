@@ -1432,6 +1432,19 @@
     h.hidden = !(root.hasAttribute("data-bottombar-open") && root.hasAttribute("data-bottombar-collapsed"));
   }
 
+  // Alto real de la barra de widgets → --tp-bb-offset en el root. El chip
+  // «Actualizando cada 15s» y los controles inferiores de Leaflet (atribución)
+  // suben con él en vez de quedar tapados (live-ops.css). Con la barra
+  // oculta (display:none) mide 0 y vuelven a su sitio.
+  (function () {
+    var bb = document.getElementById("tp-live-bottombar");
+    if (!bb || !root || typeof ResizeObserver !== "function") return;
+    new ResizeObserver(function () {
+      var h = bb.offsetHeight;
+      root.style.setProperty("--tp-bb-offset", h ? h + 12 + "px" : "0px");
+    }).observe(bb);
+  })();
+
   /* ── Estado de vehículo (drawer): badge + cambiador rápido ──────────── */
   var vstateData = { deviceId: null, states: [], current: null };
   function vsBase(id) {
@@ -1726,7 +1739,7 @@
       var ra = r[classify(a)],
         rb = r[classify(b)];
       if (ra !== rb) return ra - rb;
-      return (a.name || "").localeCompare(b.name || "");
+      return String(a.name || "").trim().localeCompare(String(b.name || "").trim());
     };
     state.filtered.sort(sorter);
     state.mapFiltered.sort(sorter);

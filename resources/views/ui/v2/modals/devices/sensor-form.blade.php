@@ -372,7 +372,7 @@
                         <span class="tp-form__label">{{ trans('front.calibrated_value') }}</span>
                         <input type="text" class="tp-input" data-cal-y>
                     </label>
-                    <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-cal-add>+ {{ trans('global.add') }}</button>
+                    <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-cal-add>+ {{ trans('global.add') }}</button>
                 </div>
                 </div>{{-- /tp-sensor-pane__add --}}
             </div>
@@ -470,7 +470,7 @@
                                 <input type="hidden" value="" data-map-new-icon-id>
                                 <span data-map-new-icon-img class="tp-map-icon__empty">+</span>
                             </button>
-                            <button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-map-add>+ {{ trans('global.add') }}</button>
+                            <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-map-add>+ {{ trans('global.add') }}</button>
                         </div>
                     </div>
                 </div>

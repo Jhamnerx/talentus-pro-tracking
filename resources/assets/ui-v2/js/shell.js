@@ -98,12 +98,40 @@
       }
       menu.hidden = false;
       btn.setAttribute("aria-expanded", "true");
+      // role="menu": el foco entra en el primer menuitem al abrir.
+      var items = menuItems();
+      if (items.length) items[0].focus();
     }
-    function close() {
+    function close(returnFocus) {
+      var wasOpen = !menu.hidden;
       menu.hidden = true;
       btn.setAttribute("aria-expanded", "false");
+      if (wasOpen && returnFocus === true) btn.focus();
+    }
+    function menuItems() {
+      return Array.prototype.filter.call(
+        menu.querySelectorAll('[role="menuitem"]'),
+        function (el) { return !el.disabled && el.offsetParent !== null; }
+      );
     }
     btn.__tpMenuClose = close;
+
+    // Flechas arriba/abajo, Inicio/Fin dentro del menú.
+    menu.addEventListener("keydown", function (e) {
+      var items = menuItems();
+      if (!items.length) return;
+      var idx = items.indexOf(document.activeElement);
+      var next = null;
+      if (e.key === "ArrowDown") next = items[(idx + 1) % items.length];
+      else if (e.key === "ArrowUp") next = items[(idx - 1 + items.length) % items.length];
+      else if (e.key === "Home") next = items[0];
+      else if (e.key === "End") next = items[items.length - 1];
+      else if (e.key === "Tab") close(false);
+      if (next) {
+        e.preventDefault();
+        next.focus();
+      }
+    });
 
     btn.addEventListener("click", function (e) {
       e.stopPropagation();
@@ -120,7 +148,7 @@
     });
 
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && !menu.hidden) close();
+      if (e.key === "Escape" && !menu.hidden) close(true);
     });
   }
 
