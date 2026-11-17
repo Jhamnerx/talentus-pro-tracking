@@ -1156,7 +1156,7 @@ return [
     'ops_progress_running'                => 'Recalculando ahora: :devices',
     'ops_progress_eta'                    => 'Tiempo estimado: :time',
     'ops_progress_eta_wait'               => 'Los tramos empiezan cuando termina el recálculo de cada vehículo.',
-    'ops_progress_rate'                   => 'Ritmo: :rate tramos/min · cola total del servidor: :queue tramos',
+    'ops_progress_rate'                   => 'Ritmo: :rate tramos/min · antes que los tuyos: :ahead tramos · cola total del servidor: :queue tramos',
     'ops_progress_heartbeat'              => 'Último latido del proceso: :time',
     'ops_progress_stalled'                => 'El proceso de cálculo (operations:process) no da señal desde :time. Los recálculos no avanzan: revisar el cron del servidor o ejecutar «php artisan schedule:clear-cache».',
     'ops_progress_stalled_never'          => 'El proceso de cálculo (operations:process) no ha registrado actividad. Revisar el cron del servidor.',

@@ -1106,7 +1106,7 @@
       var eta = l.eta_min + (active ? r.eta_min : 0);
       html += '<p class="tp-ops-progress__hint"><strong>' + esc(t("ui.ops_progress_eta", { time: fmtMinutes(eta) })) + "</strong>" +
         (active ? " · " + esc(t("ui.ops_progress_eta_wait")) : "") + "</p>";
-      html += '<p class="tp-ops-progress__hint">' + esc(t("ui.ops_progress_rate", { rate: l.rate, queue: l.queue })) +
+      html += '<p class="tp-ops-progress__hint">' + esc(t("ui.ops_progress_rate", { rate: l.rate, queue: l.queue, ahead: l.ahead || 0 })) +
         (p.heartbeat ? " · " + esc(t("ui.ops_progress_heartbeat", { time: p.heartbeat })) : "") + "</p>";
     } else if (finished) {
       html += '<p class="tp-ops-progress__hint">' + esc(t("ui.ops_progress_finished")) + "</p>";

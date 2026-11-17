@@ -1155,7 +1155,7 @@ return [
     'ops_progress_running'                => 'Recalculating now: :devices',
     'ops_progress_eta'                    => 'Estimated time: :time',
     'ops_progress_eta_wait'               => 'Legs start once each vehicle finishes its recalculation.',
-    'ops_progress_rate'                   => 'Rate: :rate legs/min · server queue: :queue legs',
+    'ops_progress_rate'                   => 'Rate: :rate legs/min · ahead of yours: :ahead legs · server queue: :queue legs',
     'ops_progress_heartbeat'              => 'Last process heartbeat: :time',
     'ops_progress_stalled'                => 'The calculation process (operations:process) has not reported since :time. Recalculations are not advancing: check the server cron or run "php artisan schedule:clear-cache".',
     'ops_progress_stalled_never'          => 'The calculation process (operations:process) has no recorded activity. Check the server cron.',

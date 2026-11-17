@@ -536,8 +536,12 @@ class OperationsController extends BaseController
      *     La cola de tramos es GLOBAL (todos los usuarios, por ended_at), por
      *     eso la estimacion usa la cola completa y el ritmo medido.
      *
-     * "Lote" = recalculos del usuario pedidos en las ultimas 12 h; el avance de
-     * tramos se cuenta desde el primero de ellos.
+     * "Lote" = el ULTIMO pedido de recalculo del usuario (filas creadas hasta
+     * 2 min antes de la mas nueva: un clic crea todas a la vez) mas las que
+     * sigan pendientes o en curso. Los tramos se cuentan solo de los vehiculos
+     * del lote y desde que se pidio; el tiempo estimado es el de los tramos de
+     * la cola global que se calculan ANTES que el ultimo del lote (la cola va
+     * por ended_at).
      */
     public function progress(): JsonResponse
     {
@@ -546,21 +550,39 @@ class OperationsController extends BaseController
         $now = time();
         $operationIds = Operation::userOwned($this->user)->withTrashed()->pluck('id');
 
-        $recalcs = OperationRecalculation::whereIn('operation_id', $operationIds)
+        $recent = OperationRecalculation::whereIn('operation_id', $operationIds)
             ->where('created_at', '>=', date('Y-m-d H:i:s', $now - 12 * 3600))
             ->with('device:id,name')
             ->get();
 
+        $latest = $recent->max('created_at');
+        $recalcs = $latest
+            ? $recent->filter(fn ($r) => $r->created_at->timestamp >= $latest->timestamp - 120
+                || in_array($r->status, [OperationRecalculation::STATUS_PENDING, OperationRecalculation::STATUS_RUNNING], true))->values()
+            : $recent;
+
         $byStatus = $recalcs->countBy('status');
         $active = ($byStatus[OperationRecalculation::STATUS_PENDING] ?? 0) + ($byStatus[OperationRecalculation::STATUS_RUNNING] ?? 0);
         $batchStart = $recalcs->min('created_at');
+        $batchDevices = $recalcs->pluck('device_id')->unique()->values();
 
         $userCycles = OperationCycle::whereIn('operation_id', $operationIds)->select('id');
 
-        $legsPending = OperationLeg::pendingCalculation()->whereIn('cycle_id', $userCycles)->count();
+        // Sin lote reciente: todos los vehiculos del usuario (tramos del dia a dia).
+        $legsScope = function () use ($userCycles, $batchDevices) {
+            $q = OperationLeg::whereIn('cycle_id', $userCycles);
+
+            return $batchDevices->isNotEmpty() ? $q->whereIn('device_id', $batchDevices) : $q;
+        };
+
+        $legsPending = $legsScope()->pendingCalculation()->count();
         $legsDone = $batchStart
-            ? OperationLeg::whereIn('cycle_id', $userCycles)->where('calculated_at', '>=', $batchStart)->count()
+            ? $legsScope()->where('calculated_at', '>=', $batchStart)->count()
             : 0;
+
+        // Tramos de la cola global que van antes que el ultimo del lote.
+        $lastEnded = $legsPending ? $legsScope()->pendingCalculation()->max('ended_at') : null;
+        $legsAhead = $lastEnded ? OperationLeg::pendingCalculation()->where('ended_at', '<=', $lastEnded)->count() : 0;
 
         // Ritmo real de los ultimos 10 minutos (todos los usuarios).
         $window = 10;
@@ -573,7 +595,7 @@ class OperationsController extends BaseController
         $recalcQueue = OperationRecalculation::whereIn('status', [OperationRecalculation::STATUS_PENDING, OperationRecalculation::STATUS_RUNNING])->count();
 
         // Tiempo estimado: con ritmo medido; sin ritmo aun, el nominal del comando.
-        $legsEta = (int) ceil($legsQueue / ($legsRate ?: 50));
+        $legsEta = (int) ceil($legsAhead / ($legsRate ?: 50));
         $recalcEta = (int) ceil($recalcQueue / ($recalcRate ?: 5));
 
         $heartbeat = \Cache::get(\App\Console\Commands\OperationsProcessCommand::HEARTBEAT_KEY);
@@ -604,6 +626,7 @@ class OperationsController extends BaseController
                 'pending'  => $legsPending,
                 'done'     => $legsDone,
                 'queue'    => $legsQueue,
+                'ahead'    => $legsAhead,
                 'rate'     => round($legsRate, 1),
                 'eta_min'  => $legsEta,
             ],

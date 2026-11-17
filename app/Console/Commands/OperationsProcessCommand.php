@@ -21,18 +21,21 @@ use Tobuli\Services\Operations\OperationShiftSummaryService;
  * en PositionsWriter:
  *
  *  1. Sincroniza los vehiculos de cada operacion activa con su grupo.
- *  2. Calcula los tramos cerrados pendientes (una pasada del pipeline por tramo).
+ *  2. Calcula los tramos cerrados pendientes (una pasada del pipeline por
+ *     tramo), hasta --legs o --legs-seconds.
  *  3. Marca "Sin datos" a los vehiculos en tramo sin trama en NO_DATA_SECONDS.
  *  4. Cierra como incompletos los tramos que superan max_leg_hours.
- *  5. Atiende la cola de recalculos, con tope por pasada.
+ *  5. Atiende la cola de recalculos, con tope de cantidad y de tiempo.
  *  6. Cierra los turnos recien terminados: resumen de turno por vehiculo y
  *     filas de flota por hora (reporte de turno).
  */
 class OperationsProcessCommand extends Command
 {
     protected $signature = 'operations:process
-                            {--legs=50 : tramos a calcular por pasada}
-                            {--rebuilds=5 : recalculos a atender por pasada}';
+                            {--legs=500 : tope de tramos por pasada}
+                            {--legs-seconds=45 : tiempo maximo (s) calculando tramos por pasada}
+                            {--rebuilds=5 : tope de recalculos por pasada}
+                            {--rebuilds-seconds=90 : tiempo maximo (s) de recalculos por pasada (siempre al menos uno)}';
 
     protected $description = 'Calcula tramos cerrados, detecta vehiculos sin datos y atiende recalculos de operaciones';
 
@@ -69,10 +72,10 @@ class OperationsProcessCommand extends Command
             $this->syncDevices($operation);
         }
 
-        $this->calculateLegs((int) $this->option('legs'));
+        $this->calculateLegs((int) $this->option('legs'), (int) $this->option('legs-seconds'));
         $this->detectNoData($operations);
         $this->expireLegs($operations);
-        $this->runRecalculations((int) $this->option('rebuilds'));
+        $this->runRecalculations((int) $this->option('rebuilds'), (int) $this->option('rebuilds-seconds'));
         $this->closeShifts($operations);
 
         return 0;
@@ -87,9 +90,16 @@ class OperationsProcessCommand extends Command
         }
     }
 
-    protected function calculateLegs(int $limit): void
+    /**
+     * Tramos pendientes por orden de cierre, con tope de cantidad y de tiempo:
+     * antes eran 50 fijos por pasada, y si la pasada se alargaba (recalculos)
+     * la cola avanzaba a menos de 1 tramo por minuto.
+     */
+    protected function calculateLegs(int $limit, int $seconds = 45): void
     {
         $calculator = new OperationLegCalculator();
+        $deadline = microtime(true) + max(5, $seconds);
+        $done = 0;
 
         $legs = OperationLeg::pendingCalculation()
             ->orderBy('ended_at')
@@ -97,7 +107,12 @@ class OperationsProcessCommand extends Command
             ->get();
 
         foreach ($legs as $leg) {
+            if (microtime(true) > $deadline) {
+                break;
+            }
+
             \Cache::forever(self::HEARTBEAT_KEY, time());
+            $done++;
 
             try {
                 $calculator->calculate($leg);
@@ -109,8 +124,8 @@ class OperationsProcessCommand extends Command
             }
         }
 
-        if ($legs->count()) {
-            $this->line("Tramos calculados: {$legs->count()}");
+        if ($done) {
+            $this->line("Tramos calculados: {$done}");
         }
     }
 
@@ -245,9 +260,16 @@ class OperationsProcessCommand extends Command
         }
     }
 
-    protected function runRecalculations(int $limit): void
+    /**
+     * Cola de recalculos. Cada uno rearma vueltas y resumenes de turno (puede
+     * tardar minutos), asi que se corta por tiempo: el resto queda para la
+     * siguiente pasada y los tramos que generan no esperan.
+     */
+    protected function runRecalculations(int $limit, int $seconds = 90): void
     {
         $service = new OperationRebuildService();
+        $deadline = microtime(true) + max(1, $seconds);
+        $first = true;
 
         $items = OperationRecalculation::pending()
             ->orderBy('created_at')
@@ -255,6 +277,11 @@ class OperationsProcessCommand extends Command
             ->get();
 
         foreach ($items as $item) {
+            if (! $first && microtime(true) > $deadline) {
+                break;
+            }
+
+            $first = false;
             \Cache::forever(self::HEARTBEAT_KEY, time());
 
             // Toma la fila solo si nadie la tomo entre medias.
