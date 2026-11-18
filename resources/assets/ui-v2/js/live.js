@@ -727,7 +727,7 @@
         return;
       }
       var dlg = tpModal.open({
-        title: "Widgets",
+        title: tpT('widgets'),
         size: "lg",
         body: res.data.html,
         buttons: [
@@ -754,7 +754,7 @@
                 .then(function (r) {
                   btn.disabled = false;
                   if (r && r.ok && r.data && r.data.ok) {
-                    tpModal.toast && tpModal.toast("Widgets actualizados.", "success");
+                    tpModal.toast && tpModal.toast(tpT('widgets_updated'), "success");
                     tpModal.close(dialog);
                     if (state.selectedId) loadDrawerWidgets(state.selectedId);
                   } else tpModal.toast && tpModal.toast(tpT('ui.save_failed'), "error");
@@ -1365,16 +1365,16 @@
     // Testigos
     var t = dash.telltales || {};
     var tells =
-      testigo(tpT('front.engine'), "MOTOR", t.engine, ICONOS.motor) +
+      testigo(tpT('front.engine'), tpT('engine_upper'), t.engine, ICONOS.motor) +
       testigo(tpT('ui.ignition'), tpT('ui.ignition_upper'), t.ignition, ICONOS.ignicion) +
-      testigo("Puerta", "PUERTA", t.door, ICONOS.puerta) +
-      testigo(tpT('ui.engine_lock'), "BLOQUEO", t.blocked, ICONOS.bloqueo) +
+      testigo(tpT('door'), tpT('door_upper'), t.door, ICONOS.puerta) +
+      testigo(tpT('ui.engine_lock'), tpT('lock_upper'), t.blocked, ICONOS.bloqueo) +
       (dash.volt != null
         ? '<span class="tp-dash__tell" data-on="1" title="' + tpT('ui.external_battery') + '">' + ICONOS.bateria +
           '<span class="tp-dash__tell-label">' + esc(dash.volt.value + " " + (dash.volt.unit || "v")) + "</span></span>"
         : "") +
       (dash.satellites != null
-        ? '<span class="tp-dash__tell" data-on="' + (apagado ? "0" : "1") + '" title="Satélites">' + ICONOS.satelite +
+        ? '<span class="tp-dash__tell" data-on="' + (apagado ? "0" : "1") + '" title="' + esc(tpT('satellites')) + '">' + ICONOS.satelite +
           '<span class="tp-dash__tell-label">' + (apagado ? "—" : Math.round(dash.satellites)) + " SAT</span></span>"
         : "");
 
@@ -1391,7 +1391,7 @@
     var stats =
       celda(tpT('ui.odometer'), dash.odometer, null) +
       celda(tpT('ui.hour_meter'), dash.engine_hours, null) +
-      celda("Rumbo", d.course != null ? Math.round(d.course) + "°" : null, null) +
+      celda(tpT('heading'), d.course != null ? Math.round(d.course) + "°" : null, null) +
       celda(tpT('front.stopped'), fmtDuration(d.stop_duration_sec), null) +
       (dash.show_total_distance ? celda(tpT('front.distance'), d.total_distance, "km") : "");
 
@@ -1806,7 +1806,7 @@
       '<div style="display:flex;gap:16px;margin-bottom:12px;font-size:13px;">' +
       '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" data-f-sidebar' +
       (af.sidebar ? " checked" : "") +
-      "> " + esc(L2.filter_sidebar || "Lista") + "</label>" +
+      "> " + esc(L2.filter_sidebar || tpT('list')) + "</label>" +
       '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" data-f-map' +
       (af.map ? " checked" : "") +
       "> " + esc(L2.filter_map || tpT('front.map')) + "</label></div>" +
@@ -1932,8 +1932,8 @@
     var body =
       '<p style="margin:0 0 10px;">' +
       (isOn
-        ? "" + tpT('ui.command_will_be_sent_for') + " <b>cortar</b> " + tpT('ui.the_vehicle_engine') + ""
-        : "" + tpT('ui.command_will_be_sent_for') + " <b>restablecer</b> " + tpT('ui.the_vehicle_engine') + "") +
+        ? "" + tpT('ui.command_will_be_sent_for') + " <b>" + tpT('engine_cut_verb') + "</b> " + tpT('ui.the_vehicle_engine') + ""
+        : "" + tpT('ui.command_will_be_sent_for') + " <b>" + tpT('engine_restore_verb') + "</b> " + tpT('ui.the_vehicle_engine') + "") +
       "</p>" +
       '<label class="tp-field__label">' + tpT('ui.sending') + '</label>' +
       '<select class="tp-input" data-lock-type style="width:100%;margin:4px 0 10px;"><option value="gprs">GPRS</option>' +
@@ -1953,7 +1953,7 @@
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: isOn ? "Cortar" : "Restablecer",
+          label: isOn ? tpT('engine_cut') : tpT('engine_restore'),
           variant: isOn ? "danger" : "primary",
           close: false,
           onClick: function (dlg) {
@@ -2183,7 +2183,7 @@
       title: tpT('ui.show_point'),
       size: "sm",
       body:
-        '<div class="tp-scope"><label class="tp-field__label">Latitud</label>' +
+        '<div class="tp-scope"><label class="tp-field__label">' + tpT('front.latitude') + '</label>' +
         '<input type="text" class="tp-input" data-pt-lat placeholder="-8.10610" style="width:100%;margin:4px 0 10px;">' +
         '<label class="tp-field__label">Longitud</label>' +
         '<input type="text" class="tp-input" data-pt-lng placeholder="-79.02080" style="width:100%;margin-top:4px;">' +
@@ -2191,7 +2191,7 @@
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
-          label: "Mostrar",
+          label: tpT('show'),
           variant: "primary",
           close: false,
           onClick: function (dlg) {
@@ -2550,11 +2550,11 @@
               return;
             }
 
-            var accion = { created: "Creado", updated: "Modificado", deleted: "Eliminado" };
+            var accion = { created: tpT('log_created'), updated: tpT('log_updated'), deleted: tpT('log_deleted') };
 
             host.innerHTML =
               '<div style="max-height:62vh;overflow:auto;"><table class="tp-table"><thead><tr>' +
-              "<th>" + tpT('ui.when') + "</th><th>" + tpT('ui.what') + "</th><th>" + tpT('ui.action') + "</th><th>" + tpT('ui.who') + "</th><th>Cambios</th>" +
+              "<th>" + tpT('ui.when') + "</th><th>" + tpT('ui.what') + "</th><th>" + tpT('ui.action') + "</th><th>" + tpT('ui.who') + "</th><th>" + tpT('changes') + "</th>" +
               "</tr></thead><tbody>" +
               items
                 .map(function (it) {

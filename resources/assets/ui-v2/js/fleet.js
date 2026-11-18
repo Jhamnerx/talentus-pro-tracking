@@ -297,12 +297,12 @@
     r = r || { from: "", to: "", color: "#ef4444" };
     return (
       '<div class="tp-range" data-range>' +
-      '<input type="number" step="any" class="tp-input tp-input--sm" data-range-from placeholder="Desde" value="' +
+      '<input type="number" step="any" class="tp-input tp-input--sm" data-range-from placeholder="' + tpT('from_value') + '" aria-label="' + tpT('from_value') + '" value="' +
       escapeHtml(r.from) + '">' +
-      '<input type="number" step="any" class="tp-input tp-input--sm" data-range-to placeholder="Hasta" value="' +
+      '<input type="number" step="any" class="tp-input tp-input--sm" data-range-to placeholder="' + tpT('to_value') + '" aria-label="' + tpT('to_value') + '" value="' +
       escapeHtml(r.to) + '">' +
       '<input type="color" class="tp-range__color" data-range-color value="' + escapeHtml(r.color || "#ef4444") + '">' +
-      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-range-del title="Quitar tramo">×</button>' +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-range-del title="' + tpT('remove_range') + '" aria-label="' + tpT('remove_range') + '">×</button>' +
       "</div>"
     );
   }
@@ -314,7 +314,7 @@
     var current = (columnsState.colors[field] || []).slice();
 
     tpModal.open({
-      title: "Colores · " + def.label,
+      title: tpT('colors_of', { name: def.label }),
       size: "sm",
       body:
         '<div class="tp-ranges">' +
@@ -860,7 +860,7 @@
       "km/h",
       tpT('ui.engine_h'),
       tpT('ui.last_movement_js'),
-      "Expira",
+      tpT('expires'),
     ];
     var lines = [headers.join(",")];
     state.items.forEach(function (d) {

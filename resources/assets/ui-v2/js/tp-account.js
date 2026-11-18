@@ -118,7 +118,7 @@
       '<form class="tp-form tp-acc-form" data-acc-tab="widgets">' +
       '<label class="tp-acc-check" style="margin-bottom:10px;"><input type="checkbox" class="tp-choice-input" name="widgets_default" value="1"' + (W.default ? " checked" : "") + " data-acc-wdefault> " + tpT('ui.default_widgets') + "</label>" +
       '<div data-acc-wbody' + (W.default ? ' style="opacity:.5;pointer-events:none;"' : "") + ">" +
-      '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="widgets_status" value="1"' + (W.status ? " checked" : "") + "> Habilitar widgets</label>" +
+      '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="widgets_status" value="1"' + (W.status ? " checked" : "") + "> " + tpT('enable_widgets') + "</label>" +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
       W.items
         .map(function (it) {
@@ -135,7 +135,7 @@
     var D = META.dashboard;
     return (
       '<form class="tp-form tp-acc-form" data-acc-tab="dashboard">' +
-      '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="dashboard_enabled" value="1"' + (D.enabled ? " checked" : "") + "> Habilitar tablero</label>" +
+      '<label class="tp-acc-check" style="margin-bottom:12px;"><input type="checkbox" class="tp-choice-input" name="dashboard_enabled" value="1"' + (D.enabled ? " checked" : "") + "> " + tpT('enable_dashboard') + "</label>" +
       '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--fg-muted,#94a3b8);margin-bottom:8px;">' + tpT('ui.dashboard_widgets') + '</div>' +
       '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
       D.blocks
@@ -320,7 +320,7 @@
           tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
-        tpModal.toast("Guardado.", "success");
+        tpModal.toast(tpT('saved_short'), "success");
         tpModal.close(dlg);
         if (onSaved) onSaved();
       })
@@ -441,13 +441,13 @@
   /* ---- Conductores ---- */
 
   function tabDrivers() {
-    return crudPanel("drivers", tpT('ui.add_driver'), [tpT('ui.name'), "RFID", tpT('attr.phone'), "Email"]);
+    return crudPanel("drivers", tpT('ui.add_driver'), [tpT('ui.name'), "RFID", tpT('attr.phone'), tpT('attr.email')]);
   }
   function wireDrivers(panel) {
     wireCrud(panel, {
       listUrl: API + "/drivers",
       itemUrl: function (id) { return API + "/drivers/" + id; },
-      cols: [tpT('ui.name'), "RFID", tpT('attr.phone'), "Email"],
+      cols: [tpT('ui.name'), "RFID", tpT('attr.phone'), tpT('attr.email')],
       row: function (r) {
         return "<td>" + esc(r.name) + "</td><td>" + esc(r.rfid || "—") + "</td><td>" + esc(r.phone || "—") + "</td><td>" + esc(r.email || "—") + "</td>";
       },
@@ -461,7 +461,7 @@
             field(tpT('ui.name'), '<input type="text" name="d_name" value="' + esc(row ? row.name : "") + '" data-tp-field>', true, true) +
             field("RFID", '<input type="text" name="d_rfid" value="' + esc(row ? row.rfid : "") + '" data-tp-field>') +
             field(tpT('attr.phone'), '<input type="text" name="d_phone" value="' + esc(row ? row.phone : "") + '" data-tp-field>') +
-            field("Email", '<input type="text" name="d_email" value="' + esc(row ? row.email : "") + '" data-tp-field>') +
+            field(tpT('attr.email'), '<input type="text" name="d_email" value="' + esc(row ? row.email : "") + '" data-tp-field>') +
             field(tpT('attr.description'), '<input type="text" name="d_desc" value="' + esc(row ? row.description : "") + '" data-tp-field>') +
             "</div></div>",
           function (d) {
@@ -495,7 +495,7 @@
       '<div class="tp-acc-strow" data-state-row' + (id ? ' data-state-id="' + id + '"' : "") + ">" +
       '<input type="text" class="tp-input" data-st-name value="' + esc(s.name || "") + '" placeholder="Estado (ej. Cargado)" style="flex:1;min-width:0;">' +
       '<input type="text" class="tp-input" data-st-label value="' + esc(s.label || "") + '" placeholder="Label" maxlength="24" style="width:84px;flex:0 0 auto;">' +
-      '<input type="color" data-st-color value="' + esc(color) + '" title="Color del estado" style="width:40px;height:34px;flex:0 0 auto;padding:2px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;cursor:pointer;">' +
+      '<input type="color" data-st-color value="' + esc(color) + '" title="' + tpT('state_color') + '" aria-label="' + tpT('state_color') + '" style="width:40px;height:34px;flex:0 0 auto;padding:2px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;cursor:pointer;">' +
       '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-state title="Quitar">×</button></div>'
     );
   }
@@ -603,7 +603,7 @@
             '<input type="text" class="tp-input" data-c-tag value="' + esc(c.tag) + '" placeholder="Parámetro">' +
             '<select class="tp-input" data-c-type>' + options(meta.types, c.type) + "</select>" +
             '<input type="text" class="tp-input" data-c-val value="' + esc(c.tag_value) + '" placeholder="Valor">' +
-            '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-cond title="Quitar">×</button></div>'
+            '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-cond title="' + tpT('remove') + '" aria-label="' + tpT('remove') + '">×</button></div>'
           );
         }
         crudDialog(
@@ -739,7 +739,7 @@
                 })
                 .then(function (res) {
                   if (res.ok && res.data && res.data.ok) {
-                    tpModal.toast("Guardado.", "success");
+                    tpModal.toast(tpT('saved_short'), "success");
                     tpModal.close(d);
                     load();
                   } else {
@@ -849,7 +849,7 @@
                 .fetchJSON(BASE + "/secondary" + (id ? "/" + id : ""), { method: id ? "PUT" : "POST", json: payload })
                 .then(function (res) {
                   if (res.ok && res.data && res.data.ok) {
-                    tpModal.toast("Guardado.", "success");
+                    tpModal.toast(tpT('saved_short'), "success");
                     tpModal.close(d);
                     load();
                     return;
@@ -907,7 +907,7 @@
     { key: "sms", label: tpT('ui.sms_gateway'), build: tabSms, save: "sms", cap: "view_sms" },
     { key: "tpl_sms", label: tpT('ui.sms_templates'), build: function () { return tabTemplates("sms"); }, wire: function (p) { wireTemplates(p, "sms"); }, cap: "view_sms_templates" },
     { key: "tpl_gprs", label: tpT('ui.gprs_templates'), build: function () { return tabTemplates("gprs"); }, wire: function (p) { wireTemplates(p, "gprs"); }, cap: "view_gprs_templates" },
-    { key: "widgets", label: "Widgets", build: tabWidgets, save: "widgets" },
+    { key: "widgets", label: tpT('widgets'), build: tabWidgets, save: "widgets" },
     { key: "dashboard", label: tpT('ui.acc_tab_dashboard'), build: tabDashboard, save: "dashboard" },
     { key: "client", label: tpT('ui.acc_tab_client'), build: tabClient, save: "client", cap: "view_client" },
     { key: "media_cats", label: tpT('ui.media_categories'), build: tabMediaCats, wire: wireMediaCats, cap: "view_media_cats" },
@@ -1066,11 +1066,11 @@
     var clearBtn = panel.querySelector("[data-acc-sms-clear]");
     if (clearBtn)
       clearBtn.addEventListener("click", function () {
-        tpModal.confirm({ title: "Vaciar cola", message: tpT('ui.confirm_clear_sms_queue'), danger: true, confirmLabel: "Vaciar" })
+        tpModal.confirm({ title: tpT('clear_queue'), message: tpT('ui.confirm_clear_sms_queue'), danger: true, confirmLabel: tpT('clear_action') })
           .then(function (ok) {
             if (!ok) return;
             tpModal.fetchJSON(BASE + "/sms/queue", { method: "POST", json: {} }).then(function (res) {
-              if (res.ok && res.data && res.data.ok) tpModal.toast("Cola vaciada.", "success");
+              if (res.ok && res.data && res.data.ok) tpModal.toast(tpT('queue_cleared'), "success");
               else tpModal.toast(tpT('ui.empty_failed'), "error");
             });
           });
@@ -1207,7 +1207,7 @@
     if (!window.tpModal) return;
 
     tpModal.open({
-      title: "Idioma",
+      title: tpT('language'),
       size: "sm",
       body: '<div data-lang-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],

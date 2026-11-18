@@ -307,7 +307,7 @@
       '<label class="tp-form__field tp-form__field--required tp-col-2">' +
       '<span class="tp-form__label">' + tpT('ui.title') + '</span>' +
       '<input type="text" name="title" maxlength="255" value="' + esc(item.title || "") +
-      '" placeholder="Título de la tarea…" data-tp-field>' +
+      '" placeholder="' + tpT('task_title_placeholder') + '" data-tp-field>' +
       "</label>" +
       // N° factura | Prioridad
       '<label class="tp-form__field">' +
@@ -319,7 +319,7 @@
       selectHtml("priority", meta.priorities || [], item.priority != null ? item.priority : 1) +
       "</div>" +
       extra +
-      sectionTitleHtml("Recogida") +
+      sectionTitleHtml(tpT('pickup_title')) +
       addressFieldHtml("pickup", tpT('ui.pickup_address'), item) +
       dtFieldHtml("pickup_from", tpT('front.from'), item.pickup_time_from, "08:00") +
       dtFieldHtml("pickup_to", tpT('global.to'), item.pickup_time_to, "12:00") +
@@ -847,7 +847,7 @@
 
   function openImport() {
     var dlg = tpModal.open({
-      title: "Importar tareas",
+      title: tpT('import_tasks'),
       size: "lg",
       static: true,
       body:

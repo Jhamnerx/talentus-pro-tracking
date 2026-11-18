@@ -147,7 +147,7 @@
     var body =
       '<div class="tp-scope" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
       field(tpT('ui.name_required_field'), '<input type="text" class="tp-input" data-x-name value="' + (item ? esc(item.name) : "") + '" style="width:100%;">') +
-      field("Ruta *", '<select class="tp-input" data-x-route style="width:100%;">' + rutaOpts + "</select>") +
+      field(tpT('route_required'), '<select class="tp-input" data-x-route style="width:100%;">' + rutaOpts + "</select>") +
       field(tpT('ui.days_required'), '<div class="tp-rsch__days">' + diasHtml + "</div>", true) +
       field(tpT('ui.outbound_departure_required'), '<input type="time" class="tp-input" data-x-start value="' + (item ? esc(item.start_time) : "07:00") + '" style="width:100%;">') +
       field(tpT('ui.return_departure'), '<input type="time" class="tp-input" data-x-return value="' + (item && item.return_start_time ? esc(item.return_start_time) : "") + '" style="width:100%;">' +
@@ -155,7 +155,7 @@
       field(tpT('ui.tolerance_early_required'), '<input type="number" min="0" class="tp-input" data-x-early value="' + (item ? item.tolerance_early : 5) + '" style="width:100%;">') +
       field(tpT('ui.tolerance_late_required'), '<input type="number" min="0" class="tp-input" data-x-late value="' + (item ? item.tolerance_late : 10) + '" style="width:100%;">') +
       field(tpT('ui.vehicles'), '<div data-x-devices></div>', true) +
-      field("", '<label class="tp-rsch__check"><input type="checkbox" data-x-active' + (!item || item.active ? " checked" : "") + "> Activa</label>", true) +
+      field("", '<label class="tp-rsch__check"><input type="checkbox" data-x-active' + (!item || item.active ? " checked" : "") + "> " + tpT('active_f') + "</label>", true) +
       '<div data-x-err style="grid-column:1/-1;display:none;color:#ef4444;font-size:13px;"></div></div>';
 
     var dlg = tpModal.open({
@@ -288,8 +288,8 @@
         (punto && punto.name ? esc(punto.name) : "") + '">' +
       '<span class="tp-rsch__cpacts">' +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-up title="Subir">↑</button>' +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-down title="Bajar">↓</button>' +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-del title="Quitar">×</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-down title="' + tpT('move_down') + '" aria-label="' + tpT('move_down') + '">↓</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-del title="' + tpT('remove') + '" aria-label="' + tpT('remove') + '">×</button>' +
       "</span>" +
       "</div>";
   }
@@ -434,7 +434,7 @@
         " · " + esc(v.date) + " " + esc(v.start) +
       "</summary>" +
       '<table class="tp-svc-table"><thead><tr>' +
-        "<th>#</th><th>" + tpT('ui.checkpoint') + "</th><th>Previsto</th><th>Real</th>" +
+        "<th>#</th><th>" + tpT('ui.checkpoint') + "</th><th>" + tpT('planned') + "</th><th>" + tpT('actual') + "</th>" +
         '<th style="text-align:right;">' + tpT('ui.detour_min') + '</th><th>' + tpT('front.status') + '</th>' +
       "</tr></thead><tbody>" + puntos + "</tbody></table></details>";
   }

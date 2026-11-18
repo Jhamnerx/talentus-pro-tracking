@@ -41,7 +41,7 @@
         '<div class="tp-row" style="gap:6px;margin-bottom:6px;" data-tpl-row>' +
         '<input type="text" class="tp-input" value="' + esc(activity || "") + '"' +
         (id ? ' data-tpl-existing="' + id + '"' : " data-tpl-new") + ' placeholder="Actividad…">' +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-del style="color:#ef4444;flex:0 0 auto;">×</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-del title="' + tpT('global.delete') + '" aria-label="' + tpT('global.delete') + '" style="color:#ef4444;flex:0 0 auto;">×</button>' +
         "</div>"
       );
     };
@@ -326,7 +326,7 @@
               .fetchJSON(BASE + "/checklist-rows/" + img.getAttribute("data-chk-img") + "/image", { method: "POST", body: fd })
               .then(function (res) {
                 if (res.ok && res.data && res.data.ok) {
-                  tpModal.toast("Foto subida.", "success");
+                  tpModal.toast(tpT('photo_uploaded'), "success");
                   load();
                 } else fail(res, tpT('ui.photo_upload_failed'));
               });
@@ -361,7 +361,7 @@
           if (sign) {
             var cid = sign.getAttribute("data-chk-sign");
             tpModal.open({
-              title: "Firmar lista",
+              title: tpT('sign_list'),
               size: "sm",
               body:
                 '<div class="tp-form"><label class="tp-form__field"><span class="tp-form__label">Notas</span>' +
@@ -372,7 +372,7 @@
               buttons: [
                 { label: tpT('global.cancel'), variant: "ghost", close: true },
                 {
-                  label: "Firmar",
+                  label: tpT('sign'),
                   variant: "primary",
                   close: false,
                   onClick: function (d) {
@@ -386,7 +386,7 @@
                       })
                       .then(function (res) {
                         if (res.ok && res.data && res.data.ok) {
-                          tpModal.toast("Lista firmada.", "success");
+                          tpModal.toast(tpT('list_signed'), "success");
                           tpModal.close(d);
                           load();
                         } else fail(res, tpT('ui.sign_failed'));

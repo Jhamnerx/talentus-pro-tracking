@@ -652,7 +652,7 @@
     state.eventGroup = evG; if (state.display.events) evG.addTo(state.map);
   }
   function stopPopup(it, n) {
-    return '<div class="tp-hist-pt"><div class="tp-hist-pt__title">Parada ' + n + "</div><dl class=\"tp-hist-pt__defs\">" +
+    return '<div class="tp-hist-pt"><div class="tp-hist-pt__title">' + tpT('stop_n', { n: n }) + "</div><dl class=\"tp-hist-pt__defs\">" +
       "<dt>" + tpT('front.from') + "</dt><dd>" + esc(fmtTime(it.from)) + "</dd><dt>" + tpT('global.to') + "</dt><dd>" + esc(fmtTime(it.to)) + "</dd>" +
       (it.duration ? "<dt>" + tpT('ui.duration') + "</dt><dd>" + esc(it.duration) + "</dd>" : "") + "</dl></div>";
   }
@@ -1003,7 +1003,7 @@
     if (!host) return;
     var list = state.sensors && state.sensors.length
       ? state.sensors
-      : [{ id: "speed", name: tpT('front.speed'), sufix: "km/h" }, { id: "altitude", name: "Altitud", sufix: "m" }];
+      : [{ id: "speed", name: tpT('front.speed'), sufix: "km/h" }, { id: "altitude", name: tpT('front.altitude'), sufix: "m" }];
     state.sensorList = list;
     var ok = list.some(function (s) { return s.id === state.sensor; });
     if (!ok) state.sensor = list[0].id;

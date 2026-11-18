@@ -33,7 +33,7 @@
     items.forEach(function (p, i) {
       window.setTimeout(function () {
         tpModal.open({
-          title: p.title || "Aviso",
+          title: p.title || tpT('notice'),
           size: "md",
           body: '<div class="tp-admin-popup__body">' + p.content + "</div>",
           buttons: [{ label: "Entendido", variant: "primary", close: true }],

@@ -544,7 +544,7 @@
 
     var dlg = tpModal.open({
       title: tpT('ui.select_vehicle'),
-      sub: "Celda " + (slot + 1) + tpT('ui.grouped_by_object_group'),
+      sub: tpT('cell_n', { n: slot + 1 }) + tpT('ui.grouped_by_object_group'),
       size: "md",
       body:
         '<input type="search" class="tp-input" data-mp-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off" style="margin-bottom:10px;">' +

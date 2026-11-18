@@ -144,7 +144,7 @@
       '<span class="tp-form__label">Email</span>' +
       '<div class="tp-input-group">' +
       '<input type="checkbox" name="send_email" value="1" id="tp-sh-email-chk">' +
-      '<input type="text" name="email" placeholder="usuario@ejemplo.com" data-enable="tp-sh-email-chk" disabled data-tp-field>' +
+      '<input type="text" name="email" placeholder="' + tpT('email_placeholder') + '" aria-label="' + tpT('attr.email') + '" data-enable="tp-sh-email-chk" disabled data-tp-field>' +
       "</div>" +
       '<small class="tp-form__hint">' + tpT('ui.several_emails_help') + '</small>' +
       "</div>" +
@@ -401,7 +401,7 @@
           tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
-        tpModal.toast(id ? "Compartir actualizado." : tpT('ui.share_link_created'), "success");
+        tpModal.toast(id ? tpT('share_updated') : tpT('ui.share_link_created'), "success");
         tpModal.close(dialog);
         if (typeof opts.onSaved === "function") opts.onSaved(res.data.item);
       })

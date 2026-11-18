@@ -36,7 +36,7 @@
         // Campos personalizados: mismo gate que el legacy (Devices/edit.blade)
         ['key' => 'personalizados', 'label' => trans('admin.custom_fields'), 'if' => !empty($caps['has_custom_fields'])],
         // Historial de mantenimientos/suspensiones (solo en edición, como el legacy)
-        ['key' => 'historial', 'label' => 'Historial', 'if' => $isEdit],
+        ['key' => 'historial', 'label' => trans('ui.history_tab'), 'if' => $isEdit],
     ])
         ->filter(function ($t) {
             return !array_key_exists('if', $t) || $t['if'];

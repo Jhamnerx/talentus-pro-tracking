@@ -212,7 +212,7 @@
       '<div class="tp-toast__title"></div>' +
       (opts.description ? '<div class="tp-toast__desc"></div>' : "") +
       "</div>" +
-      '<button class="tp-toast__close" aria-label="Cerrar">✕</button>';
+      '<button class="tp-toast__close" aria-label="' + tpT('global.close') + '">✕</button>';
     el.querySelector(".tp-toast__title").textContent = opts.title || "";
     if (opts.description)
       el.querySelector(".tp-toast__desc").textContent = opts.description;

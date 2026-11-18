@@ -189,7 +189,7 @@
           "color:var(--fg-primary,#0f172a);line-height:1.3;";
         chip.innerHTML =
           esc(byId[i] || "#" + i) +
-          '<button type="button" data-drv-unchip="' + i + '" title="Quitar" ' +
+          '<button type="button" data-drv-unchip="' + i + '" title="' + tpT('remove') + '" aria-label="' + tpT('remove') + '" ' +
           'style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);padding:0;line-height:1;font-size:13px;">×</button>';
         chipsEl.insertBefore(chip, chipsEl.lastElementChild);
       });
@@ -229,7 +229,7 @@
 
       panel.innerHTML =
         '<div style="position:sticky;top:0;background:inherit;padding:2px 4px 6px;z-index:1;">' +
-        '<input type="search" data-drv-panel-search placeholder="Búsqueda" autocomplete="off" ' +
+        '<input type="search" data-drv-panel-search placeholder="' + tpT('front.search') + '" aria-label="' + tpT('front.search') + '" autocomplete="off" ' +
         'style="width:100%;height:30px;padding:0 10px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;font-size:13px;background:var(--surface-sunken,#f8fafc);" value="' + esc(q) + '">' +
         "</div>" +
         (sections || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.no_results') + '</div>') +
@@ -507,7 +507,7 @@
       { k: "name", label: tpT('ui.name') + " *" },
       { k: "rfid", label: "RFID" },
       { k: "phone", label: tpT('attr.phone') },
-      { k: "email", label: "Email" },
+      { k: "email", label: tpT('attr.email') },
       { k: "description", label: tpT('attr.description') },
     ];
     var body =

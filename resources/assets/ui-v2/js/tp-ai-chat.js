@@ -388,7 +388,7 @@
         body: JSON.stringify({ conversation_id: state.conversationId }),
       }).then(function (r) {
         return r.json().catch(function () { return {}; }).then(function (data) {
-          result.textContent = data.message || (r.ok ? "Listo." : t("error"));
+          result.textContent = data.message || (r.ok ? tpT('done_short') : t("error"));
           card.classList.add(r.ok && data.status !== "cancelled" ? "is-done" : "is-closed");
         });
       }).catch(function () {
@@ -478,7 +478,7 @@
           }
           return;
         }
-        var btn = node("button", "tp-btn tp-btn--outline tp-btn--sm", action.label || "Abrir");
+        var btn = node("button", "tp-btn tp-btn--outline tp-btn--sm", action.label || tpT('open'));
         btn.type = "button";
         btn.addEventListener("click", function () { runAction(action, btn); });
         actions.appendChild(btn);

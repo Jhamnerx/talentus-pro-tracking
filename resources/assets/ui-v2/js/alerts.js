@@ -1353,7 +1353,7 @@
   function panelType(meta) {
     var first = meta.types && meta.types[0];
     return (
-      '<div class="tp-field"><label class="tp-field__label">Disparador *</label>' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('trigger_required') + '</label>' +
       '<select class="tp-input" name="type" id="tp-alert-type" data-dd-tall>' +
       buildTypeOptions(meta.types, first && first.key) +
       "</select>" +
@@ -1375,7 +1375,7 @@
       zones +
       "</div>" +
       '<div class="tp-field__hint">' + tpT('ui.applies_to_geofence_alerts') + '</div></div>' +
-      '<div class="tp-field"><label class="tp-field__label">Geocercas</label>' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('geofences_label') + '</label>' +
       picklistHtml("tp-alert-zones", gf, {
         empty: tpT('ui.no_geofences_created'),
       }) +
@@ -1424,7 +1424,7 @@
       { key: "devices", label: tpT('ui.vehicles'), html: panelDevices(meta) },
       { key: "type", label: tpT('front.type'), html: panelType(meta) },
       { key: "geofences", label: "Geocercas", html: panelGeofences(meta) },
-      { key: "schedule", label: "Horario", html: panelSchedule(meta) },
+      { key: "schedule", label: tpT('schedule_label'), html: panelSchedule(meta) },
       { key: "notifs", label: "Notificaciones", html: panelNotifications(meta) },
     ];
     if (meta.can_command)
@@ -1775,7 +1775,7 @@
           return;
         }
         window.tpModal.toast(
-          res.data.active ? "Regla activada." : "Regla pausada.",
+          res.data.active ? tpT('rule_activated') : tpT('rule_paused'),
           "success",
         );
         load();

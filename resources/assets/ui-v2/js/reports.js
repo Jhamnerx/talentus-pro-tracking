@@ -1091,7 +1091,7 @@
           tpModal.toast((res.data && res.data.message) || tpT('ui.save_failed'), "error");
           return;
         }
-        tpModal.toast("Reporte guardado.", "success");
+        tpModal.toast(tpT('report_saved'), "success");
         tpModal.close(dialog);
         loadTab();
       })

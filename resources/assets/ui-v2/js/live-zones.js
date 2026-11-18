@@ -364,12 +364,12 @@
       '<div class="tp-dev-popup"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot" style="background:' +
       (g.polygon_color || "#1e88e5") +
       '"></span><span class="tp-dev-popup__name">' +
-      esc(g.name || "Geocerca") +
+      esc(g.name || tpT('search_kind_geofence')) +
       '</span></div><div class="tp-dev-popup__status">' +
       (g.type === "circle"
         ? tpT('ui.circle_dot') + (g.radius ? Math.round(g.radius) + " m" : "—")
         : g.type === "line"
-          ? "Corredor · " + (g.coordinates || []).length + " pts · ±" + Math.round(g.radius || 0) + " m"
+          ? tpT('corridor_info', { n: (g.coordinates || []).length, r: Math.round(g.radius || 0) })
           : tpT('ui.polygon_dot') + (g.coordinates || []).length + " pts") +
       "</div>" +
       (canEdit
@@ -600,7 +600,7 @@
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost" },
         {
-          label: "Crear",
+          label: tpT('create'),
           variant: "primary",
           close: false,
           onClick: function (dialog, btn) {
@@ -672,7 +672,7 @@
               .then(function (r) {
                 btn.disabled = false;
                 if (r && r.ok && r.data && r.data.ok) {
-                  tpModal.toast && tpModal.toast("Geocerca actualizada.", "success");
+                  tpModal.toast && tpModal.toast(tpT('geofence_updated'), "success");
                   tpModal.close(dialog);
                   load(true);
                 } else tpModal.toast && tpModal.toast(tpT('ui.save_failed'), "error");
@@ -932,7 +932,7 @@
     var payload = Object.assign({ name: name }, geometry);
     tpModal.fetchJSON(BASE + "/" + id, { method: "PUT", json: payload }).then(function (r) {
       if (r && r.ok && r.data && r.data.ok) {
-        tpModal.toast && tpModal.toast("Forma actualizada.", "success");
+        tpModal.toast && tpModal.toast(tpT('shape_updated'), "success");
         load(true);
       } else tpModal.toast && tpModal.toast(tpT('ui.shape_update_failed'), "error");
     });
@@ -1052,7 +1052,7 @@
   function openExport() {
     var types = {
       export_single: "Exportar seleccionadas",
-      export_active: "Exportar activas",
+      export_active: tpT('export_active_f'),
       export_inactive: "Exportar inactivas",
       export_groups: tpT('ui.export_by_groups'),
     };
@@ -1065,12 +1065,12 @@
       })
       .join("");
     tpModal.open({
-      title: "Exportar geocercas",
+      title: tpT('export_geofences'),
       size: "md",
       body:
         '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.export_type') + '</label>' +
         '<select class="tp-input" data-exp-type>' + opts + "</select></div>" +
-        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">Geocercas</label>' +
+        '<div class="tp-field" data-exp-wrap><label class="tp-field__label">' + tpT('geofences_label') + '</label>' +
         '<div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_geofences') + '</div>') + "</div></div>" +
         '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">' + tpT('front.groups') + '</label>' +
         '<div class="tp-zexp-list">' +
@@ -1141,10 +1141,10 @@
   }
   function openImport() {
     tpModal.open({
-      title: "Importar geocercas",
+      title: tpT('import_geofences'),
       size: "sm",
       body:
-        '<div class="tp-field"><label class="tp-field__label">Archivo</label>' +
+        '<div class="tp-field"><label class="tp-field__label">' + tpT('file') + '</label>' +
         '<input type="file" class="tp-input" data-imp-file accept=".csv,.gexp,.kml,.json,.geojson"></div>' +
         '<div class="tp-field__hint">' + tpT('ui.formats_kml_geojson') + '</div>',
       buttons: [
@@ -1164,7 +1164,7 @@
               .then(function (r) {
                 btn.disabled = false;
                 if (r && r.ok && r.data && r.data.ok) {
-                  tpModal.toast((r.data.message) || "Geocercas importadas.", "success");
+                  tpModal.toast((r.data.message) || tpT('geofences_imported'), "success");
                   tpModal.close(dlg);
                   load(true);
                 } else {
@@ -1229,7 +1229,7 @@
           title: tpT('ui.geofence_groups'),
           base: root.getAttribute("data-zone-groups-url") || "/ui/v2/api/zone-groups",
           itemsKey: "geofences",
-          itemsLabel: "Geocercas",
+          itemsLabel: tpT('geofences_label'),
           groups: S.groups || [],
           items: (S.items || []).map(function (z) {
             return { id: z.id, name: z.name, color: z.polygon_color };

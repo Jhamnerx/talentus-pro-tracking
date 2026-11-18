@@ -386,7 +386,7 @@
       body: body,
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
-        { label: "Registrar", variant: "primary", close: false, onClick: function (d) { submitAttend(d, ev); return false; } },
+        { label: tpT('register'), variant: "primary", close: false, onClick: function (d) { submitAttend(d, ev); return false; } },
       ],
     });
   }

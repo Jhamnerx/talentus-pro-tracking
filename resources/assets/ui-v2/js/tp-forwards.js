@@ -51,7 +51,7 @@
                 '<div class="tp-fwd__meta"><span class="tp-fwd-type">' + esc(f.type) + "</span>" + (s ? " · " + esc(s) : "") + "</div></div>" +
                 '<div class="tp-fwd__actions">' +
                 '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-fwd-edit="' + f.id + '" title="' + tpT('global.edit') + '" aria-label="' + tpT('global.edit') + '">' + EDIT_ICO + "</button>" +
-                '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-fwd-del="' + f.id + '" title="Eliminar" style="color:#ef4444;">' + DEL_ICO + "</button>" +
+                '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-fwd-del="' + f.id + '" title="' + tpT('global.delete') + '" aria-label="' + tpT('global.delete') + '" style="color:#ef4444;">' + DEL_ICO + "</button>" +
                 "</div></div>"
               );
             })

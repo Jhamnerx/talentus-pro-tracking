@@ -73,7 +73,7 @@
               )
               .then(function (res) {
                 if (res.ok && res.data && res.data.ok) {
-                  tpModal.toast("Guardado.", "success");
+                  tpModal.toast(tpT('saved_short'), "success");
                   tpModal.close(d);
                   if (typeof afterSave === "function") afterSave();
                   return;

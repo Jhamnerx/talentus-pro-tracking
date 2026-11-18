@@ -181,7 +181,7 @@
     if (!resultsGroup || !resultsList) return;
     var results = (data && data.results) || [];
     var total = (data && data.total) || results.length;
-    resultsTitle.textContent = "Resultados (" + total + ")";
+    resultsTitle.textContent = tpT('search_results_count', { count: total });
     if (!results.length) {
       resultsList.innerHTML =
         '<div class="tp-cmdk__empty">' + tpT('ui.no_results_for') + '' +
@@ -346,7 +346,7 @@
       close();
       window.tpToast &&
         window.tpToast({
-          title: "Tema cambiado",
+          title: tpT('theme_changed'),
           variant: "info",
           duration: 2000,
         });

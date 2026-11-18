@@ -133,7 +133,7 @@
       (parts.length ? '<div style="color:var(--fg-secondary,#475569);font-size:12px;margin-top:2px;">' + parts.join(" · ") + "</div>" : "") +
       (ev.time ? '<div data-tpn-time style="color:var(--fg-muted,#94a3b8);font-size:11px;margin-top:2px;">' + esc(ev.time) + "</div>" : "") +
       "</div>" +
-      '<button type="button" data-tpn-close aria-label="Cerrar" ' +
+      '<button type="button" data-tpn-close aria-label="' + tpT('global.close') + '" ' +
       'style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);font-size:15px;line-height:1;padding:2px;">×</button>';
 
     el.addEventListener("click", function (e) {

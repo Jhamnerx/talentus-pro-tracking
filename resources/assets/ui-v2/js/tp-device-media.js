@@ -92,7 +92,7 @@
                       '<span class="tp-media-card__name" title="' + esc(f.name) + '">' + esc(f.name) + "</span>" +
                       '<span class="tp-media-card__sub">' + esc(f.created_at || "") +
                       (f.camera ? " · " + esc(f.camera) : "") + "</span>" +
-                      '<a class="tp-media-card__dl" href="' + esc(f.download) + '">Descargar</a>' +
+                      '<a class="tp-media-card__dl" href="' + esc(f.download) + '">' + tpT('download') + '</a>' +
                       "</figcaption></figure>"
                     );
                   })

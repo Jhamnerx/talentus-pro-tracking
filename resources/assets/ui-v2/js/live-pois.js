@@ -188,7 +188,7 @@
                 .then(function (r) {
                   btn.disabled = false;
                   if (r && r.ok && r.data && r.data.ok) {
-                    tpModal.toast && tpModal.toast(id ? "POI actualizado." : "POI creado.", "success");
+                    tpModal.toast && tpModal.toast(id ? tpT('poi_updated') : tpT('poi_created'), "success");
                     tpModal.close(dialog);
                     load(true);
                   } else if (r && r.status === 422) {
@@ -332,7 +332,7 @@
     var formats = { csv: "CSV", gexp: "GEXP", kml: "KML" };
     var types = {
       export_single: "Exportar seleccionados",
-      export_active: "Exportar activos",
+      export_active: tpT('export_active_m'),
       export_inactive: "Exportar inactivos",
       export_groups: tpT('ui.export_by_groups'),
     };
@@ -343,7 +343,7 @@
       .map(function (p) { return '<label class="tp-zexp-item"><input type="checkbox" data-exp-id value="' + p.id + '"><span>' + esc(p.name) + "</span></label>"; })
       .join("");
     tpModal.open({
-      title: "Exportar POIs",
+      title: tpT('export_pois'),
       size: "md",
       body:
         '<div class="tp-field"><label class="tp-field__label">Formato</label><select class="tp-input" data-exp-format>' + opt(formats) + "</select></div>" +
@@ -418,10 +418,10 @@
       return '<option value="' + ic.id + '">' + esc(ic.name || ("Icono " + ic.id)) + "</option>";
     }).join("");
     tpModal.open({
-      title: "Importar POIs",
+      title: tpT('import_pois'),
       size: "sm",
       body:
-        '<div class="tp-field"><label class="tp-field__label">Archivo</label>' +
+        '<div class="tp-field"><label class="tp-field__label">' + tpT('file') + '</label>' +
         '<input type="file" class="tp-input" data-imp-file accept=".csv,.gexp,.kml"></div>' +
         '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.default_icon') + '</label>' +
         '<select class="tp-input" data-imp-icon>' + icons + "</select></div>" +
@@ -446,7 +446,7 @@
               .then(function (r) {
                 btn.disabled = false;
                 if (r && r.ok && r.data && r.data.ok) {
-                  tpModal.toast((r.data.message) || "POIs importados.", "success");
+                  tpModal.toast((r.data.message) || tpT('pois_imported'), "success");
                   tpModal.close(dlg);
                   load(true);
                 } else {

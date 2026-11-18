@@ -114,7 +114,7 @@
                     var period =
                       a.active_from || a.active_to
                         ? (a.active_from || "…") + " → " + (a.active_to || "…")
-                        : "Siempre activa";
+                        : tpT('always_active');
                     // El legacy tambien indica a cuantos vehiculos aplica.
                     var alcance =
                       a.devices > 1 ? " · " + a.devices + tpT('ui.vehicles_lower') : a.devices === 1 ? tpT('ui.dot_one_vehicle') : "";

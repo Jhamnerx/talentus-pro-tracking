@@ -183,7 +183,7 @@
         return;
       }
       if (!res.ok || !res.data || !res.data.ok) { tpModal.toast(tpT('ui.save_failed'), "error"); return; }
-      tpModal.toast(id ? "Actualizado." : "Registrado.", "success");
+      tpModal.toast(id ? tpT('updated_short') : tpT('registered_short'), "success");
       tpModal.close(dlg);
       if (onSaved) onSaved();
     }).catch(function () { tpModal.setBusy(dlg, false); tpModal.toast(tpT('ui.network_error'), "error"); });

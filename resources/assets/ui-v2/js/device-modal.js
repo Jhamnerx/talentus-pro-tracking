@@ -395,7 +395,7 @@
               : '<input type="number" class="tp-input tp-input--sm" data-rc-to value="' + r.to + '" min="1" style="width:64px;">') +
             '<input type="color" data-rc-color value="' + (r.color || "#2563eb") + '">' +
             (ranges.length > 1
-              ? '<button type="button" class="tp-routecolors__del" data-rc-del title="Quitar">×</button>'
+              ? '<button type="button" class="tp-routecolors__del" data-rc-del title="' + tpT('remove') + '" aria-label="' + tpT('remove') + '">×</button>'
               : "") +
             "</span>"
           );
@@ -1091,7 +1091,7 @@
           if (res.ok && res.data && res.data.status === 1) {
             root.querySelector("[data-maint-motivo]").value = "";
             root.querySelector("[data-maint-notas]").value = "";
-            tpModal.toast("Registro guardado.", "success");
+            tpModal.toast(tpT('record_saved'), "success");
             load();
             return;
           }
@@ -2041,7 +2041,7 @@
             added++;
           });
           tpModal.toast(
-            added + " de " + items.length + " valores importados.",
+            tpT('values_imported', { added: added, total: items.length }),
             added ? "success" : "warning",
           );
         });

@@ -290,7 +290,7 @@
       var raw = this.searchEl ? this.searchEl.value.trim() : q;
       html =
         '<div class="' + C.opt + '" role="option" data-dd-val="' + esc(raw) + '">' +
-        CHECK_PAD + '<span class="truncate">+ ' + esc('Usar "' + raw + '"') + "</span></div>" + html;
+        CHECK_PAD + '<span class="truncate">+ ' + esc(tpT('use_value', { value: raw })) + "</span></div>" + html;
     }
     list.innerHTML = html || '<div class="' + C.empty + '">—</div>';
     this.activeIdx = -1;

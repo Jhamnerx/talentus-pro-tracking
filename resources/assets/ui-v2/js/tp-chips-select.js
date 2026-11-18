@@ -159,7 +159,7 @@
 
       panel.innerHTML =
         '<div style="position:sticky;top:0;background:inherit;padding:2px 4px 6px;z-index:1;">' +
-        '<input type="search" data-cs-search placeholder="Búsqueda" autocomplete="off" ' +
+        '<input type="search" data-cs-search placeholder="' + tpT('front.search') + '" aria-label="' + tpT('front.search') + '" autocomplete="off" ' +
         'style="width:100%;height:30px;padding:0 10px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;font-size:13px;background:var(--surface-sunken,#f8fafc);">' +
         // Accesos del legacy: marcar y desmarcar de golpe. Actuan sobre lo
         // que la busqueda deja a la vista, no sobre toda la flota, que es lo
