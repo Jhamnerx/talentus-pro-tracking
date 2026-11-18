@@ -42,13 +42,13 @@
                     max="{{ date('Y-m-d') }}">
             </label>
             <label class="tp-form__field tp-col-2">
-                <span class="tp-form__label">Motivo <span style="color:#ef4444;">*</span></span>
+                <span class="tp-form__label">{{ trans('ui.reason') }} <span style="color:#ef4444;">*</span></span>
                 <input type="text" class="tp-input" data-maint-motivo maxlength="500"
                     placeholder="{{ trans('ui.reactivation_example') }}">
             </label>
             <label class="tp-form__field tp-col-2">
-                <span class="tp-form__label">Notas adicionales</span>
-                <input type="text" class="tp-input" data-maint-notas maxlength="2000" placeholder="Opcional">
+                <span class="tp-form__label">{{ trans('ui.additional_notes') }}</span>
+                <input type="text" class="tp-input" data-maint-notas maxlength="2000" placeholder="{{ trans('ui.optional') }}">
             </label>
             <div class="tp-form__field tp-col-2" style="align-items:flex-end;">
                 <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-maint-save>
@@ -64,7 +64,7 @@
                     <tr>
                         <th style="width: 118px;">{{ trans('validation.attributes.type') }}</th>
                         <th style="width: 92px;">{{ trans('front.date') }}</th>
-                        <th>Motivo</th>
+                        <th>{{ trans('ui.reason') }}</th>
                         <th>{{ trans('validation.attributes.notes') }}</th>
                         <th style="width: 150px;">{{ trans('ui.username') }}</th>
                         <th style="width: 70px;">Sync</th>

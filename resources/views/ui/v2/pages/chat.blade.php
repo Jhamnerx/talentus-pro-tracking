@@ -27,7 +27,7 @@
                 </span>
             </header>
             <ul class="tp-chat__convs" id="tp-chat-convs">
-                <li class="tp-chat__empty">Cargando…</li>
+                <li class="tp-chat__empty">{{ trans('ui.loading_ellipsis') }}</li>
             </ul>
         </aside>
 

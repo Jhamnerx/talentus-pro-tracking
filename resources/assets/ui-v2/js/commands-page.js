@@ -459,9 +459,10 @@
         return '<option value="' + esc(o.id) + '"' + (item && item.protocol === o.id ? " selected" : "") + ">" + esc(o.title) + "</option>";
       })
       .join("");
+    var dtypesSel = (item && item.device_types ? item.device_types : []).map(String);
     var dtypeOpts = meta.device_types
       .map(function (o) {
-        return '<option value="' + esc(o.id) + '">' + esc(o.title) + "</option>";
+        return '<option value="' + esc(o.id) + '"' + (dtypesSel.indexOf(String(o.id)) >= 0 ? " selected" : "") + ">" + esc(o.title) + "</option>";
       })
       .join("");
 
@@ -515,17 +516,24 @@
               type: type,
               title: dlg.querySelector('[name="title"]').value.trim(),
               adapted: dlg.querySelector('[name="adapted"]').value,
-              protocol: dlg.querySelector('[name="protocol"]').value,
+              // Sin permiso device.protocol / device.device_type_id esos
+              // campos no se pintan: querySelector daba null y no guardaba.
+              // Como el legacy, el protocolo solo viaja con la plantilla
+              // adaptada a protocolo (el campo oculto no se envía).
+              protocol: dlg.querySelector('[name="adapted"]').value === "protocol"
+                ? (dlg.querySelector('[name="protocol"]') || {}).value || ""
+                : undefined, // fuera del JSON: el helper guarda null
               message: dlg.querySelector('[name="message"]').value,
               devices: Object.keys(checked).filter(function (id) {
                 return checked[id];
               }),
-              device_types: Array.prototype.map.call(
-                dlg.querySelector('[name="device_types"]').selectedOptions,
-                function (o) {
-                  return o.value;
-                },
-              ),
+              // Como el legacy (data-disablable hide-disable): los tipos solo
+              // viajan con la plantilla adaptada a tipos de dispositivo.
+              device_types: dlg.querySelector('[name="adapted"]').value === "device_types" && dlg.querySelector('[name="device_types"]')
+                ? Array.prototype.map.call(dlg.querySelector('[name="device_types"]').selectedOptions, function (o) {
+                    return o.value;
+                  })
+                : [],
               lock_action: (dlg.querySelector('[name="lock_action"]') || {}).value || "",
             };
             btn.disabled = true;
@@ -565,9 +573,11 @@
         };
         var sync = function () {
           var v = adaptedSel.value;
-          dlg.querySelector("[data-tpl-proto]").hidden = v !== "protocol";
+          var proto = dlg.querySelector("[data-tpl-proto]");
+          var dtypes = dlg.querySelector("[data-tpl-dtypes]");
+          if (proto) proto.hidden = v !== "protocol";
           dlg.querySelector("[data-tpl-devices]").hidden = v !== "devices";
-          dlg.querySelector("[data-tpl-dtypes]").hidden = v !== "device_types";
+          if (dtypes) dtypes.hidden = v !== "device_types";
           if (v === "devices") renderDevs("");
         };
         adaptedSel.addEventListener("change", sync);

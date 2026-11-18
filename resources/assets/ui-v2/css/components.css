@@ -494,6 +494,12 @@
   flex-direction: column;
   gap: var(--sp-2);
 }
+/* display:flex anulaba el atributo hidden: los campos que un formulario
+   oculta (p.ej. protocolo / equipos / tipos en las plantillas de comandos)
+   seguían viéndose. */
+.tp-field[hidden] {
+  display: none;
+}
 .tp-label {
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);

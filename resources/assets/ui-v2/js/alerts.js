@@ -60,10 +60,10 @@
     zone_in: tpT('ui.zone_entry_alt'),
     zone_out: tpT('ui.zone_exit_alt'),
     idle_duration: tpT('ui.long_idle'),
-    stop_duration: "Detenido prolongado",
+    stop_duration: tpT('ui.alert_type_stop_duration'),
     operation_stop: tpT('ui.ops_alert_operation_stop'),
-    offline_duration: "Offline prolongado",
-    move_duration: "Movimiento prolongado",
+    offline_duration: tpT('ui.alert_type_offline_duration'),
+    move_duration: tpT('ui.alert_type_move_duration'),
     move_start: tpT('ui.movement_start'),
     ignition_on: tpT('ui.engine_on'),
     ignition_off: tpT('ui.engine_off'),
@@ -73,19 +73,19 @@
     driver_authorized: tpT('ui.authorized_driver'),
     driver_unauthorized: tpT('ui.unauthorized_driver'),
     expiring_device: tpT('ui.device_about_to_expire'),
-    expired_device: "Dispositivo expirado",
+    expired_device: tpT('ui.alert_type_expired_device'),
     expiring_sim: tpT('ui.sim_about_to_expire'),
-    expired_sim: "SIM expirada",
+    expired_sim: tpT('ui.alert_type_expired_sim'),
     expiring_user: tpT('ui.user_about_to_expire'),
-    expired_user: "Usuario expirado",
-    unplugged: "Desconectado",
-    plugged_in: "Conectado",
+    expired_user: tpT('ui.alert_type_expired_user'),
+    unplugged: tpT('ui.alert_type_unplugged'),
+    plugged_in: tpT('ui.alert_type_plugged_in'),
     ghost_speed: tpT('ui.ghost_speed'),
     jump_from_stop: tpT('ui.jump_from_stop'),
     task_new: tpT('ui.new_task'),
-    task_complete: "Tarea completa",
-    task_failed: "Tarea fallida",
-    custom: "Evento personalizado",
+    task_complete: tpT('ui.alert_type_task_complete'),
+    task_failed: tpT('ui.alert_type_task_failed'),
+    custom: tpT('ui.alert_type_custom'),
     distance: tpT('front.distance'),
     time_duration: tpT('ui.temporary_duration'),
   };
@@ -94,16 +94,16 @@
   var CHAN_LABEL = {
     color: tpT('ui.color'),
     silent: tpT('ui.anti_repeat'),
-    sound: "Sonido",
-    popup: "Popup",
-    auto_hide: "Auto-ocultar",
-    push: "Push",
-    email: "Email",
-    sms: "SMS",
-    webhook: "Webhook",
-    sharing_email: "Email comp.",
-    sharing_sms: "SMS comp.",
-    command: "Comando",
+    sound: tpT('ui.chan_sound'),
+    popup: tpT('ui.chan_popup'),
+    auto_hide: tpT('ui.chan_auto_hide'),
+    push: tpT('ui.chan_push'),
+    email: tpT('ui.chan_email'),
+    sms: tpT('ui.chan_sms'),
+    webhook: tpT('ui.chan_webhook'),
+    sharing_email: tpT('ui.chan_sharing_email'),
+    sharing_sms: tpT('ui.chan_sharing_sms'),
+    command: tpT('ui.chan_command'),
   };
 
   function typeLabel(t) {
@@ -123,7 +123,7 @@
         r.id +
         '">' +
         ICON_EDIT +
-        " Editar</button>";
+        " " + esc(tpT('global.edit')) + "</button>";
     if (CAN_EDIT)
       items +=
         '<button type="button" role="menuitem" data-act="toggle" data-id="' +

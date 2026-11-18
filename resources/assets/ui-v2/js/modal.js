@@ -285,7 +285,7 @@
     opts = opts || {};
     return new Promise(function (resolve) {
       open({
-        title: opts.title || "Aviso",
+        title: opts.title || tpT("ui.notice"),
         size: "sm",
         body:
           '<p style="margin:0; font-size:14px; line-height:1.5;">' +
@@ -293,7 +293,7 @@
           "</p>",
         buttons: [
           {
-            label: "OK",
+            label: tpT("ui.ok"),
             variant: "primary",
             onClick: function () {
               resolve();
@@ -336,7 +336,7 @@
       if (busy) b.dataset._txt = b.dataset._txt || b.innerHTML;
       b.innerHTML = busy
         ? '<span class="tp-modal__busy"></span>' +
-          (b.dataset._txt || "Guardando…")
+          (b.dataset._txt || tpT("ui.saving"))
         : b.dataset._txt || b.innerHTML;
       if (!busy) delete b.dataset._txt;
     });

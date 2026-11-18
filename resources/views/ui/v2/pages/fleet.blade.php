@@ -74,7 +74,7 @@
                     <span>{{ trans('front.export') }}</span>
                 </button>
                 <button class="tp-btn tp-btn--ghost tp-btn--icon" id="tp-fleet-refresh"
-                    title="Actualizar" aria-label="Actualizar">
+                    title="{{ trans('ui.refresh') }}" aria-label="{{ trans('ui.refresh') }}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2">
                         <path d="M21 12a9 9 0 11-3-6.7L21 8" />
@@ -190,7 +190,7 @@
                         <th class="tp-text-right" data-sort="speed">km/h</th>
                         <th class="tp-text-right">{{ trans('ui.engine_h') }}</th>
                         <th>{{ trans('ui.last_movement') }}</th>
-                        <th>Expira</th>
+                        <th>{{ trans('ui.expires') }}</th>
                         <th class="tp-fleet__th-actions"></th>
                     </tr>
                 </thead>

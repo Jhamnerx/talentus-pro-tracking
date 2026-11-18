@@ -182,21 +182,22 @@
 **Funciones del legacy que faltan en la v2**
 - ~~**Vídeo en vivo y grabaciones**~~ — **resuelto** (ver §5).
 - **Planes y «upgrade» del dispositivo**: el legacy tiene el botón (`Objects/item.blade.php:18-23`); en la v2 no hay módulo.
-- **Opciones de los bloques del Dashboard** (colores de estado, vehículos del bloque de distancia): la v2 las lee, pero no hay pantalla para editarlas.
+- ~~**Opciones de los bloques del Dashboard**~~ — **resuelto el 18-nov-2026**: botón de engranaje en `/ui/v2/dashboard` con un `tpModal` (colores de estado, vehículos y periodo del bloque de distancia, periodo de eventos y tareas). Guarda en `users.settings → dashboard.blocks.<bloque>.options`, la misma estructura que el legacy (`DashboardController@updateOptions`).
 - ~~**Marcas de llenado y robo de combustible en el Historial**~~ — **resuelto** (ver §5).
 - ~~**Botón «Probar FTP» en Reportes**~~ — **resuelto** (ver §5).
 - ~~**Conductores: registro de actividad y edición múltiple**~~ — **resuelto** (ver §5).
 - **Checklists**: faltan el código QR y la vista previa (el addon está apagado en esta instalación).
-- **Chat**: falta la búsqueda de participantes; la v2 lista como máximo 50 vehículos.
+- ~~**Chat**~~ — **resuelto el 18-nov-2026**: la búsqueda ya existía (mismo scope `search()` que el legacy); se añadió la carga al bajar de 50 en 50 con «Mostrando X de Y» (`ChatController@conversations` con `offset`/`limit`).
 
 **Fallos encontrados en el código de la v2**
 - ~~**El tema y la densidad no se guardan en el servidor.**~~ **Corregido el 14-nov-2026**: `ShellController@preferences` usa `setSettings`, y el layout lee la preferencia de la cuenta, que gana a la cookie y al localStorage.
 - ~~**Abrir cualquier URL `/ui/v2/*` vuelve a poner `ui_version=v2`.**~~ **Corregido el 14-nov-2026**: la preferencia solo cambia por elección explícita. «Nueva UI» lleva a `/ui/v2/switch` y «Versión anterior» a `/ui/v2/legacy`.
-- **El estado «leído» de las notificaciones** vive solo en el navegador y no se sincroniza entre dispositivos.
+- ~~**El estado «leído» de las notificaciones**~~ — **corregido el 18-nov-2026**: «Marcar todo como leído» guarda el id del último evento en `users.settings → tp_notif_seen_id` (`ShellController@notificationsSeen`) y la bandeja llega con `read` resuelto. En cuentas demo sigue en el localStorage.
 - **El mapa en vivo y la pestaña En vivo de Operaciones se actualizan por sondeo**: el socket solo lleva avisos, mensajes y fotos.
-- **Textos sin traducir** en el código: «Geocerca» y «POI» en `ShellController.php:95,115`, «Confirmar email» en `topbar.blade.php:189` y `aria-label="Command Palette"`.
+- ~~**Textos sin traducir**~~ — **corregido el 18-nov-2026**: los citados («Geocerca», «POI», «Confirmar email», «Command Palette»), `CHAN_LABEL`/`TYPE_LABELS` de `alerts.js`, «Aviso»/«OK»/«Guardando…» de `modal.js`, los `title="Editar"`/«Eliminar» de cuenta, reenvíos, POIs y geocercas, y unos 30 literales más de las vistas v2 (tablero, mapa, flota, eventos, paleta, bandeja…). Quedan literales dentro de otros JS de la v2 (p. ej. `tp-route-schedules.js`, respaldos de `T(...)`).
 - **Accesibilidad**: quedan 49 campos sin etiqueta y 4 conmutadores sin estado.
-- **Pendientes de verificar** (según `TALENTUS_MIGRATION_STATUS.md:211-212`): las plantillas GPRS/SMS desasocian los equipos al editar, y faltan CustomFields en el formulario del vehículo.
+- ~~**Pendientes de verificar**~~ — **revisado el 18-nov-2026**: los equipos ya no se desasociaban (`CommandsController@saveTemplate` los conserva salvo con la plantilla adaptada a equipos, como el `syncLoader` del legacy), pero los **tipos de dispositivo** sí: el formulario no los preseleccionaba al editar. Corregido, junto con los campos ocultos que se seguían viendo (`.tp-field[hidden]`) y el protocolo, que ahora solo viaja con la plantilla adaptada a protocolo. Los CustomFields ya estaban en la ficha del vehículo (pestaña «Campos personalizados», mismo gate `can('view', $item, 'custom_fields') && hasCustomFields()` que el legacy); en dev no hay campos definidos para verlo en pantalla.
+- ~~**Estilos del popup legacy sin compilar**~~ — **resuelto el 18-nov-2026**: `gulp templates` con Node 16 (node-sass no compila con Node 22). Los 29 temas llevan `.popup-actions`; el diff de los CSS solo trae esas tres reglas.
 
 ---
 

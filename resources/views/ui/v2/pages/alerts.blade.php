@@ -66,7 +66,7 @@
                             <th style="width:66px;">{{ trans('front.state') }}</th>
                             <th>{{ trans('ui.name') }}</th>
                             <th>{{ trans('front.type') }}</th>
-                            <th>Alcance</th>
+                            <th>{{ trans('ui.scope') }}</th>
                             <th>{{ trans('front.notifications') }}</th>
                             <th>{{ trans('front.schedule') }}</th>
                             <th class="tp-svc-table__actions"></th>

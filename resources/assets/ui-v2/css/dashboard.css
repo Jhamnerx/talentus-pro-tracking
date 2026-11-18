@@ -823,3 +823,19 @@
 [data-theme="dark"] .tp-dash__chip.is-active {
   color: var(--fg-on-brand);
 }
+
+/* ----- Modal «Opciones del tablero» (dashboard.js → openOptions) ----- */
+.tp-dash-opt { display: flex; flex-direction: column; gap: 18px; }
+.tp-dash-opt section { display: flex; flex-direction: column; gap: 8px; }
+.tp-dash-opt__title { margin: 0; font-size: 13px; font-weight: 600; color: var(--fg-primary); }
+.tp-dash-opt__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tp-dash-opt__colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.tp-dash-opt__color {
+  display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--fg-secondary);
+  border: 1px solid var(--border-subtle, rgba(0,0,0,.08)); border-radius: 8px; padding: 6px 8px; cursor: pointer;
+}
+.tp-dash-opt__color input[type="color"] {
+  width: 28px; height: 22px; padding: 0; border: 0; background: none; cursor: pointer; flex-shrink: 0;
+}
+.tp-dash-opt [data-opt-reset] { align-self: flex-start; }
+@media (max-width: 560px) { .tp-dash-opt__grid { grid-template-columns: 1fr; } }

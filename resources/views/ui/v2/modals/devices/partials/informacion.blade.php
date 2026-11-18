@@ -127,7 +127,7 @@
     @endif
 
     <label class="tp-form__field">
-        <span class="tp-form__label">Operador SIM</span>
+        <span class="tp-form__label">{{ trans('ui.sim_operator') }}</span>
         <select class="tp-input" style="width: 100%" name="operator_sim" data-tp-field>
             @foreach ($operatorSimOptions as $k => $v)
                 <option value="{{ $k }}" {{ ($item->operator_sim ?? '') === $k ? 'selected' : '' }}>{{ $v }}</option>

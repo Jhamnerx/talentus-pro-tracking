@@ -291,9 +291,9 @@
           '</div></div><div class="tp-poi-row__actions">' +
           '<button type="button" class="tp-poi-row__btn" data-z-go title="Centrar">' +
           GO +
-          '</button><button type="button" class="tp-poi-row__btn" data-z-edit title="Editar">' +
+          '</button><button type="button" class="tp-poi-row__btn" data-z-edit title="' + tpT('global.edit') + '" aria-label="' + tpT('global.edit') + '">' +
           EDIT +
-          '</button><button type="button" class="tp-poi-row__btn tp-poi-row__btn--danger" data-z-del title="Eliminar">' +
+          '</button><button type="button" class="tp-poi-row__btn tp-poi-row__btn--danger" data-z-del title="' + tpT('global.delete') + '" aria-label="' + tpT('global.delete') + '">' +
           DEL +
           "</button></div></div>"
         );

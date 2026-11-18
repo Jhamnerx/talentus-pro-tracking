@@ -105,7 +105,7 @@ class ShellController extends BaseController
                         'type'  => 'geofence',
                         'id'    => $g->id,
                         'label' => $g->name,
-                        'meta'  => 'Geocerca',
+                        'meta'  => trans('ui.search_kind_geofence'),
                         'url'   => url('/ui/v2/live') . '?panel=zones',
                     ];
                 }
@@ -125,7 +125,7 @@ class ShellController extends BaseController
                         'type'  => 'poi',
                         'id'    => $p->id,
                         'label' => $p->name,
-                        'meta'  => 'POI',
+                        'meta'  => trans('ui.search_kind_poi'),
                         'url'   => url('/ui/v2/live') . '?panel=pois',
                     ];
                 }
@@ -170,7 +170,13 @@ class ShellController extends BaseController
 
         $events = $query->take($perPage)->get();
 
-        $items = $events->map(function ($event) {
+        // Estado «leído» en la cuenta (users.settings → ui_notifications_seen_id):
+        // el último evento que el usuario marcó como visto, para que el
+        // contador se sincronice entre navegadores y dispositivos. En demo no
+        // se guarda nada en el servidor y el cliente sigue con su localStorage.
+        $seenId = isDemoUser() ? null : (int) $user->getSettings(self::PREF_NOTIF_SEEN_ID);
+
+        $items = $events->map(function ($event) use ($seenId) {
             $deviceName = $event->device->name ?? null;
             $desc = trim(implode(' · ', array_filter([
                 $deviceName,
@@ -183,7 +189,7 @@ class ShellController extends BaseController
                 'description' => $desc,
                 'variant'     => $this->eventSeverity((string) $event->type),
                 'category'    => 'alerts',
-                'read'        => false, // lo resuelve el cliente (last-seen)
+                'read'        => $seenId !== null && (int) $event->id <= $seenId,
                 // Instante del evento en UTC real. `events.created_at` no sirve:
                 // lo escribe MySQL con la hora local del servidor (19:13 de Lima)
                 // y, con la app en UTC, salía «…T19:13+00:00»: el navegador
@@ -209,7 +215,45 @@ class ShellController extends BaseController
         return response()->json([
             'notifications' => $items,
             'has_more'      => count($items) === $perPage,
+            // null = cuenta demo: el cliente resuelve el leído en el navegador.
+            'seen_id'       => $seenId,
         ]);
+    }
+
+    /**
+     * «Marcar todo como leído»: guarda el id del evento más nuevo que el
+     * usuario tenía en la bandeja. Solo avanza (otro dispositivo con la lista
+     * desfasada no puede desmarcar lo que ya se leyó). Demo: como las demás
+     * preferencias, solo en el navegador.
+     */
+    public function notificationsSeen(Request $request): JsonResponse
+    {
+        $user = $this->user;
+        if (! $user) {
+            return response()->json(['ok' => false], 401);
+        }
+
+        $id = (int) $request->input('last_id', 0);
+        if ($id <= 0) {
+            return response()->json(['ok' => false, 'error' => 'invalid_id'], 422);
+        }
+
+        if (isDemoUser()) {
+            return response()->json(['ok' => true, 'demo' => true]);
+        }
+
+        // No guardar ids que no existen: el contador quedaría en cero para
+        // siempre si alguien mandase un número enorme.
+        $max = (int) \Tobuli\Entities\Event::userAccessible($user)->max('events.id');
+        $id = min($id, $max);
+
+        $current = (int) $user->getSettings(self::PREF_NOTIF_SEEN_ID);
+        if ($id > $current) {
+            $user->setSettings(self::PREF_NOTIF_SEEN_ID, $id);
+            $current = $id;
+        }
+
+        return response()->json(['ok' => true, 'seen_id' => $current]);
     }
 
     public function preferences(Request $request): JsonResponse

@@ -111,7 +111,7 @@
 
     {{-- Theme toggle --}}
     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" id="tp-theme-toggle" data-tooltip="{{ trans('ui.change_theme') }}"
-        aria-label="Cambiar tema">
+        aria-label="{{ trans('ui.change_theme') }}">
         <svg class="tp-icon-dark" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -204,7 +204,7 @@
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
                     <polyline points="22,6 12,13 2,6" />
                 </svg>
-                Confirmar email
+                {{ trans('ui.confirm_email') }}
                 <span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#f59e0b;flex:0 0 auto;"
                     aria-hidden="true"></span>
             </button>

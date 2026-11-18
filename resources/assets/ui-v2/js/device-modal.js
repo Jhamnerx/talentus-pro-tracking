@@ -732,7 +732,7 @@
       "</button>" +
       '<div class="tp-svc-kebab__menu" role="menu" hidden>' +
       '<button type="button" role="menuitem" ' + editAttr + '="' + id + '"' + (editExtra || "") + ">" +
-      K_EDIT + " Editar</button>" +
+      K_EDIT + " " + tpT('global.edit') + "</button>" +
       '<button type="button" role="menuitem" class="is-danger" ' + delAttr + '="' + id + '">' +
       K_TRASH + " Eliminar</button>" +
       "</div></div>"

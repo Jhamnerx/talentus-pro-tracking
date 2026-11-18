@@ -19,9 +19,13 @@
   var data = [];
   var pollMs = 30000;
 
-  // Estado "leído" client-side: timestamp last-seen en localStorage (la
-  // tabla events no tiene marcador de lectura; el server manda read=false).
+  // Estado "leído": el servidor guarda en la cuenta el id del último evento
+  // visto (users.settings → tp_notif_seen_id) y manda cada aviso ya con
+  // `read`, así se sincroniza entre navegadores y dispositivos. Solo en cuentas
+  // demo (seen_id = null) se resuelve aquí con un instante en localStorage,
+  // como las demás preferencias de la demo.
   var SEEN_KEY = "tp_notif_seen";
+  var demo = false;
   function getSeen() {
     try {
       return parseInt(localStorage.getItem(SEEN_KEY), 10) || 0;
@@ -35,6 +39,7 @@
     } catch (e) {}
   }
   function applySeen() {
+    if (!demo) return;
     var seen = getSeen();
     data.forEach(function (n) {
       if (n.read) return;
@@ -183,6 +188,7 @@
       })
       .then(function (json) {
         data = (json && json.notifications) || [];
+        demo = !!json && json.seen_id === null;
         applySeen();
         render();
         refreshBadge();
@@ -204,7 +210,23 @@
 
   if (markAll) {
     markAll.addEventListener("click", function () {
-      setSeen(Date.now());
+      if (demo) {
+        setSeen(Date.now());
+      } else if (data.length && T.routes && T.routes.notificationsSeen) {
+        // El id más alto de la bandeja: todo lo anterior queda leído.
+        var lastId = data.reduce(function (m, n) { return Math.max(m, n.id || 0); }, 0);
+        fetch(T.routes.notificationsSeen, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRF-TOKEN": T.csrf || "",
+          },
+          body: JSON.stringify({ last_id: lastId }),
+        }).catch(function () { /* el próximo sondeo lo corrige */ });
+      }
       data.forEach(function (n) {
         n.read = true;
       });

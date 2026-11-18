@@ -52,7 +52,7 @@
                         <input type="date" class="tp-input tp-input--sm" id="tp-events-to"
                         aria-label="{{ trans('global.to') }}" title="{{ trans('global.to') }}">
                         <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-events-range-clear"
-                            title="Limpiar rango">×</button>
+                            title="{{ trans('ui.clear_range') }}" aria-label="{{ trans('ui.clear_range') }}">×</button>
                     </div>
                 </details>
                 <select class="tp-input" style="width:100%" id="tp-events-type"
@@ -187,9 +187,9 @@
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
                         style="background:#ef4444"></span> {{ trans('admin.status_critico') }}</div>
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
-                        style="background:#f59e0b"></span> Advertencia</div>
+                        style="background:#f59e0b"></span> {{ trans('ui.severity_warning') }}</div>
                 <div class="tp-events__legend-row"><span class="tp-events__legend-dot"
-                        style="background:#3b82f6"></span> Informativo</div>
+                        style="background:#3b82f6"></span> {{ trans('ui.severity_info') }}</div>
                 <div class="tp-events__legend-note" id="tp-ev-legend-note"></div>
             </div>
 

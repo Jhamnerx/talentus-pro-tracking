@@ -45,35 +45,79 @@
     }).then(function (r) { return r.json(); });
   }
 
-  /* ----- Lista de conversaciones ----- */
-  function loadConversations() {
-    return get(URLS.conversations + "?s=" + encodeURIComponent(state.s)).then(function (res) {
-      if (!res || !res.ok) return;
-      var items = res.items || [];
-      convsEl.innerHTML = items.length
-        ? items.map(function (c) {
-            return (
-              '<li class="tp-chat__conv-item' + (state.deviceId === c.device_id ? " is-active" : "") +
-              '" role="button" tabindex="0" aria-current="' +
-              (state.deviceId === c.device_id ? "true" : "false") + '" data-device="' + c.device_id + '">' +
-              '<span class="tp-chat__avatar">' + esc((c.name || "?").slice(0, 2).toUpperCase()) + "</span>" +
-              '<span class="tp-chat__conv-info"><span class="tp-chat__conv-title">' + esc(c.name) + "</span></span>" +
-              (c.unread ? '<span class="tp-chat__badge">' + c.unread + "</span>" : "") +
-              "</li>"
-            );
-          }).join("")
-        : '<li class="tp-chat__empty">' + tpT('ui.no_vehicles_with_chat') + '</li>';
-    });
+  /* ----- Lista de conversaciones -----
+     Paginada como el legacy (alli de 10 en 10 con enlaces; aqui de 50 en 50
+     al bajar). El refresco pide desde el principio todo lo ya cargado, asi
+     la lista no se recorta ni salta cuando llega un mensaje. */
+  var PAGE = 50;
+  var list = { items: [], hasMore: false, total: 0, loading: false, seq: 0 };
+
+  function convHtml(c) {
+    return (
+      '<li class="tp-chat__conv-item' + (state.deviceId === c.device_id ? " is-active" : "") +
+      '" role="button" tabindex="0" aria-current="' +
+      (state.deviceId === c.device_id ? "true" : "false") + '" data-device="' + c.device_id + '">' +
+      '<span class="tp-chat__avatar">' + esc((c.name || "?").slice(0, 2).toUpperCase()) + "</span>" +
+      '<span class="tp-chat__conv-info"><span class="tp-chat__conv-title">' + esc(c.name) + "</span></span>" +
+      (c.unread ? '<span class="tp-chat__badge">' + c.unread + "</span>" : "") +
+      "</li>"
+    );
   }
 
+  function renderList() {
+    if (!list.items.length) {
+      convsEl.innerHTML = '<li class="tp-chat__empty">' +
+        (state.s ? tpT('ui.no_results') : tpT('ui.no_vehicles_with_chat')) + '</li>';
+      return;
+    }
+    convsEl.innerHTML = list.items.map(convHtml).join("") +
+      (list.hasMore
+        ? '<li class="tp-chat__more" data-more>' + esc(list.loading ? tpT('ui.loading_more') : tpT('ui.chat_more', { shown: list.items.length, total: list.total })) + '</li>'
+        : "");
+  }
+
+  // more=false: recarga desde el principio (busqueda o refresco);
+  // more=true: añade la pagina siguiente al final.
+  function loadConversations(more) {
+    if (more && (list.loading || !list.hasMore)) return Promise.resolve();
+    var seq = ++list.seq;
+    var offset = more ? list.items.length : 0;
+    var limit = more ? PAGE : Math.max(PAGE, list.items.length);
+    list.loading = true;
+    if (more) renderList();
+    return get(URLS.conversations + "?s=" + encodeURIComponent(state.s) + "&offset=" + offset + "&limit=" + limit)
+      .then(function (res) {
+        if (seq !== list.seq) return; // llego tarde: hay una peticion mas nueva
+        list.loading = false;
+        if (!res || !res.ok) { renderList(); return; }
+        list.items = more ? list.items.concat(res.items || []) : (res.items || []);
+        list.hasMore = !!res.has_more;
+        list.total = res.total || list.items.length;
+        renderList();
+        fillIfShort();
+      })
+      .catch(function () { if (seq === list.seq) { list.loading = false; renderList(); } });
+  }
+
+  // Si la primera pagina no llena la columna no hay scroll que dispare la
+  // carga: se pide la siguiente directamente.
+  function fillIfShort() {
+    if (list.hasMore && convsEl.scrollHeight <= convsEl.clientHeight + 4) loadConversations(true);
+  }
+
+  convsEl.addEventListener("scroll", function () {
+    if (convsEl.scrollTop + convsEl.clientHeight >= convsEl.scrollHeight - 80) loadConversations(true);
+  });
+
   convsEl.addEventListener("click", function (e) {
+    if (e.target.closest("[data-more]")) { loadConversations(true); return; }
     var li = e.target.closest("[data-device]");
     if (li) openConversation(parseInt(li.getAttribute("data-device"), 10), li);
   });
 
   searchEl.addEventListener("input", function () {
     clearTimeout(searchTimer);
-    searchTimer = setTimeout(function () { state.s = searchEl.value.trim(); loadConversations(); }, 300);
+    searchTimer = setTimeout(function () { state.s = searchEl.value.trim(); list.items = []; convsEl.scrollTop = 0; loadConversations(); }, 300);
   });
 
   /* ----- Abrir conversación ----- */
@@ -88,7 +132,7 @@
 
     placeholderEl.hidden = true;
     convEl.hidden = false;
-    msgsEl.innerHTML = '<div class="tp-chat__loading">Cargando…</div>';
+    msgsEl.innerHTML = '<div class="tp-chat__loading">' + tpT('ui.loading_ellipsis') + '</div>';
 
     get(URLS.open.replace("{id}", deviceId)).then(function (res) {
       if (!res || !res.ok || state.deviceId !== deviceId) return;
@@ -172,5 +216,5 @@
 
   /* ----- Boot + polling de la lista ----- */
   loadConversations();
-  listTimer = setInterval(loadConversations, 20000);
+  listTimer = setInterval(function () { loadConversations(); }, 20000);
 })();

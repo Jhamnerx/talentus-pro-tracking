@@ -463,7 +463,7 @@
 
         if ("totalEvents" in p) {
           var te = $("[data-total-events]");
-          if (te) te.textContent = fmt(p.totalEvents || 0) + " eventos";
+          if (te) te.textContent = tpT((p.totalEvents || 0) === 1 ? "events_count_one" : "events_count_other", { count: fmt(p.totalEvents || 0) });
         }
         if (p.from) {
           // Los accesos rápidos (Hoy/Ayer/Semana/Mes) reflejan sus fechas en
@@ -473,7 +473,7 @@
         }
         var fetched = $("#tp-dash-fetched");
         if (fetched && p.from) {
-          fetched.textContent = "Rango " + p.from + " → " + p.to + " · actualizado " + new Date(p.fetchedAt).toLocaleTimeString();
+          fetched.textContent = tpT("dashboard_range_fetched", { from: p.from, to: p.to, time: new Date(p.fetchedAt).toLocaleTimeString() });
         }
       })
       .catch(function (err) { console.warn("[dashboard] load failed", err); })
@@ -513,6 +513,114 @@
     });
   var refreshBtn = $("#tp-dash-refresh");
   if (refreshBtn) refreshBtn.addEventListener("click", function () { load("all"); load("driving"); });
+
+  /* ----- Opciones de los bloques -----
+   * Las mismas que el desplegable de cada bloque del tablero legacy y en la
+   * misma estructura (users.settings → dashboard.blocks.<bloque>.options):
+   * colores de estado (device_overview), periodo y vehículos del bloque de
+   * distancia (device_distance) y periodo de eventos/tareas. */
+  var OPTIONS_URL = root.getAttribute("data-options-url");
+  var OPTIONS_SAVE_URL = root.getAttribute("data-options-save-url");
+
+  function periodSelect(block, value, allowed) {
+    var names = { day: tpT("front.day"), week: tpT("front.week"), month: tpT("front.month") };
+    return '<select class="tp-input" data-opt-period="' + block + '" style="width:100%;">' +
+      allowed.map(function (k) {
+        var n = names[k] || k;
+        return '<option value="' + k + '"' + (value === k ? " selected" : "") + ">" +
+          escapeHtml(n.charAt(0).toUpperCase() + n.slice(1)) + "</option>";
+      }).join("") + "</select>";
+  }
+
+  function field(label, html, full) {
+    return '<div class="tp-field"' + (full ? ' style="grid-column:1/-1;"' : "") + ">" +
+      '<label class="tp-field__label">' + escapeHtml(label) + "</label>" + html + "</div>";
+  }
+
+  function openOptions() {
+    if (!OPTIONS_URL || !window.tpModal) return;
+    tpModal.fetchJSON(OPTIONS_URL).then(function (r) {
+      if (!r.ok || !r.data || !r.data.ok) { tpModal.errorToast(r, tpT("front.unexpected_error")); return; }
+      var o = r.data;
+
+      var colors = (o.colors || []).map(function (c) {
+        return '<label class="tp-dash-opt__color">' +
+          '<input type="color" data-opt-color="' + escapeHtml(c.key) + '" data-default="' + escapeHtml(c.default) +
+          '" value="' + escapeHtml(c.color) + '" aria-label="' + escapeHtml(c.label) + '">' +
+          "<span>" + escapeHtml(c.label) + "</span></label>";
+      }).join("");
+
+      var body =
+        '<div class="tp-scope tp-dash-opt">' +
+        '<section><h3 class="tp-dash-opt__title">' + escapeHtml(tpT("fleet_status")) + "</h3>" +
+        '<p class="tp-field__hint">' + escapeHtml(tpT("dashboard_colors_hint")) + "</p>" +
+        '<div class="tp-dash-opt__colors">' + colors + "</div>" +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-opt-reset>' + escapeHtml(tpT("restore_default_colors")) + "</button>" +
+        "</section>" +
+        '<section><h3 class="tp-dash-opt__title">' + escapeHtml(tpT("top_mileage_units")) + "</h3>" +
+        '<div class="tp-dash-opt__grid">' +
+        field(tpT("vehicles"), '<div data-opt-devices></div><span class="tp-field__hint">' + escapeHtml(tpT("dashboard_mileage_devices_hint")) + "</span>", true) +
+        field(tpT("dashboard_distance_period"), periodSelect("device_distance", o.periods.device_distance, ["day", "week"])) +
+        "</div></section>" +
+        '<section><h3 class="tp-dash-opt__title">' + escapeHtml(tpT("dashboard_legacy_blocks")) + "</h3>" +
+        '<div class="tp-dash-opt__grid">' +
+        field(tpT("dashboard_events_period"), periodSelect("latest_events", o.periods.latest_events, ["day", "week", "month"])) +
+        field(tpT("dashboard_tasks_period"), periodSelect("latest_tasks", o.periods.latest_tasks, ["day", "week", "month"])) +
+        "</div></section>" +
+        (o.demo ? '<p class="tp-field__hint">' + escapeHtml(tpT("demo_account_read_only")) + "</p>" : "") +
+        "</div>";
+
+      var dlg = tpModal.open({
+        title: tpT("dashboard_options"),
+        size: "md",
+        body: body,
+        buttons: [
+          { label: tpT("global.cancel"), variant: "ghost", close: true },
+          { label: tpT("global.save"), variant: "primary", disabled: !!o.demo, close: false,
+            onClick: function (d) { saveOptions(d); return false; } },
+        ],
+      });
+      if (!dlg) return;
+
+      if (window.tpChipsSelect) {
+        dlg._devices = tpChipsSelect({
+          mount: dlg.querySelector("[data-opt-devices]"),
+          items: o.devices || [],
+          selected: o.chosen || [],
+          placeholder: tpT("dashboard_mileage_sample"),
+          host: dlg,
+        });
+      }
+      var reset = dlg.querySelector("[data-opt-reset]");
+      if (reset) reset.addEventListener("click", function () {
+        $$("[data-opt-color]", dlg).forEach(function (i) { i.value = i.getAttribute("data-default"); });
+      });
+    });
+  }
+
+  function saveOptions(d) {
+    var payload = { colors: {}, periods: {}, devices: d._devices ? d._devices.getIds().map(Number) : [] };
+    $$("[data-opt-color]", d).forEach(function (i) { payload.colors[i.getAttribute("data-opt-color")] = i.value; });
+    $$("[data-opt-period]", d).forEach(function (s) { payload.periods[s.getAttribute("data-opt-period")] = s.value; });
+
+    tpModal.setBusy(d, true);
+    tpModal.fetchJSON(OPTIONS_SAVE_URL, { method: "POST", json: { options: payload } }).then(function (r) {
+      tpModal.setBusy(d, false);
+      if (!r.ok || !r.data || !r.data.ok) {
+        if (r.data && r.data.errors) tpModal.showFieldErrors(d, r.data.errors);
+        tpModal.errorToast(r, tpT("front.unexpected_error"));
+        return;
+      }
+      tpModal.close(d);
+      tpModal.toast(tpT("changes_saved"), "success");
+      // Colores (en vivo) y kilometraje (periodo) dependen de las opciones.
+      load("live");
+      load("period");
+    });
+  }
+
+  var optionsBtn = $("#tp-dash-options");
+  if (optionsBtn) optionsBtn.addEventListener("click", openOptions);
 
   /* ----- Tema / resize ----- */
   new MutationObserver(function () {

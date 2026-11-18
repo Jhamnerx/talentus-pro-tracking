@@ -24,7 +24,7 @@
                 <button class="tp-segmented__item" aria-selected="true" data-notif-filter="all">{{ trans('ui.all_f') }}</button>
                 <button class="tp-segmented__item" data-notif-filter="critical">{{ trans('ui.critical_plural_f') }}</button>
                 <button class="tp-segmented__item" data-notif-filter="alerts">{{ trans('front.alerts') }}</button>
-                <button class="tp-segmented__item" data-notif-filter="system">Informativos</button>
+                <button class="tp-segmented__item" data-notif-filter="system">{{ trans('ui.informative_plural') }}</button>
             </div>
         </div>
 

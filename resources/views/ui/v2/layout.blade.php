@@ -106,6 +106,7 @@
             routes: {
                 search: '{{ url('/ui/v2/api/search') }}',
                 notifications: '{{ url('/ui/v2/api/notifications') }}',
+                notificationsSeen: '{{ url('/ui/v2/api/notifications/seen') }}',
                 eventsLive: '{{ url('/ui/v2/api/events/live') }}',
                 preferences: '{{ url('/ui/v2/api/preferences') }}',
             },

@@ -122,6 +122,17 @@
   text-align: center;
 }
 
+/* Pie de la lista: «Mostrando X de Y» y carga de la página siguiente */
+.tp-chat__more {
+  padding: 10px 16px;
+  color: var(--fg-muted);
+  font-size: 12px;
+  text-align: center;
+  cursor: pointer;
+  list-style: none;
+}
+.tp-chat__more:hover { color: var(--fg-primary); }
+
 /* ---- Columna derecha ---- */
 .tp-chat__thread {
   display: flex;

@@ -11,6 +11,7 @@
 
 @section('workspace')
     <div class="tp-dash is-booting" aria-busy="true" id="tp-dash" data-data-url="{{ route('ui.v2.api.dashboard') }}" data-poll-interval="60000"
+        data-options-url="{{ route('ui.v2.api.dashboard.options') }}" data-options-save-url="{{ route('ui.v2.api.dashboard.options_save') }}"
         data-user-today="{{ date('Y-m-d', \Formatter::time()->now()) }}">
 
         <header class="tp-dash__head">
@@ -35,15 +36,25 @@
                 <button type="button" class="tp-dash__range-btn" data-range="today">{{ trans('front.today') }}</button>
                 <button type="button" class="tp-dash__range-btn" data-range="yesterday">{{ trans('front.yesterday') }}</button>
                 <button type="button" class="tp-dash__range-btn is-active" data-range="week">{{ trans('front.week') }}</button>
-                <button type="button" class="tp-dash__range-btn" data-range="month">Mes</button>
+                <button type="button" class="tp-dash__range-btn" data-range="month">{{ ucfirst(trans('front.month')) }}</button>
                 <span class="tp-dash__range-sep"></span>
                 <input type="date" class="tp-input tp-input--sm" id="tp-dash-from" title="{{ trans('front.from') }}">
                 <input type="date" class="tp-input tp-input--sm" id="tp-dash-to" title="{{ trans('global.to') }}">
                 <button type="button" class="tp-btn tp-btn--primary tp-btn--sm" id="tp-dash-apply">{{ trans('global.apply') }}</button>
-                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-dash-refresh" title="Actualizar">
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-dash-refresh" title="{{ trans('ui.refresh') }}" aria-label="{{ trans('ui.refresh') }}">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12a9 9 0 11-3-6.7L21 8" />
                         <path d="M21 3v5h-5" />
+                    </svg>
+                </button>
+                {{-- Opciones de los bloques (las mismas que el desplegable de
+                     cada bloque del tablero legacy). --}}
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-dash-options"
+                    title="{{ trans('ui.dashboard_options') }}" aria-label="{{ trans('ui.dashboard_options') }}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
                     </svg>
                 </button>
             </div>
@@ -83,13 +94,13 @@
                 <article class="tp-widget tp-widget--span-12" data-widget="ai-summary" id="tpai-dash"
                     data-url="{{ route('ai.dashboard_summary') }}">
                     <header class="tp-widget__head">
-                        <h3 class="tp-h6 tp-mb-0">Resumen · {{ \App\Services\Ai\AiSettings::name() }}</h3>
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('ui.summary') }} · {{ \App\Services\Ai\AiSettings::name() }}</h3>
                         <span class="tp-widget__tag" id="tpai-dash-time"></span>
                     </header>
                     <div class="tp-widget__body">
                         <div class="tpai-text" id="tpai-dash-text"><span class="tpai-typing"><span></span><span></span><span></span></span></div>
                         <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" data-tpai-open style="margin-top:10px">
-                            Preguntar al asistente
+                            {{ trans('ui.ask_assistant') }}
                         </button>
                     </div>
                 </article>
@@ -162,17 +173,17 @@
                             <div class="tp-behav" data-behav="harsh_braking">
                                 <span class="tp-behav__dot" style="background:#ef4444"></span>
                                 <span class="tp-behav__val" data-behav-val>—</span>
-                                <span class="tp-behav__lbl">Frenados bruscos</span>
+                                <span class="tp-behav__lbl">{{ trans('ui.harsh_braking_plural') }}</span>
                             </div>
                             <div class="tp-behav" data-behav="harsh_acceleration">
                                 <span class="tp-behav__dot" style="background:#f97316"></span>
                                 <span class="tp-behav__val" data-behav-val>—</span>
-                                <span class="tp-behav__lbl">Aceleraciones</span>
+                                <span class="tp-behav__lbl">{{ trans('ui.harsh_acceleration_plural') }}</span>
                             </div>
                             <div class="tp-behav" data-behav="harsh_turning">
                                 <span class="tp-behav__dot" style="background:#eab308"></span>
                                 <span class="tp-behav__val" data-behav-val>—</span>
-                                <span class="tp-behav__lbl">Giros bruscos</span>
+                                <span class="tp-behav__lbl">{{ trans('ui.harsh_turning_plural') }}</span>
                             </div>
                             <div class="tp-behav" data-behav="overspeed">
                                 <span class="tp-behav__dot" style="background:#dc2626"></span>
@@ -194,7 +205,7 @@
                 </header>
                 <div class="tp-widget__body">
                     <ul class="tp-notes" id="tp-dash-notes">
-                        <li class="tp-text-muted tp-text-sm">Cargando…</li>
+                        <li class="tp-text-muted tp-text-sm">{{ trans('ui.loading_ellipsis') }}</li>
                     </ul>
                 </div>
             </article>
@@ -258,7 +269,7 @@
                     </header>
                     <div class="tp-widget__body">
                         <ul class="tp-notes" id="tp-dash-tasks">
-                            <li class="tp-text-muted tp-text-sm">Cargando…</li>
+                            <li class="tp-text-muted tp-text-sm">{{ trans('ui.loading_ellipsis') }}</li>
                         </ul>
                     </div>
                 </article>
@@ -283,7 +294,7 @@
                         <thead>
                             <tr><th>#</th><th>{{ trans('front.device') }}</th><th>{{ trans('front.state') }}</th><th class="tp-text-right">km/h</th></tr>
                         </thead>
-                        <tbody><tr><td colspan="4" class="tp-text-muted tp-text-center">Cargando…</td></tr></tbody>
+                        <tbody><tr><td colspan="4" class="tp-text-muted tp-text-center">{{ trans('ui.loading_ellipsis') }}</td></tr></tbody>
                     </table>
                 </div>
             </article>
@@ -303,5 +314,6 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-chips-select.js') }}" defer></script>
     <script src="{{ asset_resource('assets/ui/v2/js/dashboard.js') }}" defer></script>
 @endpush

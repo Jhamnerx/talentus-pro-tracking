@@ -68,6 +68,136 @@ class DashboardController extends BaseController
         ]);
     }
 
+    /**
+     * Opciones de los bloques del tablero, las MISMAS que edita el legacy en
+     * el desplegable de cada bloque (Dashboard/Blocks/<bloque>/options) y que
+     * guarda en users.settings → dashboard.blocks.<bloque>.options:
+     *   device_overview.colors, device_distance.period/devices,
+     *   latest_events.period y latest_tasks.period.
+     */
+    public function options(): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+
+        $catalog = (array) config('tobuli.dashboard.blocks', []);
+        $defaultColors = (array) ($catalog['device_overview']['options']['colors'] ?? []);
+        $colors = (array) ($this->blockOptions('device_overview')['colors'] ?? []);
+
+        $colorRows = [];
+        foreach ($defaultColors as $key => $default) {
+            $colorRows[] = [
+                'key'     => $key,
+                'label'   => trans('front.' . $key),
+                'color'   => (string) ($colors[$key] ?? $default),
+                'default' => (string) $default,
+            ];
+        }
+
+        $periods = [];
+        foreach (['device_distance', 'latest_events', 'latest_tasks'] as $block) {
+            $periods[$block] = (string) ($this->blockOptions($block)['period']
+                ?? ($catalog[$block]['options']['period'] ?? 'day'));
+        }
+
+        return response()->json([
+            'ok'      => true,
+            'demo'    => (bool) isDemoUser(),
+            'colors'  => $colorRows,
+            'periods' => $periods,
+            'chosen'  => array_values(array_filter(array_map(
+                'intval',
+                (array) ($this->blockOptions('device_distance')['devices'] ?? [])
+            ))),
+            'devices' => $this->user->devices()->clearOrdersBy()->orderBy('devices.name')
+                ->get(['devices.id', 'devices.name'])
+                ->map(fn ($d) => ['id' => (int) $d->id, 'name' => (string) $d->name])
+                ->all(),
+        ]);
+    }
+
+    /**
+     * Guarda las opciones de los bloques en la estructura del legacy
+     * (DashboardController@updateConfig hace setSettings('dashboard', …, true)).
+     * Se escribe opción a opción para no tocar 'enabled' ni las demás claves.
+     */
+    public function updateOptions(Request $request): JsonResponse
+    {
+        if (! $this->user->perm('devices', 'view')) {
+            return response()->json(['ok' => false], 403);
+        }
+        if (isDemoUser()) {
+            return response()->json(['ok' => false, 'message' => trans('front.demo_acc')], 403);
+        }
+
+        $catalog = (array) config('tobuli.dashboard.blocks', []);
+        $in = (array) $request->input('options', []);
+        $errors = [];
+
+        $colors = [];
+        foreach ((array) ($in['colors'] ?? []) as $key => $color) {
+            if (! array_key_exists($key, (array) ($catalog['device_overview']['options']['colors'] ?? []))) {
+                continue;
+            }
+            if (! is_string($color) || ! preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+                $errors['colors.' . $key] = [trans('validation.regex', ['attribute' => trans('front.' . $key)])];
+                continue;
+            }
+            $colors[$key] = strtoupper($color);
+        }
+
+        $periods = [];
+        // device_distance no ofrece 'month' en el legacy (options.blade.php → excluded)
+        $allowed = [
+            'device_distance' => ['day', 'week'],
+            'latest_events'   => ['day', 'week', 'month'],
+            'latest_tasks'    => ['day', 'week', 'month'],
+        ];
+        foreach ((array) ($in['periods'] ?? []) as $block => $period) {
+            if (isset($allowed[$block]) && in_array($period, $allowed[$block], true)) {
+                $periods[$block] = $period;
+            }
+        }
+
+        if ($errors) {
+            return response()->json(['ok' => false, 'errors' => $errors], 422);
+        }
+
+        // Solo vehículos de la cuenta (el legacy tampoco deja elegir otros).
+        $devices = null;
+        if (array_key_exists('devices', $in)) {
+            $ids = array_values(array_unique(array_filter(array_map('intval', (array) $in['devices']))));
+            $devices = $ids
+                ? $this->user->devices()->clearOrdersBy()->whereIn('devices.id', $ids)->pluck('devices.id')
+                    ->map(fn ($id) => (int) $id)->values()->all()
+                : [];
+        }
+
+        $dashboard = (array) $this->user->getSettings('dashboard');
+        if (empty($dashboard['blocks'])) {
+            $dashboard['blocks'] = $catalog;
+        }
+        if ($colors) {
+            $dashboard['blocks']['device_overview']['options']['colors'] = array_merge(
+                (array) ($dashboard['blocks']['device_overview']['options']['colors'] ?? []),
+                $colors
+            );
+        }
+        foreach ($periods as $block => $period) {
+            $dashboard['blocks'][$block]['options']['period'] = $period;
+        }
+        if ($devices !== null) {
+            $dashboard['blocks']['device_distance']['options']['devices'] = $devices;
+        }
+
+        // Sin merge: la lista de vehículos tiene que poder quedar vacía, y un
+        // merge recursivo conservaría los ids de antes.
+        $this->user->setSettings('dashboard', $dashboard, false);
+
+        return response()->json(['ok' => true]);
+    }
+
     public function data(Request $request): JsonResponse
     {
         if (! $this->user->perm('devices', 'view')) {

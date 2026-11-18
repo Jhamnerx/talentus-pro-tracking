@@ -134,7 +134,7 @@
                  Objetos/Geocercas/POIs ahora vive en el rail izquierdo). --}}
             <div class="tp-live__paneltop">
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" type="button" id="tp-live-filters-collapse"
-                    title="Colapsar panel" aria-label="Colapsar panel">
+                    title="{{ trans('ui.collapse_panel') }}" aria-label="{{ trans('ui.collapse_panel') }}">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
                         <path d="m15 18-6-6 6-6" />
@@ -145,7 +145,7 @@
             <div class="tp-live__panel" id="tp-panel-objects" data-panel="objects">
                 <header class="tp-live__filters-head">
                     <div class="tp-row tp-row-between" style="width:100%;">
-                        <h3 class="tp-h6 tp-mb-0">Flota</h3>
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('ui.security_fleet') }}</h3>
                     <div class="tp-row" style="gap:6px;align-items:center;">
                         @if (!empty($canCreate))
                             <button class="tp-btn tp-btn--accent tp-btn--icon tp-btn--sm" type="button"
@@ -306,7 +306,7 @@
                         {{-- Gestion de grupos (paridad PoisGroups legacy) --}}
                         @if (Auth::user()->can('view', new \Tobuli\Entities\PoiGroup()))
                             <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-pois-groups-manage"
-                                title="Gestionar grupos" style="flex:0 0 auto;">⚙</button>
+                                title="{{ trans('ui.manage_groups') }}" aria-label="{{ trans('ui.manage_groups') }}" style="flex:0 0 auto;">⚙</button>
                         @endif
                     </div>
                 </header>
@@ -372,7 +372,7 @@
                         {{-- Gestion de grupos (paridad GeofencesGroups legacy) --}}
                         @if (Auth::user()->can('view', new \Tobuli\Entities\GeofenceGroup()))
                             <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" id="tp-zones-groups-manage"
-                                title="Gestionar grupos" style="flex:0 0 auto;">⚙</button>
+                                title="{{ trans('ui.manage_groups') }}" aria-label="{{ trans('ui.manage_groups') }}" style="flex:0 0 auto;">⚙</button>
                         @endif
                     </div>
                 </header>
@@ -541,7 +541,7 @@
                 <div class="tp-live__map-controls-divider" aria-hidden="true"></div>
 
                 <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-live-fit"
-                    title="Ajustar a flota visible" aria-label="Ajustar a flota visible" type="button">
+                    title="{{ trans('ui.fit_visible_fleet') }}" aria-label="{{ trans('ui.fit_visible_fleet') }}" type="button">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 8V6a2 2 0 0 1 2-2h2" />
@@ -685,7 +685,7 @@
             <div class="tp-live__bottombar" id="tp-live-bottombar" aria-hidden="true">
                 <div class="tp-live__bottombar-cards" id="tp-live-bottombar-cards"></div>
                 <div class="tp-live__bottombar-ctl">
-                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-bottombar-config" data-config-url="{{ route('ui.v2.api.widgets.config') }}" data-save-url="{{ route('ui.v2.api.widgets.config_save') }}" title="Configurar widgets" aria-label="Configurar widgets">
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-bottombar-config" data-config-url="{{ route('ui.v2.api.widgets.config') }}" data-save-url="{{ route('ui.v2.api.widgets.config_save') }}" title="{{ trans('ui.configure_widgets') }}" aria-label="{{ trans('ui.configure_widgets') }}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="3" />
@@ -693,7 +693,7 @@
                         </svg>
                     </button>
                     <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-bottombar-collapse"
-                        title="Colapsar widgets" aria-label="Colapsar widgets">
+                        title="{{ trans('ui.collapse_widgets') }}" aria-label="{{ trans('ui.collapse_widgets') }}">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m6 9 6 6 6-6" />
@@ -707,7 +707,7 @@
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="m18 15-6-6-6 6" />
                 </svg>
-                <span>Widgets</span>
+                <span>{{ trans('ui.widgets') }}</span>
             </button>
         </main>
 

@@ -579,7 +579,7 @@ class CommandsController extends BaseController
 
             $entity = $type === 'sms' ? \Tobuli\Entities\UserSmsTemplate::class : \Tobuli\Entities\UserGprsTemplate::class;
             $rows = [];
-            foreach ($entity::userOwned($this->user)->with('devices:devices.id')->orderBy('id', 'desc')->get() as $t) {
+            foreach ($entity::userOwned($this->user)->with(['devices:devices.id', 'deviceTypes:device_types.id'])->orderBy('id', 'desc')->get() as $t) {
                 $rows[] = [
                     'id'            => (int) $t->id,
                     'title'         => (string) $t->title,
@@ -589,6 +589,9 @@ class CommandsController extends BaseController
                     'protocol'      => (string) ($t->protocol ?? ''),
                     'lock_action'   => (string) ($t->lock_action ?? ''),
                     'devices'       => $t->devices->pluck('id')->all(),
+                    // El form legacy preselecciona $item->deviceTypes; sin esto
+                    // la v2 abría la lista vacía y al guardar los quitaba.
+                    'device_types'  => $t->deviceTypes->pluck('id')->map(fn ($id) => (int) $id)->all(),
                 ];
             }
         } catch (\Throwable $e) {

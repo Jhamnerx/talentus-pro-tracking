@@ -21,6 +21,9 @@ abstract class BaseController extends Controller
     public const PREF_DENSITY = 'tp_density';
     public const PREF_MAP_ID  = 'tp_map_id';
 
+    /** users.settings: id del último evento marcado como leído en la bandeja. */
+    public const PREF_NOTIF_SEEN_ID = 'tp_notif_seen_id';
+
     /** users.settings: 'v2' | 'legacy' — decide a qué UI entra el usuario. */
     public const PREF_UI_VERSION = 'ui_version';
 

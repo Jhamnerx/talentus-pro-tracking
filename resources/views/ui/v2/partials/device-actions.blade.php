@@ -162,7 +162,7 @@
         </button>
         <button type="button" class="tp-row-menu__item" data-act="sharing_list" data-feature="sharing">
             <span class="tp-row-menu__icon">{!! $ic['sharing'] !!}</span>
-            <span>Enlaces compartidos</span>
+            <span>{{ trans('ui.shared_links') }}</span>
         </button>
     @endif
 

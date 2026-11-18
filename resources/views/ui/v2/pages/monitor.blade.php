@@ -50,7 +50,7 @@
             {{-- Los botones los pinta monitor.js desde su tabla LAYOUTS, para
                  que no haya dos listas de tamaños que puedan discrepar. --}}
             <div class="tp-mon__sizes">
-                <span class="tp-mon__sizeslabel">Celdas</span>
+                <span class="tp-mon__sizeslabel">{{ trans('ui.cells') }}</span>
                 <div class="tp-segmented" id="tp-mon-sizes" role="tablist"
                     aria-label="{{ trans('ui.grid_size') }}"></div>
             </div>

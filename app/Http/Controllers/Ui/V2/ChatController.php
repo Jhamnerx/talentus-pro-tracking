@@ -49,21 +49,35 @@ class ChatController extends BaseController
         return View::make('ui.v2.pages.chat', ['pageTitle' => trans('front.chat')]);
     }
 
-    /** Dispositivos chateables con conteo de no-leídos (columna izquierda). */
+    /** Dispositivos chateables con conteo de no-leídos (columna izquierda).
+     *  Paginado por offset/limit para la carga al bajar (el legacy pagina de
+     *  10 en 10 con el mismo orden: no leídos primero y luego por nombre).
+     *  El refresco periódico pide offset=0 y limit = lo ya cargado, para que
+     *  la lista no se recorte al llegar un mensaje. */
     public function conversations(Request $request): JsonResponse
     {
         $this->gate('view');
 
-        $items = $this->user->devices()
+        $offset = max(0, (int) $request->get('offset', 0));
+        $limit  = min(500, max(1, (int) $request->get('limit', 50)));
+
+        $base = $this->user->devices()
             ->search($request->get('s'))
             ->chatable()
+            ->clearOrdersBy();
+
+        // El total sin withCount ni el orden por messages_count (count() quita
+        // el select y el ORDER BY por esa columna fallaría).
+        $total = (clone $base)->count();
+
+        $items = $base
             ->withCount(['messages' => function ($q) {
                 $q->unread()->whereChattable($this->user);
             }])
-            ->clearOrdersBy()
             ->orderBy('messages_count', 'desc')
             ->orderBy('devices.name')
-            ->limit(50)
+            ->offset($offset)
+            ->limit($limit)
             ->get();
 
         $rows = [];
@@ -78,6 +92,8 @@ class ChatController extends BaseController
         return response()->json([
             'ok'     => true,
             'items'  => $rows,
+            'total'  => (int) $total,
+            'has_more' => ($offset + count($rows)) < $total,
             'unread' => (int) $this->chatService->getUnreadMessageCount($this->user),
         ]);
     }

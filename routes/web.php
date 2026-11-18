@@ -1234,6 +1234,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         // Shell endpoints
         Route::get('search',         ['as' => 'api.search',        'uses' => 'Ui\V2\ShellController@search']);
         Route::get('notifications',  ['as' => 'api.notifications', 'uses' => 'Ui\V2\ShellController@notifications']);
+        Route::post('notifications/seen', ['as' => 'api.notifications.seen', 'uses' => 'Ui\V2\ShellController@notificationsSeen']);
         Route::post('preferences',   ['as' => 'api.preferences',   'uses' => 'Ui\V2\ShellController@preferences']);
         Route::get('widgets/config',  ['as' => 'api.widgets.config',      'uses' => 'Ui\V2\ShellController@widgetsConfig']);
         Route::post('widgets/config', ['as' => 'api.widgets.config_save', 'uses' => 'Ui\V2\ShellController@widgetsConfigSave']);
@@ -1242,6 +1243,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('devices',        ['as' => 'api.devices',       'uses' => 'Ui\V2\DevicesController@liveData']);
         Route::get('fleet',          ['as' => 'api.fleet',         'uses' => 'Ui\V2\DevicesController@fleetData']);
         Route::get('dashboard',      ['as' => 'api.dashboard',     'uses' => 'Ui\V2\DashboardController@data']);
+        Route::get('dashboard/options',  ['as' => 'api.dashboard.options',      'uses' => 'Ui\V2\DashboardController@options']);
+        Route::post('dashboard/options', ['as' => 'api.dashboard.options_save', 'uses' => 'Ui\V2\DashboardController@updateOptions']);
         Route::get('zones',          ['as' => 'api.zones',         'uses' => 'Ui\V2\ZonesController@data']);
         Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
 

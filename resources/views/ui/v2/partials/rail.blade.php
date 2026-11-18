@@ -111,7 +111,7 @@
         {{-- 'return' devuelve a esta misma pantalla: sin el, cambiar el idioma
              te sacaba de la v2 y te dejaba en el mapa legacy. --}}
         <a href="{{ route('my_account_settings.change_lang', ['lang' => $nextLang, 'return' => request()->getRequestUri()]) }}"
-            class="tp-rail__item tp-has-tooltip" data-tooltip="{{ trans('ui.change_language') }}" aria-label="Cambiar idioma">
+            class="tp-rail__item tp-has-tooltip" data-tooltip="{{ trans('ui.change_language') }}" aria-label="{{ trans('ui.change_language') }}">
             <span class="tp-rail__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10" />
