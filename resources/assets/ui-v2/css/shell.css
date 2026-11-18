@@ -632,6 +632,27 @@ body.tp-app-body {
   .tp-tray__panel {
     width: 100vw;
   }
+  /* Sin teclado físico el atajo Ctrl K sobra; con él los botones salían de la pantalla a 375 px. */
+  .tp-topbar__kbd {
+    display: none;
+  }
+  .tp-topbar__search-btn {
+    min-width: 32px;
+  }
+  .tp-topbar > .tp-btn--icon,
+  .tp-topbar > .tp-topbar__user {
+    flex-shrink: 0;
+  }
+}
+@media (max-width: 639px) {
+  .tp-topbar {
+    gap: 6px;
+    padding: 0 10px;
+  }
+  /* El asistente ya tiene el botón flotante (#tpai-fab) en móvil. */
+  .tp-topbar > [data-tpai-open] {
+    display: none;
+  }
 }
 
 /* ── Avisos del administrador (addon notification_popops) ────────────── */
