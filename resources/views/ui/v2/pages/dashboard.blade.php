@@ -78,6 +78,23 @@
         {{-- WIDGETS GRID --}}
         <section class="tp-dash__grid">
 
+            {{-- Talentus IA CHAT: resumen de ayer y del estado actual (cache 6 h por usuario y dia) --}}
+            @if (\App\Services\Ai\AiFeatures::enabled(auth()->user(), 'dashboard'))
+                <article class="tp-widget tp-widget--span-12" data-widget="ai-summary" id="tpai-dash"
+                    data-url="{{ route('ai.dashboard_summary') }}">
+                    <header class="tp-widget__head">
+                        <h3 class="tp-h6 tp-mb-0">Resumen · {{ \App\Services\Ai\AiSettings::name() }}</h3>
+                        <span class="tp-widget__tag" id="tpai-dash-time"></span>
+                    </header>
+                    <div class="tp-widget__body">
+                        <div class="tpai-text" id="tpai-dash-text"><span class="tpai-typing"><span></span><span></span><span></span></span></div>
+                        <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" data-tpai-open style="margin-top:10px">
+                            Preguntar al asistente
+                        </button>
+                    </div>
+                </article>
+            @endif
+
             {{-- Fila 1 · donuts de estado (Wialon): donut izquierda + leyenda con conteos --}}
             <article class="tp-widget tp-widget--span-4" data-widget="health">
                 <header class="tp-widget__head">

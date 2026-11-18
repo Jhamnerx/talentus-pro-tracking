@@ -95,6 +95,20 @@
         </div>
     @endif
 
+    {{-- Talentus IA CHAT: abre el panel del asistente (tp-ai-chat.js). Mismo gate que layout. --}}
+    @if (!empty($tpaiOn))
+        @php($tpaiLabel = \App\Services\Ai\AiSettings::name())
+        <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" type="button" data-tpai-open
+            aria-controls="tpai" aria-expanded="false"
+            data-tooltip="{{ $tpaiLabel }} (Ctrl+I)" aria-label="{{ $tpaiLabel }}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+                <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
+            </svg>
+        </button>
+    @endif
+
     {{-- Theme toggle --}}
     <button class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip" id="tp-theme-toggle" data-tooltip="{{ trans('ui.change_theme') }}"
         aria-label="Cambiar tema">

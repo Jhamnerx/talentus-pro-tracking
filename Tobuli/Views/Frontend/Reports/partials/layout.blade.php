@@ -77,6 +77,12 @@
         @endif
 
     </div>
+
+    {{-- Talentus IA CHAT: solo al ver el reporte en el visor (no en descargas, correos ni archivos) --}}
+    @if ($formato === 'html' && request()->routeIs('reports.update') && request('view')
+        && auth()->check() && \App\Services\Ai\AiFeatures::enabled(auth()->user(), 'explain_report'))
+        @include('Frontend.Ai.report_explain')
+    @endif
 </body>
 
 </html>

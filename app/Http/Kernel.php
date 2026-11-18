@@ -50,6 +50,7 @@ class Kernel extends HttpKernel
         'captcha' => 'App\Http\Middleware\Captcha',
         'signed' => \Illuminate\Routing\Middleware\ValidateSignature::class,
         'verified' => EnsureEmailIsVerified::class,
+        'ai_assistant' => \App\Http\Middleware\AiAssistantAccess::class,
     ];
 
     protected $middlewareGroups = [

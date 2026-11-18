@@ -359,6 +359,14 @@ function getNavigation()
             'childs' => []
         ];
 
+        if (Auth::User()->isAdmin()) {
+            $items['setup']['childs'][] = [
+                'title' => '<span class="text">' . e(\App\Services\Ai\AiSettings::name()) . '</span>',
+                'route' => 'admin.ai_assistant.index',
+                'childs' => []
+            ];
+        }
+
         if (config('addon.external_url')) {
             $items['setup']['childs'][] = [
                 'title' => '<span class="text">' . trans('front.external_url') . '</span>',

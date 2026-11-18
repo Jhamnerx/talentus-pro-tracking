@@ -119,6 +119,15 @@ return [
             'edit'  => 1,
             'remove'  => 0,
         ],
+        // Talentus IA CHAT: asistente IA. Los valores indican que modos existen;
+        // el acceso real se concede por usuario/plan (por defecto apagado).
+        // view = usar el chat (solo lectura); edit = que proponga acciones
+        // (alertas, comandos, reportes programados), siempre con confirmacion.
+        'ai_assistant' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 0,
+        ],
         'media_categories' => [
             'view'  => 1,
             'edit'  => 1,

@@ -574,6 +574,49 @@ comandos (`videoStart`, `videoResourceQuery`, `videoPlayback`, `videoFileUpload`
   (`tpDeviceVideo.open/recordings`, lee `devices/video/{id}/config`) + `css/device-video.css`; kebab
   `data-act="device_video(_recordings)"`, widget del drawer `data-tp-video`, pestaña `modals/devices/partials/video`.
 
+## Talentus IA CHAT (asistente IA)
+
+Portado de AirBot (airpatrol, 18-nov-2026; rama `feature/talentus-ia-chat`). Solo UI v2. API de Claude por HTTP
+(`App\Services\Ai\ClaudeClient`, sin SDK: el SDK pide PHP 8.1). Costos por proveedor en `docs/ia-proveedores-costos.md`.
+
+- **Ajustes en Admin > Configuración > Talentus IA CHAT** (`admin/ai_assistant`): nombre visible, interruptor, clave
+  de la API (cifrada con `encrypt()`, nunca vuelve a la vista), modelo del chat, modelo de resúmenes, esfuerzo y
+  **modelo por plan**; cuotas por plan y tope USD. `App\Services\Ai\AiSettings` (grupo `configs.ai_provider`) vuelca
+  lo guardado en `config('ai.*')` con `apply()`; lo vacío cae a `config/ai.php` (.env). Para leer la clave o el
+  modelo usar `AiSettings::isConfigured()` / `chatModelFor($user)`, no `config('ai.*')` sin `apply()`.
+- **Modelos elegibles:** `config('ai.models')` (cada uno con precio en `ai.pricing`). El `fallbacks` del servidor y su
+  beta solo se mandan a Sonnet/Opus 5.5 (`AiSettings::supportsFallbacks`); Haiku 5.5 no lo tiene. Costo con
+  `AiPricing::cost()` (incluye caché de 1 h y el 5x de Haiku por encima de 100k tokens de prompt).
+- **Backend:** `AiAgent` (ciclo de herramientas, streaming SSE), 23 herramientas de consulta + 5 acciones con
+  confirmación en `app/Services/Ai/Tools` (`AiToolRegistry`; cambiar el orden invalida el caché de prompts),
+  `SystemPrompt` (usa `{{nombre}}`), `AiFeatures` (explicar reporte, resumen en correos, tablero, digest),
+  `AiQuota`. Permiso `ai_assistant` (view = chat, edit = acciones), apagado por defecto. Rutas `/ai/*`
+  (middleware `ai_assistant`). Tablas `ai_conversations`, `ai_messages`, `ai_usage_logs`, `ai_action_logs`.
+- **Permisos:** el modelo solo ve lo que la cuenta puede hacer: acciones con `allowed()` en `AiToolRegistry`,
+  enums de `atajo_ui`/`abrir_pantalla` filtrados por permiso, y guías con `BuscarGuiaTool::PERMS` (sin permiso
+  responde `permitido: false`). Además el `<contexto>` de cada pregunta lista lo que la cuenta NO tiene
+  (`AiToolRegistry::deniedFeatures()`), porque quitar la opción sola no basta: el modelo inventaba los pasos.
+  Va en el mensaje y no en el system para no partir el caché de 1 h. Revisar con
+  `php artisan ai:compare --user=<id> --show-tools` (sin API).
+- **Cuota:** límite por usuario (`ai_assistant.user_quotas`) > por plan > general (Admin) > `.env`.
+- **Manual de uso** que consulta el asistente: `resources/ai/guides.php` (pantallas de la UI v2). Las claves de
+  `pantalla` deben existir en `AbrirPantallaTool::SCREENS`, que lleva la ruta v2 de cada una.
+- **UI v2:** `partials/ai-chat.blade.php` + `ui-v2/js/tp-ai-chat.js` + `ui-v2/css/ai-chat.css`; ventana flotante
+  sobre todo (z-index 2147483000; los `<dialog>` de tpModal quedan encima por el top layer) con botón flotante
+  abajo a la derecha (`#tpai-fab`, punto de aviso si responde minimizado), botón del topbar `[data-tpai-open]` y
+  Ctrl+I; gate `$tpaiOn` en `layout.blade.php`. Abierto/minimizado y conversación siguen entre pantallas
+  (`sessionStorage` `tpai_state`). Los botones de la respuesta solo navegan a `/ui/v2/...` (`live?device=`,
+  `history?device=&from=&to=`) o ejecutan un **atajo** de la lista fija `SHORTCUTS` (herramienta `atajo_ui`:
+  editar vehículo, video, fotos, compartir, servicios, configurar equipo, regla, sin transmitir, cuenta…; el
+  servidor valida permiso y unidad). Si la pantalla no carga la API del atajo (`window.tpDeviceModal`…), abre
+  `live?device=` y lo ejecuta al cargar (`tpai_pending`). Atajo nuevo = entrada en `AtajoUiTool::shortcuts()` y
+  en `SHORTCUTS` del JS. Tarjeta de
+  resumen en el tablero (`#tpai-dash`) y botón "Explicar con…" en el visor de reportes
+  (`Reports/partials/layout`, solo `view=1`).
+- **Prueba de modelos:** `php artisan ai:compare --user=<correo>` (banco en `resources/ai/compare-questions.php`;
+  informe en `storage/app/ai-compare/`; cada pregunta en una transacción que se deshace; cuesta dinero).
+  `--check-tools` ejecuta todas las herramientas sin API.
+
 ## Backups (FTP + Google Drive)
 
 `Tobuli/Helpers/Backup/`. Cada archivo se genera en un temporal, se valida y se sube a cada destino

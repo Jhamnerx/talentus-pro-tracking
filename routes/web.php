@@ -523,6 +523,23 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('chat/{chatId}', ['as' => 'chat.get', 'uses' =>  'ChatController@getChat']);
     Route::post('chat/{chatId}', ['as' => 'chat.message', 'uses' => 'ChatController@createMessage']);
 
+    # Talentus IA CHAT (asistente IA)
+    Route::group(['prefix' => 'ai', 'as' => 'ai.', 'middleware' => ['ai_assistant']], function () {
+        Route::get('suggestions', ['as' => 'suggestions', 'uses' => 'AiAssistantController@suggestions']);
+        Route::get('conversations', ['as' => 'conversations', 'uses' => 'AiAssistantController@conversations']);
+        Route::get('conversations/{id}', ['as' => 'conversations.show', 'uses' => 'AiAssistantController@show']);
+        Route::delete('conversations/{id}', ['as' => 'conversations.destroy', 'uses' => 'AiAssistantController@destroy']);
+        Route::post('chat', ['as' => 'chat', 'uses' => 'AiAssistantController@chat'])
+            ->middleware('throttle:20,1');
+        Route::get('download/{token}', ['as' => 'download', 'uses' => 'AiAssistantController@download']);
+        Route::post('explain-report', ['as' => 'explain_report', 'uses' => 'AiAssistantController@explainReport'])
+            ->middleware('throttle:10,1');
+        Route::get('dashboard-summary', ['as' => 'dashboard_summary', 'uses' => 'AiAssistantController@dashboardSummary']);
+        Route::post('actions/{token}/confirm', ['as' => 'actions.confirm', 'uses' => 'AiAssistantController@confirm'])
+            ->middleware('throttle:20,1');
+        Route::post('actions/{token}/cancel', ['as' => 'actions.cancel', 'uses' => 'AiAssistantController@cancel']);
+    });
+
     # Dashboard
     Route::get('dashboard', ['as' => 'dashboard', 'uses' => 'DashboardController@index']);
     Route::get('dashboard/block_content', ['as' => 'dashboard.block_content', 'uses' => 'DashboardController@blockContent']);
@@ -815,6 +832,10 @@ Route::group(['middleware' => ['auth'], 'namespace' => 'Frontend'], function () 
 });
 
 Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'auth.admin'], 'namespace' => 'Admin'], function () {
+    # Talentus IA CHAT: proveedor, modelos, consumo, acciones y cuotas
+    Route::get('ai_assistant', ['as' => 'ai_assistant.index', 'uses' => 'AiAssistantController@index']);
+    Route::post('ai_assistant', ['as' => 'ai_assistant.save', 'uses' => 'AiAssistantController@save']);
+
     # Billing
     Route::any('billing/index', ['as' => 'billing.index', 'uses' => 'BillingController@index']);
     Route::any('billing/plans', ['as' => 'billing.plans', 'uses' => 'BillingController@plans']);

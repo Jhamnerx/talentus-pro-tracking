@@ -33,6 +33,12 @@
     $theme = $prefTheme ?: request()->cookie('tp_theme', 'dark');
     $density = $prefDensity ?: request()->cookie('tp_density', 'comfortable');
     $rail = trim($__env->yieldContent('rail-active', 'live'));
+    // Talentus IA CHAT: permiso del usuario/plan + asistente configurado en Admin.
+    $tpaiOn = false;
+    try {
+        $tpaiOn = $user && $user->perm('ai_assistant', 'view') && \App\Services\Ai\AiSettings::isConfigured();
+    } catch (\Throwable $e) {
+    }
     // Formato de fecha/hora del usuario para el JS (tpFmt, modal.js): el
     // mismo que usa Formatter en el servidor, para que Eventos, Flota, la
     // bandeja y el tablero pinten las fechas igual (QA V10).
@@ -70,6 +76,10 @@
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/modal.css') }}" />
     {{-- Formularios en modal (.tp-form*) — global: los usa el modal de cuenta del topbar --}}
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}" />
+    @if ($tpaiOn)
+        {{-- Talentus IA CHAT (panel lateral del asistente) --}}
+        <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/ai-chat.css') }}" />
+    @endif
     {{-- Tailwind (utilidades) — al final para ganar sobre la capa .tp-* --}}
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/tailwind.css') }}" />
 
@@ -138,6 +148,9 @@
     @include('ui.v2.partials.command-palette')
     @include('ui.v2.partials.notifications-tray')
     @include('ui.v2.partials.toast-host')
+    @if ($tpaiOn)
+        @include('ui.v2.partials.ai-chat')
+    @endif
     @if (auth()->user() && auth()->user()->perm('send_command', 'view'))
         @include('ui.v2.partials.commands-config')
     @endif
@@ -170,6 +183,9 @@
     <script src="{{ asset_resource('assets/ui/v2/js/tp-notify.js') }}" defer></script>
     {{-- Avisos del administrador (popups del legacy) --}}
     <script src="{{ asset_resource('assets/ui/v2/js/tp-admin-popups.js') }}" defer></script>
+    @if ($tpaiOn)
+        <script src="{{ asset_resource('assets/ui/v2/js/tp-ai-chat.js') }}" defer></script>
+    @endif
     {{-- Listas de verificación (addon checklists): plantillas + ejecución por servicio --}}
     @if (config('addon.checklists'))
         <script>
