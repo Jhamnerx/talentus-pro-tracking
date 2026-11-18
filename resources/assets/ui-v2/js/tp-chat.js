@@ -216,5 +216,9 @@
 
   /* ----- Boot + polling de la lista ----- */
   loadConversations();
+  // ?device=ID: llega desde «Chat» del menú del vehículo (legacy chat.init),
+  // que abre la sala del equipo aunque aún no tenga mensajes.
+  var deepDevice = parseInt(new URLSearchParams(location.search).get("device"), 10);
+  if (deepDevice > 0) openConversation(deepDevice, null);
   listTimer = setInterval(function () { loadConversations(); }, 20000);
 })();

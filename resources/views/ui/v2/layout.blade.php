@@ -192,6 +192,10 @@
         <script>
             window.TP_CHECKLISTS_ON = true;
         </script>
+    @endif
+    {{-- El QR del equipo (menú de la lista) lo gatea solo checklist_qr_code.view,
+         igual que Objects/item.blade del legacy: el script va también sin el addon. --}}
+    @if (config('addon.checklists') || (Auth::check() && Auth::user()->perm('checklist_qr_code', 'view')))
         <script src="{{ asset_resource('assets/ui/v2/js/tp-checklists.js') }}" defer></script>
     @endif
 

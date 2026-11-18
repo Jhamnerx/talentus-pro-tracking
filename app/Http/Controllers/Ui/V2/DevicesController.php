@@ -117,9 +117,22 @@ class DevicesController extends BaseController
         $payload = FractalTransformer::paginate($devices, DeviceMapTransformer::class)->toArray();
 
         if (! empty($payload['data']) && is_array($payload['data'])) {
+            $byId = collect($devices->items())->keyBy('id');
             foreach ($payload['data'] as &$row) {
                 if (isset($row['id'])) {
                     $row['channel'] = md5('device_' . $row['id']);
+                }
+                // Flags del menú de acciones de la lista (data-need en
+                // partials/device-actions): los mismos que manda fleetData.
+                // Sin ellos el menú quitaba esas opciones en todos los equipos.
+                $device = $byId->get($row['id'] ?? null);
+                if ($device) {
+                    $row['vt']       = ! empty($row['vehicle_type_id']);
+                    $row['chat']     = (bool) $device->canChat();
+                    $row['plans']    = (bool) $device->isPlanAble();
+                    $row['expired']  = (bool) $device->isExpiredWithoutExtra();
+                    $row['app_uuid'] = ! empty($device->app_uuid);
+                    $row['general']  = (bool) $device->isGeneral();
                 }
             }
             unset($row);
@@ -2121,6 +2134,73 @@ class DevicesController extends BaseController
      * rápido desde el drawer del device (botón/selector). El badge del
      * estado se pinta en la fila/marcador/drawer.
      * ================================================================= */
+
+    /**
+     * Planes del equipo («Upgrade»), paridad con Objects/item.blade.php y
+     * Frontend\DevicePlansController: mismo ajuste main_settings.enable_device_plans,
+     * mismos planes (active()->forDevice()) y mismo agrupado por duración. Con
+     * custom_device_add el legacy manda al paso «plan» del registro: aquí se
+     * devuelve esa URL para que el cliente navegue.
+     */
+    public function plans(Request $request, $id): JsonResponse
+    {
+        if (! settings('main_settings.enable_device_plans')) {
+            return response()->json(['ok' => false, 'message' => trans('ui.no_permission')], 403);
+        }
+
+        $device = $this->user->devices()->find((int) $id);
+        if (! $device) {
+            abort(404);
+        }
+        $this->checkException('devices', 'view', $device);
+
+        if ($this->user->perm('custom_device_add', 'view')) {
+            return response()->json([
+                'ok'       => true,
+                'redirect' => route('register.step.create', ['step' => 'plan', 'device_id' => $device->id]),
+            ]);
+        }
+
+        $plans = \Tobuli\Entities\DevicePlan::active()->forDevice($device)->orderBy('price')->get();
+        $grouped = settings('main_settings.group_device_plans')
+            ? $plans->groupBy('duration_type')
+            : collect(['all' => $plans]);
+
+        $groups = [];
+        foreach ($grouped as $durationType => $typePlans) {
+            $groups[] = [
+                'key'   => (string) $durationType,
+                'title' => $durationType === 'all' ? '' : trans('front.duration_type_' . $durationType),
+                'plans' => $typePlans->map(function ($plan) use ($device) {
+                    $url = route('payments.order', [
+                        'type'        => 'device_plan',
+                        'plan_id'     => $plan->id,
+                        'entity_type' => 'device',
+                        'entity'      => $device->id,
+                    ]);
+
+                    return [
+                        'id'       => (int) $plan->id,
+                        'title'    => (string) $plan->title,
+                        'duration' => (string) $plan->duration_text,
+                        'price'    => (string) $plan->price,
+                        'url'      => $url,
+                        // Plantilla del administrador (addon plan_templates), como el legacy.
+                        'template' => $plan->buildTemplate($url),
+                    ];
+                })->values()->all(),
+            ];
+        }
+
+        return response()->json([
+            'ok'         => true,
+            'title'      => trans('admin.device_plans'),
+            'device'     => ['id' => (int) $device->id, 'name' => (string) $device->name],
+            'expiration' => $device->hasExpireDate() ? (string) $device->expiration_date : null,
+            'expired'    => (bool) $device->isExpiredWithoutExtra(),
+            'groups'     => array_values(array_filter($groups, function ($g) { return ! empty($g['plans']); })),
+        ]);
+    }
 
     /** Estados del TIPO con el que este usuario clasifico el device + estado actual. */
     public function vehicleStates(Request $request, $id): JsonResponse

@@ -191,7 +191,7 @@
                   .fetchJSON(BASE + "/checklist-templates/" + rm.getAttribute("data-tpl-rm"), { method: "DELETE" })
                   .then(function (res) {
                     if (res.ok && res.data && res.data.ok) {
-                      tpModal.toast("Plantilla eliminada.", "success");
+                      tpModal.toast(tpT('ui.chk_template_deleted'), "success");
                       load();
                     } else fail(res, tpT('ui.delete_failed'));
                   });
@@ -210,7 +210,7 @@
     tpModal.open({
       title: tpT('ui.checklists') + (serviceName ? " · " + serviceName : ""),
       size: "lg",
-      body: '<div data-chk-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
+      body: '<div data-chk-index><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-chk-index]");
@@ -224,6 +224,7 @@
             }
             var d = res.data;
             meta = { outcomes: d.outcomes || [], imageOptional: !!d.image_optional, canEdit: !!d.can_edit };
+            host.__items = d.items || [];
 
             var head =
               d.can_add && (d.templates || []).length
@@ -243,9 +244,11 @@
                       '<section class="tp-chk" data-chk="' + c.id + '">' +
                       '<header class="tp-chk__head"><b>' + esc(c.name) + "</b>" +
                       (c.signed
-                        ? '<span class="tp-text-xs" style="color:#16a34a;">Firmada ' + esc(c.completed_at || "") + "</span>"
+                        ? '<span class="tp-row" style="gap:6px;"><span class="tp-text-xs" style="color:#16a34a;">' + esc(tpT('ui.chk_signed_on', { date: c.completed_at || "" })) + "</span>" +
+                          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-preview="' + c.id + '">' + tpT('ui.chk_preview') + '</button></span>'
                         : '<span class="tp-row" style="gap:6px;">' +
-                          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-sign="' + c.id + '">Firmar</button>' +
+                          '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-preview="' + c.id + '">' + tpT('ui.chk_preview') + '</button>' +
+                          (meta.canEdit ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-sign="' + c.id + '">' + tpT('ui.sign') + '</button>' : "") +
                           '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-chk-rm="' + c.id + '" style="color:#ef4444;">' + tpT('global.delete') + '</button></span>') +
                       "</header>" +
                       '<ul class="tp-chk__rows">' +
@@ -260,7 +263,7 @@
                             (c.signed || !meta.canEdit
                               ? '<span class="tp-text-xs tp-text-muted">' + esc(r.outcome || "—") + "</span>"
                               : '<select class="tp-input tp-input--sm" data-chk-outcome="' + r.id + '" style="width:auto;">' +
-                                '<option value="">Resultado…</option>' +
+                                '<option value="">' + tpT('ui.chk_outcome_placeholder') + '</option>' +
                                 meta.outcomes.map(function (o) {
                                   return '<option value="' + esc(o.id) + '"' + (r.outcome === o.id ? " selected" : "") + ">" + esc(o.label) + "</option>";
                                 }).join("") +
@@ -270,7 +273,7 @@
                                   : '<label class="tp-btn tp-btn--ghost tp-btn--sm" style="cursor:pointer;">📷' +
                                     '<input type="file" accept="image/*" hidden data-chk-img="' + r.id + '"></label>')) +
                             ((r.images || []).length
-                              ? '<span class="tp-text-xs tp-text-muted">' + r.images.length + " foto(s)</span>"
+                              ? '<span class="tp-text-xs tp-text-muted">' + esc(tpT('ui.chk_photos_count', { count: r.images.length })) + "</span>"
                               : "") +
                             "</span></li>"
                           );
@@ -326,7 +329,7 @@
               .fetchJSON(BASE + "/checklist-rows/" + img.getAttribute("data-chk-img") + "/image", { method: "POST", body: fd })
               .then(function (res) {
                 if (res.ok && res.data && res.data.ok) {
-                  tpModal.toast(tpT('photo_uploaded'), "success");
+                  tpModal.toast(tpT('ui.photo_uploaded'), "success");
                   load();
                 } else fail(res, tpT('ui.photo_upload_failed'));
               });
@@ -357,14 +360,22 @@
               });
           }
 
+          var pv = e.target.closest("[data-chk-preview]");
+          if (pv) {
+            var pid = parseInt(pv.getAttribute("data-chk-preview"), 10);
+            var pc = (host.__items || []).filter(function (x) { return x.id === pid; })[0];
+            if (pc) preview(pc);
+            return;
+          }
+
           var sign = e.target.closest("[data-chk-sign]");
           if (sign) {
             var cid = sign.getAttribute("data-chk-sign");
             tpModal.open({
-              title: tpT('sign_list'),
+              title: tpT('ui.sign_list'),
               size: "sm",
               body:
-                '<div class="tp-form"><label class="tp-form__field"><span class="tp-form__label">Notas</span>' +
+                '<div class="tp-form"><label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.chk_notes') + '</span>' +
                 '<textarea class="tp-input" rows="3" data-sign-notes></textarea></label>' +
                 '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.signature_reviewer') + '</span>' +
                 '<input type="text" class="tp-input" data-sign-value></label>' +
@@ -372,7 +383,7 @@
               buttons: [
                 { label: tpT('global.cancel'), variant: "ghost", close: true },
                 {
-                  label: tpT('sign'),
+                  label: tpT('ui.sign'),
                   variant: "primary",
                   close: false,
                   onClick: function (d) {
@@ -386,7 +397,7 @@
                       })
                       .then(function (res) {
                         if (res.ok && res.data && res.data.ok) {
-                          tpModal.toast(tpT('list_signed'), "success");
+                          tpModal.toast(tpT('ui.list_signed'), "success");
                           tpModal.close(d);
                           load();
                         } else fail(res, tpT('ui.sign_failed'));
@@ -402,5 +413,57 @@
     });
   }
 
-  window.tpChecklists = { templates: templates, forService: forService };
+  /* ================= Vista previa (legacy Checklist/preview) =================
+   * Solo lectura: actividad, si se completó, resultado y enlaces a las fotos.
+   * Es lo que el legacy abre a quien puede ver la lista pero no editarla. */
+  function preview(c) {
+    var rows = (c.rows || []).map(function (r) {
+      var fotos = (r.images || []).length
+        ? r.images.map(function (im, i) {
+            return '<a href="' + esc(im.url) + '" target="_blank" rel="noopener">' + esc(tpT('front.preview')) + (r.images.length > 1 ? " " + (i + 1) : "") + "</a>";
+          }).join(" · ")
+        : "—";
+      return (
+        "<tr><td>" + esc(r.activity) + "</td>" +
+        "<td>" + esc(r.completed ? tpT('ui.yes') : tpT('global.no')) + "</td>" +
+        "<td>" + esc(r.outcome_label || "—") + "</td>" +
+        "<td>" + fotos + "</td></tr>"
+      );
+    }).join("");
+    tpModal.open({
+      title: tpT('ui.chk_preview') + " · " + c.name,
+      size: "lg",
+      body:
+        '<div class="tp-table-wrap"><table class="tp-table">' +
+        "<thead><tr><th>" + tpT('ui.chk_activity') + "</th><th>" + tpT('ui.chk_completed') + "</th><th>" +
+        tpT('ui.chk_outcome') + "</th><th>" + tpT('ui.chk_photo') + "</th></tr></thead>" +
+        "<tbody>" + (rows || '<tr><td colspan="4">—</td></tr>') + "</tbody></table></div>" +
+        (c.notes ? '<p class="tp-text-sm" style="margin:10px 0 0;"><b>' + tpT('ui.chk_notes') + ":</b> " + esc(c.notes) + "</p>" : ""),
+      buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
+    });
+  }
+
+  /* ================= Código QR del equipo (legacy Checklist/qr_code) ================= */
+  function qr(deviceId) {
+    if (!window.tpModal) return;
+    tpModal.fetchJSON(BASE + "/devices/" + deviceId + "/checklist-qr").then(function (res) {
+      if (!res.ok || !res.data || !res.data.ok) return fail(res, tpT('ui.not_available'));
+      var d = res.data;
+      tpModal.open({
+        title: d.title + (d.name ? " · " + d.name : ""),
+        size: "sm",
+        body:
+          '<div style="display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;">' +
+          '<img src="' + esc(d.image) + '" width="300" height="300" alt="' + esc(d.title) + '" style="max-width:100%;height:auto;background:#fff;border-radius:8px;">' +
+          '<a href="' + esc(d.url) + '" target="_blank" rel="noopener" class="tp-text-sm" style="word-break:break-all;">' + esc(d.url) + "</a>" +
+          '<small class="tp-text-xs tp-text-muted">' + tpT('ui.chk_qr_help') + "</small></div>",
+        buttons: [
+          { label: tpT('global.close'), variant: "ghost", close: true },
+          { label: tpT('ui.download'), variant: "primary", close: false, onClick: function () { window.open(d.download, "_blank"); return false; } },
+        ],
+      });
+    });
+  }
+
+  window.tpChecklists = { templates: templates, forService: forService, preview: preview, qr: qr };
 })();

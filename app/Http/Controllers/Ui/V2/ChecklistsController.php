@@ -214,6 +214,28 @@ class ChecklistsController extends BaseController
         ]);
     }
 
+    /**
+     * Código QR del equipo para abrir sus checklists (paridad con
+     * ChecklistsController@qrCode del legacy): mismos permisos
+     * (devices.show + checklist_qr_code.view, que en el legacy es lo único que
+     * gatea el menú) y las mismas rutas de imagen y descarga.
+     */
+    public function qrCode(Request $request, $deviceId): JsonResponse
+    {
+        $device = \Tobuli\Entities\Device::find((int) $deviceId);
+        $this->checkException('devices', 'show', $device);
+        $this->checkException('checklist_qr_code', 'view');
+
+        return response()->json([
+            'ok'       => true,
+            'title'    => trans('front.checklist_qr_code'),
+            'name'     => (string) $device->name,
+            'image'    => route('checklist.qr_code_image', $device->id),
+            'download' => route('checklist.qr_code_download', $device->id),
+            'url'      => route('maintenance.index', ['imei' => $device->imei]),
+        ]);
+    }
+
     public function presentChecklist(Checklist $c): array
     {
         return [
@@ -228,9 +250,11 @@ class ChecklistsController extends BaseController
                     'activity'     => (string) $r->activity,
                     'completed'    => (bool) $r->completed,
                     'outcome'      => (string) ($r->outcome ?? ''),
+                    'outcome_label' => (string) ($r->formatted_outcome ?? ''),
                     'completed_at' => $r->completed_at ? \Formatter::time()->convert($r->completed_at) : null,
                     'images'       => $r->images->map(function ($i) {
-                        return ['id' => (int) $i->id, 'url' => url('/checklists/image/' . $i->id)];
+                        // Misma URL que el legacy (Checklist/preview: url($image->path)).
+                        return ['id' => (int) $i->id, 'url' => url($i->path)];
                     })->all(),
                 ];
             })->all(),

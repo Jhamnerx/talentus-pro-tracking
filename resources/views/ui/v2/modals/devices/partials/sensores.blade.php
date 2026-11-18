@@ -44,7 +44,7 @@
             </button>
             {{-- Copiar la configuracion de sensores a otros vehiculos: dar de
                  alta una flota igual obligaba a repetirla uno a uno. --}}
-            <button type="button" class="tp-devlist__add tp-devlist__add--ghost" data-sensors-copy>Copiar a…</button>
+            <button type="button" class="tp-devlist__add tp-devlist__add--ghost" data-sensors-copy>{{ trans('ui.copy_sensors_to') }}</button>
             <span class="tp-devlist__search">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">

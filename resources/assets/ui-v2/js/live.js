@@ -1450,7 +1450,7 @@
   function vsBase(id) {
     return (CFG.devicesUrl || "/ui/v2/api/devices").replace(/\/devices(\?.*)?$/, "/devices") + "/" + id;
   }
-  function loadVehicleState(id) {
+  function loadVehicleState(id, openAfter) {
     var box = document.getElementById("tp-drawer-vstate");
     if (!box) return;
     box.hidden = true;
@@ -1461,6 +1461,7 @@
         vstateData = { deviceId: id, states: res.states, current: res.current };
         renderVStateBadge();
         box.hidden = false;
+        if (openAfter) openVStateModal();
       })
       .catch(function () {});
   }
@@ -2394,7 +2395,12 @@
       // fecha de hoy y al lado "2d". El legacy usa max() de los dos
       // (Device::getTime, getLastConnectTimestamp).
       (enabled ? fmtTimeAgo(ts) : "") +
-      "</span></div>" +
+      "</span>" +
+      // Vencido y con planes (Objects/item.blade.php:15-25 del legacy).
+      (d.expired && d.plans
+        ? '<button type="button" class="tp-live__row-upgrade" data-upgrade="' + d.id + '">' + tpT('front.upgrade') + "</button>"
+        : "") +
+      "</div>" +
       '<button type="button" class="tp-live__row-menu" data-id="' +
       d.id +
       '" title="' + tpT('ui.action') + '"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg></button>' +
@@ -2514,6 +2520,76 @@
       );
     });
     return node;
+  }
+
+  /**
+   * Planes del equipo («Upgrade»): paridad con Objects/item.blade.php y
+   * Frontend/DevicePlans. Con custom_device_add el servidor devuelve el paso
+   * «plan» del registro y se navega allí, como el enlace del legacy.
+   */
+  function openDevicePlans(id) {
+    if (!window.tpModal) return;
+    tpModal.fetchJSON("/ui/v2/api/devices/" + id + "/plans").then(function (res) {
+      var d = res && res.data;
+      if (!res.ok || !d || !d.ok) {
+        tpModal.toast((d && d.message) || tpT('ui.not_available'), "error");
+        return;
+      }
+      if (d.redirect) { location.href = d.redirect; return; }
+
+      var planCard = function (p) {
+        if (p.template) return '<div class="tp-plan">' + p.template + "</div>";
+        return (
+          '<div class="tp-plan">' +
+          '<div class="tp-plan__title">' + esc(p.title) + "</div>" +
+          '<dl class="tp-plan__dl"><dt>' + tpT('front.duration') + "</dt><dd>" + esc(p.duration) + "</dd>" +
+          "<dt>" + tpT('global.price') + "</dt><dd>" + esc(p.price) + "</dd></dl>" +
+          '<a class="tp-btn tp-btn--primary tp-btn--block" href="' + esc(p.url) + '" target="_blank" rel="noopener">' +
+          tpT('front.upgrade') + "</a></div>"
+        );
+      };
+      var grid = function (g) {
+        return '<div class="tp-plans">' + g.plans.map(planCard).join("") + "</div>";
+      };
+      var groups = d.groups || [];
+      var head =
+        '<p class="tp-text-sm tp-text-muted" style="margin:0 0 12px;">' + esc(d.device.name) +
+        (d.expiration ? " · " + esc(tpT('ui.device_plans_expires', { date: tpFmt.datetime(d.expiration) })) : "") + "</p>";
+
+      var dlg = tpModal.open({
+        title: d.title,
+        size: "lg",
+        body: '<div data-plans>' + head + (groups.length
+          ? (groups.length > 1 ? "" : grid(groups[0]))
+          : '<div class="tp-empty">' + tpT('front.device_plans_no_data') + "</div>") + "</div>",
+        buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
+      });
+      // Varios tipos de duración (main_settings.group_device_plans): una pestaña
+      // por tipo, como las nav-tabs del legacy.
+      if (dlg && groups.length > 1) {
+        var host = document.createElement("div");
+        dlg.querySelector("[data-plans]").appendChild(host);
+        tpModal.tabs(host, groups.map(function (g) {
+          return { key: g.key, label: g.title, html: grid(g) };
+        }));
+      }
+    });
+  }
+
+  /** Restablecer UUID de la app (legacy devices.do_reset_app_uuid → PUT devices/reset_app_uuid). */
+  function resetAppUuid(id) {
+    if (!window.tpModal) return;
+    tpModal
+      .confirm({ title: tpT('front.reset_app_uuid'), message: tpT('ui.reset_app_uuid_confirm'), confirmLabel: tpT('global.confirm') })
+      .then(function (ok) {
+        if (!ok) return;
+        tpModal.fetchJSON("/devices/reset_app_uuid/" + id, { method: "PUT" }).then(function (res) {
+          if (res.ok && res.data && res.data.status) {
+            tpModal.toast(tpT('global.success'), "success");
+            fetchDevices(true);
+          } else tpModal.errorToast ? tpModal.errorToast(res) : tpModal.toast(tpT('ui.update_failed'), "error");
+        });
+      });
   }
 
   /**
@@ -2701,6 +2777,19 @@
         location.href = "/ui/v2/sharing?device_id=" + id;
       } else if (act === "call_action") {
         if (window.tpCallActions) tpCallActions.open(id);
+      } else if (act === "vehicle_state") {
+        // Paridad legacy (Objects/item: devices.vehicle_state_form): mismo modal
+        // que el botón del panel del vehículo.
+        selectDevice(id);
+        loadVehicleState(id, true);
+      } else if (act === "chat") {
+        location.href = "/ui/v2/chat?device=" + id;
+      } else if (act === "checklist_qr") {
+        if (window.tpChecklists && tpChecklists.qr) tpChecklists.qr(id);
+      } else if (act === "device_plans") {
+        openDevicePlans(id);
+      } else if (act === "reset_app_uuid") {
+        resetAppUuid(id);
       } else if (act === "pending" && window.tpModal && tpModal.toast)
         tpModal.toast(tpT('ui.feature_coming_soon'), "info");
     });
@@ -3069,6 +3158,12 @@
 
   if (listEl) {
     listEl.addEventListener("click", function (e) {
+      var up = e.target.closest("[data-upgrade]");
+      if (up) {
+        e.stopPropagation();
+        openDevicePlans(parseInt(up.getAttribute("data-upgrade"), 10));
+        return;
+      }
       // Acciones del kebab de grupo (antes del toggle de colapso)
       var dgNew = e.target.closest("[data-dg-new]");
       if (dgNew) {

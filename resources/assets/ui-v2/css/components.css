@@ -2164,3 +2164,46 @@ select.tp-input:disabled {
   background: var(--brand-700, #194f9f);
   border-color: var(--brand-700, #194f9f);
 }
+
+/* ── Planes del equipo («Upgrade», live.js openDevicePlans) ───────────── */
+.tp-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.tp-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-raised);
+}
+.tp-plan__title {
+  font-weight: 600;
+  font-size: var(--fs-md, 14px);
+  color: var(--fg-primary);
+}
+.tp-plan__dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: var(--fs-sm, 13px);
+}
+.tp-plan__dl dt { color: var(--fg-tertiary); }
+.tp-plan__dl dd { margin: 0; text-align: right; color: var(--fg-primary); }
+.tp-plan .tp-btn { margin-top: auto; }
+.tp-live__row-upgrade {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-link);
+  cursor: pointer;
+  text-decoration: underline;
+}

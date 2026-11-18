@@ -39,12 +39,14 @@
         'week', 'yesterday',
         // Popup y ficha del vehiculo: atajos de historial y reporte de rutas
         'last_hour', 'show_history', 'device_routes_report', 'generate',
+        // Planes del equipo («Upgrade») y restablecer UUID de la app (menú de la lista)
+        'upgrade', 'device_plans_no_data', 'duration', 'reset_app_uuid',
     ];
     // Video JT1078 (tp-device-video.js): 'channel' y todas las front.video_*.
     $tpFront = array_merge($tpFront, ['channel'], preg_grep('/^video_/', array_keys(trans('front'))));
             $tpGlobal = [ 'add', 'always', 'apply', 'cancel', 'clear', 'close',
         'confirm', 'delete', 'edit', 'failed', 'from', 'no', 'not_found', 'save',
-        'to', 'user', 'yes',
+        'to', 'user', 'yes', 'price', 'success',
     ];
     // OJO: aqui NO se cogen 'title' ni 'name'. Son etiquetas de campo de
     // formulario y en es dicen "Titulo" (sin tilde) y "Nombres" (plural),

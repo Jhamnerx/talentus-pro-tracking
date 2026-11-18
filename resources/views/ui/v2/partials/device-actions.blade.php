@@ -96,7 +96,7 @@
     @endif
 
     @if ($u->perm('devices', 'edit'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="vehicle_state"
+        <button type="button" class="tp-row-menu__item" data-act="vehicle_state" data-feature="vehicle_state"
             data-need="vt" data-url="{{ route('devices.vehicle_state_form', '__ID__') }}">
             <span class="tp-row-menu__icon">{!! $ic['vehicle_state'] !!}</span>
             <span>{{ trans('front.change_vehicle_state') }}</span>
@@ -167,7 +167,7 @@
     @endif
 
     @if ($u->perm('chat', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="chat"
+        <button type="button" class="tp-row-menu__item" data-act="chat" data-feature="chat"
             data-need="chat" data-url="{{ route('chat.init', ['__ID__', 'device', 1]) }}">
             <span class="tp-row-menu__icon">{!! $ic['chat'] !!}</span>
             <span>{{ trans('front.chat') }}</span>
@@ -175,7 +175,7 @@
     @endif
 
     @if ($u->perm('checklist_qr_code', 'view'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="qr"
+        <button type="button" class="tp-row-menu__item" data-act="checklist_qr" data-feature="qr"
             data-url="{{ route('checklist.qr_code_preview', ['device_id' => '__ID__']) }}">
             <span class="tp-row-menu__icon">{!! $ic['qr'] !!}</span>
             <span>{{ trans('front.checklist_qr_code') }}</span>
@@ -198,14 +198,14 @@
         </button>
     @endif
 
-    <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="device_plans"
+    <button type="button" class="tp-row-menu__item" data-act="device_plans" data-feature="device_plans"
         data-need="plans" data-url="{{ route('device_plans.index', ['device_id' => '__ID__']) }}">
         <span class="tp-row-menu__icon">{!! $ic['plans'] !!}</span>
         <span>{{ trans('admin.device_plans') }}</span>
     </button>
 
     @if ($u->perm('devices', 'edit'))
-        <button type="button" class="tp-row-menu__item" data-act="pending" data-feature="reset_app_uuid"
+        <button type="button" class="tp-row-menu__item" data-act="reset_app_uuid" data-feature="reset_app_uuid"
             data-need="app_uuid" data-url="{{ route('devices.do_reset_app_uuid', '__ID__') }}">
             <span class="tp-row-menu__icon">{!! $ic['reset'] !!}</span>
             <span>{{ trans('front.reset_app_uuid') }}</span>

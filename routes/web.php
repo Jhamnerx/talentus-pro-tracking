@@ -1391,7 +1391,8 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::get('device-groups/{id}/items',  ['as' => 'api.device_groups.items',   'uses' => 'Ui\V2\DevicesController@deviceGroupItems'])->where('id', '[0-9]+');
         Route::put('device-groups/{id}',        ['as' => 'api.device_groups.update',  'uses' => 'Ui\V2\DevicesController@updateDeviceGroup'])->where('id', '[0-9]+');
         Route::delete('device-groups/{id}',     ['as' => 'api.device_groups.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceGroup'])->where('id', '[0-9]+');
-        Route::get('devices/{id}/vehicle-states', ['as' => 'api.devices.vehicle_states',      'uses' => 'Ui\V2\DevicesController@vehicleStates'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/plans',          ['as' => 'api.devices.plans',               'uses' => 'Ui\V2\DevicesController@plans'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/vehicle-states',['as' => 'api.devices.vehicle_states',      'uses' => 'Ui\V2\DevicesController@vehicleStates'])->where('id', '[0-9]+');
         Route::post('devices/{id}/vehicle-state', ['as' => 'api.devices.change_vehicle_state', 'uses' => 'Ui\V2\DevicesController@changeVehicleState'])->where('id', '[0-9]+');
 
         // Sensores del modal device (tab Sensores — CRUD vía SensorModalHelper)
@@ -1417,6 +1418,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         Route::post('services/{id}/checklists',  ['as' => 'api.checklists.store',           'uses' => 'Ui\V2\ChecklistsController@store'])->where('id', '[0-9]+');
         Route::delete('checklists/{id}',         ['as' => 'api.checklists.destroy',         'uses' => 'Ui\V2\ChecklistsController@destroy'])->where('id', '[0-9]+');
         Route::put('checklist-rows/{id}',        ['as' => 'api.checklist_rows.update',      'uses' => 'Ui\V2\ChecklistsController@updateRow'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/checklist-qr',  ['as' => 'api.checklists.qr',              'uses' => 'Ui\V2\ChecklistsController@qrCode'])->where('id', '[0-9]+');
         Route::post('checklists/{id}/sign',      ['as' => 'api.checklists.sign',            'uses' => 'Ui\V2\ChecklistsController@sign'])->where('id', '[0-9]+');
         Route::post('checklist-rows/{id}/image',   ['as' => 'api.checklist_rows.image',        'uses' => 'Ui\V2\ChecklistsController@uploadRowImage'])->where('id', '[0-9]+');
         Route::delete('checklist-images/{id}',     ['as' => 'api.checklist_images.destroy',    'uses' => 'Ui\V2\ChecklistsController@destroyRowImage'])->where('id', '[0-9]+');
