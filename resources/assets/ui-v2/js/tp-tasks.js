@@ -678,7 +678,7 @@
               return (
                 "<tr>" +
                 (canEdit
-                  ? '<td><input type="checkbox" class="tp-choice-input" data-tsk-chk="' + r.id + '"' +
+                  ? '<td><input type="checkbox" class="tp-choice-input" data-tsk-chk="' + r.id + '" aria-label="' + esc(r.title) + '"' +
                     (sel[r.id] ? " checked" : "") + "></td>"
                   : "") +
                 '<td title="' + esc(addrs) + '">' + esc(r.title) + "</td>" +

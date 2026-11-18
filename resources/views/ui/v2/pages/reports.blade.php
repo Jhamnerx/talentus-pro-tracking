@@ -57,7 +57,7 @@
 
         <div class="tp-maint__card">
             <div style="display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border-default,#eef2f7);">
-                <input type="text" class="tp-input" id="tp-rep-search" placeholder="{{ trans('front.search') }}…"
+                <input type="text" class="tp-input" id="tp-rep-search" aria-label="{{ trans('front.search') }}" placeholder="{{ trans('front.search') }}…"
                     autocomplete="off" style="max-width: 240px; border-radius: 999px;">
                 <select class="tp-input" id="tp-rep-type-filter" style="width: 260px"></select>
             </div>

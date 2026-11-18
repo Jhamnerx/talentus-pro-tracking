@@ -275,11 +275,12 @@
           var items = res.data.items || [];
           box.innerHTML = items.length
             ? items
-                .map(function (i) {
+                .map(function (i, n) {
                   return (
                     '<label class="tp-icon-gallery__item' + (i.selected ? " is-selected" : "") +
                     '" data-icon-id="' + i.id + '">' +
-                    '<input type="radio" name="icon_id" value="' + i.id + '"' + (i.selected ? " checked" : "") + ">" +
+                    '<input type="radio" name="icon_id" value="' + i.id + '"' + (i.selected ? " checked" : "") +
+                    ' aria-label="' + tpModal.escapeHtml(tpT('front.icon') + ' ' + (n + 1)) + '">' +
                     '<img src="' + tpModal.escapeHtml(i.url) + '" alt="" loading="lazy"></label>'
                   );
                 })
@@ -388,12 +389,12 @@
           var last = i === ranges.length - 1;
           return (
             '<span class="tp-routecolors__row" data-idx="' + i + '">' +
-            '<input type="number" class="tp-input tp-input--sm" value="' + r.from + '" disabled style="width:64px;">' +
+            '<input type="number" class="tp-input tp-input--sm" value="' + r.from + '" disabled aria-label="' + tpT('from_value') + ' ' + (i + 1) + '" style="width:64px;">' +
             '<span class="tp-routecolors__dash">–</span>' +
             (last
               ? '<span class="tp-routecolors__inf">∞</span>'
-              : '<input type="number" class="tp-input tp-input--sm" data-rc-to value="' + r.to + '" min="1" style="width:64px;">') +
-            '<input type="color" data-rc-color value="' + (r.color || "#2563eb") + '">' +
+              : '<input type="number" class="tp-input tp-input--sm" data-rc-to value="' + r.to + '" min="1" aria-label="' + tpT('to_value') + ' ' + (i + 1) + '" style="width:64px;">') +
+            '<input type="color" data-rc-color value="' + (r.color || "#2563eb") + '" aria-label="' + tpT('color') + ' ' + (i + 1) + '">' +
             (ranges.length > 1
               ? '<button type="button" class="tp-routecolors__del" data-rc-del title="' + tpT('remove') + '" aria-label="' + tpT('remove') + '">×</button>'
               : "") +

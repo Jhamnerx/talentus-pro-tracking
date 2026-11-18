@@ -34,7 +34,7 @@
                 {{ trans('front.drivers') }}
             </h2>
             <div class="tp-maint__tools" style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" class="tp-input" id="tp-drivers-search"
+                <input type="text" class="tp-input" id="tp-drivers-search" aria-label="{{ trans('front.search') }}"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 <select class="tp-input" id="tp-drivers-assigned" style="width: 190px">
                     <option value="">{{ trans('global.all') }}</option>

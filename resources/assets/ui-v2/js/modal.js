@@ -961,6 +961,96 @@
   window.tpFmt = { datetime: datetime, date: date, fromDate: fromDate };
 
   /* ---------------------------------------------------------------
+   * tpA11y.linkLabels · nombre accesible de los campos (accesibilidad §2)
+   *   Casi todos los formularios de la v2 pintan
+   *     <div class="tp-form__field"><span class="tp-form__label">Texto</span><input></div>
+   *   y el <span> no etiqueta al campo. Aquí se enlaza con aria-labelledby
+   *   cuando el bloque tiene UN solo campo sin nombre: con dos (operador y
+   *   valor, desde y hasta) el texto del bloque confunde, y esos llevan su
+   *   aria-label en el marcado. Corre al cargar y sobre lo que se inserte
+   *   después (modales, formularios pintados por JS).
+   * --------------------------------------------------------------- */
+  var LABEL_SEL = ".tp-form__label, .tp-field__label";
+  var FIELD_SEL = ".tp-form__field, .tp-field";
+  var CTRL_SEL = "input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), select, textarea";
+  var labelSeq = 0;
+
+  function hasName(el) {
+    if ((el.getAttribute("aria-label") || "").trim()) return true;
+    if (el.getAttribute("aria-labelledby")) return true;
+    if ((el.getAttribute("title") || "").trim()) return true;
+    if (el.closest("label")) return true;
+    if (el.id && document.querySelector('label[for="' + (window.CSS && CSS.escape ? CSS.escape(el.id) : el.id) + '"]')) return true;
+    return false;
+  }
+
+  function linkField(field) {
+    var label = null;
+    for (var i = 0; i < field.children.length; i++) {
+      if (field.children[i].matches(LABEL_SEL)) { label = field.children[i]; break; }
+    }
+    if (!label) return;
+    var text = (label.textContent || "").replace(/ /g, " ").trim();
+    if (!text) return;
+    var ctrls = [].filter.call(field.querySelectorAll(CTRL_SEL), function (c) {
+      // Los campos de un bloque anidado son de ese bloque.
+      return c.closest(FIELD_SEL) === field && !hasName(c);
+    });
+    if (!ctrls.length) return;
+    if (ctrls.length > 1 && !isDateTime(ctrls)) return;
+    if (!label.id) label.id = "tp-lbl-" + (++labelSeq);
+    ctrls[0].setAttribute("aria-labelledby", label.id);
+    // Fecha + hora (+ minuto) en una fila: la hora no tiene texto propio.
+    var t = typeof window.tpT === "function" ? window.tpT : function (k) { return k.split(".").pop(); };
+    var parts = ctrls.length === 2 ? ["front.hour"] : ["front.hour", "front.minute"];
+    for (var j = 1; j < ctrls.length; j++) {
+      ctrls[j].setAttribute("aria-label", text + " (" + t(parts[j - 1]) + ")");
+    }
+  }
+
+  function isDateTime(ctrls) {
+    if (ctrls.length > 3) return false;
+    var first = ctrls[0];
+    if (first.type !== "date" && !first.hasAttribute("data-dp-enhanced")) return false;
+    for (var i = 1; i < ctrls.length; i++) {
+      if (ctrls[i].tagName !== "SELECT" && ctrls[i].type !== "time") return false;
+    }
+    return true;
+  }
+
+  function linkLabels(root) {
+    if (!root || root.nodeType !== 1) return;
+    if (root.matches(FIELD_SEL)) linkField(root);
+    root.querySelectorAll(FIELD_SEL).forEach(linkField);
+  }
+
+  var pendingRoots = [];
+  var pendingFrame = 0;
+  function flushLabels() {
+    pendingFrame = 0;
+    var roots = pendingRoots;
+    pendingRoots = [];
+    roots.forEach(function (r) { if (r.isConnected) linkLabels(r); });
+  }
+
+  function startLabelObserver() {
+    linkLabels(document.body);
+    if (!window.MutationObserver) return;
+    new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        m.addedNodes.forEach(function (n) {
+          if (n.nodeType === 1) pendingRoots.push(n.closest(FIELD_SEL) || n);
+        });
+      });
+      if (pendingRoots.length && !pendingFrame) pendingFrame = requestAnimationFrame(flushLabels);
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
+  window.tpA11y = { linkLabels: linkLabels };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", startLabelObserver);
+  else startLabelObserver();
+
+  /* ---------------------------------------------------------------
    * tpEmpty · texto de estado vacío (QA V7)
    *   tpEmpty(filtrado, "ui.no_expenses")
    *   - con búsqueda o filtro activos → «Sin resultados.»

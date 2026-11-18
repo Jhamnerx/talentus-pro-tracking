@@ -155,10 +155,10 @@
                     <input aria-labelledby="tp-lbl-bitcut" type="checkbox" class="tp-choice-input" name="bitcut" value="1" id="tp-sen-bitcut"
                         {{ !empty($item->bitcut) ? 'checked' : '' }}>
                     <input type="text" class="tp-input" name="bitcut_start" value="{{ $item->bitcut['start'] ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.bitcut_start') }}" data-enable="tp-sen-bitcut" style="flex: 1;">
+                        aria-label="{{ trans('front.bitcut') }}: {{ trans('validation.attributes.bitcut_start') }}" placeholder="{{ trans('validation.attributes.bitcut_start') }}" data-enable="tp-sen-bitcut" style="flex: 1;">
                     <input type="text" class="tp-input" name="bitcut_count" value="{{ $item->bitcut['count'] ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.bitcut_count') }}" data-enable="tp-sen-bitcut" style="flex: 1;">
-                    <select name="bitcut_base" class="tp-input" data-enable="tp-sen-bitcut" style="width: 90px;">
+                        aria-label="{{ trans('front.bitcut') }}: {{ trans('validation.attributes.bitcut_count') }}" placeholder="{{ trans('validation.attributes.bitcut_count') }}" data-enable="tp-sen-bitcut" style="flex: 1;">
+                    <select name="bitcut_base" aria-label="{{ trans('front.bitcut') }}: DEC / HEX" class="tp-input" data-enable="tp-sen-bitcut" style="width: 90px;">
                         <option value="10" {{ ($item->bitcut['base'] ?? '') == '10' ? 'selected' : '' }}>DEC</option>
                         <option value="16" {{ ($item->bitcut['base'] ?? '') == '16' ? 'selected' : '' }}>HEX</option>
                     </select>
@@ -174,9 +174,9 @@
                     <input aria-labelledby="tp-lbl-setflag" type="checkbox" class="tp-choice-input" name="setflag" value="1" id="tp-sen-setflag"
                         {{ !empty($item->setflag_count) ? 'checked' : '' }}>
                     <input type="text" class="tp-input" name="setflag_start" value="{{ $item->setflag_start ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.on_setflag_1') }}" data-enable="tp-sen-setflag" style="flex: 1;">
+                        aria-label="{{ trans('front.setflag') }}: {{ trans('validation.attributes.on_setflag_1') }}" placeholder="{{ trans('validation.attributes.on_setflag_1') }}" data-enable="tp-sen-setflag" style="flex: 1;">
                     <input type="text" class="tp-input" name="setflag_count" value="{{ $item->setflag_count ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.on_setflag_2') }}" data-enable="tp-sen-setflag" style="flex: 1;">
+                        aria-label="{{ trans('front.setflag') }}: {{ trans('validation.attributes.on_setflag_2') }}" placeholder="{{ trans('validation.attributes.on_setflag_2') }}" data-enable="tp-sen-setflag" style="flex: 1;">
                 </div>
             </div>
         </div>
@@ -239,38 +239,38 @@
             <div class="tp-form__field" data-sensor-input="logic_on">
                 <span class="tp-form__label">{{ trans('validation.attributes.on_value') }}</span>
                 <div style="display: flex; gap: 8px;">
-                    <select name="on_type" class="tp-input" style="width: 150px;">
+                    <select name="on_type" aria-label="{{ trans('validation.attributes.on_value') }}" class="tp-input" style="width: 150px;">
                         @foreach ($condTypes as $ct => $ctLabel)
                             <option value="{{ $ct }}" {{ ($item->on_type ?? null) == $ct ? 'selected' : '' }}>{{ $ctLabel }}</option>
                         @endforeach
                     </select>
                     <input type="text" class="tp-input" name="on_tag_start" value="{{ $item->on_tag_start ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.on_setflag_1') }}" data-enable="tp-sen-logic-setflag"
+                        aria-label="{{ trans('validation.attributes.on_value') }}: {{ trans('validation.attributes.on_setflag_1') }}" placeholder="{{ trans('validation.attributes.on_setflag_1') }}" data-enable="tp-sen-logic-setflag"
                         data-enable-hide="1" style="flex: 1;">
                     <input type="text" class="tp-input" name="on_tag_count" value="{{ $item->on_tag_count ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.on_setflag_2') }}" data-enable="tp-sen-logic-setflag"
+                        aria-label="{{ trans('validation.attributes.on_value') }}: {{ trans('validation.attributes.on_setflag_2') }}" placeholder="{{ trans('validation.attributes.on_setflag_2') }}" data-enable="tp-sen-logic-setflag"
                         data-enable-hide="1" style="flex: 1;">
                     <input type="text" class="tp-input" name="on_tag_value" value="{{ $item->on_tag_value ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.tag_value') }}" style="flex: 1;" data-tp-field>
+                        aria-label="{{ trans('validation.attributes.on_value') }}: {{ trans('validation.attributes.tag_value') }}" placeholder="{{ trans('validation.attributes.tag_value') }}" style="flex: 1;" data-tp-field>
                 </div>
             </div>
 
             <div class="tp-form__field" data-sensor-input="logic_off">
                 <span class="tp-form__label">{{ trans('validation.attributes.off_value') }}</span>
                 <div style="display: flex; gap: 8px;">
-                    <select name="off_type" class="tp-input" style="width: 150px;">
+                    <select name="off_type" aria-label="{{ trans('validation.attributes.off_value') }}" class="tp-input" style="width: 150px;">
                         @foreach ($condTypes as $ct => $ctLabel)
                             <option value="{{ $ct }}" {{ ($item->off_type ?? null) == $ct ? 'selected' : '' }}>{{ $ctLabel }}</option>
                         @endforeach
                     </select>
                     <input type="text" class="tp-input" name="off_tag_start" value="{{ $item->off_tag_start ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.on_setflag_1') }}" data-enable="tp-sen-logic-setflag"
+                        aria-label="{{ trans('validation.attributes.off_value') }}: {{ trans('validation.attributes.on_setflag_1') }}" placeholder="{{ trans('validation.attributes.on_setflag_1') }}" data-enable="tp-sen-logic-setflag"
                         data-enable-hide="1" style="flex: 1;">
                     <input type="text" class="tp-input" name="off_tag_count" value="{{ $item->off_tag_count ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.on_setflag_2') }}" data-enable="tp-sen-logic-setflag"
+                        aria-label="{{ trans('validation.attributes.off_value') }}: {{ trans('validation.attributes.on_setflag_2') }}" placeholder="{{ trans('validation.attributes.on_setflag_2') }}" data-enable="tp-sen-logic-setflag"
                         data-enable-hide="1" style="flex: 1;">
                     <input type="text" class="tp-input" name="off_tag_value" value="{{ $item->off_tag_value ?? '' }}"
-                        placeholder="{{ trans('validation.attributes.tag_value') }}" style="flex: 1;" data-tp-field>
+                        aria-label="{{ trans('validation.attributes.off_value') }}: {{ trans('validation.attributes.tag_value') }}" placeholder="{{ trans('validation.attributes.tag_value') }}" style="flex: 1;" data-tp-field>
                 </div>
             </div>
         </div>
@@ -295,9 +295,9 @@
 
         <div data-sensor-input="value">
             <div class="tp-form__field">
-                <span class="tp-form__label">{{ trans('validation.attributes.value') }}</span>
+                <span class="tp-form__label" id="tp-lbl-sen-value">{{ trans('validation.attributes.value') }}</span>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <input type="checkbox" class="tp-choice-input" value="1" id="tp-sen-value">
+                    <input type="checkbox" class="tp-choice-input" value="1" id="tp-sen-value" aria-labelledby="tp-lbl-sen-value">
                     <input type="text" class="tp-input" name="value" value="{{ $item->value ?? 0 }}"
                         data-enable="tp-sen-value" style="flex: 1;" data-tp-field>
                 </div>

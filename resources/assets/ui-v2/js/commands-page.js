@@ -699,7 +699,7 @@
       '<button type="button" class="' + UI.linkBtn + '" data-sch-all>' + esc(T("select_all")) + "</button>" +
       '<button type="button" class="' + UI.linkBtn + '" data-sch-none>' + esc(T("deselect_all")) + "</button>" +
       "</div></div>" +
-      '<div class="mt-2"><input type="text" class="tp-input" data-sch-search placeholder="' +
+      '<div class="mt-2"><input type="text" class="tp-input" data-sch-search aria-label="' + esc(T("search")) + '" placeholder="' +
       esc(T("search")) + '…"></div>' +
       '<div class="' + UI.list + '" data-sch-devices></div></div>' +
       // Tipo + atributos: SOLO visibles con dispositivos seleccionados
@@ -715,7 +715,7 @@
       '<div class="flex flex-col gap-2 mt-1" data-sch-types>' +
       schedRadio("exact_time", T("exact_time")) +
       '<div data-sch-box="exact_time" class="pl-6"' + (schedType !== "exact_time" ? " hidden" : "") + ">" +
-      '<input type="datetime-local" step="60" class="tp-input" data-sch-exact value="' +
+      '<input type="datetime-local" step="60" class="tp-input" data-sch-exact aria-label="' + esc(T("exact_time")) + '" value="' +
       esc(tp.time ? String(tp.time).replace(" ", "T").slice(0, 16) : "") + '"></div>' +
       schedRadio("hourly", T("hourly")) +
       '<div data-sch-box="hourly" class="pl-6"' + (schedType !== "hourly" ? " hidden" : "") + ">" +

@@ -58,7 +58,7 @@
         <section data-rsch-panel="list">
             <div class="tp-maint__card">
                 <div class="tp-rsch__bar">
-                    <input type="text" class="tp-input" id="tp-rsch-search"
+                    <input type="text" class="tp-input" id="tp-rsch-search" aria-label="{{ trans('front.search') }}"
                         placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 </div>
 

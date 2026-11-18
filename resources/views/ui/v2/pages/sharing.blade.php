@@ -34,7 +34,7 @@
                 {{ trans('front.sharing') }}
             </h2>
             <div class="tp-maint__tools" style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" class="tp-input" id="tp-sharing-search"
+                <input type="text" class="tp-input" id="tp-sharing-search" aria-label="{{ trans('front.search') }}"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 <select class="tp-input" id="tp-sharing-device" style="width: 200px"></select>
                 <button type="button" class="tp-btn tp-btn--primary" id="tp-sharing-add">

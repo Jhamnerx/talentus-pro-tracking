@@ -27,7 +27,7 @@
         'logs', 'longitude', 'map', 'minute', 'minute_short', 'model', 'month', 'monthly',
         'blocked', 'expired', 'offline',
         'move', 'move_duration', 'new', 'next', 'no_data', 'nothing_found_request', 'no_routes', 'operations',
-        'no_sensors', 'no_services', 'none', 'overspeed', 'playback', 'points', 'preview',
+        'no_sensors', 'no_services', 'set_as_current', 'icon', 'none', 'overspeed', 'playback', 'points', 'preview',
         'previous', 'protocol', 'queued', 'queued_for_online', 'report',
         'response', 'results', 'route', 'route_length', 'routes',
         'rows_per_page', 'schedule', 'schedule_at', 'search', 'second_short', 'select_all',

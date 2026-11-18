@@ -91,10 +91,10 @@
       "</div></div>" +
       // Establecer como actual
       '<div class="tp-form__field tp-col-2">' +
-      '<span class="tp-form__label">Establecer como actual</span>' +
+      '<span class="tp-form__label" id="tp-drv-current-lbl">' + tpT('front.set_as_current') + '</span>' +
       '<div style="display:flex;gap:9px;align-items:center;">' +
-      '<input type="checkbox" id="tp-drv-current" name="current" value="1"' + (item.device_id ? " checked" : "") + ">" +
-      '<select name="device_id" class="tp-input" style="width:100%;flex:1;" ' +
+      '<input type="checkbox" id="tp-drv-current" name="current" value="1" aria-labelledby="tp-drv-current-lbl"' + (item.device_id ? " checked" : "") + ">" +
+      '<select name="device_id" class="tp-input" aria-label="' + tpT('front.device') + '" style="width:100%;flex:1;" ' +
       (item.device_id ? "" : "disabled") + ">" +
       '<option value="">—</option>' +
       (meta.devices || [])

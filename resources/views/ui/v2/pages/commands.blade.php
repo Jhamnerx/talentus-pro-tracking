@@ -123,7 +123,7 @@
              de la página es «Enviar comando», QA V3) --}}
         <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
             <div class="flex items-center gap-2.5">
-                <input type="text" class="tp-input" style="max-width:260px;" id="tp-cmdhub-search"
+                <input type="text" class="tp-input" style="max-width:260px;" id="tp-cmdhub-search" aria-label="{{ trans('front.search') }}"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 {{-- Filtro por conexión (solo tab Registros) --}}
                 <select class="tp-select" id="tp-cmdhub-conn" hidden style="width:130px;">

@@ -29,7 +29,7 @@
                 {{ trans('front.routes') }}
             </h2>
             <div class="tp-maint__tools">
-                <input type="text" class="tp-input" id="tp-routes-tbl-search"
+                <input type="text" class="tp-input" id="tp-routes-tbl-search" aria-label="{{ trans('front.search') }}"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 @if (auth()->user()->perm('routes', 'edit'))
                     <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon" id="tp-routes-tbl-export"

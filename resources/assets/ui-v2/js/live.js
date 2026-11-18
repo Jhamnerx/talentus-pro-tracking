@@ -2361,7 +2361,7 @@
       (active ? tpT('ui.hide_from_map') : tpT('ui.show_on_map')) +
       '"><input type="checkbox" data-id="' +
       d.id +
-      '"' +
+      '" aria-label="' + esc(tpT('ui.show_on_map') + ': ' + (d.name || "#" + d.id)) + '"' +
       (active ? " checked" : "") +
       "></label>" +
       // El legacy pone el nombre del estado en el title del indicador.

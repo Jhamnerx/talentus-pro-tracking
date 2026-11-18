@@ -24,7 +24,7 @@
                 {{ trans('front.maintenance') }}
             </h2>
             <div class="tp-maint__tools">
-                <input type="text" class="tp-input" id="tp-maint-search"
+                <input type="text" class="tp-input" id="tp-maint-search" aria-label="{{ trans('front.search') }}"
                     placeholder="{{ trans('front.search') }}…" autocomplete="off">
                 {{-- Plantillas de listas de verificación (addon checklists) --}}
                 @if (config('addon.checklists') && Auth::user()->perm('checklist_template', 'view'))

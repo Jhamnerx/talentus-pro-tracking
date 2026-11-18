@@ -54,7 +54,7 @@
 
                 <div class="tp-hist__side-form">
                     {{-- Device --}}
-                    <label class="tp-hist__label">{{ trans('front.device') }}</label>
+                    <label class="tp-hist__label" for="tp-hist-device-input">{{ trans('front.device') }}</label>
                     <div class="tp-combo" id="tp-hist-device" data-value="">
                         <input type="text" class="tp-input tp-input--sm tp-combo__input" id="tp-hist-device-input"
                             placeholder="{{ trans('front.select_device') }}…" autocomplete="off" role="combobox"

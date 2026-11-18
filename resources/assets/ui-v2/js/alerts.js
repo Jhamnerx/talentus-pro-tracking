@@ -1107,6 +1107,8 @@
     var val = n.input == null ? "" : n.input;
     var t = n.input_type;
     if (!t) return "";
+    // Nombre accesible: el del canal (la fila solo tiene el texto en la casilla).
+    var aria = ' aria-label="' + esc(n.name || "") + '"';
     if (t === "select") {
       var opts = (n.options || [])
         .map(function (o) {
@@ -1124,7 +1126,7 @@
         })
         .join("");
       return (
-        '<select class="tp-input tp-input--sm" data-no-ts="1" data-notif-input>' +
+        '<select class="tp-input tp-input--sm" data-no-ts="1" data-notif-input' + aria + '>' +
         opts +
         "</select>"
       );
@@ -1132,20 +1134,20 @@
     if (t === "color") {
       var hex = /^#[0-9a-fA-F]{6}/.test(val) ? val : "#2563eb";
       return (
-        '<input type="color" class="tp-notif__color" data-notif-input value="' +
+        '<input type="color" class="tp-notif__color" data-notif-input' + aria + ' value="' +
         esc(hex) +
         '">'
       );
     }
     if (t === "integer") {
       return (
-        '<input type="number" min="0" class="tp-input tp-input--sm" data-notif-input value="' +
+        '<input type="number" min="0" class="tp-input tp-input--sm" data-notif-input' + aria + ' value="' +
         esc(val) +
         '" placeholder="min">'
       );
     }
     return (
-      '<input type="text" class="tp-input tp-input--sm" data-notif-input value="' +
+      '<input type="text" class="tp-input tp-input--sm" data-notif-input' + aria + ' value="' +
       esc(val) +
       '">'
     );
@@ -1335,7 +1337,7 @@
       '<div class="tp-devbox__bar">' +
       '<div class="tp-devbox__search">' +
       '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>' +
-      '<input type="search" class="tp-input tp-input--sm" data-dev-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off">' +
+      '<input type="search" class="tp-input tp-input--sm" data-dev-search placeholder="' + tpT('ui.search_vehicle') + '" aria-label="' + tpT('ui.search_vehicle') + '" autocomplete="off">' +
       "</div>" +
       '<div class="tp-devbox__acts">' +
       '<button type="button" class="tp-devbox__link" data-dev-all>' + tpT('ui.select_all_m') + '</button>' +

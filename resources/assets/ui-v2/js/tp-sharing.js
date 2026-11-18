@@ -141,9 +141,9 @@
       "</div></div>" +
       // Email
       '<div class="tp-form__field">' +
-      '<span class="tp-form__label">Email</span>' +
+      '<span class="tp-form__label" id="tp-sh-email-lbl">Email</span>' +
       '<div class="tp-input-group">' +
-      '<input type="checkbox" name="send_email" value="1" id="tp-sh-email-chk">' +
+      '<input type="checkbox" name="send_email" value="1" id="tp-sh-email-chk" aria-labelledby="tp-sh-email-lbl">' +
       '<input type="text" name="email" placeholder="' + tpT('email_placeholder') + '" aria-label="' + tpT('attr.email') + '" data-enable="tp-sh-email-chk" disabled data-tp-field>' +
       "</div>" +
       '<small class="tp-form__hint">' + tpT('ui.several_emails_help') + '</small>' +
@@ -152,10 +152,10 @@
       // usuario puede enviar SMS (meta.can_sms), como el legacy.
       (meta && meta.can_sms
         ? '<div class="tp-form__field">' +
-          '<span class="tp-form__label">SMS</span>' +
+          '<span class="tp-form__label" id="tp-sh-sms-lbl">SMS</span>' +
           '<div class="tp-input-group">' +
-          '<input type="checkbox" name="send_sms" value="1" id="tp-sh-sms-chk">' +
-          '<input type="text" name="sms" placeholder="+51999999999" data-enable="tp-sh-sms-chk" disabled data-tp-field>' +
+          '<input type="checkbox" name="send_sms" value="1" id="tp-sh-sms-chk" aria-labelledby="tp-sh-sms-lbl">' +
+          '<input type="text" name="sms" placeholder="+51999999999" aria-label="SMS" data-enable="tp-sh-sms-chk" disabled data-tp-field>' +
           "</div>" +
           '<small class="tp-form__hint">' + tpT('ui.several_numbers_help') + '</small>' +
           "</div>"
@@ -240,8 +240,8 @@
       html +=
         '<div data-sh-group="' + gid + '" style="border-bottom:1px solid var(--border-default,#eef2f7);">' +
         '<div style="display:flex;align-items:center;gap:9px;padding:7px 4px;background:var(--surface-sunken,#f8fafc);border-radius:8px;">' +
-        '<button type="button" data-sh-toggle style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);width:20px;">▾</button>' +
-        '<input type="checkbox" class="tp-choice-input" data-sh-gchk>' +
+        '<button type="button" data-sh-toggle aria-label="' + esc(tpT('ui.expand')) + ' ' + esc(title) + '" style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);width:20px;">▾</button>' +
+        '<input type="checkbox" class="tp-choice-input" data-sh-gchk aria-label="' + esc(title) + '">' +
         '<span style="font-size:13px;font-weight:600;color:var(--fg-secondary,#475569);">' + esc(title) + "</span>" +
         '<span style="font-size:11px;color:var(--fg-muted,#94a3b8);">(' + byGroup[gid].length + ")</span>" +
         "</div>" +
