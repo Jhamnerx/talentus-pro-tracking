@@ -8,109 +8,57 @@ contrastadas con WCAG 2.2 AA.
 El escaneo cubre las dos fuentes de marcado: los blades **y las cadenas de
 JavaScript**, que en esta aplicación generan la mayoría de los controles.
 
-> **Estado: cerrado el 1-oct-2026.** Siete de los ocho grupos corregidos.
-> Lo que queda está **aplazado a propósito**, con el criterio explicado en
-> *Por qué se para aquí*.
+> **Estado: cerrado el 18-nov-2026.** Los ocho grupos corregidos; lo que se
+> aplazó el 1-oct (campos sin etiqueta y rejilla de horario) está hecho y se
+> explica en *Lo corregido*.
 
 ## Dónde estamos
 
 | # | Problema | Encontrados | Pendientes | Severidad |
 |---|----------|------------:|-----------:|-----------|
 | 1 | Elemento no interactivo con click | 6 | **0** | Crítico |
-| 2 | Campo de formulario sin etiqueta | 84 | **49** | Aplazado |
+| 2 | Campo de formulario sin etiqueta | 84 | **0** | Medio |
 | 3 | Icono decorativo sin `aria-hidden` | 56 | **0** | Medio |
-| 4 | Conmutador sin estado expuesto | 17 | **4** | Aplazado |
+| 4 | Conmutador sin estado expuesto | 17 | **0** | Alto |
 | 5 | `prefers-reduced-motion` sin respetar | 13 ficheros | **0** | Medio |
 | 6 | Destino táctil por debajo de 24×24 px | 3 | **0** | Alto |
 | 7 | Foco sin indicador visible | 2 | **0** | Crítico |
 | 8 | Botón de solo icono sin nombre accesible | 2 | **0** | Crítico |
 
-**53 pendientes de 172.** Lo corregido está en nueve commits, de
-`4f0fb712` a `c344d5d0`.
-
-## Por qué se para aquí
-
-Lo corregido no era "accesibilidad" en abstracto: era cosas que **afectaban
-a todo el mundo**. El menú de tres puntos de cada vehículo medía 22 px, que
-falla en móvil para cualquiera. La paleta de comandos no mostraba el foco,
-así que quien navega con Tab iba a ciegas. Las filas de reportes no
-respondían a Enter. Y `prefers-reduced-motion` lo activa gente con mareo o
-migraña, que es mucho más común que la ceguera.
-
-Lo que queda —49 etiquetas de campo y la rejilla— **solo lo nota alguien
-que use lector de pantalla**, y está en pantallas de configuración
-ocasional: el modal de sensores lo toca quien da de alta equipos, muy de
-vez en cuando. Para un panel de operaciones de flota, el coste de acertar
-con 49 textos técnicos no se justifica hoy.
-
-**Esto cambia si aparece un cliente del sector público.** La plataforma ya
-reporta a OSINERGMIN, SUTRAN y MTC, así que opera en transporte regulado.
-En Perú, la Ley 29973 y la NTP que adopta WCAG pueden aparecer en un pliego
-de licitación. Si eso entra en el horizonte, estos 53 pasan de prescindible
-a requisito, y conviene hacerlos con calma antes y no con prisa durante un
-concurso.
-
-Todo queda localizado por fichero y línea más abajo: retomarlo es abrir este
-documento, no volver a investigar.
-
----
-
-## Lo que queda
-
-### 4 · Conmutador sin estado expuesto · 4 casos · ALTO
-
-Solo queda la **rejilla del horario de alertas** (`alerts.js:920`, `:925`,
-`:942`, `:961`). Es la única pieza que necesita diseño, no un atributo.
-
-Son **672 celdas** — 96 franjas de 15 minutos × 7 días —, así que hacerlas
-tabulables una a una está descartado: el patrón correcto es `role="grid"`
-con `role="row"` y `role="gridcell"`, tabindex itinerante y navegación con
-flechas. Unas 3 o 4 horas, y toca un formulario que guarda datos.
-
-Lo que **sí** está ya resuelto ahí, comprobado al mirarlo:
-
-- **La alternativa al arrastre existe.** Se pinta arrastrando, pero un click
-  simple en una celda la cambia, y hay un botón por día más cuatro presets
-  (limpiar, siempre, laborables, fin de semana). El criterio de arrastre de
-  WCAG 2.2 queda cubierto.
-- **Hay camino de teclado grueso**: los botones de día y los presets son
-  `<button>` de verdad. Lo que falta es la celda individual.
-
-De los 17 originales, nueve se corrigieron y **dos eran código muerto**:
-
-| Dónde | Qué pasa |
-|-------|----------|
-| `fleet.js:899` | `querySelectorAll("[data-status]")` para "reflejar el botón activo del segmentado". Ese segmentado ya no existe: la página filtra con `<select id="tp-fleet-status">`, y los únicos `data-status` del proyecto están en `live.js` y son los chips de estado del vehículo |
-| `live.js:3311` y `:3344` | operan sobre `.tp-live__paneltab`, que no se pinta en ningún sitio. Los paneles se cambian desde los enlaces del rail, más abajo en la misma función |
-
-No se han borrado: eliminar código es decisión del equipo, y conviene mirar
-antes si alguien lo dejó a medio migrar.
-
-### 2 · Campo de formulario sin etiqueta · 49 casos · APLAZADO
-
-En esta base **no hay un solo `<label for>`**: 129 `<label>` envuelven su
-campo —eso vale— y 90 `<span class="tp-form__label">` son texto visible sin
-asociar. De ahí salen todos estos.
-
-Los 35 que se podían resolver sin interpretar ya están hechos. Los 49 que
-quedan se reparten así:
-
-| Dónde | Casos | Qué hace falta |
-|-------|------:|----------------|
-| `sensor-form.blade.php` | 18 | Son campos técnicos —inicio y cantidad de un bitcut, operador y valor de una condición— donde el nombre tiene que ser preciso |
-| `poi-form`, `principal`, y 20 blades más | 31 | Pantallas de configuración ocasional |
-
-De esos 49, **5** tienen un `<span>` encima que nombra una sección con **dos
-controles** (un operador y un valor): usar ese texto para ambos confunde más
-que ayuda, y uno de ellos es un `&nbsp;` que solo separa.
-
-**Qué hace falta.** Decidir el texto de cada campo, que es trabajo de quien
-conozca el dominio o de rescatar los equivalentes del sistema clásico. El
-script `campos.py` los clasifica y da fichero y línea.
-
----
+**0 pendientes de 172.** Lo corregido está en los commits de `4f0fb712` a
+`c344d5d0`, `7539b3b3` (rejilla) y `745bd0a9` (campos).
 
 ## Lo corregido
+
+### 4 · Rejilla del horario de alertas · `7539b3b3`
+
+Las 672 celdas (96 franjas × 7 días) son `role="gridcell"` con
+`aria-selected`, dentro de `role="grid"`/`role="row"`, con tabindex itinerante:
+solo una entra con Tab, las flechas mueven el foco y Espacio la cambia
+(`alerts.js`, `wireSchedule`). Comprobado el 18-nov con teclado real.
+
+### 2 · Campos sin etiqueta · `745bd0a9`
+
+- **Enlace automático** (`modal.js`, `tpA11y.linkLabels`): en cada bloque
+  `.tp-form__field`/`.tp-field` con su texto `.tp-form__label`/`.tp-field__label`
+  y **un solo** campo sin nombre, el campo recibe `aria-labelledby`. También los
+  pares fecha + hora (la hora queda «Texto (Hora)» y, si hay, «Texto (Minuto)»).
+  Corre al cargar y sobre todo lo que se inserta después, así cubre los
+  formularios pintados desde JS.
+- **A mano**, donde un bloque tiene varios campos: bitcut, setflag y
+  condiciones ON/OFF del sensor (con el texto del legacy:
+  `on_setflag_1`, `on_setflag_2`, `tag_value`), rangos de color de la cola,
+  canales de notificación de la alerta, iconos del vehículo, búsquedas de cada
+  página, casillas de la lista en vivo, tareas, compartir y conductores.
+- Revisado en el navegador: todas las páginas, la ficha del vehículo pestaña a
+  pestaña, el formulario de sensor con sus 33 tipos, la alerta con sus 28 tipos
+  y pestañas, y los modales de alta de cada página.
+
+**Código muerto que salió en el grupo 4** (no se borró: es decisión del equipo):
+`fleet.js:899` refleja un segmentado `[data-status]` que ya no existe (la página
+filtra con `<select id="tp-fleet-status">`), y `live.js` opera sobre
+`.tp-live__paneltab`, que no se pinta en ningún sitio.
+
 
 ### 8 · Botón de solo icono sin nombre · `4f0fb712`
 

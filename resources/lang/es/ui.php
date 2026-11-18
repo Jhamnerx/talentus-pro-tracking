@@ -1583,4 +1583,5 @@ return [
     'lit_priority'                       => 'Prioridad',
     'lit_search_address_enter'           => 'Buscar dirección… (Enter)',
     'lit_reading_columns'                => 'Leyendo columnas…',
+    'lit_custom'                         => 'Personalizado',
 ];

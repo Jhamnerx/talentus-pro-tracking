@@ -571,7 +571,7 @@
     return !CE_META || CE_META.can_protocol !== false;
   }
   function ceCols() {
-    return ceShowProtocol() ? ["Mensaje", tpT('front.protocol'), "Condiciones"] : ["Mensaje", "Condiciones"];
+    return ceShowProtocol() ? [tpT('ui.lit_message'), tpT('front.protocol'), tpT('ui.lit_conditions')] : [tpT('ui.lit_message'), tpT('ui.lit_conditions')];
   }
   function tabEvents() {
     return crudPanel("events", tpT('ui.add_event'), ceCols());

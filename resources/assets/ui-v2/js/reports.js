@@ -87,7 +87,7 @@
   // Mismos valores que el select `period` del legacy (ReportModalHelper), y
   // el mismo calculo de fechas que momentCalendar() de helper.js.
   var PERIODOS = [
-    ["", "Personalizado"],
+    ["", tpT('ui.lit_custom')],
     ["1", tpT('front.today')],
     ["2", tpT('front.yesterday')],
     ["3", tpT('ui.before_2_days')],

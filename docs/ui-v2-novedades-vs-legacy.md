@@ -140,7 +140,9 @@ Port de master-tracking que reemplaza la base de vídeo antigua (Howen, `video_c
 - geocercas (corredor, matriz de velocidad por tipo y estado, import/export), POIs y rutas con grupos;
 - modal del vehículo con sus pestañas (incluidos los CustomFields), widgets, kebab y grupos con reenvíos;
 - alertas, exportación del historial (GSR/KML/GPX/CSV) y borrado de posiciones;
-- compartir, tareas, checklists, reenvíos, tipos de trayecto, ajustes de cuenta y eventos personalizados;
+- compartir, tareas, checklists (con su **vista previa** de solo lectura y el **código QR** del equipo, gate `checklist_qr_code.view` como el legacy), reenvíos, tipos de trayecto, ajustes de cuenta y eventos personalizados;
+- **planes del equipo** («Mejorar» en la fila del vehículo vencido y entrada del menú, con las reglas de `DevicePlansController`; con `custom_device_add` lleva al paso «plan» del registro);
+- menú de la lista con **cambiar estado del vehículo**, **chat** (`/ui/v2/chat?device=`), **QR del checklist** y **restablecer UUID de la app**;
 - popups del admin, notificaciones en vivo y la tabla de rutas.
 
 Programaciones de ruta, puntos de control y Tipos de trayecto **no son novedades de la v2**: ya existían en el legacy (commit `43e2937a`); la v2 los porta y añade la pestaña de Cumplimiento.
@@ -158,9 +160,9 @@ Programaciones de ruta, puntos de control y Tipos de trayecto **no son novedades
 | Componentes propios: `tp-datepicker`, `tp-select`, `tp-chips-select`, `modal.js` (`<dialog>` nativo con nombre accesible, errores 422 por campo y `aria-invalid`) | NUEVA | `resources/assets/ui-v2/js/` |
 | **Estilo común entre módulos**: misma cabecera de página, botón principal con texto en el color de marca, alturas, pestañas subrayadas, cabeceras de tabla, estados vacíos (`tpEmpty`), «—» en celdas vacías, orden del pie de los modales y formato de fecha del usuario (`tpFmt`) | NUEVA | `components.css`, `modal.js` |
 | Toasts accesibles (`aria-live`) | NUEVA | `partials/toast-host.blade.php` |
-| Accesibilidad WCAG 2.2 AA, menús con teclado y contraste revisado | MEJORADA | `docs/accesibilidad-ui-v2.md` |
-| Responsive (cortes a 1023, 767 y 639 px, menú con velo, `prefers-reduced-motion`) | MEJORADA | `components.css`, `shell.css` |
-| Textos traducidos en castellano e inglés en vistas y JS | MEJORADA | `resources/lang/{es,en}/ui.php` |
+| Accesibilidad WCAG 2.2 AA, menús con teclado y contraste revisado; **todos los campos con nombre accesible** (enlace automático de la etiqueta del bloque con `tpA11y.linkLabels` y `aria-label` donde un bloque tiene varios campos) y rejilla de horario de alertas con flechas | MEJORADA | `docs/accesibilidad-ui-v2.md`, `modal.js` |
+| Responsive (cortes a 1023, 767 y 639 px, menú con velo, `prefers-reduced-motion`); a 375 px ninguna página tiene scroll horizontal | MEJORADA | `components.css`, `shell.css` |
+| Textos traducidos en castellano e inglés en vistas y JS (sin literales en los JS de la v2) | MEJORADA | `resources/lang/{es,en}/ui.php` |
 | Un JS y un CSS por página (`@push` y `defer`); ECharts solo donde se usa | MEJORADA | — |
 | Socket: guarda suscripciones antes de conectar y avisa del estado para caer a sondeo | MEJORADA | `tp-socket.js` |
 | Permisos y gates de addon/plugin copiados del legacy | Paridad | — |
@@ -198,13 +200,8 @@ Producción usa el fork `github.com/Jhamnerx/traccar`, rama **`talentus`** (loca
 
 ## 3. Pendiente
 
-**Funciones del legacy que faltan en la v2**
-- **Planes y «upgrade» del dispositivo**: el legacy tiene el botón (`Objects/item.blade.php:18-23`); en la v2 no hay módulo.
-- **Checklists**: faltan el código QR y la vista previa (el addon está apagado en esta instalación).
-
 **Limitaciones de la v2**
 - **El mapa en vivo y la pestaña En vivo de Operaciones se actualizan por sondeo**: el socket solo lleva avisos, mensajes y fotos.
-- **Accesibilidad**: quedan 49 campos sin etiqueta y 4 conmutadores sin estado.
 
 **Fork de Traccar**
 - La rama local `jt808-anonymous-terminal` (3 commits, sin subir a GitHub) añade soporte para **MDVR Streamax**: identifica por placa o VIN los terminales que mandan ceros como teléfono, separa los rechazos de vídeo por canal y detecta la longitud del SIM (2016 o 2019). Hay que fusionarla en `talentus` y desplegarla antes de conectar esos equipos.
@@ -212,5 +209,8 @@ Producción usa el fork `github.com/Jhamnerx/traccar`, rama **`talentus`** (loca
 
 **Sin verificar**
 - Vídeo, audio, hablar con la cámara y descargas reales: no se ha probado con una cámara física y el fork en local.
-- Operaciones, Seguridad y Acciones de llamada después de la revisión visual del 14-nov (el admin de desarrollo no tiene el permiso); tema claro y ancho móvil después de los cambios de estilo.
 - Marcas de combustible con rellenos y robos reales, un envío FTP correcto, el leído de notificaciones en cuentas demo, la carga del chat con muchos vehículos y los CustomFields en pantalla (en desarrollo no hay campos definidos).
+- **Checklists con datos**: en desarrollo el addon está apagado y no existen las tablas `checklists*`. El QR se probó con el permiso (imagen, enlace y descarga); la vista previa solo con datos de ejemplo en el navegador.
+- **«Cambiar estado» desde el menú de la lista**: el admin de desarrollo no tiene tipos de vehículo, así que la opción no aparece; reusa el modal del panel del vehículo, que sí está probado.
+- **Pago de un plan**: el modal de planes se probó con un plan temporal; el enlace «Mejorar» lleva a `payments.order`, que no se siguió.
+- **Operaciones, Seguridad y Acciones de llamada** se recorrieron el 18-nov con permisos temporales (carga, consola, red, modales y envío vacío), sin datos de operación.
