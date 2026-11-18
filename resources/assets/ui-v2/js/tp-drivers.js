@@ -43,7 +43,7 @@
       title: isEdit ? tpT('ui.edit_driver') : tpT('ui.new_driver'),
       size: "lg",
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
@@ -84,7 +84,7 @@
       "</label>" +
       // Dispositivos (chips multiselect)
       '<div class="tp-form__field tp-col-2">' +
-      '<span class="tp-form__label">Dispositivos</span>' +
+      '<span class="tp-form__label">' + tpT('ui.lit_devices') + '</span>' +
       '<div data-drv-chips tabindex="0" class="tp-input" style="height:auto;min-height:36px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:4px 34px 4px 8px;cursor:pointer;position:relative;">' +
       '<span data-drv-placeholder style="color:var(--fg-muted,#94a3b8);font-size:13px;padding-left:4px;">' + tpT('ui.select_devices_ellipsis') + '</span>' +
       '<svg style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#64748b;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' +
@@ -623,7 +623,7 @@
     if (!items) return "";
     return (
       '<div class="tp-svc-kebab">' +
-      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
       "</button>" +
       '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>"

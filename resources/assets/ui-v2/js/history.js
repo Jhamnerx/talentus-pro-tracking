@@ -769,7 +769,7 @@
         (sub ? '<span class="tp-hist-tl__time">' + esc(sub) + "</span>" : "") +
         headRows +
         "</span>" +
-        (it.status === S_DRIVE ? '<button type="button" class="tp-hist-tl__play" title="Reproducir viaje">▶</button>' : "") +
+        (it.status === S_DRIVE ? '<button type="button" class="tp-hist-tl__play" title="' + tpT('ui.lit_play_trip') + '">▶</button>' : "") +
         "</div>" +
         '<div class="tp-hist-tl__box">' + rows +
         (hasExtra ? '<button type="button" class="tp-hist-tl__more" title="' + tpT('ui.see_more_info') + '" aria-expanded="false"><span></span><span></span><span></span></button>' : "") +

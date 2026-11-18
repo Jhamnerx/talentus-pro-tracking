@@ -290,12 +290,12 @@
       p.id +
       '" role="option">' +
       (S.canEdit
-        ? '<input type="checkbox" class="tp-zone-row__vis" data-p-vis title="Mostrar en el mapa"' + (p.active === false ? "" : " checked") + ">"
+        ? '<input type="checkbox" class="tp-zone-row__vis" data-p-vis title="' + tpT('ui.show_on_map') + '"' + (p.active === false ? "" : " checked") + ">"
         : "") +
       '<div class="tp-poi-row__main"><div class="tp-poi-row__name">' +
       esc(p.name || "#" + p.id) +
       "</div></div><div class=\"tp-poi-row__actions\">" +
-      '<button type="button" class="tp-poi-row__btn" data-p-go title="Centrar">' + GO + "</button>" +
+      '<button type="button" class="tp-poi-row__btn" data-p-go title="' + tpT('ui.lit_center') + '">' + GO + "</button>" +
       (S.canEdit
         ? '<button type="button" class="tp-poi-row__btn" data-p-edit title="' + tpT('global.edit') + '" aria-label="' + tpT('global.edit') + '">' + EDIT + "</button>" +
           '<button type="button" class="tp-poi-row__btn tp-poi-row__btn--danger" data-p-del title="' + tpT('global.delete') + '" aria-label="' + tpT('global.delete') + '">' + DEL + "</button>"
@@ -346,7 +346,7 @@
       title: tpT('export_pois'),
       size: "md",
       body:
-        '<div class="tp-field"><label class="tp-field__label">Formato</label><select class="tp-input" data-exp-format>' + opt(formats) + "</select></div>" +
+        '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.lit_format') + '</label><select class="tp-input" data-exp-format>' + opt(formats) + "</select></div>" +
         '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.export_type') + '</label><select class="tp-input" data-exp-type>' + opt(types) + "</select></div>" +
         '<div class="tp-field" data-exp-wrap><label class="tp-field__label">POIs</label><div class="tp-zexp-list">' + (checks || '<div class="tp-text-muted tp-text-sm">' + tpT('ui.no_pois') + '</div>') + "</div></div>" +
         '<div class="tp-field" data-exp-gwrap hidden><label class="tp-field__label">' + tpT('front.groups') + '</label><div class="tp-zexp-list">' +

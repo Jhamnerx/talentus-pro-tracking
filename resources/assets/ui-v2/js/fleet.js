@@ -545,13 +545,13 @@
             .join("") +
           '<td class="tp-fleet__th-actions">' +
           '<div class="tp-fleet__kebab">' +
-          '<button type="button" class="tp-fleet__kebab-btn" data-kebab="' + d.id + '" aria-haspopup="menu" aria-label="Acciones">' +
+          '<button type="button" class="tp-fleet__kebab-btn" data-kebab="' + d.id + '" aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
           '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
           "</button>" +
           '<div class="tp-fleet__kebab-menu" role="menu" hidden>' +
           '<button type="button" role="menuitem" data-view="' + d.id + '">' + tpT('ui.see_on_map') + '</button>' +
           '<button type="button" role="menuitem" data-edit="' + d.id + '">' + tpT('global.edit') + '</button>' +
-          '<button type="button" role="menuitem" data-history="' + d.id + '">Historial</button>' +
+          '<button type="button" role="menuitem" data-history="' + d.id + '">' + tpT('ui.history_tab') + '</button>' +
           "</div></div></td>" +
           "</tr>";
       }
@@ -618,7 +618,7 @@
     state.loading = true;
     // En el refresco automático no se toca el pie: parpadear "Cargando…" cada
     // 30 s distrae y no aporta nada.
-    if (!silent) $page.textContent = "Cargando…";
+    if (!silent) $page.textContent = tpT('ui.loading_ellipsis');
     var params = {
       page: state.page,
       limit: state.limit,

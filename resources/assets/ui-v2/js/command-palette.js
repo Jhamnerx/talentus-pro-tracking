@@ -115,10 +115,10 @@
     var list = getRecents();
     if (!list.length) {
       recentsGroup.innerHTML =
-        '<div class="tp-cmdk__group-title">Recientes</div><div class="tp-cmdk__empty">' + tpT('ui.no_recent_items') + '</div>';
+        '<div class="tp-cmdk__group-title">' + tpT('ui.recent') + '</div><div class="tp-cmdk__empty">' + tpT('ui.no_recent_items') + '</div>';
       return;
     }
-    var html = '<div class="tp-cmdk__group-title">Recientes</div>';
+    var html = '<div class="tp-cmdk__group-title">' + tpT('ui.recent') + '</div>';
     list.forEach(function (r) {
       html += renderItem(r);
     });

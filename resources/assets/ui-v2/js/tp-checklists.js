@@ -40,7 +40,7 @@
       return (
         '<div class="tp-row" style="gap:6px;margin-bottom:6px;" data-tpl-row>' +
         '<input type="text" class="tp-input" value="' + esc(activity || "") + '"' +
-        (id ? ' data-tpl-existing="' + id + '"' : " data-tpl-new") + ' placeholder="Actividad…">' +
+        (id ? ' data-tpl-existing="' + id + '"' : " data-tpl-new") + ' placeholder="' + tpT('ui.lit_activity_ellipsis') + '">' +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-del title="' + tpT('global.delete') + '" aria-label="' + tpT('global.delete') + '" style="color:#ef4444;flex:0 0 auto;">×</button>' +
         "</div>"
       );
@@ -61,7 +61,7 @@
           })
           .join("") +
         "</select></label>" +
-        '<div class="tp-form__field"><span class="tp-form__label">Actividades</span>' +
+        '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.lit_activities') + '</span>' +
         '<div data-tpl-rows>' + (rows.length ? rows.map(function (r) { return rowHtml(r.id, r.activity); }).join("") : rowHtml(null, "")) + "</div>" +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-tpl-add style="align-self:flex-start;">' + tpT('ui.add_activity_plus') + '</button>' +
         "</div></div>",
@@ -130,7 +130,7 @@
     tpModal.open({
       title: tpT('ui.checklist_templates'),
       size: "md",
-      body: '<div data-tpl-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
+      body: '<div data-tpl-index><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-tpl-index]");

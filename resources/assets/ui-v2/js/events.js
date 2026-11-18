@@ -299,7 +299,7 @@
       "</dd>" +
       (ADDR_ON ? "<dt>" + tpT('front.location') + "</dt><dd data-ev-addr>" + esc(addr) + "</dd>" : "") +
       (ev.speed != null ? "<dt>" + tpT('front.speed') + "</dt><dd>" + Math.round(ev.speed) + " km/h</dd>" : "") +
-      "<dt>Coordenadas</dt><dd>" +
+      "<dt>" + tpT('ui.lit_coordinates') + "</dt><dd>" +
       parseFloat(ev.lat).toFixed(5) +
       ", " +
       parseFloat(ev.lng).toFixed(5) +
@@ -307,7 +307,7 @@
       '<div style="display:flex;gap:6px;margin-top:8px;">' +
       // "Historial": abre la reproducción del vehículo alrededor del evento.
       (ev.device_id
-        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ev-history="' + ev.id + '" style="flex:1;">Historial</button>'
+        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-ev-history="' + ev.id + '" style="flex:1;">' + tpT('ui.history_tab') + '</button>'
         : "") +
       // "Atender": solo con permiso, si el evento tiene alerta (el backend
       // exige alert_id) y si NO se atendió ya. La lista sí miraba `attended`
@@ -317,7 +317,7 @@
       (CA_ON && ev.alert_id
         ? (ev.attended
             ? '<span class="tp-events__attended" style="flex:1;justify-content:center;">' + ATENDIDO_ICONO + 'Atendido</span>'
-            : '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-ca-attend="' + ev.id + '" style="flex:1;">Atender</button>')
+            : '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-ca-attend="' + ev.id + '" style="flex:1;">' + tpT('ui.lit_attend') + '</button>')
         : "") +
       // "Eliminar": paridad legacy events.destroy (perm events.clean → remove).
       (CAN_REMOVE
@@ -377,7 +377,7 @@
       '<span style="font-weight:600;">:</span>' +
       '<select class="tp-input" data-ca-m style="width:74px;">' + minOptions(np.m) + "</select>" +
       "</div></div>" +
-      '<label class="tp-form__field tp-form__field--required"><span class="tp-form__label">Notas</span>' +
+      '<label class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('ui.chk_notes') + '</span>' +
       '<textarea data-ca-notes rows="2" data-tp-field></textarea></label>' +
       '</div><div data-ca-err style="display:none;color:#ef4444;font-size:13px;margin-top:8px;"></div></div>';
     tpModal.open({
@@ -542,7 +542,7 @@
       state.selectedId = null;
       listEl.innerHTML = "";
     }
-    if (statusEl) statusEl.textContent = reset ? "Cargando…" : tpT('ui.loading_more');
+    if (statusEl) statusEl.textContent = reset ? tpT('ui.loading_ellipsis') : tpT('ui.loading_more');
     var hours = hoursSel ? hoursSel.value : 0;
     var type = typeSel ? typeSel.value : "";
     var deviceId = deviceSel ? deviceSel.value : "";
@@ -681,7 +681,7 @@
     var type = typeSel ? typeSel.value : "";
     var deviceId = deviceSel ? deviceSel.value : "";
     var q = searchEl ? searchEl.value.trim() : "";
-    if (legendNote) legendNote.textContent = "Cargando…";
+    if (legendNote) legendNote.textContent = tpT('ui.loading_ellipsis');
     fetch(
       MAP_URL + "?hours=" + encodeURIComponent(hours) + "&type=" + encodeURIComponent(type) + "&device_id=" + encodeURIComponent(deviceId) + "&q=" + encodeURIComponent(q) + rangeQS() + "&_=" + Date.now(),
       { credentials: "same-origin", headers: { Accept: "application/json" } },
@@ -697,7 +697,7 @@
             .bindPopup(
               '<div class="tp-ev-popup"><div class="tp-ev-popup__title">' + esc(p.device_name || "") + "</div>" +
               '<div class="tp-ev-popup__type tp-ev-popup__type--' + sevClass(p.severity) + '">' + esc(evTitle(p)) + "</div>" +
-              '<dl class="tp-ev-popup__defs"><dt>' + tpT('front.hour') + '</dt><dd>' + esc(tpFmt.datetime(p.time)) + "</dd><dt>Coordenadas</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
+              '<dl class="tp-ev-popup__defs"><dt>' + tpT('front.hour') + '</dt><dd>' + esc(tpFmt.datetime(p.time)) + "</dd><dt>" + tpT('ui.lit_coordinates') + "</dt><dd>" + p.lat.toFixed(5) + ", " + p.lng.toFixed(5) + "</dd></dl></div>",
             )
             .addTo(g);
         });

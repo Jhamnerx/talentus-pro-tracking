@@ -92,7 +92,7 @@
     tpModal.open({
       title: tpT('ui.vehicle_alerts') + (deviceName ? " · " + deviceName : ""),
       size: "md",
-      body: '<div data-da-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
+      body: '<div data-da-index><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-da-index]");
@@ -128,7 +128,7 @@
                         ? '<a class="tp-btn tp-btn--ghost tp-btn--sm" href="' +
                           esc(editUrl) + a.id + '">' + tpT('ui.edit_alert') + '</a>'
                         : "") +
-                      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-da-edit="' + a.id + '">Vigencia</button>' +
+                      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-da-edit="' + a.id + '">' + tpT('ui.lit_validity') + '</button>' +
                       "</span></div>"
                     );
                   })

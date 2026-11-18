@@ -42,7 +42,7 @@
     var body =
       '<div class="tp-rgroup-form">' +
       '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.title') + '</label>' +
-      '<input type="text" class="tp-input" data-grp-title placeholder="Insertar título…" value="' +
+      '<input type="text" class="tp-input" data-grp-title placeholder="' + tpT('ui.insert_title') + '" value="' +
       esc(isEdit ? group.title : "") + '"></div>' +
       // Mismo esquema que el legacy: una caja con la barra (seleccionar todo,
       // deseleccionar todo, buscador) arriba y la lista desplazable dentro.
@@ -50,7 +50,7 @@
       '<div class="tp-rgroup-box">' +
       '<div class="tp-rgroup-box__bar">' +
       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-all>' + tpT('ui.select_all_n') + '</button>' +
-      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-none>Deseleccionar todo</button>' +
+      '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-grp-none>' + tpT('ui.lit_deselect_all') + '</button>' +
       '<input type="search" class="tp-input tp-input--sm" data-grp-search placeholder="' + tpT('ui.search_ellipsis') + '" aria-label="' + tpT('ui.search_ellipsis') + '">' +
       "</div>" +
       '<div class="tp-rgroup-list" data-grp-list></div>' +

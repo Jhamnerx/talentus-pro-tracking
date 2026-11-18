@@ -38,7 +38,7 @@
       title: isEdit ? tpT('ui.edit_share') : tpT('ui.share_vehicles'),
       size: "lg",
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
@@ -135,7 +135,7 @@
       "</span>" +
       '<button type="button" class="tp-link-action" data-sh-all>' + tpT('ui.select_all_n') + '</button>' +
       '<span class="tp-group-box__sep">|</span>' +
-      '<button type="button" class="tp-link-action" data-sh-none>Deseleccionar todo</button>' +
+      '<button type="button" class="tp-link-action" data-sh-none>' + tpT('ui.lit_deselect_all') + '</button>' +
       "</div>" +
       '<div data-sh-list style="max-height:280px;overflow-y:auto;"></div>' +
       "</div></div>" +
@@ -470,7 +470,7 @@
           '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg> ' + tpT('global.delete') + '</button>';
       return (
         '<div class="tp-svc-kebab">' +
-        '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+        '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
         '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
         "</button>" +
         '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>"

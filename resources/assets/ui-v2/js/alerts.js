@@ -151,7 +151,7 @@
         " Eliminar</button>";
     if (!items) return "";
     return (
-      '<div class="tp-svc-kebab"><button type="button" class="tp-svc-kebab__btn" data-alert-kebab aria-haspopup="menu" aria-label="Opciones">' +
+      '<div class="tp-svc-kebab"><button type="button" class="tp-svc-kebab__btn" data-alert-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_options') + '">' +
       ICON_DOTS +
       '</button><div class="tp-svc-kebab__menu" role="menu" hidden>' +
       items +
@@ -1180,9 +1180,9 @@
       '<div class="tp-notif__report">' +
       '<label>' + tpT('front.report') + '<select class="tp-input tp-input--sm" data-no-ts="1" data-report-type>' +
       '<option value="">—</option>' + tipos + "</select></label>" +
-      '<label>Formato<select class="tp-input tp-input--sm" data-no-ts="1" data-report-format>' +
+      '<label>' + tpT('ui.lit_format') + '<select class="tp-input tp-input--sm" data-no-ts="1" data-report-format>' +
       formatos + "</select></label>" +
-      '<label>Min. antes<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-before value="' +
+      '<label>' + tpT('ui.lit_min_before') + '<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-before value="' +
       esc(it.report_minutes_before == null ? 15 : it.report_minutes_before) + '"></label>' +
       '<label>' + tpT('ui.min_after') + '<input type="number" min="0" max="1440" class="tp-input tp-input--sm" data-report-after value="' +
       esc(it.report_minutes_after == null ? 15 : it.report_minutes_after) + '"></label>' +
@@ -1272,7 +1272,7 @@
 
     function loadCmds(preType, preVals) {
       var ids = selectedDeviceIds(dlg);
-      typeSel.innerHTML = '<option value="">Cargando…</option>';
+      typeSel.innerHTML = '<option value="">' + tpT('ui.loading_ellipsis') + '</option>';
       window.tpModal
         .fetchJSON(COMMANDS_URL, { method: "POST", json: { devices: ids } })
         .then(function (res) {
@@ -1372,7 +1372,7 @@
       '<label class="tp-checkbox"><input type="checkbox" data-zone="1"> <span>' + tpT('ui.zone_entry') + '</span></label>' +
       '<label class="tp-checkbox"><input type="checkbox" data-zone="2"> <span>' + tpT('ui.zone_exit') + '</span></label>';
     return (
-      '<div class="tp-field"><label class="tp-field__label">Sentido</label>' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.lit_direction') + '</label>' +
       '<div class="tp-row" style="gap:18px;flex-wrap:wrap;">' +
       zones +
       "</div>" +
@@ -1400,7 +1400,7 @@
       '<label class="tp-checkbox" style="margin-bottom:6px;"><input type="checkbox" id="tp-alert-cmd-active"> <span>' + tpT('ui.send_command_on_trigger') + '</span></label>' +
       '<div class="tp-field__hint" style="margin-bottom:10px;">' + tpT('ui.command_sent_on_condition') + '</div>' +
       '<div id="tp-alert-cmd-body" hidden>' +
-      '<div class="tp-field"><label class="tp-field__label">Comando</label>' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.chan_command') + '</label>' +
       '<select class="tp-input" data-no-ts="1" id="tp-alert-cmd-type"><option value="">' + tpT('ui.select_vehicles_first') + '</option></select></div>' +
       '<div id="tp-alert-cmd-fields"></div>' +
       "</div>"
@@ -1413,7 +1413,7 @@
       '<div class="tp-alert-head">' +
       '<div class="tp-field tp-alert-head__name"><label class="tp-field__label">' + tpT('ui.name_required_field') + '</label>' +
       '<input class="tp-input" type="text" name="name" maxlength="80" required placeholder="' + tpT('ui.alert_name_example') + '"></div>' +
-      '<label class="tp-checkbox tp-alert-head__active"><input type="checkbox" name="active" checked> <span>Activa</span></label>' +
+      '<label class="tp-checkbox tp-alert-head__active"><input type="checkbox" name="active" checked> <span>' + tpT('ui.active_f') + '</span></label>' +
       "</div>" +
       '<div id="tp-alert-tabs"></div>' +
       "</form>"
@@ -1676,7 +1676,7 @@
       size: "xl",
       // Restyle scopeado (alerts.css .tp-alert-modal) — no afecta otros modales.
       className: "tp-alert-modal",
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
@@ -1824,10 +1824,10 @@
             esc(regla ? regla.name : tpT('ui.this_rule')) +
             "</b> " + tpT('ui.as_template_note') + "</p>" +
             '<label class="tp-form__field" style="margin-bottom:10px;">' +
-            '<span class="tp-form__label">Aplicar a</span>' +
+            '<span class="tp-form__label">' + tpT('ui.lit_apply_to') + '</span>' +
             '<select class="tp-input" data-tpl-plan>' + opciones + "</select></label>" +
             '<label class="tp-form__field">' +
-            '<span class="tp-form__label">Nota (opcional)</span>' +
+            '<span class="tp-form__label">' + tpT('ui.lit_note_optional') + '</span>' +
             '<input type="text" class="tp-input" data-tpl-desc placeholder="' + tpT('ui.what_is_it_for') + '"></label>',
           buttons: [
             { label: tpT('global.cancel'), variant: "ghost", close: true },
@@ -1873,7 +1873,7 @@
     var dlg = window.tpModal.open({
       title: tpT('ui.alert_templates'),
       size: "lg",
-      body: '<div data-tpl-list><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
+      body: '<div data-tpl-list><p class="tp-text-sm tp-text-muted">' + tpT('ui.loading_ellipsis') + '</p></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (d) {
         var host = d.querySelector("[data-tpl-list]");

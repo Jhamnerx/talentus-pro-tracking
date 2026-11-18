@@ -48,7 +48,7 @@
       '<label class="tp-form__field"><span class="tp-form__label">APN</span>' +
       '<input type="text" class="tp-input" data-dc-apn-name></label>' +
       '<div class="tp-form__grid tp-form__grid--2">' +
-      '<label class="tp-form__field"><span class="tp-form__label">Usuario</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.username') + '</span>' +
       '<input type="text" class="tp-input" data-dc-apn-user></label>' +
       '<label class="tp-form__field"><span class="tp-form__label">' + tpT('attr.password') + '</span>' +
       '<input type="text" class="tp-input" data-dc-apn-pass></label>' +
@@ -64,7 +64,7 @@
     var dlg = tpModal.open({
       title: "Configurar GPS",
       size: "md",
-      body: '<div class="tp-text-muted tp-text-sm">Cargando…</div>',
+      body: '<div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [
         { label: tpT('global.close'), variant: "ghost", close: true },
         {

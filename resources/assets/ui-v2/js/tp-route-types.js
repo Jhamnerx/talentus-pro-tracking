@@ -95,7 +95,7 @@
     tpModal.open({
       title: tpT('ui.trip_types') + (deviceName ? " · " + deviceName : ""),
       size: "md",
-      body: '<div data-rt-index><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
+      body: '<div data-rt-index><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-rt-index]");

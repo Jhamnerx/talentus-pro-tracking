@@ -260,11 +260,11 @@
   var CP_CABECERA =
     '<div class="tp-rsch__cphead" aria-hidden="true">' +
       "<span></span>" +
-      "<span>Geocerca</span>" +
+      "<span>" + tpT('ui.ops_geofence') + "</span>" +
       "<span>Min.</span>" +
-      "<span>Antes</span>" +
+      "<span>" + tpT('ui.ops_shift_col_hm_before') + "</span>" +
       "<span>" + tpT('ui.after') + "</span>" +
-      "<span>Etiqueta</span>" +
+      "<span>" + tpT('ui.lit_tag') + "</span>" +
       "<span></span>" +
     "</div>";
 
@@ -278,16 +278,16 @@
     return '<div class="tp-rsch__cp" data-cp-row>' +
       '<span class="tp-rsch__cpnum" aria-hidden="true"></span>' +
       '<select class="tp-input" data-cp-geofence aria-label="' + tpT('ui.point_geofence') + '">' + opts + "</select>" +
-      '<input type="number" min="0" class="tp-input" data-cp-offset placeholder="0" aria-label="Minutos desde la salida" value="' +
+      '<input type="number" min="0" class="tp-input" data-cp-offset placeholder="0" aria-label="' + tpT('ui.lit_minutes_from_departure') + '" value="' +
         (punto ? punto.planned_offset : "") + '">' +
-      '<input type="number" min="0" class="tp-input" data-cp-early placeholder="—" aria-label="Tolerancia de adelanto, en minutos" value="' +
+      '<input type="number" min="0" class="tp-input" data-cp-early placeholder="—" aria-label="' + tpT('ui.lit_early_tolerance') + '" value="' +
         (punto && punto.tolerance_early != null ? punto.tolerance_early : "") + '">' +
-      '<input type="number" min="0" class="tp-input" data-cp-late placeholder="—" aria-label="Tolerancia de retraso, en minutos" value="' +
+      '<input type="number" min="0" class="tp-input" data-cp-late placeholder="—" aria-label="' + tpT('ui.lit_late_tolerance') + '" value="' +
         (punto && punto.tolerance_late != null ? punto.tolerance_late : "") + '">' +
-      '<input type="text" class="tp-input" data-cp-name placeholder="Opcional" aria-label="Etiqueta del punto" value="' +
+      '<input type="text" class="tp-input" data-cp-name placeholder="' + tpT('ui.optional') + '" aria-label="' + tpT('ui.lit_point_label') + '" value="' +
         (punto && punto.name ? esc(punto.name) : "") + '">' +
       '<span class="tp-rsch__cpacts">' +
-        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-up title="Subir">↑</button>' +
+        '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-up title="' + tpT('ui.lit_move_up') + '">↑</button>' +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-down title="' + tpT('move_down') + '" aria-label="' + tpT('move_down') + '">↓</button>' +
         '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-cp-del title="' + tpT('remove') + '" aria-label="' + tpT('remove') + '">×</button>' +
       "</span>" +
@@ -303,7 +303,7 @@
 
       var body = '<div class="tp-scope tp-rsch__cps">' +
         '<p class="tp-text-muted">' + tpT('ui.checkpoints_help') + ' ' +
-        '<strong>Min.</strong> ' + tpT('ui.are_minutes_from_departure') + ' <strong>Antes</strong> y <strong>' + tpT('ui.after') + '</strong> ' + tpT('ui.are_tolerance_minutes') + ' ' +
+        '<strong>Min.</strong> ' + tpT('ui.are_minutes_from_departure') + ' <strong>' + tpT('ui.ops_shift_col_hm_before') + '</strong> y <strong>' + tpT('ui.after') + '</strong> ' + tpT('ui.are_tolerance_minutes') + ' ' +
         '' + tpT('ui.blank_uses_schedule') + '</p>' +
         SENTIDOS.map(function (s) {
           var filas = (d.checkpoints[s.key] || []).map(function (p) { return cpRow(geofences, p); }).join("");
@@ -449,7 +449,7 @@
       return;
     }
 
-    caja.innerHTML = '<p class="tp-svc-table__empty">Calculando…</p>';
+    caja.innerHTML = '<p class="tp-svc-table__empty">' + tpT('ui.ops_shift_building') + '</p>';
 
     var qs = "?from=" + encodeURIComponent(desde) + "&to=" + encodeURIComponent(hasta) +
       "&device_id=" + encodeURIComponent($("tp-rsch-filter-device").value) +

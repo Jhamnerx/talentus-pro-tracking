@@ -728,7 +728,7 @@
   function kebabCell(editAttr, delAttr, id, editExtra) {
     return (
       '<div class="tp-svc-kebab">' +
-      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
       K_DOTS +
       "</button>" +
       '<div class="tp-svc-kebab__menu" role="menu" hidden>' +
@@ -1036,7 +1036,7 @@
     }
 
     function load() {
-      empty("Cargando…");
+      empty(tpT('ui.loading_ellipsis'));
       tpModal
         .fetchJSON(cfg.list)
         .then(function (res) {
@@ -1363,19 +1363,19 @@
           '<span class="tp-form__label">' + tpT('front.type') + '</span>' +
           '<select class="tp-input" style="width:100%" name="type_id" data-tp-field>' + typeOptions(item.type_id) + "</select></label>" +
           '<label class="tp-form__field tp-form__field--required">' +
-          '<span class="tp-form__label">Cantidad</span>' +
+          '<span class="tp-form__label">' + tpT('ui.lit_quantity') + '</span>' +
           '<input type="number" step="0.01" name="quantity" value="' + esc(item.quantity != null ? item.quantity : "") + '" data-tp-field></label>' +
           '<label class="tp-form__field tp-form__field--required">' +
-          '<span class="tp-form__label">Costo unitario</span>' +
+          '<span class="tp-form__label">' + tpT('ui.lit_unit_cost') + '</span>' +
           '<input type="number" step="0.01" name="unit_cost" value="' + esc(item.unit_cost != null ? item.unit_cost : "") + '" data-tp-field></label>' +
           '<label class="tp-form__field">' +
-          '<span class="tp-form__label">Proveedor</span>' +
+          '<span class="tp-form__label">' + tpT('ui.lit_supplier') + '</span>' +
           '<input type="text" name="supplier" value="' + esc(item.supplier || "") + '" data-tp-field></label>' +
           '<label class="tp-form__field">' +
-          '<span class="tp-form__label">Comprador</span>' +
+          '<span class="tp-form__label">' + tpT('ui.lit_buyer') + '</span>' +
           '<input type="text" name="buyer" value="' + esc(item.buyer || "") + '" data-tp-field></label>' +
           '<label class="tp-form__field tp-col-2">' +
-          '<span class="tp-form__label">Notas adicionales</span>' +
+          '<span class="tp-form__label">' + tpT('ui.additional_notes') + '</span>' +
           '<textarea name="additional" rows="3" data-tp-field>' + esc(item.additional || "") + "</textarea></label>" +
           "</div></form>",
         buttons: [
@@ -1506,7 +1506,7 @@
           : "") +
         "</p>" +
         '<label class="tp-form__field" style="margin-bottom:12px;">' +
-        '<span class="tp-form__label">Fichero</span>' +
+        '<span class="tp-form__label">' + tpT('ui.lit_file') + '</span>' +
         '<input type="file" class="tp-input" accept=".csv,text/csv" data-cal-file>' +
         "</label>" +
         '<label class="tp-choice">' +
@@ -1595,14 +1595,14 @@
       body:
         '<div class="tp-copy">' +
         '<div class="tp-copy__col">' +
-        '<h4 class="tp-copy__title">Sensores a copiar</h4>' +
+        '<h4 class="tp-copy__title">' + tpT('ui.lit_sensors_to_copy') + '</h4>' +
         '<div class="tp-copy__list">' + sensorRows + "</div>" +
         "</div>" +
         '<div class="tp-copy__col">' +
         '<h4 class="tp-copy__title">' + tpT('ui.target_vehicles') + '</h4>' +
         '<input type="search" class="tp-input tp-input--sm" data-cp-search placeholder="' + tpT('ui.search_vehicle') + '" autocomplete="off">' +
         '<div class="tp-copy__list" data-cp-devices>' +
-        '<p class="tp-text-sm tp-text-muted" style="padding:8px;">Cargando…</p>' +
+        '<p class="tp-text-sm tp-text-muted" style="padding:8px;">' + tpT('ui.loading_ellipsis') + '</p>' +
         "</div>" +
         '<div class="tp-copy__modes">' +
         '<span class="tp-copy__title">' + tpT('ui.what_to_do_with_existing') + '</span>' +
@@ -1766,7 +1766,7 @@
       title: isEdit ? tpT('ui.edit_sensor') : tpT('ui.new_sensor'),
       size: "lg",
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
@@ -2451,7 +2451,7 @@
       // Icono de navegación delante del título, como el header del legacy
       icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>',
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: (isEdit && CFG.canRemove ? [deleteBtn] : []).concat([
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {

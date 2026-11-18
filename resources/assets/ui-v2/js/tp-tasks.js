@@ -141,9 +141,9 @@
       '<span class="tp-form__label">' + label + "</span>" +
       '<div class="tp-input-group">' +
       '<input type="text" name="' + kind + '_address" maxlength="255" value="' + esc(item[kind + "_address"] || "") +
-      '" placeholder="Buscar dirección…" autocomplete="off" data-tp-field>' +
+      '" placeholder="' + tpT('ui.lit_search_address') + '" autocomplete="off" data-tp-field>' +
       '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-tsk-map="' + kind +
-      '" title="Elegir en el mapa">' + PIN_SVG + "</button>" +
+      '" title="' + tpT('ui.lit_pick_on_map') + '">' + PIN_SVG + "</button>" +
       "</div>" +
       '<input type="hidden" name="' + kind + '_address_lat" value="' + (lat != null ? lat : "") + '">' +
       '<input type="hidden" name="' + kind + '_address_lng" value="' + (lng != null ? lng : "") + '">' +
@@ -174,7 +174,7 @@
       '<input type="checkbox" class="tp-choice-input" name="' + kind + '_ac" value="1"' +
       (item[kind + "_ac"] ? " checked" : "") + "> " + tpT('ui.auto_state_change') + "</label>" +
       '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">' +
-      '<label class="tp-form__field"><span class="tp-form__label">Radio (m)</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.lit_radius_m') + '</span>' +
       '<input type="text" name="' + kind + '_ac_radius" value="' + esc(String(pick("radius", ""))) + '" data-tp-field></label>' +
       '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.duration_s') + '</span>' +
       '<input type="text" name="' + kind + '_ac_duration" value="' + esc(String(pick("duration", ""))) + '" data-tp-field></label>' +
@@ -315,7 +315,7 @@
       '<input type="text" name="invoice_number" maxlength="100" value="' + esc(item.invoice_number || "") + '" data-tp-field>' +
       "</label>" +
       '<div class="tp-form__field">' +
-      '<span class="tp-form__label">Prioridad</span>' +
+      '<span class="tp-form__label">' + tpT('ui.lit_priority') + '</span>' +
       selectHtml("priority", meta.priorities || [], item.priority != null ? item.priority : 1) +
       "</div>" +
       extra +
@@ -331,7 +331,7 @@
       acBlockHtml("delivery", item, meta) +
       // Comentario
       '<label class="tp-form__field tp-col-2">' +
-      '<span class="tp-form__label">Comentario</span>' +
+      '<span class="tp-form__label">' + tpT('ui.ops_note') + '</span>' +
       '<textarea name="comment" rows="2" maxlength="1000" data-tp-field>' + esc(item.comment || "") + "</textarea>" +
       "</label>" +
       customFieldsHtml(meta, item) +
@@ -346,7 +346,7 @@
       title: isEdit ? tpT('ui.edit_task') : tpT('ui.new_task'),
       size: "lg",
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         {
@@ -400,7 +400,7 @@
       body:
         '<div class="tp-form">' +
         '<div class="tp-form__field" style="margin-bottom:10px;">' +
-        '<input type="text" data-adr-q maxlength="255" placeholder="Buscar dirección… (Enter)" autocomplete="off" value="' +
+        '<input type="text" data-adr-q maxlength="255" placeholder="' + tpT('ui.lit_search_address_enter') + '" autocomplete="off" value="' +
         esc(addrInput.value || "") + '" data-tp-field>' +
         "</div>" +
         '<div data-adr-map style="height:360px;border-radius:12px;overflow:hidden;border:1px solid var(--border-default,#e2e8f0);"></div>' +
@@ -648,7 +648,7 @@
     if (!items) return "";
     return (
       '<div class="tp-svc-kebab">' +
-      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
       "</button>" +
       '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>"
@@ -833,7 +833,7 @@
       box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.pick_file_first') + '</div>';
       return;
     }
-    box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">Leyendo columnas…</div>';
+    box.innerHTML = '<div style="font-size:12px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.lit_reading_columns') + '</div>';
     var fd = new FormData();
     fd.append("file", file);
     tpModal.fetchJSON(URLS.impFields, { method: "POST", body: fd }).then(function (res) {
@@ -856,7 +856,7 @@
         '<a href="' + esc(URLS.exCsv) + '" download style="color:var(--brand-500,#2e63d9);">example.csv</a> · ' +
         '<a href="' + esc(URLS.exXls) + '" download style="color:var(--brand-500,#2e63d9);">example.xls</a></p>' +
         '<div class="tp-form__field tp-form__field--required" style="margin-bottom:10px;">' +
-        '<span class="tp-form__label">Archivo</span>' +
+        '<span class="tp-form__label">' + tpT('ui.file') + '</span>' +
         '<input type="file" data-imp-file accept=".xlsx,.xls,.csv" class="tp-input" style="height:auto;padding:7px 10px;">' +
         "</div>" +
         '<label style="display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">' +
@@ -937,7 +937,7 @@
     if (!items) return "";
     return (
       '<div class="tp-svc-kebab">' +
-      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
       "</button>" +
       '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>"

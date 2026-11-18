@@ -133,7 +133,7 @@
         "</span>";
     } catch (e) {
       $("#cp-meta").innerHTML =
-        '<span class="tp-text-muted tp-text-xs">Listo</span>';
+        '<span class="tp-text-muted tp-text-xs">' + tpT('ui.lit_done') + '</span>';
     }
   }
 

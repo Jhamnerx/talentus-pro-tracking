@@ -162,7 +162,7 @@
     var dis = META.caps.edit_client ? "" : " disabled";
     return (
       '<form class="tp-form tp-acc-form" data-acc-tab="client">' +
-      '<div class="tp-acc-legend">Cliente</div>' +
+      '<div class="tp-acc-legend">' + tpT('ui.acc_tab_client') + '</div>' +
       '<div class="tp-form__grid tp-form__grid--2">' +
       field(tpT('ui.name'), '<input type="text" name="client[first_name]" value="' + esc(C.first_name) + '"' + dis + " data-tp-field>") +
       field(tpT('attr.last_name'), '<input type="text" name="client[last_name]" value="' + esc(C.last_name) + '"' + dis + " data-tp-field>") +
@@ -170,7 +170,7 @@
       field(tpT('ui.birth_date'), '<input type="date" name="client[birth_date]" value="' + esc(C.birth_date) + '"' + dis + ">") +
       field(tpT('front.address'), '<input type="text" name="client[address]" value="' + esc(C.address) + '"' + dis + " data-tp-field>", false, true) +
       "</div>" +
-      '<div class="tp-acc-legend" style="margin-top:12px;">Empresa</div>' +
+      '<div class="tp-acc-legend" style="margin-top:12px;">' + tpT('ui.lit_company') + '</div>' +
       '<div class="tp-form__grid tp-form__grid--2">' +
       field(tpT('ui.name'), '<input type="text" name="company[name]" value="' + esc(K.name) + '"' + dis + " data-tp-field>", false, true) +
       field(tpT('ui.registration_code'), '<input type="text" name="company[registration_code]" value="' + esc(K.registration_code) + '"' + dis + " data-tp-field>") +
@@ -493,10 +493,10 @@
     var color = /^#[0-9a-fA-F]{6}/.test(s.color || "") ? s.color : "#3b82f6";
     return (
       '<div class="tp-acc-strow" data-state-row' + (id ? ' data-state-id="' + id + '"' : "") + ">" +
-      '<input type="text" class="tp-input" data-st-name value="' + esc(s.name || "") + '" placeholder="Estado (ej. Cargado)" style="flex:1;min-width:0;">' +
-      '<input type="text" class="tp-input" data-st-label value="' + esc(s.label || "") + '" placeholder="Label" maxlength="24" style="width:84px;flex:0 0 auto;">' +
+      '<input type="text" class="tp-input" data-st-name value="' + esc(s.name || "") + '" placeholder="' + tpT('ui.lit_state_example') + '" style="flex:1;min-width:0;">' +
+      '<input type="text" class="tp-input" data-st-label value="' + esc(s.label || "") + '" placeholder="' + tpT('ui.lit_label') + '" maxlength="24" style="width:84px;flex:0 0 auto;">' +
       '<input type="color" data-st-color value="' + esc(color) + '" title="' + tpT('state_color') + '" aria-label="' + tpT('state_color') + '" style="width:40px;height:34px;flex:0 0 auto;padding:2px;border:1px solid var(--border-default,#e2e8f0);border-radius:8px;cursor:pointer;">' +
-      '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-state title="Quitar">×</button></div>'
+      '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-state title="' + tpT('ui.remove') + '">×</button></div>'
     );
   }
 
@@ -600,9 +600,9 @@
         function condRow(c) {
           return (
             '<div class="tp-acc-cond">' +
-            '<input type="text" class="tp-input" data-c-tag value="' + esc(c.tag) + '" placeholder="Parámetro">' +
+            '<input type="text" class="tp-input" data-c-tag value="' + esc(c.tag) + '" placeholder="' + tpT('ui.lit_parameter') + '">' +
             '<select class="tp-input" data-c-type>' + options(meta.types, c.type) + "</select>" +
-            '<input type="text" class="tp-input" data-c-val value="' + esc(c.tag_value) + '" placeholder="Valor">' +
+            '<input type="text" class="tp-input" data-c-val value="' + esc(c.tag_value) + '" placeholder="' + tpT('ui.lit_value') + '">' +
             '<button type="button" class="tp-icon-btn tp-icon-btn--danger" data-rm-cond title="' + tpT('remove') + '" aria-label="' + tpT('remove') + '">×</button></div>'
           );
         }
@@ -612,7 +612,7 @@
             field(tpT('front.protocol'), '<select class="tp-input" name="ce_protocol">' + options(meta.protocols, row ? row.protocol : "") + "</select>", true) +
             field(tpT('attr.message'), '<input type="text" name="ce_message" value="' + esc(row ? row.message : "") + '" data-tp-field>', true) +
             '<label class="tp-acc-check" style="margin:4px 0 8px;"><input type="checkbox" class="tp-choice-input" name="ce_always" value="1"' + (row && row.always ? " checked" : "") + "> " + tpT('global.always') + "</label>" +
-            '<div class="tp-form__field"><span class="tp-form__label">Condiciones</span>' +
+            '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.lit_conditions') + '</span>' +
             '<div data-conds-wrap>' + conds.map(condRow).join("") + "</div>" +
             '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-add-cond style="margin-top:6px;">' + tpT('ui.add_condition_plus') + '</button></div>' +
             "</div>",
@@ -690,7 +690,7 @@
       '<div class="tp-acc-crud" data-acc-mcats>' +
       '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-mc-add>' + tpT('ui.new_category_plus') + '</button></div>' +
-      '<div data-mc-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div></div>'
+      '<div data-mc-list><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div></div>'
     );
   }
   function wireMediaCats(panel) {
@@ -787,7 +787,7 @@
       '<div class="tp-text-muted tp-text-sm" style="margin-bottom:8px;">' + tpT('ui.extra_logins_help') + '</div>' +
       '<div class="tp-row" style="justify-content:flex-end;margin-bottom:8px;">' +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm" data-sec-add>' + tpT('ui.new_credential_plus') + '</button></div>' +
-      '<div data-sec-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div></div>'
+      '<div data-sec-list><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div></div>'
     );
   }
   function wireSecondary(panel) {
@@ -928,7 +928,7 @@
       title: tpT('ui.account_settings'),
       size: "xl",
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:32px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:32px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
     });
 
@@ -1028,7 +1028,7 @@
           body:
             '<div class="tp-form"><div class="tp-form__field"><span class="tp-form__label">' + tpT('attr.phone') + '</span>' +
             '<input type="text" data-tst-phone placeholder="+51..." data-tp-field></div>' +
-            '<div class="tp-form__field"><span class="tp-form__label">Mensaje</span>' +
+            '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.lit_message') + '</span>' +
             '<textarea data-tst-msg rows="2" data-tp-field>Test</textarea></div></div>',
           buttons: [
             { label: tpT('global.cancel'), variant: "ghost", close: true },
@@ -1209,7 +1209,7 @@
     tpModal.open({
       title: tpT('language'),
       size: "sm",
-      body: '<div data-lang-list><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
+      body: '<div data-lang-list><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var host = dialog.querySelector("[data-lang-list]");

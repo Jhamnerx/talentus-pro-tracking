@@ -152,7 +152,7 @@
       title: tpT('front.report'),
       size: "xl",
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       // Generar es la accion principal -es la que descarga el reporte, lo
       // que se viene a hacer- y Guardar solo deja la definicion para mas
       // tarde. Orden comun del pie (QA V9): secundarios, Cancelar y la
@@ -320,7 +320,7 @@
         return '<option value="' + t.id + '"' + (String(item.type) === String(t.id) ? " selected" : "") + ">" + esc(t.title) + "</option>";
       }).join("") +
       "</select></label>" +
-      '<label class="tp-form__field"><span class="tp-form__label">Formato</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.lit_format') + '</span>' +
       '<select class="tp-input" style="width:100%" name="format" data-tp-field>' +
       (meta.formats || []).map(function (f) {
         return '<option value="' + f.id + '"' + ((item.format || "html") === f.id ? " selected" : "") + ">" + esc(f.label) + "</option>";
@@ -330,7 +330,7 @@
       ROW +
       // Periodo rápido: los mismos 8 del legacy. Al elegir uno se rellenan
       // las dos fechas; tocarlas a mano lo deja en "Personalizado".
-      '<label class="tp-form__field"><span class="tp-form__label">Periodo</span>' +
+      '<label class="tp-form__field"><span class="tp-form__label">' + tpT('ui.lit_period') + '</span>' +
       '<select class="tp-input" style="width:100%" name="period" data-rep-period>' +
       PERIODOS.map(function (p) {
         return '<option value="' + p[0] + '">' + esc(p[1]) + "</option>";
@@ -341,7 +341,7 @@
       ROW +
       '<div class="tp-form__field" data-error-for="date_from from_time"><span class="tp-form__label">' + tpT('ui.date_from') + '</span>' +
       fechaHora("from", range.from, range.fromTime) + "</div>" +
-      '<div class="tp-form__field" data-rep-field="geofences" data-error-for="geofences"><span class="tp-form__label">Geocercas</span><div data-rep-geofences></div></div>' +
+      '<div class="tp-form__field" data-rep-field="geofences" data-error-for="geofences"><span class="tp-form__label">' + tpT('ui.geofences_label') + '</span><div data-rep-geofences></div></div>' +
       "</div>" +
       ROW +
       '<div class="tp-form__field" data-error-for="date_to to_time"><span class="tp-form__label">' + tpT('ui.date_to') + '</span>' +
@@ -376,7 +376,7 @@
       '<div class="tp-form__grid tp-form__grid--2" style="margin-top:12px;">' +
       '<div class="tp-form__field" data-rep-field="speed_limit"><span class="tp-form__label">' + tpT('ui.speed_limit') + '</span>' +
       '<input type="text" name="speed_limit" placeholder="60" value="' + esc(item.speed_limit || "") + '" data-tp-field></div>' +
-      '<div class="tp-form__field" data-rep-field="stops"><span class="tp-form__label">Paradas</span>' +
+      '<div class="tp-form__field" data-rep-field="stops"><span class="tp-form__label">' + tpT('ui.security_stops') + '</span>' +
       '<select class="tp-input" style="width:100%" name="stops">' +
       (meta.stops || []).map(function (s) {
         return '<option value="' + esc(s.value) + '"' + (String(item.stops || "60") === String(s.value) ? " selected" : "") + ">" + esc(s.label) + "</option>";
@@ -384,7 +384,7 @@
       "</select></div>" +
       "</div>" +
       '<div class="tp-form__grid tp-form__grid--2" style="margin-top:12px;">' +
-      '<div class="tp-form__field" data-rep-field="metas" data-error-for="metas"><span class="tp-form__label">Metas</span><div data-rep-metas></div></div>' +
+      '<div class="tp-form__field" data-rep-field="metas" data-error-for="metas"><span class="tp-form__label">' + tpT('ui.lit_targets') + '</span><div data-rep-metas></div></div>' +
       '<div class="tp-form__field"><span class="tp-form__label">&nbsp;</span>' +
       '<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;min-height:36px;">' +
       '<label class="tp-choice" style="margin:0;"><input type="checkbox" class="tp-choice-input" name="skip_blank_results" value="1"' + (item.skip_blank_results ? " checked" : "") + "><span>" + tpT('ui.skip_empty_results') + "</span></label>" +
@@ -395,16 +395,16 @@
       HR +
       // ── Email (con + integrado) | Programación (alineada al input) ──
       ROW +
-      '<div class="tp-form__field"><span class="tp-form__label">Enviar a email</span>' +
+      '<div class="tp-form__field"><span class="tp-form__label">' + tpT('ui.lit_send_to_email') + '</span>' +
       '<div class="tp-input-group" style="padding-right:4px;padding-left:0;">' +
       '<input type="text" data-rep-email-input data-error-for="send_to_email" placeholder="Email…" style="padding-left:11px;">' +
-      '<button type="button" data-rep-email-add title="Agregar" style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:16px;font-weight:700;padding:0 8px;line-height:1;">＋</button>' +
+      '<button type="button" data-rep-email-add title="' + tpT('ui.lit_add') + '" style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--brand-500,#2e63d9);font-size:16px;font-weight:700;padding:0 8px;line-height:1;">＋</button>' +
       "</div>" +
       '<div data-rep-emails style="display:flex;flex-direction:column;gap:6px;margin-top:6px;"></div>' +
       (meta.showFtp
-        ? '<div class="tp-form__field" style="margin-top:8px;"><span class="tp-form__label">Enviar a FTP</span>' +
+        ? '<div class="tp-form__field" style="margin-top:8px;"><span class="tp-form__label">' + tpT('ui.lit_send_to_ftp') + '</span>' +
           '<div style="display:flex;gap:6px;align-items:stretch;">' +
-          '<input type="text" name="send_to_ftp" value="' + esc(item.ftp || "") + '" placeholder="ftp://usuario:contraseña@host:puerto" style="flex:1;min-width:0;">' +
+          '<input type="text" name="send_to_ftp" value="' + esc(item.ftp || "") + '" placeholder="' + tpT('ui.lit_ftp_placeholder') + '" style="flex:1;min-width:0;">' +
           (meta.ftpTestUrl ? '<button type="button" class="tp-btn tp-btn--secondary tp-btn--sm" data-rep-ftp-test style="white-space:nowrap;">' + esc(tpT('ui.test_ftp')) + '</button>' : "") +
           "</div>" +
           '<div data-rep-ftp-msg role="status" hidden style="margin-top:6px;font-size:12px;padding:6px 8px;border-radius:6px;"></div>' +
@@ -542,7 +542,7 @@
           return (
             '<div class="tp-input-group" style="padding-right:4px;padding-left:0;">' +
             '<input type="text" value="' + esc(e) + '" data-rep-email-idx="' + i + '" style="padding-left:11px;">' +
-            '<button type="button" data-rep-email-rm="' + i + '" title="Quitar" ' +
+            '<button type="button" data-rep-email-rm="' + i + '" title="' + tpT('ui.remove') + '" ' +
             'style="appearance:none;border:0;background:transparent;cursor:pointer;color:var(--fg-muted,#94a3b8);font-size:16px;font-weight:700;padding:0 8px;line-height:1;">−</button>' +
             "</div>"
           );
@@ -1127,7 +1127,7 @@
     if (!items) return "";
     return (
       '<div class="tp-svc-kebab">' +
-      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+      '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
       '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
       "</button>" +
       '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>"

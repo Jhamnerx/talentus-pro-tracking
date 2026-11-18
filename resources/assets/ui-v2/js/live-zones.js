@@ -289,7 +289,7 @@
           '</div><div class="tp-poi-row__group">' +
           meta +
           '</div></div><div class="tp-poi-row__actions">' +
-          '<button type="button" class="tp-poi-row__btn" data-z-go title="Centrar">' +
+          '<button type="button" class="tp-poi-row__btn" data-z-go title="' + tpT('ui.lit_center') + '">' +
           GO +
           '</button><button type="button" class="tp-poi-row__btn" data-z-edit title="' + tpT('global.edit') + '" aria-label="' + tpT('global.edit') + '">' +
           EDIT +
@@ -537,7 +537,7 @@
       // muestra). Antes era editable y se mandaban dos radios: el escrito
       // y el de la geometria, y ganaba el de la geometria sin avisar.
       (isCircle
-        ? '<div class="tp-field"><label class="tp-field__label">Radio (m)</label><input type="number" name="radius" class="tp-input" readonly tabindex="-1" value="' +
+        ? '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.lit_radius_m') + '</label><input type="number" name="radius" class="tp-input" readonly tabindex="-1" value="' +
           (geometry ? Math.round(geometry.radius) : g ? Math.round(g.radius) : "") +
           '"><small class="tp-field__hint">' + tpT('ui.circle_radius_from_map') + '</small></div>'
         : "") +
@@ -953,7 +953,7 @@
         '<p style="margin:0 0 12px;font-size:14px;">' + tpT('ui.which_shape_to_draw') + '</p>' +
         '<div class="tp-row" style="gap:8px;"><button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="polygon">' + tpT('ui.polygon') + '</button>' +
         '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="circle">' + tpT('ui.circle') + '</button>' +
-        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="line">Corredor</button></div>',
+        '<button type="button" class="tp-btn tp-btn--accent tp-full" data-zc="line">' + tpT('ui.lit_corridor') + '</button></div>',
       buttons: [{ label: tpT('global.cancel'), variant: "ghost" }],
     });
     if (dlg)

@@ -299,7 +299,7 @@
     if (!id || !state.index[id]) {
       cell.el.className = "tp-mon__cell tp-mon__cell--empty";
       cell.el.innerHTML =
-        '<button type="button" class="tp-mon__add" data-slot="' + i + '" title="Agregar vehículo">' + PLUS + "</button>";
+        '<button type="button" class="tp-mon__add" data-slot="' + i + '" title="' + tpT('ui.lit_add_vehicle') + '">' + PLUS + "</button>";
       return;
     }
     var d = state.index[id];

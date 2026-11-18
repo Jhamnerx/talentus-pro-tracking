@@ -854,7 +854,7 @@
       esc(d.time || "—") +
       '</dd><dt>' + tpT('front.location') + '</dt><dd data-pop-addr class="' +
       (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
-      '">Cargando…</dd></dl>' +
+      '">' + tpT('ui.loading_ellipsis') + '</dd></dl>' +
       devShortcutsHtml() +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>' + tpT('ui.see_details') + '</button></div>';
     if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
@@ -1051,7 +1051,7 @@
     el.innerHTML =
       '<div class="tp-follow__head">' +
       '<span class="tp-follow__title">Seguir (' + esc(d.name || "#" + id) + ")</span>" +
-      '<button type="button" class="tp-follow__close" aria-label="Cerrar">×</button></div>' +
+      '<button type="button" class="tp-follow__close" aria-label="' + tpT('ui.lit_close') + '">×</button></div>' +
       '<div class="tp-follow__map"></div>' +
       '<div class="tp-follow__foot"><span data-f-speed>—</span><span data-f-time></span></div>';
     root.appendChild(el);
@@ -1568,7 +1568,7 @@
   function loadDrawerWidgets(id) {
     var box = document.getElementById("tp-drawer-widgets");
     var bottom = document.getElementById("tp-live-bottombar-cards");
-    if (box) box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">Cargando…</div>';
+    if (box) box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">' + tpT('ui.loading_ellipsis') + '</div>';
     var base = CFG.devicesUrl || "/ui/v2/api/devices";
     fetch(base + "/" + id + "/widgets", {
       headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -1940,9 +1940,9 @@
       '<select class="tp-input" data-lock-type style="width:100%;margin:4px 0 10px;"><option value="gprs">GPRS</option>' +
       (canSms ? '<option value="sms">SMS</option>' : "") +
       "</select>" +
-      '<label class="tp-field__label">Plantilla GPRS</label>' +
-      '<select class="tp-input" data-lock-tpl style="width:100%;margin:4px 0 10px;"><option value="">Cargando…</option></select>' +
-      '<label class="tp-field__label">Comando</label>' +
+      '<label class="tp-field__label">' + tpT('ui.lit_gprs_template') + '</label>' +
+      '<select class="tp-input" data-lock-tpl style="width:100%;margin:4px 0 10px;"><option value="">' + tpT('ui.loading_ellipsis') + '</option></select>' +
+      '<label class="tp-field__label">' + tpT('ui.chan_command') + '</label>' +
       '<input type="text" class="tp-input" data-lock-cmd value="" placeholder="' +
       (isOn ? "setdigout 1" : "setdigout 0") +
       '" style="width:100%;margin-top:4px;">' +
@@ -2050,15 +2050,15 @@
       body:
         '<div style="margin-bottom:10px;"><select class="tp-input" data-lock-period style="width:auto;">' +
         '<option value="today">' + tpT('front.today') + '</option><option value="yesterday">' + tpT('front.yesterday') + '</option>' +
-        '<option value="this_week">' + tpT('ui.this_week') + '</option><option value="last_week">Semana pasada</option></select></div>' +
-        '<div data-lock-hist><div class="tp-text-muted" style="padding:12px;">Cargando…</div></div>',
+        '<option value="this_week">' + tpT('ui.this_week') + '</option><option value="last_week">' + tpT('ui.lit_last_week') + '</option></select></div>' +
+        '<div data-lock-hist><div class="tp-text-muted" style="padding:12px;">' + tpT('ui.loading_ellipsis') + '</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
     });
     // Paginado: el backend manda 50 por pagina; "Cargar mas" anexa filas.
     var pagina = 1, filas = [];
     function load(period, mas) {
       var box = dlg.querySelector("[data-lock-hist]");
-      if (!mas) { pagina = 1; filas = []; box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">Cargando…</div>'; }
+      if (!mas) { pagina = 1; filas = []; box.innerHTML = '<div class="tp-text-muted" style="padding:12px;">' + tpT('ui.loading_ellipsis') + '</div>'; }
       fetch(url + "?period=" + encodeURIComponent(period) + "&page=" + pagina, {
         credentials: "same-origin",
         headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
@@ -2186,7 +2186,7 @@
       body:
         '<div class="tp-scope"><label class="tp-field__label">' + tpT('front.latitude') + '</label>' +
         '<input type="text" class="tp-input" data-pt-lat placeholder="-8.10610" style="width:100%;margin:4px 0 10px;">' +
-        '<label class="tp-field__label">Longitud</label>' +
+        '<label class="tp-field__label">' + tpT('front.longitude') + '</label>' +
         '<input type="text" class="tp-input" data-pt-lng placeholder="-79.02080" style="width:100%;margin-top:4px;">' +
         '<div data-pt-err style="display:none;margin-top:10px;color:#ef4444;font-size:13px;"></div></div>',
       buttons: [
@@ -2455,7 +2455,7 @@
           }
           tools =
             '<div class="tp-svc-kebab" style="margin-left:auto;">' +
-            '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="Acciones">' +
+            '<button type="button" class="tp-svc-kebab__btn" data-svc-kebab aria-haspopup="menu" aria-label="' + tpT('ui.lit_actions') + '">' +
             '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>' +
             "</button>" +
             '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>";
@@ -2605,7 +2605,7 @@
     var dlg = tpModal.open({
       title: tpT('ui.change_history'),
       size: "xl",
-      body: '<div data-hist><p class="tp-text-sm tp-text-muted">Cargando…</p></div>',
+      body: '<div data-hist><p class="tp-text-sm tp-text-muted">' + tpT('ui.loading_ellipsis') + '</p></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (d) {
         var host = d.querySelector("[data-hist]");
@@ -2917,7 +2917,7 @@
           "</span>" +
           '<button type="button" class="tp-link-action" data-dgm-all>' + tpT('ui.select_all_n') + '</button>' +
           '<span class="tp-group-box__sep">|</span>' +
-          '<button type="button" class="tp-link-action" data-dgm-none>Deseleccionar todo</button>' +
+          '<button type="button" class="tp-link-action" data-dgm-none>' + tpT('ui.lit_deselect_all') + '</button>' +
           "</div>" +
           '<div style="height:1px;background:var(--border-default,#e9eef5);margin:12px -14px;"></div>' +
           '<div data-dgm-list></div>' +

@@ -87,7 +87,7 @@
       title: isEdit ? tpT('ui.edit_call_action') : tpT('ui.new_call_action'),
       size: "md",
       static: true,
-      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">Cargando…</div>',
+      body: '<div class="tp-text-center tp-text-muted" style="padding:24px;">' + tpT('ui.loading_ellipsis') + '</div>',
       buttons: [
         { label: tpT('global.cancel'), variant: "ghost", close: true },
         { label: tpT('global.save'), variant: "primary", close: false, onClick: function (d) { submit(d, id, onSaved); return false; } },
@@ -115,7 +115,7 @@
         '<span style="font-weight:600;">:</span>' +
         '<select class="tp-input" name="called_at_m" style="width:74px;">' + minOptions(dt.m) + "</select>" +
         "</div></div>" +
-        '<label class="tp-form__field tp-form__field--required"><span class="tp-form__label">Notas</span>' +
+        '<label class="tp-form__field tp-form__field--required"><span class="tp-form__label">' + tpT('ui.chk_notes') + '</span>' +
         '<textarea name="remarks" rows="2" data-tp-field>' + esc(item.remarks || "") + "</textarea></label>" +
         "</div></form>";
 
@@ -123,7 +123,7 @@
       var devSel = dlg.querySelector('[name="device_id"]');
       devSel.addEventListener("change", function () {
         var evSel = dlg.querySelector('[name="event_id"]');
-        evSel.innerHTML = '<option value="">Cargando…</option>';
+        evSel.innerHTML = '<option value="">' + tpT('ui.loading_ellipsis') + '</option>';
         if (window.tpSelect && tpSelect.refresh) try { tpSelect.refresh(evSel); } catch (e) {}
         tpModal.fetchJSON(URLS.events + "?device_id=" + devSel.value, { method: "GET" }).then(function (r) {
           var evs = r.ok && r.data && r.data.ok ? r.data.events : [];
@@ -268,7 +268,7 @@
     if (!res.ok || !res.data || !res.data.ok) return;
     META = res.data;
     deviceSel.innerHTML = '<option value="">' + tpT('ui.all_vehicles') + '</option>' + options(META.devices, "");
-    respSel.innerHTML = '<option value="">Toda respuesta</option>' + options(META.responseTypes, "");
+    respSel.innerHTML = '<option value="">' + tpT('ui.any_response') + '</option>' + options(META.responseTypes, "");
     ["tp-ca-device", "tp-ca-response"].forEach(function (idc) {
       var el = document.getElementById(idc);
       if (window.tpSelect && tpSelect.refresh) try { tpSelect.refresh(el); } catch (e) {}

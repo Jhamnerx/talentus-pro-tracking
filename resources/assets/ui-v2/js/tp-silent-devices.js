@@ -100,7 +100,7 @@
     return (
       '<div class="tp-form">' +
       '<div class="tp-row" style="gap:10px; align-items:flex-end; flex-wrap:wrap;">' +
-      '<label class="tp-form__field" style="min-width:150px;"><span class="tp-form__label">Forma</span>' +
+      '<label class="tp-form__field" style="min-width:150px;"><span class="tp-form__label">' + tpT('ui.lit_shape') + '</span>' +
       '<select class="tp-input" data-sd-shape>' +
       '<option value="polygon">' + tpT('ui.polygon') + '</option>' +
       '<option value="circle">' + tpT('ui.circle') + '</option>' +
@@ -176,7 +176,7 @@
     if (!dialog || !zone) return;
 
     var caja = dialog.querySelector("[data-sd-result]");
-    caja.innerHTML = '<p class="tp-text-muted tp-text-sm">Buscando…</p>';
+    caja.innerHTML = '<p class="tp-text-muted tp-text-sm">' + tpT('ui.lit_searching') + '</p>';
 
     var fd = new FormData();
     fd.append("_token", csrf());
@@ -227,7 +227,7 @@
 
     html +=
       '<div style="overflow:auto; max-height:52vh;"><table class="tp-table"><thead><tr>' +
-      "<th>" + tpT('ui.name') + "</th><th>" + tpT('ui.plate') + "</th><th>IMEI</th><th>Coordenadas</th><th>Usuarios</th><th>" + tpT('ui.last_transmission') + "</th>" +
+      "<th>" + tpT('ui.name') + "</th><th>" + tpT('ui.plate') + "</th><th>IMEI</th><th>" + tpT('ui.lit_coordinates') + "</th><th>" + tpT('ui.lit_users') + "</th><th>" + tpT('ui.last_transmission') + "</th>" +
       "</tr></thead><tbody>";
 
     items.forEach(function (i) {

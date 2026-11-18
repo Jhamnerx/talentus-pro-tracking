@@ -166,7 +166,7 @@
         // que se espera al haber filtrado antes.
         '<div style="display:flex;gap:6px;margin-top:6px;">' +
         '<button type="button" data-cs-all style="' + BTN + '">' + tpT('ui.select_all_n') + '</button>' +
-        '<button type="button" data-cs-none style="' + BTN + '">Deseleccionar todo</button>' +
+        '<button type="button" data-cs-none style="' + BTN + '">' + tpT('ui.lit_deselect_all') + '</button>' +
         "</div></div>" +
         (body || '<div style="padding:8px 10px;font-size:13px;color:var(--fg-muted,#94a3b8);">' + tpT('ui.no_results') + '</div>') +
         '<div style="position:sticky;bottom:0;background:inherit;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px 4px;border-top:1px solid var(--border-default,#eef2f7);z-index:1;">' +

@@ -125,7 +125,7 @@
       (!item || item.active ? " checked" : "") + "> " + tpT('attr.active') + "</label>" +
       '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.title_required_field') + '</label><input type="text" class="tp-input" data-fwd-title value="' +
       (item ? esc(item.title) : "") + '" style="width:100%;"></div>' +
-      '<div class="tp-field"><label class="tp-field__label">Tipo *</label><select class="tp-input" data-no-ts="1" data-fwd-type style="width:100%;"' +
+      '<div class="tp-field"><label class="tp-field__label">' + tpT('ui.lit_type_required') + '</label><select class="tp-input" data-no-ts="1" data-fwd-type style="width:100%;"' +
       (isEdit ? " disabled" : "") + ">" + typeOpts + "</select></div>" +
       "<div data-fwd-fields></div>" +
       (TYPES.length

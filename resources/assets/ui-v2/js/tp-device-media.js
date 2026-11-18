@@ -29,7 +29,7 @@
     tpModal.open({
       title: tpT('ui.gallery') + (deviceName ? " · " + deviceName : ""),
       size: "lg",
-      body: '<div data-media-root><div class="tp-text-muted tp-text-sm">Cargando…</div></div>',
+      body: '<div data-media-root><div class="tp-text-muted tp-text-sm">' + tpT('ui.loading_ellipsis') + '</div></div>',
       buttons: [{ label: tpT('global.close'), variant: "ghost", close: true }],
       onMount: function (dialog) {
         var root = dialog.querySelector("[data-media-root]");
@@ -68,7 +68,7 @@
                     .join("") +
                   "</select>"
                 : "") +
-              '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-zip disabled>Descargar ZIP</button>' +
+              '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-zip disabled>' + tpT('ui.lit_download_zip') + '</button>' +
               (state.canRemove
                 ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--sm" data-media-del style="color:#ef4444;" disabled>' + tpT('global.delete') + '</button>'
                 : "") +
