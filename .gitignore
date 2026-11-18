@@ -32,3 +32,9 @@ docs/manual-pruebas/*.pdf
 .claude/settings.local.json
 # Enlaces locales a .agents/skills (git en Windows los copiaba enteros; cada maquina los recrea con: npx skills add ...)
 .claude/skills/
+
+# Videos de /brag (Hyperframes)
+/brag/
+
+# Salidas de sesiones de Claude (pueden tener datos de clientes)
+/Claude outputs/

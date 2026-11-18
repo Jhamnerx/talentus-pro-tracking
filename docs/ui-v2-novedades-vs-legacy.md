@@ -1,13 +1,14 @@
 # UI v2 frente a legacy: novedades y mejoras
 
-> Revisión del código de la rama `nuevo-tema` (14-nov-2026). Se comparó cada módulo de `/ui/v2/*`
+> Revisión del código de la rama `nuevo-tema` (actualizada el 18-nov-2026). Se comparó cada módulo de `/ui/v2/*`
 > (`app/Http/Controllers/Ui/V2/`, `resources/views/ui/v2/`, `resources/assets/ui-v2/js/`) con su
 > equivalente legacy (`Tobuli/Views/Frontend/`, `resources/assets/js/`).
 >
 > - **NUEVA**: no existe en el legacy.
 > - **MEJORADA**: existe en el legacy, pero la v2 hace más o lo hace mejor.
-> - **Paridad**: portada sin cambios funcionales (se lista al final de cada módulo).
-> - **Pendiente**: el legacy lo tiene y la v2 todavía no (sección final).
+> - **Paridad**: portada sin cambios funcionales.
+>
+> La §1 reúne todas las características. La §2 resume el fork de Traccar del que dependen el vídeo y la ingesta. La §3 lista lo que sigue pendiente.
 
 ---
 
@@ -15,234 +16,201 @@
 
 | Categoría | Qué hay |
 | --- | --- |
-| **Módulos completamente nuevos** | Operaciones (control de vueltas y reporte de turno), Seguridad (control de flota), Monitoreo de grupo, Co-Pilot, paleta de comandos Ctrl+K, hitos kilométricos del Perú, mapa de riesgo de eventos, plantillas de alerta, comandos pendientes «enviar cuando esté en línea» |
-| **Módulos rediseñados con mejoras grandes** | Dashboard, Flota (lista de objetos), Historial, Reportes, Eventos, Comandos, Gastos, Cumplimiento de rutas, Dashboard del vehículo y widget de bloqueo de motor |
-| **Añadido después de la auditoría (§5, ya en `nuevo-tema`)** | Vídeo JT1078 completo (en vivo, audio, hablar con la cámara, grabaciones con descarga MP4/FTP, permiso `device_video`), marcas de combustible en el Historial, «Probar FTP», registro de actividad y edición múltiple de conductores |
-| **Base transversal nueva** | Tema claro/oscuro en caliente, densidad, Tailwind y tokens CSS, iconos SVG, componentes propios (datepicker, select, chips, modal nativo), accesibilidad WCAG 2.2 AA, diseño responsive, carga de JS por página, preferencia legacy↔v2 |
+| **Módulos nuevos** | Talentus IA CHAT, Operaciones (control de vueltas y reporte de turno), Seguridad (control de flota), Monitoreo de grupo, Co-Pilot, paleta de comandos Ctrl+K, vídeo JT1078 en vivo y grabaciones |
+| **Funciones nuevas en módulos que ya existían** | Hitos kilométricos del Perú, mapa de riesgo de eventos, plantillas de alerta, comandos «enviar cuando esté en línea», atajos de historial y «Reporte de rutas» en el popup, reportes visibles en el sistema con mapa flotante, galería de Cámara / Medios, opciones de los bloques del tablero |
+| **Módulos rediseñados** | Tablero, Flota, Mapa en vivo, Historial, Reportes, Eventos, Alertas, Comandos, Gastos, Cumplimiento de rutas, Mantenimiento, ficha del vehículo |
+| **Base transversal** | Tema claro/oscuro en caliente guardado en la cuenta, densidad, Tailwind y tokens CSS, iconos SVG, componentes propios, estilo común entre módulos, accesibilidad WCAG 2.2 AA, responsive, carga de JS por página, preferencia legacy↔v2, textos traducidos |
+| **Servidor de rastreo (§2)** | Fork de Traccar `talentus`: vídeo JT1078 completo, streams por IMEI, posiciones en Redis con `uniqueId`, usuario de servicio, comandos por `uniqueId`, IO extra de Teltonika |
 
 ---
 
-## 1. Módulos nuevos (sin equivalente en el legacy)
+## 1. Características de la UI v2
 
-### Operaciones: control de vueltas (`/ui/v2/operations`)
-- Página con 4 pestañas (En vivo, Vueltas, Operaciones, Turno) — `pages/operations.blade.php:52-61`.
-- **En vivo**: estado de cada vehículo y vueltas del día. Se refresca cada 20 s — `tp-operations.js:38`.
-- **Vueltas**: historial por rango, con tramos y paradas desplegables — `OperationsController.php:344,392`.
-- **Configurar operaciones**: turnos, pausas, puntos de carga y descarga (geocercas) y tipo/estados de vehículo. Se pueden activar, desactivar y borrar — `OperationService.php`.
-- Motivos de parada y justificación de cada parada (mantenimiento o standby) — `OperationsController.php:664-744`.
-- **Conteo automático durante la ingesta** (`OperationChecker` en `PositionsWriter`), con una máquina de estados carga → ida → descarga → vuelta. Cambia solo el estado cargado/vacío del vehículo.
-- **Recalcular** con vista previa, barra de progreso y cola — `OperationsController.php:460-546`.
-- **Pestaña Turno**: tarjetas de indicadores, 5 gráficas por hora, barra de estados de 24 h, horómetro, kilometraje, abastecimientos y salidas del área de operación. Se exporta a Excel con gráficos nativos y a PDF.
-- Reportes 910–914 (vueltas, paradas, horas de trabajo, visitas de abastecimiento, turno en PDF).
-- Comandos programados `operations:process`, `operations:summaries` y `operations:clean`.
+### 1.1 Módulos nuevos
 
-### Seguridad: control de flota (`/ui/v2/security`)
+#### Talentus IA CHAT: asistente IA · NUEVA
+Port de AirBot (airpatrol) sobre la API de Claude, solo en la UI v2. Es distinto del Co-Pilot, que sigue con sus hallazgos por reglas.
+
+- **Ventana flotante** con botón abajo a la derecha, botón en la barra superior y **Ctrl+I**. Se minimiza, avisa con un punto si responde minimizada y mantiene la conversación al cambiar de pantalla. Las conversaciones se guardan.
+- **Respuestas en streaming** con botones que llevan a la v2: ver en el mapa, abrir el historial con el rango o un **atajo** (editar vehículo, vídeo, fotos, compartir, servicios, configurar equipo, nueva regla, cuenta…).
+- **24 consultas**: buscar unidades (también por placa sin guion ni espacios), estado y ubicación, resumen general, operación diaria, recorridos y paradas, excesos de velocidad, geocercas, alertas y eventos, conductores, combustible, horas de motor, odómetro, mantenimiento, vencimientos, diagnóstico de equipos sin transmitir, comparar periodos, exportar un reporte o un recorrido, abrir pantallas y la **guía de uso de la v2** (`resources/ai/guides.php`).
+- **5 acciones, siempre con confirmación** y registradas (`ai_action_logs`): crear una alerta, enviar un comando, programar un reporte, renombrar una unidad y renovar una licencia.
+- **Respeta los permisos**: el modelo solo ve las acciones, atajos, pantallas y guías que la cuenta permite.
+- **Fuera del chat**: tarjeta de resumen en el Tablero, botón «Explicar con…» en el visor de reportes, resumen en los correos de reportes programados y correo diario de alertas a las 07:00 (`ai:alerts-digest`, apagado por defecto).
+- **Administración** (Admin › Configuración › Talentus IA CHAT): nombre visible, interruptor, clave de la API cifrada, modelo del chat y de los resúmenes, esfuerzo, **modelo por plan**, cuotas de preguntas por usuario, plan o general, **tope mensual en USD** y consumo por modelo. Modelos: Claude Sonnet 5.5 (por defecto), Haiku 5.5 y Opus 5.5.
+- **Permiso `ai_assistant`** (ver = chat, editar = acciones), apagado por defecto. `php artisan ai:compare` compara modelos; costos en `docs/ia-proveedores-costos.md`.
+- **Para activarlo**: migraciones `2026_11_15_*` y `2026_11_16_*`, la clave de la API en Admin y el permiso a quien lo vaya a usar.
+
+#### Vídeo JT1078: en vivo y grabaciones · NUEVA
+Port de master-tracking que reemplaza la base de vídeo antigua (Howen, `video_channels`, proxy HLS en PHP). Funciona con el fork de Traccar (§2). Plan en `docs/superpowers/plans/2026-11-14-video-jt1078-ui-v2.md`; despliegue en `docs/video/GUIA-DESPLIEGUE.md`.
+
+- **Cámara por equipo**: `has_camera`, `camera_channels`, roles por canal y `camera_attributes`, con pestaña Vídeo en la ficha y «Detectar desde el equipo». Los canales solo se envían con «Tiene cámara» marcado.
+- **Permiso `device_video`** (ver y editar), dado solo a dueños de equipos con cámara, sus managers, sus planes y los admins.
+- **En vivo**: FLV directo del tracker con URL firmada (HMAC), sin pasar por PHP; HLS de respaldo, HD/SD y H.265 si el navegador lo soporta. Reproductor en un modal con selector de canal y cuadrícula de 1 a 3 columnas.
+- **Audio y hablar con la cámara**: G.711, G.726 y AAC; micrófono (necesita HTTPS).
+- **Grabaciones**: búsqueda y reproducción; **descarga a MP4** en la cola `video` (worker propio y ffmpeg) o subida FTP nativa del equipo, con bajar, borrar y cancelar.
+- **Accesos**: «Vídeo en vivo» y «Grabaciones de vídeo» en el kebab, y un botón por canal en el widget del drawer.
+- Comandos rechazados con mensaje claro si el equipo está offline. API para la app: `devices/video/{id}/config`.
+- **Protocolos** con `VIDEO_PROTOCOLS` (por defecto `jt808`).
+
+#### Operaciones: control de vueltas (`/ui/v2/operations`) · NUEVA
+- Página con 4 pestañas: En vivo, Vueltas, Operaciones y Turno.
+- **En vivo**: estado de cada vehículo y vueltas del día, refrescado cada 20 s.
+- **Vueltas**: historial por rango con tramos y paradas desplegables; carga sola con las fechas por defecto.
+- **Configurar operaciones**: turnos, pausas, puntos de carga y descarga (geocercas) y tipo/estados de vehículo.
+- Motivos de parada y justificación de cada parada (mantenimiento o standby).
+- **Conteo automático durante la ingesta** (`OperationChecker` en `PositionsWriter`), con una máquina de estados carga → ida → descarga → vuelta que cambia el estado cargado/vacío del vehículo.
+- **Recalcular** con vista previa y barra de progreso que cuenta solo tu lote y estima el tiempo con los tramos que van antes que los tuyos. `operations:process` limita cada pasada por tiempo, así que un recálculo largo no frena los tramos nuevos.
+- **Turno**: tarjetas de indicadores, 5 gráficas por hora, barra de estados de 24 h, horómetro, kilometraje, abastecimientos y salidas del área; exporta a Excel con gráficos nativos y a PDF.
+- Reportes 910–914 y comandos `operations:process`, `operations:summaries` y `operations:clean`.
+
+#### Seguridad: control de flota (`/ui/v2/security`) · NUEVA
 - Reproduce el Excel del cliente (`docs/Dashboard_FM_Seguridad.xlsx`) dentro de la plataforma.
-- **Filtros**: flota por tipo de vehículo, turno (día, noche o ambos), rango de fechas y unidad — `SecurityController.php:192-232`.
-- **Resultados**: 8 tarjetas, resumen diario, detalle por unidad y por unidad-día, y estado en vivo. Las gráficas ECharts se adaptan al tema.
-- **Ajustes por usuario**: horario del turno de día, límite de velocidad manual, vigencia, minutos de parada y de corte.
-- Recálculo síncrono (hasta 31 días) más el agregado horario `security:aggregate`.
-- Exportación a Excel de hasta 93 días.
+- Filtros por tipo de vehículo, turno (día, noche o ambos), rango de fechas y unidad.
+- 8 tarjetas, resumen diario, detalle por unidad y por unidad-día, y estado en vivo, con gráficas ECharts que siguen el tema.
+- Ajustes por usuario (horario del turno, límite de velocidad manual, vigencia, minutos de parada y de corte), recálculo de hasta 31 días, agregado horario `security:aggregate` y Excel de hasta 93 días.
 
-### Monitoreo de grupo (`/ui/v2/monitor`)
+#### Monitoreo de grupo (`/ui/v2/monitor`) · NUEVA
 - Cuadrícula de 2 a 32 mini-mapas; cada celda sigue en vivo a un vehículo.
-- Recuerda el tamaño, la selección y las capas (geocercas, POIs, rutas, cola) — `monitor.js:53-92`.
+- Recuerda el tamaño, la selección y las capas (geocercas, POIs, rutas, cola).
 
-### Co-Pilot (`/ui/v2/copilot`)
-- Insights con reglas propias, sin LLM externo: vehículos offline mucho tiempo, ralentí prolongado, sin señal GPS, reincidentes.
-- Chat que reconoce la intención y lleva a Flota, Eventos o Alertas con el filtro ya puesto — `CopilotController.php:218-240`.
+#### Co-Pilot (`/ui/v2/copilot`) · NUEVA
+- Hallazgos con reglas propias, sin LLM: vehículos offline mucho tiempo, ralentí prolongado, sin señal GPS, reincidentes.
+- Chat que reconoce la intención y lleva a Flota, Eventos o Alertas con el filtro puesto.
 
-### Paleta de comandos (Ctrl/Cmd+K o «/»)
-- Busca vehículos (por nombre, placa o IMEI), geocercas y POIs, respetando permisos. Guarda recientes y se usa entera con teclado — `command-palette.js`, `ShellController.php:46-127`.
+#### Paleta de comandos (Ctrl/Cmd+K o «/») · NUEVA
+- Busca vehículos (nombre, placa o IMEI), geocercas y POIs respetando permisos. Guarda recientes y se usa entera con teclado.
 
-### Funciones nuevas dentro de módulos que ya existían
+### 1.2 Funciones nuevas dentro de módulos que ya existían
+
 | Módulo | Función nueva | Referencia |
 | --- | --- | --- |
-| Mapa en vivo | **Hitos kilométricos del Perú**: capa con densidad según el zoom (cada 1, 10 o 100 km) y referencia «PE-1N · km 557» en los popups | `tp-hitos.js`, `MapLayersController.php:622` |
-| Mapa en vivo | **Color del marcador por velocidad**, con aviso de «cerca» o «por encima» del límite de la geocerca para el tipo y estado del vehículo | `live.js:289-346` |
-| Mapa en vivo | **Tablero del vehículo**: esferas con aguja (velocidad frente al límite) y testigos que salen de sensores reales | `live.js:1085-1243` |
-| Mapa en vivo | **Historial de cambios del vehículo** (ficha, sensores, servicios) | `DevicesController.php:683-700` |
-| Mapa en vivo | **Copiar sensores** de un vehículo a otros | `routes/web.php:1364-1365` |
-| Historial | **Colores del recorrido por vehículo** (por viaje, color único o por velocidad con rangos propios) | `HistoryController.php:227-234` |
-| Historial | **Km del resumen desde una sola fuente** (`DeviceMileageService`), para que cuadren con el Dashboard | `HistoryController.php:247-253` |
-| Historial | **Enlace directo** `?device=&range=&from=&to=` y reproducción de un solo tramo desde la línea de tiempo | `history.js:501-617,1502` |
-| Reportes | **Día exacto de la programación** (día de la semana o del mes) | `ReportsController.php:316-320` |
-| Reportes | **Filtro por días de la semana y franja horaria** (slider) | `ReportsController.php:322-327` |
-| Eventos | **Mapa de riesgo de la flota** (hasta 1500 puntos por severidad) | `EventsController.php:238-296` |
-| Eventos | **«Atender» evento** (crea una acción de llamada y marca «Atendido»), exportar CSV y salto a Historial | `EventsController.php:209-221` |
-| Alertas | **Plantillas de alerta** (admin): con plan de facturación, se aplican al crear usuarios | `AlertsController.php:137-257` |
-| Comandos | **«Enviar cuando esté en línea»**, con pestaña Pendientes: el GPRS a un equipo desconectado queda en cola y lo envía `commands:dispatch-pending` | `CommandsController.php:98-197` |
-| Cuenta | Confirmación de email por código único con reenvío | `AccountController.php:357-384` |
+| Mapa en vivo | **Hitos kilométricos del Perú**: capa con densidad según el zoom y referencia «PE-1N · km 557» en los popups | `tp-hitos.js`, `MapLayersController.php` |
+| Mapa en vivo | **Color del marcador por velocidad**, con aviso de «cerca» o «por encima» del límite de la geocerca para el tipo y estado del vehículo | `live.js` |
+| Mapa en vivo | **Tablero del vehículo**: esferas con aguja (velocidad frente al límite) y testigos de sensores reales | `live.js` |
+| Mapa en vivo | **Historial de cambios del vehículo** (ficha, sensores, servicios) y **copiar sensores** a otros vehículos | `DevicesController.php` |
+| Mapa (legacy y v2) | **Atajos de historial** en el popup, la ficha y el kebab: Última hora, Hoy y Ayer (permiso `history.view`) | `model/device.js`, `live.js` |
+| Mapa (legacy y v2) | **Reporte de rutas** (tipo 43) desde el popup: formulario con fechas y reporte HTML en una pestaña nueva, sin guardar nada (permiso `reports.view`) | `devices/route_report/{id}` |
+| Historial | **Colores del recorrido por vehículo** (por viaje, color único o por velocidad con rangos propios) | `HistoryController.php` |
+| Historial | **Km del resumen desde una sola fuente** (`DeviceMileageService`), para que cuadren con el Tablero | `HistoryController.php` |
+| Historial | **Enlace directo** `?device=&range=&from=&to=` y reproducción de un solo tramo | `history.js` |
+| Historial | **Marcas de llenado y robo de combustible** en la gráfica, sincronizadas con el cursor del mapa | `history.js` |
+| Reportes (legacy y v2) | **Reportes visibles en el sistema** (`Report::$viewable`): Paradas en un visor a pantalla completa con «Mostrar mapa» por parada y ventana flotante «Ubicación de la Unidad» | `map_window.blade.php` |
+| Reportes | **Teselas de Google** en los reportes 43 y 65 | `map_tiles.blade.php` |
+| Reportes | **Día exacto de la programación** y **filtro por días de la semana y franja horaria** | `ReportsController.php` |
+| Reportes | **«Probar FTP»** junto al campo | ruta `ftp.test` |
+| Tablero | **Opciones de los bloques** (colores de estado, vehículos y periodos), en la misma estructura que el legacy | `DashboardController@updateOptions` |
+| Eventos | **Mapa de riesgo de la flota** (hasta 1500 puntos por severidad) | `EventsController.php` |
+| Eventos | **«Atender» evento** (crea una acción de llamada), exportar CSV y salto a Historial | `EventsController.php` |
+| Alertas | **Plantillas de alerta** (admin), con plan de facturación, aplicadas al crear usuarios | `AlertsController.php` |
+| Comandos | **«Enviar cuando esté en línea»** con pestaña Pendientes (`commands:dispatch-pending`) | `CommandsController.php` |
+| Conductores | **Registro de actividad** desde el kebab y **edición múltiple** de los seleccionados | `tp-drivers.js` |
+| Cámara / Medios | **Galería desde el menú lateral**: selector de vehículo con buscador y luego sus fotos y vídeos FTP (permiso `camera`), actualizada sola al llegar una foto | `tp-device-media.js` |
+| Cuenta | Confirmación de email por código único con reenvío | `AccountController.php` |
 
----
+### 1.3 Módulos mejorados
 
-## 2. Módulos mejorados
+- **Tablero**: de 6 bloques estáticos a un panel con rangos (hoy, ayer, semana, mes o personalizado) en la zona horaria del usuario, con puntaje de conducción, ranking, tendencia de riesgo, vehículos de mayor riesgo, alertas por tipo y kilometraje. Carga por partes en paralelo y se refresca solo.
+- **Flota** (antes «Lista de objetos»): búsqueda, filtros por grupo, modelo y protocolo, estado en la URL (`?status=`), exportación CSV, direcciones de las filas visibles y orden por nombre sin espacios iniciales.
+- **Mapa en vivo**:
+  - lista con contadores por estado, filtro segmentado, vista agrupada o plana y kebab sin AJAX;
+  - filtro avanzado en el servidor con los mismos scopes del legacy;
+  - sondeo que se pausa con la pestaña oculta;
+  - **bloqueo de motor** con comandos preconfigurados (un clic, GPRS o SMS) e historial;
+  - panel móvil en pantallas de 900 px o menos.
+- **Historial**: rangos rápidos, capas de geocercas, rutas y POIs, gráfica con pestañas por sensor, zoom y cursor sincronizado, registro con todas las columnas del XML `other` y orden ascendente o descendente, cursor con el icono real del vehículo y unidad de combustible del usuario.
+- **Reportes**: guardados con búsqueda, filtro, paginación y resumen de la programación; logs con búsqueda por email, estado de envío y descarga; selector de vehículos con chips para miles de equipos; al editar se recupera el periodo y el FTP.
+- **Eventos**: filtros por tipo, vehículo, horas o rango; scroll infinito y actualización en vivo con pitido en eventos críticos; marcador real del vehículo, geocodificación bajo demanda y hora en la zona del usuario.
+- **Alertas**: tabla de reglas con búsqueda, número de vehículos y canales activos; selectores de vehículos y geocercas con grupos; editor en pestañas; apertura directa con `?edit=`.
+- **Comandos**: una sola página con pestañas (Horario, Registros, Pendientes, Plantillas GPRS y SMS) en lugar de 3 o 4 pantallas; al editar una plantilla se conservan los equipos y los tipos de dispositivo.
+- **Rutas: cumplimiento**: dentro de la página de programaciones (en el legacy solo es el reporte 909), con filtro por vehículo, solo incumplimientos y detalle por punto.
+- **Gastos**: de modal por vehículo a página de flota con búsqueda, filtro, rango de fechas y total.
+- **Mantenimiento y servicios**: orden, búsqueda y paginación sin recargar, barras de color por umbral y un mismo modal desde el mapa y desde la página.
+- **Ficha del vehículo**: disposición del legacy (600 px, campos a una columna), Usuarios con «Seleccionar todo» y carga al bajar, Sensores y Servicios con edición en línea, ayuda con imagen en el IMEI, pestañas en una fila, errores marcados en su pestaña con foco en el primero.
+- **Otros**:
+  - **Conductores**: búsqueda, filtro con o sin dispositivos y selector múltiple.
+  - **Tareas**: selector de dirección en un mapa propio.
+  - **Acciones de llamada**: modal global desde el kebab y desde el popup del evento.
+  - **Tipos de vehículo**: estados con nombre, etiqueta corta y color.
+  - **Chat**: conversaciones por no leídos, búsqueda y carga de 50 en 50 al bajar; sondeo según el socket.
+  - **Bandeja de notificaciones**: scroll infinito, severidad, badge y «marcar todo leído» guardado en la cuenta (se ve igual en todos los dispositivos); el evento abre su popup en el mapa.
 
-### Dashboard
-- **Legacy**: 6 bloques HTML estáticos.
-- **v2**: un panel con rangos (hoy, ayer, semana, mes o personalizado) en la zona horaria del usuario.
-- **Nuevo contenido**: puntaje de conducción, ranking, tendencia de riesgo, vehículos de mayor riesgo, alertas por tipo y kilometraje.
-- Carga por partes en paralelo y se refresca solo — `DashboardController.php:71-122,504-660`.
+**Portados con paridad**:
+- capas base, clúster, seguir vehículo, colas, nombres, tráfico, regla, mostrar punto, buscar dirección y unidades sin transmitir;
+- geocercas (corredor, matriz de velocidad por tipo y estado, import/export), POIs y rutas con grupos;
+- modal del vehículo con sus pestañas (incluidos los CustomFields), widgets, kebab y grupos con reenvíos;
+- alertas, exportación del historial (GSR/KML/GPX/CSV) y borrado de posiciones;
+- compartir, tareas, checklists, reenvíos, tipos de trayecto, ajustes de cuenta y eventos personalizados;
+- popups del admin, notificaciones en vivo y la tabla de rutas.
 
-### Flota (antes «Lista de objetos»)
-- Búsqueda, filtros por grupo, modelo y protocolo, y estado en la URL (`?status=`, el Dashboard enlaza así).
-- Exporta a CSV y resuelve las direcciones de las filas visibles.
-- Se refresca solo cuando no hay nada seleccionado — `fleet.js:22-30,481-544,698-720`.
+Programaciones de ruta, puntos de control y Tipos de trayecto **no son novedades de la v2**: ya existían en el legacy (commit `43e2937a`); la v2 los porta y añade la pestaña de Cumplimiento.
 
-### Mapa en vivo
-- **Lista**: contadores por estado, filtro segmentado, vista agrupada o plana (se recuerda) y menú kebab sin AJAX (sale de una plantilla con los permisos ya resueltos).
-- **Filtro avanzado**: se resuelve en el servidor con los mismos scopes del legacy; filtra la lista y el mapa por separado.
-- **Sondeo**: se pausa con la pestaña oculta y se reanuda al volver (el legacy sondea siempre) — `live.js:3045-3078`.
-- **Bloqueo de motor**: comandos de corte y restablecimiento preconfigurados (un clic, GPRS o SMS) e historial de bloqueos — `live.js:1747-1950`.
-- **Móvil**: la lista y los filtros se abren como panel en pantallas de 900 px o menos.
-
-### Historial
-- Rangos rápidos: hoy, ayer, 2 y 3 días, semana, semana anterior, mes, mes anterior y última hora.
-- Capas de geocercas, rutas y POIs desde el propio historial.
-- Gráfica con pestañas por sensor, zoom y cursor sincronizado con el mapa.
-- Registro de datos con todas las columnas del XML `other` y orden ascendente o descendente (en el legacy el descendente no funcionaba).
-- El cursor de reproducción usa el icono real del vehículo, con su rumbo, y un HUD de datos.
-- La unidad de combustible es la del usuario (L o gal), no «L» fija.
-
-### Reportes
-- **Guardados**: búsqueda, filtro por tipo, paginación y resumen de la programación.
-- **Logs**: búsqueda también por email, tamaño legible, estado de envío y descarga.
-- Selector de vehículos con chips, pensado para miles de equipos.
-- **Al editar**: se recupera el periodo rápido guardado y el FTP ya no se pierde.
-
-### Eventos
-- Filtros por tipo (catálogo completo), vehículo, horas o rango, y búsqueda por nombre de vehículo. El legacy solo tenía búsqueda de texto.
-- **Carga y actualización**: scroll infinito; además, la página se actualiza en vivo, con pitido en eventos críticos.
-- Marcador real del vehículo, geocodificación bajo demanda y capas del mapa.
-- La hora sale en la zona horaria del usuario e incluye los eventos de alertas compartidas.
-
-### Alertas
-- Tabla de reglas con búsqueda, número de vehículos y solo los canales que están activos.
-- Selectores de vehículos y geocercas con grupos y contador, y editor en pestañas.
-- Apertura directa con `?edit=`.
-
-### Comandos
-- **Una sola página con pestañas** (Horario, Registros, Pendientes, Plantillas GPRS y SMS). En el legacy esto está repartido en 3 o 4 pantallas.
-
-### Rutas: cumplimiento
-- **Cumplimiento dentro de la página de programaciones**: en el legacy solo existe como reporte 909. La v2 filtra por vehículo, muestra solo incumplimientos si se pide y da el detalle por punto (planificado, real y desvío).
-- Valida las geocercas de los puntos de control y guarda en transacción.
-
-### Gastos
-- **De modal por vehículo a página de flota**: búsqueda, filtro de vehículo, rango de fechas y total.
-
-### Mantenimiento y servicios
-- Orden, búsqueda y paginación sin recargar, con barras de color por umbral.
-- **Un mismo modal en varios sitios**: se usa desde el mapa en vivo y desde la página.
-- Los errores de validación se marcan en cada campo.
-
-### Otros módulos mejorados
-- **Conductores**: búsqueda, filtro con o sin dispositivos y selector múltiple con chips.
-- **Tareas**: selector de dirección en un mapa propio (buscar, hacer clic o arrastrar, con geocodificación inversa).
-- **Acciones de llamada**: también como modal global, desde el kebab del mapa y desde el popup del evento.
-- **Tipos de vehículo**: cada estado tiene nombre, etiqueta corta y color (chips en la tabla).
-- **Medios del vehículo**: la galería se actualiza sola al llegar una foto por socket.
-- **Chat**: conversaciones ordenadas por no leídos y con búsqueda. El sondeo se adapta según el socket esté o no conectado.
-- **Bandeja de notificaciones**: scroll infinito, severidad, badge y «marcar todo leído»; el evento abre su popup en el mapa.
-
-### Portados con paridad
-- **Mapa**: capas base, clúster, seguir vehículo, colas, nombres, tráfico, regla, mostrar punto, buscar dirección y unidades sin transmitir.
-- **Capas del mapa**: geocercas (corredor, matriz de velocidad por tipo y estado, import/export), POIs y rutas con grupos.
-- **Vehículo**: modal de 14 pestañas, widgets, kebab de acciones y grupos con reenvíos.
-- **Alertas**: tipos, horario, canales y vigencia por vehículo.
-- **Historial**: exportación GSR/KML/GPX/CSV y borrado de posiciones.
-- **Módulos de gestión**: compartir, tareas (CSV y conjuntos), checklists, reenvíos, tipos de trayecto, ajustes de cuenta (12 pestañas) y eventos personalizados.
-- **Avisos**: popups del admin, notificaciones en vivo (sonido y Notification API) y la tabla de rutas.
-
----
-
-## 3. Base transversal de la v2
+### 1.4 Base transversal
 
 | Tema | Tipo | Detalle |
 | --- | --- | --- |
-| Layout aislado (`.tp-scope`) con rail y topbar propios, `lang` y RTL automáticos | MEJORADA | `layout.blade.php:25-26,85-100` |
-| Rail compacto o expandido (se recuerda) | NUEVA | `partials/rail.blade.php` |
-| Tema claro/oscuro en caliente, sin parpadeo al cargar | MEJORADA | En el legacy cada tema es un CSS compilado aparte y no se cambia en vivo |
-| Densidad cómoda/compacta | NUEVA | `topbar.blade.php:203` |
-| Tailwind, PostCSS y tokens CSS (`--surface-*`, `--fg-*`) en Gulp | NUEVA | `gulpfile.js:220-261` |
+| Layout aislado (`.tp-scope`) con rail y topbar propios, `lang` y RTL automáticos | MEJORADA | `layout.blade.php` |
+| Rail compacto o expandido (se recuerda), con un icono distinto por módulo | NUEVA | `partials/rail.blade.php` |
+| Tema claro/oscuro en caliente y densidad cómoda/compacta, guardados en la cuenta (siguen al usuario entre dispositivos) | NUEVA | `ShellController@preferences` |
+| Preferencia `ui_version` (legacy↔v2): cambia solo por elección explícita («Nueva UI» → `/ui/v2/switch`, «Versión anterior» → `/ui/v2/legacy`) | NUEVA | `ShellController` |
+| Tailwind, PostCSS y tokens CSS (`--surface-*`, `--fg-*`) en Gulp | NUEVA | `gulpfile.js` |
 | Iconos SVG inline, sin fuentes de iconos | NUEVA | `partials/icons.blade.php` |
-| Componentes propios: `tp-datepicker`, `tp-select` (buscador y teclado), `tp-chips-select`, `modal.js` (`<dialog>` nativo, errores 422 por campo que saltan a su pestaña) | NUEVA | `resources/assets/ui-v2/js/` |
+| Componentes propios: `tp-datepicker`, `tp-select`, `tp-chips-select`, `modal.js` (`<dialog>` nativo con nombre accesible, errores 422 por campo y `aria-invalid`) | NUEVA | `resources/assets/ui-v2/js/` |
+| **Estilo común entre módulos**: misma cabecera de página, botón principal con texto en el color de marca, alturas, pestañas subrayadas, cabeceras de tabla, estados vacíos (`tpEmpty`), «—» en celdas vacías, orden del pie de los modales y formato de fecha del usuario (`tpFmt`) | NUEVA | `components.css`, `modal.js` |
 | Toasts accesibles (`aria-live`) | NUEVA | `partials/toast-host.blade.php` |
-| Accesibilidad WCAG 2.2 AA: 119 de 172 hallazgos corregidos | MEJORADA | `docs/accesibilidad-ui-v2.md` |
+| Accesibilidad WCAG 2.2 AA, menús con teclado y contraste revisado | MEJORADA | `docs/accesibilidad-ui-v2.md` |
 | Responsive (cortes a 1023, 767 y 639 px, menú con velo, `prefers-reduced-motion`) | MEJORADA | `components.css`, `shell.css` |
-| Rendimiento: un JS y un CSS por página (`@push` y `defer`) en lugar de bundles enormes; ECharts solo donde se usa | MEJORADA | p. ej. `security.blade.php:117` |
+| Textos traducidos en castellano e inglés en vistas y JS | MEJORADA | `resources/lang/{es,en}/ui.php` |
+| Un JS y un CSS por página (`@push` y `defer`); ECharts solo donde se usa | MEJORADA | — |
 | Socket: guarda suscripciones antes de conectar y avisa del estado para caer a sondeo | MEJORADA | `tp-socket.js` |
-| Preferencia `ui_version` (legacy↔v2): los usuarios nuevos empiezan en v2 y el legacy redirige según la preferencia | NUEVA | `BaseController.php:36-43`, `ObjectsController.php:36`, `ShellController@legacy` |
 | Permisos y gates de addon/plugin copiados del legacy | Paridad | — |
 
 ---
 
-## 4. Pendiente o con fallos (detectado en la revisión)
+## 2. Servidor de rastreo: fork de Traccar para Talentus
+
+Producción usa el fork `github.com/Jhamnerx/traccar`, rama **`talentus`** (local en `E:\Users\jamne\IdeaProjects\traccar`), rebasado sobre Traccar upstream (último rebase 3-nov-2026, con copias `backup/talentus-pre-rebase-*`). Tiene 23 commits propios. No es parte de la UI, pero varias funciones de la v2 y del legacy dependen de él.
+
+### Integración con la plataforma (Laravel)
+| Qué | Para qué | Dónde lo usa Laravel |
+| --- | --- | --- |
+| **Redis**: gestor de conexión, `redis.enable` / `redis.url`; registra cada equipo conectado | Estado en vivo y conexión de los equipos sin consultar la base de Traccar | `config/tracker.php` (`redis.*`), `CheckPositionsCommand` (`position.*`) |
+| **Posiciones en Redis como JSON plano con `uniqueId`** (`PositionForwarderRedis`) | Laravel recibe la posición con el IMEI y la escribe en sus tablas por dispositivo | `app/Console/PositionsWriter.php` (claves `positions.{imei}`) |
+| **`database.savePositions`** | Permite no guardar las posiciones en la base de Traccar (las guarda Laravel) | — |
+| **Usuario de servicio** (`user.password`) | La API de Traccar acepta al usuario `admin` con esa clave sin usuario en la base | `config/tracker.php` (`user.password`) |
+| **Comandos por `uniqueId`** | La web puede mandar un comando con el IMEI, sin conocer el id interno de Traccar | Envío de comandos GPRS |
+
+### Protocolos
+- **Teltonika**: los IO 1–4 también llegan como `di1`–`di4` (0/1), y 16 (odómetro), 113 (batería) y 199 (odómetro de viaje) también como `io16`, `io113`, `io199`. Más claves de IO de los modelos FMB en `setup/traccar.xml`. Los IO con alarma (remolque, accidente, jamming, ralentí, corte de energía, conducción brusca) llegan como `alarm`; Laravel los interpreta con `TeltonikaEvents` (reporte 902, Securitas, Comsatel, UNIGIS).
+- **Jimi**: fotos de evidencia de alarmas en el puerto 6267.
+- Documentación de protocolos en el repositorio: Teltonika, Queclink GV310LAU y JimiIoT 4G (v2.6.2).
+
+### Vídeo JT1078 (JT808), lo que necesita el vídeo de la §1.1
+- **En vivo**: HLS por IMEI (`/api/stream/imei/{uniqueId}/{canal}/live.m3u8`) y **HTTP-FLV de baja latencia** (`live.flv`, con pista de audio AAC opcional) y audio en vivo, autorizados con token HMAC (`media.streamSecret`) en vez de sesión. Sub-stream (SD) y audio a pedido.
+- **Hablar con la cámara**: `POST /api/stream/live/{uniqueId}/{canal}/talk` envía el audio ya codificado por la conexión del equipo (escucha, conversación y difusión).
+- **Grabaciones del equipo**: consulta (0x9205/0x1205), reproducción (0x9201/0x9202) separada del en vivo para que no se pisen, y lista en `/api/stream/{id|imei}/resources`. Fechas ISO-8601 convertidas a la zona del equipo.
+- **Subida FTP nativa** (0x9206, con pausa, continuar y cancelar 0x9207, y aviso de fin 0x1206); las tareas se listan en `/uploads`.
+- **Capacidades de la cámara** (0x9003/0x1003): códecs, canales y altavoz, en `/attributes`; con esto funciona «Detectar desde el equipo».
+- **Estado del stream** (`/status`: conectado, códec H.264/H.265, último fotograma) y rechazos del equipo por petición (0x0001).
+- **Robustez**: los streams sin espectadores se cierran a los 60 s (`media.streamIdleTimeout`) y mandan `videoStop` al equipo; las peticiones de reproducción caducan a los 30 s.
+
+---
+
+## 3. Pendiente
 
 **Funciones del legacy que faltan en la v2**
-- ~~**Vídeo en vivo y grabaciones**~~ — **resuelto** (ver §5).
 - **Planes y «upgrade» del dispositivo**: el legacy tiene el botón (`Objects/item.blade.php:18-23`); en la v2 no hay módulo.
-- ~~**Opciones de los bloques del Dashboard**~~ — **resuelto el 18-nov-2026**: botón de engranaje en `/ui/v2/dashboard` con un `tpModal` (colores de estado, vehículos y periodo del bloque de distancia, periodo de eventos y tareas). Guarda en `users.settings → dashboard.blocks.<bloque>.options`, la misma estructura que el legacy (`DashboardController@updateOptions`).
-- ~~**Marcas de llenado y robo de combustible en el Historial**~~ — **resuelto** (ver §5).
-- ~~**Botón «Probar FTP» en Reportes**~~ — **resuelto** (ver §5).
-- ~~**Conductores: registro de actividad y edición múltiple**~~ — **resuelto** (ver §5).
 - **Checklists**: faltan el código QR y la vista previa (el addon está apagado en esta instalación).
-- ~~**Chat**~~ — **resuelto el 18-nov-2026**: la búsqueda ya existía (mismo scope `search()` que el legacy); se añadió la carga al bajar de 50 en 50 con «Mostrando X de Y» (`ChatController@conversations` con `offset`/`limit`).
 
-**Fallos encontrados en el código de la v2**
-- ~~**El tema y la densidad no se guardan en el servidor.**~~ **Corregido el 14-nov-2026**: `ShellController@preferences` usa `setSettings`, y el layout lee la preferencia de la cuenta, que gana a la cookie y al localStorage.
-- ~~**Abrir cualquier URL `/ui/v2/*` vuelve a poner `ui_version=v2`.**~~ **Corregido el 14-nov-2026**: la preferencia solo cambia por elección explícita. «Nueva UI» lleva a `/ui/v2/switch` y «Versión anterior» a `/ui/v2/legacy`.
-- ~~**El estado «leído» de las notificaciones**~~ — **corregido el 18-nov-2026**: «Marcar todo como leído» guarda el id del último evento en `users.settings → tp_notif_seen_id` (`ShellController@notificationsSeen`) y la bandeja llega con `read` resuelto. En cuentas demo sigue en el localStorage.
+**Limitaciones de la v2**
 - **El mapa en vivo y la pestaña En vivo de Operaciones se actualizan por sondeo**: el socket solo lleva avisos, mensajes y fotos.
-- ~~**Textos sin traducir**~~ — **corregido el 18-nov-2026**: los citados («Geocerca», «POI», «Confirmar email», «Command Palette»), `CHAN_LABEL`/`TYPE_LABELS` de `alerts.js`, «Aviso»/«OK»/«Guardando…» de `modal.js`, los `title="Editar"`/«Eliminar» de cuenta, reenvíos, POIs y geocercas, y unos 30 literales más de las vistas v2 (tablero, mapa, flota, eventos, paleta, bandeja…). Después, el resto de literales visibles de los JS de la v2 (unos 90 en 30 ficheros: avisos, títulos de modal, etiquetas, `title`/`aria-label`, placeholders) y las 13 claves que faltaban a los `T(clave, respaldo)` de `live-routes.js` y `routes-table.js`. Solo quedan sin traducir nombres propios (capas de mapa, «Auth ID», «RFID»).
 - **Accesibilidad**: quedan 49 campos sin etiqueta y 4 conmutadores sin estado.
-- ~~**Pendientes de verificar**~~ — **revisado el 18-nov-2026**: los equipos ya no se desasociaban (`CommandsController@saveTemplate` los conserva salvo con la plantilla adaptada a equipos, como el `syncLoader` del legacy), pero los **tipos de dispositivo** sí: el formulario no los preseleccionaba al editar. Corregido, junto con los campos ocultos que se seguían viendo (`.tp-field[hidden]`) y el protocolo, que ahora solo viaja con la plantilla adaptada a protocolo. Los CustomFields ya estaban en la ficha del vehículo (pestaña «Campos personalizados», mismo gate `can('view', $item, 'custom_fields') && hasCustomFields()` que el legacy); en dev no hay campos definidos para verlo en pantalla.
-- ~~**Estilos del popup legacy sin compilar**~~ — **resuelto el 18-nov-2026**: `gulp templates` con Node 16 (node-sass no compila con Node 22). Los 29 temas llevan `.popup-actions`; el diff de los CSS solo trae esas tres reglas.
 
----
+**Fork de Traccar**
+- La rama local `jt808-anonymous-terminal` (3 commits, sin subir a GitHub) añade soporte para **MDVR Streamax**: identifica por placa o VIN los terminales que mandan ceros como teléfono, separa los rechazos de vídeo por canal y detecta la longitud del SIM (2016 o 2019). Hay que fusionarla en `talentus` y desplegarla antes de conectar esos equipos.
+- **Howen** usará el mismo contrato de vídeo cuando el fork implemente el protocolo; en Laravel se activa con `VIDEO_PROTOCOLS=jt808,howen`.
 
-## 5. Cambios posteriores a la auditoría (14-nov-2026)
-
-### Vídeo JT1078 (en `nuevo-tema`: commits `1bd3ccb8`, `2008770c`, `a05fa60c`, fusión `e26b422d`)
-Es un port de master-tracking que reemplaza la base de vídeo antigua (Howen, `video_channels`, proxy HLS en PHP). Funciona con el fork de Traccar (rama `talentus`). Plan en `docs/superpowers/plans/2026-11-14-video-jt1078-ui-v2.md`.
-
-**Backend (común al legacy y a la v2)**
-- **Cámara por equipo**: `has_camera`, `camera_channels`, roles por canal y `camera_attributes`. Los datos se migran desde `video_channels`, que queda deprecada.
-- **Permiso nuevo `device_video`** (ver y editar). Solo lo reciben los dueños de equipos con cámara, sus managers, sus planes y los admins. Antes no había permiso propio.
-- **En vivo**: FLV directo del tracker con URL firmada (HMAC), sin pasar por PHP. HLS de respaldo, HD/SD, H.265 si el navegador lo soporta.
-- **Audio y hablar con la cámara**: audio G.711, G.726 y AAC; hablar con la cámara (micrófono, necesita HTTPS).
-- **Grabaciones**: búsqueda (desde hoy a las 00:00 por defecto) y reproducción. **Descarga a MP4** en la cola `video` (con worker propio y ffmpeg) o subida FTP nativa del equipo (0x9206). Comandos `video:clean-downloads` y `video:ftp-user`.
-- **Capacidades de la cámara**: detección desde el equipo.
-- **Equipos offline**: se rechazan los comandos con un mensaje claro.
-- **API para la app**: `devices/video/{id}/config`.
-- **Protocolos** configurables con `VIDEO_PROTOCOLS`. Howen entrará por el fork con `VIDEO_PROTOCOLS=jt808,howen`. Se eliminó el adaptador viejo (`api/howen/*`, `streamProxy`, rutas `device_video/*`).
-
-**UI v2** (`tp-device-video.js`, `css/device-video.css`)
-- **Kebab**: «Vídeo en vivo» y «Grabaciones de vídeo», en lugar del modal explicativo.
-- **Reproductor**: en un modal, con selector de canal y cuadrícula de 1 a 3 columnas.
-- **Grabaciones**: reproducción del historial y descargas (bajar, borrar o cancelar FTP).
-- **Widget del drawer**: un botón por canal; antes abría el visor viejo en otra pestaña.
-- **Ficha del vehículo**: pestaña Vídeo nueva con canales, roles y «Detectar desde el equipo».
-
-**Sin verificar**: vídeo, audio, hablar con la cámara y descargas reales (no había cámara física ni fork local). Lo que se probó en el navegador:
-- menús, cuadrícula, ficha y búsqueda;
-- 403 sin `device_video`;
-- sin botón en protocolos no soportados.
-
-Para producción hay que seguir `docs/video/GUIA-DESPLIEGUE.md`: Apache `ProxyPass /tracker-media/`, variables `VIDEO_*`, worker de la cola `video` y ffmpeg.
-
-### Paridad legacy (commit `45b8dee0`, fusionado en `nuevo-tema` con `2788dae0`)
-- **Historial**: marcas de llenado y robo de combustible en la gráfica, con etiqueta al pasar el ratón y sincronizadas con el cursor del mapa.
-- **Reportes**: botón «Probar FTP» junto al campo, con la misma ruta `ftp.test` del legacy.
-- **Conductores**:
-  - registro de actividad desde el kebab (filtro desde/hasta y paginación);
-  - edición múltiple de los seleccionados (nombre, RFID, teléfono, email, descripción; se guarda todo o nada).
-- **Sin verificar**: las marcas con rellenos y robos reales, y un envío FTP correcto.
-
-### Preferencias de la v2 (en la copia de trabajo de `nuevo-tema`, sin commit)
-- El tema y la densidad se guardan en la cuenta y siguen al usuario entre dispositivos.
-- La elección de «legacy» ya no se pierde al abrir un enlace de la v2: «Nueva UI» lleva a `/ui/v2/switch`.
-
----
-
-**Aclaración**: Programaciones de ruta, puntos de control y Tipos de trayecto **no son novedades de la v2**. Ya existían en el legacy (desarrollo propio, commit `43e2937a`); la v2 solo los porta y les añade la pestaña de Cumplimiento.
+**Sin verificar**
+- Vídeo, audio, hablar con la cámara y descargas reales: no se ha probado con una cámara física y el fork en local.
+- Operaciones, Seguridad y Acciones de llamada después de la revisión visual del 14-nov (el admin de desarrollo no tiene el permiso); tema claro y ancho móvil después de los cambios de estilo.
+- Marcas de combustible con rellenos y robos reales, un envío FTP correcto, el leído de notificaciones en cuentas demo, la carga del chat con muchos vehículos y los CustomFields en pantalla (en desarrollo no hay campos definidos).
