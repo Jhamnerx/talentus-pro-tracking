@@ -18,7 +18,9 @@ class AiCompletion
 
     public function __construct(ClaudeClient $client = null)
     {
-        $this->client = $client ?? new ClaudeClient();
+        // Sin cliente inyectado se crea uno por llamada con la clave del usuario
+        // (la de su reseller si tiene propia).
+        $this->client = $client;
     }
 
     /**
@@ -51,7 +53,8 @@ class AiCompletion
         $response = null;
 
         try {
-            $response = $this->client->stream($body, $onText);
+            $client = $this->client ?? new ClaudeClient(AiSettings::configFor($user));
+            $response = $client->stream($body, $onText);
 
             if ($response->stop_reason === 'refusal') {
                 $status = 'refusal';
@@ -84,6 +87,7 @@ class AiCompletion
 
             AiUsageLog::create([
                 'user_id' => $user->id,
+                'key_owner_id' => AiSettings::keyOwnerFor($user),
                 'feature' => $feature,
                 'model' => $model,
                 'input_tokens' => $input,

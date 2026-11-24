@@ -24,7 +24,10 @@
             @endif
 
             <div class="ab-kpis">
-                <div class="ab-kpi"><div class="v">USD {{ number_format($totalCost, 2) }}</div><div class="l">Costo del mes</div></div>
+                <div class="ab-kpi"><div class="v">USD {{ number_format($totalCost, 2) }}</div><div class="l">Costo del mes con tu clave</div></div>
+                @if ($resellerCost > 0)
+                    <div class="ab-kpi"><div class="v">USD {{ number_format($resellerCost, 2) }}</div><div class="l">Con claves de resellers (lo pagan ellos)</div></div>
+                @endif
                 <div class="ab-kpi"><div class="v">{{ ($byFeature['chat']->calls ?? 0) + ($byFeature['explain_report']->calls ?? 0) }}</div><div class="l">Preguntas del mes (chat + explicar reporte)</div></div>
                 <div class="ab-kpi"><div class="v">{{ $usersWithAccess }} · {{ count($plansWithAccess) }}</div><div class="l">Usuarios · planes con acceso</div></div>
                 <div class="ab-kpi"><div class="v">{{ $totalErrors }}</div><div class="l">Errores del mes</div></div>
@@ -182,12 +185,12 @@
                 <div class="panel-heading"><div class="panel-title">Usuarios con más consumo (mes)</div></div>
                 <div class="panel-body">
                     <table class="table table-condensed">
-                        <thead><tr><th>Usuario</th><th class="text-right">Preguntas</th><th class="text-right">USD</th></tr></thead>
+                        <thead><tr><th>Usuario</th><th>Clave</th><th class="text-right">Preguntas</th><th class="text-right">USD</th></tr></thead>
                         <tbody>
                         @forelse ($byUser as $row)
-                            <tr><td>{{ $row->email ?? '-' }}</td><td class="text-right">{{ $row->questions }}</td><td class="text-right">{{ number_format($row->cost, 3) }}</td></tr>
+                            <tr><td>{{ $row->email ?? '-' }}</td><td>{!! $row->payer ? e($row->payer) : '<span class="ab-muted">Principal</span>' !!}</td><td class="text-right">{{ $row->questions }}</td><td class="text-right">{{ number_format($row->cost, 3) }}</td></tr>
                         @empty
-                            <tr><td colspan="3" class="ab-muted">Sin consumo todavía.</td></tr>
+                            <tr><td colspan="4" class="ab-muted">Sin consumo todavía.</td></tr>
                         @endforelse
                         </tbody>
                     </table>
@@ -232,6 +235,34 @@
 
             <button type="submit" class="btn btn-primary">{{ trans('global.save') }}</button>
             {!! Form::close() !!}
+        </div>
+    </div>
+
+    <div class="panel panel-default">
+        <div class="panel-heading"><div class="panel-title">Resellers</div></div>
+        <div class="panel-body">
+            <p class="ab-muted">Cada reseller puede cargar su propia clave en su Admin; entonces él y sus usuarios la usan y él paga ese consumo. Si no tiene clave, sus usuarios solo usan la tuya cuando marcas "Puede usar mi clave".</p>
+            @if ($resellers->count())
+                {!! Form::open(['route' => 'admin.ai_assistant.save', 'method' => 'POST']) !!}
+                <input type="hidden" name="section" value="resellers">
+                <table class="table table-condensed" style="max-width:760px">
+                    <thead><tr><th>Reseller</th><th>Clave propia</th><th>Puede usar mi clave</th><th class="text-right">Consumo mes con su clave</th></tr></thead>
+                    <tbody>
+                    @foreach ($resellers as $r)
+                        <tr>
+                            <td>{{ $r->email }}</td>
+                            <td>{!! $r->own_key ? 'Sí' : '<span class="ab-muted">No</span>' !!}</td>
+                            <td><input type="checkbox" name="allow_main[]" value="{{ $r->id }}" @if ($r->allow_main) checked @endif></td>
+                            <td class="text-right">USD {{ number_format($r->spent_own, 3) }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+                <button type="submit" class="btn btn-primary">{{ trans('global.save') }}</button>
+                {!! Form::close() !!}
+            @else
+                <p class="ab-muted">No hay resellers.</p>
+            @endif
         </div>
     </div>
 

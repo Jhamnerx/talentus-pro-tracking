@@ -25,7 +25,7 @@ class AiFeatures
 
     public static function enabled(User $user, string $feature): bool
     {
-        return ClaudeClient::isConfigured()
+        return AiSettings::isConfiguredFor($user)
             && (bool) config("ai.features.$feature")
             && $user->perm('ai_assistant', 'view');
     }
@@ -53,7 +53,7 @@ class AiFeatures
             . 'sin titulos ni vinetas. ' . self::STYLE;
 
         $text = (new AiCompletion())->complete($user, 'report_email', $system,
-            "Reporte: $title\n\n" . self::clip($json, self::MAX_REPORT_CHARS), config('ai.light_model'), 'low', 800);
+            "Reporte: $title\n\n" . self::clip($json, self::MAX_REPORT_CHARS), AiSettings::configFor($user)['light_model'], 'low', 800);
 
         return $text === '' ? null : nl2br(e($text));
     }
@@ -72,7 +72,7 @@ class AiFeatures
                 . 'recomendacion si corresponde). Usa **negrita** para cifras. ' . self::STYLE;
 
             $text = (new AiCompletion())->complete($user, 'dashboard', $system,
-                json_encode($data, JSON_UNESCAPED_UNICODE), config('ai.light_model'), 'low', 800);
+                json_encode($data, JSON_UNESCAPED_UNICODE), AiSettings::configFor($user)['light_model'], 'low', 800);
 
             return ['text' => $text, 'generated_at' => Formatter::time()->convert(gmdate('Y-m-d H:i:s'), 'H:i')];
         });
@@ -93,7 +93,7 @@ class AiFeatures
             . 'que conviene revisar. Texto plano con guiones para los puntos. ' . self::STYLE;
 
         $text = (new AiCompletion())->complete($user, 'alerts_digest', $system,
-            json_encode($data, JSON_UNESCAPED_UNICODE), config('ai.light_model'), 'low', 1000);
+            json_encode($data, JSON_UNESCAPED_UNICODE), AiSettings::configFor($user)['light_model'], 'low', 1000);
 
         return $text === '' ? null : nl2br(e($text));
     }

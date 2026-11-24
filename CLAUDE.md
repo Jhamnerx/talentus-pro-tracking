@@ -599,6 +599,13 @@ Portado de AirBot (airpatrol, 18-nov-2026; rama `feature/talentus-ia-chat`). Sol
   Va en el mensaje y no en el system para no partir el caché de 1 h. Revisar con
   `php artisan ai:compare --user=<id> --show-tools` (sin API).
 - **Cuota:** límite por usuario (`ai_assistant.user_quotas`) > por plan > general (Admin) > `.env`.
+- **Clave por reseller** (tabla `ai_reseller_settings`, panel `admin/ai_reseller` para el grupo 3): el reseller del
+  usuario (él mismo o subiendo por `manager_id`, `AiSettings::resellerFor()`) con clave propia ⇒ se usan su clave,
+  modelos, esfuerzo, cuotas (`user_quotas` > `default_quota` > las principales) y tope. Sin clave ⇒ la principal
+  solo si `allow_main_key` (lo marca el admin en su panel, tabla Resellers). Toda llamada se construye con
+  `AiSettings::configFor($user)` y se registra con `ai_usage_logs.key_owner_id` (NULL = principal); el tope
+  principal solo cuenta `key_owner_id NULL` (`AiQuota::spent()`). Gates: `isConfiguredFor($user)`, nunca
+  `isConfigured()` para decidir si un usuario ve la IA.
 - **Manual de uso** que consulta el asistente: `resources/ai/guides.php` (pantallas de la UI v2). Las claves de
   `pantalla` deben existir en `AbrirPantallaTool::SCREENS`, que lleva la ruta v2 de cada una.
 - **UI v2:** `partials/ai-chat.blade.php` + `ui-v2/js/tp-ai-chat.js` + `ui-v2/css/ai-chat.css`; ventana flotante

@@ -33,10 +33,10 @@ class AiAgent
     public function __construct(User $user, ClaudeClient $client = null)
     {
         $this->user = $user;
-        $this->client = $client ?? new ClaudeClient();
-        $this->config = config('ai');
-        // Modelo del plan del usuario (Admin > Talentus IA CHAT) o el general.
-        $this->config['model'] = AiSettings::chatModelFor($user);
+        // Clave, modelos y esfuerzo del usuario: los de su reseller si tiene
+        // clave propia; si no, los principales (con el modelo de su plan).
+        $this->config = AiSettings::configFor($user);
+        $this->client = $client ?? new ClaudeClient($this->config);
     }
 
     /** Fuerza un modelo (lo usa la prueba comparativa ai:compare). */
@@ -355,6 +355,7 @@ class AiAgent
         try {
             AiUsageLog::create([
                 'user_id' => $this->user->id,
+                'key_owner_id' => $this->config['key_owner_id'] ?? null,
                 'conversation_id' => $conversation->id,
                 'model' => $model,
                 'input_tokens' => $usage['input'],

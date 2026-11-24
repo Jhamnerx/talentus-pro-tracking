@@ -9,7 +9,7 @@ class AiUsageLog extends AbstractEntity
     protected $table = 'ai_usage_logs';
 
     protected $fillable = [
-        'user_id', 'conversation_id', 'feature', 'model', 'input_tokens', 'output_tokens',
+        'user_id', 'key_owner_id', 'conversation_id', 'feature', 'model', 'input_tokens', 'output_tokens',
         'cache_read_tokens', 'cache_write_tokens', 'api_calls', 'cost_usd', 'tools', 'status',
     ];
 

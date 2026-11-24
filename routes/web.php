@@ -691,6 +691,10 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
     }]);
 
     Route::group(['as' => 'admin.'], function () {
+        # Talentus IA CHAT del reseller (su clave, modelos, cuotas y consumo)
+        Route::get('ai_reseller', ['as' => 'ai_reseller.index', 'uses' => 'AiResellerController@index']);
+        Route::post('ai_reseller', ['as' => 'ai_reseller.save', 'uses' => 'AiResellerController@save']);
+
         # Clients
         Route::any('users/users', ['as' => 'clients.users', 'uses' => 'ClientsController@users']);
         Route::any('users/managers', ['as' => 'clients.managers', 'uses' => 'ClientsController@managers']);

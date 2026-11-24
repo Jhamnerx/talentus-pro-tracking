@@ -124,6 +124,15 @@ function getNavigation()
         'childs' => '',
     ];
 
+    // Talentus IA CHAT del reseller: su clave, modelos, cuotas y consumo.
+    if (Auth::user()->isReseller()) {
+        $items[] = [
+            'title' => '<i class="icon setup"></i> ' . '<span class="text">' . e(\App\Services\Ai\AiSettings::name()) . '</span>',
+            'route' => 'admin.ai_reseller.index',
+            'childs' => []
+        ];
+    }
+
     if (Auth::user()->isAdmin()) {
         $items[] = [
             'title' => '<i class="icon events"></i> ' . '<span class="text">' .  trans('admin.events') . '</span>',

@@ -11,12 +11,25 @@ use Tobuli\Entities\User;
 class AiQuota
 {
     /**
-     * Preguntas al mes para el usuario: su limite propio (Admin > Talentus IA
-     * CHAT > Limite por usuario), si no la cuota de su plan, si no la cuota
-     * por defecto guardada en Admin, si no la de config/.env. 0 = sin limite.
+     * Preguntas al mes para el usuario. Si usa la clave de su reseller:
+     * limite que el reseller le puso, si no la cuota por defecto del
+     * reseller. Despues (o con la clave principal): su limite propio en Admin,
+     * la cuota de su plan, la cuota por defecto de Admin y la de .env.
+     * 0 = sin limite.
      */
     public static function limit(User $user = null): int
     {
+        if ($user && ($ownerId = AiSettings::keyOwnerFor($user))) {
+            $reseller = \Tobuli\Entities\AiResellerSetting::find($ownerId);
+            $quotas = (array) ($reseller->user_quotas ?? []);
+            if (isset($quotas[$user->id]) && $quotas[$user->id] !== '' && $quotas[$user->id] !== null) {
+                return (int) $quotas[$user->id];
+            }
+            if ($reseller && $reseller->default_quota !== null) {
+                return (int) $reseller->default_quota;
+            }
+        }
+
         $settings = self::settings();
 
         if ($user && isset($settings['user_quotas'][$user->id]) && $settings['user_quotas'][$user->id] !== '') {
@@ -71,14 +84,32 @@ class AiQuota
         return $limit > 0 ? max(0, $limit - self::used($user)) : null;
     }
 
-    public static function budgetExceeded(): bool
+    /**
+     * Tope de gasto del mes de quien paga las llamadas de este usuario: el
+     * del reseller (sobre su clave) o el principal (sobre la clave principal).
+     */
+    public static function budgetExceeded(User $user = null): bool
     {
-        $budget = self::budget();
+        $ownerId = $user ? AiSettings::keyOwnerFor($user) : null;
 
-        if ($budget <= 0) {
-            return false;
+        if ($ownerId) {
+            $budget = (float) (\Tobuli\Entities\AiResellerSetting::find($ownerId)->monthly_budget_usd ?? 0);
+
+            return $budget > 0 && self::spent($ownerId) >= $budget;
         }
 
-        return (float) AiUsageLog::thisMonth()->sum('cost_usd') >= $budget;
+        $budget = self::budget();
+
+        return $budget > 0 && self::spent(null) >= $budget;
+    }
+
+    /** Gasto del mes con una clave: la del reseller indicado o la principal (null). */
+    public static function spent($keyOwnerId): float
+    {
+        $query = AiUsageLog::thisMonth();
+
+        $keyOwnerId ? $query->where('key_owner_id', $keyOwnerId) : $query->whereNull('key_owner_id');
+
+        return (float) $query->sum('cost_usd');
     }
 }

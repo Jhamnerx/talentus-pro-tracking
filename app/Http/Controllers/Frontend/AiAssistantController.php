@@ -115,7 +115,7 @@ class AiAssistantController extends Controller
 
         $user = $request->user();
 
-        if (AiQuota::budgetExceeded()) {
+        if (AiQuota::budgetExceeded($user)) {
             return response()->json(['message' => trans('front.ai_disabled')], 429);
         }
 
@@ -188,7 +188,7 @@ class AiAssistantController extends Controller
         if (!\App\Services\Ai\AiFeatures::enabled($user, 'explain_report')) {
             return response()->json(['message' => trans('front.ai_disabled')], 403);
         }
-        if (AiQuota::budgetExceeded()) {
+        if (AiQuota::budgetExceeded($user)) {
             return response()->json(['message' => trans('front.ai_disabled')], 429);
         }
         if (AiQuota::remaining($user) === 0) {

@@ -19,7 +19,7 @@ class AiAssistantAccess
             return response()->json(['message' => trans('front.dont_have_permission')], 403);
         }
 
-        if (!ClaudeClient::isConfigured()) {
+        if (!\App\Services\Ai\AiSettings::isConfiguredFor($user)) {
             return response()->json(['message' => trans('front.ai_disabled')], 503);
         }
 

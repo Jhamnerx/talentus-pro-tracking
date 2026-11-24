@@ -61,7 +61,7 @@ class AiCompareCommand extends Command
             return $this->checkTools($user, $unit);
         }
 
-        if (!AiSettings::isConfigured()) {
+        if (!AiSettings::isConfiguredFor($user)) {
             $this->error('El asistente no esta configurado: falta la clave de la API en Admin > Talentus IA CHAT.');
             return 1;
         }

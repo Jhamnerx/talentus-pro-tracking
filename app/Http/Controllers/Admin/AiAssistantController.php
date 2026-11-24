@@ -40,10 +40,27 @@ class AiAssistantController extends Controller
             ->selectRaw('model, COUNT(*) as calls, SUM(cost_usd) as cost')
             ->groupBy('model')->orderByDesc('cost')->get();
 
+        // "payer": de quien es la clave (NULL = principal, si no el correo del reseller).
         $byUser = (clone $month)
             ->leftJoin('users', 'users.id', '=', 'ai_usage_logs.user_id')
-            ->selectRaw("users.email, SUM(CASE WHEN feature IN ('chat','explain_report') THEN 1 ELSE 0 END) as questions, SUM(cost_usd) as cost")
-            ->groupBy('users.email')->orderByDesc('cost')->limit(20)->get();
+            ->leftJoin('users as owners', 'owners.id', '=', 'ai_usage_logs.key_owner_id')
+            ->selectRaw("users.email, owners.email as payer, SUM(CASE WHEN feature IN ('chat','explain_report') THEN 1 ELSE 0 END) as questions, SUM(cost_usd) as cost")
+            ->groupBy('users.email', 'owners.email')->orderByDesc('cost')->limit(20)->get();
+
+        // Resellers: clave propia, permiso para usar la principal y consumo del mes.
+        $resellerSettings = \Tobuli\Entities\AiResellerSetting::all()->keyBy('user_id');
+        $resellers = \Tobuli\Entities\User::where('group_id', 3)->orderBy('email')->get(['id', 'email'])
+            ->map(function ($r) use ($resellerSettings) {
+                $s = $resellerSettings->get($r->id);
+
+                return (object) [
+                    'id' => $r->id,
+                    'email' => $r->email,
+                    'own_key' => (bool) ($s->api_key ?? null),
+                    'allow_main' => !$s || $s->allow_main_key,
+                    'spent_own' => AiQuota::spent($r->id),
+                ];
+            });
 
         $daily = AiUsageLog::where('created_at', '>=', date('Y-m-d 00:00:00', strtotime('-29 days')))
             ->selectRaw('DATE(created_at) as day, SUM(cost_usd) as cost, COUNT(*) as calls')
@@ -82,7 +99,9 @@ class AiAssistantController extends Controller
             'features' => self::FEATURES,
             'byFeature' => $byFeature,
             'byModel' => $byModel,
-            'totalCost' => (float) (clone $month)->sum('cost_usd'),
+            'totalCost' => AiQuota::spent(null),
+            'resellerCost' => (float) (clone $month)->whereNotNull('key_owner_id')->sum('cost_usd'),
+            'resellers' => $resellers,
             'totalErrors' => (clone $month)->where('status', 'error')->count(),
             'byUser' => $byUser,
             'daily' => $daily,
@@ -107,6 +126,19 @@ class AiAssistantController extends Controller
 
         if ($request->input('section') === 'user_quotas') {
             return $this->saveUserQuotas($request);
+        }
+
+        if ($request->input('section') === 'resellers') {
+            // Solo el permiso de usar la clave principal; la clave y los
+            // modelos los maneja cada reseller en su panel.
+            $allowed = array_map('intval', (array) $request->input('allow_main', []));
+            foreach (\Tobuli\Entities\User::where('group_id', 3)->pluck('id') as $id) {
+                \Tobuli\Entities\AiResellerSetting::updateOrCreate(['user_id' => $id],
+                    ['allow_main_key' => in_array($id, $allowed, true)]);
+            }
+            AiSettings::forget();
+
+            return redirect()->route('admin.ai_assistant.index')->with('success', trans('front.successfully_saved'));
         }
 
         $this->validate($request, [

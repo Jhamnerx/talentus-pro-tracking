@@ -36,7 +36,7 @@
     // Talentus IA CHAT: permiso del usuario/plan + asistente configurado en Admin.
     $tpaiOn = false;
     try {
-        $tpaiOn = $user && $user->perm('ai_assistant', 'view') && \App\Services\Ai\AiSettings::isConfigured();
+        $tpaiOn = $user && $user->perm('ai_assistant', 'view') && \App\Services\Ai\AiSettings::isConfiguredFor($user);
     } catch (\Throwable $e) {
     }
     // Formato de fecha/hora del usuario para el JS (tpFmt, modal.js): el
