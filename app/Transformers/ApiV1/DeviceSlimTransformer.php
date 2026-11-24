@@ -76,6 +76,12 @@ class DeviceSlimTransformer extends BaseTransformer
                 'created_at' => null, 'updated_at' => null,
             ],
 
+            // Canales de video JT1078 (como DeviceFullTransformer): [] sin video o sin el
+            // permiso device_video. La app muestra el botón de cámara solo si no está vacío.
+            'camera_channels' => $entity->hasVideo() && $this->canView($entity, 'camera_channels')
+                ? array_values(array_map('intval', (array)$entity->camera_channels))
+                : [],
+
             // tail_color elevated from device_data so device_data is not needed
             'tail_color' => $entity->tail_color,
             'tail'       => $entity->tail,
