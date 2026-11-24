@@ -3,7 +3,10 @@ namespace App\Http\Controllers\Api\Frontend;
 
 use App\Transformers\CallAction\CallActionFullTransformer;
 use CustomFacades\Validators\CallActionFormValidator;
+use App\Exceptions\ResourseNotFoundException;
+use Formatter;
 use Tobuli\Entities\CallAction;
+use Tobuli\Entities\Device;
 use Tobuli\Entities\Event;
 use FractalTransformer;
 
@@ -39,6 +42,26 @@ class CallActionsController extends BaseController {
     public function store()
     {
         $this->checkException('call_actions', 'store');
+
+        // Igual que la web: alerta, dispositivo y usuario salen del evento y de la
+        // sesión, no del cliente (antes la API guardaba la atención sin user_id y
+        // el scope byUser la ocultaba).
+        $event = Event::find($this->data['event_id'] ?? null);
+
+        if (! $event) {
+            throw new ResourseNotFoundException(trans('validation.attributes.event'));
+        }
+
+        $device = Device::find($event->device_id);
+        $this->checkException('devices', 'show', $device);
+
+        $this->data['alert_id'] = $event->alert_id;
+        $this->data['device_id'] = $event->device_id;
+        $this->data['user_id'] = $this->user->id;
+        $this->data['called_at'] = empty($this->data['called_at'])
+            ? null
+            : Formatter::time()->reverse($this->data['called_at']);
+
         CallActionFormValidator::validate('create', $this->data);
         CallAction::create($this->data);
 
