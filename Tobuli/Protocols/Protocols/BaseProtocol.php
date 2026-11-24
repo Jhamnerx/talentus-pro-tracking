@@ -75,7 +75,10 @@ class BaseProtocol implements Protocol
         $command = [
             'type'  => 'template_' . $template->id,
             'title' => $template->title . '(' . trans('validation.attributes.gprs_template_id') . ')',
-            'connection' => SendCommandService::CONNECTION_GPRS
+            'connection' => SendCommandService::CONNECTION_GPRS,
+            // Uso en bloqueo de motor (block/unblock/null): la app móvil lo usa
+            // para elegir Cortar/Restablecer como el widget de la UI v2.
+            'lock_action' => $template->lock_action ?: null,
         ];
 
         if ($display)
