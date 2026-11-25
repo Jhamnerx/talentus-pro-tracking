@@ -626,41 +626,10 @@ class MapLayersController extends BaseController
             return response()->json(['ok' => false, 'items' => []], 422);
         }
         [$w, $s, $e, $n] = $parts;
-        $zoom = (int) $request->get('zoom', 10);
 
-        // Densidad según zoom: ≥12 cada 1 km · 9–11 cada 10 · <9 cada 100
-        $mod = $zoom >= 12 ? 1 : ($zoom >= 9 ? 10 : 100);
-
-        // via = nombre legible ("Panamericana Norte") con fallback al código
-        $viaExpr = "COALESCE(NULLIF(rv.nombre_comun,''), NULLIF(rv.trayecto_corto,''), hitos_km.ruta)";
-
-        $q = HitoKm::current()
-            ->leftJoin('rutas_viales as rv', 'rv.ruta', '=', 'hitos_km.ruta')
-            ->whereBetween('hitos_km.lat', [min($s, $n), max($s, $n)])
-            ->whereBetween('hitos_km.lon', [min($w, $e), max($w, $e)]);
-        if ($mod > 1) {
-            $q->whereRaw('(hitos_km.km % ?) = 0', [$mod]);
-        }
-
-        $items = $q->limit(4000)
-            ->get([
-                'hitos_km.ruta',
-                \DB::raw($viaExpr . ' as via'),
-                'hitos_km.km',
-                'hitos_km.lat',
-                'hitos_km.lon',
-                'hitos_km.estado',
-            ])
-            ->map(function ($h) {
-                return [
-                    'ruta'   => $h->ruta,
-                    'via'    => $h->via,
-                    'km'     => (int) $h->km,
-                    'lat'    => (float) $h->lat,
-                    'lon'    => (float) $h->lon,
-                    'estado' => $h->estado,
-                ];
-            });
+        // Misma consulta que la app (api get_hitos): HitosKmService.
+        $items = app(\Tobuli\Services\HitosKmService::class)
+            ->inBbox($w, $s, $e, $n, (int) $request->get('zoom', 10));
 
         // Dataset semestral → cachear fuerte en el cliente
         return response()->json(['ok' => true, 'items' => $items])
@@ -676,35 +645,16 @@ class MapLayersController extends BaseController
             return response()->json(['ok' => false], 422);
         }
 
-        // bbox ±0.05° (~5.5 km) y orden por distancia euclídea aproximada;
-        // la distancia real se calcula en PHP (haversine) para el corte de 2 km.
-        $viaExpr = "COALESCE(NULLIF(rv.nombre_comun,''), NULLIF(rv.trayecto_corto,''), hitos_km.ruta)";
-        $rows = HitoKm::current()
-            ->leftJoin('rutas_viales as rv', 'rv.ruta', '=', 'hitos_km.ruta')
-            ->whereBetween('hitos_km.lat', [$lat - 0.05, $lat + 0.05])
-            ->whereBetween('hitos_km.lon', [$lng - 0.05, $lng + 0.05])
-            ->orderByRaw('(hitos_km.lat - ?) * (hitos_km.lat - ?) + (hitos_km.lon - ?) * (hitos_km.lon - ?) asc', [$lat, $lat, $lng, $lng])
-            ->limit(1)
-            ->get(['hitos_km.ruta', \DB::raw($viaExpr . ' as via'), 'hitos_km.km', 'hitos_km.lat', 'hitos_km.lon']);
+        // Misma búsqueda que la app (api get_hito_nearest): HitosKmService.
+        // null = sin hitos a menos de 2 km (fuera de la red vial nacional).
+        $hito = app(\Tobuli\Services\HitosKmService::class)->nearest($lat, $lng);
 
-        $h = $rows->first();
-        if (! $h) {
+        if (! $hito) {
             return response()->json(['ok' => false]);
         }
 
-        $d = $this->haversine($lat, $lng, (float) $h->lat, (float) $h->lon);
-        if ($d > 2000) {
-            // Fuera de la red vial nacional
-            return response()->json(['ok' => false]);
-        }
-
-        return response()->json([
-            'ok'       => true,
-            'ruta'     => $h->ruta,
-            'via'      => $h->via,
-            'km'       => (int) $h->km,
-            'distance' => (int) round($d),
-        ])->header('Cache-Control', 'public, max-age=3600');
+        return response()->json(['ok' => true] + $hito)
+            ->header('Cache-Control', 'public, max-age=3600');
     }
 
     /** Distancia en metros entre dos coordenadas (haversine). */

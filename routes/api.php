@@ -150,6 +150,9 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
 
         Route::any('get_events', ['as' => 'api.get_events', 'uses' => 'ApiController@EventsController#index']);
         Route::any('destroy_events', ['as' => 'api.destroy_events', 'uses' => 'ApiController@EventsController#destroy']);
+        // Hitos kilométricos del Perú (capa del mapa y referencia vial «PE-1N · km 557»).
+        Route::get('get_hitos', ['as' => 'api.get_hitos', 'uses' => 'ApiController@HitosKmController#apiBbox']);
+        Route::get('get_hito_nearest', ['as' => 'api.get_hito_nearest', 'uses' => 'ApiController@HitosKmController#apiNearest']);
         // Mapa de riesgo de eventos (como Eventos → «Mapa de riesgo» de la UI v2).
         Route::get('get_events_map', ['as' => 'api.get_events_map', 'uses' => 'ApiController@EventsRiskMapController#apiPoints']);
         // Bandeja de notificaciones con el «leído» compartido con la UI v2.
