@@ -73,6 +73,10 @@ Route::group(['middleware' => ['auth.api', 'active_subscription'], 'namespace' =
     Route::get('devices/video/{id}/stream/{channel}/{file}', ['as' => 'api.devices.video.stream', 'uses' => 'DeviceVideoController@stream'])
         ->where(['channel' => '[1-8]', 'file' => '(history-)?\d+\.ts|(live|history)\.m3u8']);
 
+    # Tablero / KPIs para la pantalla «Resumen» de la app: el mismo controlador que
+    # ui/v2/api/dashboard. scope=live|period|driving y range=today|yesterday|week|month.
+    Route::get('get_dashboard', ['as' => 'api.get_dashboard', 'uses' => '\App\Http\Controllers\Ui\V2\DashboardController@data']);
+
     # Talentus IA CHAT para la app: el mismo controlador y middleware que /ai/* de la web,
     # con user_api_hash. chat responde en SSE (conversation, delta, source, action, done, error).
     Route::group(['prefix' => 'ai', 'as' => 'api.ai.', 'middleware' => ['ai_assistant']], function () {
