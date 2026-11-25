@@ -72,6 +72,21 @@ Route::group(['middleware' => ['auth.api', 'active_subscription'], 'namespace' =
     Route::delete('devices/video/{id}/downloads/{downloadId}', ['as' => 'api.devices.video.downloads.delete', 'uses' => 'DeviceVideoController@downloadDelete']);
     Route::get('devices/video/{id}/stream/{channel}/{file}', ['as' => 'api.devices.video.stream', 'uses' => 'DeviceVideoController@stream'])
         ->where(['channel' => '[1-8]', 'file' => '(history-)?\d+\.ts|(live|history)\.m3u8']);
+
+    # Talentus IA CHAT para la app: el mismo controlador y middleware que /ai/* de la web,
+    # con user_api_hash. chat responde en SSE (conversation, delta, source, action, done, error).
+    Route::group(['prefix' => 'ai', 'as' => 'api.ai.', 'middleware' => ['ai_assistant']], function () {
+        Route::get('suggestions', ['as' => 'suggestions', 'uses' => 'AiAssistantController@suggestions']);
+        Route::get('conversations', ['as' => 'conversations', 'uses' => 'AiAssistantController@conversations']);
+        Route::get('conversations/{id}', ['as' => 'conversations.show', 'uses' => 'AiAssistantController@show']);
+        Route::delete('conversations/{id}', ['as' => 'conversations.destroy', 'uses' => 'AiAssistantController@destroy']);
+        Route::post('chat', ['as' => 'chat', 'uses' => 'AiAssistantController@chat'])
+            ->middleware('throttle:20,1');
+        Route::get('download/{token}', ['as' => 'download', 'uses' => 'AiAssistantController@download']);
+        Route::post('actions/{token}/confirm', ['as' => 'actions.confirm', 'uses' => 'AiAssistantController@confirm'])
+            ->middleware('throttle:20,1');
+        Route::post('actions/{token}/cancel', ['as' => 'actions.cancel', 'uses' => 'AiAssistantController@cancel']);
+    });
 });
 
 Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
