@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\View;
 use Tobuli\Entities\Event;
+use Tobuli\Services\EventsRiskMapService;
 
 /**
  * UI v2 · Eventos — página dedicada con mapa.
@@ -241,58 +242,15 @@ class EventsController extends BaseController
             return response()->json(['ok' => false, 'points' => []], 403);
         }
 
-        $hoursRaw = (int) $request->get('hours', 0);
-        $hours    = $hoursRaw <= 0 ? 0 : min(168, max(1, $hoursRaw));
-        $type     = trim((string) $request->get('type', ''));
-        $q        = trim((string) $request->get('q', ''));
-        $deviceId = (int) $request->get('device_id', 0);
-        $cap      = 1500;
+        // Misma lógica que la app (api get_events_map): EventsRiskMapService.
+        $result = app(EventsRiskMapService::class)->points($this->user, [
+            'hours'     => (int) $request->get('hours', 0),
+            'type'      => $request->get('type', ''),
+            'q'         => $request->get('q', ''),
+            'device_id' => (int) $request->get('device_id', 0),
+        ]);
 
-        // Mismo alcance que data(): eventos propios + de alertas compartidas.
-        $query = Event::userAccessible($this->user)
-            ->with(['device' => function ($qq) { $qq->select('id', 'name'); }])
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->orderBy('time', 'desc');
-
-        if ($hours > 0) {
-            $query->where('time', '>=', date('Y-m-d H:i:s', strtotime("-{$hours} hours")));
-        }
-        if ($type !== '') {
-            $query->where('type', $type);
-        }
-        if ($deviceId > 0) {
-            $query->where('device_id', $deviceId);
-        }
-        if ($q !== '') {
-            $query->where('message', 'like', '%' . $q . '%');
-        }
-
-        $query->when(settings('plugins.event_section_alert.status'), function ($q) {
-            $q->with('alert');
-        });
-        // alert_id es necesario para que Event::getTitleAttribute() resuelva
-        // el nombre de la alerta cuando el plugin está activo.
-        $rows   = $query->limit($cap + 1)->get(['id', 'type', 'message', 'alert_id', 'device_id', 'latitude', 'longitude', 'time']);
-        $capped = $rows->count() > $cap;
-        if ($capped) {
-            $rows = $rows->slice(0, $cap);
-        }
-
-        $points = $rows->map(function ($e) {
-            return [
-                'id'          => (int) $e->id,
-                'lat'         => (float) $e->latitude,
-                'lng'         => (float) $e->longitude,
-                'severity'    => $this->eventSeverity((string) $e->type),
-                'message'     => (string) $e->message,
-                'title'       => (string) $e->title,
-                'device_name' => $e->device->name ?? null,
-                'time'        => \Formatter::time()->convert($e->time),
-            ];
-        })->values()->all();
-
-        return response()->json(['ok' => true, 'points' => $points, 'capped' => $capped, 'cap' => $cap]);
+        return response()->json(['ok' => true] + $result);
     }
 
     /**

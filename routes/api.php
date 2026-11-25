@@ -150,6 +150,8 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
 
         Route::any('get_events', ['as' => 'api.get_events', 'uses' => 'ApiController@EventsController#index']);
         Route::any('destroy_events', ['as' => 'api.destroy_events', 'uses' => 'ApiController@EventsController#destroy']);
+        // Mapa de riesgo de eventos (como Eventos → «Mapa de riesgo» de la UI v2).
+        Route::get('get_events_map', ['as' => 'api.get_events_map', 'uses' => 'ApiController@EventsRiskMapController#apiPoints']);
         // Bandeja de notificaciones con el «leído» compartido con la UI v2.
         Route::get('get_notifications', ['as' => 'api.get_notifications', 'uses' => 'ApiController@NotificationsTrayController#apiIndex']);
         Route::get('get_notifications_unread', ['as' => 'api.get_notifications_unread', 'uses' => 'ApiController@NotificationsTrayController#apiUnread']);
