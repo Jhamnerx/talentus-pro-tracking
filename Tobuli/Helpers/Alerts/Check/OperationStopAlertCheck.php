@@ -83,6 +83,13 @@ class OperationStopAlertCheck extends AlertCheck
         if (! $this->checkAlertPosition($position))
             return false;
 
+        // Si en este momento va en movimiento no es una parada, aunque moved_at aún no se
+        // haya actualizado (p. ej. velocidad por sensor ECM o posición recién llegada): se
+        // generaban «paradas» con 7 km/h. Mismo umbral que usa la ingesta (min_moving_speed).
+        $minMoving = (float) $this->device->min_moving_speed;
+        if ($minMoving > 0 && ((float) $position->speed >= $minMoving || (float) $this->device->getSpeed() >= $minMoving))
+            return false;
+
         // Dentro de grifo, taller o descanso (segun la operacion) la parada es autorizada.
         $authorized = Geofence::userOwned($this->state->operation->user)
             ->category($this->state->operation->authorizedCategories())
