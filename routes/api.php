@@ -228,6 +228,9 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('send_sms_command', ['uses' => 'V1\SendCommandController@sendSMS']);
         Route::any('send_gprs_command', ['uses' => 'V1\SendCommandController@sendGPRS']);
         Route::any('get_device_commands', ['uses' => 'V1\SendCommandController@getCommands']);
+        // Cola «enviar cuando esté en línea» para la app. El envío usa send_gprs_command con auto_online=1.
+        Route::get('get_pending_commands', ['as' => 'api.get_pending_commands', 'uses' => 'V1\SendCommandController@pendings']);
+        Route::any('destroy_pending_command', ['as' => 'api.destroy_pending_command', 'uses' => 'V1\SendCommandController@destroyPending']);
         // Historial de bloqueos de motor para la app (device_id, period, page, per_page).
         Route::get('get_lock_history', ['as' => 'api.get_lock_history', 'uses' => 'ApiController@LockStatusController#apiHistory']);
 

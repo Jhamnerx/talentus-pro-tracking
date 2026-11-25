@@ -9,6 +9,7 @@ use Tobuli\Entities\UserGprsTemplate;
 use Tobuli\Entities\UserSmsTemplate;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Services\Commands\CommandService;
+use Tobuli\Services\Commands\PendingCommandService;
 use Tobuli\Services\Commands\SendCommandService;
 
 class SendCommandController extends Controller
@@ -171,6 +172,25 @@ class SendCommandController extends Controller
 
         $this->commandService->validateGPRS($devices, $data);
 
+        // «Enviar cuando esté en línea» (auto_online=1): los equipos sin conexión
+        // quedan en cola (pending_commands) en vez de fallar; el resto se envía ya.
+        $queued = [];
+        if ($request->boolean('auto_online')) {
+            $parameters = Arr::except($data, ['device_id', 'devices', 'auto_online', 'user_api_hash', 'lang']);
+
+            $result = (new PendingCommandService())
+                ->queueOffline($this->user, $devices, (string) $data['type'], $parameters);
+            $queued = $result['queued'];
+
+            $devices = $devices->filter(function ($device) use ($result) {
+                return in_array((int) $device->id, $result['online'], true);
+            })->values();
+
+            if ($devices->isEmpty()) {
+                return ['status' => 1, 'message' => trans('front.queued_for_online'), 'queued' => $queued];
+            }
+        }
+
         $responses = $this->sendCommandService->gprs($devices, $data, $this->user);
 
         $errors = $responses
@@ -182,10 +202,35 @@ class SendCommandController extends Controller
             });
 
         if ($errors->isNotEmpty()) {
-            return ['status' => 0, 'error' => $errors->first()];
+            return ['status' => 0, 'error' => $errors->first(), 'queued' => $queued];
         }
 
-        return ['status' => 1, 'message' => trans('front.command_sent')];
+        return ['status' => 1, 'message' => trans('front.command_sent'), 'queued' => $queued];
+    }
+
+    /** Comandos en cola del usuario (opcional: device_id). */
+    public function pendings(Request $request)
+    {
+        $this->checkException('send_command', 'view');
+
+        $deviceId = (int) $request->get('device_id') ?: null;
+
+        return [
+            'status' => 1,
+            'items'  => (new PendingCommandService())->listFor($this->user, $deviceId),
+        ];
+    }
+
+    /** Cancela un comando en cola (id por query). */
+    public function destroyPending(Request $request)
+    {
+        $this->checkException('send_command', 'view');
+
+        if (! (new PendingCommandService())->cancel($this->user, (int) $request->get('id'))) {
+            throw new ValidationException(['id' => trans('global.not_found')]);
+        }
+
+        return ['status' => 1];
     }
 
     public function getCommands(Request $request)

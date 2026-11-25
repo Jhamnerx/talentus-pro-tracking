@@ -17,6 +17,7 @@ use Tobuli\Entities\SentCommand;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Protocols\Commands;
 use Tobuli\Services\Commands\CommandService;
+use Tobuli\Services\Commands\PendingCommandService;
 use Tobuli\Services\Commands\SendCommandService;
 use Tobuli\Services\EntityLoader\UserDevicesLoader;
 use Tobuli\Services\Schedule\Scheduler;
@@ -176,28 +177,15 @@ class CommandsController extends BaseController
             ->except(['devices', 'selected_devices', 'connection', 'auto_online'])
             ->all();
 
-        $queued = [];
-        $onlineIds = [];
-        foreach ($devices as $device) {
-            if ($device->isConnected()) {
-                $onlineIds[] = (int) $device->id;
-                continue;
-            }
-            \Tobuli\Entities\PendingCommand::create([
-                'user_id'    => $this->user->id,
-                'device_id'  => $device->id,
-                'connection' => 'gprs',
-                'command'    => (string) $request->get('type'),
-                'parameters' => $parameters,
-            ]);
-            $queued[] = (string) $device->name;
-        }
+        // Lógica compartida con la API de la app (PendingCommandService).
+        $result = (new PendingCommandService())
+            ->queueOffline($this->user, $devices, (string) $request->get('type'), $parameters);
 
         // Solo los conectados siguen al envío inmediato.
-        $request->merge(['devices' => array_map('strval', $onlineIds)]);
+        $request->merge(['devices' => array_map('strval', $result['online'])]);
         $this->mergeSelectedDevices($request);
 
-        return $queued;
+        return $result['queued'];
     }
 
     /* =================================================================
@@ -471,40 +459,17 @@ class CommandsController extends BaseController
             return response()->json(['ok' => false], 403);
         }
 
-        $rows = [];
-        $items = \Tobuli\Entities\PendingCommand::pending()
-            ->where('user_id', $this->user->id)
-            ->with('device:id,name')
-            ->orderBy('id', 'desc')
-            ->limit(500)
-            ->get();
-
-        foreach ($items as $p) {
-            $params = [];
-            foreach ((array) ($p->parameters ?? []) as $k => $v) {
-                $params[] = $k . ': ' . (is_scalar($v) ? $v : json_encode($v));
-            }
-            $rows[] = [
-                'id'         => (int) $p->id,
-                'device'     => (string) ($p->device->name ?? '—'),
-                'command'    => (string) $p->command,
-                'parameters' => implode(', ', $params),
-                'attempts'   => (int) $p->attempts,
-                'last_error' => (string) ($p->last_error ?? ''),
-                'date'       => \Formatter::time()->human($p->created_at),
-            ];
-        }
-
-        return response()->json(['ok' => true, 'items' => $rows]);
+        return response()->json([
+            'ok'    => true,
+            'items' => (new PendingCommandService())->listFor($this->user),
+        ]);
     }
 
     public function destroyPending(Request $request, $id): JsonResponse
     {
-        $p = \Tobuli\Entities\PendingCommand::find((int) $id);
-        if (! $p || $p->user_id != $this->user->id) {
+        if (! (new PendingCommandService())->cancel($this->user, (int) $id)) {
             return response()->json(['ok' => false], 404);
         }
-        $p->delete();
 
         return response()->json(['ok' => true]);
     }
