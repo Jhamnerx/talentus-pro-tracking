@@ -200,6 +200,8 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('send_sms_command', ['uses' => 'V1\SendCommandController@sendSMS']);
         Route::any('send_gprs_command', ['uses' => 'V1\SendCommandController@sendGPRS']);
         Route::any('get_device_commands', ['uses' => 'V1\SendCommandController@getCommands']);
+        // Historial de bloqueos de motor para la app (device_id, period, page, per_page).
+        Route::get('get_lock_history', ['as' => 'api.get_lock_history', 'uses' => 'ApiController@LockStatusController#apiHistory']);
 
         Route::get('sent_commands', ['as' => 'api.sent_commands', 'uses' => 'V1\SentCommandsController@index']);
 

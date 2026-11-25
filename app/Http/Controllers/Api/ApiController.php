@@ -547,7 +547,9 @@ class ApiController extends Controller
             'devices_limit' => intval($this->user->devices_limit),
             'group_id'      => $this->user->group_id,
             'role_id'       => $this->user->group_id,
-            'permissions'   => $this->user->getPermissions()
+            'permissions'   => $this->user->getPermissions(),
+            // Plugin del widget de bloqueo de motor: la app oculta la tarjeta si está apagado.
+            'locking_enabled' => (bool) settings('plugins.locking_widget.status'),
         ];
     }
 

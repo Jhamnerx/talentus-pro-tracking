@@ -139,6 +139,53 @@ class LockStatusController extends Controller
         return $response;
     }
 
+    /**
+     * Historial de bloqueos para la app (JSON, misma lógica que la tabla legacy y la UI v2).
+     * Query: device_id, period (today|yesterday|this_week|last_week), page, per_page.
+     */
+    public function apiHistory()
+    {
+        $device = Device::find((int) request()->get('device_id'));
+        $this->checkException('devices', 'show', $device);
+
+        $period = request()->get('period', 'today');
+        LockStatusTableValidator::validate('table', ['period' => $period]);
+
+        $range = getPeriodByPhrase($period);
+
+        $history = new DeviceHistory($device);
+        $history->registerActions([
+            AppendLockStatus::class,
+            Duration::class,
+            GroupLockOffStatus::class,
+        ]);
+        $history->setRange($range['start'], $range['end']);
+
+        $result = $history->get();
+        $groups = isset($result['groups']) ? ($result['groups']->all() ?? []) : [];
+
+        $rows = array_values(array_map(fn ($g) => [
+            'time'     => $g->getStartAt(),
+            'duration' => $g->stats()->human('duration'),
+            'lat'      => $g->getStartPosition()->latitude,
+            'lng'      => $g->getStartPosition()->longitude,
+        ], $groups));
+
+        $perPage = max(10, min(200, (int) request()->get('per_page', 50)));
+        $page    = max(1, (int) request()->get('page', 1));
+        $total   = count($rows);
+
+        return [
+            'status'   => 1,
+            'enabled'  => (bool) settings('plugins.locking_widget.status'),
+            'items'    => array_slice($rows, ($page - 1) * $perPage, $perPage),
+            'total'    => $total,
+            'page'     => $page,
+            'per_page' => $perPage,
+            'pages'    => (int) max(1, ceil($total / $perPage)),
+        ];
+    }
+
     private function getPaginatedData($deviceId, $filterData, $limit = 10)
     {
         $page = request()->get('page', 1);
