@@ -114,6 +114,10 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('v2/get_devices', ['as' => 'api.v2.get_devices', 'uses' => 'ApiController@getDevicesV2']);
         Route::any('v2/get_devices_latest', ['as' => 'api.v2.get_devices_latest', 'uses' => 'ApiController@getDevicesLatestV2']);
         Route::get('get_devices_transmission_status', ['as' => 'api.get_devices_transmission_status', 'uses' => 'ApiController@getDevicesTransmissionStatus']);
+        // Clasificación de vehículos (tipo + estado) para la app.
+        Route::get('get_vehicle_types', ['as' => 'api.get_vehicle_types', 'uses' => 'ApiController@VehicleClassificationController#apiTypes']);
+        Route::get('get_device_vehicle_states', ['as' => 'api.get_device_vehicle_states', 'uses' => 'ApiController@VehicleClassificationController#apiDeviceStates']);
+        Route::post('change_device_vehicle_state', ['as' => 'api.change_device_vehicle_state', 'uses' => 'ApiController@VehicleClassificationController#apiChangeState']);
 
         Route::any('add_device_data', ['as' => 'api.add_device_data', 'uses' => 'ApiController@DevicesController#create']);
         Route::any('add_device', ['as' => 'api.add_device', 'uses' => 'ApiController@DevicesController#store']);

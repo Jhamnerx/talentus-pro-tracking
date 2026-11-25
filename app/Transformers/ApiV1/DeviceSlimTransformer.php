@@ -26,6 +26,7 @@ class DeviceSlimTransformer extends BaseTransformer
     public function transform(Device $entity)
     {
         $driver = $entity->driver;
+        $classification = $this->classification($entity);
 
         $odometerOptimizer = App::make(OdometerOptimizer::class);
         $odometerValues    = $odometerOptimizer->getOdometerValues($entity);
@@ -82,6 +83,13 @@ class DeviceSlimTransformer extends BaseTransformer
                 ? array_values(array_map('intval', (array)$entity->camera_channels))
                 : [],
 
+            // Clasificación (tipo y estado) del usuario actuante, como DeviceMapTransformer:
+            // la app la usa para el badge de estado y el límite por tipo/estado en geocercas.
+            // getDevicesV2 la carga por lotes (Device::classificationRelationFor).
+            'vehicle_type_id'  => $classification['vehicle_type_id'],
+            'vehicle_state_id' => $classification['vehicle_state_id'],
+            'vehicle_state'    => $classification['vehicle_state'],
+
             // tail_color elevated from device_data so device_data is not needed
             'tail_color' => $entity->tail_color,
             'tail'       => $entity->tail,
@@ -106,6 +114,22 @@ class DeviceSlimTransformer extends BaseTransformer
             'distancia_hoy'   => Formatter::distance()->format($odometerValues['total_distance']),
             'odometro_inicio' => $odometerValues['odometer_start'],
             'odometro_final'  => $odometerValues['odometer_end'],
+        ];
+    }
+
+    protected function classification(Device $entity): array
+    {
+        $classification = $this->user ? $entity->classificationFor((int) $this->user->id) : null;
+        $state = $classification ? $classification->vehicleState : null;
+
+        return [
+            'vehicle_type_id'  => ($classification && $classification->vehicle_type_id) ? (int) $classification->vehicle_type_id : null,
+            'vehicle_state_id' => ($classification && $classification->vehicle_state_id) ? (int) $classification->vehicle_state_id : null,
+            'vehicle_state'    => $state ? [
+                'name'  => (string) $state->name,
+                'label' => (string) ($state->label ?: $state->name),
+                'color' => (string) ($state->color ?: '#64748b'),
+            ] : null,
         ];
     }
 

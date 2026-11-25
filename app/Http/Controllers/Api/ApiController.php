@@ -316,6 +316,8 @@ class ApiController extends Controller
     protected function groupDevicesSlim(&$grouped, $device_groups, $devices)
     {
         DeviceSlimTransformer::loadRelations($devices);
+        // Clasificación tipo/estado del usuario, en una consulta por lote (si no, una por equipo).
+        $devices->load(\Tobuli\Entities\Device::classificationRelationFor((int) $this->user->id));
 
         foreach ($devices as $device) {
             $group_id = empty($device->pivot->group_id) ? 0 : $device->pivot->group_id;
