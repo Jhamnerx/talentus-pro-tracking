@@ -150,6 +150,9 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('get_history', ['as' => 'api.get_history', 'uses' => 'ApiController@HistoryController#index']);
         Route::any('get_history_messages', ['as' => 'api.get_history_messages', 'uses' => 'ApiController@HistoryController#positionsPaginated']);
         Route::any('delete_history_positions', ['as' => 'api.delete_history_positions', 'uses' => 'ApiController@HistoryController#deletePositions']);
+        // Exportar el historial (GPX/KML/CSV/GSR) para la app; mismos parámetros que get_history + format.
+        Route::any('history_export', ['as' => 'api.history_export', 'uses' => 'ApiController@HistoryExportController#generate']);
+        Route::get('history_download', ['as' => 'api.history_download', 'uses' => 'ApiController@HistoryExportController#apiDownload']);
 
         Route::any('get_alerts', ['as' => 'api.get_alerts', 'uses' => 'ApiController@AlertsController#index']);
         Route::any('add_alert_data', ['as' => 'api.add_alert_data', 'uses' => 'ApiController@AlertsController#create']);
