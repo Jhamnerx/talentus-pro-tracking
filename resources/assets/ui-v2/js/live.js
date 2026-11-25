@@ -1371,11 +1371,11 @@
       testigo(tpT('ui.engine_lock'), tpT('lock_upper'), t.blocked, ICONOS.bloqueo) +
       (dash.volt != null
         ? '<span class="tp-dash__tell" data-on="1" title="' + tpT('ui.external_battery') + '">' + ICONOS.bateria +
-          '<span class="tp-dash__tell-label">' + esc(dash.volt.value + " " + (dash.volt.unit || "v")) + "</span></span>"
+          '<span class="tp-dash__tell-label">' + esc(dash.volt.text || (dash.volt.value + " " + (dash.volt.unit || "v"))) + "</span></span>"
         : "") +
       (dash.satellites != null
         ? '<span class="tp-dash__tell" data-on="' + (apagado ? "0" : "1") + '" title="' + esc(tpT('satellites')) + '">' + ICONOS.satelite +
-          '<span class="tp-dash__tell-label">' + (apagado ? "—" : Math.round(dash.satellites)) + " SAT</span></span>"
+          '<span class="tp-dash__tell-label">' + Math.round(dash.satellites) + " SAT</span></span>"
         : "");
 
     if (tells) html += '<div class="tp-dash__tells">' + tells + "</div>";

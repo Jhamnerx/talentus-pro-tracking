@@ -2976,7 +2976,13 @@ class DevicesController extends BaseController
             'rpm'  => $rpm === null ? null : ['value' => round($rpm), 'max' => 4000],
             'fuel' => $fuel === null ? null : ['value' => round($fuel, 1), 'unit' => $unidad('fuel_tank') ?: '%'],
             'temp' => $temp === null ? null : ['value' => round($temp, 1), 'unit' => $unidad('temperature') ?: '\u00b0'],
-            'volt' => $volt === null ? null : ['value' => round($volt, 1), 'unit' => $unidad('battery_external') ?: 'v'],
+            // 'text' es el valor tal como lo formatea el sensor (sus decimales y
+            // su unidad): con round(…, 1) un 4.98 V salía como "5 v".
+            'volt' => $volt === null ? null : [
+                'value' => $volt,
+                'unit' => $unidad('battery_external') ?: 'v',
+                'text' => $texto('battery_external'),
+            ],
 
             'satellites' => $valor('satellites'),
 

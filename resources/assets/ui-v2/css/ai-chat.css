@@ -47,6 +47,11 @@
 .tpai-fab:hover { transform: translateY(-2px); box-shadow: var(--shadow-xl); }
 .tpai-fab:focus-visible { outline: none; box-shadow: var(--shadow-focus), var(--shadow-lg); }
 .tpai-fab[aria-expanded="true"] { background: var(--surface-inverted); }
+/* El icono del boton flotante va SIEMPRE en blanco: sobre el azul de marca
+   cualquier color heredado (el del boton del topbar activo, un tema) lo
+   dejaba oscuro sobre oscuro. */
+.tpai-fab, .tpai-fab[aria-expanded="true"] { color: var(--neutral-0, #ffffff); }
+.tpai-fab svg { stroke: currentColor; }
 .tpai-fab.is-busy svg { animation: tpai-spin 1.6s linear infinite; }
 @keyframes tpai-spin { to { transform: rotate(360deg); } }
 .tpai-fab__dot {
@@ -218,7 +223,7 @@
 .tpai__foot span:empty { display: none; }
 
 /* Boton del topbar activo mientras el panel esta abierto */
-[data-tpai-open][aria-expanded="true"] { color: var(--brand-primary); background: var(--brand-bg-subtle); }
+[data-tpai-open]:not(.tpai-fab)[aria-expanded="true"] { color: var(--brand-primary); background: var(--brand-bg-subtle); }
 
 @media (max-width: 640px) {
   .tpai { inset: 0; width: 100vw; height: 100%; border: 0; border-radius: 0; }
