@@ -90,6 +90,10 @@ class DeviceSlimTransformer extends BaseTransformer
             'vehicle_state_id' => $classification['vehicle_state_id'],
             'vehicle_state'    => $classification['vehicle_state'],
 
+            // Color del marcador por velocidad (como DeviceMapTransformer): null si la unidad no
+            // lo tiene activado; los valores por defecto van en get_user_data.marker_speed_colors.
+            'marker_colors' => $this->markerColors($entity),
+
             // tail_color elevated from device_data so device_data is not needed
             'tail_color' => $entity->tail_color,
             'tail'       => $entity->tail,
@@ -115,6 +119,23 @@ class DeviceSlimTransformer extends BaseTransformer
             'odometro_inicio' => $odometerValues['odometer_start'],
             'odometro_final'  => $odometerValues['odometer_end'],
         ];
+    }
+
+    /** Config del color por velocidad de la unidad (solo lo que difiere de los valores por defecto). */
+    protected function markerColors(Device $entity): ?array
+    {
+        if (! $entity->marker_colors_enabled) {
+            return null;
+        }
+
+        $rangos = json_decode((string) ($entity->marker_speed_ranges ?? ''), true);
+
+        return array_filter([
+            'ranges' => is_array($rangos) && $rangos ? $rangos : null,
+            'margin' => $entity->marker_geofence_margin !== null ? (int) $entity->marker_geofence_margin : null,
+            'near'   => $entity->marker_geofence_near_color ?: null,
+            'over'   => $entity->marker_geofence_over_color ?: null,
+        ], fn ($v) => $v !== null);
     }
 
     protected function classification(Device $entity): array

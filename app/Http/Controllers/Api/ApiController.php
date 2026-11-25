@@ -552,6 +552,8 @@ class ApiController extends Controller
             'permissions'   => $this->user->getPermissions(),
             // Plugin del widget de bloqueo de motor: la app oculta la tarjeta si está apagado.
             'locking_enabled' => (bool) settings('plugins.locking_widget.status'),
+            // Valores por defecto del color del marcador por velocidad (como mapConfig de la v2).
+            'marker_speed_colors' => (array) config('tobuli.marker_speed_colors', []),
         ];
     }
 
