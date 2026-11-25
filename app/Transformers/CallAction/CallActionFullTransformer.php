@@ -22,6 +22,11 @@ class CallActionFullTransformer extends CallActionTransformer {
             'event_id'      => (int) $entity->event_id,
             'alert_id'      => (int) $entity->alert_id,
             'called_at'     => (string) $entity->called_at,
+            // La misma hora en la zona del usuario, para mostrarla y reenviarla al editar.
+            'called_at_user' => $entity->called_at
+                ? \Formatter::time()->convert($entity->called_at, 'Y-m-d H:i:s')
+                : null,
+            'user_name'     => $entity->user ? (string) ($entity->user->email ?? '') : null,
             'response_type' => (string) $entity->response_type,
             'remarks'       => (string) $entity->remarks,
             'created_at'    => (string) $entity->created_at,
