@@ -151,73 +151,18 @@ class ShellController extends BaseController
             return response()->json(['notifications' => []], 401);
         }
 
-        if (! $user->perm('events', 'view')) {
-            return response()->json(['notifications' => [], 'has_more' => false]);
-        }
-
-        $perPage  = 30;
-        $beforeId = (int) $request->get('before_id', 0);
-
-        $query = \Tobuli\Entities\Event::userAccessible($user)
-            ->with(['device', 'geofence'])
-            ->orderBy('events.id', 'desc');
-
-        // Cursor para scroll infinito: al bajar, se piden eventos MÁS VIEJOS
-        // que el último ya cargado (id < before_id).
-        if ($beforeId > 0) {
-            $query->where('events.id', '<', $beforeId);
-        }
-
-        $events = $query->take($perPage)->get();
-
-        // Estado «leído» en la cuenta (users.settings → ui_notifications_seen_id):
-        // el último evento que el usuario marcó como visto, para que el
-        // contador se sincronice entre navegadores y dispositivos. En demo no
-        // se guarda nada en el servidor y el cliente sigue con su localStorage.
-        $seenId = isDemoUser() ? null : (int) $user->getSettings(self::PREF_NOTIF_SEEN_ID);
-
-        $items = $events->map(function ($event) use ($seenId) {
-            $deviceName = $event->device->name ?? null;
-            $desc = trim(implode(' · ', array_filter([
-                $deviceName,
-                $event->geofence->name ?? null,
-            ])));
-
-            return [
-                'id'          => (int) $event->id,
-                'title'       => (string) $event->title,
-                'description' => $desc,
-                'variant'     => $this->eventSeverity((string) $event->type),
-                'category'    => 'alerts',
-                'read'        => $seenId !== null && (int) $event->id <= $seenId,
-                // Instante del evento en UTC real. `events.created_at` no sirve:
-                // lo escribe MySQL con la hora local del servidor (19:13 de Lima)
-                // y, con la app en UTC, salía «…T19:13+00:00»: el navegador
-                // restaba otras 5 h. `time` está en UTC, como en Eventos.
-                'created_at'  => $event->time
-                    ? \Carbon\Carbon::parse((string) $event->time, 'UTC')->toIso8601String()
-                    : optional($event->created_at)->toIso8601String(),
-                // Datos para el popup en el mapa (DÓNDE ocurrió el evento).
-                // human() convierte de UTC a la zona del usuario; format() solo
-                // cambiaba el formato y dejaba la hora en UTC (00:13 en vez de 19:13).
-                'time'        => $event->time ? \Formatter::time()->human($event->time) : null,
-                'device_id'   => $event->device_id ? (int) $event->device_id : null,
-                'device_name' => $deviceName,
-                'lat'         => $event->latitude !== null ? (float) $event->latitude : null,
-                'lng'         => $event->longitude !== null ? (float) $event->longitude : null,
+        // Misma bandeja que la app (api get_notifications): NotificationsTrayService.
+        // seen_id null = cuenta demo: el cliente resuelve el leído en el navegador.
+        return response()->json(
+            app(\Tobuli\Services\NotificationsTrayService::class)->page(
+                $user,
+                (int) $request->get('before_id', 0),
                 // Fallback de navegación (sin coords o fuera de Live).
-                'url'         => $event->device_id
+                fn ($event) => $event->device_id
                     ? url('/ui/v2/live') . '?device=' . (int) $event->device_id
-                    : url('/ui/v2/events'),
-            ];
-        })->all();
-
-        return response()->json([
-            'notifications' => $items,
-            'has_more'      => count($items) === $perPage,
-            // null = cuenta demo: el cliente resuelve el leído en el navegador.
-            'seen_id'       => $seenId,
-        ]);
+                    : url('/ui/v2/events')
+            )
+        );
     }
 
     /**
@@ -233,27 +178,10 @@ class ShellController extends BaseController
             return response()->json(['ok' => false], 401);
         }
 
-        $id = (int) $request->input('last_id', 0);
-        if ($id <= 0) {
-            return response()->json(['ok' => false, 'error' => 'invalid_id'], 422);
-        }
+        $result = app(\Tobuli\Services\NotificationsTrayService::class)
+            ->markSeen($user, (int) $request->input('last_id', 0));
 
-        if (isDemoUser()) {
-            return response()->json(['ok' => true, 'demo' => true]);
-        }
-
-        // No guardar ids que no existen: el contador quedaría en cero para
-        // siempre si alguien mandase un número enorme.
-        $max = (int) \Tobuli\Entities\Event::userAccessible($user)->max('events.id');
-        $id = min($id, $max);
-
-        $current = (int) $user->getSettings(self::PREF_NOTIF_SEEN_ID);
-        if ($id > $current) {
-            $user->setSettings(self::PREF_NOTIF_SEEN_ID, $id);
-            $current = $id;
-        }
-
-        return response()->json(['ok' => true, 'seen_id' => $current]);
+        return response()->json($result, $result['ok'] ? 200 : 422);
     }
 
     public function preferences(Request $request): JsonResponse

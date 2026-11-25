@@ -150,6 +150,10 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
 
         Route::any('get_events', ['as' => 'api.get_events', 'uses' => 'ApiController@EventsController#index']);
         Route::any('destroy_events', ['as' => 'api.destroy_events', 'uses' => 'ApiController@EventsController#destroy']);
+        // Bandeja de notificaciones con el «leído» compartido con la UI v2.
+        Route::get('get_notifications', ['as' => 'api.get_notifications', 'uses' => 'ApiController@NotificationsTrayController#apiIndex']);
+        Route::get('get_notifications_unread', ['as' => 'api.get_notifications_unread', 'uses' => 'ApiController@NotificationsTrayController#apiUnread']);
+        Route::post('notifications_seen', ['as' => 'api.notifications_seen', 'uses' => 'ApiController@NotificationsTrayController#apiSeen']);
 
         Route::any('get_history', ['as' => 'api.get_history', 'uses' => 'ApiController@HistoryController#index']);
         Route::any('get_history_messages', ['as' => 'api.get_history_messages', 'uses' => 'ApiController@HistoryController#positionsPaginated']);
