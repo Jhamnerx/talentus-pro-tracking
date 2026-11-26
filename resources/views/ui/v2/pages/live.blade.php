@@ -238,15 +238,10 @@
             {{-- Virtualized list --}}
             <div class="tp-live__list-wrap">
                 <div class="tp-live__list" id="tp-live-list" role="listbox" aria-label="{{ trans('front.object_listview') }}">
-                    {{-- Skeleton --}}
-                    <div class="tp-live__skeleton">
-                        @for ($i = 0; $i < 8; $i++)
-                            <div class="tp-live__row tp-live__row--skeleton">
-                                <div class="sk sk-dot"></div>
-                                <div class="sk sk-line sk-line-1"></div>
-                                <div class="sk sk-line sk-line-2"></div>
-                            </div>
-                        @endfor
+                    {{-- Cargando: spinner hasta que llegan todas las páginas (live.js lo quita) --}}
+                    <div class="tp-live__skeleton tp-live__loading" role="status" aria-live="polite">
+                        <span class="tp-live__spinner" aria-hidden="true"></span>
+                        <span class="tp-live__loading-text" id="tp-live-loading-text">{{ trans('front.loading') }}…</span>
                     </div>
                     <div class="tp-live__empty" hidden>
                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"

@@ -1439,10 +1439,27 @@
   (function () {
     var bb = document.getElementById("tp-live-bottombar");
     if (!bb || !root || typeof ResizeObserver !== "function") return;
-    new ResizeObserver(function () {
+    function medir() {
       var h = bb.offsetHeight;
       root.style.setProperty("--tp-bb-offset", h ? h + 12 + "px" : "0px");
-    }).observe(bb);
+
+      // La atribución (abajo a la derecha) solo sube si el contenido de la
+      // barra le pasa por debajo; las tarjetas suelen quedarse a la izquierda.
+      var derecha = "0px";
+      var attr = root.querySelector(".leaflet-bottom.leaflet-right");
+      if (h && attr) {
+        var hasta = 0;
+        Array.prototype.forEach.call(bb.querySelectorAll(".tp-live__bottombar-cards > *, .tp-live__bottombar-ctl"), function (el) {
+          var r = el.getBoundingClientRect();
+          if (r.width) hasta = Math.max(hasta, r.right);
+        });
+        var a = attr.getBoundingClientRect();
+        if (hasta + 8 > a.left) derecha = h + 12 + "px";
+      }
+      root.style.setProperty("--tp-bb-offset-right", derecha);
+    }
+    new ResizeObserver(medir).observe(bb);
+    window.addEventListener("resize", medir);
   })();
 
   /* ── Estado de vehículo (drawer): badge + cambiador rápido ──────────── */
@@ -3274,11 +3291,18 @@
           if (j && Array.isArray(j.groups)) state.groups = j.groups;
           var pg = (j && j.pagination) || null;
           if (pg && pg.total != null) total = pg.total;
-          commit(acc, total);
           if (pg && pg.current_page < pg.last_page) {
+            // La lista se pinta UNA vez, con todas las páginas (como el
+            // legacy). Pintar por página reordenaba la lista en cada tanda
+            // (los nombres de la página 2 caen entre los de la 1) y, al
+            // refrescar, la recortaba a la primera página y la volvía a
+            // llenar. Mientras tanto sigue el esqueleto o la lista anterior.
             if (statusText) statusText.textContent = "Cargando… " + acc.length + "/" + (total || "?");
+            var lt = document.getElementById("tp-live-loading-text");
+            if (lt) lt.textContent = "Cargando… " + acc.length + "/" + (total || "?");
             return page(pg.current_page + 1);
           }
+          commit(acc, total);
           if (statusText)
             statusText.textContent = (total || acc.length) + " " + tpT('ui.vehicles_dot') + " " + new Date().toLocaleTimeString();
         });
