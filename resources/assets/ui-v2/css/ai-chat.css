@@ -47,10 +47,10 @@
 .tpai-fab:hover { transform: translateY(-2px); box-shadow: var(--shadow-xl); }
 .tpai-fab:focus-visible { outline: none; box-shadow: var(--shadow-focus), var(--shadow-lg); }
 .tpai-fab[aria-expanded="true"] { background: var(--surface-inverted); }
-/* El icono del boton flotante va SIEMPRE en blanco: sobre el azul de marca
-   cualquier color heredado (el del boton del topbar activo, un tema) lo
-   dejaba oscuro sobre oscuro. */
-.tpai-fab, .tpai-fab[aria-expanded="true"] { color: var(--neutral-0, #ffffff); }
+/* El icono del boton flotante va SIEMPRE en blanco. Con el id porque
+   `.tp-scope button { color: inherit }` (components.css) pesa mas que
+   `.tpai-fab` y le pasaba el color del texto: icono oscuro sobre azul. */
+#tpai-fab, #tpai-fab[aria-expanded="true"] { color: var(--neutral-0, #ffffff); }
 .tpai-fab svg { stroke: currentColor; }
 .tpai-fab.is-busy svg { animation: tpai-spin 1.6s linear infinite; }
 @keyframes tpai-spin { to { transform: rotate(360deg); } }
