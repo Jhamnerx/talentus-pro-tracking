@@ -270,6 +270,15 @@
         : Object.keys(state.baseLayers)[0];
     if (firstId) setBaseLayer(firstId);
     state.deviceLayer = L.layerGroup().addTo(state.map);
+    // El mapa cambia de tamaño sin que la ventana cambie (al abrir la ficha en
+    // pantalla ancha, plegar la lista…). Leaflet guarda el tamaño y, sin
+    // avisarle, centraba con el ancho viejo: el vehiculo seguido quedaba
+    // ~190 px corrido. Se le avisa cada vez que el contenedor cambia.
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(function () {
+        if (state.map) state.map.invalidateSize({ pan: false });
+      }).observe(state.map.getContainer());
+    }
     // Arrastrar el mapa deja de seguir al vehiculo (legacy: dragstart →
     // disableFitBounds). Volver a elegirlo reanuda el seguimiento.
     state.map.on("dragstart", function () {
@@ -1515,6 +1524,8 @@
   function centerOnSelected(zoom) {
     var d = state.selectedId != null ? state.index[state.selectedId] : null;
     if (!d || d.lat == null || d.lng == null || !state.map) return;
+    // Tamaño real del mapa antes de centrar (la ficha recien abierta lo encoge).
+    state.map.invalidateSize({ pan: false });
     var ll = L.latLng(parseFloat(d.lat), parseFloat(d.lng));
     var derecha = 0;
     var dw = document.getElementById("tp-live-drawer");
