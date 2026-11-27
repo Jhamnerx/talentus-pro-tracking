@@ -2,7 +2,6 @@
 
 use Illuminate\Console\Command;
 use Tobuli\Helpers\Tracker;
-use Illuminate\Support\Facades\DB;
 
 class RestartCommand extends Command {
 	/**
@@ -36,10 +35,6 @@ class RestartCommand extends Command {
 	 */
 	public function handle()
 	{
-		
-		$date = date('Y-m-d H:i:s', strtotime('-1 days'));
-		DB::statement("DELETE FROM sms_events_queue WHERE created_at < '{$date}'");
-
 		$tracker = new Tracker();
 
 		try {

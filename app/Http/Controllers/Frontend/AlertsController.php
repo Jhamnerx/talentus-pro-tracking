@@ -12,6 +12,10 @@ use Tobuli\Exceptions\ValidationException;
 use Tobuli\InputFields\AbstractField;
 use Tobuli\InputFields\SelectField;
 use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
+use Tobuli\Services\EntityLoader\UserDriversLoader;
+use Tobuli\Services\EntityLoader\UserEventsCustomLoader;
+use Tobuli\Services\EntityLoader\UserGeofencesGroupLoader;
+use Tobuli\Services\EntityLoader\UserPoisGroupLoader;
 use Tobuli\Services\EntityLoader\UsersLoader;
 
 class AlertsController extends Controller
@@ -145,6 +149,50 @@ class AlertsController extends Controller
             $userDevicesLoader->setQueryStored($alert->devices());
 
         return response()->json($userDevicesLoader->get());
+    }
+
+    public function geofences($id = null)
+    {
+        $userGeofenceLoader = new UserGeofencesGroupLoader($this->user);
+        $userGeofenceLoader->setRequestKey('geofences');
+
+        if ($alert = $this->user->alerts()->enabled()->find($id))
+            $userGeofenceLoader->setQueryStored($alert->geofences());
+
+        return response()->json($userGeofenceLoader->get());
+    }
+
+    public function zones($id = null)
+    {
+        $userGeofenceLoader = new UserGeofencesGroupLoader($this->user);
+        $userGeofenceLoader->setRequestKey('zones');
+
+        if ($alert = $this->user->alerts()->enabled()->find($id))
+            $userGeofenceLoader->setQueryStored($alert->zones());
+
+        return response()->json($userGeofenceLoader->get());
+    }
+
+    public function pois($id = null)
+    {
+        $loader = new UserPoisGroupLoader($this->user);
+        $loader->setRequestKey('pois');
+
+        if ($alert = $this->user->alerts()->enabled()->find($id))
+            $loader->setQueryStored($alert->pois());
+
+        return response()->json($loader->get());
+    }
+
+    public function drivers($id = null)
+    {
+        $loader = new UserDriversLoader($this->user);
+        $loader->setRequestKey('drivers');
+
+        if ($alert = $this->user->alerts()->enabled()->find($id))
+            $loader->setQueryStored($alert->drivers());
+
+        return response()->json($loader->get());
     }
 
     public function summary()

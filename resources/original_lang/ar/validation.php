@@ -183,6 +183,7 @@ return array(
         'frequency' => 'التردد',
         'unit' => 'وحدة',
         'noreply_email' => 'لا يوجد عنوان بريد اليكتروني للرد',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'توقيع',
         'use_smtp_server' => 'استخدم خادم البريد SMTP',
         'smtp_server_host' => 'عنوان خادم البريد SMTP',

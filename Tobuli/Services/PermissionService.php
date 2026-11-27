@@ -157,6 +157,11 @@ class PermissionService
             unset($permissions['device.authentication']);
         }
 
+        if ( ! config('addon.tags')) {
+            unset($permissions['tags']);
+            unset($permissions['device.tags']);
+        }
+
         if (! config('addon.checklists')) {
             unset(
                 $permissions['checklist'],
@@ -230,6 +235,10 @@ class PermissionService
 
         if (!config('addon.lbs')) {
             unset($permissions['device.lbs']);
+        }
+
+        if (!config('addon.flights_info')) {
+            unset($permissions['flights_info']);
         }
 
         return $permissions;

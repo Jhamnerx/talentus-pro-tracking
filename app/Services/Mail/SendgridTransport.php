@@ -1,267 +1,257 @@
 <?php
+
 namespace App\Services\Mail;
 
-use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Psr7\Response;
-use Illuminate\Mail\Transport\Transport;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Support\Arr;
-use Swift_Attachment;
-use Swift_Image;
-use Swift_Mime_SimpleMessage;
-use Swift_MimePart;
+use Psr\Http\Message\ResponseInterface;
+use Stringable;
+use Symfony\Component\Mailer\SentMessage;
+use Symfony\Component\Mailer\Transport\AbstractTransport;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Message;
+use Symfony\Component\Mime\MessageConverter;
+use Symfony\Component\Mime\Part\DataPart;
 
-class SendgridTransport extends Transport
+/**
+ * @link https://github.com/s-ichikawa/laravel-sendgrid-driver/blob/master/src/Transport/SendgridTransport.php
+ */
+class SendgridTransport extends AbstractTransport implements Stringable
 {
-    const MAXIMUM_FILE_SIZE = 7340032;
-    const SMTP_API_NAME = 'sendgrid/x-smtpapi';
-    const BASE_URL = 'https://api.sendgrid.com/v3/mail/send';
+    /**
+     * https://docs.sendgrid.com/api-reference/mail-send/mail-send
+     */
+    private const BASE_URL = 'https://api.sendgrid.com/v3/mail/send';
 
     /**
-     * @var Client
+     * @deprecated use REQUEST_BODY_PARAMETER instead
      */
-    private $client;
-    private $options;
-    private $attachments;
-    private $numberOfRecipients;
+    const SMTP_API_NAME = 'sendgrid/request-body-parameter';
+    const REQUEST_BODY_PARAMETER = 'sendgrid/request-body-parameter';
 
-    public function __construct(ClientInterface $client, $api_key)
-    {
-        $this->client = $client;
-        $this->options = [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $api_key,
-                'Content-Type'  => 'application/json',
-            ],
-        ];
+    private array $attachments = [];
+    private int $numberOfRecipients = 0;
+
+    public function __construct(
+        private ClientInterface $client,
+        private string $apiKey,
+        private ?string $endpoint = null
+    ) {
+        $this->endpoint = $endpoint ?? self::BASE_URL;
+
+        parent::__construct();
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    protected function doSend(SentMessage $message): void
     {
-        $this->beforeSendPerformed($message);
+        $origMessage = $message->getOriginalMessage();
 
-        $payload = $this->options;
+        if (!$origMessage instanceof Message) {
+            throw new \InvalidArgumentException('Invalid email message');
+        }
+
+        $email = MessageConverter::toEmail($origMessage);
 
         $data = [
-            'personalizations' => $this->getPersonalizations($message),
-            'from'             => $this->getFrom($message),
-            'subject'          => $message->getSubject(),
-            'content'          => $this->getContents($message),
+            'personalizations' => $this->getPersonalizations($email),
+            'from' => $this->getFrom($email),
+            'subject' => $email->getSubject(),
         ];
 
-        if ($reply_to = $this->getReplyTo($message)) {
+        if ($contents = $this->getContents($email)) {
+            $data['content'] = $contents;
+        }
+
+        if ($reply_to = $this->getReplyTo($email)) {
             $data['reply_to'] = $reply_to;
         }
 
-        $attachments = $this->getAttachments($message);
+        $attachments = $this->getAttachments($email);
         if (count($attachments) > 0) {
             $data['attachments'] = $attachments;
         }
 
-        $data = $this->setParameters($message, $data);
+        $data = $this->setParameters($email, $data);
 
-        $payload['json'] = $data;
+        $payload = [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $this->apiKey,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => $data,
+        ];
 
         $response = $this->post($payload);
 
-        $message->getHeaders()->addTextHeader('X-Message-Id', $response->getHeaderLine('X-Message-Id'));
+        $messageId = $response->getHeaderLine('X-Message-Id');
 
-        if (is_callable("sendPerformed")) {
-            $this->sendPerformed($message);
-        }
+        $message->setMessageId($messageId);
 
-        if (is_callable("numberOfRecipients")) {
-            return $this->numberOfRecipients ?: $this->numberOfRecipients($message);
-        }
-        return $response;
+        $message->getOriginalMessage()
+            ->getHeaders()
+            ->addTextHeader('X-Sendgrid-Message-Id', $messageId);
     }
 
-    /**
-     * @param Swift_Mime_SimpleMessage $message
-     * @return array
-     */
-    private function getPersonalizations(Swift_Mime_SimpleMessage $message)
+    private function getPersonalizations(Email $email): array
     {
-        $setter = function (array $addresses) {
-            $recipients = [];
-            foreach ($addresses as $email => $name) {
-                $address = [];
-                $address['email'] = $email;
-                if ($name) {
-                    $address['name'] = $name;
-                }
-                $recipients[] = $address;
-            }
-            return $recipients;
-        };
+        $personalization['to'] = $this->setAddress($email->getTo());
 
-        $personalization = [];
-        $personalization['to'] = $setter($message->getTo());
+        if (count($email->getCc()) > 0) {
+            $personalization['cc'] = $this->setAddress($email->getCc());
 
-        if ($cc = $message->getCc()) {
-            $personalization['cc'] = $setter($cc);
         }
 
-        if ($bcc = $message->getBcc()) {
-            $personalization['bcc'] = $setter($bcc);
+        if (count($email->getBcc()) > 0) {
+            $personalization['bcc'] = $this->setAddress($email->getBcc());
+
         }
 
         return [$personalization];
     }
 
     /**
-     * Get From Addresses.
-     *
-     * @param Swift_Mime_SimpleMessage $message
-     * @return array
+     * @param Address[] $addresses
      */
-    private function getFrom(Swift_Mime_SimpleMessage $message)
+    private function setAddress(array $addresses): array
     {
-        if ($message->getFrom()) {
-            foreach ($message->getFrom() as $email => $name) {
-                return ['email' => $email, 'name' => $name];
+        $recipients = [];
+        foreach ($addresses as $address) {
+            $recipient = ['email' => $address->getAddress()];
+            if ($address->getName() !== '') {
+                $recipient['name'] = $address->getName();
+            }
+            $recipients[] = $recipient;
+        }
+        return $recipients;
+    }
+
+    private function getFrom(Email $email): array
+    {
+        if (count($email->getFrom()) > 0) {
+            foreach ($email->getFrom() as $from) {
+                return ['email' => $from->getAddress(), 'name' => $from->getName()];
             }
         }
         return [];
     }
 
-    /**
-     * Get ReplyTo Addresses.
-     *
-     * @param Swift_Mime_SimpleMessage $message
-     * @return array|string|null
-     */
-    private function getReplyTo(Swift_Mime_SimpleMessage $message)
+    private function getContents(Email $email): array
     {
-        $replyTo = $message->getReplyTo();
-
-        if (is_array($replyTo)) {
-            foreach ($replyTo as $email => $name) {
-                return ['email' => $email, 'name' => $name];
-            }
-        }
-
-        return $replyTo ?: null;
-    }
-
-    /**
-     * Get contents.
-     *
-     * @param Swift_Mime_SimpleMessage $message
-     * @return array
-     */
-    private function getContents(Swift_Mime_SimpleMessage $message)
-    {
-        $content = [];
-        foreach ($message->getChildren() as $attachment) {
-            if ($attachment instanceof Swift_MimePart) {
-                $content[] = [
-                    'type'  => 'text/plain',
-                    'value' => $attachment->getBody(),
-                ];
-                break;
-            }
-        }
-
-        if (empty($content) || strpos($message->getContentType(), 'multipart') !== false) {
-            $content[] = [
-                'type'  => 'text/html',
-                'value' => $message->getBody(),
+        $contents = [];
+        if (!is_null($email->getTextBody())) {
+            $contents[] = [
+                'type' => 'text/plain',
+                'value' => $email->getTextBody(),
             ];
         }
-        return $content;
+
+        if (!is_null($email->getHtmlBody())) {
+            $contents[] = [
+                'type' => 'text/html',
+                'value' => $email->getHtmlBody(),
+            ];
+        }
+
+        return $contents;
     }
 
-    /**
-     * @param Swift_Mime_SimpleMessage $message
-     * @return array
-     */
-    private function getAttachments(Swift_Mime_SimpleMessage $message)
+    private function getReplyTo(Email $email): ?array
+    {
+        if (count($email->getReplyTo()) > 0) {
+            $replyTo = $email->getReplyTo()[0];
+            return [
+                'email' => $replyTo->getAddress(),
+                'name' => $replyTo->getName(),
+            ];
+        }
+        return null;
+    }
+
+    private function getAttachments(Email $email): array
     {
         $attachments = [];
-        foreach ($message->getChildren() as $attachment) {
-            if ((!$attachment instanceof Swift_Attachment && !$attachment instanceof Swift_Image)
-                || $attachment->getFilename() === self::SMTP_API_NAME
-                || !strlen($attachment->getBody()) > self::MAXIMUM_FILE_SIZE
-            ) {
+        foreach ($email->getAttachments() as $attachment) {
+            $filename = $this->getAttachmentName($attachment);
+            if ($filename === self::REQUEST_BODY_PARAMETER) {
                 continue;
             }
+
             $attachments[] = [
-                'content'     => base64_encode($attachment->getBody()),
-                'filename'    => $attachment->getFilename(),
-                'type'        => $attachment->getContentType(),
-                'disposition' => $attachment->getDisposition(),
-                'content_id'  => $attachment->getId(),
+                'content' => base64_encode($attachment->getBody()),
+                'filename' => $this->getAttachmentName($attachment),
+                'type' => $this->getAttachmentContentType($attachment),
+                'disposition' => $attachment->getHeaders()->getHeaderBody('Content-Disposition'),
+                'content_id' => $attachment->getContentId(),
             ];
         }
-        return $this->attachments = $attachments;
+        return $attachments;
     }
 
-    /**
-     * Set Request Body Parameters
-     *
-     * @param Swift_Mime_SimpleMessage $message
-     * @param array $data
-     * @return array
-     * @throws \Exception
-     */
-    protected function setParameters(Swift_Mime_SimpleMessage $message, $data)
+    private function getAttachmentName(DataPart $dataPart): string
     {
-        $this->numberOfRecipients = 0;
+        return $dataPart->getPreparedHeaders()->getHeaderParameter('Content-Disposition', 'filename');
+    }
 
-        $smtp_api = [];
-        foreach ($message->getChildren() as $attachment) {
-            if (!$attachment instanceof Swift_Image
-                || !in_array(self::SMTP_API_NAME, [$attachment->getFilename(), $attachment->getContentType()])
-            ) {
-                continue;
+    private function getAttachmentContentType(Datapart $dataPart): string
+    {
+        return $dataPart->getMediaType() . '/' . $dataPart->getMediaSubtype();
+    }
+
+    private function setParameters(Email $email, array $data): array
+    {
+        $smtpApi = [];
+        foreach ($email->getAttachments() as $attachment) {
+            $name = $attachment->getPreparedHeaders()->getHeaderParameter('Content-Disposition', 'filename');
+            if ($name === self::REQUEST_BODY_PARAMETER) {
+                $smtpApi = self::decode($attachment->getBody());
             }
-            $smtp_api = $attachment->getBody();
         }
 
-        if (!is_array($smtp_api)) {
+        if (count($smtpApi) < 1) {
             return $data;
         }
 
-        foreach ($smtp_api as $key => $val) {
-
+        foreach ($smtpApi as $key => $val) {
             switch ($key) {
-
+                case 'api_key':
+                    $this->apiKey = $val;
+                    continue 2;
                 case 'personalizations':
                     $this->setPersonalizations($data, $val);
                     continue 2;
-
                 case 'attachments':
                     $val = array_merge($this->attachments, $val);
                     break;
-
-                case 'unique_args':
-                    throw new \Exception('Sendgrid v3 now uses custom_args instead of unique_args');
-
-                case 'custom_args':
-                    foreach ($val as $name => $value) {
-                        if (!is_string($value)) {
-                            throw new \Exception('Sendgrid v3 custom arguments have to be a string.');
-                        }
-                    }
-                    break;
-
             }
-
             Arr::set($data, $key, $val);
         }
+
         return $data;
     }
 
-    private function setPersonalizations(&$data, $personalizations)
+    public static function decode($strParams): array
+    {
+        if (!is_string($strParams)) {
+            return (array)$strParams;
+        }
+        $params = json_decode($strParams, true);
+        return is_array($params) ? $params : [];
+    }
+
+    /**
+     * @param array $data
+     * @param array $personalizations
+     * @return void
+     */
+    private function setPersonalizations(array &$data, array $personalizations): void
     {
         foreach ($personalizations as $index => $params) {
             foreach ($params as $key => $val) {
                 if (in_array($key, ['to', 'cc', 'bcc'])) {
-                    Arr::set($data, 'personalizations.' . $index . '.' . $key, [$val]);
+                    Arr::set($data, 'personalizations.' . $index . '.' . $key, $val);
                     ++$this->numberOfRecipients;
                 } else {
                     Arr::set($data, 'personalizations.' . $index . '.' . $key, $val);
@@ -271,11 +261,15 @@ class SendgridTransport extends Transport
     }
 
     /**
-     * @param $payload
-     * @return Response
+     * @throws ClientException|GuzzleException
      */
-    private function post($payload)
+    private function post(array $payload): ResponseInterface
     {
-        return $this->client->post('https://api.sendgrid.com/v3/mail/send', $payload);
+        return $this->client->request('POST', $this->endpoint, $payload);
+    }
+
+    public function __toString(): string
+    {
+        return 'sendgrid';
     }
 }

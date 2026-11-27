@@ -4,6 +4,7 @@ namespace Tobuli\Services\Securitas;
 
 use Tobuli\Entities\Device;
 use Tobuli\Entities\TraccarPosition;
+use Tobuli\Helpers\Teltonika\TeltonikaEvents;
 
 /**
  * Arma un evento GlobalAVL (Inbound Event Messaging v2.0) a partir de una posicion.
@@ -118,7 +119,9 @@ class SecuritasEventMapper
             ];
         }
 
-        $driver = trim((string) $position->getParameter('driverUniqueId', ''));
+        // PositionsWriter guarda las claves en minúsculas: «driverUniqueId»
+        // nunca existía y el conductor no se enviaba.
+        $driver = trim((string) $position->getParameter('driveruniqueid', $position->getParameter('driverUniqueId', '')));
         if ($driver !== '' && $driver !== '0') {
             $inputs['serial'] = [
                 ['index' => 0, 'type' => self::SERIAL_DRIVER_ID, 'value' => $driver],
@@ -148,13 +151,16 @@ class SecuritasEventMapper
                     ? self::EV_IGNITION_ON
                     : self::EV_IGNITION_OFF;
 
+            // El decoder del fork no deja io252/io253: 252 → alarm powerCut
+            // (solo al desconectar) y 253 → alarm hardAcceleration/… .
+            // TeltonikaEvents lo resuelve (con io{ID} de respaldo).
             case 252:
-                return ((int) $position->getParameter('io252', 0)) === 1
+                return TeltonikaEvents::isActive(252, $position->parameters)
                     ? self::EV_MAIN_POWER_LOST
                     : self::EV_MAIN_POWER_BACK;
 
             case 253:
-                switch ((int) $position->getParameter('io253', 0)) {
+                switch (TeltonikaEvents::greenDrivingType($position->parameters)) {
                     case 1:
                         return self::EV_HARSH_ACCEL;
                     case 2:

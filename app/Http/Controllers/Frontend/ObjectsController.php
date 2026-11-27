@@ -11,7 +11,8 @@ use Formatter;
 use FractalTransformer;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Request;
-use ModalHelpers\SendCommandModalHelper;
+use Tobuli\Services\Commands\CommandService;
+use Tobuli\Services\Commands\SendCommandService;
 use Tobuli\Services\UserOpenGroupService;
 
 class ObjectsController extends Controller {
@@ -27,6 +28,15 @@ class ObjectsController extends Controller {
 
     public function index()
     {
+        // Preferencia de UI persistida (users.settings.ui_version, la escribe
+        // el shell v2): si el usuario eligió la v2, entra SIEMPRE a la v2 —
+        // login, "/" y marcadores a /objects aterrizan aquí, así que este es
+        // el punto único de aplicación. "Versión anterior" pone 'legacy'
+        // ANTES de redirigir acá, por lo que no hay bucle.
+        if ($this->user && $this->user->getSettings('ui_version') === 'v2') {
+            return redirect()->route('ui.v2.live');
+        }
+
         $version = Config::get('tobuli.version');
         $devices = [];
 
@@ -109,16 +119,24 @@ class ObjectsController extends Controller {
 
         $position = $item->positions()->orderBy('time', 'desc')->first();
 
-        $sendCommandModalHelper = new SendCommandModalHelper();
-        $sendCommandModalHelper->setData([
+        $data = [
             'device_id' => $item->id,
             'type' => $item->alarm == 0 ? 'alarmArm' : 'alarmDisarm'
-        ]);
-        $result = $sendCommandModalHelper->gprsCreate();
+        ];
+
+        $devices = collect([$item]);
+
+        try {
+            (new CommandService($this->user))->validateGPRS($devices, $data);
+            $responses = (new SendCommandService($this->user))->gprs($devices, $data, $this->user);
+            $result = $responses->first();
+        } catch (\Tobuli\Exceptions\ValidationException $e) {
+            return ['status' => 0, 'alarm' => intval($item->alarm), 'error' => $e->getMessage()];
+        }
 
         $alarm = $item->alarm;
 
-        if ($result['status'] == 1) {
+        if ($result && $result['status'] == 1) {
             $tr = TRUE;
             $times = 1;
             $val = '';
@@ -169,14 +187,22 @@ class ObjectsController extends Controller {
         if (empty($item) || (!$item->users->contains($this->user->id) && !isAdmin()))
             return response()->json(['status' => 0]);
 
-        $sendCommandModalHelper = new SendCommandModalHelper();
-        $sendCommandModalHelper->setData([
+        $data = [
             'device_id' => $item->id,
             'type' => 'positionSingle'
-        ]);
-        $result = $sendCommandModalHelper->gprsCreate();
+        ];
 
-        if ($result['status'] == 1)
+        $devices = collect([$item]);
+
+        try {
+            (new CommandService($this->user))->validateGPRS($devices, $data);
+            $responses = (new SendCommandService($this->user))->gprs($devices, $data, $this->user);
+            $result = $responses->first();
+        } catch (\Tobuli\Exceptions\ValidationException $e) {
+            return ['status' => 0, 'error' => $e->getMessage()];
+        }
+
+        if ($result && $result['status'] == 1)
             return ['status' => 1];
         else
             return ['status' => 0, 'error' => isset($result['error']) ? $result['error'] : ''];

@@ -27,12 +27,18 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         'App\Console\Commands\Inspire',
+        'App\Console\Commands\UiV2SmokeCommand',
+        'App\Console\Commands\CleanModelChangeLogCommand',
         'App\Console\Commands\UnigisTestCommand',
         'App\Console\Commands\SecuritasTestCommand',
         'App\Console\Commands\BootTest',
+        'App\Console\Commands\DispatchPendingCommands',
+        'App\Console\Commands\ImportHitosKmCommand',
+        'App\Console\Commands\IntegrationStatusCommand',
         'App\Console\Commands\Tracker\RestartCommand',
         'App\Console\Commands\Tracker\ConfigCommand',
         'App\Console\Commands\Tracker\ConfigAliasCommand',
+        'App\Console\Commands\Tracker\SyncDeviceModelsCommand',
         'App\Console\Commands\Socket\SSLCertCommand',
         'App\Console\Commands\Socket\ServiceCommand',
         'App\Console\Commands\AutoCleanServerCommand',
@@ -48,12 +54,17 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\CleanReportLogCommand',
         'App\Console\Commands\CleanDevicesCommand',
         'App\Console\Commands\CleanEventsCommand',
+        'App\Console\Commands\OperationsCleanCommand',
         'App\Console\Commands\CleanUnregisteredDeviceLogCommand',
         'App\Console\Commands\CleanUserCommand',
         'App\Console\Commands\CleanDeviceCamerasCommand',
+        'App\Console\Commands\CleanVideoDownloadsCommand',
+        'App\Console\Commands\VideoFtpUserCommand',
         'App\Console\Commands\CleanExpiredSharingsCommand',
         'App\Console\Commands\CleanModelCommand',
         'App\Console\Commands\ReportsDailyCommand',
+        'App\Console\Commands\AiAlertsDigestCommand',
+        'App\Console\Commands\AiCompareCommand',
         'App\Console\Commands\SendEventsCommand',
         'App\Console\Commands\ReportsCleanCommand',
         'App\Console\Commands\ServerTranslationsCommand',
@@ -63,7 +74,8 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\InsertCommand',
         'App\Console\Commands\CheckPositionsCommand',
         'App\Console\Commands\CheckTimeCommand',
-        'App\Console\Commands\ResetDevicesTimezoneCommand',
+        'App\Console\Commands\DevicesTimezoneResetCommand',
+        'App\Console\Commands\DevicesTimezoneApplyCommand',
         'App\Console\Commands\CheckSubscriptionsCommand',
         'App\Console\Commands\CheckDevicesExpirationCommand',
         'App\Console\Commands\CheckOfflineDevices',
@@ -75,6 +87,10 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\CopyDevicesCommand',
         'App\Console\Commands\CalcVirtualOdometerCommand',
         'App\Console\Commands\RecalculateDeviceHistoryCommand',
+        'App\Console\Commands\OperationsProcessCommand',
+        'App\Console\Commands\OperationsSummariesCommand',
+        'App\Console\Commands\SecurityAggregateCommand',
+        'App\Console\Commands\MapIconsRefreshCommand',
         'App\Console\Commands\SplitDevicesCommand',
         'App\Console\Commands\FakeDevicesCommand',
         'App\Console\Commands\DropDeviceFreeTablesCommand',
@@ -84,6 +100,8 @@ class Kernel extends ConsoleKernel
         'App\Console\Commands\BackupManageCommand',
         'App\Console\Commands\BackupImportCommand',
         'App\Console\Commands\DeltaPositionsBackupCommand',
+        'App\Console\Commands\BackupPruneCommand',
+        'App\Console\Commands\BackupDriveImportFtpCommand',
         'App\Console\Commands\DeltaPositionsImportCommand',
         'App\Console\Commands\DeleteInvalidFuelEventsCommand',
         'App\Console\Commands\DeviceServerReconfigCommand',
@@ -108,6 +126,11 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping();
 
+        // Descargas de video JT1078: cada job dura lo que la grabacion (ver RecordVideoDownload).
+        $schedule->command('queue:work redis --sleep=3 --tries=1 --timeout=3900 --queue=' . config('video.downloads_queue', 'video'))
+            ->everyMinute()
+            ->withoutOverlapping();
+
         $schedule
             ->exec('systemctl restart supervisord')
             ->hourlyAt(3);
@@ -115,6 +138,12 @@ class Kernel extends ConsoleKernel
         $schedule
             ->command('device_history:recalculate')
             ->everyMinute()
+            ->withoutOverlapping();
+
+        // Talentus IA CHAT: resumen diario de alertas (solo si AI_ALERTS_DIGEST=true)
+        $schedule
+            ->command('ai:alerts-digest')
+            ->dailyAt('07:00')
             ->withoutOverlapping();
 
         $schedule
@@ -148,9 +177,17 @@ class Kernel extends ConsoleKernel
             ->daily();
 
         $schedule
+            ->command('video:clean-downloads')
+            ->daily();
+
+        $schedule
             ->command('server:check')
             ->daily()
             ->withoutOverlapping();
+
+        $schedule
+            ->command('passport:purge')
+            ->daily();
 
         $schedule
             ->command('sharing:clean')
@@ -165,6 +202,17 @@ class Kernel extends ConsoleKernel
             ->command('devices:check_offline')
             ->everyMinute()
             ->withoutOverlapping();
+
+        // Modulo de Operaciones: tramos cerrados, "sin datos", tramos
+        // vencidos y cola de recalculos. Sin efecto con operations_enabled apagado.
+        $schedule
+            ->command('operations:process')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        // Seguridad: agregados de ayer y hoy, cada hora a y 20 (hoy queda
+        // parcial y se rehace en la siguiente pasada).
+        $schedule->command('security:aggregate')->hourlyAt(20)->withoutOverlapping();
 
         //WEB SERVICES JOBS — dispatch manejado por Supervisor, estos solo programan
         $schedule->job(new DispatchSutranJobs)->everyMinute()->withoutOverlapping();
@@ -185,6 +233,10 @@ class Kernel extends ConsoleKernel
         // Procesamiento de posiciones GPS (ProcessManager controla solapamiento)
         $schedule->command('insert:run')->everyMinute();
 
+        // Resumen de reenvio para el panel de cumplimiento. Cada 10 min:
+        // el panel lee el resumen y nunca las colas.
+        $schedule->command('integrations:status')->everyTenMinutes()->withoutOverlapping();
+
         // Regeneración de cámaras
         $schedule->command('device_cameras:regenerate')->everyMinute()->withoutOverlapping();
 
@@ -198,6 +250,9 @@ class Kernel extends ConsoleKernel
         // Revisión de servicios
         $schedule->command('service:check')->everyThreeMinutes()->withoutOverlapping();
         $schedule->command('service:check_expire')->everyThreeMinutes()->withoutOverlapping();
+
+        // Auto-send when online: comandos GPRS en cola → enviar al reconectar
+        $schedule->command('commands:dispatch-pending')->everyMinute()->withoutOverlapping();
 
         // Normas de comando (consulta -> respuesta -> accion), ej. caso DOUT1 buzzer FTC921.
         // La respuesta la evalua CommandRuleResponseListener (PositionResultRetrieved).

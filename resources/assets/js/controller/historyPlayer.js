@@ -58,7 +58,7 @@ function HistoryPlayer() {
     if (options.lastPoint !== null) {
       angle = L.LineUtil.PolylineDecorator.computeAngle(
         options.lastPoint,
-        point
+        point,
       );
     }
     options.lastPoint = point;
@@ -92,11 +92,11 @@ function HistoryPlayer() {
             x: e,
             y: 0,
           }).left,
-          10
+          10,
         ) - app.history.graph.plot.getPlotOffset().left,
       a = app.history.graph.plot.width(),
       s = parseInt(a / 2, 10);
-    t > a - s &&
+    (t > a - s &&
       app.history.graph.plot.pan({
         left: t - (a - s),
         top: 0,
@@ -109,12 +109,12 @@ function HistoryPlayer() {
       app.history.graph.plot.setCrosshair({
         x: e,
         y: 0,
-      });
+      }));
   };
   _this.graphSetLabel = function (item) {
     $("#hoverdata").text(item[1] + " " + app.history.graph.unit);
     $("#hoverdata-date").text(
-      moment.utc(item[0]).format("YYYY-MM-DD HH:mm:ss")
+      moment.utc(item[0]).format("YYYY-MM-DD HH:mm:ss"),
     );
   };
 }

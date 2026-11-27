@@ -279,6 +279,31 @@
         width: 280px;
         height: 126px;
       }
+
+      // Nombre del sensor a la izquierda y, al pasar por encima del grafico,
+      // el valor del punto a la derecha. Sin esto el grafico es una silueta
+      // sin escala de la que no se puede leer ningun valor.
+      .sensor-graph-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 6px;
+        padding: 4px 6px 0;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .sensor-graph-name {
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .sensor-graph-hover {
+        white-space: nowrap;
+        opacity: 0.75;
+      }
     }
   }
 

@@ -1,0 +1,1402 @@
+/*
+ * TalentusPro · device-modal.css
+ * ---------------------------------------------------------------
+ * Estilos del modal de vehículo (form tabbed) + form de sensor
+ * anidado. Scoped a .tp-form (solo lo usan estos dos forms) para
+ * que ambos compartan grid/labels/inputs, con la MISMA métrica que
+ * el .tp-input canónico de components.css (36px, fs-md, r-md) y
+ * los tokens del design system (tokens.css) — tema claro y oscuro.
+ * ---------------------------------------------------------------
+ */
+
+.tp-form {
+  display: block;
+}
+
+.tp-form .tp-form__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px 16px;
+}
+@media (min-width: 640px) {
+  .tp-form .tp-form__grid--2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (min-width: 720px) {
+  .tp-form .tp-form__grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.tp-form .tp-col-2 {
+  grid-column: 1 / -1;
+}
+
+.tp-form .tp-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: var(--fs-md, 14px);
+  min-width: 0;
+}
+
+.tp-form .tp-form__label {
+  color: var(--fg-secondary, #475569);
+  font-size: var(--fs-sm, 12px);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.tp-form .tp-form__field--required > .tp-form__label::after {
+  content: " *";
+  color: var(--danger-500, #ef4444);
+}
+
+/* Inputs sin clase .tp-input (partials del device): misma receta que
+   components.css → un solo look en toda la v2. */
+.tp-form input[type="text"],
+.tp-form input[type="password"],
+.tp-form input[type="email"],
+.tp-form input[type="tel"],
+.tp-form input[type="search"],
+.tp-form input[type="date"],
+.tp-form input[type="time"],
+.tp-form input[type="datetime-local"],
+.tp-form input[type="number"],
+.tp-form select,
+.tp-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 0 var(--sp-3, 12px);
+  background: var(--surface-raised, #fff);
+  color: var(--fg-primary, #0f172a);
+  border: 1px solid var(--border-default, #cbd5e1);
+  border-radius: var(--r-md, 8px);
+  font-size: var(--fs-md, 14px);
+  font-family: inherit;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.tp-form textarea {
+  height: auto;
+  min-height: 72px;
+  padding: var(--sp-2, 8px) var(--sp-3, 12px);
+  resize: vertical;
+  line-height: 1.45;
+}
+.tp-form input::placeholder,
+.tp-form textarea::placeholder {
+  color: var(--fg-muted, #94a3b8);
+}
+.tp-form input:hover,
+.tp-form select:hover,
+.tp-form textarea:hover {
+  border-color: var(--border-strong, #94a3b8);
+}
+.tp-form input:focus,
+.tp-form select:focus,
+.tp-form textarea:focus {
+  outline: none;
+  border-color: var(--border-focus, var(--brand-500, #2e63d9));
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(46, 99, 217, 0.25));
+}
+.tp-form input:disabled,
+.tp-form select:disabled,
+.tp-form textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tp-form input[type="color"] {
+  width: 100%;
+  box-sizing: border-box;
+  height: 36px;
+  padding: 3px;
+  border: 1px solid var(--border-default, #cbd5e1);
+  border-radius: var(--r-md, 8px);
+  background: var(--surface-raised, #fff);
+  cursor: pointer;
+}
+
+/* Checkboxes / radios sueltos dentro del form */
+.tp-form input[type="checkbox"],
+.tp-form input[type="radio"] {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  accent-color: var(--brand-500, #2e63d9);
+  cursor: pointer;
+}
+
+.tp-form .tp-form__field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  padding-top: 2px;
+  cursor: pointer;
+}
+.tp-form .tp-form__field--checkbox .tp-form__label {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--fg-primary, #0f172a);
+}
+
+.tp-form .has-error input,
+.tp-form .has-error select,
+.tp-form input.is-invalid,
+.tp-form select.is-invalid {
+  border-color: var(--danger-500, #ef4444);
+}
+
+.tp-form .tp-form__error,
+.tp-form .tp-field__error {
+  color: var(--danger-500, #ef4444);
+  font-size: var(--fs-xs, 11px);
+  margin-top: 2px;
+}
+
+.tp-form .tp-form__hint {
+  font-size: var(--fs-xs, 11px);
+  color: var(--fg-muted, #94a3b8);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Secciones dentro de una pestaña */
+.tp-form .tp-form__section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-default, #e2e8f0);
+}
+.tp-form .tp-form__section:first-of-type {
+  margin-top: 12px;
+}
+.tp-form .tp-form__section-title {
+  margin: 0 0 10px 0;
+  font-size: var(--fs-sm, 12px);
+  font-weight: 600;
+  color: var(--fg-secondary, #475569);
+}
+
+/* Placeholder de pestañas pendientes / avisos */
+.tp-form .tp-form__placeholder {
+  padding: 26px 16px;
+  text-align: center;
+  color: var(--fg-muted, #94a3b8);
+  background: var(--surface-sunken, #f8fafc);
+  border: 1px dashed var(--border-default, #e2e8f0);
+  border-radius: var(--r-lg, 12px);
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Modal de vehículo con la MISMA métrica que el legacy (Devices/edit.blade):
+ * 600px de ancho, pestañas como enlaces de texto en línea que pasan a otra
+ * fila al llenarse, y campos a una columna con la etiqueta encima. Se
+ * mantienen los colores/tokens de la v2 (claro y oscuro).
+ * ------------------------------------------------------------------------- */
+.tp-modal.tp-modal--device {
+  max-width: 600px;
+  /* Anclado arriba como el modal Bootstrap del legacy (30px): al cambiar de
+     pestaña cambia la altura y, centrado, el modal "saltaba" de sitio. */
+  margin-top: 30px;
+  max-height: calc(100vh - 60px);
+}
+.tp-modal.tp-modal--device .tp-modal__inner {
+  max-height: calc(100vh - 60px);
+}
+/* Header como el legacy: icono de navegación + título más grande */
+.tp-modal--device .tp-modal__head {
+  padding: 14px 16px;
+}
+.tp-modal--device .tp-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fg-primary, #0f172a);
+}
+.tp-modal__title-icon {
+  display: inline-flex;
+  color: var(--brand-600, #1f5fbf);
+}
+[data-theme="dark"] .tp-modal__title-icon {
+  color: var(--brand-400, #6b9be6);
+}
+
+.tp-device-form .tp-tabs__nav {
+  position: sticky;
+  /* full-bleed: compensa el padding del .tp-modal__body para quedar
+     pegado al header del modal (sin franja por la que se vea contenido) */
+  top: calc(var(--sp-4, 16px) * -1);
+  margin: calc(var(--sp-4, 16px) * -1) calc(var(--sp-4, 16px) * -1) 16px;
+  padding: 6px var(--sp-4, 16px) 0;
+  z-index: 5;
+  /* Una sola fila desplazable en horizontal: con 13 pestañas en 600 px se
+     partían en tres líneas (QA D4). La pestaña activa se trae a la vista
+     desde device-modal.js (wireTabs). */
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0 4px;
+  background: var(--surface-raised, #fff);
+  border: 0;
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scroll-padding-inline: var(--sp-4, 16px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong, #cbd5e1) transparent;
+}
+.tp-device-form .tp-tabs__nav::-webkit-scrollbar {
+  display: block;
+  height: 4px;
+}
+.tp-device-form .tp-tabs__nav::-webkit-scrollbar-thumb {
+  background: var(--border-strong, #cbd5e1);
+  border-radius: 4px;
+}
+.tp-device-form .tp-tabs__nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tp-device-form .tp-tabs__tab {
+  flex: 0 0 auto;
+}
+.tp-device-form .tp-tabs__tab {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 10px 14px 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-transform: none;
+  text-align: center;
+  color: var(--fg-secondary, #475569);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: inset 0 -2px 0 transparent;
+  transition:
+    color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+/* Hover como el legacy: caja gris clara detrás del texto; activa con
+   texto de marca y subrayado de 3px. */
+.tp-device-form .tp-tabs__tab:hover {
+  color: var(--fg-primary, #0f172a);
+  background: var(--surface-sunken, #eef2f6);
+}
+.tp-device-form .tp-tabs__tab.is-active {
+  color: var(--brand-600, #1f5fbf);
+  background: transparent;
+  box-shadow: inset 0 -3px 0 var(--brand-600, #1f5fbf);
+}
+.tp-device-form .tp-tabs__tab.is-active:hover {
+  background: var(--surface-sunken, #eef2f6);
+}
+
+/* Campos a una columna (como el legacy). Excepciones, que en el legacy
+   también van en columnas: Avanzado/Información (col-sm-6) e Historial. Las
+   filas --3 (combustible, colores de cola) se quedan como están. */
+.tp-device-form
+  .tp-tabs__panel:not([data-tp-panel="informacion"]):not([data-tp-panel="historial"])
+  .tp-form__grid--2 {
+  grid-template-columns: 1fr;
+}
+.tp-device-form .tp-form__grid {
+  gap: 12px 16px;
+}
+
+/* Métrica de campo del legacy (todos los .tp-form de la v2): inputs de
+   34px y texto de 13px. */
+.tp-form input[type="text"],
+.tp-form input[type="password"],
+.tp-form input[type="email"],
+.tp-form input[type="tel"],
+.tp-form input[type="search"],
+.tp-form input[type="date"],
+.tp-form input[type="time"],
+.tp-form input[type="datetime-local"],
+.tp-form input[type="number"],
+.tp-form input[type="color"],
+.tp-form select {
+  height: 34px;
+  font-size: 13px;
+}
+.tp-form textarea {
+  font-size: 13px;
+}
+.tp-form .tp-form__field {
+  font-size: 13px;
+}
+
+/* Video: canales a 2 columnas con el check encima y el rol a todo el ancho
+   (como Devices/partials/video.blade del legacy, col-xs-6). */
+.tp-device-form .tp-dv-channels {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+.tp-device-form .tp-dv-channels__item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.tp-device-form .tp-dv-channels__item > * {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Componentes con el aspecto del legacy (master tracking), con tokens v2,
+ * para TODOS los formularios .tp-form de la v2 (vehículo, sensor, conductores,
+ * tareas, compartir, cuenta…):
+ * campos rellenos (fondo hundido, borde suave, radio 6px), etiquetas de
+ * 13px en negrita, checks de 16px y botones del pie a la izquierda en el
+ * orden Guardar · Cancelar · Eliminar.
+ * ------------------------------------------------------------------------- */
+.tp-form .tp-form__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-secondary, #475569);
+}
+.tp-form .tp-form__field--checkbox {
+  gap: 7px;
+}
+.tp-form .tp-form__field--checkbox .tp-form__label,
+.tp-form label.tp-form__field--checkbox {
+  font-weight: 400;
+  color: var(--fg-primary, #0f172a);
+}
+
+.tp-form input[type="text"],
+.tp-form input[type="password"],
+.tp-form input[type="email"],
+.tp-form input[type="tel"],
+.tp-form input[type="search"],
+.tp-form input[type="date"],
+.tp-form input[type="time"],
+.tp-form input[type="datetime-local"],
+.tp-form input[type="number"],
+.tp-form select,
+.tp-form textarea,
+.tp-form .tp-dd__btn,
+.tp-form .tp-input-group {
+  background-color: var(--surface-sunken, #f5f7fa);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 6px;
+  box-shadow: none;
+}
+.tp-form .tp-input-group {
+  height: 34px;
+}
+.tp-form input:hover,
+.tp-form select:hover,
+.tp-form textarea:hover,
+.tp-form .tp-dd__btn:hover {
+  border-color: var(--border-default, #cbd5e1);
+}
+.tp-form input:focus,
+.tp-form select:focus,
+.tp-form textarea:focus,
+.tp-form .tp-dd__btn:focus,
+.tp-form .tp-input-group:focus-within {
+  background-color: var(--surface-raised, #fff);
+  border-color: var(--border-focus, var(--brand-500, #2e63d9));
+  box-shadow: 0 0 0 2px rgba(46, 99, 217, 0.15);
+}
+.tp-form .tp-input-group input[type="text"],
+.tp-form .tp-input-group input[type="text"]:focus {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.tp-form .tp-dd__btn {
+  height: 34px;
+}
+/* Flecha del select centrada (antes quedaba caída hacia abajo) */
+.tp-form .tp-dd__chev {
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  --tw-translate-y: 0;
+  transform: none;
+}
+
+/* Checks y radios propios (como los del legacy de master tracking):
+   cuadro gris claro con borde suave; marcado = relleno de marca con ✓
+   blanco. El radio marcado es un aro de marca con punto. */
+.tp-form input[type="checkbox"],
+.tp-form input[type="radio"],
+.tp-modal .tp-choice-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  vertical-align: middle;
+  background: var(--surface-sunken, #f5f7fa) center / 14px 14px no-repeat;
+  border: 1px solid var(--border-strong, #c3ccd8);
+  border-radius: 5px;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+/* El radio es redondo también sin marcar: .tp-modal .tp-choice-input pone
+   5px a todos los tipos y el radio sin marcar parecía una casilla. */
+.tp-form input[type="radio"],
+.tp-modal .tp-choice-input[type="radio"] {
+  border-radius: 50%;
+}
+.tp-form input[type="checkbox"]:hover,
+.tp-form input[type="radio"]:hover,
+.tp-modal .tp-choice-input:hover {
+  border-color: var(--brand-500, #2e63d9);
+}
+.tp-form input[type="checkbox"]:focus-visible,
+.tp-form input[type="radio"]:focus-visible,
+.tp-modal .tp-choice-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 99, 217, 0.25);
+}
+.tp-form input[type="checkbox"]:checked,
+.tp-modal .tp-choice-input[type="checkbox"]:checked {
+  background-color: var(--brand-600, #1f5fbf);
+  border-color: var(--brand-600, #1f5fbf);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23fff' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.3 6.2l2.5 2.5 4.9-5.2'/%3E%3C/svg%3E");
+}
+.tp-form input[type="checkbox"]:indeterminate {
+  background-color: var(--brand-600, #1f5fbf);
+  border-color: var(--brand-600, #1f5fbf);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M3 6h6'/%3E%3C/svg%3E");
+}
+.tp-form input[type="radio"]:checked,
+.tp-modal .tp-choice-input[type="radio"]:checked {
+  border-color: var(--brand-600, #1f5fbf);
+  background: radial-gradient(circle, var(--brand-600, #1f5fbf) 0 5px, var(--surface-raised, #fff) 5.5px);
+}
+.tp-form input[type="checkbox"]:disabled,
+.tp-form input[type="radio"]:disabled,
+.tp-modal .tp-choice-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Pie: orden y aspecto únicos para todos los modales (modal.css + modal.js,
+   QA V9): Eliminar a la izquierda, Cancelar y Guardar a la derecha. Antes
+   aquí se ponía Guardar a la izquierda con `order`. */
+
+/* ---------------------------------------------------------------------------
+ * Pestaña Usuarios: como el selectpicker "multiexpand half" del legacy —
+ * caja con [Seleccionar todo] [Deseleccionar todo] [buscador] arriba y la
+ * lista a 2 columnas con scroll (carga más páginas al bajar).
+ * ------------------------------------------------------------------------- */
+.tp-device-form .tp-users-box {
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 6px;
+  background: var(--surface-raised, #fff);
+  padding: 6px;
+}
+.tp-device-form .tp-users-box__head {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin-bottom: 6px;
+}
+.tp-device-form .tp-users-box__action {
+  height: 34px;
+  padding: 0 10px;
+  background: var(--surface-sunken, #f5f7fa);
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 6px 0 0 6px;
+  color: var(--fg-primary, #0f172a);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.tp-device-form .tp-users-box__action + .tp-users-box__action {
+  border-left: 0;
+  border-radius: 0 6px 6px 0;
+}
+.tp-device-form .tp-users-box__action:hover {
+  background: var(--surface-raised, #fff);
+  color: var(--brand-600, #2e63d9);
+}
+.tp-device-form .tp-users-box__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+.tp-device-form .tp-users-box__search svg {
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+  color: var(--fg-muted, #94a3b8);
+}
+.tp-device-form .tp-users-box__search input[type="search"] {
+  padding-left: 30px;
+}
+.tp-device-form .tp-users-box__list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 0 12px;
+  height: 200px;
+  overflow-y: auto;
+  padding: 2px 6px 2px 20px;
+}
+.tp-device-form .tp-users-box__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--fg-primary, #0f172a);
+  cursor: pointer;
+}
+.tp-device-form .tp-users-box__row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-device-form .tp-users-box__msg {
+  grid-column: 1 / -1;
+  padding: 10px 2px;
+  font-size: 13px;
+}
+@media (max-width: 520px) {
+  .tp-device-form .tp-users-box__head {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tp-device-form .tp-users-box__search {
+    grid-column: 1 / -1;
+    margin: 6px 0 0;
+  }
+  .tp-device-form .tp-users-box__list {
+    grid-template-columns: 1fr;
+  }
+}
+.tp-device-form .tp-tabs__panel {
+  display: none;
+}
+.tp-device-form .tp-tabs__panel.is-active {
+  display: block;
+  padding-bottom: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Caja agrupadora (tab Usuarios y similares): borde redondeado, header con
+ * buscador + acciones, cuerpo y paginación al pie (estilo referencia).
+ * ------------------------------------------------------------------------- */
+.tp-form .tp-group-box {
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-raised, #fff);
+  padding: 12px 14px;
+}
+.tp-form .tp-group-box__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.tp-form .tp-group-box__head input[type="search"] {
+  max-width: 220px;
+  border-radius: 999px;
+}
+
+/* Input date: indicador de calendario propio (en vez del icono nativo) */
+.tp-form input[type="date"]::-webkit-calendar-picker-indicator {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  opacity: 0.75;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2'/%3E%3Cpath d='M16 2v4M8 2v4M3 10h18'/%3E%3C/svg%3E")
+    center / 16px no-repeat;
+}
+.tp-form input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+[data-theme="dark"] .tp-form input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}
+
+/* Input-group: campo con addon embebido (ej. Reenvío con checkbox prefijo) */
+.tp-form .tp-input-group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 4px 0 11px;
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #cbd5e1);
+  border-radius: var(--r-md, 8px);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.tp-form .tp-input-group:focus-within {
+  border-color: var(--border-focus, var(--brand-500, #2e63d9));
+  box-shadow: var(--shadow-focus, 0 0 0 3px rgba(46, 99, 217, 0.25));
+}
+.tp-form .tp-input-group input[type="text"] {
+  flex: 1;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+.tp-form .tp-input-group input[type="text"]:focus {
+  border: 0;
+  box-shadow: none;
+}
+
+/* Buscador pill con icono de lupa como prefijo (estilo referencia) */
+.tp-form .tp-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 220px;
+  min-width: 140px;
+}
+.tp-form .tp-search svg {
+  position: absolute;
+  left: 12px;
+  pointer-events: none;
+  color: var(--fg-muted, #94a3b8);
+}
+.tp-form .tp-search input[type="search"] {
+  width: 100%;
+  max-width: none;
+  padding-left: 34px;
+  border-radius: 999px;
+}
+.tp-form .tp-link-action {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-500, #2e63d9);
+  cursor: pointer;
+}
+.tp-link-action:hover {
+  text-decoration: underline;
+}
+.tp-form .tp-group-box__sep {
+  color: var(--border-strong, #cbd5e1);
+}
+.tp-form .tp-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 10px;
+}
+.tp-form .tp-pagination button {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: var(--fg-secondary, #475569);
+  cursor: pointer;
+}
+.tp-form .tp-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.tp-form .tp-pagination button.is-current {
+  border-color: var(--border-default, #e2e8f0);
+  color: var(--fg-primary, #0f172a);
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tablas embebidas (tabs Sensores / paneles del sensor)
+ * ------------------------------------------------------------------------- */
+.tp-form .tp-embed-box {
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: var(--r-lg, 12px);
+  /* visible: el menú kebab (absoluto) debe poder salir de la caja.
+     El redondeo de esquinas se aplica por celda (abajo). */
+  overflow: visible;
+  background: var(--surface-raised, #fff);
+}
+.tp-form .tp-embed-box thead th:first-child {
+  border-top-left-radius: calc(var(--r-lg, 12px) - 1px);
+}
+.tp-form .tp-embed-box thead th:last-child {
+  border-top-right-radius: calc(var(--r-lg, 12px) - 1px);
+}
+.tp-form .tp-embed-box tbody tr:last-child td:first-child {
+  border-bottom-left-radius: calc(var(--r-lg, 12px) - 1px);
+}
+.tp-form .tp-embed-box tbody tr:last-child td:last-child {
+  border-bottom-right-radius: calc(var(--r-lg, 12px) - 1px);
+}
+.tp-form .tp-embed-box table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+/* Cabecera de tabla común (QA V6): MAYÚSCULAS 11 px gris, como .tp-svc-table. */
+.tp-form .tp-embed-box thead th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide, 0.04em);
+  color: var(--fg-tertiary, #64748b);
+  background: var(--surface-sunken, #f8fafc);
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
+  white-space: nowrap;
+}
+.tp-form .tp-embed-box tbody td {
+  padding: 7px 12px;
+  border-top: 1px solid var(--border-default, #eef2f7);
+  color: var(--fg-primary, #0f172a);
+}
+.tp-form .tp-embed-box tbody tr:first-child td {
+  border-top: 0;
+}
+.tp-form .tp-embed-box tbody tr:hover td {
+  background: var(--surface-sunken, #f8fafc);
+}
+
+/* ---------------------------------------------------------------------------
+ * Galería de iconos (radio visual)
+ * ------------------------------------------------------------------------- */
+.tp-device-form .tp-icon-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-sunken, #f8fafc);
+}
+.tp-device-form .tp-icon-gallery__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md, 8px);
+  background: var(--surface-raised, #fff);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.08s ease;
+}
+.tp-device-form .tp-icon-gallery__item:hover {
+  border-color: var(--brand-500, #2e63d9);
+}
+.tp-device-form .tp-icon-gallery__item.is-selected {
+  border-color: var(--brand-500, #2e63d9);
+  box-shadow: 0 0 0 2px var(--brand-bg-subtle, rgba(46, 99, 217, 0.18));
+}
+.tp-device-form .tp-icon-gallery__item img {
+  max-width: 40px;
+  max-height: 40px;
+  object-fit: contain;
+  pointer-events: none;
+}
+.tp-device-form .tp-icon-gallery__item input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ── Colores del recorrido (tab Cola) — estilo Wialon ── */
+.tp-routecolors {
+  margin-top: 4px;
+}
+.tp-routecolors__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--fg-primary, #0f172a);
+}
+.tp-routecolors__opt.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tp-routecolors__opt--block {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.tp-routecolors__opt-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tp-routecolors__opt-body {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  transition: opacity 0.15s ease;
+}
+.tp-routecolors__opt-body--block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-left: 24px;
+}
+/* atenuar paneles de modos no activos */
+.tp-routecolors[data-active="trips"] [data-rc-panel],
+.tp-routecolors[data-active="single"] [data-rc-panel]:not([data-rc-panel="single"]),
+.tp-routecolors[data-active="speed"] [data-rc-panel]:not([data-rc-panel="speed"]),
+.tp-routecolors[data-active="sensor"] [data-rc-panel]:not([data-rc-panel="sensor"]) {
+  opacity: 0.45;
+}
+.tp-routecolors__hex,
+.tp-form input[type="color"].tp-routecolors__hex {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tp-routecolors__swatches {
+  display: inline-flex;
+  gap: 4px;
+}
+.tp-routecolors__swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+.tp-routecolors__swatch:hover {
+  transform: scale(1.15);
+}
+.tp-routecolors__add,
+.tp-routecolors__reset,
+.tp-routecolors__del {
+  border: 1px solid var(--border-default, #e2e8f0);
+  background: transparent;
+  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--fg-secondary, #475569);
+}
+.tp-routecolors__add {
+  color: #16a34a;
+  font-weight: 700;
+}
+.tp-routecolors__del:hover {
+  color: var(--danger-500, #ef4444);
+  border-color: var(--danger-500, #ef4444);
+}
+.tp-routecolors__bar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+/* Rangos en linea (horizontal, con wrap) */
+.tp-routecolors__rows {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.tp-routecolors__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tp-routecolors__row input[type="color"] {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tp-routecolors__dash,
+.tp-routecolors__inf {
+  color: var(--fg-muted, #94a3b8);
+  min-width: 14px;
+  text-align: center;
+}
+
+/* Filas de los CRUD simples del modal de cuenta (categorías de medios,
+   credenciales secundarias) */
+.tp-acc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  font-size: 13px;
+}
+.tp-acc-row + .tp-acc-row {
+  margin-top: 6px;
+}
+.tp-acc-row:hover {
+  background: var(--brand-bg-subtle, var(--brand-50));
+}
+
+/* Picker de icono por fila de mapeo del sensor (paridad legacy icons-modal) */
+.tp-map-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--border-default, #cbd5e1);
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.tp-map-icon:hover {
+  border-color: var(--brand-500, #2563eb);
+  background: var(--brand-bg-subtle, var(--brand-50));
+}
+.tp-map-icon img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+.tp-map-icon__empty {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--fg-tertiary, #94a3b8);
+}
+.tp-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.tp-icon-grid__cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle, #e2e8f0);
+  border-radius: 10px;
+  background: var(--surface-page, #fff);
+  cursor: pointer;
+  padding: 6px;
+}
+.tp-icon-grid__cell:hover {
+  border-color: var(--brand-500, #2563eb);
+}
+.tp-icon-grid__cell.is-active {
+  border-color: var(--brand-500, #2563eb);
+  box-shadow: 0 0 0 2px var(--brand-100, #dbeafe);
+}
+.tp-icon-grid__cell img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Badge de tipo en el tab Historial (mantenimiento/suspensión/reactivación) */
+.tp-maint-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* ── Sensor: calibración / cartografía como sección propia ──────────────
+   El legacy (calibationShow/Hide en Frontend/Sensors/form.blade.php) parte
+   el formulario en dos col-md-6 y ensancha el modal cuando se activa
+   Calibración o Cartografía, para que se lea como una sección aparte y no
+   como más campos del mismo formulario. Aquí se replica ese comportamiento:
+   .tp-sensor-form--split lo pone el JS (syncPanels). */
+.tp-sensor-form__panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--sp-4);
+  align-items: start;
+}
+.tp-sensor-form--split .tp-sensor-form__panes {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.tp-sensor-form__main {
+  min-width: 0;
+}
+.tp-sensor-form__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+/* Separador vertical: refuerza que la derecha es otra sección. */
+.tp-sensor-form--split .tp-sensor-form__side {
+  border-left: 1px solid var(--border-subtle);
+  padding-left: var(--sp-4);
+}
+.tp-sensor-pane__box {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  background: var(--surface-page);
+  padding: var(--sp-3);
+}
+.tp-sensor-pane__title {
+  margin: 0 0 var(--sp-3);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+
+/* Bajo 900px el modal ya no da para dos columnas: se apilan. */
+@media (max-width: 900px) {
+  .tp-sensor-form--split .tp-sensor-form__panes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tp-sensor-form--split .tp-sensor-form__side {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--sp-4);
+  }
+}
+
+/* Al partirse, la columna izquierda se estrecha: los campos pasan a una sola
+   columna (igual que el col-md-6 del legacy) en vez de quedar apretados. */
+.tp-sensor-form--split .tp-sensor-form__main > .tp-form__grid--2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Alta de valores: bloque propio, claramente separado de la tabla de los
+   valores ya agregados (antes se leía como una fila más de la tabla). */
+.tp-sensor-pane__add {
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px dashed var(--border-default);
+}
+.tp-sensor-pane__add-title {
+  display: block;
+  margin-bottom: var(--sp-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+/* La tabla de valores ya agregados: cabecera propia para que se lea como
+   "lo que ya hay" frente al bloque de alta. */
+.tp-sensor-pane .tp-embed-box {
+  margin-bottom: 0;
+}
+
+/* Cabecera del panel: título a la izquierda, acciones (importar) a la derecha. */
+.tp-sensor-pane__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+.tp-sensor-pane__head .tp-sensor-pane__title {
+  margin: 0;
+}
+
+/* ── Copiar sensores a otros vehículos ───────────────────────────────
+   Dos columnas: qué se copia y a dónde. Las listas llevan su propio
+   scroll para que el modal no crezca con flotas de cientos de equipos. */
+.tp-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-4);
+}
+.tp-copy__col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.tp-copy__title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+.tp-copy__list {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.tp-copy__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tp-copy__row:hover {
+  background: var(--surface-sunken);
+}
+.tp-copy__row span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-copy__row small {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+}
+
+@media (max-width: 720px) {
+  .tp-copy {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Modos de la copia: qué hacer con lo que el destino ya tiene. */
+.tp-copy__modes {
+  border-top: 1px dashed var(--border-default);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+}
+.tp-copy__modes .tp-copy__row {
+  cursor: pointer;
+  align-items: flex-start;
+}
+.tp-copy__modes input[type="radio"] {
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+.tp-copy__modes .tp-copy__row span {
+  white-space: normal;
+}
+
+/* Acciones de la fila (alertas del vehículo: editar + vigencia). */
+.tp-acc-row__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.tp-acc-row__actions .tp-btn {
+  text-decoration: none;
+}
+
+/* ---------- Modal de reportes ----------
+   Es alto, de dos columnas y con filas encadenadas: con el interlineado
+   base la etiqueta de una fila quedaba pegada al campo de la de arriba
+   ("Periodo" tocando el select de Tipo). Se separa solo aquí, para no
+   mover el resto de formularios de la v2. */
+.tp-form.tp-report-form .tp-form__field {
+  gap: 7px;
+}
+.tp-form.tp-report-form .tp-form__grid {
+  gap: 18px 18px;
+}
+/* Aire entre filas consecutivas, que iban pegadas una debajo de otra. */
+.tp-form.tp-report-form .tp-form__grid + .tp-form__grid {
+  margin-top: 18px;
+}
+.tp-form.tp-report-form .tp-form__label {
+  margin-bottom: 1px;
+}
+/* La caja de chips y los selects, a la misma altura que los inputs de
+   fecha: si no, cada columna termina a una altura distinta. */
+.tp-form.tp-report-form .tp-form__field > .tp-input,
+.tp-form.tp-report-form .tp-form__field > div > .tp-input {
+  min-height: 38px;
+}
+
+/* ── Color del marcador por velocidad ─────────────────────────────────
+   Con el interruptor apagado el bloque se atenua pero SIGUE enviandose:
+   deshabilitar los campos los dejaria fuera del submit y se perderia lo
+   configurado al volver a activarlo. */
+.tp-markercolors[data-on="0"] .tp-markercolors__body {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.tp-markercolors .tp-routecolors__opt-head {
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Listas de las pestañas Sensores y Servicios (tp-devlist): como
+ * Devices/partials/sensors|services + Sensors/index|Services/table del legacy —
+ * botón "+ Agregar sensor" arriba, tabla Nombre / Plantilla con editar y
+ * eliminar como iconos en línea. Buscador y "Copiar a…" (extras v2) a la
+ * derecha de la misma barra.
+ * ------------------------------------------------------------------------- */
+.tp-device-form .tp-devlist__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+/* «+ Añadir servicio/sensor» de las pestañas: secundario y a la altura de
+   las barras de herramientas (tp-btn--secondary tp-btn--sm). El único
+   primario del modal es Guardar, en el pie (QA V3/V4). */
+.tp-device-form .tp-devlist__add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 var(--sp-3, 12px);
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-default, #cbd5e1);
+  border-radius: var(--r-sm, 4px);
+  color: var(--fg-primary, #0f172a);
+  font: inherit;
+  font-size: var(--fs-sm, 12px);
+  font-weight: var(--fw-medium, 500);
+  cursor: pointer;
+}
+.tp-device-form .tp-devlist__add:hover {
+  background: var(--surface-sunken, #f1f5f9);
+  border-color: var(--border-strong, #cbd5e1);
+}
+.tp-device-form .tp-devlist__add--ghost {
+  background: transparent;
+}
+.tp-device-form .tp-devlist__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 1 200px;
+  margin-left: auto;
+}
+.tp-device-form .tp-devlist__search svg {
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+  color: var(--fg-muted, #94a3b8);
+}
+.tp-device-form .tp-devlist__search input[type="search"] {
+  padding-left: 30px;
+}
+
+.tp-device-form .tp-devlist__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+/* Cabecera de tabla común (QA V6). */
+.tp-device-form .tp-devlist__table th {
+  padding: 8px 10px;
+  text-align: left;
+  font-size: var(--fs-xs, 11px);
+  font-weight: var(--fw-semibold, 600);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide, 0.04em);
+  color: var(--fg-tertiary, #64748b);
+  background: var(--surface-sunken, #f8fafc);
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
+  white-space: nowrap;
+}
+.tp-device-form .tp-devlist__table td {
+  padding: 7px 10px;
+  color: var(--fg-primary, #0f172a);
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+  vertical-align: middle;
+}
+.tp-device-form .tp-devlist__table tbody tr:hover td {
+  background: var(--surface-sunken, #f5f7fa);
+}
+.tp-device-form .tp-devlist__actions-col {
+  width: 76px;
+}
+.tp-device-form .tp-devlist__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.tp-device-form .tp-devlist__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-left: 2px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--fg-secondary, #475569);
+  cursor: pointer;
+}
+.tp-device-form .tp-devlist__icon svg {
+  width: 15px;
+  height: 15px;
+}
+.tp-device-form .tp-devlist__icon:hover {
+  background: var(--surface-sunken, #f1f5f9);
+  color: var(--brand-600, #1f5fbf);
+}
+.tp-device-form .tp-devlist__icon--danger:hover {
+  color: var(--danger-500, #ef4444);
+}
+.tp-device-form .tp-devlist__empty {
+  padding: 14px 10px;
+  color: var(--fg-muted, #94a3b8);
+  text-align: center;
+}
+
+/* Vídeo: los canales se ocultan sin «Tiene cámara» (el display:flex de
+   .tp-form__field ganaba al atributo hidden). */
+.tp-form [data-tp-video-channels][hidden] {
+  display: none;
+}

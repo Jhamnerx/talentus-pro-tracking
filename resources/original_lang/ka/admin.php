@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'სადღეღამისო განაკვეთები',
     'forwards' => 'ფორვარდები',
     'group_6' => 'ზედამხედველი',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'მომხმარებელი შექმნილია დღეების წინ',
     'reminders_trans' => 'შეხსენებების თარგმანები',
     'passwords_trans' => 'პაროლების თარგმანები',

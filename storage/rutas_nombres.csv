@@ -1,0 +1,200 @@
+ruta,nombre_comun,trayecto_corto
+PE-02,,Dv. Paita – Paita
+PE-02A,,Dv. Huancabamba – Huancabamba
+PE-02B,,Sondor – Dv. Pte. Tamborapa
+PE-02C,,Dv. Pte. Carrasquillo – PE-1N R
+PE-02D,,Miraflores – Tambogrande
+PE-02E,,La Afiladera – Palambla
+PE-04,,El Cruce – Bapo
+PE-04A,,El Cruce – Olmos
+PE-04B,,Dv. Jaén – Pte. Hualapampa
+PE-04C,,Chiple – Chamaya
+PE-06,,Dv. Pimentel – Pimentel
+PE-06A,,Larán – Cochabamba
+PE-06B,,Pte. El Cumbil – Chamana
+PE-08,Ciudad de Dios – Cajamarca,Ciudad de Dios – Cajamarca
+PE-08A,,Chilete – San Pablo – Dv. Cajamarca
+PE-08B,,Cajamarca – La Calzada
+PE-08C,,Dv. Caclic – Pte. Ingenio
+PE-10,,Dv. Pto. Salaverry – Pto. Salaverry
+PE-10A,,Ov. La Marina – Shorey
+PE-10B,,Laguna Sausacocha – Pte. Santa Martha
+PE-10C,,Pte. El Pallar – Pte. Mamahuaje
+PE-12,,Santa – Chuquicara
+PE-12A,,Dv. Sihuas – Pte. Huaynabe
+PE-12B,,Pariash – Tayabamba
+PE-12C,,Miraflores – Challas
+PE-14,,Pte. Carrizales – Huaraz
+PE-14A,,Huaraz – Tingo María
+PE-14B,,Anyanga – Pte. Pomachaca
+PE-14C,,PE-12 A – Huari
+PE-14D,,Alpash – Dv. Paucas
+PE-14E,,Pirush – Tingo Chico
+PE-16,,Dv. Conococha – Conococha
+PE-16A,,PE-1N – La Curva
+PE-18,,Ov. Río Seco – Ambo
+PE-18A,,Ovalo Cayhuana – Pte. Pumahuasi
+PE-18B,,Pte. Rancho – Dv. Codo del Pozuzo
+PE-18C,,Von Humboldt – Frontera con Brasil
+PE-18D,,San Rafael – Pozuzo
+PE-18E,,PE-18 B – PE-18 B
+PE-1N,Panamericana Norte,I.V. Santa Anita – Pte. Internacional de La Paz
+PE-1NA,,I.V. Ancón – Chacra y Mar
+PE-1NB,,Ov. Chancay – Huaral
+PE-1ND,,Dv. Pto. Chancay – Dv. Ov. Río Seco
+PE-1NE,,Huaura – Dv. Sayán
+PE-1NF,,Chicama – Chilete
+PE-1NG,,Dv. Santa María de Tecapa – Dv. Tembladera
+PE-1NI,,Nvo. Mocupe – Bolivar
+PE-1NJ,,Dv. Mochumí – Dv. Catacaos
+PE-1NK,,Dv. Catacaos – Dv. Bayovar
+PE-1NL,,Dv. Pte. Macará – Pte. Macará
+PE-1NM,,Dv. Surpampa – Dv. Pte. Macara
+PE-1NN,,Marcavelica – El Alamor
+PE-1NO,,Ov. Zarumilla – Pte. Internacional Aguas Verdes
+PE-1NQ,,Dv. Chimbote – Santa
+PE-1NR,,Dv. Tambogrande – Curilcas
+PE-1NS,,El Cincuenta – Chulucanas
+PE-1NT,,Sajino – Socchabamba
+PE-1NU,,El Veintiuno – Tambo Grande
+PE-1NÑ,,Dv. San Pedro de las Incas – Aeropuerto
+PE-1S,Panamericana Sur,I.V. Santa Anita – La Concordia.
+PE-1SB,,Tupac Amaru – I.V. Pisco
+PE-1SC,,Pte. Los Maestros – Huaytara
+PE-1SD,,Dv. Quilca – Dv. Costanera
+PE-1SE,,Dv. Chincha Alta – PE-1S
+PE-1SF,,PE-1S – Dv. Paracas
+PE-1SG,,Dv. Pisco – Dv. Paracas
+PE-1SH,,PE-1S G – San Andres
+PE-1SI,,Yauca – Coracora
+PE-1SJ,,PE-1S – PE-1S D
+PE-20,,I.V. Zapallal – Pto. Callao
+PE-20A,Lima – Canta – Huayllay,Dv. Trapiche – Villa de Pasco
+PE-20B,,Óvalo 200 Millas – Av. Néstor Gambetta (Callao)
+PE-20C,,Dv. Huaral – Dv. Huayllay
+PE-20E,,PE-20 – Embarque de Minerales
+PE-20F,,Dv. Pte. Chillón – Ov. Canta Callao
+PE-20H,,Dv. Pto. Callao – Acceso Muelle Norte
+PE-20I,,Av. Morales Duarez – Av. Costanera
+PE-20J,,PE-20B – Av. Circunvalación
+PE-20K,,Av. Elmer Faucett – Límite provincial de Callao-Lima
+PE-22,Carretera Central,I.V. La Menacho – Repartición La Oroya
+PE-22A,,I.V. Mala – Río Blanco
+PE-22B,,Dv. Tarma – Pte. Reither
+PE-22C,,Pte. Surco – Matucana
+PE-22D,,Autopista Cieneguilla – San Mateo
+PE-24,,Dv. San Vicente de Cañete – El Tambo
+PE-24A,,Concepción – Satipo
+PE-24C,,Pte.Huanacaure – Satipo
+PE-26,,Chincha Alta – Izcuchaca
+PE-26A,,Toyoc – Castrovirreyna
+PE-26B,,Huancavelica – Lagunilla
+PE-28,,Dv. Paracas – Pto. San Martín
+PE-28A,Vía Los Libertadores,Dv. Huaytará – Ayacucho
+PE-28B,,Pacaycasa – Huacarpay
+PE-28C,,San Francisco – Mazamari
+PE-28D,,Pámpano – Lachoj
+PE-28E,,Rumichaca – Santa Inés
+PE-28F,,Poroy – Urubamba
+PE-28G,,Cusco – Pisac
+PE-28H,,Rosario – Alto Anapati
+PE-28J,,Chinchero – Catacchara
+PE-30,,Dv. San Juan – Pto. San Juan de Marcona
+PE-30A,,Vista Alegre – Pte. Sahuinto
+PE-30B,,Dv. Andahuaylas – Andahuaylas
+PE-30C,Interoceánica Sur,Urcos – Pte. Iñapari
+PE-30D,,PE-30 D – Granja de Caracha
+PE-30E,,PE 30C San Lorenzo – Alto Peru
+PE-32,,Dv. Achanizo – Puquio
+PE-32A,,Dv. Andamarca – Abra Tocto
+PE-32C,,Ullaccasa – L.D. Arequipa
+PE-34,,Dv. Pto. Matarani – Pto. Mataraní
+PE-34A,Arequipa – Juliaca (Interoceánica),La Repartición – Juliaca
+PE-34B,,Dv. Azángaro – Pte. Inambari
+PE-34C,,Dv. Chiguata – Santa Lucía
+PE-34E,,Dv. Vizcachane – Yauri
+PE-34F,,Río Salado – Combapata
+PE-34G,,El Descanso – Sicuani
+PE-34H,,Juliaca – Paujil Playa
+PE-34I,,Dv. Huancane – Ninantaya
+PE-34J,,Imata – Héctor Tejada
+PE-34K,,Rosario – Quiscupunco
+PE-34L,,Chaquiminas – Coasia
+PE-34M,,Salviane – Saco
+PE-34N,,Carlos Gutierrez Alzamora – Usicayos
+PE-34O,,Pachani – Patambuco
+PE-34P,,San José – Boca Limbani
+PE-34Q,,Putina – Muñani
+PE-34R,,Azángaro – Pte. Independencia
+PE-34S,,Dv. Huancho – Arapa
+PE-34T,,Dv. Inchupalla – Huatasani
+PE-34U,,Dv. Mañazo – Dv. Ccellacce
+PE-34V,,PE-34I – L. Internacional
+PE-34W,,PE-34L – Cupisaya
+PE-34X,,PU-892 – Hito 03
+PE-34Ñ,,Dv. Limbani – Phara
+PE-36,,Dv. Ilo – Ilo
+PE-36A,,PE-1S – Dv. Desaguadero
+PE-36B,,Dv. Puno – Puno
+PE-36C,,Dv. Uchuni – Dv. Pte. Internacional Desaguadero
+PE-36D,,PE-36 – PE-1 S
+PE-36E,,Dv. Vilacalla – Capazo
+PE-36F,,Dv. Azancallane – L.D. Tacna
+PE-36G,,Torata – L.D. Moquegua
+PE-38,,Tacna – Mazocruz
+PE-38A,,Mazocruz – Ilave
+PE-38B,,Dv. Palermo – Palermo
+PE-3N,Longitudinal de la Sierra Norte,Repartición La Oroya – Vado Grande
+PE-3NA,,Dv. Pte. Huarochiri – Tauca
+PE-3NB,,Dv. Yanacanchilla Alta – Bambamarca
+PE-3NC,,Chota – Cutervo
+PE-3ND,,Cutervo – Cuyca
+PE-3NE,,Dv. Aquia – PE-3N
+PE-3NG,,La Cima – Chinchan
+PE-3NH,,Pte. Tingo – Antamina
+PE-3NI,,Ovalo Cayhuayna – PE -18 A
+PE-3NJ,,Huánuco – PE-18 A
+PE-3S,Longitudinal de la Sierra Sur,Repartición La Oroya – Pte. Internacional Desaguadero
+PE-3SA,,Ov. Aeropuerto Jauja – Tarma
+PE-3SAA,,Escuri – Caracoto
+PE-3SB,,Dv. Pte. Stuart – Huayucachi
+PE-3SC,,Chilca – Dv. Mullampa
+PE-3SD,,Dv. Pampas – Mayocc
+PE-3SE,,Dv. Kishuara – Abra Crusccassa
+PE-3SF,,Dv. Chuquibambilla – Dv. Cotabambas
+PE-3SG,,Challhuahuacho – Ayaviri
+PE-3SH,,Pucará – Villa Chuctani
+PE-3SI,,Marcapata – Sicuani
+PE-3SJ,,Dv. Santa Teresa – Puente Hidroeléctrica
+PE-3SK,,Yauri – Dv. Tintaya
+PE-3SL,,Ayacucho – Dv. Ocros
+PE-3SM,,Mcal. Cáceres La Mejorada – Dv. Marcas
+PE-3SM1,,Sta. Rosa – Ituata
+PE-3SN,,Dv. Ayapata – Ayapata
+PE-3SO,,Taraco – Dv. Huata
+PE-3SP,,Arcopunco – Atuncolla
+PE-3SQ,,Llallinyo – Jualiaca
+PE-3SR,,PE-34 A – PE-3SQ
+PE-3SS,,Chuquibambilla – L.D. Cusco
+PE-3ST,,Platería – Perca
+PE-3SU,,Dv. Palermo – Pichupichuni
+PE-3SV,,Dv. Huanipaca – Estación de salida del Teleférico
+PE-3SW,,Chaychapampa – Yauri
+PE-3SX,,Progreso – Dv. Quehuira
+PE-3SY,,Pte. Isuray – Velille
+PE-3SZ,,Pilcomayo – Huayucachi
+PE-3SÑ,,Est. Pucará – Dv. Pucará
+PE-40,,Tacna – Tripartito
+PE-40A,,Rosaspata – Collpa (fr. Bolivia)
+PE-5N,Marginal de la Selva Norte (Fernando Belaúnde Terry),Pte. Reither – Río Heath
+PE-5NA,,Pte. Paucartambo – Pte. Plátano Isla
+PE-5NB,,Tarapoto – Pte. Chanusi -Yurimaguas
+PE-5NC,,El Reposo – Saramiriza
+PE-5ND,,Pte. Wawico – Saramiriza
+PE-5NE,,Juan Velasco Alvarado – Nva. Seasme
+PE-5NG,,Corral Quemado – PE-08B
+PE-5NH,,Dv. Pto. Inca – Pto. Inca
+PE-5NI,,Iquitos – Río Putumayo
+PE-5S,Marginal de la Selva Sur (Fernando Belaúnde Terry),Pte. Reither – Río Heath
+PE-5SA,,Pto. Ocopa – Atalaya
+PE-5SB,,Dv. Bajo Kimiriki – Dv. Puerto Ocopa

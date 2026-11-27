@@ -183,6 +183,7 @@ return array(
         'frequency' => 'အျကိမ္အေရအတြက္',
         'unit' => 'ယူနစ္',
         'noreply_email' => 'System၏ အီးေမး(လ္)လိပ္စာ',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'လက္မွတ္',
         'use_smtp_server' => 'SMTP server ကိုသုံးပါ',
         'smtp_server_host' => ' SMTP server၏ host အမည္',

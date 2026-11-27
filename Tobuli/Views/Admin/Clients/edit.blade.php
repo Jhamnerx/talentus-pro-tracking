@@ -219,6 +219,18 @@
                 </div>
             </div>
 
+            @if (config('google2fa.enabled') && $item->is2faEnabled())
+                <div class="form-group">
+                    <h4>{{ trans('front.setup_2fa') }}</h4>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox">
+                        {!! Form::checkbox('reset_2fa') !!}
+                        {!! Form::label(null, trans('front.reset')) !!}
+                    </div>
+                </div>
+            @endif
 
             @if (config('addon.login_token') && Auth::user()->can('view', $item, 'login_token'))
                 <div class="form-group">

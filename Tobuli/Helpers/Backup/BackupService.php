@@ -4,6 +4,7 @@ namespace Tobuli\Helpers\Backup;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Backup;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Helpers\Backup\Exception\InvalidFtpConfigException;
@@ -11,7 +12,10 @@ use Tobuli\Helpers\Backup\Exception\NoHiveConfigException;
 use Tobuli\Helpers\Backup\Process\DatabaseBackuper;
 use Tobuli\Helpers\Backup\Process\DevicesPositionsBackuper;
 use Tobuli\Helpers\Backup\Process\FilesBackuper;
+use Tobuli\Helpers\Backup\Destination\BackupDestination;
+use Tobuli\Helpers\Backup\Destination\DriveDestination;
 use Tobuli\Helpers\Backup\Uploader\BackupFtp;
+use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
 use Tobuli\Helpers\Hive;
 use Tobuli\Services\DatabaseService;
 
@@ -23,6 +27,7 @@ class BackupService
     protected array $settings;
     protected BackupFtp $ftp;
     protected Hive $hive;
+    private ?array $destinations = null;
 
     public function __construct(array $settings)
     {
@@ -62,12 +67,60 @@ class BackupService
         );
     }
 
-    public function canRestorePositions(): bool
+    /**
+     * @return array<string, BackupDestination> los destinos configurados
+     */
+    public function destinations(): array
     {
-        return !$this->isAutoSettings() || $this->hive->hasBackupServer();
+        if ($this->destinations !== null) {
+            return $this->destinations;
+        }
+
+        $destinations = [];
+
+        try {
+            $destinations[BackupDestination::FTP] = $this->ftp();
+        } catch (NoHiveConfigException | InvalidFtpConfigException | \GuzzleHttp\Exception\GuzzleException $e) {
+            // Sin FTP configurado, el backup puede seguir solo con Drive.
+        }
+
+        if (!empty($this->settings['drive_enabled'])) {
+            $destinations[BackupDestination::DRIVE] = new DriveDestination(
+                $this->settings['drive_remote'] ?? 'gdrive',
+                $this->settings['drive_path'] ?? 'backup_plataforma/',
+                config('tobuli.backups_rclone_config')
+            );
+        }
+
+        return $this->destinations = $destinations;
     }
 
-    private function hasHiveCredentials(): bool
+    public function destination(string $name): BackupDestination
+    {
+        $destinations = $this->destinations();
+
+        if (!isset($destinations[$name])) {
+            throw new \InvalidArgumentException("Backup destination `$name` is not available");
+        }
+
+        return $destinations[$name];
+    }
+
+    public function testDrive(): DriveDestination
+    {
+        /** @var DriveDestination $drive */
+        $drive = $this->destination(BackupDestination::DRIVE);
+        $drive->test();
+
+        return $drive;
+    }
+
+    public function canRestorePositions(): bool
+    {
+        return !$this->isAutoSettings() || $this->hive->hasBackupServer() || !empty($this->settings['drive_enabled']);
+    }
+
+    public function hasHiveCredentials(): bool
     {
         return $this->isAutoSettings() && $this->hive->hasBackupServer();
     }
@@ -79,13 +132,15 @@ class BackupService
 
     public function auto(): bool
     {
+        $this->closeAbandonedAutoBackup();
+
         if (!$this->canStartAutoBackup()) {
             return false;
         }
 
-        try {
-            $this->setupFtp();
-        } catch (NoHiveConfigException | InvalidFtpConfigException $e) {
+        $destinations = $this->destinations();
+
+        if (empty($destinations)) {
             $this->setNextBackup();
             return false;
         }
@@ -97,7 +152,7 @@ class BackupService
             $backup = $this->createBackup(self::LAUNCHER_AUTO);
         }
 
-        $processManager = new ProcessManager($this->ftp);
+        $processManager = new ProcessManager(new MultiDestinationUploader($destinations));
 
         try {
             $processManager->setBackup($backup)->handle();
@@ -106,16 +161,41 @@ class BackupService
                 $hive = new Hive();
                 $hive->backupServerError([
                     'code' => $e->getCode(),
-                    'error' => $e->getMessage(),
+                    'error' => BackupSecrets::scrub($e->getMessage()),
                 ]);
             }
 
             return false;
-        } finally {
-            $this->writeSettings();
         }
 
         return true;
+    }
+
+    /**
+     * Un backup automatico que se quedo sin procesos vivos (fallidos o caducados) y sin completar
+     * nunca llegaria a cerrarse solo: se cierra y se avisa (el aviso no se repite).
+     */
+    private function closeAbandonedAutoBackup(): void
+    {
+        try {
+            $backup = Backup::where('launcher', self::LAUNCHER_AUTO)
+                ->orderBy('created_at', 'DESC')
+                ->first();
+
+            if (
+                $backup
+                && $backup->created_at > now()->subDays(35)
+                && $backup->message !== 'Killed'
+                && !$backup->isCompleted()
+                && $backup->processes()->whereUnfinished()->count() === 0
+                // Un proceso que acaba de actualizarse puede estar terminando: no se cierra.
+                && !$backup->processes()->where('updated_at', '>', now()->subSeconds(60))->exists()
+            ) {
+                (new BackupFinalizer(new MultiDestinationUploader($this->destinations())))->closeFailed($backup);
+            }
+        } catch (\Throwable $e) {
+            logger()->error('Backup: cannot close abandoned backup: ' . BackupSecrets::scrub($e->getMessage()));
+        }
     }
 
     private function canStartAutoBackup(): bool
@@ -195,7 +275,10 @@ class BackupService
 
     public function force()
     {
-        if (!$this->ftp()->check()) {
+        $destinations = $this->destinations();
+        $uploader = new MultiDestinationUploader($destinations);
+
+        if (!$destinations || !$uploader->check()) {
             throw new \Exception(trans('front.login_failed'));
         }
 
@@ -203,30 +286,46 @@ class BackupService
 
         $backup = $this->createBackup(self::LAUNCHER_FORCE);
 
-        (new ProcessManager($this->ftp))
+        (new ProcessManager($uploader))
             ->setBackup($backup)
             ->handle();
     }
 
     public function kill(?string $launcher = null, ?int $backupId = null): int
     {
-        return $this->getUpdatableProcesses($launcher, $backupId)->update([
-            'failed_at' => date('Y-m-d H:i:s')
-        ]);
+        $this->killCurrentProcesses();
+
+        $updated = 0;
+
+        DB::transaction(function () use ($launcher, $backupId, &$updated) {
+            $updated = $this->getUpdatableProcesses($launcher, $backupId)->update([
+                'failed_at' => date('Y-m-d H:i:s')
+            ]);
+
+            if ($updated) {
+                Backup::when($backupId, fn (Builder $query) => $query->where('id', $backupId))
+                    ->when($launcher, fn (Builder $query) => $query->where('launcher', $launcher))
+                    ->update(['message' => 'Killed']);
+            }
+        });
+
+        return $updated;
     }
 
-    public function pause(?string $launcher = null, ?int $backupId = null): int
+    public function pause(int $minutes, ?string $launcher = null, ?int $backupId = null): int
     {
+        $this->killCurrentProcesses();
+
+        $date = date('Y-m-d H:i:s', time() + ($minutes * 60));
+
         return $this->getUpdatableProcesses($launcher, $backupId)->update([
-            'reserved_at' => date('Y-m-d H:i:s')
+            'reserved_at' => $date
         ]);
     }
 
     private function getUpdatableProcesses(?string $launcher = null, ?int $backupId = null): Builder
     {
-        $query = BackupProcess::whereUnexpired()
-            ->whereNotNull('completed_at')
-            ->whereNotNull('failed_at');
+        $query = BackupProcess::whereUnfinished();
 
         if ($launcher || $backupId) {
             $query->whereHas('backup', fn (Builder $query) => $query
@@ -255,20 +354,6 @@ class BackupService
         }
     }
 
-    protected function writeSettings($retry = 0)
-    {
-        try {
-            settings('backups', $this->settings);
-        } catch (\Exception $e) {
-            if ($retry > 3) {
-                throw $e;
-            }
-
-            sleep(30);
-            $this->writeSettings(++$retry);
-        }
-    }
-
     protected function setNextBackup()
     {
         $this->settings['next_backup'] = strtotime(
@@ -291,5 +376,10 @@ class BackupService
         }
 
         return $this->ftp;
+    }
+
+    protected function killCurrentProcesses(): void
+    {
+        (new \App\Console\ProcessManager('backup:mysql'))->killProcesses();
     }
 }

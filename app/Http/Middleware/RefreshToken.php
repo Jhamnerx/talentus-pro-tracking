@@ -29,7 +29,7 @@ class RefreshToken {
             || $response instanceof StreamedResponse;
 
         if (! $descarga)
-            $response->header('X-Refresh-Token', $token);
+            $response->headers->set('X-Refresh-Token', $token);
 
         return $response;
     }

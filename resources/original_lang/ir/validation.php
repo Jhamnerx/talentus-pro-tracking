@@ -183,6 +183,7 @@ return array(
         'frequency' => 'تکرار',
         'unit' => 'واحد',
         'noreply_email' => 'ایمیل بدون پاسخ',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'امضاء',
         'use_smtp_server' => 'استفاده از سرور SMTP',
         'smtp_server_host' => 'SMTP server host',

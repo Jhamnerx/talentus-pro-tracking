@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Μεροκάματα',
     'forwards' => 'Εμπρός',
     'group_6' => 'Επόπτης',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Ο χρήστης δημιουργήθηκε πριν από ημέρες',
     'reminders_trans' => 'Μεταφράσεις υπενθυμίσεων',
     'passwords_trans' => 'Μεταφράσεις κωδικών πρόσβασης',

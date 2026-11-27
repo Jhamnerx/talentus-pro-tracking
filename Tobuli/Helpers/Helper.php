@@ -288,21 +288,28 @@ function formatBytes($bytes)
 
 function getGeoAddress($lat, $lon)
 {
-    return CustomFacades\GeoLocation::resolveAddress($lat, $lon);
+    return CustomFacades\GeoLocation::resolveAddressHandled($lat, $lon);
 }
 
-function prepareServiceData($input, $values = NULL)
+function prepareServiceData(array $input, array $values, ?User $user = null): array
 {
     $last_service = $input['last_service'];
 
     if ($input['expiration_by'] == 'days') {
-        $today = Carbon::parse(Formatter::time()->convert(Carbon::now()));
+        $today = Carbon::now();
         $last_service = Carbon::parse($last_service);
+
+        if ($user) {
+            $last_service = $last_service->format('Y-m-d H:i:s');
+            $last_service = Formatter::time()->reverse($last_service);
+            $last_service = Carbon::parse($last_service);
+        }
+
         $input['last_service'] = $last_service->copy();
         $input['expires_date'] = $last_service->copy()
             ->addDays($input['interval']);
 
-        if ($today >= $input['expires_date'] && isset($input['renew_after_expiration'])) {
+        if ($today >= $input['expires_date'] && !empty($input['renew_after_expiration'])) {
             $diff = $today->diffInDays($last_service);
             $times = floor($diff / $input['interval']);
             $daysTillExpiration = $input['interval'] - ($times > 0 ? ($diff - $input['interval'] * $times) : 0);
@@ -323,15 +330,15 @@ function prepareServiceData($input, $values = NULL)
         $input['expired'] = $today >= $input['expires_date'];
         $input['event_sent'] = $today >= $input['remind_date'];
 
-        $input['expires_date'] = $input['expires_date']->format('Y-m-d');
-        $input['remind_date'] = $input['remind_date']->format('Y-m-d');
-        $input['last_service'] = $input['last_service']->format('Y-m-d');
+        $input['expires_date'] = $input['expires_date']->format('Y-m-d H:i:s');
+        $input['remind_date'] = $input['remind_date']->format('Y-m-d H:i:s');
+        $input['last_service'] = $input['last_service']->format('Y-m-d H:i:s');
     } else {
         $value = $values[$input['expiration_by']];
         $input['last_service'] = (is_numeric($last_service) && $last_service > 0) ? $last_service : 0;
         $input['expires'] = $input['interval'] + $input['last_service'];
 
-        if ($value >= $input['expires'] && isset($input['renew_after_expiration'])) {
+        if ($value >= $input['expires'] && !empty($input['renew_after_expiration'])) {
             $over = $value - $input['expires'];
             $times = ceil($over / $input['interval']);
             $input['expires'] = $input['expires'] + ($input['interval'] * ($times > 0 ? $times : 1));
@@ -380,7 +387,9 @@ function images_path($path = '')
         $path = DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
     }
 
-    return "/var/www/html/images{$path}";
+    // Antes era fijo "/var/www/html/images", que en esta instalación no existe: las imágenes
+    // subidas (device_images, device_icons, checklistPhotos…) viven en public/images.
+    return public_path("images{$path}");
 }
 
 function asset_resource($path, $file = null)
@@ -869,7 +878,11 @@ function listviewTrans($user_id, &$settings, &$fields)
         if ($field['class'] == 'sensor') {
             $field['title'] = $field['name'] . " (" . Arr::get($sensors_trans, $field['type'], 'none') . ")";
         } else {
-            $field['title'] = $fields_trans[$field['field']];
+            // Si un campo se añade a tobuli.listview_fields y se olvida su
+            // titulo, antes saltaba "Undefined array key" y se caia con 500
+            // el listado entero (y el de la v2, y el del admin). Mejor la
+            // columna con un nombre feo que la pantalla sin columnas.
+            $field['title'] = Arr::get($fields_trans, $field['field'], $field['field']);
         }
 
         $field['title'] = htmlentities($field['title'], ENT_QUOTES);
@@ -1516,6 +1529,7 @@ function listsTranslations()
         'sim_expiration_date' => trans('validation.attributes.sim_expiration_date'),
         'installation_date' => trans('validation.attributes.installation_date'),
         'expiration_date' => trans('validation.attributes.expiration_date'),
+        'distance' => trans('front.distance'),
     ]);
 
     $widgetsData = [
@@ -1528,13 +1542,19 @@ function listsTranslations()
         'image' => trans('front.device_image'),
         'fuel_graph' => trans('front.fuel'),
         'gprs_command' => trans('front.gprs_command'),
-        'recent_events' => trans('front.recent_events'),
         'driver' => trans('front.driver'),
         'live_video' => trans('front.live_video'),
     ];
 
     if (! settings('main_settings.streetview_key') && (settings('main_settings.streetview_api') != 'default')) {
         unset($widgetsData[array_search('streetview', $widgetsData)]);
+    }
+
+    // Estaba en el array de arriba sin condicion, asi que el interruptor
+    // "Eventos recientes" del admin no hacia nada: el widget salia igual
+    // apagado. Se gatea como el de bloqueo, que es el patron de al lado.
+    if (settings('plugins.recent_events.status')) {
+        $widgetsData['recent_events'] = trans('front.recent_events');
     }
 
     if (settings('plugins.locking_widget.status')) {
@@ -1658,6 +1678,10 @@ function getJsConfig()
             'showHistoryArrow' => Arr::get($user->map_controls, 'history_control_arrows', $mapControls['showHistoryArrow'] ?? null),
             'showHistoryStop' => Arr::get($user->map_controls, 'history_control_stops ', $mapControls['showHistoryStop'] ?? null),
             'showHistoryEvent' => Arr::get($user->map_controls, 'history_control_events', $mapControls['showHistoryEvent'] ?? null),
+            // history shortcuts (last hour / today / yesterday) in the device map popup, same rule as the sidebar menu
+            'showHistoryShortcuts' => (bool) ($user && $user->perm('history', 'view')),
+            // routes report shortcut in the device map popup
+            'showReportShortcut' => (bool) ($user && $user->perm('reports', 'view')),
             'keys' => [
                 'google_maps_key' => settings('main_settings.google_maps_key'),
                 'here_api_key' => settings('main_settings.here_api_key'),
@@ -1689,6 +1713,8 @@ function getJsConfig()
             'events' => route('events.index'),
             'eventDoDelete' => route('events.do_destroy'),
 
+            'deviceRouteReport' => route('devices.route_report').'/',
+
             'history' => route('history.index'),
             'historyExport' => route('history.export'),
             'historyPosition' => route('history.position'),
@@ -1715,6 +1741,7 @@ function getJsConfig()
             'deviceSendGprsCommand' => route('send_command.gprs'),
             'deviceWidgetLocation' => route('device.widgets.location') . '/',
             'deviceWidgetCameras' => route('device.widgets.cameras') . '/',
+            'deviceVideo' => url('devices/video') . '/',
             'deviceWidgetImage' => route('device.widgets.image') . '/',
             'deviceWidgetUploadImage' => route('device.image.store') . '/',
             'deviceWidgetFuelGraph' => route('device.widgets.fuel_graph') . '/',

@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Dažnis',
         'unit' => 'Įrenginys',
         'noreply_email' => '"Neatsakyti" el. pašto adresas',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Parašas',
         'use_smtp_server' => 'Naudoti SMTP serverį',
         'smtp_server_host' => 'SMTP serverio adresas',

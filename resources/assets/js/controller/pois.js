@@ -42,7 +42,7 @@ function Pois() {
             initComponents("#pois_export");
           },
         });
-      }
+      },
     );
 
     $(document)
@@ -51,14 +51,14 @@ function Pois() {
         '[data-toggle="tab"][href="#pois_create"]',
         function (e) {
           _this.cancelEditing();
-        }
+        },
       )
       .on(
         "hidden.bs.tab",
         '[data-toggle="tab"][href="#pois_edit"]',
         function (e) {
           _this.cancelEditing();
-        }
+        },
       );
 
     $("#pois_create").on("change", 'input[name="map_icon_id"]', function () {
@@ -92,7 +92,7 @@ function Pois() {
       'input[name="search"]',
       $.debounce(100, function () {
         _this.list();
-      })
+      }),
     );
   };
 
@@ -262,7 +262,7 @@ function Pois() {
 
   _this.initForm = function (item, $container) {
     let checked = $container.find(
-      '.icon-list input[name="map_icon_id"]:checked'
+      '.icon-list input[name="map_icon_id"]:checked',
     );
 
     if (!checked.length) {
@@ -293,7 +293,7 @@ function Pois() {
       function () {
         _this.initForm(tmpItem, $container);
       },
-      false
+      false,
     );
 
     app.openTab("pois_create");
@@ -328,7 +328,7 @@ function Pois() {
       function () {
         _this.initForm(tmpItem, $container);
       },
-      false
+      false,
     );
 
     if (tmpItem.getLatLng()) _this.map().setView(tmpItem.getLatLng());
@@ -356,7 +356,7 @@ function Pois() {
     if (!confirmed) {
       $("#deletePoi button[onclick]").attr(
         "onclick",
-        "app.pois.delete(" + id + ", true);"
+        "app.pois.delete(" + id + ", true);",
       );
 
       return;
@@ -404,7 +404,7 @@ function Pois() {
     }
 
     var checked = $container.find(
-      '.icon-list input[name="map_icon_id"]:checked'
+      '.icon-list input[name="map_icon_id"]:checked',
     );
 
     if (!checked.length) {
@@ -426,7 +426,7 @@ function Pois() {
     tmpItem.update(_options);
 
     $('[name="coordinates"]', $container).val(
-      tmpItem.getLatLng() === null ? "" : JSON.stringify(tmpItem.getLatLng())
+      tmpItem.getLatLng() === null ? "" : JSON.stringify(tmpItem.getLatLng()),
     );
 
     dd("pois.map.click.data", _options);

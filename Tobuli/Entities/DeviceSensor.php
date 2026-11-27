@@ -1,18 +1,19 @@
 <?php namespace Tobuli\Entities;
 
 use App\Events\DeviceSensorDeleted;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Arr;
-use Tobuli\Entities\TraccarPosition as Position;
 use Tobuli\Sensors\Extractions\Calibration;
 use Tobuli\Sensors\SensorsManager;
 use Tobuli\Sensors\Value;
-use Tobuli\Services\ConditionService;
+use Tobuli\Traits\ChangeLogs;
+use Tobuli\Traits\DisplayTrait;
 
-class DeviceSensor extends AbstractEntity
+class DeviceSensor extends AbstractEntity implements DisplayInterface
 {
-    use HasFactory;
+    use HasFactory, ChangeLogs;
+    use DisplayTrait;
 
     protected $table = 'device_sensors';
 
@@ -37,6 +38,7 @@ class DeviceSensor extends AbstractEntity
         //'value_formula',
         //'show_in_popup',
         'unit_of_measurement',
+        'unit_type',
         'on_tag_value',
         'off_tag_value',
         'on_type',
@@ -44,15 +46,16 @@ class DeviceSensor extends AbstractEntity
         'calibrations',
         'skip_calibration',
         'skip_empty',
+        'reset_blank',
         'decbin',
         'hexbin',
         'bitcut',
         'mappings',
         'data',
         'ascii',
+        'value_set_at',
+        'value_changed_at',
     );
-
-    public $timestamps = false;
 
     private $cacheSensor;
 
@@ -63,6 +66,8 @@ class DeviceSensor extends AbstractEntity
         'mappings' => 'array',
         'data' => AsArrayObject::class
     ];
+
+    public static string $displayField = 'name';
 
     protected static function boot()
     {
@@ -203,7 +208,7 @@ class DeviceSensor extends AbstractEntity
             $this->data['anon_longitude'] = $position->longitude;
         }
 
-        if (is_null($value))
+        if (is_null($value) && (!$this->reset_blank))
             return false;
 
         if (is_array($value))
@@ -214,6 +219,16 @@ class DeviceSensor extends AbstractEntity
 
         if ($this->skip_empty && empty($value))
             return false;
+
+        $time = $position->time ?? date('Y-m-d H:i:s');
+
+        if ($time < $this->value_set_at)
+            return false;
+
+        $this->value_set_at = $time;
+
+        if ($value !== $this->value)
+            $this->value_changed_at = $this->value_set_at;
 
         $this->value = $value;
 
@@ -310,24 +325,29 @@ class DeviceSensor extends AbstractEntity
             $value = $this->getCurrent();
         }
 
-        if (is_null($value)) {
-            return new Value(null, '-', null);
-        }
-        
         if ($value === '-') {
-            return new Value(null, '-', null);
+            $value = null;
         }
 
-        return new Value(
-            $value,
-            $this->getSensor()->getValueFormatted($value),
-            $this->getSensor()->getValueIcon($value)
-        );
+        return $this->getSensor()->toValue($value);
     }
 
     public function getValuePosition($position)
     {
         return $this->getSensor()->getPositionValue($position);
+    }
+
+    /**
+     * Valor guardado por trama (`sensors_values`), sin pasar por `other`.
+     * Necesario para leer el historico de un odometro virtual o de horas de
+     * motor virtuales: su getDataValue() devuelve el acumulado ACTUAL del
+     * sensor, no el que tenia en esa trama.
+     */
+    public function getValueStored($position)
+    {
+        $sensor = $this->getSensor();
+
+        return $sensor ? $sensor->getPositionStoredValue($position) : null;
     }
 
     //public for positionWrite
@@ -409,5 +429,23 @@ class DeviceSensor extends AbstractEntity
         }
 
         return asset("assets/icons/sensors_{$name}_l.svg");
+    }
+
+    protected function performUpdate(Builder $query)
+    {
+        if (!array_diff(array_keys($this->getDirty()), ['value', 'value_formula', 'value_set_at', 'value_changed_at'])) {
+            $this->timestamps = false;
+        }
+
+        $result = parent::performUpdate($query);
+
+        $this->timestamps = true;
+
+        return $result;
+    }
+
+    public function scopeUserAccessible(Builder $query, User $user): Builder
+    {
+        return $query->whereIn('device_id', $user->devices()->select('devices.id'));
     }
 }

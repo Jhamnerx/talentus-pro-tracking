@@ -1,6 +1,6 @@
 <?php
 return [
-    'version' => '3.7.11',
+    'version' => '3.7.13',
     'key'  => env('key', ''),
     'type' => env('APP_TYPE', 'ss3'),
 
@@ -13,6 +13,7 @@ return [
     'geocoder_cache_driver' => env('GEOCODER_CACHE_DRIVER', 'sqlite'),
 
     'payments_error_log' => env('PAYMENTS_ERROR_LOG', false),
+    'check_service_expire_log' => env('CHECK_SERVICE_EXPIRE_LOG', false),
 
     'fuel_check_lock_log' => env('FUEL_CHECK_LOCK_LOG', false),
 
@@ -52,6 +53,7 @@ return [
         'showHistoryArrow' => true,
         'showHistoryStop' => true,
         'showHistoryEvent' => true,
+        'showAircraft' => false,
     ],
 
     'main_settings' => [
@@ -134,6 +136,7 @@ return [
         'google_play_link' => null,
         'enable_device_plans' => 0,
         'email_verification' => 0,
+        'phone_verification' => 0,
         'custom_registration_fields' => [
             'enabled' => 0,
             'fields' => [
@@ -153,8 +156,75 @@ return [
     'max_speed' => env('MAX_SPEED_LIMIT', 300),
     'min_time_gap' => env('MIN_TIME_GAP', 600),
     'prev_position_device_object' => env('PREV_POSITION_DEVICE_OBJECT', false),
-    'apply_network_data' => env('APPLY_NETWORK_DATA', false),
+    'apply_network_data' => env('APPLY_NETWORK_DATA', true),
     'overwrite_invalid'  => env('OVERWRITE_INVALID', true),
+
+    // Modulo de Operaciones (control de vueltas). Apagado, PositionsWriter no
+    // hace ninguna consulta ni evaluacion por el modulo: es el interruptor de
+    // despliegue y de vuelta atras.
+    'operations_enabled' => env('OPERATIONS_ENABLED', false),
+    'security_enabled' => env('SECURITY_ENABLED', false),
+    'gnss_glitch' => [
+        'enabled'              => env('GNSS_GLITCH_ENABLED', true),
+        'enforce'              => env('GNSS_GLITCH_ENFORCE', false), // false = modo sombra
+        'max_age_seconds'      => env('GNSS_GLITCH_MAX_AGE', 30),
+        'alt_min_jump_m'       => env('GNSS_GLITCH_ALT_MIN_JUMP', 40),
+        'alt_max_rate_ms'      => env('GNSS_GLITCH_ALT_MAX_RATE', 20),
+        'alt_stationary_speed_kph'  => env('GNSS_GLITCH_ALT_STATIONARY_SPEED', 3),
+        'alt_stationary_max_dist_m' => env('GNSS_GLITCH_ALT_STATIONARY_DIST', 10),
+        'accel_max_kph_s'      => env('GNSS_GLITCH_ACCEL_MAX', 10),
+        'accel_min_speed_kph'  => env('GNSS_GLITCH_ACCEL_MIN_SPEED', 25),
+        // Tolerancia (% de la velocidad actual, mínimo 10 kph) para corroborar 'acc': si el
+        // desplazamiento GPS real (impliedKph) queda dentro de este margen de la velocidad
+        // reportada, el salto de velocidad NO se marca como glitch (el problema está en la
+        // velocidad anterior, no en esta posición). Ver evaluateGnssGlitch().
+        'accel_corroboration_tolerance_pct' => env('GNSS_GLITCH_ACCEL_CORROBORATION_PCT', 0.35),
+        'tele_min_distance_m'  => env('GNSS_GLITCH_TELE_MIN_DIST', 50),
+        'tele_speed_factor'    => env('GNSS_GLITCH_TELE_FACTOR', 2),
+        'tele_speed_margin'    => env('GNSS_GLITCH_TELE_MARGIN', 40),
+    ],
+    'overspeed_tracking_max_gap' => env('OVERSPEED_TRACKING_MAX_GAP', 300),
+
+    // Umbrales de detectJumpFromStop() (PositionsWriter). Además del umbral de distancia,
+    // se invalida la posición si avg_speed > current_speed*multiplier + margen_kph, para
+    // absorber el ruido normal entre velocidad GPS instantánea y velocidad media calculada
+    // por distancia/tiempo (con reporte cada 30s, un 10% de tolerancia sin margen absoluto
+    // invalidaba arranques normales desde parada).
+    'from_stop_max_jump_meters'       => env('FROM_STOP_MAX_JUMP_METERS', 150),
+    'from_stop_avg_speed_multiplier'  => env('FROM_STOP_AVG_SPEED_MULTIPLIER', 1.3),
+    'from_stop_avg_speed_margin_kph'  => env('FROM_STOP_AVG_SPEED_MARGIN_KPH', 5),
+
+    /*
+     * Eventos nativos de exceso de velocidad en geocerca reportados por el propio
+     * equipo Teltonika (AVL IDs "Manual Geofence Speeding event"). Por ahora solo
+     * en modo sombra: se registran en el log 'validaciones_tecnicas' comparando
+     * la duración nativa (hardware) contra la calculada por checkOverspeedDuration()
+     * (por intervalo de posiciones), sin disparar ni modificar alertas todavía.
+     *
+     * - FTC927 (plataforma FT): AVL 157 = flag start(1)/stop(0), AVL 155 = ID de
+     *   geocerca (valor + 1).
+     * - Familia FMB/FMC/FMU/FMM (Codec8 clásico, incl. FMC920): cada geocerca tiene
+     *   su propio AVL ID dedicado (zone_avl_map), con valor 0-3 por evento:
+     *   0=salió, 1=entró, 2=fin de exceso, 3=inicio de exceso.
+     */
+    'native_geofence_speed' => [
+        'enabled' => env('NATIVE_GEOFENCE_SPEED_ENABLED', true),
+        // Modelos cuyo device_model coincide (substring, case-insensitive) con "ftc"
+        // usan el esquema AVL 155(id)+157(flag). El resto usa zone_avl_map (FMx clásico).
+        'ftc_model_match' => 'ftc',
+        'zone_avl_map' => [
+            155 => 1,  156 => 2,  157 => 3,  158 => 4,  159 => 5,
+            61  => 6,  62  => 7,  63  => 8,  64  => 9,  65  => 10,
+            70  => 11, 88  => 12, 91  => 13, 92  => 14, 93  => 15,
+            94  => 16, 95  => 17, 96  => 18, 97  => 19, 98  => 20,
+            99  => 21, 153 => 22, 154 => 23, 190 => 24, 191 => 25,
+            192 => 26, 193 => 27, 194 => 28, 195 => 29, 196 => 30,
+            197 => 31, 198 => 32, 208 => 33, 209 => 34, 216 => 35,
+            217 => 36, 218 => 37, 219 => 38, 220 => 39, 221 => 40,
+            222 => 41, 223 => 42, 224 => 43, 225 => 44, 226 => 45,
+            227 => 46, 228 => 47, 229 => 48, 230 => 49, 231 => 50,
+        ],
+    ],
     'device_sidebar_query' => env('DEVICE_SIDEBAR_QUERY', true),
     'entityloader_store_query' => env('ENTITYLOADER_STORE_QUERY', false),
     'alerts_throw_user_device' => env('ALERTS_THROW_USER_DEVICE', true),
@@ -245,9 +315,7 @@ return [
     ],
     'duration_formats' => [
         'standart' => 'h min s',
-        'standart2' => 'd h min s',
         'hh:mm:ss' => 'hh:mm:ss',
-        'dd:hh:mm:ss' => 'dd:hh:mm:ss',
     ],
     'object_online_timeouts' => [],
 
@@ -268,6 +336,37 @@ return [
         'load_calibration',
         'speed_ecm',
     ],
+    /*
+    |--------------------------------------------------------------------------
+    | Color del marcador por velocidad
+    |--------------------------------------------------------------------------
+    |
+    | Valores por defecto cuando el vehiculo no define los suyos. Se activa
+    | por unidad (devices.marker_colors_enabled).
+    |
+    | 'ranges'   : [{from, to, color}], con to = null en el ultimo tramo.
+    | 'geofence' : dentro de una geocerca CON limite manda esto y no los
+    |              rangos. 'margin' son los km/h antes del limite en los que
+    |              ya se avisa; 'near' es ese aviso y 'over' el exceso.
+    |
+    */
+    'marker_speed_colors' => [
+        'ranges' => [
+            // Desde 1 y no desde 0: a 0 kph el vehiculo esta parado y no se
+            // colorea por velocidad, que es lo que hacia salir con el verde
+            // del primer tramo a uno detenido.
+            ['from' => 1,  'to' => 40,   'color' => '#22c55e'],
+            ['from' => 40, 'to' => 60,   'color' => '#eab308'],
+            ['from' => 60, 'to' => 90,   'color' => '#f97316'],
+            ['from' => 90, 'to' => null, 'color' => '#ef4444'],
+        ],
+        'geofence' => [
+            'margin' => 5,
+            'near'   => '#a855f7',
+            'over'   => '#dc2626',
+        ],
+    ],
+
     'listview_fields' => [
         'name' => [
             'field' => 'name',
@@ -383,6 +482,10 @@ return [
         ],
         'expiration_date' => [
             'field' => 'expiration_date',
+            'class' => 'device'
+        ],
+        'distance' => [
+            'field' => 'distance',
             'class' => 'device'
         ],
     ],
@@ -596,6 +699,7 @@ return [
         'light-purple'      => 'Light Purple',
         'light-win10-blue'  => 'Light Win10 Blue',
         'light-ocean-blue'  => 'Light Ocean Blue',
+        'light-tropical-blue'=> 'Light Tropical Blue',
         'light-indigo'      => 'Light Indigo',
         'light-black'       => 'Light Black',
         'light-gray'        => 'Light Gray',
@@ -609,6 +713,7 @@ return [
         'dark-purple'       => 'Dark Purple',
         'dark-win10-blue'   => 'Dark Win10 Blue',
         'dark-ocean-blue'   => 'Dark Ocean Blue',
+        'dark-tropical-blue'=> 'Dark Tropical Blue',
         'dark-indigo'       => 'Dark Indigo',
         'dark-gray'         => 'Dark Gray',
         'dark-golden'       => 'Dark Golden',
@@ -1370,7 +1475,15 @@ return [
         'ftp_password' => null,
         'ftp_port'     => null,
         'ftp_path'     => null,
+        'drive_enabled'              => false,
+        'drive_remote'               => 'gdrive',
+        'drive_path'                 => 'backup_plataforma/',
+        'retention_daily_days'       => 30,
+        'retention_long_term_months' => 2,
+        'retention_max_days'         => 365,
     ],
+
+    'backups_rclone_config' => env('BACKUP_RCLONE_CONFIG'),
 
     'exports' => [
         'formats' => [
@@ -1405,6 +1518,9 @@ return [
             'device_distance'      => [
                 'enabled' => 1,
                 'options' => [
+                    // Sin 'period' el desplegable de opciones reventaba
+                    // (Undefined array key) y con el, todo /dashboard.
+                    'period'  => 'day',
                     'devices' => []
                 ],
             ],
@@ -1430,10 +1546,17 @@ return [
         ],
         \Tobuli\Entities\User::class => [
             'attributes' => ['*'],
-            'attributes_to_ignore' => ['created_at', 'updated_at', 'loged_at'],
+            'attributes_to_ignore' => [
+                'map_id',
+                'map_controls',
+                'created_at',
+                'updated_at',
+                'loged_at',
+            ],
         ],
         \Tobuli\Entities\Alert::class => [
             'attributes' => ['*'],
+            'include_hidden' => true,
         ],
         \Tobuli\Entities\Report::class => [
             'attributes' => ['*'],
@@ -1446,6 +1569,13 @@ return [
             'attributes' => ['*'],
             'attributes_to_ignore' => ['created_at', 'updated_at', 'coordinates'],
         ],
+        \Tobuli\Entities\RouteSchedule::class => [
+            'attributes' => ['*'],
+        ],
+        \Tobuli\Entities\Operation::class => [
+            'attributes' => ['*'],
+            'attributes_to_ignore' => ['created_at', 'updated_at'],
+        ],
         \Tobuli\Entities\Poi::class => [
             'attributes' => ['*'],
         ],
@@ -1456,6 +1586,32 @@ return [
             'attributes' => ['*'],
         ],
         \Tobuli\Entities\DeviceService::class => [
+            'attributes' => ['*'],
+        ],
+        // Añadidas 23-ago: no dejaban rastro. La primera es la que mas
+        // importa, porque la copia masiva de sensores puede cambiar decenas
+        // de equipos de una vez. Poner el trait en la entidad NO basta: sin
+        // estar aqui, attributesToBeLogged() queda vacio y no se registra nada.
+        \Tobuli\Entities\DeviceSensor::class => [
+            'attributes' => ['*'],
+            // calibrations y mappings son bloques enteros; el registro guarda
+            // que cambiaron, no su contenido completo. value_set_at y
+            // value_changed_at cambian con cada posicion: sin ignorarlos el
+            // changelog se llenaria de ruido.
+            'attributes_to_ignore' => ['created_at', 'updated_at', 'value_set_at', 'value_changed_at'],
+        ],
+        \Tobuli\Entities\SensorGroupSensor::class => [
+            'attributes' => ['*'],
+            'attributes_to_ignore' => ['created_at', 'updated_at', 'value_set_at', 'value_changed_at'],
+        ],
+        \Tobuli\Entities\DeviceMaintenance::class => [
+            'attributes' => ['*'],
+            'attributes_to_ignore' => ['created_at', 'updated_at', 'synced_at'],
+        ],
+        \Tobuli\Entities\Sharing::class => [
+            'attributes' => ['*'],
+        ],
+        \Tobuli\Entities\DeviceGroup::class => [
             'attributes' => ['*'],
         ],
         'login' => [
@@ -1548,5 +1704,6 @@ return [
         \Tobuli\Reports\Reports\SpeedReport::TYPE_ID => ['status' => false],
         \Tobuli\Reports\Reports\RoutesReport::TYPE_ID => ['status' => true],
         \Tobuli\Reports\Reports\RoutesSummarizedReport::TYPE_ID => ['status' => true],
+        \Tobuli\Reports\Reports\UsersDevicesReport::TYPE_ID => ['status' => false],
     ],
 ];

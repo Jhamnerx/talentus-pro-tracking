@@ -6,6 +6,8 @@ use Exception;
 use Illuminate\Database\QueryException;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Entities\TraccarDevice;
+use Tobuli\Helpers\Backup\BackupIndex;
+use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
 use Tobuli\Services\DatabaseService;
 
 class DevicesPositionsBackuper extends AbstractBackuper
@@ -13,17 +15,21 @@ class DevicesPositionsBackuper extends AbstractBackuper
     private const GENERAL_ERROR_CODES = [
         1045, // Access denied for user
         2002, // Connection refused / Connection timed out
+        MultiDestinationUploader::ALL_DESTINATIONS_FAILED,
     ];
 
     protected int $failOnAttempt = 3;
     protected bool $attemptsPerItem = true;
     private string $cmdBase;
+    private $currentItemId = null;
 
     /**
      * @param TraccarDevice $item
      */
     protected function backup($item): bool
     {
+        $this->currentItemId = $item->id;
+
         $positions = $item->positions();
 
         try {
@@ -43,6 +49,13 @@ class DevicesPositionsBackuper extends AbstractBackuper
         $cmd = "$this->cmdBase " . $positions->getRelated()->getTable();
 
         $this->uploader->process($cmd, $this->process, $item);
+
+        (new BackupIndex())->record(
+            $this->process->backup_id,
+            $item->id,
+            $item->positions()->min('time'),
+            $item->positions()->max('time')
+        );
 
         return true;
     }
@@ -79,14 +92,15 @@ class DevicesPositionsBackuper extends AbstractBackuper
             throw new \InvalidArgumentException("Database with ID `$databaseId`");
         }
 
-        $this->cmdBase = "mysqldump"
+        $this->cmdBase = "MYSQL_PWD=" . escapeshellarg((string)$config['password'])
+            . " mysqldump"
             . " --insert-ignore"
             . " --no-create-info"
             . " --skip-add-drop-table"
-            . " -u '{$config['username']}'"
-            . " -h {$config['host']}"
-            . " -p'{$config['password']}'"
-            . " {$config['database']}";
+            . " -u " . escapeshellarg($config['username'])
+            . " -h " . escapeshellarg($config['host'])
+            . " --port=" . escapeshellarg($config['port'])
+            . " " . escapeshellarg($config['database']);
     }
 
     /**
@@ -105,7 +119,20 @@ class DevicesPositionsBackuper extends AbstractBackuper
             return null;
         }
 
-        return $this->isItemSpecificError($e) ? false : null;
+        if (!$this->isItemSpecificError($e)) {
+            return null;
+        }
+
+        if ($this->currentItemId !== null) {
+            $options = $this->process->options ?: [];
+            $options['failed_items'] = array_values(array_unique(
+                array_merge($options['failed_items'] ?? [], [$this->currentItemId])
+            ));
+            $this->process->options = $options;
+            $this->process->save();
+        }
+
+        return false;
     }
 
     protected function isFailureTerminal(Exception $e): bool
@@ -130,7 +157,7 @@ class DevicesPositionsBackuper extends AbstractBackuper
             'type'              => static::class,
             'source'            => $source,
             'options'           => $options,
-            'duration_expire'   => 10 * $total,
+            'duration_expire'   => 40 * $total,
             'last_item_id'      => 0,
             'total'             => $total,
         ]);

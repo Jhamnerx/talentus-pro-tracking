@@ -2,23 +2,26 @@
 
 namespace Tobuli\Helpers\GeoLocation\GeoServices;
 
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
 use Illuminate\Support\Facades\Cache;
 use Tobuli\Helpers\GeoLocation\GeoSettings;
 use Tobuli\Helpers\GeoLocation\Location;
 
 class GeoMapmyindia extends AbstractGeoService
 {
-    private $curl;
-
-    private $urls = [];
+    private GuzzleClient $client;
+    private array $urls;
 
     public function __construct(GeoSettings $settings)
     {
         parent::__construct($settings);
 
-        $this->curl = new \Curl;
-        $this->curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
-        $this->curl->options['CURLOPT_TIMEOUT'] = 5;
+        $this->client = new GuzzleClient([
+            RequestOptions::TIMEOUT  => 5,
+            RequestOptions::VERIFY   => false,
+        ]);
 
         //For some reason geocode uses OAuth2 whilst reverse geocoding uses simple api key...
         $this->urls = [
@@ -74,28 +77,37 @@ class GeoMapmyindia extends AbstractGeoService
 
     private function request($method, $options)
     {
-        if ($method == 'geocode')
-            $this->curl->headers['Authorization'] = $this->getOAuthHeader();
+        $requestOptions = [RequestOptions::QUERY => $options];
 
-        $response = $this->curl->get(
-            $this->urls[$method],
-            $options
-        );
+        if ($method === 'geocode') {
+            $requestOptions[RequestOptions::HEADERS] = ['Authorization' => $this->getOAuthHeader()];
+        }
 
-        $response_body = json_decode($response->body, true);
-
-        if ($response->headers['Status-Code'] != 200)
+        try {
+            $response = $this->client->get($this->urls[$method], $requestOptions);
+        } catch (RequestException $e) {
             throw new \Exception('Geocoder API error.');
+        }
 
-        if ($response_body == null)
+        if ($response->getStatusCode() !== 200) {
+            throw new \Exception('Geocoder API error.');
+        }
+
+        $responseBody = json_decode($response->getBody()->getContents(), true);
+
+        if ($responseBody == null) {
             throw new \Exception('Location not found! (MapMyIndia only supports Indian locations!).');
+        }
 
-        if ($method == 'geocode')
-            return $response_body['copResults'];
+        if ($method === 'geocode') {
+            return $responseBody['copResults'];
+        }
 
-        $result = $response_body['results'];
-        if (empty($result))
+        $result = $responseBody['results'];
+
+        if (empty($result)) {
             throw new \Exception('Location not found! (MapMyIndia only supports Indian locations!).');
+        }
 
         return $result[0];
     }
@@ -151,12 +163,20 @@ class GeoMapmyindia extends AbstractGeoService
                 'client_secret' => $this->settings->getAppSecret(),
             ];
 
-            $response = $this->curl->post(
-                'https://outpost.mapmyindia.com/api/security/oauth/token',
-                $requestParams
-            );
+            try {
+                $response = $this->client->post(
+                    'https://outpost.mapmyindia.com/api/security/oauth/token',
+                    ['form_params' => $requestParams]
+                );
 
-            $responseBody = json_decode($response->body, true);
+                $responseBody = json_decode($response->getBody()->getContents(), true);
+            } catch (RequestException $e) {
+                $responseBody = $e->getResponse() ? json_decode($e->getResponse()->getBody()->getContents(), true) : null;
+            }
+
+            if (!is_array($responseBody)) {
+                throw new \Exception('Failed to retrieve OAuth token.');
+            }
 
             if (array_key_exists('error', $responseBody))
                 throw new \Exception($responseBody['error_description']);

@@ -63,7 +63,7 @@ return array(
     'successful' => 'Exitoso',
     'failed' => 'Ha fallado',
     'count' => 'Contar',
-    'not_found' => 'Extraviado',
+    'not_found' => 'No encontrado',
     'info' => 'Información',
     'expenses_types' => 'Tipos de gastos del dispositivo',
     'all_trans' => 'Todas las traducciones',

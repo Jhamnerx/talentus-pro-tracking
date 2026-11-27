@@ -41,10 +41,12 @@ class VehicleTypesController extends Controller
     {
         VehicleTypeFormValidator::validate('create', $this->data);
 
-        VehicleType::create([
+        $item = VehicleType::create([
             'user_id' => $this->user->id,
             'name'    => $this->data['name'],
         ]);
+
+        $this->syncStates($item);
 
         return ['status' => 1];
     }
@@ -91,26 +93,54 @@ class VehicleTypesController extends Controller
         return $item;
     }
 
+    /**
+     * edit_state[id] actualiza/mantiene; add_state[] crea; el resto se borra.
+     * Mismo formato que la ui/v2 (Ui/V2/VehicleTypesController@syncStates):
+     * cada estado es un objeto {name, label, color}. El formulario legacy
+     * manda exactamente eso (state_row.blade + state_rows_script.blade).
+     */
     private function syncStates(VehicleType $item): void
     {
         $kept = [];
 
-        foreach ($this->data['edit_state'] ?? [] as $id => $name) {
-            if (empty($name))
+        foreach ((array) ($this->data['edit_state'] ?? []) as $id => $st) {
+            $fields = $this->stateFields($st);
+
+            if ($fields === null)
                 continue;
 
-            VehicleState::where('id', $id)->where('vehicle_type_id', $item->id)->update(['name' => $name]);
+            VehicleState::where('id', $id)->where('vehicle_type_id', $item->id)->update($fields);
 
             $kept[] = $id;
         }
 
-        $item->states()->whereNotIn('id', $kept)->delete();
+        $item->states()->whereNotIn('id', $kept ?: [0])->delete();
 
-        foreach ($this->data['add_state'] ?? [] as $name) {
-            if (empty($name))
+        foreach ((array) ($this->data['add_state'] ?? []) as $st) {
+            $fields = $this->stateFields($st);
+
+            if ($fields === null)
                 continue;
 
-            $item->states()->create(['name' => $name]);
+            $item->states()->create($fields);
         }
+    }
+
+    /** Normaliza un estado {name, label, color} -> campos a guardar, o null si no hay nombre. */
+    private function stateFields($st): ?array
+    {
+        $name  = is_array($st) ? trim((string) ($st['name'] ?? '')) : trim((string) $st);
+        if ($name === '') {
+            return null;
+        }
+
+        $label = is_array($st) ? trim((string) ($st['label'] ?? '')) : '';
+        $color = is_array($st) ? trim((string) ($st['color'] ?? '')) : '';
+
+        return [
+            'name'  => mb_substr($name, 0, 255),
+            'label' => $label === '' ? null : mb_substr($label, 0, 24),
+            'color' => preg_match('/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/', $color) ? $color : null,
+        ];
     }
 }

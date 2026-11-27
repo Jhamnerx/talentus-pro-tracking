@@ -1,0 +1,78 @@
+{{--
+    Tab Vídeo — paridad con Frontend/Devices/partials/video.blade.php (JT1078):
+    has_camera + camera_channels[] + camera_channel_roles[n] y «Detectar
+    capacidades» (0x9003). Mismos names: se guarda por DeviceModalHelper y
+    DeviceService normaliza (sin cámara ⇒ sin canales). Gate de la pestaña y
+    de la edición: DevicePropertiesPolicy (device_video view/edit).
+    El botón de detectar lo atiende tp-device-video.js (delegado en document).
+--}}
+@php
+    $videoEditable = auth()->user()->can('edit', $item, 'has_camera');
+    $videoDisabled = $videoEditable ? '' : 'disabled';
+    $videoChannels = array_map('intval', (array) ($item->camera_channels ?? []));
+    $videoRoles = (array) ($item->camera_channel_roles ?? []);
+    $videoRoleOptions = collect(\Tobuli\Entities\Device::VIDEO_CHANNEL_ROLES)
+        ->mapWithKeys(fn ($role) => [$role => trans("front.video_role_$role")])->all();
+@endphp
+
+@if (! $item->supportsVideo())
+    <div class="tp-form__placeholder">
+        {{ trans('front.video_protocol_unsupported', ['protocol' => $item->protocol]) }}
+    </div>
+@endif
+
+<div class="tp-form__grid">
+    <label class="tp-form__field tp-form__field--checkbox">
+        <input type="hidden" name="has_camera" value="0" {{ $videoDisabled }}>
+        <input type="checkbox" name="has_camera" value="1" {{ $item->has_camera ? 'checked' : '' }} {{ $videoDisabled }}
+            data-tp-video-toggle>
+        <span class="tp-form__label">{{ trans('validation.attributes.has_camera') }}</span>
+    </label>
+
+    {{-- Como el legacy (data-disabler "#camera-channels-group;hide-disable"):
+         los canales solo se ven y se envían con «Tiene cámara» marcado. --}}
+    <div class="tp-form__field" data-tp-video-channels @unless ($item->has_camera) hidden @endunless>
+        <span class="tp-form__label">{{ trans('validation.attributes.camera_channels') }}</span>
+        <div class="tp-dv-channels">
+            @for ($channel = 1; $channel <= \Tobuli\Entities\Device::VIDEO_MAX_CHANNELS; $channel++)
+                <div class="tp-dv-channels__item">
+                    <label>
+                        <input type="checkbox" name="camera_channels[]" value="{{ $channel }}"
+                            {{ in_array($channel, $videoChannels, true) ? 'checked' : '' }} {{ $videoDisabled }}>
+                        {{ trans('front.channel') }} {{ $channel }}
+                    </label>
+                    <select class="tp-input" name="camera_channel_roles[{{ $channel }}]" {{ $videoDisabled }}>
+                        <option value="">{{ trans('front.video_role_default') }}</option>
+                        @foreach ($videoRoleOptions as $role => $label)
+                            <option value="{{ $role }}" {{ ($videoRoles[$channel] ?? '') === $role ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endfor
+        </div>
+        <small class="tp-form__hint">{{ trans('front.video_channels_help') }}</small>
+    </div>
+
+    @if ($item->id && $item->supportsVideo() && auth()->user()->perm('device_video', 'view'))
+        @php
+            $videoAttributes = app(\Tobuli\Services\DeviceVideoService::class)->describeAttributes($item->camera_attributes);
+        @endphp
+        <div class="tp-form__field" data-tp-video-attrs
+            data-url="{{ route('devices.video.attributes', $item->id) }}"
+            data-query-url="{{ route('devices.video.attributes.query', $item->id) }}">
+            <span class="tp-form__label">{{ trans('front.video_attributes') }}</span>
+            <p class="tp-text-sm" data-tp-video-attrs-info style="margin:0 0 8px;">
+                {{ $videoAttributes['summary'] ?? trans('front.video_attributes_none') }}
+            </p>
+            @if ($videoEditable)
+                {{-- Botón con borde (secondary): el ghost de 28 px parecía texto suelto (QA D3). --}}
+                <div>
+                    <button type="button" class="tp-btn tp-btn--secondary tp-btn--sm tp-dv-detect" data-tp-video-attrs-detect>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+                        {{ trans('front.video_attributes_detect') }}
+                    </button>
+                </div>
+            @endif
+        </div>
+    @endif
+</div>

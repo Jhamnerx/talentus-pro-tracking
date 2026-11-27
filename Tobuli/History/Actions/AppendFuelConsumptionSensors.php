@@ -62,6 +62,22 @@ class AppendFuelConsumptionSensors extends ActionAppend
         if (empty($value) || empty($prevValue))
             return 0;
 
+        // Un contador acumulativo (fuelused y compania) no puede bajar: si lo
+        // hace es que se reinicio -- cambio de equipo, actualizacion de
+        // firmware, reconfiguracion o desbordamiento del contador.
+        //
+        // Sin este corte entraba la resta en negativo, y como StatConsumption
+        // solo recorta el TOTAL a cero, un reinicio de 9.990 L se comia el
+        // consumo del periodo entero y el reporte salia en 0.
+        //
+        // Se devuelve 0 y no $value a proposito: tras el reinicio los saltos
+        // siguientes ya se miden contra la nueva base y son correctos, asi que
+        // lo unico que se pierde es el tramo justo del reinicio. Contar $value
+        // habria sido mas exacto con un reinicio de verdad, pero convertiria
+        // cualquier lectura baja pasajera en consumo inventado.
+        if ($value < $prevValue)
+            return 0;
+
         return $value - $prevValue;
     }
 }

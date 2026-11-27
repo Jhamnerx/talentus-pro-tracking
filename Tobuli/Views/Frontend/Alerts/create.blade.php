@@ -71,29 +71,26 @@
         </div>
 
         <div id="alerts-form-geofences" class="tab-pane">
-            @if (!empty($geofences))
-                <div class="form-group">
-                    {!! Form::hidden('zone', 0) !!}
-                    <div class="checkbox-inline">
-                        {!! Form::checkbox('zone', 1) !!}
-                        {!! Form::label(null, trans('front.zone_in')) !!}
-                    </div>
-                    <div class="checkbox-inline">
-                        {!! Form::checkbox('zone', 2) !!}
-                        {!! Form::label(null, trans('front.zone_out')) !!}
-                    </div>
+            <div class="form-group">
+                {!! Form::hidden('zone', 0) !!}
+                <div class="checkbox-inline">
+                    {!! Form::checkbox('zone', 1) !!}
+                    {!! Form::label(null, trans('front.zone_in')) !!}
                 </div>
-                <div class="form-group">
-                    {!! Form::select('zones[]', $geofences, null, [
-                        'class' => 'form-control multiexpand',
-                        'multiple' => 'multiple',
-                        'data-live-search' => 'true',
-                        'data-actions-box' => 'true',
-                    ]) !!}
+                <div class="checkbox-inline">
+                    {!! Form::checkbox('zone', 2) !!}
+                    {!! Form::label(null, trans('front.zone_out')) !!}
                 </div>
-            @else
-                <div class="alert alert-warning" role="alert">{!! trans('front.no_geofences') !!}</div>
-            @endif
+            </div>
+            <div class="form-group">
+                {!! Form::select('zones[]', [], null, [
+                    'class' => 'form-control multiexpand',
+                    'multiple' => 'multiple',
+                    'data-live-search' => 'true',
+                    'data-actions-box' => 'true',
+                    'data-ajax' => route('alerts.zones')
+                ]) !!}
+            </div>
         </div>
 
         <div id="alerts-form-schedule" class="tab-pane">
@@ -151,6 +148,12 @@
 
                         @if (\Illuminate\Support\Arr::has($notification, 'description'))
                             <small>{!! $notification['description'] !!}</small>
+                        @endif
+
+                        {{-- El canal de reporte necesita mas que una lista de
+                             correos: que reporte, en que formato y que ventana. --}}
+                        @if ($notification['name'] === 'report')
+                            @include('front::Alerts.partials.report_notification')
                         @endif
                     </div>
                 </div>

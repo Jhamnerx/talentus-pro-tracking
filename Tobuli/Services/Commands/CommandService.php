@@ -1,6 +1,4 @@
-<?php
-
-namespace Tobuli\Services\Commands;
+<?php namespace Tobuli\Services\Commands;
 
 
 use Illuminate\Database\Eloquent\Builder;
@@ -9,7 +7,7 @@ use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\User;
 use Illuminate\Support\Collection;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
+use Illuminate\Database\Eloquent\Collection AS EloquentCollection;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Protocols\Commands;
 use Tobuli\Services\EntityLoader\EnityLoader;
@@ -26,6 +24,21 @@ class CommandService
         $this->user = $user;
     }
 
+    public function validate($devices, $data, $type = SendCommandService::CONNECTION_GPRS)
+    {
+        switch ($type) {
+            case null:
+            case SendCommandService::CONNECTION_GPRS:
+                return $this->validateGPRS($devices, $data);
+
+            case SendCommandService::CONNECTION_SMS:
+                return $this->validateSMS($devices, $data);
+
+            default:
+                throw new \RuntimeException("Unknown commands type '$type'");
+        }
+    }
+
     /**
      * @param EloquentCollection|Device|Device[]|EnityLoader $devices
      * @param $data
@@ -37,6 +50,21 @@ class CommandService
             $data['type'],
             $this->getGprsCommands($devices)
         ));
+
+        if ($validator->fails())
+            throw new ValidationException($validator->messages());
+    }
+
+    /**
+     * @param EloquentCollection|Device|Device[]|EnityLoader $devices
+     * @param $data
+     * @throws ValidationException
+     */
+    public function validateSMS($devices, $data)
+    {
+        $validator = Validator::make($data, [
+            'message' => 'required_if:type,custom|string'
+        ]);
 
         if ($validator->fails())
             throw new ValidationException($validator->messages());
@@ -121,9 +149,9 @@ class CommandService
      * @param EloquentCollection|Device|Device[] $devices
      * @throws \Exception
      */
-    protected function normalizeCollection($devices): EloquentCollection
+    protected function normalizeCollection($devices) : EloquentCollection
     {
-        switch (true) {
+        switch(true) {
             case $devices instanceof EloquentCollection:
                 return $devices;
             case $devices instanceof Device:

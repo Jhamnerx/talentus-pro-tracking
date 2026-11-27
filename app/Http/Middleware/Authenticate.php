@@ -4,6 +4,7 @@ use Carbon\Carbon;
 use Closure;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Support\Facades\Auth;
@@ -171,8 +172,9 @@ class Authenticate extends Middleware{
 
 	private function redirect(Request $request, $message = 'Unauthorized.')
     {
-        if ( ! $this->auth->guest())
+        if ( (!$this->auth->guest()) && $this->auth->guard() instanceof StatefulGuard) {
             $this->auth->logout();
+        }
 
         if ($request->expectsJson() || $request->ajax())
             return response($message, 401);

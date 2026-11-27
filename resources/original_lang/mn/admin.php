@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Өдрийн ханш',
     'forwards' => 'довтлогч',
     'group_6' => 'Удирдагч',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Хэрэглэгч хэд хоногийн өмнө үүсгэсэн',
     'reminders_trans' => 'Сануулагч орчуулгууд',
     'passwords_trans' => 'Нууц үгийн орчуулга',

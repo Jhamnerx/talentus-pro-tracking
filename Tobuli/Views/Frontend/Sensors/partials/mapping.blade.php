@@ -1,15 +1,3 @@
-@php
-    $valueTypes = [
-        '1' => trans('front.value'),
-        '2' => trans('front.range'),
-    ];
-    $mapTypes = [
-        '1' => trans('front.text'),
-        '2' => trans('front.formula'),
-        '3' => trans('front.value'),
-    ];
-@endphp
-
 <div class="mappings" data-sensor-input="mapping" data-disablable="#mapping;disable">
     {!! Form::hidden('mappings_fake') !!}
     <div style="display: block; height: 400px;overflow-y: scroll; border: 1px solid #dddddd; margin-bottom: 20px;">
@@ -30,7 +18,7 @@
                     {!! Form::label('vt',trans('validation.attributes.tag_value')) !!}
                     <div class="row">
                         <div class="col-xs-5">
-                            {!! Form::select('vt', $valueTypes, null, ['class' => 'form-control', 'id' => 'vt_set']) !!}
+                            {!! Form::select('vt', \Tobuli\Sensors\Extractions\Mapping::getValueTypes(), null, ['class' => 'form-control', 'id' => 'vt_set']) !!}
                         </div>
                         <div class="col-xs-7">
                             <div class="input-group">
@@ -47,7 +35,7 @@
                     {!! Form::label('mt',trans('front.mapped_value')) !!}
                     <div class="row">
                         <div class="col-xs-5">
-                            {!! Form::select('mt', $mapTypes, null, ['class' => 'form-control', 'id' => 'mt_set']) !!}
+                            {!! Form::select('mt', \Tobuli\Sensors\Extractions\Mapping::getMapTypes(), null, ['class' => 'form-control', 'id' => 'mt_set']) !!}
                         </div>
                         <div class="col-xs-7">
                             <div class="input-group">
@@ -108,7 +96,6 @@
 
         switch (mapping.vt) {
             case "1":
-
                 $value.html(mapping.v);
                 $button.append($('<input type="hidden" name="mappings['+index+'][v]" value="' + mapping.v + '">'));
                 break;
@@ -117,6 +104,9 @@
                 $button.append($('<input type="hidden" name="mappings['+index+'][v]" value="' + mapping.v + '">'));
                 $button.append($('<input type="hidden" name="mappings['+index+'][t]" value="' + mapping.t + '">'));
                 break;
+            case "3":
+                $value.html('-');
+
         }
         $button.append($('<input type="hidden" name="mappings['+index+'][vt]" value="' + mapping.vt + '">'));
 

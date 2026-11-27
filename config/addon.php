@@ -45,4 +45,8 @@ return [
     'sensor_position_all' => env('ENABLE_SENSOR_POSITION_ALL', false),
     'street_view_frame' => env('ENABLE_STREET_VIEW_FRAME', true),
     'distance_point' => env('ENABLE_DISTANCE_POINT', false),
+    'device_custom_data' => env('ENABLE_DEVICE_CUSTOM_DATA', false),
+    'distance_calc_strategy' => env('DISTANCE_CALC_STRATEGY', false),
+    'flights_info' => env('ENABLE_FLIGHTS_INFO', false),
+    'tags' => env('ENABLE_TAGS', true),
 ];

@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Events\DeviceCreated;
 use App\Events\DeviceDeleted;
+use App\Events\DeviceImeiChanged;
+use App\Listeners\ClearDeviceOauthTokens;
 use App\Events\DeviceSensorDeleted;
 use App\Events\SensorIconsDeleted;
 use App\Events\UserPasswordChanged;
@@ -28,12 +30,19 @@ class EventServiceProvider extends ServiceProvider
         'Illuminate\Auth\Events\Login' => [
             'App\Handlers\Events\AuthLoginEventHandler',
             'App\Listeners\SetActingUser',
+            'PragmaRX\Google2FALaravel\Listeners\LoginViaRemember',
         ],
         'Illuminate\Auth\Events\Failed' => [
             'App\Handlers\Events\AuthFailedEventHandler',
         ],
         'Illuminate\Auth\Events\Logout' => [
             'App\Handlers\Events\AuthLogoutEventHandler',
+        ],
+        // Todo el correo sale por Mail::send(), asi que un solo listener
+        // sobre MessageSending cubre los cinco proveedores sin tocar ni
+        // un Mailable.
+        'Illuminate\Mail\Events\MessageSending' => [
+            'App\Listeners\SetMailReplyTo',
         ],
         'App\Events\NewMessage' => [
             'App\Listeners\NewMessageListener'
@@ -89,6 +98,15 @@ class EventServiceProvider extends ServiceProvider
         ],
         DeviceDeleted::class => [
             BackupRemoveDevice::class
+        ],
+        'Illuminate\Auth\Events\PasswordReset' => [
+            'App\Listeners\ClearUserOauthTokens',
+        ],
+        'App\Events\TaskCreate' => [
+            'App\Listeners\TaskCreateListener',
+        ],
+        DeviceImeiChanged::class => [
+            ClearDeviceOauthTokens::class
         ],
     ];
 }

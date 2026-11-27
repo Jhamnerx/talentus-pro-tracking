@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'သေဆုံးနှုန်းများ',
     'forwards' => 'ထပ်ဆင့်',
     'group_6' => 'အဲ့ဒီတော့',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'အသုံးပြုသူသည် ရက်များမတိုင်မီ ဖန်တီးခဲ့သည်။',
     'reminders_trans' => 'ပြန်ဆိုချက်များ သတိပေးချက်များ',
     'passwords_trans' => 'စကားဝှက်များ ဘာသာပြန်ချက်များ',

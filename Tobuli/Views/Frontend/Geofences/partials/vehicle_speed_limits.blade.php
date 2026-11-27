@@ -28,7 +28,9 @@
                 </div>
             @else
                 <div class="form-group">
-                    <label>{{ $vehicleType->name }}</label>
+                    {{-- En bloque: inline flotaba junto a los col-sm-4 y el
+                         nombre del tipo salia a la derecha de sus estados. --}}
+                    <label style="display:block;clear:both;">{{ $vehicleType->name }}</label>
 
                     @foreach ($vehicleType->states as $vehicleState)
                         <div class="col-sm-4">

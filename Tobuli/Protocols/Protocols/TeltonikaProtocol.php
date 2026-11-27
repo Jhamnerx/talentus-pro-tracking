@@ -24,14 +24,15 @@ class TeltonikaProtocol extends BaseProtocol implements Protocol
 
             $commands[] = $this->initCommand(Commands::TYPE_REQUEST_VIDEO, [
                 Field::datetime(
-                    'datetime',
-                    trans('validation.attributes.datetime'),
+                    'datetime', trans('validation.attributes.datetime'),
                     date('Y-m-d H:i:s', Formatter::time()->now())
-                )->setRequired(),
+                )->setRequired()
+                    ,
                 Field::number('duration', trans('validation.attributes.duration'), 5)
                     ->setRequired()
                     ->setMax(30)
-                    ->addValidation('numeric'),
+                    ->addValidation('numeric')
+                    ,
                 $this->getIndexAttribute()
             ]);
         }
@@ -70,6 +71,6 @@ class TeltonikaProtocol extends BaseProtocol implements Protocol
                 2 => trans('global.rear'),
                 3 => trans('global.both'),
             ])
-        ;
+            ;
     }
 }

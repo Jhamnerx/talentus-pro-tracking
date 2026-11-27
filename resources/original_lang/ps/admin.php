@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'د ورځې نرخونه',
     'forwards' => 'مخکی',
     'group_6' => 'څارونکی',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'کارن د ورځو دمخه جوړ شوی',
     'reminders_trans' => 'د یادونې ژباړې',
     'passwords_trans' => 'د پاسورډونو ژباړې',

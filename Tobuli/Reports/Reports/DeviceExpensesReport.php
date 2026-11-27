@@ -9,7 +9,15 @@ class DeviceExpensesReport extends DeviceReport
 {
     const TYPE_ID = 46;
 
-    protected $enableFields = ['devices', 'metas'];
+    protected $enableFields = [
+        'period',
+        'date_from',
+        'from_time',
+        'date_to',
+        'to_time',
+        'devices',
+        'metas',
+    ];
 
     public function getInputParameters(): array
     {

@@ -66,6 +66,14 @@ function getNavigation()
                 'childs' => []
             ];
         }
+
+        if (Auth::user()->isAdmin()) {
+            $items[] = [
+                'title'  => '<i class="fa fa-shield"></i> ' . '<span class="text">' . trans('admin.integrations_status') . '</span>',
+                'route'  => 'admin.integrations_status.index',
+                'childs' => []
+            ];
+        }
     }
 
     $items['content'] = [
@@ -95,6 +103,14 @@ function getNavigation()
             ];
         }
 
+        if (auth()->user()->perm('tags', 'edit')) {
+            $items['content']['childs'][] = [
+                'title' => '<span class="text">' . trans('front.tags') . '</span>',
+                'route' => 'admin.tags.index',
+                'childs' => []
+            ];
+        }
+
         $items[] = [
             'title' => '<i class="icon setup"></i> ' . '<span class="text">' .  trans('validation.attributes.logo') . '</span>',
             'route' => 'admin.main_server_settings.index',
@@ -107,6 +123,15 @@ function getNavigation()
         'route' => 'admin.companies.index',
         'childs' => '',
     ];
+
+    // Talentus IA CHAT del reseller: su clave, modelos, cuotas y consumo.
+    if (Auth::user()->isReseller()) {
+        $items[] = [
+            'title' => '<i class="icon setup"></i> ' . '<span class="text">' . e(\App\Services\Ai\AiSettings::name()) . '</span>',
+            'route' => 'admin.ai_reseller.index',
+            'childs' => []
+        ];
+    }
 
     if (Auth::user()->isAdmin()) {
         $items[] = [
@@ -232,6 +257,14 @@ function getNavigation()
             ];
         }
 
+        if (auth()->user()->perm('tags', 'edit')) {
+            $items['content']['childs'][] = [
+                'title' => '<span class="text">' . trans('front.tags') . '</span>',
+                'route' => 'admin.tags.index',
+                'childs' => []
+            ];
+        }
+
         if (config('auth.secondary_credentials') && Auth::user()->isMainLogin()) {
             $items['content']['childs'][] = [
                 'title' =>  '<span class="text">' . trans('front.secondary_credentials') . '</span>',
@@ -328,6 +361,20 @@ function getNavigation()
             'route' => 'admin.fcm_configurations.index',
             'childs' => []
         ];
+
+        $items['setup']['childs'][] = [
+            'title' => '<span class="text">' . trans('front.widgets') . '</span>',
+            'route' => 'admin.widgets.index',
+            'childs' => []
+        ];
+
+        if (Auth::User()->isAdmin()) {
+            $items['setup']['childs'][] = [
+                'title' => '<span class="text">' . e(\App\Services\Ai\AiSettings::name()) . '</span>',
+                'route' => 'admin.ai_assistant.index',
+                'childs' => []
+            ];
+        }
 
         if (config('addon.external_url')) {
             $items['setup']['childs'][] = [

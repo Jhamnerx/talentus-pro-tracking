@@ -39,6 +39,22 @@ class GexpExporter implements ExporterInterface
             }
 
             unset($geofence['group']);
+
+            // Limites por tipo/estado de vehiculo por NOMBRE: los ids no
+            // sirven en otra cuenta; el importador los resuelve o los crea.
+            if (array_key_exists('vehicle_speed_limits', $geofence)) {
+                $geofence['vehicle_speed_limits'] = array_values(array_filter(array_map(function ($row) {
+                    if (empty($row['vehicle_type']['name'])) {
+                        return null;
+                    }
+
+                    return [
+                        'vehicle_type'  => $row['vehicle_type']['name'],
+                        'vehicle_state' => $row['vehicle_state']['name'] ?? null,
+                        'speed_limit'   => $row['speed_limit'],
+                    ];
+                }, (array) $geofence['vehicle_speed_limits'])));
+            }
         }
     }
 

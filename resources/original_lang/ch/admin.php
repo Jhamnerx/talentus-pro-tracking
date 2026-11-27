@@ -120,6 +120,7 @@ return [
     'diem_rates' => 'Tasas diarias',
     'forwards' => 'Hacia adelante',
     'group_6' => 'Supervisor',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Usuario creado días antes',
     'reminders_trans' => 'Traducciones de recordatorios',
     'passwords_trans' => 'Traducciones de contraseñas',

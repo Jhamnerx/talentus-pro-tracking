@@ -6,6 +6,7 @@ use App\Events\Tracker\RestartFail;
 use App\Events\Tracker\RestartSuccess;
 use App\Jobs\TrackerRestart;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Str;
 use Symfony\Component\Process\Exception\ProcessFailedException;
@@ -160,6 +161,21 @@ class Tracker
     public function sendCommand($data)
     {
         return $this->api('api/commands/send', $data);
+    }
+
+    /**
+     * GET a la API del tracker (p. ej. playlists/segmentos HLS de video y estado de los streams).
+     *
+     * @param string $endpoint
+     * @return \Illuminate\Http\Client\Response
+     */
+    public function get($endpoint)
+    {
+        $config = config('tracker');
+
+        return Http::withBasicAuth('admin', config('app.admin_user'))
+            ->timeout(15)
+            ->get($this->getUrl() . ':' . $config['web.port'] . '/' . ltrim($endpoint, '/'));
     }
 
     /**

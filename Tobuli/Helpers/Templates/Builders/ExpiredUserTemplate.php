@@ -15,15 +15,19 @@ class ExpiredUserTemplate extends TemplateBuilder
     {
         $userReplacer = (new UserReplacer())->setUser($this->user);
 
+        $daysPassed = \Carbon::now()->diffInDays($user->expiration_date);
+
         return array_merge([
-            '[days]'   => settings('main_settings.expire_notification.days_after'),
+            '[days]'        => settings('main_settings.expire_notification.days_after'),
+            '[days_passed]' => $daysPassed,
         ], $userReplacer->replacers($user));
     }
 
     protected function placeholders()
     {
         return array_merge([
-            '[days]'   => 'Days after expiration',
+            '[days]'        => 'Days after expiration',
+            '[days_passed]' => 'Days passed since user\'s expiration',
         ], (new UserReplacer())->placeholders());
     }
 }

@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Api;
+<?php namespace App\Http\Controllers\Api;
 
 use App\Exceptions\Manager;
 use App\Exceptions\PermissionException;
@@ -318,6 +316,8 @@ class ApiController extends Controller
     protected function groupDevicesSlim(&$grouped, $device_groups, $devices)
     {
         DeviceSlimTransformer::loadRelations($devices);
+        // Clasificación tipo/estado del usuario, en una consulta por lote (si no, una por equipo).
+        $devices->load(\Tobuli\Entities\Device::classificationRelationFor((int) $this->user->id));
 
         foreach ($devices as $device) {
             $group_id = empty($device->pivot->group_id) ? 0 : $device->pivot->group_id;
@@ -549,7 +549,11 @@ class ApiController extends Controller
             'devices_limit' => intval($this->user->devices_limit),
             'group_id'      => $this->user->group_id,
             'role_id'       => $this->user->group_id,
-            'permissions'   => $this->user->getPermissions()
+            'permissions'   => $this->user->getPermissions(),
+            // Plugin del widget de bloqueo de motor: la app oculta la tarjeta si está apagado.
+            'locking_enabled' => (bool) settings('plugins.locking_widget.status'),
+            // Valores por defecto del color del marcador por velocidad (como mapConfig de la v2).
+            'marker_speed_colors' => (array) config('tobuli.marker_speed_colors', []),
         ];
     }
 
@@ -571,7 +575,7 @@ class ApiController extends Controller
         if (!$device)
             return response()->json(['status' => 0, 'errors' => ['imei' => dontExist('global.device')]], 400);
 
-        if (! $this->user->can('edit', $device, 'expiration_date'))
+        if ( ! $this->user->can('edit', $device, 'expiration_date'))
             throw new PermissionException();
 
         $device->expiration_date = request()->get('expiration_date');
@@ -639,24 +643,6 @@ class ApiController extends Controller
         return response()->json(['status' => 1]);
     }
 
-    public function destroyFcmToken(FcmService $fcmService)
-    {
-        $validator = Validator::make(request()->all(), ['token' => 'required']);
-
-        if ($validator->fails()) {
-            throw new ValidationException($validator->errors());
-        }
-
-        $token = request('token');
-        $result = $fcmService->destroyFcmToken($this->user, $token);
-
-        if (!$result) {
-            return response()->json(['status' => 0, 'message' => 'El token no existe'], 404);
-        }
-
-        return response()->json(['status' => 1, 'message' => 'Token eliminado con éxito.']);
-    }
-
     public function getServicesKeys()
     {
         $services = [];
@@ -677,7 +663,7 @@ class ApiController extends Controller
             return response()->json(['status' => 0, 'message' => 'Method does not exist!'], 500);
         }
 
-        if (! is_array($response))
+        if ( ! is_array($response))
             return $response;
 
         if (!array_key_exists('status', $response))

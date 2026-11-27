@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Tracker;
 
+use GuzzleHttp\Exception\ClientException;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\Device;
@@ -58,5 +59,30 @@ class ApiController extends Controller
         $fcmService->setFcmToken($this->deviceInstance, $input['token'], $input['project_id'] ?? null);
 
         return response()->json(['status' => 1, 'data' => $this->deviceInstance->fcmTokens()]);
+    }
+
+    public function testFcmToken(FcmService $fcmService)
+    {
+        $input = request()->all();
+
+        $validator = Validator::make($input, ['token' => 'required']);
+
+        if ($validator->fails()) {
+            throw new ValidationException($validator->errors());
+        }
+
+        $token = $this->deviceInstance->fcmTokens()->where('token', $input['token'])->first();
+
+        try {
+            $fcmService->sendToTokens([$token], 'Test title', 'Test body');
+        } catch (ClientException $e) {
+            $error = $e->getResponse()->getBody()->getContents();
+        } catch (\Exception $e) {
+            $error = $e->getMessage();
+        }
+
+        return response()->json([
+            'status' => empty($error)
+        ]);
     }
 }

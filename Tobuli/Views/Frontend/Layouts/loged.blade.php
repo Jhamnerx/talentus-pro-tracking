@@ -131,6 +131,15 @@
                         <span class="icon traffic"></span>
                     </label>
 
+                    @if (auth()->user()->able('flights_info'))
+                        <label class="btn" data-toggle="tooltip" data-placement="left"
+                            title="{!! trans('front.live_aircraft') !!}">
+                            <input id="showAircraft" type="checkbox" autocomplete="off"
+                                onchange="app.changeSetting('showAircraft', this.checked);">
+                            <span class="fa fa-plane"></span>
+                        </label>
+                    @endif
+
                     @if (config('addon.html_geolocation'))
                         <button type="button" class="btn" onclick="app.getMyLocation();"><span
                                 class="icon icon-fa fa-dot-circle-o"></span></button>
@@ -200,7 +209,6 @@
         handlers.circle.radius = '{{ trans('front.radius') }}';
         handlers.circle.tooltip.start = '{{ trans('front.click_and_drag_to_draw_shape') }}';
         handlers.simpleshape.tooltip.end = '{{ trans('front.release_mouse_to_finish_drawing') }}';
-
         var urlBase = '{{ url('/') }}/';
         var titleCommands = '{{ trans('front.command') }}';
         var titleSharing = '{{ trans('front.sharing') }}';

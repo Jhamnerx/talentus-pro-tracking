@@ -18,6 +18,11 @@
             'onChange' => 'app.geofences.changeType(this);',
         ]) !!}
     </div>
+    <div class="form-group geofence-corridor-width">
+        {!! Form::label('radius', trans('front.corridor_width') . ':') !!}
+        {!! Form::number('radius', 100, ['class' => 'form-control', 'min' => 1, 'step' => 1]) !!}
+        <small>{{ trans('front.corridor_width_hint') }}</small>
+    </div>
     @if (settings('plugins.moving_geofence.status'))
         <div class="form-group">
             {!! Form::label('device_id', trans('validation.attributes.geofence_device') . ':') !!}
@@ -42,6 +47,12 @@
                 </a>
             </span>
         </div>
+    </div>
+
+
+    <div class="form-group">
+        {!! Form::label('category', trans('front.geofence_category').':') !!}
+        {!! Form::select('category', ['' => trans('front.geofence_category_none')] + \Tobuli\Entities\Geofence::categories(), null, ['class' => 'form-control']) !!}
     </div>
 
     @include('front::Geofences.partials.vehicle_speed_limits')
@@ -82,3 +93,23 @@
     </div>
 </div>
 {!! Form::close() !!}
+
+{{-- La anchura solo tiene sentido para el corredor: se muestra con el tipo.
+     Va aqui y no en el JS del mapa porque es puro formulario. --}}
+<script>
+    (function () {
+        var $form = $('#geofence_create');
+
+        function toggleCorridorWidth() {
+            var esCorredor = $form.find('select[name="type"]').val() === 'line';
+
+            $form.find('.geofence-corridor-width').toggle(esCorredor);
+            // Oculto no basta: el campo seguia viajando y un poligono se
+            // guardaba con radius = 100 (fallo 13 de la QA legacy).
+            $form.find('.geofence-corridor-width input[name="radius"]').prop('disabled', !esCorredor);
+        }
+
+        $form.on('change', 'select[name="type"]', toggleCorridorWidth);
+        toggleCorridorWidth();
+    })();
+</script>

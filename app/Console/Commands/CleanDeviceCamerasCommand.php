@@ -1,24 +1,11 @@
-<?php
-// Decrypted by https://bolt.pawan.krd - Educational Use Only
-//
-// DISCLAIMER: This file was decrypted for educational and research purposes only.
-// Use of this file is at your own risk. We make no warranties, express or implied,
-// regarding the accuracy, reliability, or legality of the content within. We are not
-// responsible for any damages, direct or indirect, resulting from the use of this file.
-// You are solely responsible for ensuring compliance with all applicable laws and
-// regulations in your jurisdiction.
-//
-// By using this file, you acknowledge and agree to these terms.
-
-namespace App\Console\Commands;
+<?php namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use CustomFacades\Repositories\DeviceCameraRepo;
 use Tobuli\Entities\File\DeviceCameraMedia;
 use Illuminate\Support\Facades\File;
 
-class CleanDeviceCamerasCommand extends Command
-{
+class CleanDeviceCamerasCommand extends Command {
     /**
      * The console command name.
      *
@@ -58,13 +45,14 @@ class CleanDeviceCamerasCommand extends Command
 
                 if (File::exists($path)) {
                     if (!File::delete($path)) {
-                        $this->line('Couldn\'t delete: ' . $path);
+                        $this->line('Couldn\'t delete: '.$path);
                     }
                 }
             }
 
             $this->line('Ok');
-        } catch (\Exception $e) {
+        } catch(\Exception $e) {
+
         }
     }
 

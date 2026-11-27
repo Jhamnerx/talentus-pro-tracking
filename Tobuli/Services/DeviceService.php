@@ -13,36 +13,13 @@ use Tobuli\Entities\User;
 
 class DeviceService
 {
-
-    /**
-     * @var User
-     */
-    protected $user;
-
-    /**
-     * @var DeviceConfigService
-     */
-    private $configService;
-
-    /**
-     * @var CustomValuesService
-     */
-    private $customValueService;
-
-    /**
-     * @var DeviceUsersService
-     */
-    private $deviceUsersService;
+    protected User $user;
 
     public function __construct(
-        DeviceConfigService $configService,
-        CustomValuesService $customValueService,
-        DeviceUsersService $deviceUsersService
-    ) {
-        $this->configService = $configService;
-        $this->customValueService = $customValueService;
-        $this->deviceUsersService = $deviceUsersService;
-    }
+        private CustomValuesService $customValueService,
+        private DeviceUsersService $deviceUsersService,
+        private TagService $tagService,
+    ) {}
 
     public function setActingUser(User $user)
     {
@@ -51,7 +28,7 @@ class DeviceService
 
     public function getActingUser()
     {
-        if (is_null($this->user))
+        if (!isset($this->user))
             return getActingUser();
 
         return $this->user;
@@ -118,6 +95,10 @@ class DeviceService
             $data['fuel_price'] = floatval($data['fuel_price']);
         }
 
+        if (array_key_exists('custom_data', $data) && !config('addon.device_custom_data')) {
+            unset($data['custom_data']);
+        }
+
         if (array_key_exists('gprs_templates_only', $data)) {
             $data['gprs_templates_only'] = empty($data['gprs_templates_only']) ? 0 : 1;
         }
@@ -126,6 +107,29 @@ class DeviceService
             $data['sim_expiration_date'] = Carbon::createFromTimestamp(strtotime($data['sim_activation_date']))
                 ->addDays(settings('plugins.annual_sim_expiration.options.days'))
                 ->toDateString();
+        }
+
+        if (array_key_exists('has_camera', $data)) {
+            $data['has_camera'] = empty($data['has_camera']) ? 0 : 1;
+
+            // Los checkboxes desmarcados no se envian: sin camara o sin marcar, sin canales.
+            $data['camera_channels'] = $data['has_camera'] ? ($data['camera_channels'] ?? []) : [];
+        }
+
+        if (array_key_exists('camera_channels', $data)) {
+            $channels = array_map('intval', (array)$data['camera_channels']);
+            $channels = array_unique(array_filter($channels, fn ($c) => $c >= 1 && $c <= Device::VIDEO_MAX_CHANNELS));
+            sort($channels);
+            $data['camera_channels'] = array_values($channels);
+        }
+
+        if (array_key_exists('camera_channel_roles', $data)) {
+            $data['camera_channel_roles'] = array_filter(
+                (array)$data['camera_channel_roles'],
+                fn ($role, $channel) => in_array($role, Device::VIDEO_CHANNEL_ROLES)
+                    && $channel >= 1 && $channel <= Device::VIDEO_MAX_CHANNELS,
+                ARRAY_FILTER_USE_BOTH
+            );
         }
 
         if ($forwardIP = Arr::get($data, 'forward.ip')) {
@@ -182,10 +186,12 @@ class DeviceService
             $this->saveUsers($device, $data);
             $this->attachCreator($device);
             $this->saveGroup($device, $data);
+            $this->saveTags($device, $data);
 
             $device->createPositionsTable();
 
             commitTransaction();
+
         } catch (\Exception $e) {
             rollbackTransaction();
 
@@ -223,8 +229,10 @@ class DeviceService
             $this->saveSensors($device, $data);
             $this->saveUsers($device, $data);
             $this->saveGroup($device, $data);
+            $this->saveTags($device, $data);
 
             commitTransaction();
+
         } catch (\Exception $e) {
             rollbackTransaction();
 
@@ -240,6 +248,7 @@ class DeviceService
 
         try {
             $device->users()->sync([]);
+            $device->tags()->sync([]);
             $device->events()->delete();
             $device->sensors()->delete();
             $device->services()->delete();
@@ -292,12 +301,10 @@ class DeviceService
     {
         $sensor_group_id = $data['sensor_group_id'] ?? null;
 
-        if (
-            empty($sensor_group_id)
+        if (empty($sensor_group_id)
             && $device->wasRecentlyCreated
             && $device->device_type_id
-            && $deviceType = DeviceType::find($device->device_type_id)
-        ) {
+            && $deviceType = DeviceType::find($device->device_type_id)) {
             $sensor_group_id = $deviceType->sensor_group_id;
         }
 
@@ -307,6 +314,21 @@ class DeviceService
 
         $sensorsService = new DeviceSensorsService();
         $sensorsService->addSensorGroup($device, $this->getActingUser(), $sensor_group_id);
+    }
+
+    protected function saveTags(Device $device, $data): void
+    {
+        if (!array_key_exists('tags', $data)) {
+            return;
+        }
+
+        $user = $this->getActingUser();
+
+        if (!$user->can('edit', $device, 'tags')) {
+            return;
+        }
+
+        $this->tagService->setUser($user)->setToModel($device, $data['tags']);
     }
 
     public static function getExpirationDateOffset()

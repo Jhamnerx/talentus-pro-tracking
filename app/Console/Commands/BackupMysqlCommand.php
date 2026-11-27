@@ -40,6 +40,8 @@ class BackupMysqlCommand extends Command
 			return;
 		}
 
+		Backup\BackupTempFile::cleanStale();
+
 		$settings = settings('backups');
 		$backup = new Backup\BackupService($settings);
 

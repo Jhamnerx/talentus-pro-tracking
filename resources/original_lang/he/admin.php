@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'תעריפי דיים',
     'forwards' => 'קדימה',
     'group_6' => 'מְפַקֵחַ',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'משתמש נוצר לפני ימים',
     'reminders_trans' => 'תרגומי תזכורות',
     'passwords_trans' => 'תרגומי סיסמאות',

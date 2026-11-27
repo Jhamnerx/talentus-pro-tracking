@@ -7,9 +7,15 @@
 @section('body')
     {!! Form::open(['route' => 'admin.clients.import_poi_set', 'method' => 'POST']) !!}
     {!! Form::hidden('id') !!}
+
     <div class="form-group">
         {!! Form::label('user_id', trans('validation.attributes.user').'*:') !!}
-        {!! Form::select('user_id[]', $users->pluck('email', 'id'), null, ['class' => 'form-control', 'multiple' => 'multiple', 'data-live-search' => 'true']) !!}
+        {!! Form::select('user_id[]', [], null, [
+                'class' => 'form-control',
+                'data-live-search' => 'true',
+                'multiple' => 'multiple',
+                'data-ajax' => route('admin.clients.users')
+                ]) !!}
     </div>
 
     <div class="form-group">
@@ -19,7 +25,7 @@
             @foreach($icons->toArray() as $key=>$value)
             <div class="checkbox-inline">
                 {!! Form::radio('map_icon_id', $value['id'], null, ['data-width' => $value['width'], 'data-height' => $value['height']]) !!}
-                <label> <img src="{!!asset($value['path'])!!}" alt="ICON"></label>
+                <label> <img src="{!!asset($value['path'])!!}" alt="ICON" width="32" height="32"></label>
             </div>
             @endforeach
         </div>

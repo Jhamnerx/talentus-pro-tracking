@@ -4,15 +4,16 @@
 namespace Tobuli\Services\EntityLoader;
 
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\JoinClause;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tobuli\Services\EntityLoader\Filters\Filter;
-use Tobuli\Services\EntityLoader\Filters\FilterValuesSequence;
 use Tobuli\Services\EntityLoader\Filters\FilterValue;
+use Tobuli\Services\EntityLoader\Filters\FilterValuesSequence;
 
 abstract class EnityLoader
 {
@@ -29,7 +30,7 @@ abstract class EnityLoader
     protected $filters = [];
 
     /**
-     * @var Builder
+     * @var Builder|Relation
      */
     protected $queryItems;
 
@@ -38,7 +39,17 @@ abstract class EnityLoader
      */
     protected $queryStored;
 
+    /**
+     * @var string[]
+     */
+    protected $appends = [self::KEY_SEARCH];
+
     abstract protected function transform($item);
+
+    public function addAppends(array $appends)
+    {
+        $this->appends = array_merge($appends, $this->appends);
+    }
 
     /**
      * @param string $key
@@ -74,9 +85,11 @@ abstract class EnityLoader
     {
         $items = $this->getItems();
 
-        $items->appends([
-            self::KEY_SEARCH => request()->get(self::KEY_SEARCH)
-        ]);
+        foreach ($this->appends as $append) {
+            $items->appends([
+                $append => request()->get($append)
+            ]);
+        }
 
         return $items;
     }
@@ -149,9 +162,6 @@ abstract class EnityLoader
         $this->queryItems = $query;
     }
 
-    /**
-     * @return Builder|null
-     */
     public function getQueryItems()
     {
         return $this->queryItems ? clone $this->queryItems : null;
@@ -180,7 +190,7 @@ abstract class EnityLoader
     protected function getItems()
     {
         $query = $this->getQueryItems();
-        $query->search(request()->get('s'));
+        $query->search(request()->get(self::KEY_SEARCH));
 
         if ($id = request('selected_id')) {
             $sequence = $this->parseSequence();
@@ -287,16 +297,8 @@ abstract class EnityLoader
 
     public function getQueryAttach()
     {
-        $selectedQuery = $this->getSelectedSubquery();
-
-        if (!$selectedQuery)
-            return null;
-
-        $query = $this->getQueryItems();
-
-        $query->whereIn($this->getQueryItems()->getModel()->getQualifiedKeyName(), $selectedQuery);
-
-        return $query->select($this->getQueryItems()->getModel()->getQualifiedKeyName());
+        return $this->getQuerySelected()
+            ?->select($this->getQueryItems()->getModel()->getQualifiedKeyName());
     }
 
     public function getQueryDetach()
@@ -382,4 +384,47 @@ abstract class EnityLoader
 
         return $this->tmpTableQuery;
     }
+
+    /*  PHP 7.4 fix
+
+    public function removeOutsiders(BelongsToMany $relation): void
+    {
+        $queryItems = $this->getQueryItems();
+
+        $relatedClass = match (true) {
+            $queryItems instanceof Relation => $queryItems->getRelated()::class,
+            $queryItems instanceof Builder => $queryItems->getModel()::class,
+            default => throw new \InvalidArgumentException('Items query must be Relation or Eloquent Builder'),
+        };
+
+        if ($relation->getRelated()::class !== $relatedClass) {
+            throw new \InvalidArgumentException('$relation and $queryItems must share the same class related model');
+        }
+
+        $tablePivot = $relation->getTable();
+        $foreignPivotKey = $relation->getForeignPivotKeyName();
+        $relatedPivotKey = $relation->getRelatedPivotKeyName();
+
+        $parent = $relation->getParent();
+        $tableParent = $parent->getTable();
+        $parentQualifiedKey = $parent->getQualifiedKeyName();
+
+        $owner = $queryItems->getParent();
+        $parentOwnerKey = Str::snake(class_basename($owner::class)) . '_id';
+
+        $relatedKey = $relation->getRelated()->getKeyName();
+        $relatedQualifiedKey = $relation->getRelated()->getQualifiedKeyName();
+
+        $scopeQuery = $queryItems->select($relatedQualifiedKey);
+
+        DB::table($tablePivot)
+            ->join($tableParent, fn (JoinClause $join) => $join
+                ->on($parentQualifiedKey, "$tablePivot.$foreignPivotKey")
+                ->where("$tableParent.$parentOwnerKey", $owner->getKey())
+            )
+            ->leftJoinSub($scopeQuery, 'tmp_table_related', "tmp_table_related.$relatedKey", "$tablePivot.$relatedPivotKey")
+            ->whereNull("tmp_table_related.$relatedKey")
+            ->delete();
+    }
+    */
 }

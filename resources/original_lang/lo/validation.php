@@ -183,6 +183,7 @@ return array(
         'frequency' => 'ຄວາມຖີ່',
         'unit' => 'ໜ່ວຍ ງານ',
         'noreply_email' => 'ບໍ່ມີທີ່ຢູ່ອີເມວຕອບ',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'ລາຍເຊັນ',
         'use_smtp_server' => 'ໃຊ້ເຄື່ອງແມ່ຂ່າຍ SMTP',
         'smtp_server_host' => 'ເຄື່ອງແມ່ຂ່າຍ SMTP',

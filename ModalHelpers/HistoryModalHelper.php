@@ -10,6 +10,8 @@ use Illuminate\Support\Arr;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Event;
 use Tobuli\Entities\UserDriver;
+use Tobuli\History\Actions\AppendFuelFilling;
+use Tobuli\History\Actions\AppendFuelTheft;
 use Tobuli\History\Actions\AppendRouteColor;
 use Tobuli\History\Actions\Distance;
 use Tobuli\History\Actions\Drivers;
@@ -132,9 +134,28 @@ class HistoryModalHelper extends ModalHelper
             $history->registerActions([GroupEvent::class]);
         }
 
+        // Rellenos y robos para marcarlos sobre la curva del grafico. El
+        // relleno ya entraba solo (AppendFuelConsumptionLevelSensors lo pide);
+        // el robo no lo pedia nadie. Se registran unicamente si el equipo tiene
+        // sensor de nivel: sin el no hay nada que detectar y el pipeline del
+        // historial lo recorre TODO el mundo, no solo quien mide combustible.
+        if ($this->hasFuelTankSensor($device)) {
+            $history->registerActions([
+                AppendFuelFilling::class,
+                AppendFuelTheft::class,
+            ]);
+        }
+
         $history->setSensors($this->getDeviceSensors($device));
 
         return $history->get();
+    }
+
+    private function hasFuelTankSensor($device): bool
+    {
+        return $device->sensors->contains(function ($sensor) {
+            return $sensor->type === 'fuel_tank';
+        });
     }
 
     private function getDeviceSensors($device)
@@ -238,6 +259,12 @@ class HistoryModalHelper extends ModalHelper
                                     $data["s{$sensor_id}"] = $sensor_data['v'];
                                 }
                             }
+
+                            // Relleno y robo detectados en esta posicion, para
+                            // poder marcarlos sobre la curva del grafico. Es lo
+                            // que distingue "bajo porque iba andando" de "bajo
+                            // parado a las 3 de la manana".
+                            $data = array_merge($data, $this->fuelEventsOf($position));
 
                             return $data;
                         },
@@ -390,6 +417,13 @@ class HistoryModalHelper extends ModalHelper
 
         HistoryFormValidator::validate('create', $this->data);
 
+        // snap_to_road: get() ya lo aplicaba sobre las posiciones de cada tramo;
+        // getApi() lo ignoraba (el checkbox de la v2 no hacía nada). Se define
+        // AQUÍ porque aquí es donde se usa — estaba declarado en get() y en esta
+        // función quedaba indefinido.
+        $snapToRoad = isset($this->data['snap_to_road'])
+            && ($this->data['snap_to_road'] === 'true' || $this->data['snap_to_road'] == 1);
+
         $device = $this->getDevice();
 
         $data = $this->getHistoryData($device);
@@ -464,7 +498,9 @@ class HistoryModalHelper extends ModalHelper
                         function ($position) {
                             return $this->positionToItem($position);
                         },
-                        $group->getStat('positions')->value()
+                        $snapToRoad
+                            ? snapToRoad($group->getStat('positions')->value())
+                            : $group->getStat('positions')->value()
                     ),
                 ];
             }
@@ -504,11 +540,42 @@ class HistoryModalHelper extends ModalHelper
         })->values()->all());
 
 
+        // Distancia total por ODÓMETRO (misma fórmula que get(): suma de
+        // odómetro_fin - odómetro_inicio por tramo, con fallback al stat
+        // 'distance'). Clave ADITIVA: 'distance_sum' se deja intacta para no
+        // alterar el contrato de la API móvil; la usa la UI v2 para mostrar el
+        // mismo "Km recorrido" que el panel legacy.
+        $odometerSum = 0;
+        if (!empty($data['groups'])) {
+            foreach ($data['groups']->all() as $group) {
+                if ($group->getKey() === 'event' || $group->getKey() === 'stop') {
+                    continue;
+                }
+                $segment  = null;
+                $odometer = $group->stats()->has('odometer') ? $group->stats()->get('odometer') : null;
+                if ($odometer) {
+                    $sp = $group->getStartPosition();
+                    $ep = $group->getEndPosition();
+                    if ($sp && isset($sp->odometer) && $ep && isset($ep->odometer)) {
+                        $odometer->set($sp->odometer);
+                        $oStart = round($odometer->format(), 1);
+                        $odometer->set($ep->odometer);
+                        $oEnd = round($odometer->format(), 1);
+                        if (is_numeric($oStart) && is_numeric($oEnd)) {
+                            $segment = $oEnd - $oStart;
+                        }
+                    }
+                }
+                $odometerSum += $segment ?? $group->getStat('distance')->format();
+            }
+        }
+
         return [
             'items' => $items,
             'device' => FractalTransformer::setSerializer(WithoutDataArraySerializer::class)
                 ->item($device, DeviceHistoryTransformer::class)->toArray(),
             'distance_sum' => $data['root']->getStat('distance')->human(),
+            'distance_sum_odometer' => $odometerSum ?: null,
             'top_speed' => $data['root']->getStat('speed_max')->human(),
             'move_duration' => $data['root']->getStat('drive_duration')->human(),
             'stop_duration' => $data['root']->getStat('stop_duration')->human(),
@@ -769,7 +836,37 @@ class HistoryModalHelper extends ModalHelper
 
             'other_arr' => parseXML($position->other),
             'sensors_data' => $sensor_data,
-        ];
+        ] + $this->fuelEventsOf($position);
+    }
+
+    /**
+     * Relleno y robo detectados en la posicion (AppendFuelFilling /
+     * AppendFuelTheft), para marcarlos sobre la curva del grafico. Es lo que
+     * distingue "bajo porque iba andando" de "bajo parado a las 3 de la
+     * manana". Lo usan get() (legacy) y getApi() (UI v2).
+     */
+    protected function fuelEventsOf($position): array
+    {
+        $data = [];
+
+        foreach (['fill' => 'fuel_filling', 'theft' => 'fuel_theft'] as $clave => $campo) {
+            if (empty($position->$campo)) {
+                continue;
+            }
+
+            $evento = $position->$campo;
+
+            $data[$clave] = [
+                'sensor' => 's' . $evento['sensor_id'],
+                'name'   => $evento['name'],
+                'diff'   => round((float) $evento['diff'], 2),
+                'from'   => round((float) $evento['previous'], 2),
+                'to'     => round((float) $evento['current'], 2),
+                'unit'   => $evento['unit'],
+            ];
+        }
+
+        return $data;
     }
 
     protected function getGroupMetas($group, $keys)

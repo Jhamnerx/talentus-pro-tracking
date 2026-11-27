@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\View;
 use Tobuli\Exceptions\ValidationException;
-use Tobuli\Helpers\Backup;
+use Tobuli\Helpers\Backup\BackupService;
 use Tobuli\Validation\AdminBackupsFormValidator;
 
 class BackupsController extends BaseController {
@@ -113,6 +113,12 @@ class BackupsController extends BaseController {
                 $settings['ftp_path'] = $input['ftp_path'];
                 $settings['period'] = $input['period'];
                 $settings['hour'] = $input['hour'];
+                $settings['drive_enabled'] = !empty($input['drive_enabled']);
+                $settings['drive_remote'] = $input['drive_remote'] ?? 'gdrive';
+                $settings['drive_path'] = $input['drive_path'] ?? 'backup_plataforma/';
+                $settings['retention_daily_days'] = (int)($input['retention_daily_days'] ?? 0) ?: (int)($settings['retention_daily_days'] ?? 0) ?: 30;
+                $settings['retention_long_term_months'] = (int)($input['retention_long_term_months'] ?? 0) ?: (int)($settings['retention_long_term_months'] ?? 0) ?: 2;
+                $settings['retention_max_days'] = (int)($input['retention_max_days'] ?? 0) ?: (int)($settings['retention_max_days'] ?? 0) ?: 365;
 
                 settings('backups', $settings);
             }
@@ -124,10 +130,15 @@ class BackupsController extends BaseController {
             commitTransaction();
 
             try {
-                (new Backup($settings))->check();
+                $service = new BackupService($settings);
+                $service->check();
+
+                if (!empty($settings['drive_enabled'])) {
+                    $service->testDrive();
+                }
             }
             catch(\Exception $e) {
-                throw new ValidationException(['id' => $e->getMessage()]);
+                throw new ValidationException(['id' => \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage())]);
             }
 
             return Redirect::route('admin.backups.index')->withSuccess(trans('front.successfully_saved'));
@@ -146,17 +157,37 @@ class BackupsController extends BaseController {
             return Response::json(['status' => trans('front.unexpected_error')]);
 
         try {
-            (new Backup($settings))->check();
+            (new BackupService($settings))->check();
 
             $message = trans('front.successfully_uploaded');
             $status = 1;
         }
         catch(\Exception $e) {
-            $message = $e->getMessage();
+            $message = \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage());
             $status = 0;
         }
 
         return Response::json(['status' => $status, 'message' => $message]);
+    }
+
+    public function testDrive()
+    {
+        $settings = settings('backups') ?: [];
+
+        if (empty($settings['drive_enabled'])) {
+            return Response::json(['status' => 0, 'message' => trans('backups.drive_unavailable')]);
+        }
+
+        try {
+            $about = (new BackupService($settings))->testDrive()->about();
+
+            return Response::json(['status' => 1, 'message' => trans('backups.drive_ok', [
+                'used' => round($about['used'] / 1073741824, 1),
+                'free' => round($about['free'] / 1073741824, 1),
+            ])]);
+        } catch (\Exception $e) {
+            return Response::json(['status' => 0, 'message' => trans('backups.drive_failed', ['error' => \Tobuli\Helpers\Backup\BackupSecrets::scrub($e->getMessage())])]);
+        }
     }
 
     public function logs()

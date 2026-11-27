@@ -1,0 +1,46 @@
+{{-- Config compartida del módulo Servicios/Mantenimiento (la consume tp-services.js).
+     Incluir UNA vez por página que use los modales de servicios. --}}
+<script type="application/json" id="tp-services-config">
+{!! json_encode([
+    'urls' => [
+        'data'    => route('ui.v2.api.services'),
+        'device'  => route('ui.v2.api.services.device', 0),
+        'meta'    => route('ui.v2.api.services.meta'),
+        'store'   => route('ui.v2.api.services.store'),
+        'update'  => route('ui.v2.api.services.update', 0),
+        'destroy' => route('ui.v2.api.services.destroy', 0),
+    ],
+    'i18n' => [
+        'service'                => trans('front.service'),
+        'services'               => trans('front.services'),
+        'add_service'            => trans('front.add_service'),
+        'no_services'            => trans('front.no_services'),
+        'name'                   => trans('validation.attributes.name'),
+        'expiration_by'          => trans('validation.attributes.expiration_by'),
+        'interval'               => trans('validation.attributes.interval'),
+        'last_service'           => trans('validation.attributes.last_service'),
+        'trigger_event_left'     => trans('validation.attributes.trigger_event_left'),
+        'renew_after_expiration' => trans('validation.attributes.renew_after_expiration'),
+        'current_odometer'       => trans('validation.attributes.current_odometer'),
+        'current_engine_hours'   => trans('validation.attributes.current_engine_hours'),
+        'description'            => trans('validation.attributes.description'),
+        'email'                  => trans('validation.attributes.email'),
+        'expiration_date'        => trans('front.expiration_date'),
+        'expired'                => trans('front.expired'),
+        'save'                   => trans('global.save'),
+        'cancel'                 => trans('global.cancel'),
+        'edit'                   => trans('global.edit'),
+        'delete'                 => trans('global.delete'),
+        'search'                 => trans('front.search'),
+        'rows_per_page'          => trans('front.rows_per_page'),
+        'previous'               => trans('front.previous'),
+        'next'                   => trans('front.next'),
+        'confirm'                => trans('global.confirm'),
+        'changes_saved'          => trans('front.successfully_saved'),
+        'are_you_sure'           => trans('front.are_you_sure'),
+        'email_semicolon'        => trans('front.email_semicolon'),
+        'error'                  => trans('front.unexpected_error'),
+        'loading'                => trans('front.loading'),
+    ],
+], JSON_UNESCAPED_UNICODE) !!}
+</script>

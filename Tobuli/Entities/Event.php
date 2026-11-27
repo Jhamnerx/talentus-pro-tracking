@@ -17,6 +17,20 @@ class Event extends AbstractEntity implements DisplayInterface
 {
     use Filterable, Searchable;
 
+    /**
+     * Alarmas normalizadas de Traccar (parámetro `alarm`). Un tipo por alarma
+     * para que reportes y puntuación de conducción las distingan; el usuario
+     * las configura desde un único tipo de alerta.
+     * Caben en events.type, que es string(30).
+     */
+    const TYPE_HARSH_ACCELERATION = 'harsh_acceleration';
+    const TYPE_HARSH_BRAKING      = 'harsh_braking';
+    const TYPE_HARSH_CORNERING    = 'harsh_cornering';
+    const TYPE_HIGH_RPM           = 'high_rpm';
+    const TYPE_ACCIDENT           = 'accident';
+    const TYPE_POWER_CUT          = 'power_cut';
+    const TYPE_JAMMING            = 'jamming';
+
     const TYPE_FUEL_FILL  = 'fuel_fill';
     const TYPE_FUEL_THEFT = 'fuel_theft';
     const TYPE_EXPIRED_DEVICE = 'expired_device';
@@ -38,6 +52,7 @@ class Event extends AbstractEntity implements DisplayInterface
     const TYPE_OFFLINE_DURATION = 'offline_duration';
     const TYPE_MOVE_DURATION = 'move_duration';
     const TYPE_STOP_DURATION = 'stop_duration';
+    const TYPE_OPERATION_STOP = 'operation_stop';
     const TYPE_IDLE_DURATION = 'idle_duration';
     const TYPE_IGNITION_DURATION = 'ignition_duration';
     const TYPE_IGNITION_ON = 'ignition_on';
@@ -51,6 +66,8 @@ class Event extends AbstractEntity implements DisplayInterface
     const TYPE_DISTANCE = 'distance';
     const TYPE_POI_STOP_DURATION = 'poi_stop_duration';
     const TYPE_POI_IDLE_DURATION = 'poi_idle_duration';
+    // Umbral sobre el valor de un sensor (temperatura, voltaje, carga...)
+    const TYPE_SENSOR_VALUE = 'sensor_value';
     const TYPE_DEVICE_SUBSCRIPTION_EXPIRED = 'device_subscription_expired';
     const TYPE_UNPLUGGED = 'unplugged';
     const TYPE_PLUGGED_IN = 'plugged_in';
@@ -286,6 +303,16 @@ class Event extends AbstractEntity implements DisplayInterface
                 $duration = Arr::get($this->additional, 'stop_duration', 0);
                 $detail   = $duration . ' ' . trans('front.minutes');
                 break;
+            case Event::TYPE_OPERATION_STOP:
+                $parts = [Formatter::duration()->human((int) Arr::get($this->additional, 'stop_seconds', 0))];
+                if ($op = Arr::get($this->additional, 'operation'))
+                    $parts[] = $op;
+                if ($dir = Arr::get($this->additional, 'direction'))
+                    $parts[] = trans($dir === 'outbound' ? 'front.operation_outbound' : 'front.operation_inbound');
+                if ($n = Arr::get($this->additional, 'cycle_number'))
+                    $parts[] = trans('front.operation_cycle') . ' #' . $n;
+                $detail = implode(' · ', $parts);
+                break;
             case Event::TYPE_TIME_DURATION:
                 $duration = Arr::get($this->additional, 'time_duration', 0);
                 $detail   = $duration . ' ' . trans('front.minutes');
@@ -361,6 +388,9 @@ class Event extends AbstractEntity implements DisplayInterface
             case Event::TYPE_STOP_DURATION:
                 $name = trans('validation.attributes.stop_duration_longer_than');
                 break;
+            case Event::TYPE_OPERATION_STOP:
+                $name = trans('front.operation_stop');
+                break;
             case Event::TYPE_TIME_DURATION:
                 $name = trans('validation.attributes.time_duration');
                 break;
@@ -408,6 +438,11 @@ class Event extends AbstractEntity implements DisplayInterface
                 break;
             case Event::TYPE_POI_IDLE_DURATION:
                 $name = trans('front.poi_idle_duration');
+                break;
+            case Event::TYPE_SENSOR_VALUE:
+                // El nombre del sensor y el valor van en los adicionales; aqui
+                // solo la etiqueta del tipo, como el resto.
+                $name = trans('front.sensor_value');
                 break;
             case Event::TYPE_SOS:
                 $name = 'SOS';
@@ -515,6 +550,10 @@ class Event extends AbstractEntity implements DisplayInterface
                 'title' => trans('front.stop_duration'),
             ],
             [
+                'type' => Event::TYPE_OPERATION_STOP,
+                'title' => trans('front.operation_stop'),
+            ],
+            [
                 'type' => Event::TYPE_TIME_DURATION,
                 'title' => trans('front.time_duration'),
             ],
@@ -586,6 +625,36 @@ class Event extends AbstractEntity implements DisplayInterface
                 'type' => Event::TYPE_DISTANCE,
                 'title' => trans('global.distance'),
             ],
+            // Alarmas normalizadas del equipo. Sin titulo aqui, el listado de
+            // eventos las mostraria como "-".
+            [
+                'type' => Event::TYPE_HARSH_ACCELERATION,
+                'title' => trans('front.alarm_hardAcceleration'),
+            ],
+            [
+                'type' => Event::TYPE_HARSH_BRAKING,
+                'title' => trans('front.alarm_hardBraking'),
+            ],
+            [
+                'type' => Event::TYPE_HARSH_CORNERING,
+                'title' => trans('front.alarm_hardCornering'),
+            ],
+            [
+                'type' => Event::TYPE_HIGH_RPM,
+                'title' => trans('front.alarm_highRpm'),
+            ],
+            [
+                'type' => Event::TYPE_ACCIDENT,
+                'title' => trans('front.alarm_accident'),
+            ],
+            [
+                'type' => Event::TYPE_POWER_CUT,
+                'title' => trans('front.alarm_powerCut'),
+            ],
+            [
+                'type' => Event::TYPE_JAMMING,
+                'title' => trans('front.alarm_jamming'),
+            ],
         ]);
     }
 
@@ -626,6 +695,7 @@ class Event extends AbstractEntity implements DisplayInterface
             case Event::TYPE_TIME_DURATION:
             case Event::TYPE_MOVE_DURATION:
             case Event::TYPE_STOP_DURATION:
+            case Event::TYPE_OPERATION_STOP:
             case Event::TYPE_IDLE_DURATION:
             case Event::TYPE_POI_IDLE_DURATION:
             case Event::TYPE_POI_STOP_DURATION:

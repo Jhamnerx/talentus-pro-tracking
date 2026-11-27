@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'نرخ های روزانه',
     'forwards' => 'مهاجمان',
     'group_6' => 'سرپرست',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'کاربر قبل از چند روز ایجاد شده است',
     'reminders_trans' => 'ترجمه های یادآوری',
     'passwords_trans' => 'ترجمه رمزهای عبور',

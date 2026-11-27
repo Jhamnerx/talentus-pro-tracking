@@ -10,14 +10,14 @@ class BeaconFormValidator extends Validator
      */
     public $rules = [
         'create' => [
-            'imei'                => 'required|unique:devices,imei',
+            'imei'                => 'required|imei|unique:devices,imei',
             'name'                => 'required|string|between:1,255',
             'icon_id'             => 'required|exists:device_icons,id',
             'tail_length'         => 'required|numeric|min:0|max:10',
             'group_id'            => 'exists:device_groups,id',
         ],
         'update' => [
-            'imei'                => 'sometimes|required|unique:devices,imei,%s',
+            'imei'                => 'sometimes|required|imei|unique:devices,imei,%s',
             'name'                => 'sometimes|required|string|between:1,255',
             'icon_id'             => 'exists:device_icons,id',
             'tail_length'         => 'numeric|min:0|max:10',

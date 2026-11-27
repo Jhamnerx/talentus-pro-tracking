@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Títtleiki',
         'unit' => 'Eind',
         'noreply_email' => 'Ikki svar t-postadressa',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Undirskrift',
         'use_smtp_server' => 'Brúka SMTP-servara',
         'smtp_server_host' => 'SMTP-servaravertur',

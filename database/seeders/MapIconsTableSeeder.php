@@ -35,10 +35,18 @@ class MapIconsTableSeeder extends Seeder {
             if (!$width || !$height)
                 continue;
 
-            $path = 'images/map_icons/' . $file->getFilename();
+            // allFiles() es recursivo: conservar la subcarpeta (poi/) en el path.
+            $relative = str_replace('\\', '/', $file->getRelativePathname());
+            $path = 'images/map_icons/' . $relative;
 
             if ($this->mapIcon->findWhere(['path' => $path]))
                 continue;
+
+            // Los iconos de POI rediseñados (poi/) son de 64 px para pantallas
+            // retina, pero en el mapa se dibujan a 32 px.
+            if (str_starts_with($relative, 'poi/')) {
+                $width = $height = 32;
+            }
 
             $this->mapIcon->create([
                 'path'   => $path,

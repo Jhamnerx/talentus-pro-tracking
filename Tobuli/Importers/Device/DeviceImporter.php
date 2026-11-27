@@ -256,7 +256,7 @@ class DeviceImporter extends Importer
     public function getValidationBaseRules(): array
     {
         return [
-            'imei'                => 'required',
+            'imei'                => 'required|imei',
             'name'                => 'required',
             'icon_id'             => 'exists:device_icons,id',
             'fuel_quantity'       => 'numeric',

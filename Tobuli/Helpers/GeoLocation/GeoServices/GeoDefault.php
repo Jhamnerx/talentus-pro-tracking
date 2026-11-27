@@ -2,18 +2,16 @@
 
 namespace Tobuli\Helpers\GeoLocation\GeoServices;
 
-
+use GuzzleHttp\Promise\Utils;
 use Illuminate\Support\Facades\Cache;
+use Tobuli\Helpers\GeoLocation\Exceptions\GeocoderServerException;
 use Tobuli\Helpers\GeoLocation\GeoSettings;
 
 class GeoDefault extends GeoNominatim
 {
     const LOCK_TTL = 60;
 
-    /**
-     * @var array|null
-     */
-    protected $servers = null;
+    protected ?array $servers = null;
 
     public function __construct(GeoSettings $settings)
     {
@@ -28,7 +26,7 @@ class GeoDefault extends GeoNominatim
     {
         try {
             return parent::request($method, $options);
-        } catch (\CurlException $e) {
+        } catch (GeocoderServerException $e) {
             $this->setServerLock($this->url);
             $this->setServerCurrent();
         }
@@ -36,32 +34,56 @@ class GeoDefault extends GeoNominatim
         return $this->request($method, $options);
     }
 
-    protected function setServerCurrent() : string
+    protected function setServerCurrent(): void
     {
-        $url = $this->getServerRandom();
-
-        if ($this->hasServerLock($url)) {
-            return $this->setServerCurrent();
-        }
-
-        return $this->url = $url;
+        $this->url = $this->getFastestAvailableServer();
     }
 
-    protected function getServerRandom() : string
+    protected function getFastestAvailableServer(): string
     {
-        if (empty($this->servers)) {
-            throw new \Exception('No working geocode servers');
+        $cacheKey = 'geo_default.servers_response_times.' . gethostname();
+
+        $serverTimes = Cache::get($cacheKey);
+
+        if ($serverTimes === null) {
+            $serverTimes = $this->measureServerTimes();
+
+            asort($serverTimes);
+
+            Cache::put($cacheKey, $serverTimes, 600);
         }
 
-        $randomIndex = rand(0, count($this->servers) - 1);
+        foreach ($serverTimes as $server => $time) {
+            if (!$this->hasServerLock($server)) {
+                return $server;
+            }
+        }
 
-        $server = $this->servers[$randomIndex];
+        throw new \RuntimeException('No available servers');
+    }
 
-        unset($this->servers[$randomIndex]);
+    protected function measureServerTimes(): array
+    {
+        $promises = [];
+        $results = [];
+        $options = $this->getRequestOptions(['search' => 'test-geo-location']);
 
-        $this->servers = array_values($this->servers);
+        foreach ($this->servers as $server) {
+            $start = microtime(true);
+            $promises[$server] = $this->client->getAsync($server, $options)
+                ->then(
+                    function () use ($server, $start, &$results) {
+                        $results[$server] = microtime(true) - $start;
+                    },
+                    function () use ($server, &$results) {
+                        $results[$server] = false;
+                    }
+                );
+        }
 
-        return $server;
+        Utils::settle($promises)->wait();
+
+        return array_filter($results, fn ($time) => $time !== false);
     }
 
     protected function hasServerLock(string $server) : bool

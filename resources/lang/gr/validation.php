@@ -182,6 +182,7 @@ return array(
         'frequency' => 'Συχνότητα',
         'unit' => 'Μονάδα',
         'noreply_email' => 'Δεν υπάρχει διεύθυνση ηλεκτρονικού ταχυδρομείου απάντησης',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Υπογραφή',
         'use_smtp_server' => 'Χρήση διακομιστή SMTP',
         'smtp_server_host' => 'Υποδοχή διακομιστή SMTP',

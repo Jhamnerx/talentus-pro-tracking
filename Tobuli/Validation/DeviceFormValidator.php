@@ -13,7 +13,9 @@ class DeviceFormValidator extends Validator
      */
     public $rules = [
         'create' => [
-            'imei'                => 'required|unique:devices,imei,%s',
+            'imei'                => 'required|imei|unique:devices,imei,%s',
+            'fuel_type'           => 'in:petrol,diesel,biodiesel,biogas,hydrogen,electric,ethanol,petrol_electric,diesel_electric,propane,methanol',
+            'fuel_emissions'      => 'numeric|min:0',
             'name'                => 'required|string|between:1,255',
             'icon_id'             => 'exists:device_icons,id',
             'model_id'            => 'exists:device_models,id',
@@ -22,7 +24,26 @@ class DeviceFormValidator extends Validator
             'fuel_measurement_id' => 'in:1,2,3,4,5,6',
             'tail_color'          => 'css_color',
             'tail_length'         => 'numeric|min:0|max:10',
+            // Columnas nuevas (colores de recorrido/marcador, costo por km):
+            // las dos interfaces comparten este validador. Sin reglas,
+            // "abc" o -5 en cost_per_km y un route_color_type inventado
+            // entraban tal cual (QA legacy /objects, fallo 8).
+            'cost_per_km'                => 'nullable|numeric|min:0',
+            'route_color_type'           => 'nullable|in:trips,single,speed,sensor',
+            'route_color'                => 'nullable|css_color',
+            'route_sensor_id'            => 'nullable|integer',
+            'route_speed_ranges'         => 'nullable|json',
+            'marker_colors_enabled'      => 'nullable|boolean',
+            'marker_speed_ranges'        => 'nullable|json',
+            'marker_geofence_margin'     => 'nullable|numeric|min:0|max:1000',
+            'marker_geofence_near_color' => 'nullable|css_color',
+            'marker_geofence_over_color' => 'nullable|css_color',
             'max_speed'           => 'numeric|min:1',
+            'has_camera'          => 'nullable|boolean',
+            'camera_channels'     => 'nullable|array',
+            'camera_channels.*'   => 'integer|between:1,8',
+            'camera_channel_roles'   => 'nullable|array',
+            'camera_channel_roles.*' => 'nullable|in:front,driver,cabin,rear,left,right,other',
             'min_moving_speed'    => 'numeric|min:1|max:50',
             'min_fuel_fillings'   => 'numeric|min:1|max:1000',
             'min_fuel_thefts'     => 'numeric|min:1|max:1000',
@@ -42,12 +63,14 @@ class DeviceFormValidator extends Validator
             'consatel' => 'boolean',
             'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|required_if:unigis,1|regex:/^\S+$/',
             'device_type_id' => 'nullable|exists:device_types,id',
-            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
-            'vehicle_state_id' => 'nullable|exists:vehicle_states,id',
+            // vehicle_type_id / vehicle_state_id no llegan aqui: DeviceModalHelper los
+            // saca antes y los valida DeviceClassificationService (clasificacion por usuario).
             'object_owner' => 'required_if:wisetrack,1',
         ],
         'update' => [
-            'imei'                => 'sometimes|required|unique:devices,imei,%s',
+            'imei'                => 'sometimes|required|imei|unique:devices,imei,%s',
+            'fuel_type'           => 'in:petrol,diesel,biodiesel,biogas,hydrogen,electric,ethanol,petrol_electric,diesel_electric,propane,methanol',
+            'fuel_emissions'      => 'numeric|min:0',
             'name'                => 'sometimes|required|string|between:1,255',
             'icon_id'             => 'exists:device_icons,id',
             'model_id'            => 'exists:device_models,id',
@@ -56,11 +79,33 @@ class DeviceFormValidator extends Validator
             'fuel_measurement_id' => 'in:1,2,3,4,5,6',
             'tail_color'          => 'css_color',
             'tail_length'         => 'numeric|min:0|max:10',
+            // Columnas nuevas (colores de recorrido/marcador, costo por km):
+            // las dos interfaces comparten este validador. Sin reglas,
+            // "abc" o -5 en cost_per_km y un route_color_type inventado
+            // entraban tal cual (QA legacy /objects, fallo 8).
+            'cost_per_km'                => 'nullable|numeric|min:0',
+            'route_color_type'           => 'nullable|in:trips,single,speed,sensor',
+            'route_color'                => 'nullable|css_color',
+            'route_sensor_id'            => 'nullable|integer',
+            'route_speed_ranges'         => 'nullable|json',
+            'marker_colors_enabled'      => 'nullable|boolean',
+            'marker_speed_ranges'        => 'nullable|json',
+            'marker_geofence_margin'     => 'nullable|numeric|min:0|max:1000',
+            'marker_geofence_near_color' => 'nullable|css_color',
+            'marker_geofence_over_color' => 'nullable|css_color',
             'max_speed'           => 'numeric|min:1',
+            'has_camera'          => 'nullable|boolean',
+            'camera_channels'     => 'nullable|array',
+            'camera_channels.*'   => 'integer|between:1,8',
+            'camera_channel_roles'   => 'nullable|array',
+            'camera_channel_roles.*' => 'nullable|in:front,driver,cabin,rear,left,right,other',
             'min_moving_speed'    => 'numeric|min:1|max:50',
             'min_fuel_fillings'   => 'numeric|min:1|max:1000',
             'min_fuel_thefts'     => 'numeric|min:1|max:1000',
-            'sim_number'          => 'required|unique:devices,sim_number,%s',
+            // sometimes: el campo no viaja cuando el usuario no tiene permiso
+            // device.sim_number (onlyEditables lo quita antes de validar) y con
+            // 'required' a secas el guardado fallaba con "Necesario".
+            'sim_number'          => 'sometimes|required|unique:devices,sim_number,%s',
             //'expiration_date'     => 'required_if:enable_expiration_date,1|date',
             'installation_date'   => 'date',
             'sim_activation_date' => 'date',
@@ -76,8 +121,8 @@ class DeviceFormValidator extends Validator
             'consatel' => 'boolean',
             'plate_number' => 'required_if:mtc,1|required_if:osinergmin,1|required_if:mininter,1|required_if:consatel,1|required_if:wisetrack,1|required_if:sidersales,1|required_if:unigis,1|regex:/^\S+$/',
             'device_type_id' => 'nullable|exists:device_types,id',
-            'vehicle_type_id' => 'nullable|exists:vehicle_types,id',
-            'vehicle_state_id' => 'nullable|exists:vehicle_states,id',
+            // vehicle_type_id / vehicle_state_id no llegan aqui: DeviceModalHelper los
+            // saca antes y los valida DeviceClassificationService (clasificacion por usuario).
             'object_owner' => 'required_if:wisetrack,1',
         ],
     ];

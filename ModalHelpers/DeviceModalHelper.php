@@ -40,17 +40,18 @@ use Tobuli\Entities\DeviceType;
 use Tobuli\Entities\Event;
 use Tobuli\Entities\UnregisteredDevice;
 use Tobuli\Entities\User;
-use Tobuli\Entities\VehicleState;
 use Tobuli\Entities\VehicleType;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\SMS\SMSGatewayManager;
 use Tobuli\Services\AlertSoundService;
 use Tobuli\Services\CustomValuesService;
+use Tobuli\Services\DeviceClassificationService;
 use Tobuli\Services\DeviceConfigService;
 use Tobuli\Services\DeviceSensorsService;
 use Tobuli\Services\DeviceService;
 use Tobuli\Services\DeviceUsersService;
 use Tobuli\Services\EntityLoader\UsersLoader;
+use Tobuli\Services\FractalSerializers\DataArraySerializer;
 use Tobuli\Services\FractalSerializers\WithoutDataArraySerializer;
 use Tobuli\Services\FractalTransformerService;
 
@@ -60,6 +61,7 @@ class DeviceModalHelper extends ModalHelper
     private $configService;
     private $customValueService;
     private $deviceService;
+    private $classificationService;
 
     /**
      * @var DeviceUsersService
@@ -82,9 +84,12 @@ class DeviceModalHelper extends ModalHelper
         DeviceConfigService $configService,
         DeviceService $deviceService,
         CustomValuesService $customValueService,
-        FractalTransformerService $transformerService
+        FractalTransformerService $transformerService,
+        DeviceClassificationService $classificationService
     ) {
         parent::__construct();
+
+        $this->classificationService = $classificationService;
 
         $this->device_fuel_measurements = [
             [
@@ -170,6 +175,21 @@ class DeviceModalHelper extends ModalHelper
         $this->usersLoader = new UsersLoader($this->user);
         $this->usersLoader->setRequestKey('user_id');
 
+        $this->fuel_types = [
+            null => trans('front.nothing_selected'),
+            'petrol' => trans('front.petrol'),
+            'diesel' => trans('front.diesel'),
+            'biodiesel' => trans('front.biodiesel'),
+            'biogas' => trans('front.biogas'),
+            'hydrogen' => trans('front.hydrogen'),
+            'electric' => trans('front.electric'),
+            'ethanol' => trans('front.ethanol'),
+            'petrol_electric' => trans('front.petrol_electric'),
+            'diesel_electric' => trans('front.diesel_electric'),
+            'propane' => trans('front.propane'),
+            'methanol' => trans('front.methanol'),
+        ];
+
         $this->talentusSyncService = app(TalentusDeviceSyncService::class);
     }
 
@@ -225,6 +245,9 @@ class DeviceModalHelper extends ModalHelper
 
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
         $vehicle_types = VehicleType::with('states')->where('user_id', $this->user->id)->orderBy('name')->get();
+        // Clasificacion (tipo + estado) del usuario que crea: ninguna todavia.
+        $vehicle_type_id = null;
+        $vehicle_state_id = null;
         $models = $this->getDeviceModels(new Device());
 
         if ($this->api) {
@@ -264,6 +287,8 @@ class DeviceModalHelper extends ModalHelper
 
         $webservices = $this->getWebservices($item);
 
+        $fuel_types = $this->fuel_types;
+
         return compact(
             'device_groups',
             'sensor_groups',
@@ -273,6 +298,7 @@ class DeviceModalHelper extends ModalHelper
             'users',
             'timezones',
             'expiration_date_select',
+            'fuel_types',
             'device_fuel_measurements_select',
             'icons_type',
             'device_icons_grouped',
@@ -281,6 +307,8 @@ class DeviceModalHelper extends ModalHelper
             'apn_configs',
             'device_types',
             'vehicle_types',
+            'vehicle_type_id',
+            'vehicle_state_id',
             'fuel_detect_sec_after_stop_options',
             'models',
             'webservices'
@@ -299,9 +327,14 @@ class DeviceModalHelper extends ModalHelper
 
         $multiItems = $items->count() > 1;
         $name = Arr::get($this->data, 'name');
+        // create() saca tipo/estado de vehiculo de $this->data al guardarlos
+        // como clasificacion; se reponen en cada vuelta para que TODOS los
+        // dispositivos del lote reciban la misma.
+        $classification = Arr::only($this->data, ['vehicle_type_id', 'vehicle_state_id']);
 
         foreach ($items as $item) {
             $this->data['imei'] = $item->imei;
+            $this->data = array_merge($this->data, $classification);
 
             if (request()->has('name')) {
                 $this->data['name'] = $name . ($multiItems ? " $item->imei" : '');
@@ -335,6 +368,9 @@ class DeviceModalHelper extends ModalHelper
 
         $this->data['icon_colors'] = $this->setIconColors();
 
+        $classification = $this->pullClassification();
+        $this->validateClassification($classification);
+
         $this->data = onlyEditables(new Device(), $this->user, $this->data);
 
         $this->setAbleUsers();
@@ -343,6 +379,8 @@ class DeviceModalHelper extends ModalHelper
         DeviceFormValidator::validate('create', $this->data);
 
         $device = $this->deviceService->create($this->data);
+
+        $this->saveClassification($device, $classification);
 
         if ($this->data['configure_device'] ?? false) {
             $this->configureDevice($device);
@@ -436,7 +474,18 @@ class DeviceModalHelper extends ModalHelper
         $device_cameras = DeviceCameraRepo::searchAndPaginate(['filter' => ['device_id' => $device_id]], 'id', 'desc', 10);
 
         $device_types = DeviceType::active()->get()->pluck('title', 'id')->prepend(trans('front.none'), '');
-        $vehicle_types = VehicleType::with('states')->where('user_id', $this->user->id)->orderBy('name')->get();
+        // Solo los tipos del usuario que edita: la clasificacion (tipo + estado)
+        // es por usuario, asi que lo que vea y guarde es lo suyo, nunca lo del
+        // dueño ni lo de otra cuenta con la que se comparta el dispositivo.
+        $vehicle_types = VehicleType::with('states')
+            ->where('user_id', $this->user->id)
+            ->orderBy('name')
+            ->get();
+        $classification = $item->classificationFor($this->user->id);
+        $vehicle_type_id = $classification ? $classification->vehicle_type_id : null;
+        $vehicle_state_id = $classification ? $classification->vehicle_state_id : null;
+
+        $fuel_types = $this->fuel_types;
 
         return compact(
             'device_id',
@@ -452,6 +501,7 @@ class DeviceModalHelper extends ModalHelper
             'sensors',
             'services',
             'expiration_date_select',
+            'fuel_types',
             'timezones',
             'users',
             'sel_users',
@@ -464,6 +514,8 @@ class DeviceModalHelper extends ModalHelper
             'device_cameras',
             'device_types',
             'vehicle_types',
+            'vehicle_type_id',
+            'vehicle_state_id',
             'fuel_detect_sec_after_stop_options',
             'models',
             'webservices'
@@ -497,6 +549,9 @@ class DeviceModalHelper extends ModalHelper
 
         $this->data['icon_colors'] = $this->setIconColors($item);
 
+        $classification = $this->pullClassification();
+        $this->validateClassification($classification);
+
         $this->data = onlyEditables($item, $this->user, $this->data);
 
         $this->setAbleUsers($item);
@@ -513,11 +568,16 @@ class DeviceModalHelper extends ModalHelper
 
         $this->deviceService->update($item, $this->data);
 
+        $this->saveClassification($item, $classification);
+
         // Registrar mantenimiento automático si cambió el estado active
         if ($activeChanged) {
             if (! $newActive) {
                 // Desactivación → suspensión
-                $item->updateQuietly(['suspended_at' => now()]);
+                // forceFill y no updateQuietly: updateQuietly pasa por
+                // asignacion masiva y 'suspended_at' no esta en $fillable,
+                // asi que Eloquent la descartaba sin avisar.
+                $item->forceFill(['suspended_at' => now()])->saveQuietly();
                 DeviceMaintenance::create([
                     'device_id' => $item->id,
                     'tipo'      => DeviceMaintenance::TIPO_SUSPENSION,
@@ -537,7 +597,7 @@ class DeviceModalHelper extends ModalHelper
                     'motivo'    => $motivo,
                     'user_id'   => $this->user->id,
                 ]);
-                $item->updateQuietly(['suspended_at' => null]);
+                $item->forceFill(['suspended_at' => null])->saveQuietly();
             }
         }
 
@@ -619,7 +679,7 @@ class DeviceModalHelper extends ModalHelper
     {
         $validator = Validator::make($this->data, [
             'id' => 'required|exists:devices,id',
-            'vehicle_state_id' => 'nullable|exists:vehicle_states,id',
+            'vehicle_state_id' => 'nullable|integer',
         ]);
 
         if ($validator->fails()) {
@@ -631,19 +691,51 @@ class DeviceModalHelper extends ModalHelper
 
         $this->checkException('devices', 'edit', $item);
 
-        $stateId = $this->data['vehicle_state_id'] ?? null;
-
-        if ($stateId) {
-            $state = VehicleState::find($stateId);
-
-            if (!$state || $state->vehicle_type_id != $item->vehicle_type_id) {
-                throw new ValidationException(['vehicle_state_id' => [trans('front.no_vehicle_state')]]);
-            }
-        }
-
-        $item->update(['vehicle_state_id' => $stateId]);
+        // El estado pertenece a la clasificacion del usuario (su tipo), no a
+        // la columna global del dispositivo. El servicio valida tipo y estado.
+        $this->classificationService->setState($this->user, $item, $this->data['vehicle_state_id'] ?? null);
 
         return ['status' => 1];
+    }
+
+    /**
+     * Saca tipo y estado de vehiculo de los datos del formulario para que no
+     * se escriban en las columnas globales de `devices` (son por usuario).
+     * Devuelve null si la peticion no traia `vehicle_type_id` (clientes API
+     * que no conocen el campo): en ese caso la clasificacion no se toca.
+     */
+    private function pullClassification(): ?array
+    {
+        $present = array_key_exists('vehicle_type_id', $this->data);
+
+        $classification = $present
+            ? ['type_id' => $this->data['vehicle_type_id'], 'state_id' => $this->data['vehicle_state_id'] ?? null]
+            : null;
+
+        unset($this->data['vehicle_type_id'], $this->data['vehicle_state_id']);
+
+        return $classification;
+    }
+
+    /**
+     * Valida tipo/estado ANTES de guardar el dispositivo: si son invalidos se
+     * lanza la ValidationException sin haber creado/actualizado nada.
+     */
+    private function validateClassification(?array $classification): void
+    {
+        if ($classification === null)
+            return;
+
+        $this->classificationService->validate($this->user, $classification['type_id'], $classification['state_id']);
+    }
+
+    /** Guarda la clasificacion (ya validada) del usuario que edita, si la peticion la traia. */
+    private function saveClassification(Device $device, ?array $classification): void
+    {
+        if ($classification === null)
+            return;
+
+        $this->classificationService->set($this->user, $device, $classification['type_id'], $classification['state_id']);
     }
 
     public function itemsJson()
@@ -655,23 +747,33 @@ class DeviceModalHelper extends ModalHelper
 
         $query = empty($this->data['id']) ? $this->user->devices() : $this->user->accessibleDevices();
 
-        $items = $query
+        $query
             ->filter($this->data)
             ->filter($this->data['filters'] ?? null)
             ->updatedAfter(date('Y-m-d H:i:s', $time))
-            ->clearOrdersBy()
-            ->get();
+            ->clearOrdersBy();
 
-        $transformer = $this->api ? DeviceFullJsonTransformer::class : DeviceMapTransformer::class;
+        if (request()->has('page') || request()->has('limit')) {
+            $page = max(1, request()->get('page', 1));
+            $limit = max(1, request()->get('limit', 100));
+            $query->forPage($page, $limit);
+        }
 
-        $items = $this->transformerService->collection($items, $transformer)->toArray();
+        $items = $this->api
+            ? $this->transformerService
+                ->collection($query->get(), DeviceFullJsonTransformer::class)->toArray()
+            : $this->transformerService
+                ->setSerializer(new DataArraySerializer())
+                ->cursorPaginate($query->cursorPaginate(1000)->appends(['time' => $time]), DeviceMapTransformer::class)->toArray();
 
-        if ($this->user->perm('events', 'view')) {
+        if ($this->user->perm('events', 'view') && empty($this->data['cursor'])) {
             $eventTime = ($now - $time > 300) ? $now - 300 : $time;
 
             $events = Event::userAccessible($this->user)->higherTime($eventTime, $this->data['id'] ?? null)->get();
             $events = $events->filter(fn($event) => Arr::get($event, 'alert.notifications.popup.active', true));
-            $events = $this->transformerService->collection($events, EventLatestTransformer::class)->toArray();
+            $events = $this->transformerService
+                ->setSerializer(new WithoutDataArraySerializer())
+                ->collection($events, EventLatestTransformer::class)->toArray();
         } else {
             $events = [];
         }

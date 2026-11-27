@@ -7,6 +7,7 @@
             </div>
             <div class="modal-body">
                 {!! trans('front.do_geofence_delete') !!}
+                <p class="text-warning" data-routes-warning style="display:none;margin:10px 0 0;font-weight:600;"></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-action" onclick="" data-dismiss="modal">{{ trans('global.yes') }}</button>

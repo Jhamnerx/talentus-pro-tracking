@@ -363,23 +363,60 @@
             url: '{{ route('reports.index') }}'
         });
 
+        function openReportViewer(title) {
+            var modal = $modal.initModal('report_viewer');
+
+            modal.find('.contents').html(
+                '<div class="modal-dialog modal-full" style="height: calc(100% - 20px);">' +
+                    '<div class="modal-content" style="height: 100%; display: flex; flex-direction: column;">' +
+                        '<div class="modal-header">' +
+                            '<button type="button" class="close" data-dismiss="modal" aria-hidden="true"><span>×</span></button>' +
+                            '<h4 class="modal-title"></h4>' +
+                        '</div>' +
+                        '<div class="modal-body" style="flex: 1 1 auto; min-height: 0; padding: 0;">' +
+                            '<iframe name="report_viewer_frame" src="about:blank" style="border: 0; width: 100%; height: 100%;"></iframe>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            );
+
+            // initModal() envuelve el contenido en div.contents sin altura: sin esto el
+            // diálogo (height en %) y el iframe colapsan a la altura mínima del navegador.
+            modal.find('.contents').css('height', '100%');
+            modal.find('.modal-title').text(title);
+
+            // bootstrap-modal.js (jschr) dispara 'hidden' (estilo Bootstrap 2), no 'hidden.bs.modal'.
+            modal.off('hidden.reportViewer').on('hidden.reportViewer', function (e) {
+                if (e.target !== this) {
+                    return;
+                }
+
+                $(this).find('iframe').attr('src', 'about:blank');
+            });
+
+            modal.modal('show');
+
+            return modal;
+        }
+
         function reports_create_modal_callback(res) {
             if (res.status == 3) {
-                var action = $('#report_form').attr('action');
-                if (action.indexOf('?') == -1) {
-                    action = action + "?generate=1";
+                var form = $('#report_form');
+                // Base limpia: el botón Generar guarda la URL de reports.update en data-action.
+                var action = $('#reports_create button.generate').data('action') || form.attr('action');
+
+                action = action + (action.indexOf('?') == -1 ? '?' : '&') + 'generate=1';
+
+                if (res.view) {
+                    action = action + '&view=1';
+                    openReportViewer($('#reports_type option:selected').text());
+                    form.attr('target', 'report_viewer_frame');
                 } else {
-                    action = action + "&generate=1";
+                    form.removeAttr('target');
                 }
-                $('#report_form').attr('action', action);
-                $('#report_form').submit();
-                /*
-                if (typeof res.url != 'undefined') {
-                    var form = $('<form method="POST" action="' + res.url + '">');
-                    $('body').append(form);
-                    form.submit();
-                }
-                */
+
+                form.attr('action', action);
+                form.submit();
             }
             if (res.status == 2) {
                 tables.get('reports-form-generated-reports');
@@ -428,6 +465,11 @@
             $format.selectpicker('refresh');
 
             var fields = [
+                'period',
+                'date_from',
+                'from_time',
+                'date_to',
+                'to_time',
                 'devices',
                 'geofences',
                 'speed_limit',
@@ -511,11 +553,15 @@
                     case 'select':
                     case 'multiselect':
                     case 'multiselect-group':
+                    case 'select-loader':
+                    case 'multiselect-loader':
                         var attr = 'class="form-control"';
 
-                        if ('multiselect' === parameter.type || 'multiselect-group' === parameter.type)
+                        if (parameter.type.startsWith('multi'))
                             attr = attr + ' name="' + parameter.html_name +
                             '" multiple="multiple" data-live-search="true" data-actions-box="true"';
+                        else if (parameter.type === 'select-loader')
+                            attr = attr + ' name="' + parameter.html_name + '" data-live-search="true"';
                         else
                             attr = attr + ' name="' + parameter.html_name + '"';
 
@@ -535,6 +581,12 @@
                                 });
                                 $select.append($group);
                             });
+                        } else if (parameter.type.endsWith('loader')) {
+                            $select.attr('data-ajax', parameter.url);
+
+                            if (value) {
+                                $select.attr('data-selected', value)
+                            }
                         } else {
                             $.each(parameter.options, function(index, option) {
                                 $select.append('<option value="' + option.id + '">' + option.title +

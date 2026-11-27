@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Biežums',
         'unit' => 'Vienība',
         'noreply_email' => 'Nav atbildes e-pasta adreses',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Paraksts',
         'use_smtp_server' => 'Izmantojiet SMTP serveri',
         'smtp_server_host' => 'SMTP servera "Hosts"',

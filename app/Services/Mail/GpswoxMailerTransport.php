@@ -3,22 +3,20 @@
 namespace App\Services\Mail;
 
 use Curl;
-use Illuminate\Mail\Transport\Transport;
-use Swift_Attachment;
-use Swift_Image;
-use Swift_Mime_SimpleMessage;
-use Swift_MimePart;
+use Symfony\Component\Mailer\Transport\TransportInterface;
+use Symfony\Component\Mailer\Envelope;
+use Symfony\Component\Mailer\SentMessage;
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\RawMessage;
 
-class GpswoxMailerTransport extends Transport
+class GpswoxMailerTransport implements TransportInterface
 {
-    const BASE_URL = 'http://mailsender.com';
+    private const BASE_URL = 'http://localhost';
 
-    private $client;
-    private $multipartBoundary;
+    private string $multipartBoundary;
 
-    public function __construct(Curl $client, string $apiKey)
+    public function __construct(private Curl $client, string $apiKey)
     {
-        $this->client = $client;
         $this->client->options['CURLOPT_RETURNTRANSFER'] = true;
         $this->client->headers['Authorization'] = $apiKey;
 
@@ -28,33 +26,24 @@ class GpswoxMailerTransport extends Transport
     /**
      * {@inheritdoc}
      */
-    public function send(Swift_Mime_SimpleMessage $message, &$failedRecipients = null)
+    public function send(RawMessage $message, Envelope $envelope = null): ?SentMessage
     {
-        $this->beforeSendPerformed($message);
+        if (!$message instanceof Email) {
+            throw new \InvalidArgumentException('Invalid email message.');
+        }
 
         $data = $this->getData($message);
-
         $attachments = $this->getAttachments($message);
 
         if (count($attachments) > 0) {
             $data['attachments'] = $attachments;
         }
 
-        // this nonsense is done because obsolete Swift messages do not allow to get full path of files,
-        // which makes impossible to attach the files normally
         $data = $this->generateMultipartContents($data, $this->multipartBoundary);
 
-        $response = $this->post($data);
+        $this->post($data);
 
-        if (is_callable('sendPerformed')) {
-            $this->sendPerformed($message);
-        }
-
-        if (is_callable('numberOfRecipients')) {
-            return $this->numberOfRecipients($message);
-        }
-
-        return $response;
+        return new SentMessage($message, $envelope ?? new Envelope($message->getFrom(), $message->getTo()));
     }
 
     private function generateMultipartContents(array $data, string $boundary, string $prefix = ''): string
@@ -62,10 +51,14 @@ class GpswoxMailerTransport extends Transport
         $contents = '';
 
         foreach ($data as $key => $datum) {
+            if ($prefix && is_numeric($key)) {
+                $key = '';
+            }
+
             $name = $prefix ? $prefix . '[' . $key . ']' : $key;
 
             if (isset($datum['__file'])) {
-                $contents .= "--" . $boundary . "\r\n";
+                $contents .= '--' . $boundary . "\r\n";
                 // "filename" attribute is not essential; server-side scripts may use it
                 $contents .= 'Content-Disposition: form-data; name="' . $name . '";' .
                     ' filename="' . $datum['filename'] . '"' . "\r\n";
@@ -94,23 +87,22 @@ class GpswoxMailerTransport extends Transport
         return $contents;
     }
 
-    private function getData(Swift_Mime_SimpleMessage $message): array
+    private function getData(Email $email): array
     {
         $data = [
-            'subject' => $message->getSubject(),
-            'body' => $this->getContents($message),
+            'subject' => $email->getSubject(),
+            'body' => $this->getContents($email),
         ];
 
-        if ($from = $this->getFrom($message)) {
+        if ($from = $this->getFrom($email)) {
             $data['from'] = $from;
         }
 
-        if ($replyTo = $this->getReplyTo($message)) {
+        if ($replyTo = $this->getReplyTo($email)) {
             $data['reply_to'] = $replyTo;
         }
 
-        $recipients = $this->getRecipients($message);
-
+        $recipients = $this->getRecipients($email);
         $data['to'] = $recipients['to'];
 
         if (isset($recipients['cc'])) {
@@ -124,98 +116,53 @@ class GpswoxMailerTransport extends Transport
         return $data;
     }
 
-    /**
-     * @param Swift_Mime_SimpleMessage $message
-     * @return array
-     */
-    private function getRecipients(Swift_Mime_SimpleMessage $message): array
+    private function getRecipients(Email $email): array
     {
-        $setter = function (array $addresses) {
-            $recipients = [];
+        $setter = fn (array $addresses) => array_map(fn($address) => $address->getAddress(), $addresses);
 
-            foreach ($addresses as $email => $name) {
-                $recipients[] = $email;
-            }
+        $recipients = ['to' => $setter($email->getTo())];
 
-            return $recipients;
-        };
-
-        $recipients = [];
-        $recipients['to'] = $setter($message->getTo());
-
-        if ($cc = $message->getCc()) {
+        if ($cc = $email->getCc()) {
             $recipients['cc'] = $setter($cc);
         }
 
-        if ($bcc = $message->getBcc()) {
+        if ($bcc = $email->getBcc()) {
             $recipients['bcc'] = $setter($bcc);
         }
 
         return $recipients;
     }
 
-    private function getFrom(Swift_Mime_SimpleMessage $message)
+    private function getFrom(Email $email)
     {
-        $from = $message->getFrom();
+        $from = $email->getFrom();
 
-        if (is_array($from)) {
-            foreach ($message->getFrom() as $email => $name) {
-                return ['address' => $email, 'name' => $name];
-            }
-        }
-
-        return null;
+        return $from ? ['address' => $from[0]->getAddress(), 'name' => $from[0]->getName()] : null;
     }
 
-    private function getReplyTo(Swift_Mime_SimpleMessage $message)
+    private function getReplyTo(Email $email)
     {
-        $replyTo = $message->getReplyTo();
+        $replyTo = $email->getReplyTo();
 
-        if (is_array($replyTo)) {
-            foreach ($replyTo as $email => $name) {
-                return ['address' => $email, 'name' => $name];
-            }
-        }
-
-        if (is_string($replyTo)) {
-            return ['address' => $replyTo];
-        }
-
-        return null;
+        return $replyTo ? ['address' => $replyTo[0]->getAddress(), 'name' => $replyTo[0]->getName()] : null;
     }
 
-    private function getContents(Swift_Mime_SimpleMessage $message): string
+    private function getContents(Email $email): string
     {
-        foreach ($message->getChildren() as $attachment) {
-            if ($attachment instanceof Swift_MimePart) {
-                return $attachment->getBody();
-            }
-        }
-
-        if (empty($content) || strpos($message->getContentType(), 'multipart') !== false) {
-            return $message->getBody();
-        }
-
-        return '';
+        return $email->getHtmlBody() ?? $email->getTextBody() ?? '';
     }
 
-    /**
-     * @param Swift_Mime_SimpleMessage $message
-     * @return array
-     */
-    private function getAttachments(Swift_Mime_SimpleMessage $message): array
+    private function getAttachments(Email $email): array
     {
         $attachments = [];
 
-        foreach ($message->getChildren() as $attachment) {
-            if ($attachment instanceof Swift_Attachment || $attachment instanceof Swift_Image) {
-                $attachments[] = [
-                    '__file'    => true,
-                    'filename'  => $attachment->getFilename(),
-                    'type'      => $attachment->getBodyContentType(),
-                    'contents'  => $attachment->getBody(),
-                ];
-            }
+        foreach ($email->getAttachments() as $attachment) {
+            $attachments[] = [
+                '__file'    => true,
+                'filename'  => $attachment->getPreparedHeaders()->getHeaderParameter('Content-Disposition', 'filename'),
+                'type'      => $attachment->getMediaType() . '/' . $attachment->getMediaSubtype(),
+                'contents'  => $attachment->getBody(),
+            ];
         }
 
         return $attachments;
@@ -257,5 +204,10 @@ class GpswoxMailerTransport extends Transport
         }
 
         return $message;
+    }
+
+    public function __toString(): string
+    {
+        return 'gpswox';
     }
 }

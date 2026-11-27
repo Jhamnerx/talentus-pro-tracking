@@ -6,6 +6,7 @@ use Formatter;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Tobuli\History\Group;
+use Tobuli\Entities\Device;
 use Tobuli\Entities\Geofence;
 use Illuminate\Database\QueryException;
 use Tobuli\Reports\DeviceReport;
@@ -63,22 +64,22 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
      * la geocerca mas especifica (area mas pequena) -- solo cuando
      * onlyViolations esta desactivado.
      *
-     * El limite usado por geocerca se resuelve segun el tipo/estado de vehiculo
-     * del dispositivo (ver Geofence::speedLimitFor), con fallback al limite
-     * general de la geocerca.
+     * El limite usado por geocerca se resuelve segun la clasificacion (tipo/estado)
+     * que el dueño de la geocerca asigno al dispositivo (ver
+     * Geofence::speedLimitForDevice), con fallback al limite general de la geocerca.
      *
      * @return array<int, array{geofence: Geofence, speed_limit: float, exceeded: bool}>
      */
-    protected function resolveGeofenceEvents(array $point, float $speed, $vehicleType, $vehicleState): array
+    protected function resolveGeofenceEvents(array $point, float $speed, Device $device): array
     {
         $matches = $this->speedLimitGeofences
             ->filter(function (Geofence $geofence) use ($point) {
                 return $geofence->pointIn($point);
             })
-            ->map(function (Geofence $geofence) use ($vehicleType, $vehicleState) {
+            ->map(function (Geofence $geofence) use ($device) {
                 return [
                     'geofence'    => $geofence,
-                    'speed_limit' => $geofence->speedLimitFor($vehicleType, $vehicleState),
+                    'speed_limit' => $geofence->speedLimitForDevice($device),
                 ];
             })
             ->filter(function (array $match) {
@@ -143,14 +144,14 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
         }
     }
 
-    protected function processPosition($position, $vehicleType, $vehicleState): array
+    protected function processPosition($position, Device $device): array
     {
         $point = [
             'latitude'  => $position->latitude,
             'longitude' => $position->longitude,
         ];
 
-        $events = $this->resolveGeofenceEvents($point, (float) $position->speed, $vehicleType, $vehicleState);
+        $events = $this->resolveGeofenceEvents($point, (float) $position->speed, $device);
 
         return array_map(function (array $event) use ($position) {
             return $this->buildRow($position, $event['geofence'], $event['speed_limit'], $event['exceeded']);
@@ -161,9 +162,6 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
     {
         $this->onlyViolations = Arr::get($this->parameters, 'only_violations', 1) != 0;
 
-        $vehicleType = $device->vehicleType;
-        $vehicleState = $device->vehicleState;
-
         $rows = [];
         try {
             $device->positions()
@@ -172,9 +170,9 @@ class OverspeedsInGeofenceCustomReport extends DeviceReport
                 ->where('speed', '>', 0)
                 ->chunk(
                     2000,
-                    function ($positions) use (&$rows, $vehicleType, $vehicleState) {
+                    function ($positions) use (&$rows, $device) {
                         foreach ($positions as $position) {
-                            array_push($rows, ...$this->processPosition($position, $vehicleType, $vehicleState));
+                            array_push($rows, ...$this->processPosition($position, $device));
                         }
                     }
                 );

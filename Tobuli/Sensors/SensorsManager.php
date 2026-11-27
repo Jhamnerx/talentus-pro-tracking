@@ -237,6 +237,9 @@ class SensorsManager
                 case 'unit':
                     $sensor->setUnit($entity->unit_of_measurement);
                     break;
+                case 'unit_type':
+                    $sensor->setUnitType($entity->unit_type);
+                    break;
                 case 'full_tank':
                     $sensor->setFullTank($entity->full_tank);
                     $sensor->setFullTankValue($entity->full_tank_value);

@@ -15,6 +15,22 @@ use Tobuli\Services\Commands\SendCommandService;
 
 class SendCommandController extends Controller
 {
+    /**
+     * @var CommandService;
+     */
+    protected $commandService;
+
+    /**
+     * @var SendCommandService
+     */
+    protected $sendCommandService;
+
+    protected function afterAuth($user)
+    {
+        $this->commandService = new CommandService($user);
+        $this->sendCommandService = new SendCommandService();
+    }
+
     public function view(Request $request)
     {
         $this->checkException('send_command', 'view');
@@ -23,7 +39,8 @@ class SendCommandController extends Controller
             'connection' => 'required|in:' . implode(',', [
                 SendCommandService::CONNECTION_SMS,
                 SendCommandService::CONNECTION_GPRS]),
-            'device_id' => 'required'
+            'device_id' => 'required_without:group_id',
+            'group_id'  => 'required_without:device_id'
         ]);
 
         if ($validator->fails())
@@ -33,13 +50,8 @@ class SendCommandController extends Controller
             ->filter($request->all())
             ->get();
 
-        if ($request->get('connection') == SendCommandService::CONNECTION_SMS)
-            return response()->json([
-                'data' => $this->commandService->getSmsCommands($devices, true)
-            ]);
-
         return response()->json([
-            'data' => $this->commandService->getGprsCommands($devices, true)
+            'data' => $this->commandService->getCommands($devices, true, $request->get('connection'))
         ]);
     }
 
@@ -51,7 +63,8 @@ class SendCommandController extends Controller
             'connection' => 'required|in:' . implode(',', [
                     SendCommandService::CONNECTION_SMS,
                     SendCommandService::CONNECTION_GPRS]),
-            'device_id' => 'required',
+            'device_id' => 'required_without:group_id',
+            'group_id'  => 'required_without:device_id',
             'type'      => 'required'
         ]);
 
@@ -66,11 +79,9 @@ class SendCommandController extends Controller
             throw new ValidationException(['device_id' => trans('global.not_found')]);
         }
 
-        $commandService = new CommandService($this->user);
-        $commandService->validateGPRS($devices, $request->all());
+        $this->commandService->validate($devices, $request->all(), $request->get('connection'));
 
-        $sendCommandService = new SendCommandService();
-        $responses = $sendCommandService->gprs($devices, $request->all(), $this->user);
+        $responses = $this->sendCommandService->send($devices, $request->all(), $this->user, $request->get('connection'));
 
         $errors = $responses
             ->filter(function ($response) {
@@ -78,7 +89,8 @@ class SendCommandController extends Controller
             })
             ->map(function ($response) {
                 return "{$response['device']}: {$response['error']}";
-            });
+            })
+            ->values();
 
         if ($errors->isNotEmpty()) {
             return ['status' => 0, 'errors' => $errors];

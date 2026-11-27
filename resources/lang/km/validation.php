@@ -183,6 +183,7 @@ return array(
         'frequency' => 'ប្រេកង់',
         'unit' => 'ឯកតា',
         'noreply_email' => 'គ្មានអាសយដ្ឋានអ៊ីមែលឆ្លើយតប',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'ហត្ថលេខា',
         'use_smtp_server' => 'ប្រើម៉ាស៊ីនមេ SMTP',
         'smtp_server_host' => 'ម៉ាស៊ីនមេ SMTP',

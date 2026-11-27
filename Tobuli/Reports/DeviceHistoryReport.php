@@ -183,6 +183,11 @@ abstract class DeviceHistoryReport extends DeviceReport
                 case 'location_end':
                     $result[$key] = $this->getLocation($group->getEndPosition());
                     break;
+                case 'latitude':
+                case 'longitude':
+                    $position = $group->getStartPosition();
+                    $result[$key] = $position ? $position->{$key} : null;
+                    break;
                 case 'fuel_level_start_list':
                     $stats = $group->stats()->like('fuel_level_start_');
 

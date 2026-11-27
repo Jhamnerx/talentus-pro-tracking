@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diem árfolyamok',
     'forwards' => 'Előre',
     'group_6' => 'Felügyelő',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Felhasználó létrehozva nap előtt',
     'reminders_trans' => 'Emlékeztető fordítások',
     'passwords_trans' => 'Jelszavak fordítása',

@@ -56,6 +56,8 @@ class AppendFuelFillingByPeaks extends ActionAppend
                 'sensor_id' => $sensor->id,
                 'name' => $sensor->name,
                 'previous' => $peak['begin_value'],
+                // Inicio real de la subida (el grupo se marca en el pico).
+                'start_time' => $peak['begin_time'],
                 'current' => $peak['peak_value'],
                 'diff' => $diff,
                 'unit' => $sensor->unit_of_measurement

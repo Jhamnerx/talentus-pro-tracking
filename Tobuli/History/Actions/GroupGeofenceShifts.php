@@ -7,14 +7,11 @@ use Formatter;
 
 class GroupGeofenceShifts extends ActionGroup
 {
-    /**
-     * @var null|array
-     */
-    private static $shifts = null;
+    private static ?array $shifts = null;
 
-    private $openGroups = [];
+    private array $openGroups = [];
 
-    private static function resolveShifts(array $parameters)
+    private static function resolveShifts(array $parameters): void
     {
         static::$shifts = [];
 
@@ -27,6 +24,10 @@ class GroupGeofenceShifts extends ActionGroup
 
             $key = $key[1];
             $meta = explode('_', $key);
+
+            if (count($meta) !== 2) {
+                continue;
+            }
 
             if ($meta[0] === 'start' || $meta[0] === 'finish') {
                 $timeRev = Formatter::time()->reverse($time, 'H:i');
@@ -50,7 +51,7 @@ class GroupGeofenceShifts extends ActionGroup
         }
     }
 
-    public static function getShifts()
+    public static function getShifts(): ?array
     {
         return self::$shifts;
     }

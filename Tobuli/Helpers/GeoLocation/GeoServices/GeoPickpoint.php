@@ -2,6 +2,8 @@
 
 namespace Tobuli\Helpers\GeoLocation\GeoServices;
 
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
 use Language;
 use Illuminate\Support\Arr;
 use Tobuli\Helpers\GeoLocation\GeoSettings;
@@ -53,25 +55,34 @@ class GeoPickpoint extends GeoNominatim
 
     protected function request($method, $options)
     {
-        $response = $this->curl->get(
-            trim($this->url, '/') . '/' . $method,
-            array_merge($options, $this->requestOptions)
-        );
+        $url = trim($this->url, '/') . '/' . $method;
 
-        if ( ! in_array($response->headers['Status-Code'], [200])) {
-            $this->throwException($response->headers['Status-Code']);
+        try {
+            $response = $this->client->get($url, [
+                RequestOptions::QUERY => array_merge($options, $this->requestOptions)
+            ]);
+        } catch (RequestException $e) {
+            $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 500;
+            $this->throwException($statusCode);
         }
 
-        $response_body = json_decode($response->body, true);
+        $statusCode = $response->getStatusCode();
 
-        if (empty($response_body))
+        if ($statusCode !== 200) {
+            $this->throwException($statusCode);
+        }
+
+        $responseBody = json_decode($response->getBody()->getContents(), true);
+
+        if (empty($responseBody)) {
             $this->throwException(404);
-
-        if (array_key_exists('error', $response_body)) {
-            throw new \Exception(Arr::get($response_body, 'error'));
         }
 
-        return (is_array($response_body) && ! empty($response_body)) ? $response_body : null;
+        if (array_key_exists('error', $responseBody)) {
+            throw new \Exception(Arr::get($responseBody, 'error'));
+        }
+
+        return (is_array($responseBody) && !empty($responseBody)) ? $responseBody : null;
     }
 
 

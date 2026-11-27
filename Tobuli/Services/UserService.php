@@ -101,8 +101,29 @@ class UserService
         $data = array_merge($this->getDefaults(), $data);
         $data = $this->normalize($data);
 
-        $user = User::create($data);
+        $user = User::make($data);
+
+        if (empty($data['email_verification'])) {
+            $user->email_verified_at = date('Y-m-d H:i:s');
+        }
+
+        if (empty($data['phone_verification'])) {
+            $user->phone_verified_at = date('Y-m-d H:i:s');
+        }
+
+        $user->save();
+
         $this->setDefaultTimezone($user);
+
+        $user->setSettings('widgets', $data['widgets'] ?? settings('widgets'), false);
+
+        // Los usuarios nuevos entran a la version nueva. La clave es la misma
+        // que escribe el shell al pisar /ui/v2/* (Ui\V2\BaseController::
+        // PREF_UI_VERSION) y la que mira ObjectsController@index para
+        // redirigir, asi que "Volver a UI clasica" la revierte sin nada
+        // especial. Sin sembrarla, el usuario recien creado aterrizaba en la
+        // UI clasica porque la preferencia no existia.
+        $user->setSettings('ui_version', 'v2', false);
 
         if ($user->isMonitoring() && $user->manager_id) {
             (new MonitoringDeviceSyncService())->syncFromManager($user);
@@ -248,6 +269,9 @@ class UserService
             if (!empty($user) && ($user->isReseller() || $user->isOperator()))
                 $data['manager_id'] = $user->id;
         }
+
+        $data['email_verification'] = settings('main_settings.email_verification');
+        $data['phone_verification'] = settings('main_settings.phone_verification');
 
         $user = $this->create($data + ['group_id' => 2]);
 

@@ -62,7 +62,7 @@ textarea.form-control {
   &:before {
     @extend .form-control-feedback;
     @extend .fa;
-    @extend .fa-search:before;
+    content: $fa-var-search;
 
     left: 0;
     right: auto;

@@ -26,6 +26,7 @@ class DeviceSlimTransformer extends BaseTransformer
     public function transform(Device $entity)
     {
         $driver = $entity->driver;
+        $classification = $this->classification($entity);
 
         $odometerOptimizer = App::make(OdometerOptimizer::class);
         $odometerValues    = $odometerOptimizer->getOdometerValues($entity);
@@ -76,6 +77,23 @@ class DeviceSlimTransformer extends BaseTransformer
                 'created_at' => null, 'updated_at' => null,
             ],
 
+            // Canales de video JT1078 (como DeviceFullTransformer): [] sin video o sin el
+            // permiso device_video. La app muestra el botón de cámara solo si no está vacío.
+            'camera_channels' => $entity->hasVideo() && $this->canView($entity, 'camera_channels')
+                ? array_values(array_map('intval', (array)$entity->camera_channels))
+                : [],
+
+            // Clasificación (tipo y estado) del usuario actuante, como DeviceMapTransformer:
+            // la app la usa para el badge de estado y el límite por tipo/estado en geocercas.
+            // getDevicesV2 la carga por lotes (Device::classificationRelationFor).
+            'vehicle_type_id'  => $classification['vehicle_type_id'],
+            'vehicle_state_id' => $classification['vehicle_state_id'],
+            'vehicle_state'    => $classification['vehicle_state'],
+
+            // Color del marcador por velocidad (como DeviceMapTransformer): null si la unidad no
+            // lo tiene activado; los valores por defecto van en get_user_data.marker_speed_colors.
+            'marker_colors' => $this->markerColors($entity),
+
             // tail_color elevated from device_data so device_data is not needed
             'tail_color' => $entity->tail_color,
             'tail'       => $entity->tail,
@@ -100,6 +118,39 @@ class DeviceSlimTransformer extends BaseTransformer
             'distancia_hoy'   => Formatter::distance()->format($odometerValues['total_distance']),
             'odometro_inicio' => $odometerValues['odometer_start'],
             'odometro_final'  => $odometerValues['odometer_end'],
+        ];
+    }
+
+    /** Config del color por velocidad de la unidad (solo lo que difiere de los valores por defecto). */
+    protected function markerColors(Device $entity): ?array
+    {
+        if (! $entity->marker_colors_enabled) {
+            return null;
+        }
+
+        $rangos = json_decode((string) ($entity->marker_speed_ranges ?? ''), true);
+
+        return array_filter([
+            'ranges' => is_array($rangos) && $rangos ? $rangos : null,
+            'margin' => $entity->marker_geofence_margin !== null ? (int) $entity->marker_geofence_margin : null,
+            'near'   => $entity->marker_geofence_near_color ?: null,
+            'over'   => $entity->marker_geofence_over_color ?: null,
+        ], fn ($v) => $v !== null);
+    }
+
+    protected function classification(Device $entity): array
+    {
+        $classification = $this->user ? $entity->classificationFor((int) $this->user->id) : null;
+        $state = $classification ? $classification->vehicleState : null;
+
+        return [
+            'vehicle_type_id'  => ($classification && $classification->vehicle_type_id) ? (int) $classification->vehicle_type_id : null,
+            'vehicle_state_id' => ($classification && $classification->vehicle_state_id) ? (int) $classification->vehicle_state_id : null,
+            'vehicle_state'    => $state ? [
+                'name'  => (string) $state->name,
+                'label' => (string) ($state->label ?: $state->name),
+                'color' => (string) ($state->color ?: '#64748b'),
+            ] : null,
         ];
     }
 
@@ -142,7 +193,7 @@ class DeviceSlimTransformer extends BaseTransformer
         $result = [];
 
         foreach ($entity->services as $service) {
-            $service->setSensors($entity->sensors);
+            $service->setDevice($entity)->setSensors($entity->sensors);
 
             $result[] = [
                 'id'      => $service->id,

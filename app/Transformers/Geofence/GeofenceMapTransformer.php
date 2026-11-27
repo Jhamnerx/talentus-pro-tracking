@@ -33,6 +33,9 @@ class GeofenceMapTransformer extends GeofenceTransformer {
             //'description' => (string) $entity->description,
 
             'coordinates' => json_decode($entity->coordinates, true),
+            // Rutas que la usan como punto de control (withCount en el
+            // listado); el borrado avisa cuando es > 0.
+            'routes_count'  => (int) ($entity->route_checkpoints_count ?? 0),
         ];
 
         if (settings('plugins.geofences_speed_limit.status')) {

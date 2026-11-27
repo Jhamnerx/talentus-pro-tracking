@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Tarifs journaliers',
     'forwards' => 'Attaquants',
     'group_6' => 'Superviseur',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Utilisateur créé avant jours',
     'reminders_trans' => 'Traductions de rappels',
     'passwords_trans' => 'Traductions de mots de passe',

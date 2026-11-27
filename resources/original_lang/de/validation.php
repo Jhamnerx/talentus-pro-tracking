@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Frequenz',
         'unit' => 'Aggregat',
         'noreply_email' => 'Keine Antwort E-Mail Adresse',
+        'reply_to_email' => 'Antwort-E-Mail (Reply-To)',
         'signature' => 'Unterschrift',
         'use_smtp_server' => 'Verwenden Sie SMTP-Server',
         'smtp_server_host' => 'SMTP -Server-Host',

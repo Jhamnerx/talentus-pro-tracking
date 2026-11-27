@@ -183,6 +183,7 @@ return array(
         'frequency' => 'आवृत्ति',
         'unit' => 'एकाइ',
         'noreply_email' => 'कुनै जवाफ ईमेल ठेगाना छैन',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'हस्ताक्षर',
         'use_smtp_server' => 'SMTP सर्भर प्रयोग गर्नुहोस्',
         'smtp_server_host' => 'SMTP सर्वर होस्ट',

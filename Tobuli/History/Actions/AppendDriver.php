@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class AppendDriver extends ActionAppend
 {
+    const RADIO = 9000;
+
     protected $drivers = [];
 
     protected $next;
@@ -32,17 +34,10 @@ class AppendDriver extends ActionAppend
         if (empty($this->next))
             return;
 
-        if ($this->next->timestamp <= $position->timestamp)
-        {
-            if ($this->current)
-            {
-                if ($this->current->id != $this->next->id)
-                    $this->fire('driver.changed');
-            } else {
-                $this->fire('driver.set');
-            }
+        if ($this->next->timestamp <= $position->timestamp) {
+            $this->current = empty($this->next->id) ? null : $this->next;
 
-            $position->driver = $this->current = $this->next;
+            $position->driver = $this->current;
 
             $this->setNext();
         }
@@ -61,7 +56,7 @@ class AppendDriver extends ActionAppend
 
         $query = DB::table('user_driver_position_pivot AS dp')
             ->select('d.*', 'dp.date')
-            ->join('user_drivers AS d', 'dp.driver_id', '=', 'd.id')
+            ->leftjoin('user_drivers AS d', 'dp.driver_id', '=', 'd.id')
             ->where('dp.date', '>=', $date_from)
             ->where('dp.date', '<=', $date_to)
             ->where('dp.device_id', $device->id)
@@ -70,7 +65,7 @@ class AppendDriver extends ActionAppend
 
         $rows = DB::table('user_driver_position_pivot AS dp')
             ->select('d.*', 'dp.date')
-            ->join('user_drivers AS d', 'dp.driver_id', '=', 'd.id')
+            ->leftjoin('user_drivers AS d', 'dp.driver_id', '=', 'd.id')
             ->where('dp.date', '<=', $date_from)
             ->where('dp.device_id', $device->id)
             ->orderBy('dp.date', 'desc')

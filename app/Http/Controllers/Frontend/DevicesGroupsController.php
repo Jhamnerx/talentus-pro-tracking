@@ -220,6 +220,15 @@ class DevicesGroupsController extends Controller
 
         $this->checkException('devices_groups', 'remove', $item);
 
+        // Operaciones: un grupo que usa una operacion no se borra; primero hay
+        // que quitarlo de la operacion o eliminarla.
+        $operations = \Tobuli\Services\Operations\OperationService::operationsUsingGroup((int) $item->id);
+        if ($operations->isNotEmpty()) {
+            throw new \Tobuli\Exceptions\ValidationException([
+                'id' => trans('front.group_in_operation', ['operations' => $operations->pluck('name')->implode(', ')]),
+            ]);
+        }
+
         DB::table('user_device_pivot')
             ->where([
                 'group_id' => $item->id,

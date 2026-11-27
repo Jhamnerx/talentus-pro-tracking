@@ -148,7 +148,9 @@ class Handler extends ExceptionHandler {
         if ($e instanceof \UnexpectedValueException)
             return false;
 
-        if($e instanceof \Swift_TransportException)
+        // Laravel 9 cambio Swift Mailer por Symfony Mailer: la excepcion de
+        // transporte pasa a ser la de Symfony.
+        if ($e instanceof \Symfony\Component\Mailer\Exception\TransportExceptionInterface)
             return false;
 
         if ($e instanceof PDOException && $e->getCode() == 2002)

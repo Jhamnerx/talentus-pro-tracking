@@ -6,13 +6,23 @@ const gulp = require("gulp"),
   concat = require("gulp-concat"),
   group = require("gulp-group-files"),
   minify = require("gulp-minify"),
-  purify = require("gulp-purifycss");
+  purify = require("gulp-purifycss"),
+  postcss = require("gulp-postcss"),
+  tailwindcss = require("tailwindcss"),
+  autoprefixer = require("autoprefixer"),
+  terser = require("gulp-terser");
 
-// node-sass es un binario compilado contra una version concreta de Node. Si
-// se requiere aqui arriba, en otro Node falla la CARGA del gulpfile y con
-// ella todas las tareas, incluidas las de JS que no tienen nada que ver.
-// Cargandolo solo cuando una tarea de sass lo pide, `gulp scripts` funciona
-// en cualquier Node y solo los temas exigen el correcto.
+// Por que node-sass (libsass) y no dart-sass: el tema legacy usa @extend
+// sobre selectores compuestos (13 casos en layout/_icons.scss, del tipo
+// `@extend .ico-gsm-0:before`), que dart-sass rechaza desde la 1.x y dejaba
+// `gulp sass-all` y `gulp templates` sin poder compilar. node-sass 7 exige
+// Node 16 para sus binarias nativas.
+//
+// Y por que en carga perezosa: al ser un binario compilado contra una
+// version concreta de Node, requerirlo arriba hacia fallar la CARGA del
+// gulpfile en cualquier otro Node, y con ella TODAS las tareas, incluidas
+// las de JS que no tocan sass. Cargandolo solo cuando una tarea de sass lo
+// pide, `gulp scripts` corre en cualquier Node y solo los temas exigen el 16.
 function sass() {
   return require("gulp-sass")(require("node-sass"))();
 }
@@ -112,6 +122,7 @@ var scripts = {
     "resources/assets/js/controller/notifications.js",
     "resources/assets/js/controller/commands.js",
     "resources/assets/js/controller/deviceMedia.js",
+    "resources/assets/js/controller/deviceVideo.js",
 
     "resources/assets/js/model/device.js",
     "resources/assets/js/model/alert.js",
@@ -119,6 +130,7 @@ var scripts = {
     "resources/assets/js/model/geofence.js",
     "resources/assets/js/model/route.js",
     "resources/assets/js/model/event.js",
+    "resources/assets/js/model/aircraft.js",
     "resources/assets/js/model/MapTiles.js",
     "resources/assets/js/lib/socket.io.js",
 
@@ -205,6 +217,50 @@ gulp.task("minify-js", function () {
     .pipe(gulp.dest("public/assets/js"));
 });
 
+// ── UI v2 (tema nuevo) ──────────────────────────────────────────
+// CSS: Tailwind + autoprefixer sobre TODO resources/assets/ui-v2/css/*.css
+// (tailwind.css recibe las utilidades; el resto solo se autoprefija/copia)
+// → public/assets/ui/v2/css/
+gulp.task("ui-v2-css", function () {
+  return gulp
+    .src("resources/assets/ui-v2/css/*.css")
+    .pipe(postcss([tailwindcss("./tailwind.config.js"), autoprefixer()]))
+    // Minificar la salida de public (las fuentes en resources quedan legibles).
+    // tidySelectors apagado: clean-css 4 recorta el espacio de
+    // ":where([data-theme=dark], [data-theme=dark] *)" (las variantes dark: de
+    // Tailwind) y lo deja como "[data-theme=dark]*", que no coincide con nada;
+    // por eso el calendario y los paneles con clases dark: salian claros.
+    .pipe(cleanCSS({ level: { 1: { tidySelectors: false } } }))
+    .pipe(gulp.dest("public/assets/ui/v2/css"))
+    .pipe(browserSync.reload({ stream: true }));
+});
+
+// JS: se conserva la lógica tal cual (un archivo por dominio) desde resources
+// → public/assets/ui/v2/js/
+gulp.task("ui-v2-js", function () {
+  return gulp
+    .src("resources/assets/ui-v2/js/**/*.js")
+    .pipe(terser()) // minifica ES6+ (no rompe arrow/const/templates); fuentes en resources quedan legibles
+    .pipe(gulp.dest("public/assets/ui/v2/js"))
+    .pipe(browserSync.reload({ stream: true }));
+});
+
+// El cliente de socket.io lo comparte el legacy: se copia tal cual, sin pasar
+// por terser (ya viene minificado; re-minificar un UMD de terceros solo gasta
+// tiempo y añade riesgo). Una sola copia del fichero en el repo.
+gulp.task("ui-v2-vendor", function () {
+  return gulp
+    .src([
+      "resources/assets/js/lib/socket.io.js",
+      // Animacion de movimiento del marcador: el mismo plugin que usa el
+      // legacy (model/device.js -> layer.slideTo).
+      "resources/assets/js/lib/leaflet/Leaflet.Marker.SlideTo.js",
+    ])
+    .pipe(gulp.dest("public/assets/ui/v2/js/lib"));
+});
+
+gulp.task("ui-v2", gulp.series("ui-v2-css", "ui-v2-js", "ui-v2-vendor"));
+
 gulp.task("watch", function () {
   browserSync.init({
     //proxy: "http://46.101.121.251"
@@ -214,11 +270,20 @@ gulp.task("watch", function () {
 
   gulp.watch("resources/assets/scss/**/*.scss", gulp.series("sass"));
   gulp.watch("resources/assets/js/**/*.js", gulp.series(["scripts"]));
+  // UI v2: recompila al tocar css/js/blades del tema nuevo
+  gulp.watch(
+    [
+      "resources/assets/ui-v2/css/**/*.css",
+      "resources/views/ui/v2/**/*.blade.php",
+    ],
+    gulp.series("ui-v2-css"),
+  );
+  gulp.watch("resources/assets/ui-v2/js/**/*.js", gulp.series("ui-v2-js"));
 });
 
-gulp.task("default", gulp.series("sass", "scripts", "watch"));
+gulp.task("default", gulp.series("sass", "scripts", "ui-v2", "watch"));
 gulp.task("templates", gulp.series("sass-all", "minify-css"));
 gulp.task(
   "assets",
-  gulp.series("sass-all", "minify-css", "scripts", "minify-js"),
+  gulp.series("sass-all", "minify-css", "scripts", "minify-js", "ui-v2"),
 );

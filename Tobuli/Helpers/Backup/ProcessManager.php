@@ -6,16 +6,17 @@ use Illuminate\Database\Eloquent\Builder;
 use Tobuli\Entities\Backup;
 use Tobuli\Entities\BackupProcess;
 use Tobuli\Helpers\Backup\Process\AbstractBackuper;
-use Tobuli\Helpers\Backup\Uploader\BackupFtp;
+use Tobuli\Helpers\Backup\Uploader\BackupUploaderInterface;
+use Tobuli\Helpers\Backup\Uploader\MultiDestinationUploader;
 
 class ProcessManager
 {
-    private BackupFtp $ftp;
+    private MultiDestinationUploader $uploader;
     private Backup $backup;
 
-    public function __construct(BackupFtp $ftp)
+    public function __construct(MultiDestinationUploader $uploader)
     {
-        $this->ftp = $ftp;
+        $this->uploader = $uploader;
     }
 
     public function handle(): void
@@ -28,19 +29,30 @@ class ProcessManager
             }
 
             try {
-                $this->resolveBackuper($process, $this->ftp)->run();
+                $this->resolveBackuper($process, $this->uploader)->run();
             } catch (\Throwable $e) {
+                $error = BackupSecrets::scrub($e->getCode() . ': ' . $e->getMessage());
+
                 $this->backup->update([
                     'message' => (new ErrorTranslator())->translate($e),
-                    'details' => $e->getCode() . ': ' . $e->getMessage(),
+                    'details' => $error,
                 ]);
+
+                (new BackupNotifier())->notifyOnce(
+                    $this->backup,
+                    'failed-' . $process->id,
+                    trans('backups.mail_failed_subject', ['name' => $this->backup->name]),
+                    trans('backups.mail_failed_body', ['name' => $this->backup->name, 'error' => $error])
+                );
 
                 throw $e;
             }
         }
 
         if ($this->backup->isCompleted()) {
-            $this->backup->update(['message' => trans('front.successfully_uploaded')]);
+            (new BackupFinalizer($this->uploader))->finalize($this->backup->refresh());
+        } elseif ($this->backup->processes()->whereUnfinished()->count() === 0) {
+            (new BackupFinalizer($this->uploader))->closeFailed($this->backup->refresh());
         }
     }
 
@@ -61,9 +73,9 @@ class ProcessManager
             ->update(['reserved_at' => $now]);
     }
 
-    public static function resolveBackuper(BackupProcess $process, BackupFtp $ftp): AbstractBackuper
+    public static function resolveBackuper(BackupProcess $process, BackupUploaderInterface $uploader): AbstractBackuper
     {
-        return new $process->type($process, $ftp);
+        return new $process->type($process, $uploader);
     }
 
     public function setBackup(Backup $backup): self

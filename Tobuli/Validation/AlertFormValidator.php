@@ -3,7 +3,9 @@
 namespace Tobuli\Validation;
 
 use Illuminate\Validation\Factory as IlluminateValidator;
+use Illuminate\Validation\Rule;
 use ModalHelpers\AlertModalHelper;
+use Tobuli\Entities\Alert;
 
 class AlertFormValidator extends Validator
 {
@@ -15,22 +17,30 @@ class AlertFormValidator extends Validator
         'create' => [
             'name'              => 'required',
             'type'              => 'required',
-            'devices'           => 'required_without:selected_devices|array',
-            'selected_devices'  => 'required_without:devices|array',
-
-            'drivers'           => 'required_if:type,driver|array',
-            'events_custom'     => 'required_if:type,custom|array',
-            'geofences'         => 'required_if:type,geofence_in,geofence_out,geofence_inout|array',
-            'pois'              => 'required_if:type,poi_stop_duration,poi_idle_duration|array',
+            //inner validation
+            'devices'           => 'array',
+            'selected_devices'  => 'array',
+            'drivers'           => 'array',
+            'events_custom'     => 'array',
+            // Una alerta de alarma sin alarmas elegidas no vigilaria nada
+            'alarms'            => 'required_if:type,device_alarm|array',
+            // Umbral sobre un sensor: sin tipo, lado y valor no hay nada que vigilar
+            'sensor_type'       => 'required_if:type,sensor_value|string',
+            'sensor_operator'   => 'required_if:type,sensor_value|in:above,below',
+            'sensor_value'      => 'required_if:type,sensor_value|numeric',
+            'sensor_duration'   => 'nullable|integer|between:0,1440',
+            'geofences'         => 'array',
+            'pois'              => 'array',
+            'zones'             => 'array',
 
             'zone'              => 'in:0,1,2',
-            'zones'             => 'required_if:zone,1,2|array',
 
             'schedule'          => 'in:0,1',
             'schedules'         => 'required_if:schedule,1',
 
             'overspeed'         => 'required_if:type,overspeed|numeric',
             'stop_duration'     => 'required_if:type,stop_duration,poi_stop_duration|numeric',
+            'operation_stop_seconds' => 'required_if:type,operation_stop|numeric|min:1',
             'idle_duration'     => 'required_if:type,idle_duration,poi_idle_duration|numeric',
             'ignition_duration' => 'required_if:type,ignition_duration|numeric',
             'offline_duration'  => 'required_if:type,offline_duration|numeric',
@@ -48,18 +58,22 @@ class AlertFormValidator extends Validator
         'update' => [
             'name'              => 'required',
             'type'              => 'required',
+            'case'              => 'required_if:type,device_expiration|in:expired,expiring,expired_sim,expiring_sim',
+            'days'              => 'required_if:type,device_expiration|integer|min:0',
+            //inner validation
             'devices'           => 'array',
-
-            'drivers'           => 'required_if:type,driver|array',
-            'events_custom'     => 'required_if:type,custom|array',
-            'geofences'         => 'required_if:type,geofence_in,geofence_out,geofence_inout|array',
-            'pois'              => 'required_if:type,poi_stop_duration,poi_idle_duration|array',
+            'selected_devices'  => 'array',
+            'drivers'           => 'array',
+            'events_custom'     => 'array',
+            'geofences'         => 'array',
+            'pois'              => 'array',
+            'zones'             => 'array',
 
             'zone'              => 'in:0,1,2',
-            'zones'             => 'required_if:zone,1,2|array',
 
             'overspeed'         => 'required_if:type,overspeed|numeric',
             'stop_duration'     => 'required_if:type,stop_duration,poi_stop_duration|numeric',
+            'operation_stop_seconds' => 'required_if:type,operation_stop|numeric|min:1',
             'idle_duration'     => 'required_if:type,idle_duration,poi_idle_duration|numeric',
             'ignition_duration' => 'required_if:type,ignition_duration|numeric',
             'offline_duration'  => 'required_if:type,offline_duration|numeric',
@@ -88,6 +102,11 @@ class AlertFormValidator extends Validator
 
         $this->rules['create']['type'] = 'required|in:' . $types->implode('type', ',');
         $this->rules['update']['type'] = 'required|in:' . $types->implode('type', ',');
+
+        $deviceExpirationCase = 'required_if:type,device_expiration|' . Rule::in(Alert::getAvailableCases());
+
+        $this->rules['create']['case'] = $deviceExpirationCase;
+        $this->rules['update']['case'] = $deviceExpirationCase;
 
         parent::__construct($validator);
     }

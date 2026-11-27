@@ -3,11 +3,11 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
 use Tobuli\Entities\Device;
+use Tobuli\Helpers\Backup\BackupPathResolver;
 use Tobuli\Helpers\Backup\BackupService;
-use Tobuli\Helpers\Backup\Uploader\BackupFtp;
+use Tobuli\Helpers\Backup\BackupTempFile;
+use Tobuli\Helpers\Backup\Destination\BackupDestination;
 use Tobuli\Services\DatabaseService;
 
 /**
@@ -25,11 +25,12 @@ class DeltaPositionsBackupCommand extends Command
     protected $signature = 'backup:delta-positions
                             {--from=  : Fecha inicio (YYYY-MM-DD o YYYY-MM-DD HH:MM:SS)}
                             {--to=    : Fecha fin   (YYYY-MM-DD o YYYY-MM-DD HH:MM:SS)}
-                            {--device= : Limitar a un solo Device ID (opcional)}';
+                            {--device= : Limitar a un solo Device ID (opcional)}
+                            {--destination=ftp : ftp o drive}';
 
     protected $description = 'Backup incremental de posiciones por rango de fechas en carpeta delta separada del FTP';
 
-    private BackupFtp $ftp;
+    private BackupDestination $destination;
     private string $remoteFolder;
 
     public function handle(): int
@@ -41,11 +42,10 @@ class DeltaPositionsBackupCommand extends Command
         $ftpSettings = $this->getFtpSettings();
 
         $service = new BackupService($ftpSettings);
-        $service->setupFtp();
-        $this->ftp = $service->ftp();
+        $this->destination = $service->destination($this->option('destination'));
 
-        if (!$this->ftp->check()) {
-            $this->error('FTP inaccesible. Verifica las credenciales.');
+        if (!$this->destination->check()) {
+            $this->error('Destino inaccesible. Verifica las credenciales.');
             return 1;
         }
 
@@ -118,44 +118,32 @@ class DeltaPositionsBackupCommand extends Command
             return false;
         }
 
-        $remotePath  = $this->remoteFolder . '/' . BackupFtp::getDevicePositionsRemoteDir($device->id) . $table . '.sql.gz';
+        // Se usa el id de traccar, igual que el import: Device->id podría ser distinto.
+        $relative = BackupPathResolver::devicePositionsDir($traccar->id) . $table . '.sql.gz';
         $whereClause = "time >= '{$from}' AND time <= '{$to}'";
 
-        // MYSQL_PWD evita que mysqldump pida contraseña interactivamente,
-        // además de evitar problemas con caracteres especiales en la contraseña.
-        $cmd = "mysqldump"
-            . " --insert-ignore"
-            . " --no-create-info"
-            . " --skip-add-drop-table"
-            . " -u " . escapeshellarg($config['username'])
-            . " -h " . escapeshellarg($config['host'])
-            . " --where=" . escapeshellarg($whereClause)
-            . " " . escapeshellarg($config['database'])
-            . " " . escapeshellarg($table)
-            . " | gzip -9"
-            . " | " . $this->ftp->buildPipeUploadCommand($remotePath);
+        $command = 'MYSQL_PWD=' . escapeshellarg((string)$config['password'])
+            . ' mysqldump'
+            . ' --insert-ignore'
+            . ' --no-create-info'
+            . ' --skip-add-drop-table'
+            . ' -u ' . escapeshellarg($config['username'])
+            . ' -h ' . escapeshellarg($config['host'])
+            . ' --port=' . escapeshellarg($config['port'])
+            . ' --where=' . escapeshellarg($whereClause)
+            . ' ' . escapeshellarg($config['database'])
+            . ' ' . escapeshellarg($table);
 
-        $process = Process::fromShellCommandline($cmd);
-        $process->setTimeout(300);
-        $process->setEnv(['MYSQL_PWD' => $config['password']]);
-        $process->run();
+        $local = BackupTempFile::dump($command, basename($relative));
 
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
+        try {
+            BackupTempFile::assertValid($local);
+            $this->destination->upload($local, $this->remoteFolder . '/' . $relative);
+        } finally {
+            @unlink($local);
         }
 
         return true;
-    }
-
-    private function runShell(string $cmd): void
-    {
-        $process = Process::fromShellCommandline($cmd);
-        $process->setTimeout(300);
-        $process->run();
-
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
     }
 
     private function resolveDates(): array

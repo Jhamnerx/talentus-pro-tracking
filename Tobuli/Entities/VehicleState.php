@@ -9,6 +9,8 @@ class VehicleState extends AbstractEntity
     protected $fillable = [
         'vehicle_type_id',
         'name',
+        'label',
+        'color',
     ];
 
     public function vehicleType(): BelongsTo

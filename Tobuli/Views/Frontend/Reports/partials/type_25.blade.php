@@ -14,10 +14,7 @@
                         @endforeach
                         <th>{{ trans('front.server_time') }}</th>
                         <th>{{ trans('front.time') }}</th>
-                        <th>{{ trans('front.latitude') }}</th>
-                        <th>{{ trans('front.longitude') }}</th>
                         <th>{{ trans('front.address') }}</th>
-                        <th>{{ trans('front.altitude') }}</th>
                         <th>{{ trans('front.speed') }}</th>
 
                         @foreach($item['sensors'] as $sensor)
@@ -33,7 +30,7 @@
 
                     @if (isset($item['error']))
                         <tr>
-                            <td colspan="{{ 7 + count($item['meta']) + count($item['sensors']) + count($item['parameters']) }}">{{ $item['error'] }}</td>
+                            <td colspan="{{ 4 + count($item['meta']) + count($item['sensors']) + count($item['parameters']) }}">{{ $item['error'] }}</td>
                         </tr>
                     @else
                         @foreach($item['table']['rows'] as $row)
@@ -43,13 +40,10 @@
                                 @endforeach
                                 <td>{{ $row['server_time'] }}</td>
                                 <td>{{ $row['time'] }}</td>
-                                <td>{{ $row['latitude'] }}</td>
-                                <td>{{ $row['longitude'] }}</td>
                                 <td>{!! $row['location'] !!}</td>
-                                <td>{{ $row['altitude'] }}</td>
                                 <td>{{ $row['speed'] }}</td>
                                 @foreach($item['sensors'] as $sensor)
-                                    <th>{{ $row['sensors'][$sensor['id']] ?? '' }}</th>
+                                    <td>{{ $row['sensors'][$sensor['id']] ?? '' }}</td>
                                 @endforeach
                                 @foreach($item['parameters'] as $parameter)
                                     <td>{{ $row['parameters'][$parameter] ?? '' }}</td>

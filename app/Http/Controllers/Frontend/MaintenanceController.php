@@ -1,34 +1,24 @@
 <?php namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Request;
-use CustomFacades\ModalHelpers\ServiceModalHelper;
-use CustomFacades\Repositories\DeviceServiceRepo;
-use CustomFacades\Repositories\UserRepo;
-use CustomFacades\Repositories\DeviceRepo;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Tobuli\Entities\Device;
+use Tobuli\Entities\DeviceService;
 
 class MaintenanceController extends Controller
 {
     public function index($imei = null)
     {
-        $services = [];
-        $devices = [];
-
         if ($imei) {
             $this->checkException('checklist_qr_code', 'view');
-            $device = DeviceRepo::whereImei($imei);
+            $device = Device::firstWhere('imei', $imei);
             $this->checkException('devices', 'show', $device);
         }
 
-        if ($this->user->perm('maintenance', 'view')) {
-            $devices = UserRepo::getDevicesWithServices($this->user->id, $imei);
-        }
-
-        foreach ($devices as $device) {
-            foreach ($device->services as $service) {
-                $services[] = $service;
-            }
-        }
+        $services = $this->user->perm('maintenance', 'view')
+            ? $this->getServices($device ?? null)
+            : [];
 
         $data = [
             'services' => $services,
@@ -44,21 +34,11 @@ class MaintenanceController extends Controller
             return view('front::Maintenance.index')->with($data);
     }
 
-    public function table() {
-        $services = [];
-
-        if ($this->user->perm('maintenance', 'view'))
-        {
-            $devices = UserRepo::getDevicesWithServices($this->user->id);
-
-            foreach ($devices as $device)
-            {
-                foreach ($device->services as $service)
-                {
-                    $services[] = $service;
-                }
-            }
-        }
+    public function table()
+    {
+        $services = $this->user->perm('maintenance', 'view')
+            ? $this->getServices()
+            : [];
 
         $sortBy = request()->input('sorting.sort_by', 'name');
         $sort   = request()->input('sorting.sort', 'desc') == 'asc' ? 'asc' : 'desc';
@@ -71,7 +51,7 @@ class MaintenanceController extends Controller
 
             if ($sortBy == 'name')
                 return $service->name;
-            
+
             if ($service->expiration_by == 'odometer' && $sortBy != 'odometer_percentage' && $sortBy != 'odometer_left')
                 return -1;
 
@@ -103,5 +83,18 @@ class MaintenanceController extends Controller
         ];
 
         return view('front::Maintenance.table')->with($data);
+    }
+
+    private function getServices(?Device $device = null): Collection
+    {
+        return DeviceService::with('device.sensors')
+            ->userAccessible($this->user)
+            ->when($device, fn (Builder $query) => $query->where('device_id', $device->id))
+            ->orderBy('device_id')
+            ->get()
+            ->each(function ($service) {
+                $service->setDevice($service->device)
+                    ->setSensors($service->device->sensors);
+            });
     }
 }

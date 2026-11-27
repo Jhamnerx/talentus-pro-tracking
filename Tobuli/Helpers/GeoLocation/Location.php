@@ -36,7 +36,7 @@ class Location
                 continue;
             }
 
-            $this->values[$attribute] = $location_attributes[$attribute];
+            $this->values[$attribute] = (string) $location_attributes[$attribute];
         }
 
         $this->values['id'] = md5(strtolower(

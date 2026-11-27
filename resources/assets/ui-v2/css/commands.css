@@ -1,0 +1,26 @@
+/* =====================================================
+   TalentusPro · commands.css · Página /ui/v2/commands
+   Overrides de la tabla base (.tp-svc-table de services.css)
+   al estilo de la referencia: filas con más aire.
+   ===================================================== */
+
+#tp-cmdhub .tp-maint__card {
+  border-radius: var(--r-md, 8px);
+}
+
+/* Cabecera de tabla: la común de .tp-svc-table (MAYÚSCULAS 11 px gris,
+   QA V6). Antes aquí se pasaba a tipo título en negrita oscura. Solo se
+   iguala el relleno lateral al de las celdas para que alineen. */
+#tp-cmdhub .tp-svc-table th {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+#tp-cmdhub .tp-svc-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+#tp-cmdhub .tp-svc-table tbody tr:hover td {
+  background: var(--surface-sunken, #f8fafc);
+}

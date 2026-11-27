@@ -1,10 +1,20 @@
 <?php namespace Tobuli\Entities;
 
+use Tobuli\Traits\ChangeLogs;
+use Tobuli\Traits\DisplayTrait;
+
 use Carbon\Carbon;
 use Tobuli\Traits\Filterable;
 use Tobuli\Traits\Searchable;
 
-class Sharing extends AbstractEntity {
+class Sharing extends AbstractEntity implements DisplayInterface {
+    use ChangeLogs;
+
+    use DisplayTrait;
+
+    // Nombre con el que sale en el registro de cambios del admin
+    public static string $displayField = 'name';
+
     use Searchable, Filterable;
 
     private $searchable = [];
@@ -26,7 +36,7 @@ class Sharing extends AbstractEntity {
      */
     protected $hidden = [];
 
-    protected $fillable = ['name', 'expiration_date', 'active', 'delete_after_expiration'];
+    protected $fillable = ['name', 'description', 'expiration_date', 'active', 'delete_after_expiration'];
 
     public function user()
     {

@@ -10,6 +10,7 @@ use Tobuli\Entities\Device;
 use Tobuli\Entities\Event;
 use Formatter;
 use Tobuli\Entities\User;
+use Tobuli\Helpers\Alerts\Check\UnpluggedAlertCheck;
 use Tobuli\Services\EventWriteService;
 
 class ConfirmUnpluggedAlert extends Job implements ShouldQueue
@@ -35,9 +36,6 @@ class ConfirmUnpluggedAlert extends Job implements ShouldQueue
 
     public function handle()
     {
-        if (!$this->sensor)
-            return;
-
         if($this->isPluggedIn())
             return;
 
@@ -59,7 +57,14 @@ class ConfirmUnpluggedAlert extends Job implements ShouldQueue
             ->get();
 
         foreach($positions as $position) {
-            if ($this->sensor->getValuePosition($position))
+            // Sin sensor `plugged`, la alerta salió por la alarma powerCut
+            // (UnpluggedAlertCheck): se da por reconectado si llega
+            // powerRestored/powerOn o, en Teltonika, el 252 sin powerCut.
+            $plugged = $this->sensor
+                ? $this->sensor->getValuePosition($position)
+                : UnpluggedAlertCheck::isPowerRestored($position);
+
+            if ($plugged)
                 return true;
         }
 

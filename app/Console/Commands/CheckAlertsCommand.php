@@ -4,6 +4,7 @@ use App\Console\ProcessManager;
 use Illuminate\Console\Command;
 use Tobuli\Entities\Alert;
 use Tobuli\Helpers\Alerts\Check\Checker;
+use Tobuli\Helpers\Alerts\Check\DeviceExpirationAlertCheck;
 use Tobuli\Services\EventWriteService;
 
 class CheckAlertsCommand extends Command
@@ -75,7 +76,8 @@ class CheckAlertsCommand extends Command
                     }
                 } else {
                     foreach ($alerts as $alert) {
-                        $query = $alert->devices()->unexpired()->with('traccar');
+                        $baseQuery = $alert->devices();
+                        $query = (clone $baseQuery)->unexpired()->with('traccar');
 
                         switch ($alert->type) {
                             case 'offline_duration':
@@ -83,6 +85,9 @@ class CheckAlertsCommand extends Command
                                 break;
                             case 'distance':
                                 $query->with('sensors');
+                                break;
+                            case 'device_expiration':
+                                $query = DeviceExpirationAlertCheck::filterDevices($baseQuery, $alert);
                                 break;
                         }
 

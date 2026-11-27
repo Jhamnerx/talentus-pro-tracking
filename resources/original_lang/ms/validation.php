@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Kekerapan',
         'unit' => 'Unit',
         'noreply_email' => 'Tiada alamat e-mel balas',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Tandatangan',
         'use_smtp_server' => 'Gunakan pelayan SMTP',
         'smtp_server_host' => 'Hos pelayan SMTP',

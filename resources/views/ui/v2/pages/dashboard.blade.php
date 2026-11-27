@@ -1,0 +1,319 @@
+@extends('ui.v2.layout')
+
+@section('title', $pageTitle ?? trans('front.dashboard'))
+@section('rail-active', 'dashboard')
+
+@push('head')
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/dashboard.css') }}">
+@endpush
+
+@section('workspace-class', 'tp-workspace--scroll')
+
+@section('workspace')
+    <div class="tp-dash is-booting" aria-busy="true" id="tp-dash" data-data-url="{{ route('ui.v2.api.dashboard') }}" data-poll-interval="60000"
+        data-options-url="{{ route('ui.v2.api.dashboard.options') }}" data-options-save-url="{{ route('ui.v2.api.dashboard.options_save') }}"
+        data-user-today="{{ date('Y-m-d', \Formatter::time()->now()) }}">
+
+        <header class="tp-dash__head">
+            <div>
+                {{-- Título común de página (QA V1) --}}
+                <h1 class="tp-maint__title">
+                    <span class="tp-maint__title-ico" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="9" rx="1" />
+                            <rect x="14" y="3" width="7" height="5" rx="1" />
+                            <rect x="14" y="12" width="7" height="9" rx="1" />
+                            <rect x="3" y="16" width="7" height="5" rx="1" />
+                        </svg>
+                    </span>
+                    {{ trans('ui.control_panel') }}
+                </h1>
+                <p class="tp-text-muted tp-mb-0">{{ trans('ui.dashboard_subtitle') }}</p>
+            </div>
+            {{-- Toolbar de rango (estilo Wialon: Hoy / Ayer / Semana / Mes) --}}
+            <div class="tp-dash__range" id="tp-dash-range">
+                <button type="button" class="tp-dash__range-btn" data-range="today">{{ trans('front.today') }}</button>
+                <button type="button" class="tp-dash__range-btn" data-range="yesterday">{{ trans('front.yesterday') }}</button>
+                <button type="button" class="tp-dash__range-btn is-active" data-range="week">{{ trans('front.week') }}</button>
+                <button type="button" class="tp-dash__range-btn" data-range="month">{{ ucfirst(trans('front.month')) }}</button>
+                <span class="tp-dash__range-sep"></span>
+                <input type="date" class="tp-input tp-input--sm" id="tp-dash-from" title="{{ trans('front.from') }}">
+                <input type="date" class="tp-input tp-input--sm" id="tp-dash-to" title="{{ trans('global.to') }}">
+                <button type="button" class="tp-btn tp-btn--primary tp-btn--sm" id="tp-dash-apply">{{ trans('global.apply') }}</button>
+                <button class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-dash-refresh" title="{{ trans('ui.refresh') }}" aria-label="{{ trans('ui.refresh') }}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 11-3-6.7L21 8" />
+                        <path d="M21 3v5h-5" />
+                    </svg>
+                </button>
+                {{-- Opciones de los bloques (las mismas que el desplegable de
+                     cada bloque del tablero legacy). --}}
+                <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-dash-options"
+                    title="{{ trans('ui.dashboard_options') }}" aria-label="{{ trans('ui.dashboard_options') }}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+        <div class="tp-dash__meta"><span id="tp-dash-fetched"></span></div>
+
+        {{-- KPI ROW --}}
+        <section class="tp-dash__kpis" aria-label="{{ trans('ui.key_indicators') }}">
+            @php
+                $kpis = [
+                    ['key' => 'total', 'label' => trans('ui.fleet_total'), 'icon' => 'fleet'],
+                    ['key' => 'moving', 'label' => trans('front.move'), 'icon' => 'live', 'tone' => 'success'],
+                    ['key' => 'idle', 'label' => trans('ui.inactive_plural'), 'icon' => 'history', 'tone' => 'warning'],
+                    ['key' => 'stopped', 'label' => trans('ui.stopped_plural'), 'icon' => 'zones', 'tone' => 'info'],
+                    ['key' => 'offline', 'label' => trans('front.no_data'), 'icon' => 'alerts', 'tone' => 'muted'],
+                    ['key' => 'avgSpeed', 'label' => trans('ui.avg_speed'), 'icon' => 'reports', 'suffix' => ' km/h'],
+                    ['key' => 'utilization', 'label' => trans('ui.utilization'), 'icon' => 'sparkle', 'tone' => 'brand', 'suffix' => '%'],
+                ];
+            @endphp
+            @foreach ($kpis as $k)
+                <article class="tp-kpi tp-kpi--{{ $k['tone'] ?? 'default' }}" data-kpi="{{ $k['key'] }}"
+                    data-suffix="{{ $k['suffix'] ?? '' }}">
+                    <div class="tp-kpi__icon">@include('ui.v2.partials.icons', ['name' => $k['icon']])</div>
+                    <div class="tp-kpi__body">
+                        <div class="tp-kpi__label">{{ $k['label'] }}</div>
+                        <div class="tp-kpi__value" data-kpi-value>—</div>
+                    </div>
+                </article>
+            @endforeach
+        </section>
+
+        {{-- WIDGETS GRID --}}
+        <section class="tp-dash__grid">
+
+            {{-- Talentus IA CHAT: resumen de ayer y del estado actual (cache 6 h por usuario y dia) --}}
+            @if (\App\Services\Ai\AiFeatures::enabled(auth()->user(), 'dashboard'))
+                <article class="tp-widget tp-widget--span-12" data-widget="ai-summary" id="tpai-dash"
+                    data-url="{{ route('ai.dashboard_summary') }}">
+                    <header class="tp-widget__head">
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('ui.summary') }} · {{ \App\Services\Ai\AiSettings::name() }}</h3>
+                        <span class="tp-widget__tag" id="tpai-dash-time"></span>
+                    </header>
+                    <div class="tp-widget__body">
+                        <div class="tpai-text" id="tpai-dash-text"><span class="tpai-typing"><span></span><span></span><span></span></span></div>
+                        <button type="button" class="tp-btn tp-btn--outline tp-btn--sm" data-tpai-open style="margin-top:10px">
+                            {{ trans('ui.ask_assistant') }}
+                        </button>
+                    </div>
+                </article>
+            @endif
+
+            {{-- Fila 1 · donuts de estado (Wialon): donut izquierda + leyenda con conteos --}}
+            <article class="tp-widget tp-widget--span-4" data-widget="health">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.device_status') }}</h3>
+                    <span class="tp-widget__tag">{{ trans('ui.live') }}</span>
+                </header>
+                <div class="tp-widget__body">
+                    <div class="tp-donut">
+                        <div class="tp-donut__chart" id="tp-chart-health"></div>
+                        <ul class="tp-legend" id="tp-legend-health"></ul>
+                    </div>
+                </div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-4" data-widget="connection">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.connection_status') }}</h3>
+                    <span class="tp-widget__tag">{{ trans('ui.live') }}</span>
+                </header>
+                <div class="tp-widget__body">
+                    <div class="tp-donut">
+                        <div class="tp-donut__chart" id="tp-chart-connection"></div>
+                        <ul class="tp-legend" id="tp-legend-connection"></ul>
+                    </div>
+                </div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-4" data-widget="movement">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.movement_status') }}</h3>
+                    <span class="tp-widget__tag">{{ trans('ui.live') }}</span>
+                </header>
+                <div class="tp-widget__body">
+                    <div class="tp-donut">
+                        <div class="tp-donut__chart" id="tp-chart-movement"></div>
+                        <ul class="tp-legend" id="tp-legend-movement"></ul>
+                    </div>
+                </div>
+            </article>
+
+            {{-- Fila 2 · Conducción (analítica propia) + Notificaciones --}}
+            <article class="tp-widget tp-widget--span-8" data-widget="driving">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.driving_and_behaviour') }}</h3>
+                    <span class="tp-widget__hint" id="tp-driving-range">—</span>
+                </header>
+                <div class="tp-widget__body">
+                    <div class="tp-driving">
+                        <div class="tp-driving__score">
+                            {{-- Puntuación 0-100 de la flota (más es mejor). Se
+                                 llama distinto del "índice" del ranking, que es
+                                 eventos por 100 km y va al revés: dos números
+                                 con el mismo nombre no se pueden leer. --}}
+                            <div class="tp-eco" id="tp-eco"
+                                title="{{ trans('ui.score_help') }}">
+                                <div class="tp-eco__value" data-eco-value>—</div>
+                                <div class="tp-eco__label">{{ trans('ui.score') }}<br>{{ trans('ui.of_fleet') }}</div>
+                            </div>
+                            <div class="tp-driving__risk">
+                                <span class="tp-driving__risk-val" data-risk-events>—</span>
+                                <span class="tp-driving__risk-lbl">{{ trans('ui.risk_events') }}</span>
+                            </div>
+                        </div>
+                        <div class="tp-driving__tiles">
+                            <div class="tp-behav" data-behav="harsh_braking">
+                                <span class="tp-behav__dot" style="background:#ef4444"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">{{ trans('ui.harsh_braking_plural') }}</span>
+                            </div>
+                            <div class="tp-behav" data-behav="harsh_acceleration">
+                                <span class="tp-behav__dot" style="background:#f97316"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">{{ trans('ui.harsh_acceleration_plural') }}</span>
+                            </div>
+                            <div class="tp-behav" data-behav="harsh_turning">
+                                <span class="tp-behav__dot" style="background:#eab308"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">{{ trans('ui.harsh_turning_plural') }}</span>
+                            </div>
+                            <div class="tp-behav" data-behav="overspeed">
+                                <span class="tp-behav__dot" style="background:#dc2626"></span>
+                                <span class="tp-behav__val" data-behav-val>—</span>
+                                <span class="tp-behav__lbl">{{ trans('front.overspeed') }}</span>
+                            </div>
+                        </div>
+                        <div class="tp-driving__trend">
+                            <div class="tp-widget__subhead">{{ trans('ui.risk_events_trend') }}</div>
+                            <div class="tp-chart" id="tp-chart-trend" style="height:120px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-4" data-widget="notifications">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.latest_notifications') }}</h3>
+                </header>
+                <div class="tp-widget__body">
+                    <ul class="tp-notes" id="tp-dash-notes">
+                        <li class="tp-text-muted tp-text-sm">{{ trans('ui.loading_ellipsis') }}</li>
+                    </ul>
+                </div>
+            </article>
+
+            {{-- Fila 3 · Alertas por tipo + Top vehículos de riesgo --}}
+            <article class="tp-widget tp-widget--span-6" data-widget="bycategory">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.alerts_by_type') }}</h3>
+                    <span class="tp-widget__hint" data-total-events>—</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-bycategory"></div></div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-6" data-widget="toprisk">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.top_risk_vehicles') }}</h3>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-toprisk"></div></div>
+            </article>
+
+            {{-- Ranking de conducción: el MISMO cálculo que el reporte de
+                 Conducción (DrivingScoreService), para que el panel y el
+                 reporte no digan cosas distintas del mismo vehículo. --}}
+            @if (Auth::user()->perm('reports', 'view'))
+                <article class="tp-widget tp-widget--span-12" data-widget="ranking">
+                    <header class="tp-widget__head">
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('ui.driving_ranking') }}</h3>
+                        <span class="tp-widget__hint" id="tp-rank-hint">—</span>
+                    </header>
+                    <div class="tp-widget__body">
+                        <div class="tp-rank">
+                            <div class="tp-rank__col">
+                                <div class="tp-widget__subhead">{{ trans('ui.best_driving') }}</div>
+                                <div class="tp-barlist" id="tp-dash-rank-best"></div>
+                            </div>
+                            <div class="tp-rank__col">
+                                <div class="tp-widget__subhead">{{ trans('ui.worst_driving') }}</div>
+                                <div class="tp-barlist" id="tp-dash-rank-worst"></div>
+                            </div>
+                        </div>
+                        <p class="tp-rank__foot" id="tp-rank-foot"></p>
+                    </div>
+                </article>
+            @endif
+
+            {{-- Reparto de la flota por estado: los mismos 6 grupos y colores del
+                 bloque device_overview del legacy --}}
+            <article class="tp-widget tp-widget--span-6" data-widget="overview">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.fleet_status') }}</h3>
+                    <a href="{{ url('/ui/v2/fleet') }}" class="tp-link tp-text-sm">{{ trans('ui.see_fleet_arrow') }}</a>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-overview"></div></div>
+            </article>
+
+            @if (Auth::user()->perm('tasks', 'view'))
+                <article class="tp-widget tp-widget--span-6" data-widget="tasks">
+                    <header class="tp-widget__head">
+                        <h3 class="tp-h6 tp-mb-0">{{ trans('front.latest_tasks') }}</h3>
+                        <a href="{{ url('/ui/v2/tasks') }}" class="tp-link tp-text-sm">{{ trans('ui.see_tasks_arrow') }}</a>
+                    </header>
+                    <div class="tp-widget__body">
+                        <ul class="tp-notes" id="tp-dash-tasks">
+                            <li class="tp-text-muted tp-text-sm">{{ trans('ui.loading_ellipsis') }}</li>
+                        </ul>
+                    </div>
+                </article>
+            @endif
+
+            {{-- Fila 4 · Kilometraje + Top velocidad --}}
+            <article class="tp-widget tp-widget--span-6" data-widget="mileage">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.top_mileage_units') }}</h3>
+                    <span class="tp-widget__hint" id="tp-dash-mileage-hint">{{ trans('ui.in_the_period') }}</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-barlist" id="tp-dash-mileage"></div></div>
+            </article>
+
+            <article class="tp-widget tp-widget--span-6" data-widget="topspeed">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.top5_current_speed') }}</h3>
+                    <a href="{{ url('/ui/v2/live') }}" class="tp-link tp-text-sm">{{ trans('ui.see_map_arrow') }}</a>
+                </header>
+                <div class="tp-widget__body">
+                    <table class="tp-table tp-table--sm" id="tp-dash-top-table">
+                        <thead>
+                            <tr><th>#</th><th>{{ trans('front.device') }}</th><th>{{ trans('front.state') }}</th><th class="tp-text-right">km/h</th></tr>
+                        </thead>
+                        <tbody><tr><td colspan="4" class="tp-text-muted tp-text-center">{{ trans('ui.loading_ellipsis') }}</td></tr></tbody>
+                    </table>
+                </div>
+            </article>
+
+            {{-- Fila 5 · Actividad 24h --}}
+            <article class="tp-widget tp-widget--span-12" data-widget="activity">
+                <header class="tp-widget__head">
+                    <h3 class="tp-h6 tp-mb-0">{{ trans('ui.activity_last_24h') }}</h3>
+                    <span class="tp-widget__hint">{{ trans('ui.movements_per_hour') }}</span>
+                </header>
+                <div class="tp-widget__body"><div class="tp-chart" id="tp-chart-activity" style="height:240px;"></div></div>
+            </article>
+
+        </section>
+    </div>
+@endsection
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-chips-select.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/dashboard.js') }}" defer></script>
+@endpush

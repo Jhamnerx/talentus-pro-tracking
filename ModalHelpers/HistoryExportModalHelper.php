@@ -60,6 +60,17 @@ class HistoryExportModalHelper extends ModalHelper {
 			
         fclose( $fp );
 
+        // Desde la app (API) la descarga va por su ruta con user_api_hash; la web usa la sesión.
+        if ($this->api) {
+            return [
+                'download' => route('api.history_download', [
+                    'file'          => $file,
+                    'name'          => $this->getFilename($format),
+                    'user_api_hash' => request()->get('user_api_hash'),
+                ]),
+            ];
+        }
+
         return [
             'download' => route('history.download', [$file, urlencode($this->getFilename($format))])
         ];

@@ -37,6 +37,9 @@ class DeviceMaintenancesController extends Controller
                 'motivo'      => $m->motivo,
                 'notas'       => $m->notas,
                 'user'        => $m->user?->email ?? '—',
+                // El partial legacy ya pintaba `m.synced` pero el endpoint nunca
+                // lo devolvia: la columna Sync siempre salia como "pendiente".
+                'synced'      => ! is_null($m->synced_at),
                 'created_at'  => $m->created_at->format('d/m/Y H:i'),
             ]);
 

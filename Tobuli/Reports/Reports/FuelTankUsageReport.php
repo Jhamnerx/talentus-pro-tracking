@@ -17,12 +17,13 @@ class FuelTankUsageReport extends DeviceHistoryReport
 {
     const TYPE_ID = 75;
 
-    protected $connectionsInfo = [];
-    protected $actionGroup;
+    protected array $connectionsInfo = [];
+    protected string $actionGroup;
+    protected string $actionGroupRfid = GroupRfid::class;
 
     public function typeID()
     {
-        return self::TYPE_ID;
+        return static::TYPE_ID;
     }
 
     public function title()
@@ -34,7 +35,7 @@ class FuelTankUsageReport extends DeviceHistoryReport
     {
         if ($this->actionGroup === 'tank') {
             return [
-                GroupRfid::class,
+                $this->actionGroupRfid,
                 Fuel::class,
             ];
         }
@@ -64,7 +65,7 @@ class FuelTankUsageReport extends DeviceHistoryReport
 
         /** @var Group $group */
         foreach ($tankData['groups']->all() as $tankGroup) {
-            if ($tankGroup->getKey() !== GroupRfid::KEY) {
+            if ($tankGroup->getKey() !== $this->actionGroupRfid::KEY) {
                 continue;
             }
 

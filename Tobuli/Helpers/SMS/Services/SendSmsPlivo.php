@@ -2,7 +2,8 @@
 
 namespace Tobuli\Helpers\SMS\Services;
 
-use Plivo\RestAPI;
+use Plivo\Resources\Message\MessageCreateErrorResponse;
+use Plivo\RestClient;
 use Tobuli\Exceptions\ValidationException;
 
 class SendSmsPlivo extends SendSmsManager
@@ -20,16 +21,16 @@ class SendSmsPlivo extends SendSmsManager
 
     public function sendSingle($receiver_phone, $message_body)
     {
-        $plivo_service = new RestAPI($this->senderId, $this->senderToken);
+        $plivo_service = new RestClient($this->senderId, $this->senderToken);
 
-        $response = $plivo_service->send_message([
+        $response = $plivo_service->messages->create([
             'src' => $this->senderPhone,
             'dst' => $receiver_phone,
             'text' => $message_body,
         ]);
 
-        if (isset($response['response']['error']))
-            throw new ValidationException(['request_method' => $response['response']['error']]);
+        if ($response instanceof MessageCreateErrorResponse)
+            throw new ValidationException(['request_method' => $response->error]);
 
         return json_encode($response);
     }

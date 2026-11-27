@@ -41,6 +41,8 @@
   line-height: $line-height-computed;
   color: $progress-bar-color;
   text-align: center;
+  white-space: nowrap;
+  text-shadow: -1px 0 $progress-bar-bg, 0 1px $progress-bar-bg, 1px 0 $progress-bar-bg, 0 -1px $progress-bar-bg;
   background-color: $progress-bar-bg;
   @include box-shadow(inset 0 -1px 0 rgba(0,0,0,.15));
   @include transition(width .6s ease);

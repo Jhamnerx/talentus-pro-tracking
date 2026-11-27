@@ -21,6 +21,11 @@ class Alert extends AbstractEntity implements DisplayInterface
     use SentCommandActor;
     use Searchable;
 
+    const CASE_EXPIRED = Event::TYPE_EXPIRED_DEVICE;
+    const CASE_EXPIRING = Event::TYPE_EXPIRING_DEVICE;
+    const CASE_EXPIRED_SIM = Event::TYPE_EXPIRED_SIM;
+    const CASE_EXPIRING_SIM = Event::TYPE_EXPIRING_SIM;
+
     public static string $displayField = 'name';
 
     protected $table = 'alerts';
@@ -46,6 +51,8 @@ class Alert extends AbstractEntity implements DisplayInterface
         'ignition_duration',
         'pre_start_checklist_only',
         'stop_duration',
+        // Parada en operacion (modulo de Operaciones): umbral en segundos
+        'operation_stop_seconds',
         'time_duration',
         'offline_duration',
         'move_duration',
@@ -58,7 +65,20 @@ class Alert extends AbstractEntity implements DisplayInterface
         'authorized',
         'state',
         'acceptable_time_from',
-        'statuses'
+        'statuses',
+        'alarms',
+        'case',
+        'days',
+        // Alerta por umbral de sensor (tipo sensor_value)
+        'sensor_type',
+        'sensor_operator',
+        'sensor_value',
+        'sensor_duration',
+        // Accion "enviar reporte por correo" (canal report)
+        'report_type',
+        'report_format',
+        'report_minutes_before',
+        'report_minutes_after',
     );
 
     protected $casts = [
@@ -85,6 +105,7 @@ class Alert extends AbstractEntity implements DisplayInterface
         'ignition_duration' => 0,
         'pre_start_checklist_only' => 0,
         'stop_duration' => 0,
+        'operation_stop_seconds' => 60,
         'time_duration' => 0,
         'offline_duration' => 0,
         'move_duration' => 0,
@@ -95,7 +116,23 @@ class Alert extends AbstractEntity implements DisplayInterface
         'authorized' => 0,
         'acceptable_time_from' => 0,
         'state' => null,
-        'statuses' => []
+        'statuses' => [],
+        // Alarmas del equipo a vigilar (tipo device_alarm)
+        'alarms' => [],
+        'case' => '',
+        'days' => 0,
+        // Umbral sobre un sensor: que tipo vigilar, por encima o por debajo,
+        // el valor y cuantos minutos tiene que aguantar antes de avisar.
+        'sensor_type' => null,
+        'sensor_operator' => 'above',
+        'sensor_value' => 0,
+        'sensor_duration' => 0,
+        // Reporte que acompana al evento: tipo, formato y la ventana de
+        // minutos antes y despues del evento que tiene que cubrir.
+        'report_type' => null,
+        'report_format' => 'pdf',
+        'report_minutes_before' => 15,
+        'report_minutes_after' => 15,
     ];
 
     public function user(): BelongsTo
@@ -212,17 +249,33 @@ class Alert extends AbstractEntity implements DisplayInterface
             'idle_duration',
             'ignition_duration',
             'stop_duration',
+            'operation_stop',
             'time_duration',
             'offline_duration',
             'distance',
             'poi_stop_duration',
             'poi_idle_duration',
+            'device_expiration',
         ]);
     }
 
     public function scopeEnabled(Builder $query): Builder
     {
         return $query;
+    }
+
+    public static function getAvailableCases(): array
+    {
+        $cases = [self::CASE_EXPIRED, self::CASE_EXPIRING];
+
+        if (settings('plugins.additional_installation_fields.status')
+            && settings('plugins.send_sim_expiration_notification.status')
+        ) {
+            $cases[] = self::CASE_EXPIRED_SIM;
+            $cases[] = self::CASE_EXPIRING_SIM;
+        }
+
+        return $cases;
     }
 
     public function isActive()

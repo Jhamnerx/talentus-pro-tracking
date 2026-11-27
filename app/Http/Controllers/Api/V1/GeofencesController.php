@@ -31,11 +31,27 @@ class GeofencesController extends Controller
         try {
             $this->checkException('geofences', 'view');
 
+            $geofences = Geofence::userOwned($this->user)
+                ->filter(request()->all())
+                ->search(request('search'))
+                ->with('vehicleSpeedLimits')
+                ->get();
+
+            // Límites por tipo/estado de vehículo como lista, en la unidad del usuario (lo
+            // mismo que aceptan add/edit_geofence en vehicle_speed_limits[tipo][estado|0]).
+            $geofences->each(function (Geofence $g) {
+                $limits = $g->vehicleSpeedLimits->map(fn ($l) => [
+                    'vehicle_type_id'  => (int) $l->vehicle_type_id,
+                    'vehicle_state_id' => $l->vehicle_state_id ? (int) $l->vehicle_state_id : null,
+                    'speed_limit'      => round(\Formatter::speed()->convert($l->speed_limit)),
+                ])->values()->all();
+
+                $g->unsetRelation('vehicleSpeedLimits');
+                $g->setAttribute('vehicle_speed_limits', $limits);
+            });
+
             return ['items' => [
-                'geofences' => Geofence::userOwned($this->user)
-                    ->filter(request()->all())
-                    ->search(request('search'))
-                    ->get()
+                'geofences' => $geofences
             ]];
         } catch (\Exception $e) {
             return ['items' => ['geofences' => []]];

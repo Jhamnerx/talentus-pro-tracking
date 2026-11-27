@@ -217,90 +217,6 @@ class Server {
         return 100 - round($free / $total * 100, 1);
     }
 
-    public function databaseFreeSpace()
-    {
-        try {
-            $directory = exec('mysql -u root -p'. config('database.connections.mysql.password') .' -Bse "select @@datadir;"');
-
-            return disk_free_space($directory);
-
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    public function wwwFreeSpace()
-    {
-        try {
-            $directory = storage_path();
-
-            return disk_free_space($directory);
-
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    public function traccarFreeSpace()
-    {
-        try {
-            $directory = config('tobuli.logs_path');
-
-            return disk_free_space($directory);
-
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    public function databaseTotalSpace()
-    {
-        try {
-            $directory = exec('mysql -u root -p'. config('database.connections.mysql.password') .' -Bse "select @@datadir;"');
-
-            return disk_total_space($directory);
-
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    public function wwwTotalSpace()
-    {
-        try {
-            $directory = storage_path();
-
-            return disk_total_space($directory);
-
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    public function traccarTotalSpace()
-    {
-        try {
-            $directory = config('tobuli.logs_path');
-
-            return disk_total_space($directory);
-
-        } catch (\Exception $e) {
-            return 0;
-        }
-    }
-
-    public function isOnSameDisk()
-    {
-        $db_disk = exec('stat -c "%d" ' .
-            exec('mysql -u root -p'. config('database.connections.mysql.password') .' -Bse "select @@datadir;"'));
-
-        $traccar_disk = exec('stat -c "%d" ' . config('tobuli.logs_path'));
-
-        $storage_disk = exec('stat -c "%d" ' . storage_path());
-
-        return ($traccar_disk == $db_disk && $storage_disk == $db_disk);
-    }
-
     public function statusServices()
     {
         $services = [
@@ -422,7 +338,7 @@ class Server {
                 'mount' => $mount,
                 'total' => $match[2],
                 'used'  => $match[3],
-
+                'free'  => $match[4],
             ];
         }, $rows);
 

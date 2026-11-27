@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Ставки суточных',
     'forwards' => 'Нападающие',
     'group_6' => 'Руководитель',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Пользователь создан до дня',
     'reminders_trans' => 'Напоминания переводы',
     'passwords_trans' => 'Переводы паролей',

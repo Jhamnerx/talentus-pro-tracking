@@ -47,10 +47,8 @@ class FlowDailyReport extends DeviceReport
 
         $dateTo = $period->end;
 
-        if (!Carbon::parse($dateTo)->isMidnight()) {
-            $period = iterator_to_array($period);
-            $period[] = $dateTo;
-        }
+        $period = iterator_to_array($period);
+        $period[] = $dateTo;
 
         foreach ($period as $value) {
             $date = $value->format('Y-m-d');
@@ -218,7 +216,7 @@ class FlowDailyReport extends DeviceReport
     {
         $params = $position->getParametersAttribute();
 
-        return isset($params['nettotal']) ? round($params['nettotal'], 2) : null;
+        return isset($params['nettotal']) ? round((float)$params['nettotal'], 2) : null;
     }
 
     private function getDeviceEngineHoursAttribute(Device $device): string

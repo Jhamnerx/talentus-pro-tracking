@@ -5,8 +5,8 @@ use Carbon\Carbon;
 use CustomFacades\Appearance;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
-use Swift_SendmailTransport as MailTransport;
 use GuzzleHttp\Exception\ClientException;
+use Symfony\Component\Mailer\Transport\SendmailTransport;
 
 class MailHelper
 {
@@ -69,26 +69,24 @@ class MailHelper
         }
 
         if (!empty($error) && $this->fallback) {
-            $backupMailer = Mail::getSwiftMailer();
+            $backupTransport = Mail::getFacadeRoot()->getSymfonyTransport();
 
-            Mail::setSwiftMailer( new \Swift_Mailer( new MailTransport()) );
+            Mail::getFacadeRoot()->setSymfonyTransport(new SendmailTransport());
 
-            try
-            {
+            try {
                 Mail::send($messeage);
-            }
-            catch (\Exception $e) {
+            } catch (\Exception $e) {
                 $error = $e->getMessage();
             }
 
-            Mail::setSwiftMailer( $backupMailer );
+            Mail::getFacadeRoot()->setSymfonyTransport($backupTransport);
         }
 
         if (config('tobuli.log_send_mail_template')) {
             $data = [
                 Carbon::now(),
                 $subject,
-                $to,
+                implode(';', $recipients),
                 empty($error) ? 'OK' : $error
             ];
 

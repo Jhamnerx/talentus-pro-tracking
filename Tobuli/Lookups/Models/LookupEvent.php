@@ -49,6 +49,14 @@ class LookupEvent extends LookupModel
             'orderable'  => false,
             'searchable' => false,
         ]);
+
+        $this->addColumn([
+            'data'       => 'speed',
+            'name'       => 'speed',
+            'title'      => trans('front.speed'),
+            'orderable'  => false,
+            'searchable' => false,
+        ]);
     }
 
     public function renderTime($event) {

@@ -18,7 +18,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="javascript:" data-url="{{ route('pois.import') }}" data-modal="pois_import">
+                    <a href="javascript:" data-url="{{ route('pois.import.index') }}" data-modal="pois_import">
                         <i class="icon upload" title="{{ trans('front.import') }}"></i>
                     </a>
                 </li>

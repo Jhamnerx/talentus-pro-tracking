@@ -6,6 +6,7 @@
 
 @section('scripts')
     <script src="{{ asset('assets/js/report.js') }}" type="text/javascript"></script>
+    @include('Frontend.Reports.partials.map_tiles')
 
     <script>
         var app = {
@@ -49,7 +50,7 @@
                                     attributionControl: false,
                                     boxZoom: false,
                                 });
-                                new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18}).addTo(map);
+                                reportTileLayer(map);
 
                                 L.marker({{ json_encode($item['map']['start']) }}, {icon: startIcon}).addTo(map);
                                 L.marker({{ json_encode($item['map']['end']) }}, {icon: endIcon}).addTo(map);

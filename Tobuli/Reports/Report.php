@@ -22,10 +22,27 @@ abstract class Report implements Arrayable
 {
     protected $formats = ['html', 'json', 'xls', 'xlsx', 'pdf', 'pdf_land'];
     protected $disabledFormats = [];
-    protected $enableFields = ['devices', 'geofences', 'metas', 'speed_limit', 'stops', 'show_addresses', 'zones_instead'];
+    protected $enableFields = [
+        'period',
+        'date_from',
+        'from_time',
+        'date_to',
+        'to_time',
+        'devices',
+        'geofences',
+        'metas',
+        'speed_limit',
+        'stops',
+        'show_addresses',
+        'zones_instead',
+    ];
     protected $disableFields = [];
     protected $validation = [];
     protected $deviceless = false;
+    protected bool $allDevices = false;
+
+    /** HTML result may be shown inside the system instead of being downloaded */
+    protected bool $viewable = false;
 
     /** @var User */
     protected $user;
@@ -108,6 +125,21 @@ abstract class Report implements Arrayable
         return $this->deviceless;
     }
 
+    public function hasAllDevices(): bool
+    {
+        return $this->allDevices;
+    }
+
+    public function hasDateFrom(): bool
+    {
+        return !in_array('date_from', $this->disableFields) && in_array('date_from', $this->enableFields);
+    }
+
+    public function hasDateTo(): bool
+    {
+        return !in_array('date_to', $this->disableFields) && in_array('date_to', $this->enableFields);
+    }
+
     protected function beforeGenerate()
     {
         if ($this->zones_instead && (empty($this->geofences) || $this->geofences->isEmpty()))
@@ -138,6 +170,12 @@ abstract class Report implements Arrayable
 
     public function getGeofenceNames()
     {
+        // Los reportes con el campo de geocercas deshabilitado (p. ej. 909,
+        // 910-913) llegan sin coleccion: la cabecera de parametros reventaba
+        // con "pluck() on null" y el navegador recibia una descarga rota.
+        if (empty($this->geofences))
+            return [];
+
         return $this->getGeofences()->pluck('name')->all();
     }
 
@@ -221,7 +259,7 @@ abstract class Report implements Arrayable
 
     public function setPeriodTimeTo($value)
     {
-        $this->period_time_from = $value;
+        $this->period_time_to = $value;
     }
 
     public function getPeriodTimeTo()
@@ -229,9 +267,75 @@ abstract class Report implements Arrayable
         return $this->period_time_to;
     }
 
+    /** @var array|null Config resuelta del filtro de periodo (lazy) */
+    private $periodShiftResolved = null;
+
+    /**
+     * ¿La posición cae dentro del filtro "días de la semana + franja
+     * horaria" del periodo (period_weekdays / period_time_from/to)?
+     * Misma semántica de TZ que AppendShiftCheck: las horas del usuario
+     * se convierten a UTC (Formatter::time()->reverse) y se comparan con
+     * la hora cruda de la posición; el día se evalúa en la zona horaria
+     * del usuario. Soporta franjas que cruzan medianoche. Sin filtro
+     * definido devuelve siempre true.
+     * Pensado para reportes que iteran posiciones crudas (fuera del
+     * pipeline de History), como ObjectHistoryReport.
+     */
+    protected function isPositionInPeriod($position): bool
+    {
+        if ($this->periodShiftResolved === null) {
+            $from = $this->period_time_from
+                ? Formatter::time()->reverse($this->period_time_from, 'H:i:s')
+                : null;
+            $to = $this->period_time_to
+                ? Formatter::time()->reverse($this->period_time_to, 'H:i:s')
+                : null;
+
+            $this->periodShiftResolved = [
+                'from'     => $from ?: null,
+                'to'       => $to ?: null,
+                'passes'   => $from && $to && $from > $to,
+                'weekdays' => ! empty($this->period_weekdays)
+                    ? array_map('intval', (array) $this->period_weekdays)
+                    : null,
+            ];
+        }
+
+        $ps = $this->periodShiftResolved;
+
+        if ($ps['weekdays']) {
+            $day = (int) Formatter::date()->convert($position->time, 'N');
+            if (! in_array($day, $ps['weekdays'], true)) {
+                return false;
+            }
+        }
+
+        if ($ps['from'] && $ps['to']) {
+            $time = (new \DateTime($position->time))->format('H:i:s');
+            $in = $ps['passes']
+                ? ($time >= $ps['from'] || $time < $ps['to'])
+                : ($time >= $ps['from'] && $time < $ps['to']);
+            if (! $in) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public function getFormat()
     {
         return $this->format;
+    }
+
+    public function isViewable(): bool
+    {
+        return $this->viewable;
+    }
+
+    public function canViewInline(): bool
+    {
+        return $this->isViewable() && $this->format === 'html';
     }
 
     public function getDateFrom()
@@ -288,9 +392,19 @@ abstract class Report implements Arrayable
             'metas.*'           => Rule::in(array_keys(ReportManager::getMetaList($this->user))),
             'send_to_email'     => ['array_max:' . config('tobuli.limits.report_emails')],
             'send_to_email.*'   => 'email',
-            'date_from'         => 'required|date',
-            'date_to'           => 'required|date|after_or_equal:date_from',
         ];
+
+        if ($this->hasDateFrom()) {
+            $rules['date_from'] = 'required|date';
+        }
+
+        if ($this->hasDateTo()) {
+            $rules['date_to'] = 'required|date';
+
+            if ($this->hasDateFrom()) {
+                $rules['date_to'] .= '|after_or_equal:date_from';
+            }
+        }
 
         if (config('addon.report_send_to_ftp')) {
             $rules['send_to_ftp'] = 'url|starts_with:ftp,sftp';
@@ -372,13 +486,17 @@ abstract class Report implements Arrayable
 
     public function getFilename()
     {
-        $items = [
-            //$this::title(),
-            Str::snake(class_basename(get_class($this))),
-            Formatter::time()->convert($this->date_from),
-            Formatter::time()->convert($this->date_to),
-            time()
-        ];
+        $items = [Str::snake(class_basename(get_class($this)))];
+
+        if ($this->hasDateFrom()) {
+            $items[] = Formatter::time()->convert($this->date_from);
+        }
+
+        if ($this->hasDateTo()) {
+            $items[] = Formatter::time()->convert($this->date_to);
+        }
+
+        $items[] = time();
 
         $filename = implode('_', $items);
         $filename = mb_convert_encoding($filename, 'ASCII');
@@ -418,7 +536,23 @@ abstract class Report implements Arrayable
 
     public function toPDF()
     {
-        return PDF::loadView($this->getView(), ['report' => $this]);
+        $pdf = PDF::loadView($this->getView(), ['report' => $this]);
+
+        // Pie del PDF. Va por opciones de wkhtmltopdf y no por CSS porque es
+        // el motor el unico que sabe cuantas paginas hay: con contadores CSS
+        // no se puede poner "3 de 12".
+        try {
+            $pdf->setOption('footer-left', trans('global.date') . ': ' . \Formatter::time()->convert(now()))
+                ->setOption('footer-right', trans('front.page') . ' [page] / [topage]')
+                ->setOption('footer-font-size', 7)
+                ->setOption('footer-spacing', 4);
+        } catch (\Throwable $e) {
+            // Si el binario no admite estas opciones, el PDF sale igual pero
+            // sin pie: preferible a no generar el reporte.
+            report($e);
+        }
+
+        return $pdf;
     }
 
     public function toPDFLand()
@@ -588,7 +722,7 @@ abstract class Report implements Arrayable
             $address = $this->getGeofencesNames($position);
 
         if ($this->show_addresses && ! $address) {
-            $address = $this->geoLocation->resolveAddress($position->latitude, $position->longitude);
+            $address = $this->geoLocation->resolveAddressHandled($position->latitude, $position->longitude);
         }
 
         return $address ? htmlentities(removeEmoji($address)) : null;

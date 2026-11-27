@@ -178,6 +178,7 @@ return array(
         'frequency' => 'Fréquence',
         'unit' => 'Unité',
         'noreply_email' => 'Aucune adresse E-mail de réponse',
+        'reply_to_email' => 'E-mail de réponse (Reply-To)',
         'signature' => 'Signature',
         'use_smtp_server' => 'Utiliser un serveur SMTP',
         'smtp_server_host' => 'Serveur hôte SMTP',

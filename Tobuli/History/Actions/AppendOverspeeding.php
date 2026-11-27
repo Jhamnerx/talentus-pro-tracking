@@ -23,6 +23,7 @@ class AppendOverspeeding extends ActionAppend
             AppendSpeedLimitRoads::class,
             AppendSpeedLimitGeofence::class,
             AppendSpeedLimitGeofenceByPriority::class,
+            AppendSpeedLimitGeofenceOrStatic::class,
             AppendSpeedLimitGeofenceMulti::class,
         ];
     }

@@ -17,8 +17,24 @@ _ide_helper_models.php
 /storage/framework/*
 storage/framework/cache/*
 public/images/device_icons
+# Fotos subidas de los vehiculos: contenido de cada instalacion, no del codigo
+public/images/device_images
 public/images/deviceTypes
 public/images/logos
 public/serve_file.php
 public/webhook.php
 api_examples_json/
+# Salidas de Playwright y PDF generado del manual (se regenera desde el HTML)
+.playwright-mcp/
+docs/manual-pruebas/*.pdf
+
+# Claude Code: permisos locales por maquina (los enlaces de .claude/skills si se versionan)
+.claude/settings.local.json
+# Enlaces locales a .agents/skills (git en Windows los copiaba enteros; cada maquina los recrea con: npx skills add ...)
+.claude/skills/
+
+# Videos de /brag (Hyperframes)
+/brag/
+
+# Salidas de sesiones de Claude (pueden tener datos de clientes)
+/Claude outputs/

@@ -180,6 +180,7 @@ return array(
         'frequency' => 'Frecvență',
         'unit' => 'Unitate',
         'noreply_email' => 'Fară adresă de e-mail pt. răspuns',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Semnătură',
         'use_smtp_server' => 'Folositți server SMTP',
         'smtp_server_host' => 'Server SMTP',

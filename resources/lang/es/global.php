@@ -59,7 +59,7 @@ return [
     'longitude' => 'Longitud',
     'new' => 'Nuevo',
     'no' => 'No',
-    'not_found' => 'Extraviado',
+    'not_found' => 'No encontrado',
     'off' => 'Apagado',
     'offline' => 'Desconectado',
     'old' => 'Viejo',
@@ -109,4 +109,6 @@ return [
     'weekend' => 'Fin de semana',
     'workdays' => 'Días laborables',
     'yes' => 'Si',
+    'verified_email' => 'Correo verificado',
+    'verified_phone' => 'Telefono verificado',
 ];

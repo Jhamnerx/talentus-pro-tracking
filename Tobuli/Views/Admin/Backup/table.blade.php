@@ -7,6 +7,8 @@
             {!! tableHeaderSort($items->sorting, 'date') !!}
             {!! tableHeader('front.progress') !!}
             {!! tableHeader('front.completed') !!}
+            {!! tableHeader('backups.destinations') !!}
+            {!! tableHeader('backups.database_size') !!}
             {!! tableHeader('validation.attributes.message') !!}
             {!! tableHeader('admin.actions', 'style="text-align: right;"') !!}
         </tr>
@@ -37,8 +39,19 @@
                     </div>
                 </td>
                 <td>{{ $item->isCompleted() ? trans('global.yes') : trans('global.no') }}</td>
+                <td>
+                    @foreach (array_keys($item->destinations ?: []) as $destinationName)
+                        <div>{{ strtoupper($destinationName) }}: {{ trans('backups.status_' . $item->destinationStatus($destinationName)) }}</div>
+                    @endforeach
+                </td>
+                <td>{{ $item->database_bytes ? round($item->database_bytes / 1048576, 1) . ' MB' : '' }}</td>
                 <td>{{ $item->message }}</td>
                 <td class="actions">
+                    @if (settings('backups.drive_enabled') && !empty($item->destinations['drive']))
+                        {!! Form::open(['route' => ['admin.backup.protect', $item->id], 'method' => 'POST', 'style' => 'display:inline']) !!}
+                        {!! Form::submit(trans($item->protected ? 'backups.unprotect' : 'backups.protect'), ['class' => 'btn btn-xs btn-default']) !!}
+                        {!! Form::close() !!}
+                    @endif
                     <i class="btn icon ico-arrow-down"
                        type="button"
                        data-url="{{ route('admin.backup.processes', $item->id) }}"
@@ -48,11 +61,11 @@
                 </td>
             </tr>
             <tr class="row-table-inner">
-                <td colspan="7" id="backup-processes-{{ $item->id }}" aria-expanded="false" class="collapse"></td>
+                <td colspan="9" id="backup-processes-{{ $item->id }}" aria-expanded="false" class="collapse"></td>
             </tr>
         @empty
             <tr class="">
-                <td class="no-data" colspan="7">
+                <td class="no-data" colspan="9">
                     {!! trans('admin.no_data') !!}
                 </td>
             </tr>

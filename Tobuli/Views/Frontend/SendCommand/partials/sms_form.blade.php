@@ -15,7 +15,7 @@
                 'multiple' => 'multiple',
                 'data-live-search' => 'true',
                 'data-actions-box' => 'true',
-                'data-ajax' => $ajax_url ?? route('devices.index', ['type' => 'sms']),
+                'data-ajax' => $ajax_url ?? route('devices.index', ['type' => 'sms', 'grouped' => true]),
                 'data-selected' => $device_id ?? null
             ]) !!}
         @endif

@@ -1,0 +1,1868 @@
+<!doctype html>
+<html lang="es" data-theme="dark" data-density="comfortable">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TalentusPro · Design System Showcase</title>
+    <link rel="preconnect" href="https://rsms.me/" />
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css"
+    />
+    <link rel="stylesheet" href="./css/tokens.css" />
+    <link rel="stylesheet" href="./css/components.css" />
+    <style>
+      /* showcase-only styles */
+      .demo-section {
+        margin-bottom: var(--sp-12);
+      }
+      .demo-section__title {
+        font-size: var(--fs-lg);
+        font-weight: var(--fw-semibold);
+        margin-bottom: var(--sp-2);
+      }
+      .demo-section__desc {
+        color: var(--fg-tertiary);
+        margin-bottom: var(--sp-5);
+        font-size: var(--fs-sm);
+      }
+      .demo-swatch-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: var(--sp-3);
+      }
+      .demo-swatch {
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-md);
+        overflow: hidden;
+        background: var(--surface-raised);
+      }
+      .demo-swatch__color {
+        height: 56px;
+      }
+      .demo-swatch__meta {
+        padding: var(--sp-2) var(--sp-3);
+        font-family: var(--font-mono);
+        font-size: var(--fs-xs);
+      }
+      .demo-swatch__name {
+        color: var(--fg-primary);
+        font-weight: var(--fw-semibold);
+      }
+      .demo-swatch__val {
+        color: var(--fg-tertiary);
+      }
+
+      .demo-anchor {
+        color: var(--fg-tertiary);
+        text-decoration: none;
+        font-size: var(--fs-sm);
+        padding: 6px 10px;
+        border-radius: var(--r-sm);
+        display: block;
+      }
+      .demo-anchor:hover {
+        background: var(--surface-sunken);
+        color: var(--fg-primary);
+      }
+      .demo-anchor.active {
+        background: var(--brand-bg-muted);
+        color: var(--brand-700);
+        font-weight: var(--fw-medium);
+      }
+      [data-theme="dark"] .demo-anchor.active {
+        color: var(--brand-300);
+      }
+
+      .demo-toc {
+        position: sticky;
+        top: var(--sp-4);
+      }
+      .demo-layout {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: var(--sp-8);
+        align-items: start;
+      }
+      @media (max-width: 1023px) {
+        .demo-layout {
+          grid-template-columns: 1fr;
+        }
+        .demo-toc {
+          display: none;
+        }
+      }
+
+      /* Mini live ops simulation */
+      .demo-liveops {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 0;
+        height: 520px;
+        border-radius: var(--r-lg);
+        overflow: hidden;
+        border: 1px solid var(--border-subtle);
+        background: var(--surface-raised);
+      }
+      .demo-liveops__list {
+        background: var(--surface-raised);
+        border-right: 1px solid var(--border-subtle);
+        overflow: auto;
+      }
+      .demo-liveops__head {
+        padding: var(--sp-4);
+        border-bottom: 1px solid var(--border-subtle);
+        position: sticky;
+        top: 0;
+        background: var(--surface-raised);
+        z-index: 2;
+      }
+      .demo-unit {
+        display: flex;
+        gap: var(--sp-3);
+        padding: var(--sp-3) var(--sp-4);
+        border-bottom: 1px solid var(--border-subtle);
+        cursor: pointer;
+        transition: background var(--dur-fast) var(--ease-out);
+      }
+      .demo-unit:hover {
+        background: var(--surface-sunken);
+      }
+      .demo-unit.active {
+        background: var(--brand-bg-subtle);
+      }
+      .demo-unit__icon {
+        width: 32px;
+        height: 32px;
+        border-radius: var(--r-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--brand-bg-muted);
+        color: var(--brand-700);
+      }
+      [data-theme="dark"] .demo-unit__icon {
+        color: var(--brand-300);
+      }
+      .demo-unit__main {
+        flex: 1;
+        min-width: 0;
+      }
+      .demo-unit__title {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        font-weight: var(--fw-semibold);
+        font-size: var(--fs-md);
+      }
+      .demo-unit__sub {
+        color: var(--fg-tertiary);
+        font-size: var(--fs-xs);
+        margin-top: 2px;
+      }
+      .demo-unit__metric {
+        font-family: var(--font-mono);
+        font-size: var(--fs-xs);
+        color: var(--fg-secondary);
+      }
+
+      .demo-map {
+        background:
+          radial-gradient(
+            ellipse at 30% 40%,
+            rgba(46, 99, 217, 0.15),
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse at 70% 60%,
+            rgba(16, 185, 129, 0.1),
+            transparent 60%
+          ),
+          var(--map-bg);
+        position: relative;
+        background-size: cover;
+      }
+      .demo-map__grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+      [data-theme="light"] .demo-map__grid {
+        background-image:
+          linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+      }
+      .demo-marker {
+        position: absolute;
+        width: 28px;
+        height: 28px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-md);
+        border: 2px solid #fff;
+      }
+      .demo-marker--moving {
+        background: var(--status-moving);
+      }
+      .demo-marker--idle {
+        background: var(--status-idle);
+      }
+      .demo-marker--alert {
+        background: var(--status-alert);
+        animation: tp-pulse 1.4s ease-in-out infinite;
+      }
+      .demo-map__controls {
+        position: absolute;
+        top: var(--sp-3);
+        right: var(--sp-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+      }
+      .demo-map__ticker {
+        position: absolute;
+        top: var(--sp-3);
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: var(--sp-2);
+        max-width: calc(100% - 120px);
+        overflow: hidden;
+      }
+      .demo-map__search {
+        position: absolute;
+        top: var(--sp-3);
+        left: var(--sp-3);
+        width: 240px;
+      }
+
+      .demo-tile {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--r-md);
+      }
+
+      /* Sparkline */
+      .demo-spark {
+        stroke: var(--brand-500);
+        stroke-width: 2;
+        fill: none;
+      }
+      .demo-spark--up {
+        stroke: var(--success-500);
+      }
+      .demo-spark--down {
+        stroke: var(--danger-500);
+      }
+
+      /* Theme toggle floating */
+      .demo-theme-toggle {
+        position: fixed;
+        bottom: var(--sp-5);
+        right: var(--sp-5);
+        z-index: var(--z-toast);
+        display: flex;
+        gap: var(--sp-2);
+        padding: var(--sp-2);
+        background: var(--surface-raised);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--r-pill);
+        box-shadow: var(--shadow-lg);
+      }
+    </style>
+  </head>
+  <body class="tp-scope">
+    <!-- ============================================================ -->
+    <!-- SHELL                                                          -->
+    <!-- ============================================================ -->
+    <div class="tp-app">
+      <!-- RAIL -->
+      <aside class="tp-rail" aria-label="Navegación principal">
+        <div class="tp-rail__logo">T</div>
+
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          aria-current="page"
+          data-tooltip="Live Ops"
+          aria-label="Live Ops"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        </button>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="Command Center"
+          aria-label="Dashboard"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="3" width="7" height="9" />
+            <rect x="14" y="3" width="7" height="5" />
+            <rect x="14" y="12" width="7" height="9" />
+            <rect x="3" y="16" width="7" height="5" />
+          </svg>
+        </button>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="Fleet"
+          aria-label="Flota"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M10 17h4V5H2v12h3" />
+            <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5" />
+            <circle cx="7.5" cy="17.5" r="2.5" />
+            <circle cx="17.5" cy="17.5" r="2.5" />
+          </svg>
+        </button>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="Zones & Routes"
+          aria-label="Geocercas"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l8.84 8.84 8.84-8.84a5.5 5.5 0 0 0 0-7.78z"
+            />
+          </svg>
+        </button>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="Alerts"
+          aria-label="Alertas"
+          style="position: relative"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span
+            class="tp-badge"
+            style="position: absolute; top: 4px; right: 4px"
+            >3</span
+          >
+        </button>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="History"
+          aria-label="Historial"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+            <path d="M12 7v5l4 2" />
+          </svg>
+        </button>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="Reports"
+          aria-label="Reportes"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+            />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+        </button>
+        <div class="tp-rail__spacer"></div>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="Co-Pilot IA"
+          aria-label="Co-Pilot"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 2l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" />
+          </svg>
+        </button>
+        <button
+          class="tp-rail__item tp-has-tooltip"
+          data-tooltip="Admin"
+          aria-label="Admin"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+            />
+          </svg>
+        </button>
+      </aside>
+
+      <!-- TOPBAR -->
+      <header class="tp-topbar">
+        <div class="tp-topbar__brand">
+          <span style="font-size: var(--fs-md)">TalentusPro</span>
+          <span class="tp-chip tp-chip--brand">Design System v1.0</span>
+        </div>
+
+        <div class="tp-topbar__search">
+          <div class="tp-input-wrap">
+            <span class="tp-input-wrap__icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </span>
+            <input
+              class="tp-input"
+              type="text"
+              placeholder="Buscar vehículo, conductor, geocerca, comando…"
+            />
+            <span class="tp-topbar__kbd">⌘K</span>
+          </div>
+        </div>
+
+        <div class="tp-topbar__spacer"></div>
+
+        <div class="tp-topbar__status">
+          <span class="tp-dot tp-dot--moving"></span>
+          <span>142 live · 18 idle · 3 offline</span>
+        </div>
+
+        <button
+          class="tp-btn tp-btn--ghost tp-btn--icon tp-has-tooltip"
+          data-tooltip="Notificaciones"
+          style="position: relative"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          <span
+            class="tp-badge"
+            style="position: absolute; top: 4px; right: 4px"
+            >7</span
+          >
+        </button>
+
+        <div class="tp-avatar">JM</div>
+      </header>
+
+      <!-- WORKSPACE -->
+      <main class="tp-workspace">
+        <div class="demo-layout">
+          <!-- TOC -->
+          <nav class="demo-toc" aria-label="Secciones del showcase">
+            <div class="tp-text-overline" style="padding: 6px 10px">
+              Showcase
+            </div>
+            <a href="#hero" class="demo-anchor active">Resumen</a>
+            <a href="#liveops" class="demo-anchor">Live Ops preview</a>
+            <a href="#kpis" class="demo-anchor">KPI cards</a>
+            <a href="#colors" class="demo-anchor">Colores</a>
+            <a href="#typography" class="demo-anchor">Tipografía</a>
+            <a href="#buttons" class="demo-anchor">Botones</a>
+            <a href="#forms" class="demo-anchor">Formularios</a>
+            <a href="#chips" class="demo-anchor">Chips & badges</a>
+            <a href="#alerts" class="demo-anchor">Alertas</a>
+            <a href="#cards" class="demo-anchor">Cards</a>
+            <a href="#table" class="demo-anchor">Tablas</a>
+            <a href="#tabs" class="demo-anchor">Tabs</a>
+          </nav>
+
+          <div>
+            <!-- HERO -->
+            <section id="hero" class="demo-section">
+              <h1 class="tp-h1">Design System · v1.0</h1>
+              <p
+                class="tp-text-secondary tp-mt-2"
+                style="font-size: var(--fs-lg); max-width: 680px"
+              >
+                Fundación visual del rediseño
+                <strong>Modern Enterprise Command Center</strong>. Tokens
+                unificados, dark/light mode, densidad ajustable, y componentes
+                accesibles listos para Live Ops, Dashboard y módulos de gestión.
+              </p>
+
+              <div class="tp-row tp-mt-6" style="flex-wrap: wrap">
+                <button class="tp-btn tp-btn--primary">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                  Comenzar integración
+                </button>
+                <button class="tp-btn tp-btn--secondary">
+                  Ver documentación
+                </button>
+                <span class="tp-chip tp-chip--success"
+                  ><span class="tp-dot tp-dot--moving"></span> Fase 0
+                  lista</span
+                >
+                <span class="tp-chip">Fase 1 · próxima</span>
+              </div>
+            </section>
+
+            <!-- LIVE OPS PREVIEW -->
+            <section id="liveops" class="demo-section">
+              <h2 class="demo-section__title">Live Ops · vista previa</h2>
+              <p class="demo-section__desc">
+                Composición real de los componentes en el módulo principal de
+                tracking.
+              </p>
+
+              <div class="demo-liveops">
+                <!-- list -->
+                <aside class="demo-liveops__list">
+                  <div class="demo-liveops__head tp-stack-sm">
+                    <div class="tp-row tp-row-between">
+                      <strong class="tp-h6"
+                        >Unidades <span class="tp-text-muted">163</span></strong
+                      >
+                      <button
+                        class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm"
+                        aria-label="Más"
+                      >
+                        ⋯
+                      </button>
+                    </div>
+                    <div class="tp-segmented">
+                      <button class="tp-segmented__item" aria-selected="true">
+                        Todas
+                      </button>
+                      <button class="tp-segmented__item">Activas</button>
+                      <button class="tp-segmented__item">Idle</button>
+                      <button class="tp-segmented__item">Off</button>
+                    </div>
+                    <div class="tp-input-wrap">
+                      <span class="tp-input-wrap__icon"
+                        ><svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.35-4.35" /></svg
+                      ></span>
+                      <input
+                        class="tp-input tp-btn--sm"
+                        style="height: 32px"
+                        placeholder="Filtrar por placa, conductor…"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="demo-unit active">
+                    <div class="demo-unit__icon">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M10 17h4V5H2v12h3" />
+                        <circle cx="7.5" cy="17.5" r="2.5" />
+                        <circle cx="17.5" cy="17.5" r="2.5" />
+                      </svg>
+                    </div>
+                    <div class="demo-unit__main">
+                      <div class="demo-unit__title">
+                        <span class="tp-dot tp-dot--moving"></span> ABC-123
+                        <span class="tp-text-muted" style="font-weight: 400"
+                          >Volvo FH16</span
+                        >
+                      </div>
+                      <div class="demo-unit__sub">
+                        Juan Pérez ·
+                        <span class="demo-unit__metric">72 km/h N</span>
+                      </div>
+                      <div class="demo-unit__sub">
+                        📍 Av. Javier Prado · hace 4s
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="demo-unit">
+                    <div class="demo-unit__icon">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M10 17h4V5H2v12h3" />
+                        <circle cx="7.5" cy="17.5" r="2.5" />
+                        <circle cx="17.5" cy="17.5" r="2.5" />
+                      </svg>
+                    </div>
+                    <div class="demo-unit__main">
+                      <div class="demo-unit__title">
+                        <span class="tp-dot tp-dot--idle"></span> XYZ-456
+                        <span class="tp-text-muted" style="font-weight: 400"
+                          >Hino 500</span
+                        >
+                      </div>
+                      <div class="demo-unit__sub">
+                        Carlos Méndez ·
+                        <span class="demo-unit__metric">idle 14m</span>
+                      </div>
+                      <div class="demo-unit__sub">
+                        📍 Terminal Callao · hace 22s
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="demo-unit">
+                    <div class="demo-unit__icon">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M10 17h4V5H2v12h3" />
+                        <circle cx="7.5" cy="17.5" r="2.5" />
+                        <circle cx="17.5" cy="17.5" r="2.5" />
+                      </svg>
+                    </div>
+                    <div class="demo-unit__main">
+                      <div class="demo-unit__title">
+                        <span class="tp-dot tp-dot--sos"></span> DEF-789
+                        <span
+                          class="tp-chip tp-chip--danger tp-chip--sm"
+                          style="margin-left: 6px"
+                          >SOS</span
+                        >
+                      </div>
+                      <div class="demo-unit__sub">
+                        María López ·
+                        <span class="demo-unit__metric">0 km/h</span>
+                      </div>
+                      <div
+                        class="demo-unit__sub"
+                        style="color: var(--danger-500)"
+                      >
+                        ⚠ Botón SOS activado · hace 1m 12s
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="demo-unit">
+                    <div class="demo-unit__icon">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M10 17h4V5H2v12h3" />
+                        <circle cx="7.5" cy="17.5" r="2.5" />
+                        <circle cx="17.5" cy="17.5" r="2.5" />
+                      </svg>
+                    </div>
+                    <div class="demo-unit__main">
+                      <div class="demo-unit__title">
+                        <span class="tp-dot tp-dot--offline"></span> GHI-012
+                        <span class="tp-text-muted" style="font-weight: 400"
+                          >Scania R450</span
+                        >
+                      </div>
+                      <div class="demo-unit__sub">Sin conductor</div>
+                      <div class="demo-unit__sub">
+                        📍 Última señal hace 2h 14m
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="demo-unit">
+                    <div class="demo-unit__icon">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <path d="M10 17h4V5H2v12h3" />
+                        <circle cx="7.5" cy="17.5" r="2.5" />
+                        <circle cx="17.5" cy="17.5" r="2.5" />
+                      </svg>
+                    </div>
+                    <div class="demo-unit__main">
+                      <div class="demo-unit__title">
+                        <span class="tp-dot tp-dot--moving"></span> JKL-345
+                        <span class="tp-text-muted" style="font-weight: 400"
+                          >Mercedes Actros</span
+                        >
+                      </div>
+                      <div class="demo-unit__sub">
+                        Roberto Silva ·
+                        <span class="demo-unit__metric">58 km/h SE</span>
+                      </div>
+                      <div class="demo-unit__sub">
+                        📍 Panamericana Sur · hace 6s
+                      </div>
+                    </div>
+                  </div>
+                </aside>
+
+                <!-- map -->
+                <div class="demo-map">
+                  <div class="demo-map__grid"></div>
+
+                  <div class="demo-map__search tp-glass" style="padding: 6px">
+                    <div class="tp-input-wrap">
+                      <span class="tp-input-wrap__icon"
+                        ><svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.35-4.35" /></svg
+                      ></span>
+                      <input
+                        class="tp-input"
+                        style="height: 30px; background: transparent; border: 0"
+                        placeholder="Buscar en el mapa…"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="demo-map__ticker">
+                    <span class="tp-chip tp-chip--danger tp-chip--lg"
+                      ><span class="tp-dot tp-dot--sos"></span> SOS ·
+                      DEF-789</span
+                    >
+                    <span class="tp-chip tp-chip--warning tp-chip--lg"
+                      >⚠ Exceso velocidad · ABC-123</span
+                    >
+                    <span class="tp-chip tp-chip--info tp-chip--lg"
+                      >⏱ Idle prolongado · XYZ-456</span
+                    >
+                  </div>
+
+                  <div class="demo-map__controls">
+                    <button
+                      class="tp-btn tp-btn--secondary tp-btn--icon tp-glass tp-has-tooltip"
+                      data-tooltip="Capas"
+                      style="border: 0"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                        <polyline points="2 17 12 22 22 17" />
+                        <polyline points="2 12 12 17 22 12" />
+                      </svg>
+                    </button>
+                    <button
+                      class="tp-btn tp-btn--secondary tp-btn--icon tp-glass tp-has-tooltip"
+                      data-tooltip="Localizar"
+                      style="border: 0"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="2" y1="12" x2="22" y2="12" />
+                        <path
+                          d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+                        />
+                      </svg>
+                    </button>
+                    <div
+                      class="tp-glass"
+                      style="display: flex; flex-direction: column"
+                    >
+                      <button
+                        class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm"
+                        style="border: 0"
+                      >
+                        +
+                      </button>
+                      <hr class="tp-divider" />
+                      <button
+                        class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm"
+                        style="border: 0"
+                      >
+                        −
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- markers -->
+                  <div
+                    class="demo-marker demo-marker--moving"
+                    style="top: 38%; left: 28%"
+                  ></div>
+                  <div
+                    class="demo-marker demo-marker--moving"
+                    style="top: 55%; left: 62%"
+                  ></div>
+                  <div
+                    class="demo-marker demo-marker--idle"
+                    style="top: 30%; left: 70%"
+                  ></div>
+                  <div
+                    class="demo-marker demo-marker--alert"
+                    style="top: 62%; left: 40%"
+                  ></div>
+                  <div
+                    class="demo-marker demo-marker--moving"
+                    style="top: 48%; left: 50%"
+                  ></div>
+                </div>
+              </div>
+            </section>
+
+            <!-- KPIs -->
+            <section id="kpis" class="demo-section">
+              <h2 class="demo-section__title">KPI Cards</h2>
+              <p class="demo-section__desc">
+                Tarjetas hero del Command Center. Número monoespaciado, delta
+                semántico, sparkline opcional.
+              </p>
+
+              <div class="tp-grid tp-grid-6">
+                <div class="tp-kpi">
+                  <div class="tp-kpi__label">Vehículos live</div>
+                  <div class="tp-kpi__value">142</div>
+                  <div class="tp-kpi__delta tp-kpi__delta--up">
+                    ▲ 4% vs ayer
+                  </div>
+                  <svg
+                    class="tp-kpi__spark"
+                    viewBox="0 0 80 28"
+                    preserveAspectRatio="none"
+                  >
+                    <polyline
+                      class="demo-spark demo-spark--up"
+                      points="0,20 10,18 20,22 30,15 40,17 50,10 60,12 70,6 80,8"
+                    />
+                  </svg>
+                </div>
+                <div class="tp-kpi">
+                  <div class="tp-kpi__label">Idle</div>
+                  <div class="tp-kpi__value">18</div>
+                  <div class="tp-kpi__delta tp-kpi__delta--down">▼ 2%</div>
+                  <svg
+                    class="tp-kpi__spark"
+                    viewBox="0 0 80 28"
+                    preserveAspectRatio="none"
+                  >
+                    <polyline
+                      class="demo-spark demo-spark--down"
+                      points="0,8 10,12 20,10 30,16 40,14 50,18 60,20 70,22 80,21"
+                    />
+                  </svg>
+                </div>
+                <div class="tp-kpi">
+                  <div class="tp-kpi__label">Offline</div>
+                  <div class="tp-kpi__value">3</div>
+                  <div class="tp-kpi__delta tp-kpi__delta--flat">
+                    = sin cambio
+                  </div>
+                  <svg
+                    class="tp-kpi__spark"
+                    viewBox="0 0 80 28"
+                    preserveAspectRatio="none"
+                  >
+                    <polyline
+                      class="demo-spark"
+                      points="0,14 10,14 20,15 30,14 40,14 50,14 60,15 70,14 80,14"
+                      style="stroke: var(--neutral-400)"
+                    />
+                  </svg>
+                </div>
+                <div class="tp-kpi">
+                  <div class="tp-kpi__label">Alertas críticas</div>
+                  <div class="tp-kpi__value" style="color: var(--danger-500)">
+                    7
+                  </div>
+                  <div class="tp-kpi__delta tp-kpi__delta--down">▲ 1 nueva</div>
+                  <svg
+                    class="tp-kpi__spark"
+                    viewBox="0 0 80 28"
+                    preserveAspectRatio="none"
+                  >
+                    <polyline
+                      class="demo-spark"
+                      points="0,22 10,20 20,18 30,16 40,15 50,12 60,10 70,6 80,4"
+                      style="stroke: var(--danger-500)"
+                    />
+                  </svg>
+                </div>
+                <div class="tp-kpi">
+                  <div class="tp-kpi__label">Distancia hoy</div>
+                  <div class="tp-kpi__value">8,420</div>
+                  <div class="tp-kpi__delta tp-kpi__delta--up">km · ▲ 12%</div>
+                </div>
+                <div class="tp-kpi">
+                  <div class="tp-kpi__label">SOS activos</div>
+                  <div class="tp-kpi__value">1</div>
+                  <div
+                    class="tp-kpi__delta tp-kpi__delta--down"
+                    style="color: var(--critical-500)"
+                  >
+                    ⚠ DEF-789
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- COLORS -->
+            <section id="colors" class="demo-section">
+              <h2 class="demo-section__title">Sistema de color</h2>
+              <p class="demo-section__desc">
+                Base de marca + neutros + semánticos + estados operacionales del
+                mapa.
+              </p>
+
+              <h3 class="tp-h6 tp-mb-2 tp-mt-4">Brand</h3>
+              <div class="demo-swatch-grid">
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--brand-900)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">brand-900</div>
+                    <div class="demo-swatch__val">#060B34</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--brand-800)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">brand-800</div>
+                    <div class="demo-swatch__val">#0E2157</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--brand-700)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">brand-700</div>
+                    <div class="demo-swatch__val">#122F71</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--brand-600)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">brand-600</div>
+                    <div class="demo-swatch__val">#1B43A3</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--brand-500)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">brand-500</div>
+                    <div class="demo-swatch__val">#2E63D9</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--brand-400)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">brand-400</div>
+                    <div class="demo-swatch__val">#5C87E8</div>
+                  </div>
+                </div>
+              </div>
+
+              <h3 class="tp-h6 tp-mb-2 tp-mt-6">Neutral</h3>
+              <div class="demo-swatch-grid">
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--neutral-900)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">neutral-900</div>
+                    <div class="demo-swatch__val">#0D1018</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--neutral-700)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">neutral-700</div>
+                    <div class="demo-swatch__val">#2C3340</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--neutral-500)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">neutral-500</div>
+                    <div class="demo-swatch__val">#6B7280</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--neutral-400)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">neutral-400 ★</div>
+                    <div class="demo-swatch__val">#898989</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--neutral-200)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">neutral-200</div>
+                    <div class="demo-swatch__val">#DFE3EB</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="
+                      background: var(--neutral-50);
+                      border: 1px solid var(--border-subtle);
+                    "
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">neutral-50</div>
+                    <div class="demo-swatch__val">#F7F8FB</div>
+                  </div>
+                </div>
+              </div>
+
+              <h3 class="tp-h6 tp-mb-2 tp-mt-6">Semantic</h3>
+              <div class="demo-swatch-grid">
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--success-500)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">success</div>
+                    <div class="demo-swatch__val">#10B981</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--warning-500)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">warning</div>
+                    <div class="demo-swatch__val">#F59E0B</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--danger-500)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">danger</div>
+                    <div class="demo-swatch__val">#EF4444</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--critical-500)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">critical</div>
+                    <div class="demo-swatch__val">#B91C1C</div>
+                  </div>
+                </div>
+                <div class="demo-swatch">
+                  <div
+                    class="demo-swatch__color"
+                    style="background: var(--info-500)"
+                  ></div>
+                  <div class="demo-swatch__meta">
+                    <div class="demo-swatch__name">info</div>
+                    <div class="demo-swatch__val">#2E63D9</div>
+                  </div>
+                </div>
+              </div>
+
+              <h3 class="tp-h6 tp-mb-2 tp-mt-6">Operational status (mapa)</h3>
+              <div class="tp-row" style="flex-wrap: wrap">
+                <span class="tp-chip"
+                  ><span class="tp-dot tp-dot--moving"></span> Moving</span
+                >
+                <span class="tp-chip"
+                  ><span class="tp-dot tp-dot--idle"></span> Idle</span
+                >
+                <span class="tp-chip"
+                  ><span class="tp-dot tp-dot--stopped"></span> Stopped</span
+                >
+                <span class="tp-chip"
+                  ><span class="tp-dot tp-dot--offline"></span> Offline</span
+                >
+                <span class="tp-chip"
+                  ><span class="tp-dot tp-dot--alert"></span> Alert</span
+                >
+                <span class="tp-chip"
+                  ><span class="tp-dot tp-dot--sos"></span> SOS (pulsing)</span
+                >
+              </div>
+            </section>
+
+            <!-- TYPOGRAPHY -->
+            <section id="typography" class="demo-section">
+              <h2 class="demo-section__title">Tipografía</h2>
+              <p class="demo-section__desc">
+                Inter para UI · JetBrains Mono para métricas, IDs, coordenadas.
+              </p>
+              <div class="tp-card tp-stack">
+                <div>
+                  <div class="tp-text-overline">Display · 36</div>
+                  <div class="tp-h1">Command Center</div>
+                </div>
+                <div>
+                  <div class="tp-text-overline">H2 · 28</div>
+                  <div class="tp-h2">Operaciones en tiempo real</div>
+                </div>
+                <div>
+                  <div class="tp-text-overline">H3 · 22</div>
+                  <div class="tp-h3">Resumen ejecutivo</div>
+                </div>
+                <div>
+                  <div class="tp-text-overline">H5 · 16</div>
+                  <div class="tp-h5">Conductor asignado</div>
+                </div>
+                <div>
+                  <div class="tp-text-overline">Body · 13 (base)</div>
+                  <div>
+                    The quick brown fox jumps over the lazy dog · 1234567890
+                  </div>
+                </div>
+                <div>
+                  <div class="tp-text-overline">Mono · 13</div>
+                  <div class="tp-text-mono">
+                    ABC-123 · 72 km/h · -12.0464°, -77.0428° · 14:32:18
+                  </div>
+                </div>
+                <div>
+                  <div class="tp-text-overline">Muted small</div>
+                  <div class="tp-text-sm tp-text-muted">
+                    Última actualización hace 4 segundos
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- BUTTONS -->
+            <section id="buttons" class="demo-section">
+              <h2 class="demo-section__title">Botones</h2>
+              <p class="demo-section__desc">Variantes, tamaños y estados.</p>
+              <div class="tp-card">
+                <div class="tp-row" style="flex-wrap: wrap">
+                  <button class="tp-btn tp-btn--primary">Primary</button>
+                  <button class="tp-btn tp-btn--secondary">Secondary</button>
+                  <button class="tp-btn tp-btn--ghost">Ghost</button>
+                  <button class="tp-btn tp-btn--success">Success</button>
+                  <button class="tp-btn tp-btn--danger">Cortar motor</button>
+                  <button class="tp-btn tp-btn--critical">Confirmar SOS</button>
+                  <button class="tp-btn tp-btn--primary" disabled>
+                    Disabled
+                  </button>
+                </div>
+                <hr class="tp-divider tp-mt-4 tp-mb-4" />
+                <div class="tp-row" style="flex-wrap: wrap">
+                  <button class="tp-btn tp-btn--primary tp-btn--sm">
+                    Small
+                  </button>
+                  <button class="tp-btn tp-btn--primary">Default</button>
+                  <button class="tp-btn tp-btn--primary tp-btn--lg">
+                    Large
+                  </button>
+                  <button
+                    class="tp-btn tp-btn--secondary tp-btn--icon"
+                    aria-label="settings"
+                  >
+                    ⚙
+                  </button>
+                  <div class="tp-btn-group">
+                    <button class="tp-btn tp-btn--secondary">Día</button>
+                    <button class="tp-btn tp-btn--secondary">Semana</button>
+                    <button class="tp-btn tp-btn--secondary">Mes</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- FORMS -->
+            <section id="forms" class="demo-section">
+              <h2 class="demo-section__title">Formularios</h2>
+              <div class="tp-card">
+                <div class="tp-grid tp-grid-2">
+                  <div class="tp-field">
+                    <label class="tp-label">Placa</label>
+                    <input
+                      class="tp-input"
+                      placeholder="ABC-123"
+                      value="ABC-123"
+                    />
+                    <span class="tp-hint">Formato: 3 letras + 3 dígitos</span>
+                  </div>
+                  <div class="tp-field">
+                    <label class="tp-label">Conductor</label>
+                    <div class="tp-input-wrap">
+                      <span class="tp-input-wrap__icon"
+                        ><svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <circle cx="11" cy="11" r="8" />
+                          <path d="m21 21-4.35-4.35" /></svg
+                      ></span>
+                      <input class="tp-input" placeholder="Buscar conductor…" />
+                    </div>
+                  </div>
+                  <div class="tp-field">
+                    <label class="tp-label">Grupo</label>
+                    <select class="tp-select">
+                      <option>Lima Norte</option>
+                      <option>Lima Sur</option>
+                      <option>Callao</option>
+                    </select>
+                  </div>
+                  <div class="tp-field">
+                    <label class="tp-label">Velocidad máxima</label>
+                    <input class="tp-input" value="abc" aria-invalid="true" />
+                    <span class="tp-error"
+                      >Debe ser un número entre 0 y 200</span
+                    >
+                  </div>
+                  <div class="tp-field" style="grid-column: 1 / -1">
+                    <label class="tp-label">Notas</label>
+                    <textarea
+                      class="tp-textarea"
+                      placeholder="Observaciones…"
+                    ></textarea>
+                  </div>
+                  <div class="tp-row">
+                    <label class="tp-switch"
+                      ><input type="checkbox" checked /><span
+                        class="tp-switch__slider"
+                      ></span
+                    ></label>
+                    <span>Notificar al supervisor por SMS</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- CHIPS / BADGES -->
+            <section id="chips" class="demo-section">
+              <h2 class="demo-section__title">Chips & Badges</h2>
+              <div class="tp-card">
+                <div class="tp-row" style="flex-wrap: wrap">
+                  <span class="tp-chip">Default</span>
+                  <span class="tp-chip tp-chip--brand">Brand</span>
+                  <span class="tp-chip tp-chip--success">Activo</span>
+                  <span class="tp-chip tp-chip--warning">En ruta</span>
+                  <span class="tp-chip tp-chip--danger">Crítico</span>
+                  <span class="tp-chip tp-chip--info">MININTER</span>
+                  <span class="tp-chip tp-chip--solid">Solid</span>
+                  <span class="tp-chip tp-chip--sm">SM</span>
+                  <span class="tp-chip tp-chip--lg">LG</span>
+                </div>
+                <hr class="tp-divider tp-mt-4 tp-mb-4" />
+                <div class="tp-row">
+                  <span style="position: relative; display: inline-block">
+                    <button class="tp-btn tp-btn--secondary">
+                      Alertas
+                      <span class="tp-badge" style="margin-left: 6px">12</span>
+                    </button>
+                  </span>
+                  <span class="tp-badge tp-badge--brand">NEW</span>
+                  <span class="tp-badge tp-badge--neutral">DRAFT</span>
+                </div>
+              </div>
+            </section>
+
+            <!-- ALERTS -->
+            <section id="alerts" class="demo-section">
+              <h2 class="demo-section__title">Alert banners</h2>
+              <div class="tp-stack">
+                <div class="tp-alert tp-alert--info">
+                  <div class="tp-alert__icon">ℹ</div>
+                  <div class="tp-alert__body">
+                    <div class="tp-alert__title">
+                      Nueva actualización disponible
+                    </div>
+                    <div class="tp-alert__desc">
+                      Versión 2026.06 lista para instalar.
+                    </div>
+                  </div>
+                </div>
+                <div class="tp-alert tp-alert--success">
+                  <div class="tp-alert__icon">✓</div>
+                  <div class="tp-alert__body">
+                    <div class="tp-alert__title">Reporte generado</div>
+                    <div class="tp-alert__desc">
+                      Reporte de viajes Mayo 2026 listo para descarga.
+                    </div>
+                  </div>
+                </div>
+                <div class="tp-alert tp-alert--warning">
+                  <div class="tp-alert__icon">⚠</div>
+                  <div class="tp-alert__body">
+                    <div class="tp-alert__title">
+                      Exceso de velocidad detectado
+                    </div>
+                    <div class="tp-alert__desc">
+                      ABC-123 superó 90 km/h en zona urbana.
+                    </div>
+                  </div>
+                </div>
+                <div class="tp-alert tp-alert--danger">
+                  <div class="tp-alert__icon">✕</div>
+                  <div class="tp-alert__body">
+                    <div class="tp-alert__title">
+                      Desconexión GPS prolongada
+                    </div>
+                    <div class="tp-alert__desc">
+                      JKL-345 sin señal hace 2h 14m.
+                    </div>
+                  </div>
+                </div>
+                <div class="tp-alert tp-alert--critical">
+                  <div class="tp-alert__icon">🚨</div>
+                  <div class="tp-alert__body">
+                    <div class="tp-alert__title">SOS ACTIVADO · DEF-789</div>
+                    <div class="tp-alert__desc">
+                      Conductor María López · Av. Javier Prado 1234. Acción
+                      inmediata requerida.
+                    </div>
+                  </div>
+                  <button
+                    class="tp-btn tp-btn--sm"
+                    style="
+                      background: rgba(255, 255, 255, 0.2);
+                      color: #fff;
+                      border-color: transparent;
+                    "
+                  >
+                    Atender
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- CARDS -->
+            <section id="cards" class="demo-section">
+              <h2 class="demo-section__title">Cards</h2>
+              <div class="tp-grid tp-grid-3">
+                <div class="tp-card">
+                  <div class="tp-card__header">
+                    <span class="tp-card__title">Telemetría</span>
+                    <span class="tp-chip tp-chip--success tp-chip--sm"
+                      >Live</span
+                    >
+                  </div>
+                  <div class="tp-stack-sm">
+                    <div class="tp-row tp-row-between">
+                      <span class="tp-text-muted">Velocidad</span
+                      ><span class="tp-text-mono">72 km/h</span>
+                    </div>
+                    <div class="tp-row tp-row-between">
+                      <span class="tp-text-muted">RPM</span
+                      ><span class="tp-text-mono">1,840</span>
+                    </div>
+                    <div class="tp-row tp-row-between">
+                      <span class="tp-text-muted">Combustible</span
+                      ><span class="tp-text-mono">68%</span>
+                    </div>
+                    <div class="tp-row tp-row-between">
+                      <span class="tp-text-muted">Temp motor</span
+                      ><span class="tp-text-mono">87 °C</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tp-card tp-card--elevated">
+                  <div class="tp-card__header">
+                    <span class="tp-card__title">Conductor</span>
+                  </div>
+                  <div class="tp-row">
+                    <div class="tp-avatar tp-avatar--lg">JP</div>
+                    <div>
+                      <div class="tp-text-strong">Juan Pérez</div>
+                      <div class="tp-text-sm tp-text-muted">
+                        Lic. A-IIIc · 8 años
+                      </div>
+                    </div>
+                  </div>
+                  <div class="tp-card__footer">
+                    <div class="tp-row tp-row-between">
+                      <span class="tp-text-sm tp-text-muted">Driver score</span>
+                      <span class="tp-chip tp-chip--success">87 / 100</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tp-card tp-card--interactive">
+                  <div class="tp-card__header">
+                    <span class="tp-card__title">Acciones rápidas</span>
+                  </div>
+                  <div class="tp-stack-sm">
+                    <button
+                      class="tp-btn tp-btn--secondary tp-btn--block"
+                      style="justify-content: flex-start"
+                    >
+                      📍 Centrar en mapa
+                    </button>
+                    <button
+                      class="tp-btn tp-btn--secondary tp-btn--block"
+                      style="justify-content: flex-start"
+                    >
+                      📊 Ver historial
+                    </button>
+                    <button
+                      class="tp-btn tp-btn--danger tp-btn--block"
+                      style="justify-content: flex-start"
+                    >
+                      ⛔ Cortar motor
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- TABLE -->
+            <section id="table" class="demo-section">
+              <h2 class="demo-section__title">Tablas</h2>
+              <div class="tp-table-wrap">
+                <table class="tp-table">
+                  <thead>
+                    <tr>
+                      <th>Estado</th>
+                      <th>Placa</th>
+                      <th>Vehículo</th>
+                      <th>Conductor</th>
+                      <th style="text-align: right">Velocidad</th>
+                      <th>Última señal</th>
+                      <th>Grupo</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><span class="tp-dot tp-dot--moving"></span></td>
+                      <td class="tp-text-mono tp-text-strong">ABC-123</td>
+                      <td>Volvo FH16</td>
+                      <td>Juan Pérez</td>
+                      <td class="tp-text-mono" style="text-align: right">
+                        72 km/h
+                      </td>
+                      <td class="tp-text-sm tp-text-muted">hace 4s</td>
+                      <td>
+                        <span class="tp-chip tp-chip--brand tp-chip--sm"
+                          >Lima Norte</span
+                        >
+                      </td>
+                      <td>
+                        <button
+                          class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm"
+                        >
+                          ⋯
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><span class="tp-dot tp-dot--idle"></span></td>
+                      <td class="tp-text-mono tp-text-strong">XYZ-456</td>
+                      <td>Hino 500</td>
+                      <td>Carlos Méndez</td>
+                      <td
+                        class="tp-text-mono tp-text-muted"
+                        style="text-align: right"
+                      >
+                        0 km/h
+                      </td>
+                      <td class="tp-text-sm tp-text-muted">hace 22s</td>
+                      <td>
+                        <span class="tp-chip tp-chip--brand tp-chip--sm"
+                          >Callao</span
+                        >
+                      </td>
+                      <td>
+                        <button
+                          class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm"
+                        >
+                          ⋯
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><span class="tp-dot tp-dot--sos"></span></td>
+                      <td class="tp-text-mono tp-text-strong">DEF-789</td>
+                      <td>Iveco Daily</td>
+                      <td>María López</td>
+                      <td
+                        class="tp-text-mono"
+                        style="text-align: right; color: var(--danger-500)"
+                      >
+                        SOS
+                      </td>
+                      <td class="tp-text-sm" style="color: var(--danger-500)">
+                        hace 1m
+                      </td>
+                      <td>
+                        <span class="tp-chip tp-chip--brand tp-chip--sm"
+                          >Lima Sur</span
+                        >
+                      </td>
+                      <td>
+                        <button class="tp-btn tp-btn--danger tp-btn--sm">
+                          Atender
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><span class="tp-dot tp-dot--offline"></span></td>
+                      <td class="tp-text-mono tp-text-strong">GHI-012</td>
+                      <td>Scania R450</td>
+                      <td>—</td>
+                      <td
+                        class="tp-text-mono tp-text-muted"
+                        style="text-align: right"
+                      >
+                        —
+                      </td>
+                      <td class="tp-text-sm tp-text-muted">hace 2h 14m</td>
+                      <td>
+                        <span class="tp-chip tp-chip--brand tp-chip--sm"
+                          >Lima Norte</span
+                        >
+                      </td>
+                      <td>
+                        <button
+                          class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm"
+                        >
+                          ⋯
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- TABS -->
+            <section id="tabs" class="demo-section">
+              <h2 class="demo-section__title">Tabs & Segmented</h2>
+              <div class="tp-card">
+                <div class="tp-tabs">
+                  <button class="tp-tab" aria-selected="true">Overview</button>
+                  <button class="tp-tab">Sensors</button>
+                  <button class="tp-tab">Cameras</button>
+                  <button class="tp-tab">History</button>
+                  <button class="tp-tab">Commands</button>
+                  <button class="tp-tab">Alerts</button>
+                  <button class="tp-tab">Maintenance</button>
+                </div>
+                <div class="tp-mt-6">
+                  <div class="tp-segmented">
+                    <button class="tp-segmented__item">Hoy</button>
+                    <button class="tp-segmented__item" aria-selected="true">
+                      7d
+                    </button>
+                    <button class="tp-segmented__item">30d</button>
+                    <button class="tp-segmented__item">Custom</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <footer
+              class="tp-mt-6"
+              style="
+                padding: var(--sp-6) 0;
+                color: var(--fg-tertiary);
+                font-size: var(--fs-sm);
+                border-top: 1px solid var(--border-subtle);
+              "
+            >
+              TalentusPro · Design System Showcase · v1.0 (Fase 0 Foundations)
+            </footer>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Theme & density toggle -->
+    <div class="demo-theme-toggle">
+      <div class="tp-segmented">
+        <button class="tp-segmented__item" data-theme-btn="light">
+          ☀ Light
+        </button>
+        <button
+          class="tp-segmented__item"
+          aria-selected="true"
+          data-theme-btn="dark"
+        >
+          🌙 Dark
+        </button>
+      </div>
+      <div class="tp-segmented">
+        <button
+          class="tp-segmented__item"
+          aria-selected="true"
+          data-density-btn="comfortable"
+        >
+          Comfortable
+        </button>
+        <button class="tp-segmented__item" data-density-btn="compact">
+          Compact
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Theme + density toggle
+      const html = document.documentElement;
+      document.querySelectorAll("[data-theme-btn]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const theme = btn.dataset.themeBtn;
+          html.setAttribute("data-theme", theme);
+          document
+            .querySelectorAll("[data-theme-btn]")
+            .forEach((b) =>
+              b.setAttribute("aria-selected", b === btn ? "true" : "false"),
+            );
+        });
+      });
+      document.querySelectorAll("[data-density-btn]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          html.setAttribute("data-density", btn.dataset.densityBtn);
+          document
+            .querySelectorAll("[data-density-btn]")
+            .forEach((b) =>
+              b.setAttribute("aria-selected", b === btn ? "true" : "false"),
+            );
+        });
+      });
+
+      // TOC scroll spy + click
+      const anchors = document.querySelectorAll(".demo-anchor");
+      anchors.forEach((a) =>
+        a.addEventListener("click", (e) => {
+          anchors.forEach((x) => x.classList.remove("active"));
+          a.classList.add("active");
+        }),
+      );
+
+      // Segmented active state (showcase)
+      document.querySelectorAll(".tp-segmented").forEach((seg) => {
+        seg.addEventListener("click", (e) => {
+          const item = e.target.closest(".tp-segmented__item");
+          if (!item) return;
+          if (
+            item.hasAttribute("data-theme-btn") ||
+            item.hasAttribute("data-density-btn")
+          )
+            return;
+          seg
+            .querySelectorAll(".tp-segmented__item")
+            .forEach((i) =>
+              i.setAttribute("aria-selected", i === item ? "true" : "false"),
+            );
+        });
+      });
+
+      // Tabs
+      document.querySelectorAll(".tp-tabs").forEach((tabs) => {
+        tabs.addEventListener("click", (e) => {
+          const tab = e.target.closest(".tp-tab");
+          if (!tab) return;
+          tabs
+            .querySelectorAll(".tp-tab")
+            .forEach((t) =>
+              t.setAttribute("aria-selected", t === tab ? "true" : "false"),
+            );
+        });
+      });
+    </script>
+  </body>
+</html>

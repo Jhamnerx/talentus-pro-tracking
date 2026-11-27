@@ -3,28 +3,29 @@
 namespace Tobuli\Helpers\Backup\Uploader;
 
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
+use Tobuli\Helpers\Backup\Exception\BackupCommandException;
 use Tobuli\Clients\FtpHandler;
-use Tobuli\Entities\Backup;
 use Tobuli\Entities\BackupProcess;
-use Tobuli\Entities\Device;
-use Tobuli\Entities\TraccarDevice;
+use Tobuli\Helpers\Backup\BackupCommandRunner;
+use Tobuli\Helpers\Backup\BackupTempFile;
+use Tobuli\Helpers\Backup\Destination\BackupDestination;
 use Tobuli\Helpers\Backup\FileMeta;
-use Tobuli\Helpers\Backup\Process\DatabaseBackuper;
-use Tobuli\Helpers\Backup\Process\DevicesPositionsBackuper;
-use Tobuli\Helpers\Backup\Process\FilesBackuper;
 
-class BackupFtp implements BackupUploaderInterface
+class BackupFtp implements BackupDestination
 {
-    protected static array $devicePositionsSubfolders;
+    private const UPLOAD_ATTEMPTS = 3;
+    private const MISSING_DIR_EXIT_CODE = 14;
 
     private FtpHandler $handler;
 
     public function __construct($host, $user, $pass, $port, $path)
     {
         $this->handler = new FtpHandler($host, $user, $pass, $port, rtrim($path, '/') . '/');
+    }
+
+    public function name(): string
+    {
+        return self::FTP;
     }
 
     public function getHost()
@@ -34,285 +35,113 @@ class BackupFtp implements BackupUploaderInterface
 
     public function check(): bool
     {
-        return $this->handler->getConn() !== false;
-    }
-
-    public function testCommand()
-    {
-        $filename = time() . 'test.txt';
-        $command = "ncftpput -m -c"
-            . " -u '{$this->handler->getUser()}'"
-            . " -p '{$this->handler->getPass()}'"
-            . " -P {$this->handler->getPort()}"
-            . " {$this->handler->getHost()} {$this->handler->getPath()}$filename";
-
-        $this->run('echo "test"' . " | $command");
-    }
-
-    public function process($commands, BackupProcess $process, $item, bool $gzip = true)
-    {
-        $command = $this->buildBackupCommand($commands, $process, $item, $gzip);
-
         try {
-            $this->run($command, $process);
-        } catch (ProcessFailedException $e) {
-            $backup = $process->backup;
-            $cache = Cache::store('array');
+            return $this->handler->getConn() !== false;
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
 
-            // backup root dir may not exist
-            if ($e->getProcess()->getExitCode() === 14 && !$cache->has("backups.$backup->id.root_create")) {
-                $cache->put("backups.$backup->id.root_create", 1);
+    public function testCommand(): void
+    {
+        BackupCommandRunner::shell('echo "test" | ' . $this->uploadCommand(time() . 'test.txt'));
+    }
 
-                $cmdMakeDir = 'ncftpput -m -c ' . $this->getFtpLoginParams() . self::getRootPath($backup) . '.empty';
+    public function upload(string $localPath, string $remotePath, ?BackupProcess $keepAlive = null): void
+    {
+        $command = $this->uploadCommand($remotePath) . ' < ' . escapeshellarg($localPath);
 
-                $this->run($cmdMakeDir);
-                $this->run($command, $process);
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                BackupCommandRunner::shell($command, $keepAlive);
 
                 return;
-            }
+            } catch (BackupCommandException $e) {
+                if ($e->getExitCode() === self::MISSING_DIR_EXIT_CODE) {
+                    $this->createRootFolder($remotePath);
+                }
 
-            throw $e;
-        }
-    }
+                if ($attempt >= self::UPLOAD_ATTEMPTS) {
+                    throw $e;
+                }
 
-    protected function buildBackupCommand($commands, BackupProcess $process, $item, bool $gzip = true): string
-    {
-        $filename = $this->resolveItemFilename($process, $item);
-        $filename = self::getRootPath($process->backup) . $filename;
-
-        if (is_string($commands)) {
-            $commands = [$commands];
-        }
-
-        if ($gzip) {
-            $filename .= '.gz';
-            $commands[] = 'gzip -9';
-        }
-
-        $commands[] = "ncftpput -m -c" . $this->getFtpLoginParams() . "$filename";
-
-        return implode(' | ', $commands);
-    }
-
-    protected function getFtpLoginParams(): string
-    {
-        return " -u '{$this->handler->getUser()}'"
-            . " -p '{$this->handler->getPass()}'"
-            . " -P {$this->handler->getPort()}"
-            . " {$this->handler->getHost()} {$this->handler->getPath()}";
-    }
-
-    protected function resolveItemFilename(BackupProcess $process, $item): string
-    {
-        switch ($process->type) {
-            case FilesBackuper::class:
-                return basename($item) . '.tar';
-            case DatabaseBackuper::class:
-                return self::getDatabaseFilename($item);
-            case DevicesPositionsBackuper::class:
-                return self::getTraccarFilename($item);
-            default:
-                throw new \InvalidArgumentException('Unsupported backup process type: ' . $process->type);
-        }
-    }
-
-    protected function run(string $command, ?BackupProcess $backupProcess = null): void
-    {
-        $process = Process::fromShellCommandline($command);
-        $process->start();
-
-        $timer = 0;
-
-        while ($process->isRunning()) {
-            sleep(1);
-            $timer++;
-
-            if ($backupProcess && $timer % BackupProcess::DURATION_ALIVE) {
-                $backupProcess->updateReservation();
+                sleep(5);
             }
         }
-
-        if (!$process->isSuccessful()) {
-            throw new ProcessFailedException($process);
-        }
-    }
-
-    public static function getDatabaseFilename(array $config): string
-    {
-        return "{$config['host']}-{$config['database']}-db.sql";
-    }
-
-    public static function getTraccarFilename(TraccarDevice $device): string
-    {
-        $table = $device->positions()->getRelated()->getTable();
-
-        return self::getDevicePositionsRemoteDir($device->id) . $table . '.sql';
     }
 
     /**
-     * if id = 312456, $path = <...>/10000000/1000000/400000/20000/3000/500/
+     * La carpeta raíz del backup puede no existir todavía.
      */
-    public static function getDevicePositionsRemoteDir($id): string
+    private function createRootFolder(string $remotePath): void
     {
-        $path = '';
-        $dirDecimals = self::getDevicePositionsSubfolders();
+        $root = strtok($remotePath, '/');
+        $cache = Cache::store('array');
 
-        foreach ($dirDecimals as $i) {
-            $path .= (ceil($id / $i) % 10 * $i) . '/';
+        if ($cache->has("backups.$root.root_create")) {
+            return;
         }
 
-        return $path;
+        BackupCommandRunner::shell('echo -n | ' . $this->uploadCommand("$root/.empty"));
+
+        $cache->put("backups.$root.root_create", 1);
     }
 
-    protected static function getDevicePositionsSubfolders(): array
+    private function uploadCommand(string $remotePath): string
     {
-        if (isset(self::$devicePositionsSubfolders)) {
-            return self::$devicePositionsSubfolders;
+        return 'ncftpput -m -c'
+            . ' -u ' . escapeshellarg($this->handler->getUser())
+            . ' -p ' . escapeshellarg($this->handler->getPass())
+            . ' -P ' . escapeshellarg($this->handler->getPort())
+            . ' ' . escapeshellarg($this->handler->getHost())
+            . ' ' . escapeshellarg($this->handler->getPath() . $remotePath);
+    }
+
+    public function listFolders(string $prefix): array
+    {
+        $rows = $this->handler->rawlist($prefix . '*') ?: [];
+
+        $rows = array_filter(
+            is_string($rows) ? [$rows] : $rows,
+            fn ($row) => str_starts_with($row, 'd')
+        );
+
+        return array_values(array_map(
+            fn ($row) => FileMeta::fromFtpRaw($row, $this->handler->getPath())->getName(),
+            $rows
+        ));
+    }
+
+    public function exists(string $remotePath): bool
+    {
+        return !empty($this->handler->rawlist($remotePath));
+    }
+
+    public function download(string $remotePath, string $localPath): void
+    {
+        $result = $this->handler->get($localPath, $remotePath);
+
+        if ($result === false || !is_file($localPath) || filesize($localPath) === 0) {
+            @unlink($localPath);
+
+            throw new \RuntimeException("FTP download returned no data: $remotePath");
         }
-
-        $decimal = '100';
-        $dirDecimals = [];
-
-        while (strlen($decimal) <= 10) { // avoiding 20-digit numbers, because they are stored as 1.0E+19
-            array_unshift($dirDecimals, $decimal);
-            $decimal .= '0';
-        }
-
-        return self::$devicePositionsSubfolders = $dirDecimals;
     }
 
-    /**
-     * @param  Backup|string  $backupDate
-     */
-    public static function getRootPath($backupDate): string
+    public function read(string $remotePath): ?string
     {
-        if ($backupDate instanceof Backup) {
-            $backupDate = $backupDate->created_at;
-        }
-
-        $date = \Carbon::parse($backupDate)->format('Y-m-d');
-        $timestamp = \Carbon::parse($backupDate)->timestamp;
-
-        return "backup_$date-$timestamp/";
-    }
-
-    /**
-     * Returns the tail of a pipeline command that uploads stdin to $remotePath via ncftpput.
-     * Usage: "mysqldump ... | gzip -9 | " . $ftp->buildPipeUploadCommand($remote)
-     */
-    public function buildPipeUploadCommand(string $remotePath): string
-    {
-        return "ncftpput -m -c" . $this->getFtpLoginParams() . $remotePath;
-    }
-
-    public function findBackupFolders(): array
-    {
-        $list = $this->handler->rawlist('backup_*') ?: [];
-
-        return $this->parseRawFileList($list, $this->handler->getPath());
-    }
-
-    public function findFiles(string $pathPattern): array
-    {
-        $list = $this->handler->rawlist($pathPattern);
-
-        $dir = dirname($pathPattern);
-
-        return $this->parseRawFileList($list, $dir);
-    }
-
-    public function findFirstFile(string $pathPattern): ?FileMeta
-    {
-        $files = $this->findFiles($pathPattern);
-
-        return $files[0] ?? null;
-    }
-
-    /**
-     * @param string|array $rows
-     * @return FileMeta[]
-     */
-    private function parseRawFileList($rows, string $dir): array
-    {
-        if ($rows === false) {
-            return [];
-        }
-
-        if (is_string($rows)) {
-            $rows = [$rows];
-        }
-
-        return array_map(fn($row) => FileMeta::fromFtpRaw($row, $dir), $rows);
-    }
-
-    public function getMainDbFile(string $folder): ?string
-    {
-        $file = self::getDatabaseFilename(DB::getConfig());
-
-        $pattern = $folder . '/' . $file . '*';
-
-        return $this->downloadFileByPattern($pattern);
-    }
-
-    public function getDeviceFile(Device $device, string $folder): ?string
-    {
-        $pattern = $folder . '/' . $this->getTraccarFilename($device->traccar) . '*';
-
-        return $this->downloadFileByPattern($pattern);
-    }
-
-    private function downloadFileByPattern(string $pattern): ?string
-    {
-        $file = $this->findFirstFile($pattern);
-
-        if ($file === null) {
+        if (!$this->exists($remotePath)) {
             return null;
         }
 
-        return $this->downloadFile($file->getPath());
-    }
-
-    private function downloadFile(string $path): string
-    {
-        $localPath = storage_path('cache/' . basename($path));
-        $localDir  = dirname($localPath);
-
-        if (!is_dir($localDir)) {
-            mkdir($localDir, 0775, true);
-            @chmod($localDir, 0775);
-        }
-
-        if (!is_writable($localDir)) {
-            throw new \RuntimeException(
-                "Local cache directory is not writable: {$localDir}\n" .
-                    "Run: chmod 775 {$localDir}"
-            );
-        }
+        $localPath = BackupTempFile::path(basename($remotePath));
 
         try {
-            $result = $this->handler->get($localPath, $path);
-        } catch (\Throwable $e) {
-            throw new \RuntimeException(
-                "FTP download failed.\n" .
-                    "  Remote path : {$path}\n" .
-                    "  Local path  : {$localPath}\n" .
-                    "  Dir exists  : " . (is_dir($localDir) ? 'yes' : 'no') . "\n" .
-                    "  Dir writable: " . (is_writable($localDir) ? 'yes' : 'no') . "\n" .
-                    "  PHP open_basedir: " . (ini_get('open_basedir') ?: '(not set)') . "\n" .
-                    "  Original error: " . $e->getMessage(),
-                0,
-                $e
-            );
-        }
+            $this->download($remotePath, $localPath);
 
-        if ($result === false || !file_exists($localPath) || filesize($localPath) === 0) {
-            throw new \RuntimeException(
-                "FTP download returned no data.\n" .
-                    "  Remote path : {$path}\n" .
-                    "  Local path  : {$localPath}"
-            );
+            return file_get_contents($localPath);
+        } finally {
+            @unlink($localPath);
         }
-
-        return $localPath;
     }
 }

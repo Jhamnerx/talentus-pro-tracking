@@ -13,6 +13,8 @@ use Tobuli\Entities\SensorIcon;
 use Tobuli\Entities\TraccarPosition;
 use Tobuli\Exceptions\ValidationException;
 use Tobuli\Helpers\SetFlag;
+use Tobuli\Sensors\Extractions\BitCut;
+use Tobuli\Sensors\Extractions\Mapping;
 use Tobuli\Sensors\Sensor;
 use Tobuli\Sensors\SensorsManager;
 use Tobuli\Sensors\Types\Counter;
@@ -264,8 +266,9 @@ class SensorModalHelper extends ModalHelper {
         if ($rules) {
             $validator = \Validator::make($input, $rules);
 
-            if ($validator->fails())
+            if ($validator->fails()) {
                 throw new ValidationException($validator->messages());
+            }
         }
     }
 
@@ -317,10 +320,10 @@ class SensorModalHelper extends ModalHelper {
                     break;
                 case 'mapping':
                     $rules['mappings'] = 'required_if:mapping,1|nullable|array|min:1|array_max:20';
-                    $rules['mappings.*.vt'] = 'required|in:1,2';
-                    $rules['mappings.*.v'] = 'required';
+                    $rules['mappings.*.vt'] = 'required|in:' . Mapping::getValueTypes()->keys()->implode(',');
+                    $rules['mappings.*.v'] = 'sometimes';
                     $rules['mappings.*.t'] = 'sometimes';
-                    $rules['mappings.*.mt'] = 'required|in:1,2,3';
+                    $rules['mappings.*.mt'] = 'required|in:' . Mapping::getMapTypes()->keys()->implode(',');
                     $rules['mappings.*.mv'] = 'sometimes';
                     break;
                 case 'setflag':
@@ -328,9 +331,10 @@ class SensorModalHelper extends ModalHelper {
                     $rules['setflag_count'] = 'required_if:setflag,1|numeric|min:1';
                     break;
                 case 'bitcut':
-                    $rules['bitcut_start'] = 'required_if:bitcut,1|numeric|min:0';
-                    $rules['bitcut_count'] = 'required_if:bitcut,1|numeric|min:1';
-                    $rules['bitcut_base']  = 'required_if:bitcut,1|in:10,16';
+                    $rules['bitcut'] = 'nullable|array';
+                    $rules['bitcut.start'] = 'required_with:bitcut|numeric|min:0';
+                    $rules['bitcut.count'] = 'required_with:bitcut|numeric|min:1';
+                    $rules['bitcut.base']  = 'required_with:bitcut|in:' . BitCut::bases()->implode('key', ',');
                     break;
                 case 'minmax':
                     $rules['min_value'] = 'required|numeric|min:0';
@@ -339,11 +343,17 @@ class SensorModalHelper extends ModalHelper {
                 case 'unit':
                     $rules['unit_of_measurement'] = 'max:32';
                     break;
+                case 'unit_type':
+                    $rules['unit_type'] = 'required|in:' . EngineHours::unitTypes()->implode('key', ',');
+                    break;
                 case 'value':
                     $rules['value'] = 'sometimes|numeric';
                     break;
                 case 'skip_empty':
                     $rules['skip_empty'] = '';
+                    break;
+                case 'reset_blank':
+                    $rules['reset_blank'] = '';
                     break;
                 case 'bin':
                     $rules['decbin'] = '';
@@ -395,13 +405,12 @@ class SensorModalHelper extends ModalHelper {
                         $update[$key] = collect($input[$key])->sortBy('v')->toArray();
                     }
                     break;
-                case 'bitcut_start':
-                case 'bitcut_count':
+                case 'bitcut':
                     if (Arr::get($input,'bitcut')) {
                         $update['bitcut'] = [
-                            'start' => $input['bitcut_start'],
-                            'count' => $input['bitcut_count'],
-                            'base'  => $input['bitcut_base']
+                            'start' => $input['bitcut']['start'],
+                            'count' => $input['bitcut']['count'],
+                            'base'  => $input['bitcut']['base']
                         ];
                     }
                     break;

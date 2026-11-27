@@ -1,0 +1,2209 @@
+/* ============================================================
+   TalentusPro Design System · Components v1.0
+   ------------------------------------------------------------
+   Depends on: tokens.css
+   Prefix:     .tp-*  (avoids collisions with legacy Bootstrap)
+   ============================================================ */
+
+/* ============================================================
+   1. RESET + BASE
+   ============================================================ */
+.tp-scope,
+.tp-scope *,
+.tp-scope *::before,
+.tp-scope *::after {
+  box-sizing: border-box;
+}
+
+.tp-scope {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  color: var(--fg-primary);
+  background: var(--surface-app);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+.tp-scope button,
+.tp-scope input,
+.tp-scope select,
+.tp-scope textarea {
+  font: inherit;
+  color: inherit;
+  margin: 0;
+}
+/* Los controles de formulario NO deben heredar el color (inherit): dentro de
+   un <dialog> el color heredado es el default del navegador (negro), que en
+   modo oscuro queda invisible. Se fija al token de tema, que sí flipea con
+   [data-theme]. Mayor especificidad que el reset de arriba (0,1,1). */
+.tp-scope input,
+.tp-scope select,
+.tp-scope textarea {
+  color: var(--fg-primary);
+}
+/* Opciones nativas del desplegable (dropdown del SO) legibles en dark */
+[data-theme="dark"] .tp-scope select option {
+  background: var(--surface-raised, #1e293b);
+  color: var(--fg-primary, #f1f5f9);
+}
+/* Placeholder con contraste suficiente en dark (el muted base es muy oscuro) */
+[data-theme="dark"] .tp-scope input::placeholder,
+[data-theme="dark"] .tp-scope textarea::placeholder {
+  color: #94a3b8;
+}
+/* tp-select (select mejorado): sus clases Tailwind `dark:` dependen de
+   [data-theme] pero el reset color:inherit las pisaba y, además, el modal
+   toma sus superficies de los TOKENS. Para garantizar consistencia con el
+   modal en cualquier tema, se pilota el botón y el panel desde los tokens
+   (mayor especificidad que las utilidades y el reset). */
+.tp-scope .tp-dd__btn {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border-color: var(--border-default);
+}
+.tp-scope .tp-dd__btn:hover {
+  border-color: var(--border-strong);
+}
+.tp-scope .tp-dd__panel {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border-color: var(--border-default);
+}
+.tp-scope .tp-dd__panel [data-dd-val],
+.tp-scope .tp-dd__panel [data-dd-search] {
+  color: var(--fg-primary);
+}
+.tp-scope .tp-dd__panel [data-dd-search] {
+  background: var(--surface-sunken);
+  border-color: var(--border-default);
+}
+.tp-scope .tp-dd__panel [data-dd-val].is-selected {
+  color: var(--fg-primary);
+}
+
+/* Variante outline: botón con borde para acciones destacadas no-primarias
+   (ej. "Generar" en Reportes = descarga). */
+.tp-scope button.tp-btn--outline,
+.tp-scope a.tp-btn--outline {
+  background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-strong, #cbd5e1);
+  color: var(--fg-primary, #0f172a);
+  font-weight: 600;
+}
+.tp-scope button.tp-btn--outline:hover,
+.tp-scope a.tp-btn--outline:hover {
+  border-color: var(--brand-500, #2e63d9);
+  color: var(--brand-500, #2e63d9);
+}
+
+/* El reset de arriba (color: inherit) pisaba el color de las variantes
+   sólidas de botón (mayor especificidad que .tp-btn--*): re-afirmarlas. */
+.tp-scope button.tp-btn--primary,
+.tp-scope a.tp-btn--primary {
+  color: var(--brand-fg-solid, #fff);
+}
+.tp-scope button.tp-btn--accent,
+.tp-scope a.tp-btn--accent {
+  color: #fff;
+}
+.tp-scope button.tp-btn--danger,
+.tp-scope a.tp-btn--danger {
+  color: #fff;
+}
+
+.tp-scope :focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--r-sm);
+}
+
+/* ============================================================
+   2. TYPOGRAPHY
+   ============================================================ */
+.tp-h1 {
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+.tp-h2 {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  margin: 0;
+}
+.tp-h3 {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  margin: 0;
+}
+.tp-h4 {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  margin: 0;
+}
+.tp-h5 {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  margin: 0;
+}
+.tp-h6 {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  line-height: var(--lh-snug);
+  margin: 0;
+}
+
+.tp-text-xs {
+  font-size: var(--fs-xs);
+}
+.tp-text-sm {
+  font-size: var(--fs-sm);
+}
+.tp-text-md {
+  font-size: var(--fs-md);
+}
+.tp-text-lg {
+  font-size: var(--fs-lg);
+}
+
+.tp-text-muted {
+  color: var(--fg-tertiary);
+}
+.tp-text-secondary {
+  color: var(--fg-secondary);
+}
+.tp-text-strong {
+  font-weight: var(--fw-semibold);
+}
+.tp-text-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+}
+.tp-text-overline {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--fg-tertiary);
+}
+
+/* ============================================================
+   3. LAYOUT PRIMITIVES
+   ============================================================ */
+.tp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.tp-stack-sm {
+  gap: var(--sp-2);
+}
+.tp-stack-lg {
+  gap: var(--sp-6);
+}
+
+.tp-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.tp-row-sm {
+  gap: var(--sp-2);
+}
+.tp-row-lg {
+  gap: var(--sp-4);
+}
+.tp-row-between {
+  justify-content: space-between;
+}
+
+.tp-grid {
+  display: grid;
+  gap: var(--sp-4);
+}
+.tp-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.tp-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.tp-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.tp-grid-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+@media (max-width: 1023px) {
+  .tp-grid-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .tp-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 639px) {
+  .tp-grid-2,
+  .tp-grid-3,
+  .tp-grid-4,
+  .tp-grid-6 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tp-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  border: 0;
+  margin: 0;
+}
+
+/* ============================================================
+   4. SURFACE / CARD
+   ============================================================ */
+.tp-surface {
+  background: var(--surface-raised);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--r-lg);
+}
+
+.tp-card {
+  background: var(--surface-raised);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-xs);
+  transition:
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.tp-card--elevated {
+  box-shadow: var(--shadow-md);
+}
+.tp-card--interactive {
+  cursor: pointer;
+}
+.tp-card--interactive:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-default);
+  transform: translateY(-1px);
+}
+.tp-card--flat {
+  box-shadow: none;
+}
+.tp-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+}
+.tp-card__title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+}
+.tp-card__footer {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Glass overlay (map controls) */
+.tp-glass {
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* ============================================================
+   5. BUTTON
+   ============================================================ */
+.tp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  height: 36px;
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-primary);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    transform var(--dur-instant) var(--ease-out);
+}
+.tp-btn:active {
+  transform: scale(0.98);
+}
+.tp-btn:disabled,
+.tp-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.tp-btn--sm {
+  height: 28px;
+  padding: 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  border-radius: var(--r-sm);
+}
+.tp-btn--lg {
+  height: 44px;
+  padding: 0 var(--sp-5);
+  font-size: var(--fs-lg);
+}
+.tp-btn--icon {
+  width: 36px;
+  padding: 0;
+}
+.tp-btn--icon.tp-btn--sm {
+  width: 28px;
+}
+.tp-btn--icon.tp-btn--lg {
+  width: 44px;
+}
+.tp-btn--block {
+  width: 100%;
+}
+
+/* Variants */
+.tp-btn--primary {
+  background: var(--brand-bg-solid);
+  color: var(--brand-fg-solid);
+  border-color: var(--brand-bg-solid);
+}
+.tp-btn--primary:hover {
+  background: var(--brand-bg-hover);
+  border-color: var(--brand-bg-hover);
+}
+
+/* Accent: alias del primario (QA V3). Antes era turquesa (--brand-accent) y
+   convivía con el azul marino de Guardar/Aplicar en la misma pantalla. Hay
+   un solo color de acción principal: el de marca. La clase se mantiene
+   porque la usan muchas vistas y JS (y setBusy la busca). */
+.tp-btn--accent {
+  background: var(--brand-bg-solid);
+  color: var(--brand-fg-solid);
+  border-color: var(--brand-bg-solid);
+}
+.tp-btn--accent:hover {
+  background: var(--brand-bg-hover);
+  border-color: var(--brand-bg-hover);
+  color: var(--brand-fg-solid);
+}
+.tp-btn--accent > svg,
+.tp-btn--accent > span {
+  color: inherit;
+}
+
+.tp-btn--secondary {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border-color: var(--border-default);
+}
+.tp-btn--secondary:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+}
+
+.tp-btn--ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+}
+.tp-btn--ghost:hover {
+  background: var(--surface-sunken);
+  color: var(--fg-primary);
+}
+
+.tp-btn--danger {
+  background: var(--danger-500);
+  color: #fff;
+  border-color: var(--danger-500);
+}
+.tp-btn--danger:hover {
+  background: var(--danger-600);
+  border-color: var(--danger-600);
+}
+
+.tp-btn--critical {
+  background: var(--critical-500);
+  color: #fff;
+  border-color: var(--critical-500);
+}
+.tp-btn--critical:hover {
+  background: var(--critical-600);
+  border-color: var(--critical-600);
+}
+
+.tp-btn--success {
+  background: var(--success-500);
+  color: #fff;
+  border-color: var(--success-500);
+}
+.tp-btn--success:hover {
+  background: var(--success-600);
+  border-color: var(--success-600);
+}
+
+/* Button group */
+.tp-btn-group {
+  display: inline-flex;
+}
+.tp-btn-group .tp-btn {
+  border-radius: 0;
+}
+.tp-btn-group .tp-btn:first-child {
+  border-radius: var(--r-md) 0 0 var(--r-md);
+}
+.tp-btn-group .tp-btn:last-child {
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+}
+.tp-btn-group .tp-btn + .tp-btn {
+  margin-left: -1px;
+}
+
+/* ============================================================
+   6. INPUT / FORM
+   ============================================================ */
+.tp-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+/* display:flex anulaba el atributo hidden: los campos que un formulario
+   oculta (p.ej. protocolo / equipos / tipos en las plantillas de comandos)
+   seguían viéndose. */
+.tp-field[hidden] {
+  display: none;
+}
+.tp-label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--fg-secondary);
+}
+.tp-hint {
+  font-size: var(--fs-xs);
+  color: var(--fg-tertiary);
+}
+.tp-error {
+  font-size: var(--fs-xs);
+  color: var(--danger-500);
+}
+
+.tp-input,
+.tp-select,
+.tp-textarea {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--sp-3);
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  font-size: var(--fs-md);
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.tp-textarea {
+  height: auto;
+  min-height: 80px;
+  padding: var(--sp-2) var(--sp-3);
+  resize: vertical;
+}
+.tp-input::placeholder,
+.tp-textarea::placeholder {
+  color: var(--fg-muted);
+}
+.tp-input:hover,
+.tp-select:hover,
+.tp-textarea:hover {
+  border-color: var(--border-strong);
+}
+.tp-input:focus,
+.tp-select:focus,
+.tp-textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+.tp-input[aria-invalid="true"],
+.tp-select[aria-invalid="true"],
+.tp-textarea[aria-invalid="true"] {
+  border-color: var(--danger-500);
+}
+.tp-input[aria-invalid="true"]:focus {
+  box-shadow: var(--shadow-focus-danger);
+}
+
+/* Select: quitar el estilo nativo del navegador (que desalinea el UI) y
+   pintar una flecha propia. Sin dependencias — mismo control en toda la v2.
+   La lista desplegable la sigue dibujando el SO (no estilable de forma
+   portable), pero el control cerrado queda consistente con los inputs. */
+.tp-select,
+select.tp-input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px 16px;
+  cursor: pointer;
+}
+/* Quitar la flecha nativa en IE/Edge legacy */
+.tp-select::-ms-expand,
+select.tp-input::-ms-expand {
+  display: none;
+}
+.tp-select:disabled,
+select.tp-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+@media (prefers-color-scheme: dark) {
+  .tp-select,
+  select.tp-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  }
+}
+
+/* tp-select (tp-select.js): componente de select PROPIO, 100% Tailwind —
+   las clases viven en el JS (tailwind.config.js escanea ui-v2/js). El panel
+   es un portal position:fixed (en <dialog> si aplica) posicionado por JS.
+   El nativo queda display:none; si el enhance no corre (data-no-ts="1" o
+   <select multiple>), aplica el estilo base .tp-select/.tp-input de arriba. */
+
+/* ============================================================
+   Checks/radios de formulario (v2) — componente propio para no
+   depender de utilidades sueltas: separación input↔texto y
+   accent de marca garantizados en cualquier página/modal.
+   ============================================================ */
+.tp-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  color: var(--fg-primary);
+  cursor: pointer;
+  user-select: none;
+  line-height: 1.3;
+}
+.tp-choice-input,
+.tp-choice input[type="checkbox"],
+.tp-choice input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: 0 0 auto;
+  accent-color: var(--brand-500, #0d9488);
+  cursor: pointer;
+}
+.tp-choice-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 6px;
+}
+
+/* Contenedor de formulario de modal: separación uniforme entre secciones */
+.tp-cmd-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.tp-cmd-form[hidden] {
+  display: none;
+}
+/* Un hijo vacío (ej. grid de atributos sin comando) no debe sumar gap */
+.tp-cmd-form > div:empty {
+  display: none;
+}
+
+/* ============================================================
+   Hitos kilométricos (tp-hitos.js) — pin estilo hito vial.
+   Global: la capa se usa en Live, Historial y Eventos.
+   ============================================================ */
+.leaflet-marker-icon.tp-hito,
+.tp-hito {
+  background: transparent;
+  border: 0;
+}
+.tp-hito-pin {
+  background: #0b7a3b;
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 3px;
+  font: 600 10px/16px var(--font-sans, sans-serif);
+  text-align: center;
+  padding: 0 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+/* Tooltip de dos niveles: nombre legible + código oficial pequeño */
+.tp-hito-tip b {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+}
+.tp-hito-tip span {
+  display: block;
+  font-size: 10px;
+  color: #64748b;
+  margin-top: 1px;
+}
+/* Referencia km en popups ("Panamericana Norte · km 557 (PE-1N)") */
+.tp-hito-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0b7a3b;
+}
+
+/* Input with icon */
+.tp-input-wrap {
+  position: relative;
+}
+.tp-input-wrap .tp-input {
+  padding-left: 36px;
+}
+.tp-input-wrap .tp-input--no-icon {
+  padding-left: var(--sp-3);
+}
+.tp-input-wrap__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-tertiary);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+.tp-input-wrap__suffix {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--fg-tertiary);
+}
+
+/* Switch */
+.tp-switch {
+  --w: 36px;
+  --h: 20px;
+  position: relative;
+  display: inline-block;
+  width: var(--w);
+  height: var(--h);
+}
+.tp-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.tp-switch__slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--neutral-300);
+  border-radius: var(--r-pill);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.tp-switch__slider::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: calc(var(--h) - 4px);
+  height: calc(var(--h) - 4px);
+  background: #fff;
+  border-radius: 50%;
+  transition: transform var(--dur-fast) var(--ease-out);
+  box-shadow: var(--shadow-xs);
+}
+.tp-switch input:checked + .tp-switch__slider {
+  background: var(--brand-bg-solid);
+}
+.tp-switch input:checked + .tp-switch__slider::before {
+  transform: translateX(calc(var(--w) - var(--h)));
+}
+
+/* ============================================================
+   7. CHIP / BADGE
+   ============================================================ */
+.tp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 24px;
+  padding: 0 var(--sp-2);
+  background: var(--surface-sunken);
+  color: var(--fg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+.tp-chip--sm {
+  height: 20px;
+  font-size: 10px;
+  padding: 0 var(--sp-2);
+}
+.tp-chip--lg {
+  height: 28px;
+  font-size: var(--fs-sm);
+  padding: 0 var(--sp-3);
+}
+
+.tp-chip--brand {
+  background: var(--brand-bg-muted);
+  color: var(--brand-700);
+  border-color: transparent;
+}
+.tp-chip--success {
+  background: var(--success-bg);
+  color: var(--success-600);
+  border-color: transparent;
+}
+.tp-chip--warning {
+  background: var(--warning-bg);
+  color: var(--warning-600);
+  border-color: transparent;
+}
+.tp-chip--danger {
+  background: var(--danger-bg);
+  color: var(--danger-600);
+  border-color: transparent;
+}
+.tp-chip--info {
+  background: var(--info-bg);
+  color: var(--info-500);
+  border-color: transparent;
+}
+.tp-chip--solid {
+  background: var(--brand-bg-solid);
+  color: #fff;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .tp-chip--brand {
+  color: var(--brand-300);
+}
+[data-theme="dark"] .tp-chip--success {
+  color: #6ee7b7;
+}
+[data-theme="dark"] .tp-chip--warning {
+  color: #fcd34d;
+}
+[data-theme="dark"] .tp-chip--danger {
+  color: #fca5a5;
+}
+[data-theme="dark"] .tp-chip--info {
+  color: var(--brand-300);
+}
+
+/* Status dot */
+.tp-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+  /* Como el borde de 1px del legacy: sin el, "amarillo" o "blanco" se
+     pierden sobre fondo claro. */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+}
+/* Relleno --sc-*, no el --status-* de texto: los cuatro cubos coinciden uno a
+   uno con los estados por defecto del legacy (movimiento=green, ralenti=orange,
+   detenido=gray, offline=yellow) y asi el punto se ve igual que su icono. */
+.tp-dot--moving {
+  background: var(--sc-green);
+}
+.tp-dot--idle {
+  background: var(--sc-orange);
+}
+.tp-dot--stopped {
+  background: var(--sc-gray);
+}
+.tp-dot--offline {
+  background: var(--sc-yellow);
+}
+.tp-dot--alert {
+  background: var(--status-alert);
+}
+.tp-dot--sos {
+  background: var(--status-sos);
+  animation: tp-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes tp-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(185, 28, 28, 0);
+  }
+}
+
+/* Badge (counter) */
+.tp-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--danger-500);
+  color: #fff;
+  border-radius: var(--r-pill);
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+.tp-badge--neutral {
+  background: var(--neutral-500);
+}
+.tp-badge--brand {
+  background: var(--brand-bg-solid);
+}
+
+/* ============================================================
+   8. ALERT BANNER
+   ============================================================ */
+.tp-alert {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  font-size: var(--fs-md);
+}
+.tp-alert__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 2px;
+}
+.tp-alert__body {
+  flex: 1;
+  min-width: 0;
+}
+.tp-alert__title {
+  font-weight: var(--fw-semibold);
+  margin-bottom: 2px;
+}
+.tp-alert__desc {
+  color: var(--fg-secondary);
+  font-size: var(--fs-sm);
+}
+.tp-alert__close {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 0;
+}
+.tp-alert__close:hover {
+  opacity: 1;
+}
+
+.tp-alert--info {
+  background: var(--info-bg);
+  color: var(--info-500);
+  border-color: rgba(46, 99, 217, 0.18);
+}
+.tp-alert--success {
+  background: var(--success-bg);
+  color: var(--success-600);
+  border-color: rgba(16, 185, 129, 0.18);
+}
+.tp-alert--warning {
+  background: var(--warning-bg);
+  color: var(--warning-600);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.tp-alert--danger {
+  background: var(--danger-bg);
+  color: var(--danger-600);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.tp-alert--critical {
+  background: var(--critical-500);
+  color: #fff;
+  border-color: var(--critical-600);
+}
+.tp-alert--critical .tp-alert__desc {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+[data-theme="dark"] .tp-alert--info {
+  color: var(--brand-300);
+}
+[data-theme="dark"] .tp-alert--success {
+  color: #6ee7b7;
+}
+[data-theme="dark"] .tp-alert--warning {
+  color: #fcd34d;
+}
+[data-theme="dark"] .tp-alert--danger {
+  color: #fca5a5;
+}
+
+.tp-alert--critical .tp-alert__icon {
+  animation: tp-pulse-soft 1.6s ease-in-out infinite;
+}
+@keyframes tp-pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* ============================================================
+   CABECERA DE PÁGINA (QA V1)
+   Un solo patrón para todas las páginas de la v2: icono en cuadro tintado
+   (34 px) + título de 18 px a la izquierda; herramientas y acción principal
+   («+ Nuevo …», icono + texto) a la derecha. Antes vivía en services.css y
+   las páginas que no lo cargaban (Flota, Monitoreo, Enviar comando) tenían
+   cada una su cabecera.
+   ============================================================ */
+.tp-maint__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.tp-maint__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-xl, 17px);
+  font-weight: var(--fw-semibold, 600);
+  color: var(--fg-primary, #0f172a);
+  margin: 0;
+}
+.tp-maint__title-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--brand-bg-subtle, var(--brand-50));
+  color: var(--brand-600, #0d9488);
+}
+.tp-maint__tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tp-maint__tools .tp-input {
+  width: 240px;
+}
+[data-theme="dark"] .tp-maint__title-ico {
+  color: var(--brand-400);
+}
+@media (max-width: 767px) {
+  .tp-maint__head {
+    align-items: stretch;
+  }
+  .tp-maint__tools {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .tp-maint__tools .tp-input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Estado vacío común (QA V7): mismo aspecto en todas las tablas y listas
+   (Flota, Eventos, tablas CRUD, ficha). Texto: tpEmpty() → «Sin resultados.»
+   si hay filtro, «Todavía no hay X.» si no hay nada. Antes vivía solo en
+   services.css. */
+.tp-svc-table__empty {
+  text-align: center;
+  color: var(--fg-muted, #94a3b8);
+  padding: 22px 12px;
+}
+
+/* ============================================================
+   9. TABLE
+   ============================================================ */
+.tp-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+}
+.tp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-md);
+}
+.tp-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface-sunken);
+  text-align: left;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--fg-tertiary);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+.tp-table tbody td {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--fg-primary);
+  vertical-align: middle;
+}
+.tp-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tp-table tbody tr {
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.tp-table tbody tr:hover {
+  background: var(--surface-sunken);
+}
+.tp-table--dense tbody td,
+.tp-table--dense thead th {
+  padding: var(--sp-2) var(--sp-3);
+}
+
+/* ============================================================
+   10. KPI / METRIC TILE
+   ============================================================ */
+.tp-kpi {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  position: relative;
+  overflow: hidden;
+  transition:
+    border-color var(--dur-base) var(--ease-out),
+    transform var(--dur-base) var(--ease-out);
+}
+.tp-kpi:hover {
+  border-color: var(--border-default);
+  transform: translateY(-1px);
+}
+.tp-kpi__label {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--fg-tertiary);
+  font-weight: var(--fw-medium);
+}
+.tp-kpi__value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-4xl);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg-primary);
+}
+.tp-kpi__delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
+.tp-kpi__delta--up {
+  color: var(--success-600);
+}
+.tp-kpi__delta--down {
+  color: var(--danger-600);
+}
+.tp-kpi__delta--flat {
+  color: var(--fg-tertiary);
+}
+[data-theme="dark"] .tp-kpi__delta--up {
+  color: #6ee7b7;
+}
+[data-theme="dark"] .tp-kpi__delta--down {
+  color: #fca5a5;
+}
+
+.tp-kpi__spark {
+  position: absolute;
+  right: var(--sp-4);
+  bottom: var(--sp-4);
+  width: 80px;
+  height: 28px;
+  opacity: 0.7;
+}
+
+/* ============================================================
+   11. TOOLTIP (CSS-only)
+   ============================================================ */
+.tp-has-tooltip {
+  position: relative;
+}
+.tp-has-tooltip[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 6px 10px;
+  background: var(--neutral-900);
+  color: #fff;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
+  z-index: var(--z-tooltip);
+}
+.tp-has-tooltip:hover::after,
+.tp-has-tooltip:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+[data-theme="dark"] .tp-has-tooltip[data-tooltip]::after {
+  background: var(--neutral-700);
+}
+
+/* ============================================================
+   12. AVATAR
+   ============================================================ */
+.tp-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand-bg-muted);
+  color: var(--brand-700);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.tp-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tp-avatar--sm {
+  width: 24px;
+  height: 24px;
+  font-size: var(--fs-xs);
+}
+.tp-avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: var(--fs-md);
+}
+[data-theme="dark"] .tp-avatar {
+  color: var(--brand-300);
+}
+
+/* ============================================================
+   13. TABS
+   ============================================================ */
+.tp-tabs {
+  display: flex;
+  gap: var(--sp-1);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tp-tab {
+  padding: var(--sp-3) var(--sp-4);
+  background: transparent;
+  border: 0;
+  color: var(--fg-tertiary);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  position: relative;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition:
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.tp-tab:hover {
+  color: var(--fg-primary);
+}
+.tp-tab[aria-selected="true"] {
+  color: var(--brand-bg-solid);
+  border-bottom-color: var(--brand-bg-solid);
+}
+[data-theme="dark"] .tp-tab[aria-selected="true"] {
+  color: var(--brand-400);
+  border-bottom-color: var(--brand-400);
+}
+
+/* Segmented */
+.tp-segmented {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--surface-sunken);
+  border-radius: var(--r-md);
+}
+.tp-segmented__item {
+  padding: 6px 12px;
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--r-md) - 3px);
+  color: var(--fg-secondary);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.tp-segmented__item:hover {
+  color: var(--fg-primary);
+}
+.tp-segmented__item[aria-selected="true"] {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ============================================================
+   14. SHELL (App layout primitives)
+   ============================================================ */
+.tp-app {
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+  grid-template-rows: var(--topbar-h) 1fr;
+  grid-template-areas:
+    "rail topbar"
+    "rail workspace";
+  height: 100vh;
+  background: var(--surface-app);
+  color: var(--fg-primary);
+}
+
+.tp-rail {
+  grid-area: rail;
+  background: var(--brand-900);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: var(--sp-2);
+  gap: 2px;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+.tp-rail__toggle {
+  flex: 0 0 auto;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  color: #fff;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.tp-rail__toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+/* El reset .tp-scope button (color: inherit) pisaba el color del toggle:
+   re-afirmar con la misma especificidad para que el icono ☰ sea visible. */
+.tp-scope .tp-rail__toggle {
+  color: #e2e8f0;
+}
+.tp-scope .tp-rail__toggle:hover {
+  color: #fff;
+}
+/* Iconos SVG del rail */
+.tp-rail__icon svg {
+  width: 20px;
+  height: 20px;
+}
+.tp-rail__logo {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 6px;
+  margin-bottom: var(--sp-2);
+  color: #fff;
+  text-decoration: none;
+  overflow: hidden;
+}
+.tp-rail__logo-mark {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-700);
+  border-radius: var(--r-md);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-md);
+}
+.tp-rail__logo-text {
+  font-weight: var(--fw-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  width: 0;
+}
+/* Logo de marca blanca (Appearance): directo sobre el navy del rail,
+   sin fondo (los logos de marca vienen preparados para fondo oscuro). */
+.tp-rail__logo-img {
+  max-height: 32px;
+  max-width: 100%;
+  object-fit: contain;
+}
+[data-rail='compact'] .tp-rail__logo-img {
+  max-width: 44px;
+}
+.tp-rail__nav {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+.tp-rail__nav::-webkit-scrollbar {
+  width: 6px;
+}
+.tp-rail__nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+}
+.tp-rail__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  border: 0;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+.tp-rail__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.tp-rail__item[aria-current="page"] {
+  background: var(--brand-700);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--brand-400);
+}
+.tp-rail__icon {
+  flex: 0 0 auto;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tp-rail__label {
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  width: 0;
+}
+/* Ítems pendientes de migrar: mismo aspecto que el resto (sin atenuar) —
+   el aviso "próximamente" lo da el toast al hacer click. */
+.tp-rail__item--pending {
+  opacity: 1;
+}
+.tp-rail__badge {
+  position: absolute;
+  top: 3px;
+  left: 24px;
+}
+.tp-rail__foot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--sp-2);
+  margin-top: var(--sp-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.tp-rail__spacer {
+  flex: 0 0 auto;
+}
+
+/* ----- Modo COMPACTO: solo iconos + tooltips ----- */
+[data-rail="compact"] .tp-rail__item,
+[data-rail="compact"] .tp-rail__toggle,
+[data-rail="compact"] .tp-rail__logo {
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+}
+[data-rail="compact"] .tp-rail__label,
+[data-rail="compact"] .tp-rail__logo-text {
+  display: none;
+}
+/* Rail tooltips: a la derecha del icono (solo en compacto) */
+[data-rail="compact"] .tp-rail .tp-has-tooltip[data-tooltip]::after {
+  bottom: auto;
+  top: 50%;
+  left: calc(100% + 10px);
+  transform: translateY(-50%) translateX(-4px);
+}
+[data-rail="compact"] .tp-rail .tp-has-tooltip:hover::after,
+[data-rail="compact"] .tp-rail .tp-has-tooltip:focus-visible::after {
+  transform: translateY(-50%) translateX(0);
+}
+
+/* ----- Modo COMPLETO: iconos + nombre, rail ancho, sin tooltips ----- */
+[data-rail="full"] .tp-app {
+  --rail-w: 236px;
+}
+[data-rail="full"] .tp-rail__label,
+[data-rail="full"] .tp-rail__logo-text {
+  opacity: 1;
+  width: auto;
+}
+[data-rail="full"] .tp-rail .tp-has-tooltip::after {
+  display: none !important;
+}
+[data-rail="full"] .tp-rail__badge {
+  left: auto;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tp-topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-4);
+  background: var(--surface-raised);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.tp-topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: var(--fw-semibold);
+}
+.tp-topbar__search {
+  flex: 1;
+  max-width: 520px;
+  position: relative;
+}
+.tp-topbar__search .tp-input {
+  padding-left: 36px;
+  padding-right: 60px;
+  background: var(--surface-sunken);
+  border-color: transparent;
+}
+.tp-topbar__search .tp-input:hover {
+  border-color: var(--border-subtle);
+}
+.tp-topbar__kbd {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-tertiary);
+}
+.tp-topbar__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px 10px;
+  background: var(--surface-sunken);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-xs);
+  color: var(--fg-secondary);
+  font-family: var(--font-mono);
+}
+.tp-topbar__spacer {
+  flex: 1;
+}
+
+.tp-workspace {
+  grid-area: workspace;
+  overflow: auto;
+  padding: var(--sp-6);
+}
+.tp-workspace--scroll {
+  padding: 0;
+}
+.tp-workspace--full {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ============================================================
+   15. UTILITIES
+   ============================================================ */
+.tp-hidden {
+  display: none !important;
+}
+.tp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.tp-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tp-full {
+  width: 100%;
+}
+.tp-mt-0 {
+  margin-top: 0;
+}
+.tp-mt-2 {
+  margin-top: var(--sp-2);
+}
+.tp-mt-4 {
+  margin-top: var(--sp-4);
+}
+.tp-mt-6 {
+  margin-top: var(--sp-6);
+}
+.tp-mb-0 {
+  margin-bottom: 0;
+}
+.tp-mb-2 {
+  margin-bottom: var(--sp-2);
+}
+.tp-mb-4 {
+  margin-bottom: var(--sp-4);
+}
+.tp-mb-6 {
+  margin-bottom: var(--sp-6);
+}
+
+/* Scrollbar enterprise */
+.tp-scope ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.tp-scope ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tp-scope ::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.tp-scope ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+/* Esquina donde se cruzan las dos barras (tablas con scroll en ambos
+   ejes): sin regla, Chromium la pinta blanca también en oscuro (QA V12). */
+.tp-scope ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Barras nativas (Firefox, y las que usan scrollbar-width) y la esquina que
+   dibuja el navegador: que sigan el tema. color-scheme hace que el UA pinte
+   sus controles en oscuro; scrollbar-color solo donde no hay
+   ::-webkit-scrollbar, porque en Chromium 121+ anularía los estilos de
+   arriba. */
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+[data-theme="light"] {
+  color-scheme: light;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .tp-scope * {
+    scrollbar-color: var(--border-default) transparent;
+  }
+}
+
+/* ============================================================
+   Ajustes de cuenta · modal con tabs (tp-account)
+   ============================================================ */
+/* Pestañas del modal de cuenta: las comunes .tp-tabs__nav/.tp-tabs__tab
+   (subrayado, modal.css; QA V5). Antes eran píldoras. */
+.tp-acc__tabs {
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.tp-acc__panel {
+  min-height: 260px;
+}
+.tp-acc__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+.tp-acc__foot:empty {
+  margin-top: 0;
+}
+/* Etiquetas de sección dentro de un tab */
+.tp-acc-legend {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-muted, #94a3b8);
+  margin-bottom: 4px;
+}
+/* Checkbox con etiqueta en línea */
+.tp-scope .tp-acc-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* Tile seleccionable (widgets / bloques del tablero) */
+.tp-scope .tp-acc-tile {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+/* Toggle grande con descripción (tab Mapa) */
+.tp-scope .tp-acc-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+.tp-acc-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.tp-acc-toggle b {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-primary, #0f172a);
+}
+.tp-acc-toggle small {
+  font-size: 12px;
+  color: var(--fg-muted, #94a3b8);
+  line-height: 1.4;
+}
+/* Tabs CRUD dentro del modal */
+.tp-acc-crud__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.tp-acc-crud__wrap {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border-default, #e2e8f0);
+  border-radius: 10px;
+}
+/* La tabla de los tabs CRUD del modal de cuenta (grupos, conductores, tipos
+   de vehiculo, eventos, plantillas) se apoya en .tp-svc-table, pero ese
+   estilo vive en services.css, que no cargan todas las paginas: desde
+   Historial o Reportes la tabla salia con el estilo del navegador (cabeceras
+   centradas, sin fondo). Se replican aqui las reglas base, con la misma
+   especificidad por si services.css tambien esta cargado. */
+.tp-acc-crud__wrap .tp-svc-table {
+  margin: 0;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm, 12.5px);
+}
+.tp-acc-crud__wrap .tp-svc-table th {
+  text-align: left;
+  padding: 9px 12px;
+  font-size: var(--fs-xs, 11.5px);
+  font-weight: var(--fw-semibold, 600);
+  color: var(--fg-tertiary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-sunken, #f8fafc);
+  border-bottom: 1px solid var(--border-default, #e2e8f0);
+  white-space: nowrap;
+}
+.tp-acc-crud__wrap .tp-svc-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border-subtle, #eef2f6);
+  color: var(--fg-primary, #0f172a);
+  vertical-align: middle;
+  text-align: left;
+}
+.tp-acc-crud__wrap .tp-svc-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.tp-acc-crud__wrap .tp-svc-table tbody tr:hover td {
+  background: var(--surface-sunken, #f8fafc);
+}
+.tp-acc-crud__wrap .tp-svc-table .tp-svc-table__actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+.tp-acc-crud__wrap .tp-svc-table .tp-svc-table__empty {
+  text-align: center;
+  color: var(--fg-muted, #94a3b8);
+  padding: 22px 12px;
+}
+/* Fila de estado (tipos de vehículo) / condición (eventos) */
+.tp-acc-strow,
+.tp-acc-cond {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.tp-acc-cond {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+}
+.tp-scope .tp-icon-btn {
+  appearance: none;
+  border: 1px solid var(--border-default, #e2e8f0);
+  background: var(--surface-raised, #fff);
+  color: var(--fg-secondary, #475569);
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast, 0.12s) var(--ease-out, ease),
+    border-color var(--dur-fast, 0.12s) var(--ease-out, ease),
+    background var(--dur-fast, 0.12s) var(--ease-out, ease);
+}
+.tp-scope .tp-icon-btn:hover {
+  border-color: var(--brand-500, #2e63d9);
+  color: var(--brand-500, #2e63d9);
+  background: var(--brand-bg-subtle, #eef3fb);
+}
+.tp-scope .tp-icon-btn--danger:hover {
+  border-color: #dc2626;
+  color: #dc2626;
+  background: #fef2f2;
+}
+/* Celda de acciones de las tablas CRUD del modal (2 botones con aire) */
+.tp-acc-crud__actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+.tp-acc-crud__act {
+  display: inline-flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* ============================================================
+   DENSIDAD · modo compacto (data-density="compact")
+   ------------------------------------------------------------
+   Aprieta las superficies con MÁS datos (lista de vehículos y
+   tablas CRUD) para caber más filas por pantalla. El modo
+   "cómoda" (default) no se toca. La especificidad (0,2,x) gana
+   a la base (0,1,x) sin !important ni depender del orden de
+   carga. Lo activa el toggle "Cambiar densidad" (shell.js →
+   data-density en <html>, persistido en localStorage).
+   ============================================================ */
+/* Lista de vehículos (Live) */
+[data-density="compact"] .tp-live__row {
+  padding: 5px var(--sp-2);
+}
+[data-density="compact"] .tp-live__group-items {
+  padding: 5px;
+  gap: 4px;
+}
+[data-density="compact"] .tp-live__group {
+  padding: 6px 10px;
+}
+/* Tablas CRUD (servicios, gastos, conductores, rutas, sharing, reportes…) */
+[data-density="compact"] .tp-svc-table th,
+[data-density="compact"] .tp-svc-table td {
+  padding: 5px 12px;
+}
+
+/* ============================================================
+   Rail: se pliega solo en pantallas pequeñas
+   ------------------------------------------------------------
+   NO se toca data-rail ni el localStorage: solo se anulan aqui las reglas
+   del modo COMPLETO. Asi el usuario recupera su modo en cuanto vuelve a una
+   pantalla ancha, sin haber perdido su preferencia.
+   ============================================================ */
+@media (max-width: 1100px) {
+  /* 236px de menu se comen el mapa: solo iconos */
+  [data-rail="full"] .tp-app {
+    --rail-w: 56px;
+  }
+  [data-rail="full"] .tp-rail__item,
+  [data-rail="full"] .tp-rail__toggle,
+  [data-rail="full"] .tp-rail__logo {
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+  }
+  [data-rail="full"] .tp-rail__label,
+  [data-rail="full"] .tp-rail__logo-text {
+    display: none;
+  }
+  /* Al quedarse sin rotulo, el icono necesita su tooltip */
+  [data-rail="full"] .tp-rail .tp-has-tooltip[data-tooltip]::after {
+    bottom: auto;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%) translateX(-4px);
+  }
+  [data-rail="full"] .tp-rail .tp-has-tooltip:hover::after,
+  [data-rail="full"] .tp-rail .tp-has-tooltip:focus-visible::after {
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+@media (max-width: 767px) {
+  /* En movil ni siquiera caben los 56px: el rail sale del flujo y se
+     superpone cuando se pide. El boton de hamburguesa ya alterna
+     full/compact, asi que aqui "full" significa "mostrado". */
+  /* [data-rail] iguala la especificidad de [data-rail="full"] .tp-app, que si
+     no gana y deja una columna vacia de 56px a la izquierda del mapa. */
+  [data-rail] .tp-app {
+    --rail-w: 0px;
+  }
+  /* shell.css hace .tp-rail{display:none} bajo 767px y se carga DESPUES,
+     asi que hay que ganarle por especificidad, no por orden: [data-rail]
+     siempre esta puesto en <html>, y (0,1,1) le gana a (0,0,1). */
+  [data-rail] .tp-rail {
+    display: flex;
+  }
+  .tp-rail {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 236px;
+    transform: translateX(-100%);
+    transition: transform var(--dur-normal, 0.2s) var(--ease-out, ease);
+    z-index: 60;
+  }
+  [data-rail="full"] .tp-rail {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+  /* Abierto, vuelve a mostrar los rotulos: es un menu, no una tira */
+  [data-rail="full"] .tp-rail__label,
+  [data-rail="full"] .tp-rail__logo-text {
+    display: inline;
+    opacity: 1;
+    width: auto;
+  }
+  [data-rail="full"] .tp-rail__item,
+  [data-rail="full"] .tp-rail__toggle,
+  [data-rail="full"] .tp-rail__logo {
+    justify-content: flex-start;
+    padding: 0 var(--sp-3);
+    gap: var(--sp-3);
+  }
+  /* Con el menu desplegado los tooltips sobran */
+  [data-rail="full"] .tp-rail .tp-has-tooltip[data-tooltip]::after {
+    display: none;
+  }
+}
+
+/* ── Navegacion en movil: boton de menu y velo ───────────────────────
+   El boton de plegar vive dentro del rail; cuando el rail sale de
+   pantalla se va con el, asi que el topbar lleva el suyo. */
+.tp-topbar__nav {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  margin-right: var(--sp-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  color: var(--fg-secondary);
+  cursor: pointer;
+}
+.tp-topbar__nav:hover {
+  background: var(--surface-sunken);
+  color: var(--fg-primary);
+}
+.tp-nav-scrim {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .tp-topbar__nav {
+    display: flex;
+  }
+  .tp-nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--surface-scrim);
+    z-index: 55;
+  }
+  .tp-nav-scrim[hidden] {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Controles de Leaflet en modo oscuro.
+
+   Las paginas que montan un mapa con el CSS de Leaflet de origen
+   (eventos, historial) heredaban los controles en blanco: caja clara
+   sobre interfaz oscura y, como el color de texto si venia del tema,
+   los simbolos + / - quedaban blancos sobre blanco. En la captura del
+   informe se ven como cuadrados vacios.
+
+   Live no lo sufre porque sus controles son propios.
+   ------------------------------------------------------------------ */
+[data-theme="dark"] .leaflet-bar a,
+[data-theme="dark"] .leaflet-control-zoom a,
+[data-theme="dark"] .leaflet-control-layers,
+[data-theme="dark"] .leaflet-control-attribution {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+  border-color: var(--border-default);
+}
+
+[data-theme="dark"] .leaflet-bar a:hover,
+[data-theme="dark"] .leaflet-control-zoom a:hover {
+  background: var(--surface-sunken);
+  color: var(--fg-primary);
+}
+
+[data-theme="dark"] .leaflet-bar a.leaflet-disabled {
+  background: var(--surface-sunken);
+  color: var(--fg-disabled);
+}
+
+[data-theme="dark"] .leaflet-bar {
+  border-color: var(--border-default);
+}
+
+/* El popup tambien viene claro de serie */
+[data-theme="dark"] .leaflet-popup-content-wrapper,
+[data-theme="dark"] .leaflet-popup-tip {
+  background: var(--surface-raised);
+  color: var(--fg-primary);
+}
+
+/* ── Movimiento reducido ───────────────────────────────────────────────
+   De los 15 ficheros CSS de la v2 con transiciones, solo uno lo tenia en
+   cuenta. Un bloque global es mas fiable que repetirlo en cada sitio: quien
+   haya pedido reducir el movimiento en su sistema deja de ver animaciones
+   en toda la interfaz, no solo en las partes que alguien se acordo de
+   cubrir. No se pone a 0 sino a 0,01 ms para que sigan disparandose los
+   eventos de fin de transicion de los que depende algun componente. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Foco en controles que no son <button> ────────────────────────────
+   Filas de tabla, conversaciones e insignias que reciben role + tabindex:
+   sin un anillo visible se puede llegar con Tab pero no se ve donde estas,
+   que es media reparacion. :focus-visible solo lo pinta con teclado, no al
+   pulsar con el raton. */
+[role="button"][tabindex]:focus-visible,
+[role="switch"][tabindex]:focus-visible,
+[role="option"][tabindex]:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+  border-radius: var(--r-sm, 6px);
+}
+
+/* ============================================================
+   tp-datepicker (tp-datepicker.js): día/mes/año elegido, "hoy" y
+   botones Borrar/Hoy. Clases propias con más especificidad que el
+   reset ".tp-scope button" y que las utilidades de Tailwind.
+   ============================================================ */
+.tp-dp__panel button.tp-dp__sel,
+.tp-dp__panel button.tp-dp__sel:hover {
+  background: var(--brand-600, #1f5fbf);
+  color: #fff;
+  font-weight: 600;
+}
+.tp-dp__panel button.tp-dp__today {
+  box-shadow: inset 0 0 0 1px var(--brand-400, #6b9be6);
+  color: var(--brand-600, #1f5fbf);
+  font-weight: 600;
+}
+.tp-dp__panel button.tp-dp__link {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong, #94a3b8);
+  border-radius: 6px;
+  background: var(--surface-raised, #fff);
+  color: var(--fg-primary, #0f172a);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+.tp-dp__panel button.tp-dp__link:hover {
+  background: var(--surface-sunken, #f1f5f9);
+  color: var(--fg-primary, #0f172a);
+}
+.tp-dp__panel button.tp-dp__link[data-dp-today] {
+  background: var(--brand-600, #1f5fbf);
+  border-color: var(--brand-600, #1f5fbf);
+  color: #fff;
+}
+.tp-dp__panel button.tp-dp__link[data-dp-today]:hover {
+  background: var(--brand-700, #194f9f);
+  border-color: var(--brand-700, #194f9f);
+}
+
+/* ── Planes del equipo («Upgrade», live.js openDevicePlans) ───────────── */
+.tp-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.tp-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-lg, 12px);
+  background: var(--surface-raised);
+}
+.tp-plan__title {
+  font-weight: 600;
+  font-size: var(--fs-md, 14px);
+  color: var(--fg-primary);
+}
+.tp-plan__dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: var(--fs-sm, 13px);
+}
+.tp-plan__dl dt { color: var(--fg-tertiary); }
+.tp-plan__dl dd { margin: 0; text-align: right; color: var(--fg-primary); }
+.tp-plan .tp-btn { margin-top: auto; }
+.tp-live__row-upgrade {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-link);
+  cursor: pointer;
+  text-decoration: underline;
+}

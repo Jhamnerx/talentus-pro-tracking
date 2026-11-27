@@ -5,6 +5,13 @@
     </div>
 
     <div class="panel-body">
+
+        @if(!(new \Tobuli\Helpers\Backup\BackupService(settings('backups')))->hasHiveCredentials())
+        <div class="alert alert-warning">
+            <span class="warning">{{ trans('admin.automatic_backup_disabled') }}</span>
+        </div>
+        @endif
+
         {!! Form::open(['route' => 'admin.backups.save', 'method' => 'POST', 'class' => 'form form-horizontal', 'id' => 'database-backup-form']) !!}
 
         <div class="form-group">
@@ -60,6 +67,38 @@
             </div>
         </div>
 
+        <hr>
+        <h4>{{ trans('backups.drive_title') }}</h4>
+
+        <div class="form-group">
+            <div class="col-xs-12 col-sm-8 col-sm-offset-4">
+                <label>
+                    {!! Form::checkbox('drive_enabled', 1, !empty($settings['drive_enabled'])) !!}
+                    {{ trans('backups.drive_enabled') }}
+                </label>
+            </div>
+        </div>
+
+        @foreach ([
+            'drive_remote' => $settings['drive_remote'] ?? 'gdrive',
+            'drive_path' => $settings['drive_path'] ?? 'backup_plataforma/',
+            'retention_daily_days' => $settings['retention_daily_days'] ?? 30,
+            'retention_long_term_months' => $settings['retention_long_term_months'] ?? 2,
+            'retention_max_days' => $settings['retention_max_days'] ?? 365,
+        ] as $field => $value)
+            <div class="form-group">
+                {!! Form::label($field, trans('backups.' . $field), ['class' => 'col-xs-12 col-sm-4 control-label']) !!}
+                <div class="col-xs-12 col-sm-8">
+                    {!! Form::text($field, $value, ['class' => 'form-control']) !!}
+                </div>
+            </div>
+        @endforeach
+
+        <button class="btn btn-main" type="button" onClick="test_drive();">
+            <i class="icon upload"></i> {{ trans('backups.test_drive') }}
+        </button>
+        <div class="test_drive_response alert alert-danger" style="display: none;"></div>
+
         @if (isset($settings['ftp_server']))
             <hr>
             <h4>
@@ -93,6 +132,30 @@
                         $('.test_ftp_response').show().removeClass('alert-danger').addClass('alert-success').html(res.message);
                     else
                         $('.test_ftp_response').show().removeClass('alert-success').addClass('alert-danger').html(res.message);
+                }
+            });
+        }
+
+        function test_drive() {
+            $.ajax({
+                type: 'GET',
+                url: '{{ route('admin.backups.test_drive') }}',
+                beforeSend: function() {
+                    $('.test_drive_response').hide();
+                },
+                success: function(res) {
+                    $('.test_drive_response')
+                        .show()
+                        .toggleClass('alert-success', res.status == 1)
+                        .toggleClass('alert-danger', res.status != 1)
+                        .text(res.message);
+                },
+                error: function() {
+                    $('.test_drive_response')
+                        .show()
+                        .removeClass('alert-success')
+                        .addClass('alert-danger')
+                        .text(@json(trans('front.unexpected_error')));
                 }
             });
         }

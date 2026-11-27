@@ -50,9 +50,9 @@ class AppendSpeedLimitGeofence extends ActionAppend
             if ($geofence->id != $geofence_id)
                 continue;
 
-            $device = $this->getDevice();
-
-            $resolved = $geofence->speedLimitFor($device->vehicleType, $device->vehicleState);
+            // Clasificacion segun el dueño de la geocerca; el Device se reutiliza
+            // en todo el recorrido asi que la consulta se memoiza por usuario.
+            $resolved = $geofence->speedLimitForDevice($this->getDevice());
 
             $speed_limit = empty($resolved) ? 0 : $resolved;
             $this->limits[$geofence_id] = $speed_limit;

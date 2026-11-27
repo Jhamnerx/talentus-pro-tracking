@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diem rate',
     'forwards' => 'Înainte',
     'group_6' => 'Supraveghetor',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Utilizator creat înainte de zile',
     'reminders_trans' => 'Traduceri mementouri',
     'passwords_trans' => 'Traduceri parole',

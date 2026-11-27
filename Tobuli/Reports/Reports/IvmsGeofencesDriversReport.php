@@ -83,7 +83,9 @@ class IvmsGeofencesDriversReport extends DeviceHistoryReport
             $drivers = $group->stats()->has('drivers') ? $group->stats()->get('drivers')->value() : null;
 
             if (empty($drivers)) {
-                $row['driver_name'] = $row['driver_rfid'] = trans('front.unknown');
+                $row['driver_name'] = 'Unknown';
+                $row['driver_rfid'] = '';
+
                 $this->items[] = $row;
 
                 continue;

@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Tính thường xuyên',
         'unit' => 'Đơn vị',
         'noreply_email' => 'Không có địa chỉ email trả lời',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Chữ ký',
         'use_smtp_server' => 'Sử dụng máy chủ SMTP',
         'smtp_server_host' => 'Máy chủ SMTP',

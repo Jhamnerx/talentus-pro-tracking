@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Дием ратес',
     'forwards' => 'Напријед',
     'group_6' => 'Надзорник',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Корисник креиран пре дана',
     'reminders_trans' => 'Преводи подсетника',
     'passwords_trans' => 'Преводи лозинки',

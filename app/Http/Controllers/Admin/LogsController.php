@@ -65,7 +65,7 @@ class LogsController extends BaseController
             return redirect(route('admin.logs.index'));
         }
 
-        return Response::download($file->path);
+        return Response::downloadStreamFile($file->path);
     }
 
     /**

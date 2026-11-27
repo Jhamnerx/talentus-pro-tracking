@@ -19,25 +19,14 @@
                             <th>{{ trans('front.address') }}</th>
                             <th>{{ trans('front.altitude') }}</th>
                             <th>{{ trans('front.speed') }}</th>
-
-                            {{-- @foreach ($item['sensors'] as $sensor)
-                                <th>{{ $sensor['name'] }}</th>
-                            @endforeach --}}
-
-                            <!-- Cambiando el título del campo 'event' a 'Alerta' -->
-                            <th>{{ trans('front.alert') }}</th>
-                            <th>{{ trans('front.value_exceeds') }}</th>
-                            {{-- @foreach ($item['parameters'] as $parameter)
-                                <th>{{ $parameter }}</th>
-                            @endforeach --}}
+                            <th>{{ trans('front.teltonika_event') }}</th>
+                            <th>{{ trans('front.teltonika_event_detail') }}</th>
                         </tr>
                     </thead>
                     <tbody>
-
                         @if (isset($item['error']))
                             <tr>
-                                <td colspan="{{ 7 + count($item['meta']) + count($item['parameters']) }}">
-                                    {{ $item['error'] }}</td>
+                                <td colspan="{{ 9 + count($item['meta']) }}">{{ $item['error'] }}</td>
                             </tr>
                         @else
                             @foreach ($item['table']['rows'] as $row)
@@ -52,31 +41,8 @@
                                     <td>{!! $row['location'] !!}</td>
                                     <td>{{ $row['altitude'] }}</td>
                                     <td>{{ $row['speed'] }}</td>
-                                    {{-- @foreach ($item['sensors'] as $sensor)
-                                        <th>{{ $row['sensors'][$sensor['id']] ?? '' }}</th>
-                                    @endforeach --}}
-
-                                    <!-- Mostrar solo los parámetros que coincidan con 'event_types' -->
-                                    <td>{{ trans('front.alert_' . $row['parameters']['event'] ?? '') }}</td>
-
-                                    @foreach ($item['parameters'] as $parameter)
-                                        @if (strpos($parameter, $row['parameters']['event']) !== false)
-                                            <td>
-                                                @if ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '1')
-                                                    {{ trans('front.alert_253_1') }}
-                                                @elseif ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '2')
-                                                    {{ trans('front.alert_253_2') }}
-                                                @elseif ($row['parameters']['event'] == '253' && $row['parameters'][$parameter] == '3')
-                                                    {{ trans('front.alert_253_3') }}
-                                                @else
-                                                    {{ $row['parameters'][$parameter] ?? '' }}
-                                                @endif
-                                            </td>
-                                        @endif
-                                    @endforeach
-                                    {{-- @foreach ($item['parameters'] as $parameter)
-                                        <td>{{ $row['parameters'][$parameter] ?? '' }}</td>
-                                    @endforeach --}}
+                                    <td>{{ $row['event'] }}</td>
+                                    <td>{{ $row['detail'] }}</td>
                                 </tr>
                             @endforeach
                         @endif

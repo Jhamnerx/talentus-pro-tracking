@@ -23,7 +23,19 @@ class Numerical extends Sensor
 
     protected function getResult($value)
     {
-        return parseNumber($value);
+        return $this->valueTypeConvert(parseNumber($value));
+    }
+
+    /**
+     * @param $value
+     * @return float|int|null
+     */
+    protected function valueTypeConvert($value)
+    {
+        if (is_null($value))
+            return null;
+
+        return floatval($value);
     }
 
     public function getValueFormatted($value)

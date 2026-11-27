@@ -183,6 +183,7 @@ return array(
         'frequency' => '频率',
         'unit' => '单位',
         'noreply_email' => '没有回复邮箱地址',
+        'reply_to_email' => 'Reply-To email',
         'signature' => '签名',
         'use_smtp_server' => '使用SMTP服务器',
         'smtp_server_host' => 'SMTP服务器主机',

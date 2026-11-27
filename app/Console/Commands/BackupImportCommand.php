@@ -10,8 +10,9 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Tobuli\Entities\Device;
 use Tobuli\Helpers\Backup\BackupService;
-use Tobuli\Helpers\Backup\FileMeta;
-use Tobuli\Helpers\Backup\Uploader\BackupFtp;
+use Tobuli\Helpers\Backup\BackupPathResolver;
+use Tobuli\Helpers\Backup\BackupTempFile;
+use Tobuli\Helpers\Backup\Destination\BackupDestination;
 
 class BackupImportCommand extends Command
 {
@@ -32,26 +33,30 @@ class BackupImportCommand extends Command
         self::CAT_DEV => 'Devices positions',
     ];
 
-    protected $signature = 'backup:import';
+    protected $signature = 'backup:import {--destination= : ftp o drive}';
 
     protected $description = 'Import backup';
 
-    private BackupFtp $ftp;
+    private BackupService $service;
+    private BackupDestination $destination;
     private string $folder;
 
     public function handle(): void
     {
-        $ftpSettings = $this->getFtpSettings();
+        $this->service = new BackupService($this->getFtpSettings());
 
-        $this->ftp = (new BackupService($ftpSettings))->ftp();
+        $this->destination = $this->service->destination(
+            $this->option('destination')
+                ?: $this->choice('Destino', array_keys($this->service->destinations()))
+        );
 
-        if (!$this->ftp->check()) {
-            throw new \Exception('Invalid ftp settings');
+        if (!$this->destination->check()) {
+            throw new \Exception('Invalid destination settings');
         }
 
         $this->getFolder();
 
-        if ($this->ftp->findFirstFile($this->folder) === null) {
+        if (!$this->destination->exists($this->folder)) {
             throw new \Exception('Folder empty');
         }
 
@@ -80,21 +85,37 @@ class BackupImportCommand extends Command
     {
         $this->line('Main DB restore started');
 
-        $file = $this->ftp->getMainDbFile($this->folder);
+        $relative = BackupPathResolver::databaseFile(DB::getConfig());
+        $remote = $this->folder . '/' . $relative;
 
-        if ($file === null) {
-            $this->error('Main DB file not found in backup folder. Expected filename pattern: ' . \Tobuli\Helpers\Backup\Uploader\BackupFtp::getDatabaseFilename(\Illuminate\Support\Facades\DB::getConfig()) . '*');
-            throw new \RuntimeException('Main DB backup file not found on FTP. Check that DB_HOST in .env matches the backup filename prefix.');
+        if (!$this->destination->exists($remote)) {
+            $this->error('Main DB file not found in backup folder. Expected: ' . $relative);
+            throw new \RuntimeException('Main DB backup file not found. Check that DB_HOST in .env matches the backup filename prefix.');
         }
 
-        dispatch_sync(new DatabaseImportJob(DB::getConfig(), $file, null));
+        $file = BackupTempFile::path(basename($relative));
+
+        try {
+            $this->destination->download($remote, $file);
+            BackupTempFile::assertValid($file, true);
+
+            dispatch_sync(new DatabaseImportJob(DB::getConfig(), $file, null));
+        } finally {
+            File::delete($file);
+        }
 
         $this->line('Main DB successfully restored');
     }
 
     private function restoreDevices(array $options): void
     {
-        $query = Device::query();
+        if (str_starts_with($this->folder, 'soloweb_')) {
+            $this->warn('Esta copia (soloweb_) no tiene posiciones; no hay nada que restaurar de los dispositivos.');
+
+            return;
+        }
+
+        $query = Device::with('traccar')->whereHas('traccar');
 
         if (isset($options['device_id_from'])) {
             $query->where('id', '>=', $options['device_id_from']);
@@ -121,15 +142,23 @@ class BackupImportCommand extends Command
 
     private function restoreDevice(Device $device)
     {
-        $file = $this->ftp->getDeviceFile($device, $this->folder);
+        $relative = BackupPathResolver::devicePositionsFile($device->traccar);
+        $remote = $this->folder . '/' . $relative;
 
-        if ($file === null) {
+        if (!$this->destination->exists($remote)) {
             return;
         }
 
-        dispatch_sync(new DevicePositionsImportJob($device, $file, null));
+        $file = BackupTempFile::path(basename($relative));
 
-        File::delete($file);
+        try {
+            $this->destination->download($remote, $file);
+            BackupTempFile::assertValid($file);
+
+            dispatch_sync(new DevicePositionsImportJob($device, $file, null));
+        } finally {
+            File::delete($file);
+        }
     }
 
     private function getFtpSettings(): array
@@ -158,15 +187,16 @@ class BackupImportCommand extends Command
     {
         $choice = 'n';
         $page = 0;
-        $items = $this->ftp->findBackupFolders();
+        $items = array_merge(
+            $this->destination->listFolders('backup_'),
+            $this->destination->listFolders('soloweb_')
+        );
 
         if (empty($items)) {
             throw new \RuntimeException('No backups found');
         }
 
-        $items = array_map(fn(FileMeta $item) => $item->getName(), $items);
-
-        usort($items, fn($a, $b) => strcmp($b, $a));
+        usort($items, fn($a, $b) => strcmp(strstr($b, '_'), strstr($a, '_')));
 
         while (!is_numeric($choice)) {
             $pageItems = array_slice($items, $page * self::PAGE_SIZE, self::PAGE_SIZE);

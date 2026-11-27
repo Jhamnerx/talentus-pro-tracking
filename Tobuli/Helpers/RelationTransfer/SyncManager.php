@@ -7,7 +7,9 @@ use Tobuli\Entities\Device;
 use Tobuli\Entities\User;
 use Tobuli\Helpers\RelationTransfer\Sync\AbstractRelationSync;
 use Tobuli\Helpers\RelationTransfer\Sync\DeviceUsersAlertsDevicesSync;
+use Tobuli\Helpers\RelationTransfer\Sync\DeviceUsersReportsDevicesSync;
 use Tobuli\Helpers\RelationTransfer\Sync\UserDevicesAlertsDevicesSync;
+use Tobuli\Helpers\RelationTransfer\Sync\UserDevicesReportsDevicesSync;
 
 class SyncManager
 {
@@ -17,8 +19,14 @@ class SyncManager
     public function __construct()
     {
         $this->map = [
-            [(new User())->devices(), [UserDevicesAlertsDevicesSync::class]],
-            [(new Device())->users(), [DeviceUsersAlertsDevicesSync::class]],
+            [(new User())->devices(), [
+                UserDevicesAlertsDevicesSync::class,
+                UserDevicesReportsDevicesSync::class,
+            ]],
+            [(new Device())->users(), [
+                DeviceUsersAlertsDevicesSync::class,
+                DeviceUsersReportsDevicesSync::class,
+            ]],
         ];
     }
 
@@ -83,7 +91,7 @@ class SyncManager
         throw new \InvalidArgumentException('Relation not supported');
     }
 
-    public function setAsync(bool $async): self
+    public function setAsync(bool $async = true): self
     {
         $this->async = $async;
 

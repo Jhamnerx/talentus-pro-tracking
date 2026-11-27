@@ -22,6 +22,7 @@ class CommandTemplate extends AbstractEntity
         'message',
         'protocol',
         'adapted',
+        'lock_action',
     ];
 
     protected $searchable = [
@@ -91,6 +92,12 @@ class CommandTemplate extends AbstractEntity
     public function setAdaptedAttribute($value)
     {
         $this->attributes['adapted'] = empty($value) ? null : $value;
+    }
+
+    /** Uso en el widget de bloqueo: solo 'block'/'unblock'; cualquier otra cosa = null. */
+    public function setLockActionAttribute($value)
+    {
+        $this->attributes['lock_action'] = in_array($value, ['block', 'unblock'], true) ? $value : null;
     }
 
     public function isAdaptedFromDevice($device): bool

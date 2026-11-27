@@ -2,6 +2,7 @@
 
 namespace Tobuli\Reports\Reports;
 
+use Tobuli\Entities\Device;
 use Tobuli\Entities\UserDriver;
 use Tobuli\Helpers\Formatter\Facades\Formatter;
 use Tobuli\History\Actions\Distance;
@@ -9,6 +10,7 @@ use Tobuli\History\Actions\Drivers;
 use Tobuli\History\Actions\DriveStop;
 use Tobuli\History\Actions\EngineHours;
 use Tobuli\History\Actions\GroupDrive;
+use Tobuli\History\DeviceHistory;
 use Tobuli\History\Group;
 use Tobuli\Reports\DeviceHistoryReport;
 use Tobuli\Reports\RfidFormatter;
@@ -20,8 +22,6 @@ class IvmsTravelSheetDriverReport extends DeviceHistoryReport
     const TYPE_ID = 89;
 
     protected $disableFields = ['geofences', 'show_addresses', 'zones_instead'];
-
-    private int $tripId;
 
     public function __construct()
     {
@@ -59,7 +59,7 @@ class IvmsTravelSheetDriverReport extends DeviceHistoryReport
 
     protected function beforeGenerate()
     {
-        $this->tripId = 0;
+        $this->stop_seconds = IvmsDriversEventsReport::MAX_DRIVE_PAUSE;
     }
 
     protected function generate()
@@ -79,9 +79,16 @@ class IvmsTravelSheetDriverReport extends DeviceHistoryReport
             return null;
         }
 
-        /** @var Group $group */
-        foreach ($data['groups']->all() as $group) {
-            $row = ['trip_id' => ++$this->tripId];
+        /** @var Group[] $groups */
+        $groups = $data['groups']->all();
+
+        if ($firstGroup = array_shift($groups)) {
+            $firstExtendedGroup = $this->getExtendedDrive($firstGroup, $device);
+            array_unshift($groups, $firstExtendedGroup ?: $firstGroup);
+        }
+
+        foreach ($groups as $group) {
+            $row = ['trip_id' => $this->getTripId($group, $device)];
 
             $row += $this->getDataFromGroup($group, ['engine_idle']);
 
@@ -101,7 +108,9 @@ class IvmsTravelSheetDriverReport extends DeviceHistoryReport
             $drivers = $group->stats()->has('drivers') ? $group->stats()->get('drivers')->value() : null;
 
             if (empty($drivers)) {
-                $row['driver_name'] = $row['driver_rfid'] = trans('front.unknown');
+                $row['driver_name'] = 'Unknown';
+                $row['driver_rfid'] = '';
+
                 $this->items[] = $row;
 
                 continue;
@@ -117,6 +126,60 @@ class IvmsTravelSheetDriverReport extends DeviceHistoryReport
                 $this->items[] = $row;
             }
         }
+    }
+
+    private function getExtendedDrive(Group $drive, Device $device): ?Group
+    {
+        if (!$drive->getEndPosition()) {
+            return null;
+        }
+
+        $history = new DeviceHistory($device);
+        $history->setConfig([
+            'stop_seconds'  => $this->stop_seconds,
+            'stop_speed'    => $device->min_moving_speed,
+        ]);
+
+        $from = date('Y-m-d H:i:s', strtotime($this->date_from) - (24 * 60 * 60));
+
+        $history->setRange($from, $drive->getEndPosition()->time);
+        $history->registerActions($this->getActionsList());
+
+        /** @var Group[] $groups */
+        $groups = $history->get()['groups']->all();
+
+        $group = end($groups);
+
+        if ($group === false) {
+            return null;
+        }
+
+        if (!$group->getStartPosition()) {
+            return null;
+        }
+
+        $endPosition = $group->getEndPosition();
+
+        if (!$endPosition) {
+            return null;
+        }
+
+        if ($endPosition->time < $this->date_from) {
+            return null;
+        }
+
+        return $group;
+    }
+
+    private function getTripId(Group $group, Device $device): ?string
+    {
+        $startPosition = $group->getStartPosition();
+
+        if (!$startPosition) {
+            return null;
+        }
+
+        return Formatter::time()->convert($startPosition->time, 'mdYHis') . '-' . $device->id;
     }
 
     private function formatCoordinates($position): string

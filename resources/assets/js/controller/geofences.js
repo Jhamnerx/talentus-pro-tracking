@@ -41,7 +41,7 @@ function Geofences() {
             initComponents("#geofences_export");
           },
         });
-      }
+      },
     );
 
     $(document)
@@ -50,14 +50,14 @@ function Geofences() {
         '[data-toggle="tab"][href="#geofencing_create"]',
         function (e) {
           _this.cancelEditing();
-        }
+        },
       )
       .on(
         "hidden.bs.tab",
         '[data-toggle="tab"][href="#geofencing_edit"]',
         function (e) {
           _this.cancelEditing();
-        }
+        },
       );
 
     $(_this.map()).on(
@@ -70,7 +70,7 @@ function Geofences() {
         var layer = geofence.getLayer();
 
         if (layer) _this.map().addLayer(layer);
-      }
+      },
     );
 
     _this.map().on(L.Draw.Event.CREATED, function (e) {
@@ -81,7 +81,9 @@ function Geofences() {
       var type = e.layerType,
         layer = e.layer;
 
-      if (type === "polygon" || type === "circle") {
+      // Leaflet.draw emite "polyline" para el corredor. Sin esta rama la
+      // linea dibujada se descartaba y Guardar enviaba polygon vacio.
+      if (type === "polygon" || type === "circle" || type === "polyline") {
         dd("app.drawnItems.addLayer");
 
         var _polygon = tmpItem.setLayer(layer);
@@ -97,7 +99,7 @@ function Geofences() {
       'input[name="search"]',
       $.debounce(100, function () {
         _this.list();
-      })
+      }),
     );
   };
 
@@ -337,7 +339,7 @@ function Geofences() {
       function () {
         _this.initForm(tmpItem, $container);
       },
-      false
+      false,
     );
 
     app.openTab("geofencing_create");
@@ -361,6 +363,10 @@ function Geofences() {
           feet: app.settings.units.speed.radio != 1,
         });
         break;
+      case "line":
+        // Corredor: se dibuja el eje; la anchura se escribe en el formulario
+        draw = new L.Draw.Polyline(_this.map());
+        break;
       default:
         draw = new L.Draw.Polygon(_this.map());
     }
@@ -380,6 +386,22 @@ function Geofences() {
         name: "polygon",
         value: JSON.stringify(tmpItem.getLatLngs()),
       });
+    } else if (
+      tmpItem.getLayer() instanceof L.Polyline &&
+      !(tmpItem.getLayer() instanceof L.Polygon)
+    ) {
+      // Corredor: el eje va en polygon y la anchura en radius, que aqui es la
+      // distancia maxima al eje (la mitad del ancho).
+      data.push(
+        {
+          name: "polygon",
+          value: JSON.stringify(tmpItem.getLatLngs()),
+        },
+        {
+          name: "type",
+          value: "line",
+        },
+      );
     } else if (tmpItem.getLayer() instanceof L.Circle) {
       data.push(
         {
@@ -397,7 +419,7 @@ function Geofences() {
         {
           name: "type",
           value: "circle",
-        }
+        },
       );
     }
 
@@ -413,6 +435,14 @@ function Geofences() {
   _this.edit = function (id) {
     tmpItem = items[id];
 
+    // Con la capa de geocercas oculta (showGeofences = 0) la forma no esta
+    // en el mapa: al editar un circulo reventaba (layerPointToLatLng de
+    // undefined) y con poligonos no habia vertices que arrastrar. Se pinta
+    // solo la que se edita; cancelEditing la vuelve a quitar.
+    if (!_this.map().hasLayer(tmpItem.getLayer())) {
+      _this.map().addLayer(tmpItem.getLayer());
+    }
+
     tmpItem.enableEdit();
 
     let $container = $("#geofencing_edit");
@@ -423,7 +453,7 @@ function Geofences() {
       function () {
         _this.initForm(tmpItem, $container);
       },
-      false
+      false,
     );
 
     _this.map().fitBounds(tmpItem.getBounds());
@@ -451,7 +481,27 @@ function Geofences() {
         {
           name: "type",
           value: "polygon",
-        }
+        },
+      );
+    } else if (
+      tmpItem.getLayer() instanceof L.Polyline &&
+      !(tmpItem.getLayer() instanceof L.Polygon)
+    ) {
+      // Corredor: el eje va en polygon; la anchura sale del campo radius del
+      // formulario, que ya viene en data por serializeArray().
+      data.push(
+        {
+          name: "polygon",
+          value: JSON.stringify(tmpItem.getLatLngs()),
+        },
+        {
+          name: "id",
+          value: tmpItem.id(),
+        },
+        {
+          name: "type",
+          value: "line",
+        },
       );
     } else if (tmpItem.getLayer() instanceof L.Circle) {
       data.push(
@@ -474,7 +524,7 @@ function Geofences() {
         {
           name: "type",
           value: "circle",
-        }
+        },
       );
     }
 
@@ -491,8 +541,17 @@ function Geofences() {
     if (!confirmed) {
       $("#deleteGeofence button[onclick]").attr(
         "onclick",
-        "app.geofences.delete(" + id + ', true, "' + modal_id + '");'
+        "app.geofences.delete(" + id + ', true, "' + modal_id + '");',
       );
+
+      // Si es punto de control de alguna ruta, avisar: al borrarla
+      // desaparece de esas rutas (ON DELETE CASCADE) sin mas.
+      var $warn = $("#deleteGeofence [data-routes-warning]");
+      var routes = items[id] ? parseInt(items[id].options().routes_count, 10) || 0 : 0;
+      $warn.toggle(routes > 0);
+      if (routes > 0 && window.lang && window.lang.geofence_used_by_routes) {
+        $warn.text(window.lang.geofence_used_by_routes.replace(":n", routes));
+      }
 
       return;
     }
@@ -550,7 +609,7 @@ function Geofences() {
     tmpItem.update(_options);
 
     $('[name="coordinates"]', $container).val(
-      JSON.stringify(tmpItem.getBounds())
+      JSON.stringify(tmpItem.getBounds()),
     );
 
     dd("geofences.map.click.data", _options);
@@ -587,7 +646,9 @@ function Geofences() {
 
     tmpItem.removeLayer();
 
-    if (tmpItem.id()) {
+    // Solo vuelve al mapa si la capa de geocercas esta visible; si se
+    // edito con la capa oculta, se queda oculta como las demas.
+    if (tmpItem.id() && items[tmpItem.id()].isLayerVisible()) {
       _this.map().addLayer(items[tmpItem.id()].getLayer());
     }
 
@@ -615,6 +676,12 @@ function Geofences() {
         _options = $.extend({}, _options, tmpItem.polygonToCircle());
         break;
     }
+
+    // Sin nada dibujado todavia no hay geometria que convertir: con solo
+    // cambiar el tipo antes de dibujar, enableEdit reventaba leyendo
+    // `lng` de null (fallo 14 de la QA legacy). El dibujador ya quedo
+    // preparado para el tipo nuevo; se dibuja y listo.
+    if (!_options.coordinates && !_options.center) return;
 
     tmpItem.enableEdit(_options);
 

@@ -10,6 +10,16 @@
             {!! Form::label('name', trans('validation.attributes.name') . ':') !!}
             {!! Form::text('name', null, ['class' => 'form-control']) !!}
         </div>
+
+        <div class="form-group" style="margin-bottom:4px;">
+            <label>{{ trans('front.vehicle_states') }}:</label>
+            <small style="display:block;">{{ trans('ui.name_badge_color') }}</small>
+        </div>
+
+        <div class="empty-input-items">
+            @include('Frontend.VehicleTypes.partials.state_row', ['state' => null])
+        </div>
+        @include('Frontend.VehicleTypes.partials.state_rows_script')
     {!! Form::close() !!}
 @stop
 

@@ -59,6 +59,9 @@ class EnsureEmailIsVerified
         if (!$user)
             return $next($request);
 
+        if (!$user->email)
+            return $next($request);
+
         if ($user->hasVerifiedEmail())
             return $next($request);
 
@@ -73,7 +76,7 @@ class EnsureEmailIsVerified
         if ($request->expectsJson() || $request->ajax())
             throw new AuthorizationException(trans('front.please_verify_email'), 403);
 
-        return Redirect::route('verification')->with('url', $request->fullUrl());
+        return Redirect::route('verification.email')->with('url', $request->fullUrl());
     }
 
     protected function inExceptArray($request)

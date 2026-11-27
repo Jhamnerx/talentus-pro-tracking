@@ -64,6 +64,32 @@
                         'data-filter' => 'true',
                     ]) !!}
                 </div>
+                <div class="form-group" style="min-width: 150px;">
+                    {!! Form::select(
+                        'filter[group_id]',
+                        ['' => trans('validation.attributes.group_id') . ': ' . trans('admin.all')] + config('lists.users_groups'),
+                        null,
+                        [
+                            'class' => 'form-control',
+                            'data-filter' => 'true',
+                        ],
+                    ) !!}
+                </div>
+                <div class="form-group" style="min-width: 150px;">
+                    {!! Form::select(
+                        'filter[active]',
+                        [
+                            '' => trans('validation.attributes.status') . ': ' . trans('admin.all'),
+                            '1' => trans('validation.attributes.active'),
+                            '0' => trans('front.inactive'),
+                        ],
+                        null,
+                        [
+                            'class' => 'form-control',
+                            'data-filter' => 'true',
+                        ],
+                    ) !!}
+                </div>
             </div>
         </div>
 

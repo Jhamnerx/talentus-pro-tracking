@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Tezlik',
         'unit' => 'Vahid',
         'noreply_email' => 'Cavab verilməyən email adresi',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'İmza',
         'use_smtp_server' => 'SMTP server işlət',
         'smtp_server_host' => 'SMTP server sahibi',

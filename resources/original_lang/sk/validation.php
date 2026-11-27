@@ -178,6 +178,7 @@ return array(
         'frequency' => 'Frekvencia',
         'unit' => 'Jednotka',
         'noreply_email' => 'Žiadna odpoveď e - mailová adresa',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Podpis',
         'use_smtp_server' => 'Použiť SMTP server',
         'smtp_server_host' => 'Hostiteľ SMTP server',

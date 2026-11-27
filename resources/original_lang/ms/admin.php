@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Kadar diem',
     'forwards' => 'Ke hadapan',
     'group_6' => 'Penyelia',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Pengguna dibuat sebelum hari',
     'reminders_trans' => 'Terjemahan peringatan',
     'passwords_trans' => 'Terjemahan kata laluan',

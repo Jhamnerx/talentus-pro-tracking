@@ -247,8 +247,11 @@ class MyAccountSettingsModalHelper extends ModalHelper
             DeviceGroupRepo::deleteUsersWhereNotIn($arr, $item->id);
         }
 
-        if (! $this->api) {
+        if (isset($this->data['widgets'])) {
             $this->user->setSettings('widgets', $this->data['widgets'] ?? null, true);
+        }
+
+        if (isset($this->data['dashboard'])) {
             $this->user->setSettings('dashboard', $this->data['dashboard'] ?? null, true);
         }
 

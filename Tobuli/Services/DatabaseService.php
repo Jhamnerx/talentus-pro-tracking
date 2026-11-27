@@ -17,14 +17,14 @@ class DatabaseService
     const DEFAULT_CONNECTION = 'traccar_mysql';
     const MAIN_CONNECTION = 'mysql';
 
-    public static function instance(): self
+    public static function instance() : self
     {
         return new static();
     }
 
     public static function loadDatabaseConfig()
     {
-        Cache::store('array')->remember('device.position.databases', 60, function () {
+        Cache::store('array')->remember('device.position.databases', 60, function() {
             $databases = Database::all();
 
             foreach ($databases as $database)
@@ -34,7 +34,7 @@ class DatabaseService
         });
     }
 
-    protected static function toName($database_id): string
+    protected static function toName($database_id) : string
     {
         return "database{$database_id}";
     }
@@ -44,12 +44,12 @@ class DatabaseService
         return $databaseName === self::DEFAULT_CONNECTION ? 0 : str_replace('database', '', $databaseName);
     }
 
-    public function getConnection($database_id): Connection
+    public function getConnection($database_id) : Connection
     {
         return DB::connection($this->getDatabaseName($database_id));
     }
 
-    public function getDatabaseName($database_id): string
+    public function getDatabaseName($database_id) : string
     {
         return $database_id && $this->getDatabaseConfig($database_id)
             ? self::toName($database_id)
@@ -66,7 +66,7 @@ class DatabaseService
         return config("database.connections." . self::toName($database_id));
     }
 
-    public function getDatabases(): Collection
+    public function getDatabases() : Collection
     {
         $config = config("database.connections." . self::DEFAULT_CONNECTION);
         $default = new Database();
@@ -84,7 +84,7 @@ class DatabaseService
 
     public function getActiveDatabaseId()
     {
-        $actives = Cache::store('array')->remember('device.position.active_databases', 60, function () {
+        $actives = Cache::store('array')->remember('device.position.active_databases', 60, function() {
             return Database::where('active', 1)->get();
         });
 
@@ -207,7 +207,7 @@ class DatabaseService
         });
     }
 
-    protected function getDataDir(Connection $connection): ?string
+    protected function getDataDir(Connection $connection) : ?string
     {
         $results = $connection->select(
             $connection->raw('SHOW VARIABLES WHERE Variable_name = "datadir"')
@@ -249,7 +249,7 @@ class DatabaseService
         return CacheShellCommandResultJob::getResult($cacheKey);
     }
 
-    protected static function isCluster(Connection $connection): bool
+    protected static function isCluster(Connection $connection) : bool
     {
         $results = $connection->select(
             $connection->raw('SHOW VARIABLES WHERE Variable_name = "wsrep_on"')
@@ -263,13 +263,12 @@ class DatabaseService
         return $value == 'ON';
     }
 
-    protected static function isLocal(Connection $connection): bool
+    protected static function isLocal(Connection $connection) : bool
     {
         if (self::isCluster($connection))
             return false;
-
-        return in_array(
-            $connection->getConfig('host'),
+        
+        return in_array($connection->getConfig('host'),
             [
                 'localhost',
                 '127.0.0.1'
@@ -281,7 +280,7 @@ class DatabaseService
     {
         return  $connection
             ->table('space_usage')
-            ->when($keys, function ($query) use ($keys) {
+            ->when($keys, function($query) use ($keys) {
                 $query->whereIn('id', $keys);
             })
             ->get();

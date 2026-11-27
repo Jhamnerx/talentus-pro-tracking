@@ -183,6 +183,7 @@ return array(
         'frequency' => '周波数',
         'unit' => '台',
         'noreply_email' => '返信メールアドレスなし',
+        'reply_to_email' => 'Reply-To email',
         'signature' => '署名',
         'use_smtp_server' => 'SMTPサーバーを使用する',
         'smtp_server_host' => 'SMTPサーバーホスト',

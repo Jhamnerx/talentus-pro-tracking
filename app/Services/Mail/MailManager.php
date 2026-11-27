@@ -11,9 +11,7 @@ use Illuminate\Support\Arr;
 class MailManager extends IlluminateMailManager
 {
     /**
-     * Create an instance of the Sendgrid Swift Transport driver.
-     *
-     * @return \Swift_SmtpTransport
+     * Create an instance of the Sendgrid Transport driver.
      */
     protected function createSendgridTransport()
     {
@@ -25,7 +23,7 @@ class MailManager extends IlluminateMailManager
     }
 
     /**
-     * Create an instance of the Postmark Swift Transport driver.
+     * Create an instance of the Postmark Transport driver.
      *
      * @return \App\Services\Mail\PostmarkTransport
      */
@@ -43,5 +41,14 @@ class MailManager extends IlluminateMailManager
         $config = $this->app['config']->get('services.gpswoxmailer', []);
 
         return new GpswoxMailerTransport(new Curl(), $config['api_key']);
+    }
+
+    public function createGmailTransport(): GmailTransport
+    {
+        $config = $this->app['config']->get('services.gmail', []);
+
+        $client = new HttpClient(Arr::get($config, 'guzzle', []));
+
+        return new GmailTransport($client, $config);
     }
 }

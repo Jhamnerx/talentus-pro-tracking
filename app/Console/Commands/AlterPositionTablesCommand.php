@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Database;
 use Tobuli\Services\DatabaseService;
 
@@ -47,7 +46,7 @@ class AlterPositionTablesCommand extends Command
 
         /** @var Database $database */
         foreach ($databases as $database) {
-            $this->output->writeln('Database ' . $database->host);
+            $this->output->writeln("Host `$database->host`, database `$database->database`");
 
             $this->processDatabase($database);
 
@@ -59,18 +58,18 @@ class AlterPositionTablesCommand extends Command
         return 0;
     }
 
-    private function processDatabase(Database $database)
+    private function processDatabase(Database $database): void
     {
-        $dbName = $this->dbService->getDatabaseName($database->id);
+        $conn = $this->dbService->getConnection($database->id);
 
-        $query = $database->getQuery()
-            ->from('information_schema.statistics')
+        $query = $conn
+            ->table('information_schema.columns')
             ->where('table_schema', $database->database)
             ->where('table_name', 'LIKE', 'positions_%')
-            ->where('column_name', 'device_id');
+            ->whereIn('column_name', ['device_id', 'power']);
 
         $itemsCount = (clone $query)
-            ->selectRaw('COUNT(DISTINCT table_name, index_name) AS ct')
+            ->selectRaw('COUNT(DISTINCT table_name) AS ct')
             ->first()
             ->ct;
 
@@ -80,7 +79,7 @@ class AlterPositionTablesCommand extends Command
             return;
         }
 
-        $builder = DB::connection($dbName)->getSchemaBuilder();
+        $builder = $conn->getSchemaBuilder();
 
         $progressBar = $this->output->createProgressBar($itemsCount);
 

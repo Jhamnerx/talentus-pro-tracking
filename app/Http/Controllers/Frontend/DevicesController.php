@@ -16,11 +16,13 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Session;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\Geofence;
-use Tobuli\Entities\VehicleState;
 use Tobuli\History\Actions\Duration;
 use Tobuli\History\Actions\GroupGeofenceInOut;
 use Tobuli\History\DeviceHistory;
+use Tobuli\Reports\ReportManager;
+use Tobuli\Reports\Reports\RoutesReport;
 use Tobuli\Services\DeviceImageService;
+use Tobuli\Services\EntityLoader\UserDevicesGroupLoader;
 use Tobuli\Services\EntityLoader\UserDevicesLoader;
 use Tobuli\Services\FractalSerializers\WithoutDataArraySerializer;
 
@@ -28,26 +30,35 @@ class DevicesController extends Controller
 {
     private UserDevicesLoader $devicesLoader;
 
+    private UserDevicesGroupLoader $devicesGroupLoader;
+
     protected function afterAuth($user)
     {
         $this->devicesLoader = new UserDevicesLoader($user);
         $this->devicesLoader->setRequestKey(request('request_key', 'devices'));
+
+        $this->devicesGroupLoader = new UserDevicesGroupLoader($user);
+        $this->devicesGroupLoader->setRequestKey(request('request_key', 'devices'));
     }
 
-    public function index()
+    public function index(Request $request)
     {
         if (!$this->user->perm('devices', 'view'))
             throw new PermissionException();
 
-        if (request('type') === 'sms') {
-            $this->devicesLoader->setQueryItems(
-                $this->devicesLoader->getQueryItems()->where('sim_number', '!=', '')
+        $loader = $request->has('grouped')
+            ? $this->devicesGroupLoader
+            : $this->devicesLoader;
+
+        if ($request->get('type') === 'sms') {
+            $loader->setQueryItems(
+                $loader->getQueryItems()->where('sim_number', '!=', '')
             );
         }
 
-        $items = $this->devicesLoader->get();
+        $loader->addAppends(['type', 'grouped']);
 
-        return response()->json($items);
+        return response()->json($loader->get());
     }
 
     public function create()
@@ -111,11 +122,16 @@ class DevicesController extends Controller
 
         $this->checkException('devices', 'edit', $item);
 
-        $states = $item->vehicle_type_id
-            ? VehicleState::where('vehicle_type_id', $item->vehicle_type_id)->pluck('name', 'id')
-            : collect();
+        // Estados del tipo con el que ESTE usuario clasifico el dispositivo.
+        $vehicleType = $item->vehicleTypeFor($this->user->id);
+        $vehicleState = $item->vehicleStateFor($this->user->id);
 
-        return view('front::Devices.vehicleStateForm', compact('item', 'states'));
+        $states = $vehicleType
+            ? $vehicleType->states()->orderBy('name')->pluck('name', 'id')
+            : collect();
+        $vehicle_state_id = $vehicleState ? $vehicleState->id : null;
+
+        return view('front::Devices.vehicleStateForm', compact('item', 'states', 'vehicle_state_id'));
     }
 
     public function changeVehicleState()
@@ -163,6 +179,26 @@ class DevicesController extends Controller
         return view('front::Devices.follow_map', [
             'item' => FractalTransformer::setSerializer(WithoutDataArraySerializer::class)
                 ->item($item, DeviceMapTransformer::class)->toArray()
+        ]);
+    }
+
+    /**
+     * Small modal (opened from the device map popup) asking the date range
+     * for a Routes report (RoutesReport::TYPE_ID) of a single device.
+     */
+    public function routeReport($device_id)
+    {
+        $item = Device::find($device_id);
+
+        $this->checkException('devices', 'show', $item);
+        $this->checkException('reports', 'view');
+
+        $reportManager = (new ReportManager())->setUser($this->user);
+
+        return view('front::Devices.route_report', [
+            'item'    => $item,
+            'type'    => RoutesReport::TYPE_ID,
+            'enabled' => array_key_exists(RoutesReport::TYPE_ID, $reportManager->getUsableList($this->user)),
         ]);
     }
 

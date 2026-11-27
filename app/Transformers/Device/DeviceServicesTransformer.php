@@ -2,7 +2,6 @@
 
 namespace App\Transformers\Device;
 
-use App\Transformers\BaseTransformer;
 use Tobuli\Entities\Device;
 
 class DeviceServicesTransformer extends DeviceTransformer {
@@ -12,7 +11,7 @@ class DeviceServicesTransformer extends DeviceTransformer {
 
         foreach ($entity->services as $service)
         {
-            $service->setSensors($entity->sensors);
+            $service->setDevice($entity)->setSensors($entity->sensors);
 
             $result[] = [
                 'id'       => (int)$service->id,

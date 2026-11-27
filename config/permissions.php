@@ -98,6 +98,12 @@ return [
             'edit'  => 1,
             'remove'  => 1,
         ],
+        // Video JT1078 en vivo y grabaciones (ver config/video.php). No se da a todos: ver la migracion 2026_11_14_000002.
+        'device_video' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 0,
+        ],
         'tasks' => [
             'view'  => 1,
             'edit'  => 1,
@@ -109,6 +115,15 @@ return [
             'remove'  => 1,
         ],
         'chat' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 0,
+        ],
+        // Talentus IA CHAT: asistente IA. Los valores indican que modos existen;
+        // el acceso real se concede por usuario/plan (por defecto apagado).
+        // view = usar el chat (solo lectura); edit = que proponga acciones
+        // (alertas, comandos, reportes programados), siempre con confirmacion.
+        'ai_assistant' => [
             'view'  => 1,
             'edit'  => 1,
             'remove'  => 0,
@@ -233,6 +248,21 @@ return [
             'edit' => 1,
             'remove' => 0,
         ],
+        'device.tags' => [
+            'view' => 1,
+            'edit' => 1,
+            'remove' => 0,
+        ],
+        'flights_info' => [
+            'view'  => 1,
+            'edit'  => 0,
+            'remove'  => 0,
+        ],
+        'tags' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
         'sharing' => [
             'view'  => 1,
             'edit'  => 1,
@@ -287,6 +317,22 @@ return [
             'view'  => 1,
             'edit'  => 1,
             'remove'  => 1,
+        ],
+        // Modulo de Operaciones (control de vueltas). No se siembra en
+        // user_permissions: el admin lo marca por usuario (piloto). Para
+        // abrirlo a todos: PermissionService::addToAll('operations').
+        'operations' => [
+            'view'  => 1,
+            'edit'  => 1,
+            'remove'  => 1,
+        ],
+
+        // Seguridad - control de flota (dashboard F&M). Igual que operations:
+        // no se siembra; el admin lo marca por usuario.
+        'security' => [
+            'view'   => 1,
+            'edit'   => 1,
+            'remove' => 0, // la vista de permisos del admin lee las tres claves
         ],
         'widget_template_webhook' => [
             'view'  => 1,

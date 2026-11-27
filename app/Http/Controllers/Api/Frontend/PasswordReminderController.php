@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Frontend;
 
+use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Tobuli\Entities\EmailTemplate;
@@ -66,6 +67,8 @@ class PasswordReminderController extends BaseController
         $user->save();
 
         $passwordReset->delete();
+
+        event(new PasswordReset($user));
 
         return ['success' => 1];
     }

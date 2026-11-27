@@ -5,7 +5,7 @@
             @if(auth()->user()->perm('device.protocol', 'view'))
             {!! tableHeader('validation.attributes.title') !!}
             @endif
-            {!! tableHeader('front.tags') !!}
+            {!! tableHeader('validation.attributes.parameters') !!}
             {!! tableHeader('validation.attributes.message') !!}
             {!! tableHeader('admin.show_always') !!}
             <th></th>

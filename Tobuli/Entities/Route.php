@@ -5,6 +5,7 @@ namespace Tobuli\Entities;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\DisplayTrait;
@@ -48,15 +49,25 @@ class Route extends AbstractEntity implements DisplayInterface
                 return;
             }
 
+            $coordinates = $item->coordinates ?: [];
+
+            // Una ruta con menos de dos puntos no es una linea. Sin este corte
+            // sale un ST_GeomFromText('LINESTRING()') que revienta la consulta
+            // y tumba el guardado entero.
+            if (count($coordinates) < 2) {
+                return;
+            }
+
             $linestring = null;
 
-            foreach($item->coordinates as $coordinate) {
+            foreach($coordinates as $coordinate) {
                 $linestring .= $coordinate['lat'] . ' ' . $coordinate['lng'] . ',';
             }
 
             $linestring = substr($linestring, 0, -1);
 
-            DB::unprepared("UPDATE routes SET polyline = GeomFromText('LINESTRING($linestring)') WHERE id = '$item->id'");
+            // ST_GeomFromText: GeomFromText (sin prefijo) se eliminó en MySQL 8.
+            DB::unprepared("UPDATE routes SET polyline = ST_GeomFromText('LINESTRING($linestring)') WHERE id = '$item->id'");
         });
     }
 
@@ -68,6 +79,28 @@ class Route extends AbstractEntity implements DisplayInterface
     public function group()
     {
         return $this->belongsTo(RouteGroup::class, 'group_id', 'id');
+    }
+
+    /** Puntos de control, ya en el orden en que hay que pasarlos. */
+    public function checkpoints(): HasMany
+    {
+        return $this->hasMany(RouteCheckpoint::class)
+            ->orderBy('direction')
+            ->orderBy('position');
+    }
+
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(RouteSchedule::class);
+    }
+
+    /** @return \Illuminate\Support\Collection Puntos de un sentido, en orden. */
+    public function checkpointsFor(string $direction)
+    {
+        return $this->checkpoints
+            ->where('direction', $direction)
+            ->sortBy('position')
+            ->values();
     }
 
     public function scopeVisible($query)

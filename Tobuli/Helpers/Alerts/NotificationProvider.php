@@ -20,6 +20,7 @@ class NotificationProvider
         Notification\PopupNotification::class,
         Notification\PushNotification::class,
         Notification\EmailNotification::class,
+        Notification\ReportNotification::class,
         Notification\SmsNotification::class,
         Notification\WebhookNotification::class,
         Notification\SharingEmailNotification::class,

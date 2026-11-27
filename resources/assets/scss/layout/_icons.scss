@@ -513,24 +513,24 @@ img.sensor-icon {
   &.gsm-4,
   &.gsm-5 {
     &:after {
-      @extend .ico-gsm-0:before;
+      content: "\e919";
     }
   }
 
   &.gsm-1:before {
-    @extend .ico-gsm-1:before;
+    content: "\e91a";
   }
   &.gsm-2:before {
-    @extend .ico-gsm-2:before;
+    content: "\e91b";
   }
   &.gsm-3:before {
-    @extend .ico-gsm-3:before;
+    content: "\e91c";
   }
   &.gsm-4:before {
-    @extend .ico-gsm-4:before;
+    content: "\e91d";
   }
   &.gsm-5:before {
-    @extend .ico-gsm-5:before;
+    content: "\e91e";
   }
 
   &.battery,
@@ -541,30 +541,30 @@ img.sensor-icon {
   &.battery-4,
   &.battery-5 {
     &:after {
-      @extend .ico-battery-0:before;
+      content: "\e906";
     }
   }
   &.battery {
     &:before {
-      @extend .ico-battery-4:before;
+      content: "\e90c";
     }
     &.battery-0:before {
       content: "";
     }
     &.battery-1:before {
-      @extend .ico-battery-1:before;
+      content: "\e907";
     }
     &.battery-2:before {
-      @extend .ico-battery-2:before;
+      content: "\e908";
     }
     &.battery-3:before {
-      @extend .ico-battery-3:before;
+      content: "\e909";
     }
     &.battery-4:before {
-      @extend .ico-battery-4:before;
+      content: "\e90c";
     }
     &.battery-5:before {
-      @extend .ico-battery-5:before;
+      content: "\e90d";
     }
   }
 }

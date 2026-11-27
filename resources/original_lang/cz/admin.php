@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diem sazby',
     'forwards' => 'Útočníci',
     'group_6' => 'Dozorce',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Uživatel vytvořen před dny',
     'reminders_trans' => 'Překlady připomenutí',
     'passwords_trans' => 'Překlady hesel',

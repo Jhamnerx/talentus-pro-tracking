@@ -2,29 +2,35 @@
 
 namespace Tobuli\Helpers\GeoLocation\GeoServices;
 
-use Language;
+use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\RequestOptions;
 use Illuminate\Support\Arr;
+use Language;
+use Tobuli\Helpers\GeoLocation\Exceptions\GeocoderServerException;
 use Tobuli\Helpers\GeoLocation\GeoSettings;
 use Tobuli\Helpers\GeoLocation\Location;
 
 class GeoNominatim extends AbstractGeoService
 {
-    protected $url;
-    protected $curl;
-    protected $requestOptions = [];
+    protected string $url;
+    protected GuzzleClient $client;
+    protected array $requestOptions = [];
 
     public function __construct(GeoSettings $settings)
     {
         parent::__construct($settings);
 
-        $curl = new \Curl;
-        $curl->options['CURLOPT_SSL_VERIFYPEER'] = false;
-        $curl->options['CURLOPT_TIMEOUT'] = 5;
-        $curl->options['CURLOPT_USERAGENT'] = 'Server GPS application';
-        $curl->options['CURLOPT_REFERER'] = url('/');
-
-        $this->curl = $curl;
         $this->url = $this->settings->getApiUrl();
+        $this->client = new GuzzleClient([
+            RequestOptions::TIMEOUT  => 5,
+            RequestOptions::VERIFY   => false,
+            RequestOptions::HEADERS  => [
+                'User-Agent'    => 'GPSWOX application',
+                'Referer'       => url('/'),
+            ],
+        ]);
+
         $this->requestOptions = [
             'format'          => 'json',
             'accept-language' => Language::iso(),
@@ -64,27 +70,40 @@ class GeoNominatim extends AbstractGeoService
 
     protected function request($method, $options)
     {
-        $response = $this->curl->get(
-            trim($this->url, '/') . '/' . $method . '.php',
-            array_merge($options, $this->requestOptions)
-        );
+        $url = trim($this->url, '/') . '/' . $method . '.php';
 
-        if ( ! in_array($response->headers['Status-Code'], [200])) {
-            $this->throwException($response->headers['Status-Code']);
+        try {
+            $response = $this->client->get($url, $this->getRequestOptions($options));
+        } catch (RequestException $e) {
+            $statusCode = $e->getResponse() ? $e->getResponse()->getStatusCode() : 500;
+            $this->throwException($statusCode);
         }
 
-        $response_body = json_decode($response->body, true);
+        $statusCode = $response->getStatusCode();
 
-        if (empty($response_body))
+        if ($statusCode !== 200) {
+            $this->throwException($statusCode);
+        }
+
+        $responseBody = json_decode($response->getBody()->getContents(), true);
+
+        if (empty($responseBody)) {
             $this->throwException(404);
-
-        if (array_key_exists('error', $response_body)) {
-            throw new \Exception(Arr::get($response_body, 'error'));
         }
 
-        return (is_array($response_body) && ! empty($response_body)) ? $response_body : null;
+        if (array_key_exists('error', $responseBody)) {
+            throw new \Exception(Arr::get($responseBody, 'error'));
+        }
+
+        return (is_array($responseBody) && !empty($responseBody)) ? $responseBody : null;
     }
 
+    protected function getRequestOptions(array $params): array
+    {
+        return [
+            RequestOptions::QUERY => array_merge($params, $this->requestOptions)
+        ];
+    }
 
     protected function locationObject($address)
     {
@@ -122,15 +141,12 @@ class GeoNominatim extends AbstractGeoService
         switch ($status_code) {
             case 429:
                 throw new \Exception('Geocoder API request limit exceeded.');
-                break;
             case 401:
                 throw new \Exception('Geocoder API Key is invalid or inactive');
-                break;
             case 404:
                 throw new \Exception('Unable to geocode');
-                break;
             default:
-                throw new \Exception('Geocoder API error. Code: ' . $status_code);
+                throw new GeocoderServerException('Geocoder API error. Code: ' . $status_code);
         }
     }
 }

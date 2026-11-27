@@ -65,7 +65,15 @@ class EventCustomAlertCheck extends AlertCheck
         if ( ! $position)
             return null;
 
-        if ($eventCustom->protocol != $position->protocol)
+        // Protocolo vacio = "cualquiera". Los eventos estandar se apoyan en el
+        // parametro `alarm`, que Traccar normaliza igual en todos los
+        // protocolos, asi que una sola definicion vale para toda la flota y
+        // para los equipos que se añadan en el futuro.
+        //
+        // Ningun evento existente tiene el protocolo vacio (0 de 108), asi que
+        // esto no cambia el comportamiento de nada de lo que ya funciona.
+        if ($eventCustom->protocol !== null && $eventCustom->protocol !== ''
+            && $eventCustom->protocol != $position->protocol)
             return null;
 
         if ( ! $this->checkCustomEventConditions($position, $eventCustom))

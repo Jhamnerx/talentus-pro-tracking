@@ -78,6 +78,9 @@ class DeviceMapFullTransformer extends DeviceTransformer
             'moved_timestamp' => (int)$entity->moved_timestamp,
 
             'protocol'        => $this->canView($entity, 'protocol'),
+            'camera_channels' => $entity->has_camera && $entity->supportsVideo() && $this->canView($entity, 'camera_channels')
+                ? array_values((array)$entity->camera_channels)
+                : [],
             'expiration_date' => $expirationDate,
 
             'detect_engine'      => $entity->detect_engine,
@@ -136,7 +139,7 @@ class DeviceMapFullTransformer extends DeviceTransformer
         $result = [];
 
         foreach ($entity->services as $service) {
-            $service->setSensors($entity->sensors);
+            $service->setDevice($entity)->setSensors($entity->sensors);
 
             $result[] = [
                 'id'       => $service->id,

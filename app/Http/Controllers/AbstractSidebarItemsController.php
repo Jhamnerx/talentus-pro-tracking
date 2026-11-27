@@ -67,16 +67,18 @@ abstract class AbstractSidebarItemsController extends Controller
                 $q->when($filters, function ($q) use ($filters) {
                     $q->filter($filters);
                 });
+                $q->limit(1);
             })
-            ->withCount(['items', 'itemsVisible'])
-            ->when($search || $filters, fn (Builder $q) => $q
-                ->withCount(['items as items_filter_count' => function($q) use ($search, $filters) {
-                    $q->search($search);
-                    $q->filter($filters);
-                }])
-            )
             ->orderBy('title')
             ->paginate();
+
+        $groups->loadCount(['items', 'itemsVisible']);
+        if ($search || $filters) {
+            $groups->loadCount(['items as items_filter_count' => function($q) use ($search, $filters) {
+                $q->search($search);
+                $q->filter($filters);
+            }]);
+        }
 
         if (request()->get('page', 1) <= 1) {
             $ungrouped = $this->groupModel->makeUngroupedWithCount($this->user);

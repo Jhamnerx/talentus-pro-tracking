@@ -43,7 +43,7 @@ class PermissionsHash {
 
         if ($user && !($response instanceof BinaryFileResponse)) {
             $hash = md5(json_encode($user->getPermissions()));
-            $response->header('X-Permission-Hash', $hash);
+            $response->headers->set('X-Permission-Hash', $hash);
         }
 
         return $response;

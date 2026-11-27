@@ -285,6 +285,7 @@ class MainServerSettingsController extends BaseController
 
             $settings['allow_users_registration'] = boolval($input['allow_users_registration']);
             $settings['email_verification'] = boolval($input['email_verification']);
+            $settings['phone_verification'] = boolval($input['phone_verification']);
             $settings['enable_plans'] = isset($input['enable_plans']);
             $settings['allow_user_change_plan'] = isset($input['allow_user_change_plan']);
             $settings['default_billing_plan'] = isset($input['enable_plans']) ? $input['default_billing_plan'] : NULL;

@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Dienų tarifai',
     'forwards' => 'Į priekį',
     'group_6' => 'Prižiūrėtojas',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Vartotojas sukurtas prieš dienas',
     'reminders_trans' => 'Priminimų vertimai',
     'passwords_trans' => 'Slaptažodžių vertimai',

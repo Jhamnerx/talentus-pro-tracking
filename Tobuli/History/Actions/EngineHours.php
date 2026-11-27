@@ -12,6 +12,8 @@ class EngineHours extends ActionStat
 
     protected $sensor;
 
+    protected $multiplier;
+
     static public function required()
     {
         return [
@@ -34,9 +36,11 @@ class EngineHours extends ActionStat
 
         if ($this->sensor && !in_array($this->sensor->tag_name, $formatTags)) {
             if ($this->sensor->shown_value_by === 'logical') {
-                $this->callback = [$this, 'byEngineHoursLogicalSensor'];
+                $this->callback = [$this, 'byEngineHoursSensor'];
+                $this->multiplier = 3600;
             } else {
                 $this->callback = [$this, 'byEngineHoursSensor'];
+                $this->multiplier = $this->sensor->unit_type ? 3600 : 1;
             }
         } else if ($this->sensor && $this->sensor->shown_value_by !== 'virtual') {
             $this->callback = [$this, 'byEngineHoursFormatSensor'];
@@ -66,21 +70,13 @@ class EngineHours extends ActionStat
 
         $previousValue = $this->getSensorValue($this->sensor, $previous);
 
-        return floatval($value) - floatval($previousValue);
+        return (floatval($value) - floatval($previousValue)) * $this->multiplier;
     }
 
     protected function byEngineHoursSensor($position)
     {
         $this->setStats(
             $this->getEngineHoursSensorDiffValue($position),
-            $position
-        );
-    }
-
-    protected function byEngineHoursLogicalSensor($position)
-    {
-        $this->setStats(
-            $this->getEngineHoursSensorDiffValue($position) * 3600,
             $position
         );
     }

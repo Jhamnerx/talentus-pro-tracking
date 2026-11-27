@@ -41,12 +41,14 @@ class DatabaseImportJob implements ShouldQueue
 
     protected function runProcess(): Process
     {
-        $command = $this->buildCommand();
-
-        $process = Process::fromShellCommandline($command);
+        // La clave va por entorno: con -p'clave' una clave vacía pide contraseña por terminal.
+        $process = Process::fromShellCommandline(
+            'bash -o pipefail -c ' . escapeshellarg($this->buildCommand()),
+            null,
+            ['MYSQL_PWD' => (string)$this->config['password']]
+        );
         $process->setTimeout(0);
         $process->run();
-        $process->wait();
 
         if ($process->isSuccessful()) {
             return $process;
@@ -76,18 +78,15 @@ class DatabaseImportJob implements ShouldQueue
     public static function buildDatabaseImportCommand(string $file, array $config): string
     {
         $command = 'mysql'
-            . " -h '{$config['host']}'"
-            . " -u '{$config['username']}'"
-            . " -p'{$config['password']}'"
-            . " --port={$config['port']}"
-            . " {$config['database']}";
+            . ' -h ' . escapeshellarg($config['host'])
+            . ' -u ' . escapeshellarg($config['username'])
+            . ' --port=' . escapeshellarg($config['port'])
+            . ' ' . escapeshellarg($config['database']);
 
         if (str_ends_with($file, '.gz')) {
-            $command = "zcat $file | $command";
-        } else {
-            $command .= " < $file";
+            return 'zcat ' . escapeshellarg($file) . ' | ' . $command;
         }
 
-        return $command;
+        return $command . ' < ' . escapeshellarg($file);
     }
 }

@@ -39,7 +39,7 @@ class ReportManager
         25 => Reports\ObjectHistoryReport::class,
         27 => Reports\AutomonCustomReport::class,
         28 => Reports\GeofencesShiftReport::class,
-        29 => Reports\EngineHoursVirtualReport::class,
+        29 => Reports\EngineHoursDailyReport::class,
         30 => Reports\IgnitionOnOff24ModeReport::class,
         31 => Reports\GeofencesTouchAllReport::class,
         32 => Reports\SentCommandsReport::class,
@@ -106,11 +106,23 @@ class ReportManager
         93 => Reports\LastLocationReport::class,
         94 => Reports\GeofencesOutReport::class,
         95 => Reports\StopsFilterReport::class,
+        96 => Reports\FuelTankUsageSplitReport::class,
+        97 => Reports\UsersDevicesReport::class,
+        98 => Reports\GeofencesInOutDriversReport::class,
         902 => Reports\DevicesAlerts::class,
         903 => Reports\ObjectHistoryMovementReport::class,
         904 => Reports\OverspeedsInGeofenceCustomReport::class,
         905 => Reports\OverspeedsInGeofenceCustomReportV2::class,
         906 => Reports\OverspeedsInGeofenceCustomReportBuenaventura::class,
+        907 => Reports\DrivingBehaviourReport::class,
+        908 => Reports\OperatingCostReport::class,
+        909 => Reports\RouteAdherenceReport::class,
+        910 => Reports\OperationCyclesReport::class,
+        911 => Reports\OperationStopsReport::class,
+        912 => Reports\OperationWorkHoursReport::class,
+        913 => Reports\RefuelingVisitsReport::class,
+        914 => Reports\OperationShiftReportPdf::class,
+        915 => Reports\OperationAreaExitsReport::class,
 
     ];
 
@@ -149,6 +161,21 @@ class ReportManager
         }
 
         return $list;
+    }
+
+    /**
+     * Whether the HTML result of a report type is shown inside the system instead of downloaded
+     * (Report::$viewable). Read from the class defaults so no report has to be built.
+     */
+    public static function isViewableType($type): bool
+    {
+        $class = self::$types[$type] ?? null;
+
+        if (!$class || !class_exists($class)) {
+            return false;
+        }
+
+        return (bool) ((new \ReflectionClass($class))->getDefaultProperties()['viewable'] ?? false);
     }
 
     public static function getFormats(): array
@@ -304,7 +331,7 @@ class ReportManager
     public function fromEntity(\Tobuli\Entities\Report $report, $data)
     {
         //check report
-        $this->report($data['type']);
+        $type = $this->report($data['type']);
 
         Formatter::byUser($data['user']);
 
@@ -315,6 +342,8 @@ class ReportManager
 
         if ($report->devices()->count()) {
             $deviceQuery = $report->devices();
+        } elseif ($type->hasAllDevices()) {
+            $deviceQuery = $data['user']->accessibleDevices();
         } else {
             $deviceQuery = $data['user']->devices();
         }

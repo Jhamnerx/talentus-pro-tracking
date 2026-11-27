@@ -1,0 +1,527 @@
+# Guía de actualización — módulo Operaciones (merge `operaciones` → `nuevo-tema`, 12-oct-2026; §8 Seguridad, §9 Clasificación, §10 Reporte de turno)
+
+Cubre todo lo que entra con el merge commit `8b6dc288` (54 commits, 135 archivos).
+Sirve tanto para el servidor de pruebas (`nuevo-tema`) como, más adelante, para
+producción (MariaDB 10.5.29) cuando `nuevo-tema` pase a `master`.
+
+Tres bloques entraron juntos:
+
+| Bloque | Qué es | Necesita algo en el servidor |
+| ------ | ------ | ---------------------------- |
+| **A. Módulo de Operaciones** (control de vueltas), fases 1–3 + tipo «ruta» | Entidades, 5 migraciones, comando programado, reportes 910–913, alerta nueva, página v2 | **Sí**: migraciones, `.env`, cron, reiniciar `insert:run`, permiso por usuario |
+| **B. Arreglos de la UI v2** (live, monitor, historial, dashboard, fichas) | Solo código y assets ya compilados | Limpiar caché de vistas |
+| **C. Plugins del admin que no hacían nada** (SIM, Eventos recientes) | Código | Revisar que el admin los tenga como quiere |
+
+---
+
+## 1. Antes de empezar
+
+1. **Backup de la base de datos.** Las migraciones solo crean tablas nuevas y
+   añaden columnas (no borran nada), pero `geofences` gana una columna + índice.
+2. Confirmar la versión del motor: todas las migraciones usan tipos portables
+   (`dateTime`, JSON como `text`, FKs `unsignedInteger`), probadas en MySQL 8 y
+   pensadas para MariaDB 10.5. No usan funciones espaciales.
+3. Anotar los **procesos de larga vida** que corren en el servidor: `insert:run`
+   (guarda posiciones desde Redis) y los workers `queue:work`. Ambos cargan el
+   código PHP en memoria y hay que reiniciarlos para que vean los cambios.
+
+---
+
+## 2. Pasos de despliegue (en orden)
+
+### 2.1 Código
+
+```bash
+git fetch origin
+git checkout nuevo-tema
+git pull origin nuevo-tema
+composer install --no-dev --optimize-autoloader
+```
+
+No hay dependencias Composer nuevas; el `composer install` solo regenera el
+autoload para que encuentre las clases nuevas (`Tobuli\Entities\Operation*`,
+`Tobuli\Services\Operations\*`, `App\Console\Commands\OperationsProcessCommand`).
+
+### 2.2 Variable de entorno
+
+Añadir al `.env`:
+
+```ini
+OPERATIONS_ENABLED=true
+```
+
+Es el **interruptor de despliegue y de vuelta atrás** (`config('tobuli.operations_enabled')`).
+Apagado (valor por defecto), `PositionsWriter` no hace ninguna consulta ni
+evaluación por el módulo, el comando `operations:process` sale sin tocar nada,
+y la página sigue visible solo para quien tenga el permiso. Se puede desplegar
+con `false`, correr migraciones, y encenderlo cuando el cliente esté listo.
+
+### 2.3 Migraciones
+
+```bash
+php artisan migrate --force
+```
+
+Las cinco que entran, en orden:
+
+| Migración | Qué hace |
+| --------- | -------- |
+| `2026_10_06_000001_add_category_to_geofences_table` | `geofences.category` string(20) nullable + índice. Idempotente (`hasColumn`). |
+| `2026_10_06_000002_create_operations_tables` | Crea `operations`, `operation_shifts`, `operation_points`, `operation_cycles`, `operation_legs`, `operation_visits`, `operation_stops`, `operation_device_state`, `operation_recalculations`. |
+| `2026_10_07_000001_create_operation_stop_reasons_table` | Crea `operation_stop_reasons` y añade `reason_id`, `note`, `justified_by`, `justified_at` a `operation_stops` (fase 2). |
+| `2026_10_09_000001_add_kind_to_operations_table` | `operations.kind` (`haul` acarreo / `route` ruta). |
+| `2026_10_11_000001_add_worked_hours_deductions_to_operations_table` | `operations.worked_hours_deductions` (JSON como texto, fase 3). |
+
+No hay seeders. El catálogo de motivos de parada (`operation_stop_reasons`) se
+siembra solo, por usuario, la primera vez que abre «Motivos» en la página.
+
+### 2.4 Cachés y procesos
+
+```bash
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan cache:clear
+```
+
+Después reiniciar lo que tenga PHP cargado en memoria:
+
+- **`insert:run`** (obligatorio para el módulo): es el proceso que escribe
+  posiciones, y ahí se engancha `OperationChecker`. Si corre bajo supervisor,
+  `supervisorctl restart <programa>`; si corre por el cron del scheduler, matar
+  el proceso vivo y dejar que el cron lo levante.
+- **Workers de cola** (`php artisan queue:restart`).
+- **OPcache / PHP-FPM** si está activo (`systemctl reload php-fpm` o equivalente).
+
+### 2.5 Cron
+
+No hay nada nuevo que añadir al crontab: el comando se registró en el scheduler
+de Laravel (`app/Console/Kernel.php`):
+
+```
+operations:process   cada minuto, withoutOverlapping
+```
+
+Solo verificar que el cron de `schedule:run` sigue activo. Comprobar que corre:
+
+```bash
+php artisan operations:process
+```
+
+Debe terminar sin error y sin salida cuando no hay operaciones (o con el módulo
+apagado). También acepta `--legs` y `--rebuilds` para forzar solo una parte.
+
+### 2.6 Assets
+
+**No hay que compilar nada.** Los archivos compilados de la UI v2
+(`public/assets/ui/v2/css/*`, `public/assets/ui/v2/js/*`, incluidos los nuevos
+`tp-operations.js`, `operations.css`, `tp-map-layers.js`,
+`lib/Leaflet.Marker.SlideTo.js`) y el bundle legacy `public/assets/js/app.js`
+vienen en el repositorio.
+
+Solo si en el servidor se recompila por costumbre: `gulp ui-v2` y `gulp scripts`.
+El `gulpfile.js` cambió (clean-css con `tidySelectors: false`, y SlideTo añadido
+al bundle de librerías); recompilar con un gulpfile viejo volvería a romper el
+modo oscuro de los calendarios.
+
+### 2.7 Traducciones
+
+Los archivos `resources/lang/{es,en}/{front,ui,validation}.php` y
+`resources/original_lang/*` ya vienen con las claves. Si el servidor usa
+`php artisan server:translations` como parte del deploy, correrlo como siempre;
+no hace falta nada más.
+
+---
+
+## 3. Configuración funcional después del deploy
+
+### 3.1 Permiso `operations` (por usuario)
+
+Es un módulo nuevo en `config/permissions.php` (`view`, `edit`, `remove`).
+**No se siembra en `user_permissions`**: ningún usuario lo tiene hasta que el
+admin lo marque en su ficha (Admin → Usuarios → editar → Permisos → «Operaciones»).
+
+Gobierna: la entrada «Operaciones» en el rail de la v2, todas las rutas
+`ui/v2/operations*`, y la visibilidad de los reportes 910–913 (vía
+`isUserEnabled()` del reporte).
+
+Para abrirlo a todos los usuarios de golpe (no recomendado durante el piloto):
+
+```bash
+php artisan tinker --execute="app(\Tobuli\Services\PermissionService::class)->addToAll('operations');"
+```
+
+### 3.2 Alta de una operación (lo hace el cliente o quien lo configure)
+
+1. **Geocercas con categoría.** En el editor de geocercas (v2 y legacy) hay un
+   selector «Categoría»: `carga`, `descarga`, `inicio_ruta`, `fin_ruta`,
+   `grifo`, `taller`, `descanso`. Las de carga/descarga (o inicio/fin de ruta)
+   son los puntos de la operación; `grifo` alimenta el reporte 913 y el
+   descuento «Abastecimiento» del 912; `grifo/taller/descanso` son las zonas
+   donde una parada cuenta como autorizada.
+2. **Grupo de vehículos** con las unidades de la operación.
+3. **Operación** (página Operaciones → Nueva): nombre, tipo (acarreo o ruta),
+   grupo, puntos de carga/descarga, turnos (admiten cruzar medianoche),
+   umbrales (permanencia mínima, duración de parada, horas máximas por tramo),
+   categorías autorizadas y descuentos de horas trabajadas.
+4. Desde ese momento las posiciones nuevas generan vueltas. Para el pasado,
+   «Recalcular» con un rango: encola un recálculo que `operations:process`
+   ejecuta.
+
+Reglas que cambian comportamiento existente:
+
+- **Una geocerca o un grupo usados por una operación no se pueden borrar**
+  (v2 y legacy devuelven error de validación). Primero hay que quitarlos de la
+  operación.
+- Las geocercas **móviles** no se aceptan como punto.
+- Editar la geometría de una geocerca que es punto crea una **versión nueva del
+  punto** (las vueltas pasadas se quedan con la geometría con la que se
+  calcularon).
+
+### 3.3 Alerta «Parada en operación»
+
+Tipo nuevo `operation_stop` en el modal de alertas (v2 y legacy), con umbral en
+segundos (`operation_stop_seconds`, por defecto 60). Solo dispara en vehículos
+que están en un tramo de una operación activa, fuera de zona autorizada. No
+necesita nada en la base: usa las columnas de `alerts` existentes. Hay que
+**crearla por usuario** como cualquier alerta.
+
+### 3.4 Reportes nuevos (visibles solo con el permiso `operations`)
+
+| ID | Nombre | Muestra |
+| -- | ------ | ------- |
+| 910 | Control de vueltas | Una fila por vuelta: tiempos en cada punto, ida, vuelta, ciclo, paradas; totales por día o turno. Es el que abre «Exportar» en la pestaña Vueltas. |
+| 911 | Paradas en operación | Una fila por parada dentro de un tramo, con estado (autorizada / no / dudosa) y justificación. |
+| 912 | Horas trabajadas netas | Por día: horas de motor, descuentos activos, horas netas, combustible y consumo por hora. |
+| 913 | Abastecimiento | Visitas a geocercas `grifo`: entrada, salida, duración. |
+
+Registrados en `Tobuli/Reports/ReportManager::$types`; no hay tabla de tipos
+que actualizar.
+
+---
+
+## 4. Verificación tras el deploy
+
+```bash
+php artisan migrate:status | grep 2026_10
+php artisan schedule:list | grep operations
+php artisan operations:process
+```
+
+Y en la interfaz, con un usuario que tenga el permiso:
+
+1. El rail de la v2 muestra «Operaciones»; la página abre con las tres pestañas
+   (En vivo, Vueltas, Operaciones).
+2. Editor de geocercas: aparece el selector «Categoría» y el filtro por
+   categoría en la lista de zonas.
+3. Modal de alertas: aparece el tipo «Parada en operación».
+4. Reportes: los cuatro nuevos están en la lista; un reporte sin datos debe
+   devolver una página vacía, no un error (`4d6711a5`).
+5. Intentar borrar una geocerca usada por una operación debe fallar con el
+   mensaje correspondiente.
+
+Si el módulo está encendido y hay una operación activa, en un par de minutos la
+pestaña «En vivo» debe mostrar el estado de cada vehículo (en carga, ida, en
+descarga, vuelta).
+
+---
+
+## 5. Qué más entra en el mismo merge (bloques B y C)
+
+No piden pasos de despliegue, pero conviene saberlo para las pruebas:
+
+**UI v2**
+
+- Monitor: capas del mapa, resplandor del seleccionado, color por velocidad y
+  animación de movimiento del marcador (plugin del admin
+  `device_move_animation`, el mismo que usa el legacy).
+- Live: colores de estado alineados con el legacy (una sola paleta), estado
+  «Detenido» en el mapa, icono de encendido con `acc.svg`/`acc_off.svg`, unidad
+  sin transmitir ya no sale como viva, dirección cacheada por posición.
+- Historial: hora libre `HH:MM` en el rango (sin redondeo a 5 min), «última
+  hora» abre la última hora, popup del punto conserva dirección y botón «más».
+- Dashboard: no confunde «detenido» con «ralentí»; el modal de tablero abría
+  vacío con `id="undefined"`.
+- Ficha de vehículo: el editor de tramos de color por velocidad ya no reescribe
+  el primer «desde» a 0; el primer tramo por defecto en `config/tobuli.php`
+  empieza en 1 kph (a 0 el vehículo está parado y no se colorea).
+- Etiqueta fija de la geocerca con nombre y tamaño en el mapa.
+
+**Plugins del admin que no funcionaban** (revisar cómo los tiene marcados el
+admin, porque ahora sí obedecen):
+
+- «Renovar la fecha de vencimiento de la SIM después de renovar la suscripción»:
+  la clave estaba mal escrita (`_renew_sim_expiration`) y el listener nunca
+  actuaba. Ahora, si está marcado, al renovar una suscripción renueva la SIM.
+- «Eventos recientes» (widget): salía siempre aunque estuviera apagado. Ahora
+  respeta el interruptor.
+
+**Repositorio**
+
+- `public/images/device_images` pasa a `.gitignore` (fotos subidas de cada
+  instalación). Si en el servidor ese directorio tenía archivos versionados,
+  `git pull` no los borra; quedan como están.
+
+---
+
+## 6. Vuelta atrás
+
+- **Rápida (sin tocar código):** `OPERATIONS_ENABLED=false` + `config:clear` +
+  reiniciar `insert:run`. El módulo deja de evaluar posiciones y el comando
+  programado no hace nada. Las tablas y la página quedan, sin efecto.
+- **Completa:** `git revert -m 1 8b6dc288` en `nuevo-tema` revierte los tres
+  bloques de una vez. Las migraciones tienen `down()`; `php artisan migrate:rollback --step=5`
+  elimina las tablas y columnas (se pierden las vueltas calculadas).
+
+---
+
+## 7. Pendientes conocidos (no bloquean el deploy)
+
+- `round` → `floor` en `StopDurationAlertCheck` (afecta a todas las alertas de
+  duración de parada, no solo a Operaciones; decisión pendiente).
+- ~~Confirmar con el cliente si cada motivo de parada **autoriza** la parada o
+  solo la explica.~~ **Decidido el 19-oct-2026:** el motivo solo explica; al
+  justificar hay una casilla «Autorizar esta parada» que es la que descuenta
+  la parada de las no autorizadas. El catálogo de motivos ya no tiene la
+  casilla «Autoriza».
+- Validar los conteos de vueltas contra el control manual del cliente antes de
+  darlo por bueno.
+- No hay pruebas automatizadas del módulo (decisión del proyecto); la validación
+  es manual con recálculo sobre rangos conocidos.
+
+---
+
+## 8. Módulo «Seguridad · Control de flota» (rama `seguridad`, 15-oct-2026)
+
+Entra en un merge posterior al de Operaciones. Es el dashboard que reproduce el
+Excel `Dashboard_FM_Seguridad.xlsx` del cliente: agregados diarios por unidad y
+turno, estado en vivo, gráficos y exportación al mismo Excel.
+
+### 8.1 Pasos en el servidor
+
+```bash
+git pull
+php artisan migrate --force
+```
+
+Migración `2026_10_15_000001_create_security_tables`: crea `security_settings`
+(ajustes por usuario) y `security_daily_stats` (agregados). Solo crea tablas.
+
+En el `.env`:
+
+```ini
+SECURITY_ENABLED=true
+```
+
+Es el interruptor del módulo igual que `OPERATIONS_ENABLED`: apagado, el
+comando programado no hace nada (la pantalla sigue visible con permiso y el
+botón «Recalcular» sí calcula, porque es una acción manual del usuario). Después, `php artisan config:cache` (o
+`config:clear` si no se cachea) y `php artisan view:clear`.
+
+No hay dependencias nuevas ni hay que compilar: los bundles de la v2 van en
+el repositorio. No hace falta tocar el crontab: `security:aggregate` ya está
+en el scheduler (cada hora, minuto 20, recalcula ayer y hoy de los usuarios
+que tengan el permiso y hayan abierto la pantalla al menos una vez). Los
+turnos ya cerrados y calculados después de su fin no se repiten; «Recalcular»
+desde la pantalla sí los rehace.
+
+### 8.2 Permiso y carga inicial
+
+1. Admin → Usuarios → Editar → Permisos → **Seguridad** (ver, editar). Sin
+   «editar» el usuario consulta pero no cambia ajustes ni recalcula.
+2. El usuario abre **Seguridad** en el menú (eso crea sus ajustes por defecto:
+   turno Día 07:00–19:00, vigencia 10 min, parada 1 min, hueco de señal 10 min,
+   sin límite manual).
+3. Carga inicial del histórico desde consola (hasta 31 días también se puede
+   desde el botón «Recalcular» de la pantalla):
+
+```bash
+php artisan security:aggregate --user=<id> --from=2026-09-01 --to=$(date +%F)
+```
+
+### 8.3 Qué muestra y de dónde sale
+
+| Dato | Fuente |
+| --- | --- |
+| km, horas de motor, horas en movimiento, paradas, máx. GPS | Pipeline de historial por turno |
+| Sobrevelocidad | Eventos de alertas (exceso y exceso en geocerca) **más** tramos calculados: dentro de geocerca manda el límite de la geocerca; fuera, el límite manual del filtro (vacío = no se cuenta). Sin duplicar |
+| Salidas de geocerca | Eventos de las alertas «Geocerca de salida» del usuario; sin alerta configurada el valor es 0 |
+| Desconexiones | Eventos `power_cut` y `offline_duration` + huecos de señal mayores al ajuste |
+| Cinturón | Solo unidades con sensor de tipo «cinturón»; sin sensor, celda vacía |
+| Estado en vivo | Última posición: vencida si supera la vigencia; movimiento ≥ 1 km/h; stand by = motor encendido |
+
+### 8.4 Verificación
+
+- La pantalla carga con 8 tarjetas, tabla de estado actual, resumen diario,
+  detalle por unidad y 4 gráficos.
+- «Exportar a Excel» descarga un libro con las hojas Seguridad, Operaciones,
+  Datos y Telemetría y los 4 gráficos; las cifras coinciden con la pantalla.
+- Cambiar el límite manual o el turno muestra el aviso de recalcular; tras
+  «Recalcular» cambian los excesos.
+
+### 8.5 Vuelta atrás
+
+`SECURITY_ENABLED=false` detiene el cálculo; `php artisan migrate:rollback --step=1 --force`
+elimina las dos tablas (se pierden los agregados, que se regeneran con el comando).
+
+## 9. Clasificación de vehículo por usuario (rama `clasificacion-por-usuario`, 19-oct-2026)
+
+Hasta ahora el tipo y el estado de vehículo se guardaban en el propio
+dispositivo (`devices.vehicle_type_id` / `vehicle_state_id`), aunque los tipos
+pertenecen a cada cuenta y los vehículos se comparten entre clientes: un
+vehículo compartido solo podía llevar el tipo de uno de ellos y para el otro
+no aplicaba ningún límite por tipo. Ahora cada cuenta clasifica el vehículo
+con **sus propios** tipos y estados (tabla `device_vehicle_classifications`,
+una fila por vehículo y usuario).
+
+### 9.1 Qué cambia para el usuario
+
+- En el formulario del vehículo (legacy, v2 y API) y en «Cambiar estado» cada
+  cuenta ve y guarda **su** tipo/estado; guardar no borra el de otra cuenta.
+- Mapa, lista, ficha, enlaces públicos de Compartir y Seguridad (filtro «Tipo»,
+  tablas y Excel) muestran la clasificación de la cuenta que mira (en Compartir,
+  la del dueño del enlace).
+- Alertas de exceso en geocerca, historial, reportes de exceso en geocerca
+  (904-906 y RAG) y Seguridad resuelven el límite con la clasificación que el
+  **dueño de la geocerca** le dio al vehículo. Si el dueño no lo clasificó, se
+  usa el límite general de la geocerca, como antes.
+- Borrar un tipo de vehículo ya solo afecta a las clasificaciones de esa cuenta.
+
+### 9.2 Pasos en el servidor
+
+```bash
+git pull
+php artisan migrate --force
+php artisan view:clear
+```
+
+Migración `2026_10_20_000001_create_device_vehicle_classifications_table`: crea
+la tabla y copia la clasificación actual de cada vehículo al usuario **dueño
+del tipo** (si el estado guardado era de otro tipo, se copia sin estado). No
+hay variables de entorno ni configuración nueva; no hay que compilar assets ni
+tocar el cron. La migración es idempotente: si se vuelve a ejecutar no duplica
+filas.
+
+### 9.3 Verificación
+
+```sql
+select count(*) from device_vehicle_classifications;
+select count(*) from devices where vehicle_type_id is not null;
+```
+
+Las dos cifras deben coincidir (la segunda puede ser mayor solo si había
+vehículos con un `vehicle_type_id` que ya no existe en `vehicle_types`: esos no
+se copian). Después, con un usuario que tenga tipos definidos: editar un
+vehículo compartido y asignarle un tipo; entrar con la otra cuenta y comprobar
+que su clasificación no cambió (dos filas para el mismo `device_id`).
+
+### 9.4 Vuelta atrás
+
+`php artisan migrate:rollback --step=1 --force` elimina la tabla. No hay nada
+que restaurar en `devices`: las columnas viejas no se tocaron en la migración
+(se dejaron de escribir, pero conservan el valor que tenían), así que el código
+anterior vuelve a leerlas tal cual estaban antes del despliegue. Lo que se
+pierde son las clasificaciones hechas por otras cuentas después de desplegar.
+
+### 9.5 Columnas viejas
+
+`devices.vehicle_type_id` y `vehicle_state_id` siguen en la tabla pero el
+código **ya no las lee ni las escribe**. Se eliminarán con una migración en una
+versión posterior, cuando pruebas confirme el comportamiento. Hasta entonces no
+sirven como referencia: la clasificación vigente es la de la tabla nueva.
+
+---
+
+## 10. Reporte de turno de Operaciones (rama `operaciones-turno`, 22-oct-2026)
+
+Pestaña **«Turno»** del módulo de Operaciones: los 11 elementos del Excel del cliente más la
+gráfica de velocidad de flota, en una sola pantalla, con exportación a Excel con gráficos
+nativos. Plan y decisiones en `docs/superpowers/plans/2026-10-21-operaciones-reporte-de-turno.md`.
+
+### 10.1 Qué cambia para el usuario
+
+- **Modal de operación:** apartado «Descansos» bajo Turnos (programados con horario, o «Fatiga y
+  somnolencia» sin horario); en Opciones avanzadas, «Inicio del día operativo» y «Estado de
+  vehículo automático (Seguridad)» (tipo de vehículo + estado cuando va cargado / vacío).
+- **Modal de motivos de parada:** select «Cuenta como» (— / Mantenimiento / Descanso). Los
+  usuarios nuevos reciben «Fatiga y somnolencia» y «Mantenimiento» ya marcados; los que ya tenían
+  catálogo los añaden a mano.
+- **Pestaña Turno:** filtros (operación, fecha con flechas, turno), tarjetas, cinco gráficas por
+  hora, estados por equipo en barra apilada, tablas de horas y horómetro, kilometraje y
+  abastecimientos; botón «Calcular ahora» cuando el día no tiene resúmenes; «Pantalla completa»;
+  «Exportar Excel». Consulta bajo demanda, sin refresco automático.
+- **Estado cargado / vacío:** si la operación tiene tipo y estados configurados, al abrir cada
+  tramo en vivo el vehículo pasa a «cargado» (carga → descarga) o «vacío» (regreso) para el dueño
+  de la operación, con `DeviceClassificationService`. El recálculo no toca estados.
+
+### 10.2 Pasos en el servidor
+
+```bash
+git fetch origin && git checkout operaciones-turno && git pull
+php artisan migrate --force          # 6 migraciones 2026_10_21_* y 2026_10_22_*
+php artisan view:clear && php artisan cache:clear
+```
+
+Sin dependencias nuevas (PhpSpreadsheet ya estaba) y sin compilar assets (los bundles van en
+la rama). Requiere `OPERATIONS_ENABLED=true` y el cron del scheduler (§2.5).
+
+Migraciones: `operation_shift_breaks`; `operations.day_start / vehicle_type_id /
+loaded_state_id / empty_state_id`; `operation_stop_reasons.state`; `operation_shift_summaries`;
+`operation_hour_stats`; `operation_refuelings`.
+
+### 10.3 Comandos y qué corre solo
+
+| Comando | ¿Automático? | Qué hace |
+| ------- | ------------ | -------- |
+| `operations:process` | Sí, cada minuto (scheduler) | Lo de siempre y, además, **cierra cada turno** entre 10 y 70 minutos después de su fin: calcula el resumen de cada vehículo y las filas de flota por hora. |
+| `operations:summaries --operation=ID --from=Y-m-d --to=Y-m-d [--device=ID]` | No, manual | Rellena o rehace los resúmenes de un rango de días operativos (histórico, o tras cambiar sensores/descansos). El botón «Calcular ahora» de la pantalla hace lo mismo para un día. El recálculo de vueltas (`OperationRebuildService`) también rehace los resúmenes afectados. |
+| `operations:clean {date}` | Sí, dentro de `server:autoclean` (diario a la 01:00) si el módulo está activo | Borra resúmenes, estadísticas por hora, abastecimientos, paradas, tramos, visitas y vueltas anteriores a la fecha. Usa los mismos «Días para guardar» de Admin → Herramientas → Limpieza automática del historial (`settings('db_clear')`). |
+
+### 10.4 Configuración funcional (por operación)
+
+1. Turnos con el margen que quiera el cliente (p. ej. Día 06:30–18:30 y Noche 18:30–06:30) y
+   sus descansos; inicio del día operativo (vacío = inicio del primer turno).
+2. Tipo de vehículo y estados cargado / vacío si quieren el cambio automático para Seguridad.
+3. En cada vehículo: sensores **horas de motor**, **odómetro** y **nivel de combustible** con los
+   umbrales de recarga y robo de la pestaña Precisión (`min_fuel_fillings`, `min_fuel_thefts`,
+   `fuel_detect_sec_after_stop`). Sin sensor, la celda sale vacía (no se estima).
+4. Geocercas de **taller** (categoría `taller`) fuera de mina; motivos de parada marcados como
+   Mantenimiento / Descanso.
+5. Relleno inicial: `php artisan operations:summaries --operation=ID --from=… --to=…`.
+
+### 10.5 De dónde sale cada dato
+
+- Resumen por vehículo y turno (`operation_shift_summaries`): una pasada por las posiciones del
+  turno (`ShiftPositionScan`, acción del pipeline) más vueltas/tramos/paradas ya calculados.
+  Horómetro y odómetro = valor del sensor en la primera trama, última antes del descanso, primera
+  después y última del turno. Hora inicial/final = primer y último movimiento.
+- Estados (24 h del día operativo): READY = en movimiento; DELAY = ralentí (motor encendido sin
+  movimiento); STANDBY = motor apagado sin movimiento y descansos; MAINT = tiempo en geocerca
+  taller + paradas con motivo «Mantenimiento» (se descuenta de STANDBY y luego de DELAY); Sin
+  datos = huecos con desplazamiento o > 1 h; Fuera de operación = resto. Un hueco entre tramas
+  sin desplazamiento y < 1 h cuenta como parado, no como «sin datos».
+- Por hora (`operation_hour_stats`): por vehículo y una fila de flota (`device_id` NULL) con
+  máx / media / mín en movimiento y qué unidad y a qué instante.
+- Abastecimientos (`operation_refuelings`): subidas de nivel del pipeline de combustible
+  (`AppendFuelFillingChange` / `GroupFuelFilling`) con % antes, % después y recarga en puntos;
+  `engine_off` si cayó dentro de una parada con motor apagado.
+- Velocidades en km/h en las tablas; la pantalla y el Excel convierten a la unidad del usuario.
+
+### 10.6 Verificación
+
+1. Operaciones → Turno, elegir operación y un día con datos: tarjetas con cifras, 5 gráficas, barra
+   de estados con todos los vehículos del grupo, 3 tablas.
+2. Pasar el ratón por la gráfica de flota: tooltip «PLACA · HH:MM:SS · velocidad»; clic en un
+   punto de máx o mín abre el historial de esa unidad ±5 min.
+3. Exportar Excel: hoja Reporte con las mismas celdas que el modelo del cliente y 6 gráficos
+   editables; hoja Datos con las series.
+4. Un día sin resúmenes: aviso y «Calcular ahora» (usuarios con permiso de edición).
+5. Tras un turno completo en vivo: a los 10–70 min del fin del turno aparece su resumen sin
+   intervención.
+6. Si la operación tiene tipo/estados: al salir de carga, el vehículo muestra el estado «cargado»
+   en Seguridad y en la ficha; al salir de descarga, «vacío».
+
+### 10.7 Vuelta atrás
+
+`git checkout nuevo-tema` y `php artisan migrate:rollback --step=6` (las seis migraciones
+tienen `down()`). Las tablas nuevas se borran; las columnas añadidas se quitan.

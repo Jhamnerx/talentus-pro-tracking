@@ -24,6 +24,13 @@ class ObjectHistoryReport extends DeviceReport
         return trans('front.object_history');
     }
 
+    protected $excludedFields = [
+        'latitude', 'longitude', 'altitude', 'totaldistance',
+        'in1', 'in2', 'in3', 'out1', 'out2',
+        'status', 'index', 'sequence', 'distance', 'motion',
+        'valid', 'enginehours', 'accuracy', 'alarm type', 'versionfw', 'sat'
+    ];
+
     protected function processPosition($position, & $parameters, $sensors)
     {
         foreach($position->parameters as $key => $value)
@@ -34,23 +41,23 @@ class ObjectHistoryReport extends DeviceReport
             if (in_array($key, $parameters))
                 continue;
 
+            if (in_array(strtolower($key), $this->excludedFields))
+                continue;
+
             $parameters[] = $key;
         }
 
-        if ($this->anonymizer->isAnonymous($position)) {
-            $position->latitude = null;
-            $position->longitude = null;
-        }
+        // Filter out excluded fields from parameters
+        $filteredParameters = array_filter($position->parameters, function($value, $key) {
+            return !in_array(strtolower($key), $this->excludedFields);
+        }, ARRAY_FILTER_USE_BOTH);
 
         return [
             'server_time'=> Formatter::time()->human($position->server_time),
             'time'       => Formatter::time()->human($position->time),
             'speed'      => Formatter::speed()->human($position->speed),
-            'altitude'   => Formatter::altitude()->human($position->altitude),
-            'latitude'   => $position->latitude,
-            'longitude'  => $position->longitude,
             'location'   => $this->getLocation($position, $this->getAddress($position)),
-            'parameters' => $position->parameters,
+            'parameters' => $filteredParameters,
             'sensors'    => $sensors->mapWithKeys(function($sensor) use ($position) {
                 return [$sensor->id => $sensor->getValueFormated($position, false)];
             })
@@ -74,6 +81,13 @@ class ObjectHistoryReport extends DeviceReport
                 ->chunk(2000,
                     function ($positions) use (& $rows, & $parameters, $sensors) {
                         foreach ($positions as $position) {
+                            // Filtro "Controlar días y horas" (period_weekdays
+                            // + franja horaria) — este reporte no pasa por el
+                            // pipeline de History, así que se aplica aquí.
+                            if (! $this->isPositionInPeriod($position)) {
+                                continue;
+                            }
+
                             $rows[] = $this->processPosition($position, $parameters, $sensors);
                         }
                     });

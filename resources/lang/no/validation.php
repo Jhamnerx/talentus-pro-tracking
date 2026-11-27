@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Frekvens',
         'unit' => 'Enhet',
         'noreply_email' => 'Ikke svar e-postadresse',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Signatur',
         'use_smtp_server' => 'Bruk SMTP-serveren',
         'smtp_server_host' => 'SMTP-server vert',

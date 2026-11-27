@@ -78,6 +78,35 @@ class AppearanceService
     }
 
     /**
+     * Nombre del tema cuyo CSS existe de verdad en public/assets/css.
+     *
+     * El valor guardado puede apuntar a un tema que ya no se compila: hay
+     * cuentas arrastrando "airpatrol" de una instalacion anterior, y como
+     * no figura en config('tobuli.template_colors') el selector del admin
+     * tampoco lo muestra para poder corregirlo. Sin este respaldo la pagina
+     * pide un .css que da 404 y sale entera sin estilos.
+     *
+     * @return string
+     */
+    public function getTemplateColor(): string
+    {
+        $candidatos = [
+            $this->getSetting('template_color'),
+            Arr::get(settings('main_settings'), 'template_color'),
+            Arr::get(config('tobuli.settings.main_settings'), 'template_color'),
+            'light-blue',
+        ];
+
+        foreach ($candidatos as $tema) {
+            if ($tema && file_exists(public_path('assets/css/' . $tema . '.css'))) {
+                return $tema;
+            }
+        }
+
+        return 'light-blue';
+    }
+
+    /**
      * Get all settings by user
      *
      * @return array
@@ -103,8 +132,8 @@ class AppearanceService
 
         $path = str_replace(public_path(), '', $file);
 
-        if (app()->runningInConsole()) {
-            return \CustomFacades\Server::url() . $path;
+        if (app()->runningInConsole()){
+            return \CustomFacades\Server::url().$path;
         }
 
         return asset_resource($path);
@@ -362,7 +391,7 @@ class AppearanceService
 
         $path = $fileData['filename'];
 
-        foreach (glob($path . '.*') as $filename) {
+        foreach (glob($path.'.*') as $filename) {
             unlink($filename);
         }
 

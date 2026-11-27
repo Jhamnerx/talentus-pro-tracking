@@ -122,6 +122,7 @@ return array(
     'diem_rates' => '日当',
     'forwards' => 'フォワード',
     'group_6' => 'スーパーバイザー',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => '数日前に作成されたユーザー',
     'reminders_trans' => 'リマインダーの翻訳',
     'passwords_trans' => 'パスワードの翻訳',

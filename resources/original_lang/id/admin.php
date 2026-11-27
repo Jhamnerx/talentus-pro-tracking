@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Tarif diem',
     'forwards' => 'Ke depan',
     'group_6' => 'Pengawas',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Pengguna dibuat sebelum hari',
     'reminders_trans' => 'Terjemahan pengingat',
     'passwords_trans' => 'Terjemahan kata sandi',

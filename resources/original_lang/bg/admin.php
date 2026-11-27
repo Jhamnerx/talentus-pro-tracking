@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Дневни тарифи',
     'forwards' => 'Напред',
     'group_6' => 'Ръководител',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Потребител, създаден преди дни',
     'reminders_trans' => 'Преводи на напомняния',
     'passwords_trans' => 'Преводи на пароли',

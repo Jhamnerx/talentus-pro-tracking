@@ -5,7 +5,7 @@
         <tr>
             {!! tableHeaderCheckall(['delete_url' => trans('admin.delete_selected')]) !!}
             {!! tableHeaderSort($items->sorting, 'protocol', trans('validation.attributes.device_protocol')) !!}
-            {!! tableHeader('front.tags') !!}
+            {!! tableHeader('validation.attributes.parameters') !!}
             {!! tableHeaderSort($items->sorting, 'message') !!}
             {!! tableHeaderSort($items->sorting, 'always', trans('admin.show_always')) !!}
             {!! tableHeader('admin.actions', 'style="text-align: right;"') !!}

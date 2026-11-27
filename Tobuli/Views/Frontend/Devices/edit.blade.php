@@ -16,6 +16,9 @@
         <li><a href="#device-form-services" role="tab" data-toggle="tab">{!! trans('front.services') !!}</a></li>
         <li><a href="#device-form-accuracy" role="tab" data-toggle="tab">{!! trans('front.accuracy') !!}</a></li>
         <li><a href="#device-form-tail" role="tab" data-toggle="tab">{!! trans('front.tail') !!}</a></li>
+        @if (Auth::user()->can('view', $item, 'has_camera'))
+            <li><a href="#device-form-video" role="tab" data-toggle="tab">{!! trans('front.video') !!}</a></li>
+        @endif
         @if (Auth::User()->perm('webservice.consatel', 'view') ||
                 Auth::User()->perm('webservice.mininter', 'view') ||
                 Auth::User()->perm('webservice.sutran', 'view') ||
@@ -25,7 +28,7 @@
                 Auth::User()->perm('webservice.epscenter', 'view') ||
                 Auth::User()->perm('webservice.unigis', 'view') ||
                 Auth::User()->perm('webservice.securitas', 'view'))
-            <li><a href="#device-add-form-web_service" role="tab" data-toggle="tab">Servicios Web</a></li>
+            <li><a href="#device-add-form-web_service" role="tab" data-toggle="tab">{{ trans('front.web_services') }}</a></li>
         @endif
         @if (expensesTypesExist())
             <li><a href="#device-form-expenses" role="tab" data-toggle="tab"
@@ -37,7 +40,10 @@
         @if (Auth::user()->can('view', $item, 'custom_fields') && $item->hasCustomFields())
             <li><a href="#device-custom-fields" role="tab" data-toggle="tab">{!! trans('admin.custom_fields') !!}</a></li>
         @endif
-        <li><a href="#device-form-maintenances" role="tab" data-toggle="tab">Historial</a></li>
+        <li><a href="#device-form-maintenances" role="tab" data-toggle="tab">{{ trans('front.history') }}</a></li>
+        @if (Auth::user()->can('edit', $item, 'tags'))
+            <li><a href="#device-form-tags" role="tab" data-toggle="tab">{!!trans('front.tags')!!}</a></li>
+        @endif
     </ul>
 
     {!! Form::open(['route' => 'devices.update', 'method' => 'PUT']) !!}
@@ -78,6 +84,12 @@
         <div id="device-form-tail" class="tab-pane">
             @include('Frontend.Devices.partials.tail')
         </div>
+
+        @if (Auth::user()->can('view', $item, 'has_camera'))
+            <div id="device-form-video" class="tab-pane">
+                @include('Frontend.Devices.partials.video')
+            </div>
+        @endif
         <div id="device-add-form-web_service" class="tab-pane">
             @include('Frontend.Devices.partials.webservices')
         </div>
@@ -94,6 +106,12 @@
         @if (Auth::user()->can('view', $item, 'custom_fields') && $item->hasCustomFields())
             <div id="device-custom-fields" class="tab-pane">
                 @include('Frontend.CustomFields.panel')
+            </div>
+        @endif
+
+        @if (Auth::user()->can('edit', $item, 'tags'))
+            <div id="device-form-tags" class="tab-pane">
+                @include('Frontend.Devices.partials.tags')
             </div>
         @endif
 

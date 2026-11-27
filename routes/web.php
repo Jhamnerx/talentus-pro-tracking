@@ -63,8 +63,10 @@ Route::group([], function () {
         Route::post('register/step/{step}', ['as' => 'register.step.store', 'uses' => 'CustomRegistrationController@stepStore']);
         Route::resource('register', 'CustomRegistrationController', ['except' => ['create', 'store']]);
     });
-    Route::get('verification', ['as' => 'verification', 'uses' => 'Frontend\EmailVerificationController@notice']);
-    Route::get('verification/{token}', ['as' => 'verification.verify', 'uses' => 'Frontend\EmailVerificationController@verify']);
+    Route::get('verification/email', ['as' => 'verification.email', 'uses' => 'Frontend\EmailVerificationController@notice']);
+    Route::get('verification/email/{token}', ['as' => 'verification.email.verify', 'uses' => 'Frontend\EmailVerificationController@verify']);
+    Route::get('verification/phone', ['as' => 'verification.phone', 'uses' => 'Frontend\SmsVerificationController@notice']);
+    Route::get('verification/phone/{token}', ['as' => 'verification.phone.verify', 'uses' => 'Frontend\SmsVerificationController@verify']);
 
     # Exceptions to CSRF verification - \App\Http\Middleware\VerifyCsrfToken
     Route::any('payments/{gateway}/webhook', ['as' => 'payments.webhook', 'uses' => 'Frontend\PaymentsController@webhook']);
@@ -81,6 +83,8 @@ Route::group([], function () {
     ]);
 
     Route::any('geo_address', ['as' => 'geo_address', 'uses' => 'Frontend\AddressController@get']);
+
+    Route::get('gmail/oauth2/callback', ['as' => 'gmail.oauth2.callback', 'uses' => 'Admin\EmailSettingsGmailController@__invoke']);
 });
 
 // Authenticated Frontend |active_subscription
@@ -165,6 +169,14 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('routes/list/table', ['as' => 'routes.table', 'uses' => 'RoutesController@table']);
     Route::resource('route', 'RoutesController', ['names' => 'routes', 'except' => ['update', 'destroy', 'edit']]);
 
+    # Route schedules & checkpoints (adherencia)
+    Route::get('route_schedules/table', ['as' => 'route_schedules.table', 'uses' => 'RouteSchedulesController@table']);
+    Route::any('route_schedules/destroy/{id?}', ['as' => 'route_schedules.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'RouteSchedulesController@destroy']);
+    Route::resource('route_schedules', 'RouteSchedulesController', ['except' => ['show', 'destroy']]);
+
+    Route::get('route_checkpoints/{route}', ['as' => 'route_checkpoints.edit', 'uses' => 'RouteCheckpointsController@edit'])->where('route', '[0-9]+');
+    Route::put('route_checkpoints/{route}', ['as' => 'route_checkpoints.update', 'uses' => 'RouteCheckpointsController@update'])->where('route', '[0-9]+');
+
     # Route groups
     Route::get('route_groups/change_status', ['as' => 'route_groups.change_status', 'uses' => 'RoutesGroupsController@changeStatus']);
     Route::resource('route_groups', 'RoutesGroupsController', ['except' => ['destroy']]);
@@ -196,9 +208,35 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('devices/{id}/vehicle_state', ['as' => 'devices.vehicle_state_form', 'uses' => 'DevicesController@vehicleStateForm']);
     Route::post('devices/change_vehicle_state', ['as' => 'devices.change_vehicle_state', 'uses' => 'DevicesController@changeVehicleState']);
     Route::get('devices/follow_map/{id?}', ['as' => 'devices.follow_map', 'uses' => 'DevicesController@followMap']);
+    Route::get('devices/route_report/{id?}', ['as' => 'devices.route_report', 'uses' => 'DevicesController@routeReport']);
     Route::any('devices/commands', ['as' => 'devices.commands', 'uses' => 'SendCommandController@getCommands']);
     Route::get('devices/do_destroy/{id}', ['as' => 'devices.do_destroy', 'uses' => 'DevicesController@doDestroy']);
     Route::put('devices/update', ['as' => 'devices.update', 'uses' => 'DevicesController@update']);
+
+    # Device video (JT1078)
+    Route::get('devices/video/{id}/player', ['as' => 'devices.video.player', 'uses' => 'DeviceVideoController@player']);
+    // Configuracion del reproductor en JSON (la usa la UI v2; la app movil tiene su par en api.php).
+    Route::get('devices/video/{id}/config', ['as' => 'devices.video.config', 'uses' => 'DeviceVideoController@config']);
+    Route::post('devices/video/{id}/start', ['as' => 'devices.video.start', 'uses' => 'DeviceVideoController@start']);
+    Route::post('devices/video/{id}/ping', ['as' => 'devices.video.ping', 'uses' => 'DeviceVideoController@ping']);
+    Route::post('devices/video/{id}/stop', ['as' => 'devices.video.stop', 'uses' => 'DeviceVideoController@stop']);
+    Route::get('devices/video/{id}/status', ['as' => 'devices.video.status', 'uses' => 'DeviceVideoController@status']);
+    Route::get('devices/video/{id}/recordings', ['as' => 'devices.video.recordings', 'uses' => 'DeviceVideoController@recordings']);
+    Route::post('devices/video/{id}/recordings/query', ['as' => 'devices.video.recordings.query', 'uses' => 'DeviceVideoController@recordingsQuery']);
+    Route::get('devices/video/{id}/recordings/list', ['as' => 'devices.video.recordings.list', 'uses' => 'DeviceVideoController@recordingsList']);
+    Route::post('devices/video/{id}/playback/start', ['as' => 'devices.video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
+    Route::post('devices/video/{id}/playback/control', ['as' => 'devices.video.playback.control', 'uses' => 'DeviceVideoController@playbackControl']);
+    Route::post('devices/video/{id}/talk/start', ['as' => 'devices.video.talk.start', 'uses' => 'DeviceVideoController@talkStart']);
+    Route::post('devices/video/{id}/talk/ping', ['as' => 'devices.video.talk.ping', 'uses' => 'DeviceVideoController@talkPing']);
+    Route::post('devices/video/{id}/talk/stop', ['as' => 'devices.video.talk.stop', 'uses' => 'DeviceVideoController@talkStop']);
+    Route::post('devices/video/{id}/attributes', ['as' => 'devices.video.attributes.query', 'uses' => 'DeviceVideoController@attributesQuery']);
+    Route::get('devices/video/{id}/attributes', ['as' => 'devices.video.attributes', 'uses' => 'DeviceVideoController@attributes']);
+    Route::get('devices/video/{id}/downloads', ['as' => 'devices.video.downloads', 'uses' => 'DeviceVideoController@downloads']);
+    Route::post('devices/video/{id}/downloads', ['as' => 'devices.video.downloads.create', 'uses' => 'DeviceVideoController@downloadCreate']);
+    Route::get('devices/video/{id}/downloads/{downloadId}', ['as' => 'devices.video.downloads.file', 'uses' => 'DeviceVideoController@downloadFile']);
+    Route::delete('devices/video/{id}/downloads/{downloadId}', ['as' => 'devices.video.downloads.delete', 'uses' => 'DeviceVideoController@downloadDelete']);
+    Route::get('devices/video/{id}/stream/{channel}/{file}', ['as' => 'devices.video.stream', 'uses' => 'DeviceVideoController@stream'])
+        ->where(['channel' => '[1-8]', 'file' => '(history-)?\d+\.ts|(live|history)\.m3u8']);
     Route::get('devices/do_reset_app_uuid/{id}', ['as' => 'devices.do_reset_app_uuid', 'uses' => 'DevicesController@doResetAppUuid']);
     Route::put('devices/reset_app_uuid/{id}', ['as' => 'devices.reset_app_uuid', 'uses' => 'DevicesController@resetAppUuid']);
     Route::get('devices/subscriptions', ['as' => 'devices.subscriptions', 'uses' => 'DeviceSubscriptionController@index']);
@@ -243,10 +281,14 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::post('alerts/change_active/{active?}', ['as' => 'alerts.change_active', 'uses' => 'AlertsController@changeActive']);
     Route::any('alerts/commands', ['as' => 'alerts.commands', 'uses' => 'AlertsController@getCommands']);
     Route::any('alerts/custom_events/{id?}', ['as' => 'alerts.custom_events', 'uses' => 'AlertsController@customEvents']);
+    Route::get('alerts/geofences/{id?}', ['as' => 'alerts.geofences', 'uses' => 'AlertsController@geofences']);
+    Route::get('alerts/pois/{id?}', ['as' => 'alerts.pois', 'uses' => 'AlertsController@pois']);
+    Route::get('alerts/drivers/{id?}', ['as' => 'alerts.drivers', 'uses' => 'AlertsController@drivers']);
     Route::get('alerts/summary', ['as' => 'alerts.sumary', 'uses' => 'AlertsController@summary']);
     Route::get('alerts/list', ['as' => 'alerts.index_modal', 'uses' => 'AlertsController@index_modal']);
     Route::get('alerts/list/table', ['as' => 'alerts.table', 'uses' => 'AlertsController@table']);
     Route::get('alerts/users/{id?}', ['as' => 'alerts.users', 'uses' => 'AlertsController@users']);
+    Route::get('alerts/zones/{id?}', ['as' => 'alerts.zones', 'uses' => 'AlertsController@zones']);
     Route::resource('alerts', 'AlertsController', ['except' => ['edit', 'update', 'destroy']]);
 
     # History
@@ -272,8 +314,8 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('pois/export', ['as' => 'pois.export', 'uses' => 'PoisExportController@index']);
     Route::post('pois/export', ['as' => 'pois.export.store', 'uses' => 'PoisExportController@store']);
     Route::get('pois/export_type', ['as' => 'pois.export_type', 'uses' => 'PoisExportController@getType']);
-    Route::get('pois/import', ['as' => 'pois.import', 'uses' => 'PoisImportController@index']);
-    Route::post('pois/import', ['as' => 'pois.import', 'uses' => 'PoisImportController@store']);
+    Route::get('pois/import', ['as' => 'pois.import.index', 'uses' => 'PoisImportController@index']);
+    Route::post('pois/import', ['as' => 'pois.import.store', 'uses' => 'PoisImportController@store']);
     Route::post('pois/change_active', ['as' => 'pois.change_active', 'uses' => 'PoisController@changeActive']);
     Route::put('pois/update/{id?}', ['as' => 'pois.update', 'uses' => 'PoisController@update']);
     Route::any('pois/destroy/{id?}', ['as' => 'pois.destroy', 'middleware' => ['confirmed_action'], 'uses' => 'PoisController@destroy']);
@@ -427,20 +469,6 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::put('device_camera/update', ['as' => 'device_camera.update', 'uses' => 'DeviceCamerasController@update']);
     Route::resource('device_camera', 'DeviceCamerasController', ['only' => ['store', 'edit', 'destroy']]);
 
-    # Device video (Howen / JT808 live video via commands/send + HLS proxy)
-    Route::post('device_video/{device_id}/live/start', ['as' => 'device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
-    Route::post('device_video/{device_id}/live/stop', ['as' => 'device_video.live.stop', 'uses' => 'DeviceVideoController@liveStop']);
-    Route::post('device_video/{device_id}/audio/start', ['as' => 'device_video.audio.start', 'uses' => 'DeviceVideoController@audioStart']);
-    Route::post('device_video/{device_id}/audio/stop', ['as' => 'device_video.audio.stop', 'uses' => 'DeviceVideoController@audioStop']);
-    Route::get('device_video/{device_id}/live/modal', ['as' => 'device_video.live.modal', 'uses' => 'DeviceVideoController@liveModal']);
-    Route::get('device_video/{device_id}/stream/{file}', ['as' => 'device_video.stream.proxy', 'uses' => 'DeviceVideoController@streamProxy'])
-        ->where('file', '.*');
-    Route::get('device_video/{device_id}/playback/modal', ['as' => 'device_video.playback.modal', 'uses' => 'DeviceVideoController@playbackModal']);
-    Route::post('device_video/{device_id}/playback/search', ['as' => 'device_video.playback.search', 'uses' => 'DeviceVideoController@playbackSearch']);
-    Route::get('device_video/{device_id}/playback/files/{session}', ['as' => 'device_video.playback.poll', 'uses' => 'DeviceVideoController@playbackPoll']);
-    Route::post('device_video/{device_id}/playback/start', ['as' => 'device_video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
-    Route::post('device_video/{device_id}/playback/stop', ['as' => 'device_video.playback.stop', 'uses' => 'DeviceVideoController@playbackStop']);
-    Route::get('device_video/{device_id}/playback/route', ['as' => 'device_video.playback.route', 'uses' => 'DeviceVideoController@playbackRoute']);
 
     # SMS gateway
     Route::get('sms_gateway/test_sms', ['as' => 'sms_gateway.test_sms', 'uses' => 'SmsGatewayController@testSms']);
@@ -494,6 +522,23 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('chat/{chatId}/messages', ['as' => 'chat.messages', 'uses' => 'ChatController@getMessages']);
     Route::get('chat/{chatId}', ['as' => 'chat.get', 'uses' =>  'ChatController@getChat']);
     Route::post('chat/{chatId}', ['as' => 'chat.message', 'uses' => 'ChatController@createMessage']);
+
+    # Talentus IA CHAT (asistente IA)
+    Route::group(['prefix' => 'ai', 'as' => 'ai.', 'middleware' => ['ai_assistant']], function () {
+        Route::get('suggestions', ['as' => 'suggestions', 'uses' => 'AiAssistantController@suggestions']);
+        Route::get('conversations', ['as' => 'conversations', 'uses' => 'AiAssistantController@conversations']);
+        Route::get('conversations/{id}', ['as' => 'conversations.show', 'uses' => 'AiAssistantController@show']);
+        Route::delete('conversations/{id}', ['as' => 'conversations.destroy', 'uses' => 'AiAssistantController@destroy']);
+        Route::post('chat', ['as' => 'chat', 'uses' => 'AiAssistantController@chat'])
+            ->middleware('throttle:20,1');
+        Route::get('download/{token}', ['as' => 'download', 'uses' => 'AiAssistantController@download']);
+        Route::post('explain-report', ['as' => 'explain_report', 'uses' => 'AiAssistantController@explainReport'])
+            ->middleware('throttle:10,1');
+        Route::get('dashboard-summary', ['as' => 'dashboard_summary', 'uses' => 'AiAssistantController@dashboardSummary']);
+        Route::post('actions/{token}/confirm', ['as' => 'actions.confirm', 'uses' => 'AiAssistantController@confirm'])
+            ->middleware('throttle:20,1');
+        Route::post('actions/{token}/cancel', ['as' => 'actions.cancel', 'uses' => 'AiAssistantController@cancel']);
+    });
 
     # Dashboard
     Route::get('dashboard', ['as' => 'dashboard', 'uses' => 'DashboardController@index']);
@@ -612,6 +657,15 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::resource('forwards', 'ForwardsController', ['except' => ['destroy']]);
 
     Route::post('ftp/test', ['as' => 'ftp.test', 'uses' => 'FtpController@test']);
+
+    Route::group(['excluded_middleware' => [\App\Http\Middleware\Check2fa::class]], function () {
+        Route::get('google_2fa_setup', ['as' => 'google_2fa_setup.create', 'uses' => 'Google2faSetupController@create']);
+        Route::post('google_2fa_setup', ['as' => 'google_2fa_setup.store', 'uses' => 'Google2faSetupController@store']);
+        Route::get('google_2fa_setup/confirm', ['as' => 'google_2fa_setup.create_confirm', 'uses' => 'Google2faSetupController@createConfirm']);
+        Route::post('google_2fa_setup/confirm', ['as' => 'google_2fa_setup.store_confirm', 'uses' => 'Google2faSetupController@storeConfirm']);
+
+        Route::post('google_2fa', 'Google2faController')->name('google_2fa');
+    });
 });
 
 Route::group(['middleware' => ['auth', 'auth.manager', 'active_subscription']], function () {
@@ -637,7 +691,12 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
     }]);
 
     Route::group(['as' => 'admin.'], function () {
+        # Talentus IA CHAT del reseller (su clave, modelos, cuotas y consumo)
+        Route::get('ai_reseller', ['as' => 'ai_reseller.index', 'uses' => 'AiResellerController@index']);
+        Route::post('ai_reseller', ['as' => 'ai_reseller.save', 'uses' => 'AiResellerController@save']);
+
         # Clients
+        Route::any('users/users', ['as' => 'clients.users', 'uses' => 'ClientsController@users']);
         Route::any('users/managers', ['as' => 'clients.managers', 'uses' => 'ClientsController@managers']);
         Route::get('users/clients/import_geofences', ['as' => 'clients.import_geofences', 'uses' => 'ClientsController@importGeofences']);
         Route::post('users/clients/import_geofences', ['as' => 'clients.import_geofences_set', 'uses' => 'ClientsController@importGeofencesSet']);
@@ -745,6 +804,15 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth', 'auth.manager', 'act
         # FCM Test
         Route::get('fcm_test', ['as' => 'fcm_test.create', 'uses' => 'FcmTestController@create']);
         Route::post('fcm_test', ['as' => 'fcm_test.store', 'uses' => 'FcmTestController@store']);
+
+        # Tags
+        Route::get('tags', ['as' => 'tags.index', 'uses' => 'TagsController@index']);
+        Route::get('tags/table', ['as' => 'tags.table', 'uses' => 'TagsController@table']);
+        Route::get('tags/create', ['as' => 'tags.create', 'uses' => 'TagsController@create']);
+        Route::post('tags', ['as' => 'tags.store', 'uses' => 'TagsController@store']);
+        Route::get('tags/{id?}/edit', ['as' => 'tags.edit', 'uses' => 'TagsController@edit']);
+        Route::put('tags/{id?}', ['as' => 'tags.update', 'uses' => 'TagsController@update']);
+        Route::delete('tags/{id?}', ['as' => 'tags.destroy', 'uses' => 'TagsController@destroy']);
     });
 });
 
@@ -768,6 +836,10 @@ Route::group(['middleware' => ['auth'], 'namespace' => 'Frontend'], function () 
 });
 
 Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'auth.admin'], 'namespace' => 'Admin'], function () {
+    # Talentus IA CHAT: proveedor, modelos, consumo, acciones y cuotas
+    Route::get('ai_assistant', ['as' => 'ai_assistant.index', 'uses' => 'AiAssistantController@index']);
+    Route::post('ai_assistant', ['as' => 'ai_assistant.save', 'uses' => 'AiAssistantController@save']);
+
     # Billing
     Route::any('billing/index', ['as' => 'billing.index', 'uses' => 'BillingController@index']);
     Route::any('billing/plans', ['as' => 'billing.plans', 'uses' => 'BillingController@plans']);
@@ -833,6 +905,8 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     # Email settings
     Route::get('email_settings/index', ['as' => 'email_settings.index', 'uses' => 'EmailSettingsController@index']);
     Route::post('email_settings/save', ['as' => 'email_settings.save', 'uses' => 'EmailSettingsController@save']);
+    Route::get('email_settings/manual/{id}', ['as' => 'email_settings.manual', 'uses' => 'EmailSettingsController@manual'])
+        ->where('id', 'gmail');
     Route::get('email_settings/test_email', ['as' => 'email_settings.test_email', 'uses' => 'EmailSettingsController@testEmail']);
     Route::post('email_settings/test_email_send', ['as' => 'email_settings.test_email_send', 'uses' => 'EmailSettingsController@testEmailSend']);
 
@@ -845,11 +919,13 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::get('backups/panel', ['as' => 'backups.panel', 'uses' => 'BackupsController@panel']);
     Route::post('backups/save', ['as' => 'backups.save', 'uses' => 'BackupsController@save']);
     Route::get('backups/test', ['as' => 'backups.test', 'uses' => 'BackupsController@test']);
+    Route::get('backups/test-drive', ['as' => 'backups.test_drive', 'uses' => 'BackupsController@testDrive']);
     Route::get('backups/logs', ['as' => 'backups.logs', 'uses' => 'BackupsController@logs']);
 
     Route::get('backup', ['as' => 'backup.index', 'uses' => 'BackupController@index']);
     Route::get('backup/table', ['as' => 'backup.table', 'uses' => 'BackupController@table']);
     Route::get('backup/{id}/processes', ['as' => 'backup.processes', 'uses' => 'BackupController@processes']);
+    Route::post('backup/{id}/protect', ['as' => 'backup.protect', 'uses' => 'BackupController@protect']);
 
     # Ports
     Route::any('ports/index', ['as' => 'ports.index', 'uses' => 'PortsController@index']);
@@ -966,6 +1042,9 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::delete('device_type/{device_type?}', ['as' => 'device_type.destroy', 'uses' => 'DeviceTypeController@destroy']);
     Route::resource('device_type', 'DeviceTypeController', ['only' => ['index', 'create', 'store', 'edit', 'update']]);
 
+    # Widgets
+    Route::resource('widgets', 'WidgetsController', ['only' => ['index', 'store']]);
+
     # Media category
     Route::delete('media_category/{category?}', ['as' => 'media_category.destroy', 'uses' => 'MediaCategoryController@destroy']);
     Route::resource('media_category', 'MediaCategoryController', ['only' => ['index', 'create', 'store', 'edit', 'update']]);
@@ -1012,6 +1091,8 @@ Route::group(['as' => 'admin.', 'prefix' => 'admin', 'middleware' => ['auth', 'a
     Route::post('webservices-reenvio/mininter/reenviar', ['as' => 'webservices_reenvio.mininter', 'uses' => 'WebservicesReenvioController@mininterReenviar']);
 
     # User change logs
+    // Cumplimiento regulatorio: estado de reenvio a entes y proveedores
+    Route::get('integrations_status', ['as' => 'integrations_status.index', 'uses' => 'IntegrationsStatusController@index']);
     Route::get('model_change_logs/index', ['as' => 'model_change_logs.index', 'uses' => 'ModelChangeLogsController@index']);
     Route::get('model_change_logs/show/{id}', ['as' => 'model_change_logs.show', 'uses' => 'ModelChangeLogsController@show']);
     Route::get('model_change_logs/causers', ['as' => 'model_change_logs.causers', 'uses' => 'ModelChangeLogsController@causers']);
@@ -1118,3 +1199,376 @@ Route::get('/testing', ['as' => 'testing', 'uses' => function () {}]);
 Route::get('/icons', ['as' => 'icons', 'uses' => function () {
     return response()->view('icons');
 }]);
+
+
+# ============================================================
+# UI v2 (new theme) routes — shell + command palette + tray
+# Isolated under /ui/v2/* prefix. Does not affect legacy UI.
+# ============================================================
+Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], function () {
+    // Cross-cutting shell endpoints
+    Route::get('legacy',    ['as' => 'legacy',    'uses' => 'Ui\V2\ShellController@legacy']);
+    Route::get('switch',    ['as' => 'switch',    'uses' => 'Ui\V2\ShellController@switchToV2']);
+
+    // Per-domain controllers under App\Http\Controllers\Ui\V2\*
+    Route::get('live',      ['as' => 'live',      'uses' => 'Ui\V2\DevicesController@live']);
+    Route::get('fleet',     ['as' => 'fleet',     'uses' => 'Ui\V2\DevicesController@fleet']);
+    Route::get('monitor',   ['as' => 'monitor',   'uses' => 'Ui\V2\DevicesController@monitor']);
+    Route::get('dashboard', ['as' => 'dashboard', 'uses' => 'Ui\V2\DashboardController@index']);
+    Route::get('zones',     ['as' => 'zones',     'uses' => 'Ui\V2\ZonesController@index']);
+    Route::get('alerts',    ['as' => 'alerts',    'uses' => 'Ui\V2\AlertsController@index']);
+    Route::get('events',    ['as' => 'events',    'uses' => 'Ui\V2\EventsController@index']);
+    Route::get('history',   ['as' => 'history',   'uses' => 'Ui\V2\HistoryController@index']);
+    Route::get('reports',   ['as' => 'reports',   'uses' => 'Ui\V2\ReportsController@index']);
+    Route::get('maintenance', ['as' => 'maintenance', 'uses' => 'Ui\V2\ServicesController@page']);
+    Route::get('routes/table', ['as' => 'routes_table', 'uses' => 'Ui\V2\MapLayersController@routesPage']);
+    Route::get('commands',     ['as' => 'commands',     'uses' => 'Ui\V2\CommandsController@page']);
+    Route::get('sharing',      ['as' => 'sharing',      'uses' => 'Ui\V2\SharingController@page']);
+    Route::get('drivers',      ['as' => 'drivers',      'uses' => 'Ui\V2\DriversController@page']);
+    Route::get('tasks',        ['as' => 'tasks',        'uses' => 'Ui\V2\TasksController@page']);
+    Route::get('call-actions', ['as' => 'call_actions', 'uses' => 'Ui\V2\CallActionsController@page']);
+    Route::get('chat',         ['as' => 'chat',         'uses' => 'Ui\V2\ChatController@page']);
+    Route::get('expenses',     ['as' => 'expenses',     'uses' => 'Ui\V2\ExpensesController@page']);
+    Route::get('route-schedules', ['as' => 'route_schedules', 'uses' => 'Ui\V2\RouteSchedulesController@page']);
+    Route::get('operations',   ['as' => 'operations',   'uses' => 'Ui\V2\OperationsController@page']);
+    Route::get('security',     ['as' => 'security',     'uses' => 'Ui\V2\SecurityController@page']);
+    Route::get('copilot',   ['as' => 'copilot',   'uses' => 'Ui\V2\CopilotController@index']);
+
+    Route::prefix('api')->group(function () {
+        // Shell endpoints
+        Route::get('search',         ['as' => 'api.search',        'uses' => 'Ui\V2\ShellController@search']);
+        Route::get('notifications',  ['as' => 'api.notifications', 'uses' => 'Ui\V2\ShellController@notifications']);
+        Route::post('notifications/seen', ['as' => 'api.notifications.seen', 'uses' => 'Ui\V2\ShellController@notificationsSeen']);
+        Route::post('preferences',   ['as' => 'api.preferences',   'uses' => 'Ui\V2\ShellController@preferences']);
+        Route::get('widgets/config',  ['as' => 'api.widgets.config',      'uses' => 'Ui\V2\ShellController@widgetsConfig']);
+        Route::post('widgets/config', ['as' => 'api.widgets.config_save', 'uses' => 'Ui\V2\ShellController@widgetsConfigSave']);
+
+        // Per-domain feeds
+        Route::get('devices',        ['as' => 'api.devices',       'uses' => 'Ui\V2\DevicesController@liveData']);
+        Route::get('fleet',          ['as' => 'api.fleet',         'uses' => 'Ui\V2\DevicesController@fleetData']);
+        Route::get('dashboard',      ['as' => 'api.dashboard',     'uses' => 'Ui\V2\DashboardController@data']);
+        Route::get('dashboard/options',  ['as' => 'api.dashboard.options',      'uses' => 'Ui\V2\DashboardController@options']);
+        Route::post('dashboard/options', ['as' => 'api.dashboard.options_save', 'uses' => 'Ui\V2\DashboardController@updateOptions']);
+        Route::get('zones',          ['as' => 'api.zones',         'uses' => 'Ui\V2\ZonesController@data']);
+        Route::get('alerts',         ['as' => 'api.alerts',        'uses' => 'Ui\V2\AlertsController@data']);
+
+        // Gastos (fleet-wide) + Reenvíos
+        // Programaciones de ruta, puntos de control y cumplimiento
+        Route::get('route-schedules',            ['as' => 'api.route_schedules',            'uses' => 'Ui\V2\RouteSchedulesController@data']);
+        Route::get('route-schedules/meta',       ['as' => 'api.route_schedules.meta',       'uses' => 'Ui\V2\RouteSchedulesController@meta']);
+        Route::get('route-schedules/adherence',  ['as' => 'api.route_schedules.adherence',  'uses' => 'Ui\V2\RouteSchedulesController@adherence']);
+        Route::post('route-schedules',           ['as' => 'api.route_schedules.store',      'uses' => 'Ui\V2\RouteSchedulesController@store']);
+        Route::put('route-schedules/{id}',       ['as' => 'api.route_schedules.update',     'uses' => 'Ui\V2\RouteSchedulesController@update'])->where('id', '[0-9]+');
+        Route::delete('route-schedules/{id}',    ['as' => 'api.route_schedules.destroy',    'uses' => 'Ui\V2\RouteSchedulesController@destroy'])->where('id', '[0-9]+');
+        Route::get('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints',         'uses' => 'Ui\V2\RouteSchedulesController@checkpoints'])->where('id', '[0-9]+');
+
+        // Operaciones: control de vueltas entre puntos de carga y descarga
+        Route::get('operations',                     ['as' => 'api.operations',                     'uses' => 'Ui\V2\OperationsController@data']);
+        Route::get('operations/meta',                ['as' => 'api.operations.meta',                'uses' => 'Ui\V2\OperationsController@meta']);
+        Route::get('operations/live',                ['as' => 'api.operations.live',                'uses' => 'Ui\V2\OperationsController@live']);
+        Route::get('operations/cycles',              ['as' => 'api.operations.cycles',              'uses' => 'Ui\V2\OperationsController@cycles']);
+        Route::get('operations/cycles/{id}',         ['as' => 'api.operations.cycle',               'uses' => 'Ui\V2\OperationsController@cycle'])->where('id', '[0-9]+');
+        Route::get('operations/shift-report',         ['as' => 'api.operations.shift_report',         'uses' => 'Ui\V2\OperationsController@shiftReport']);
+        Route::post('operations/shift-report/build',  ['as' => 'api.operations.shift_report_build',   'uses' => 'Ui\V2\OperationsController@shiftReportBuild']);
+        Route::get('operations/shift-report/export',  ['as' => 'api.operations.shift_report_export',  'uses' => 'Ui\V2\OperationsController@shiftReportExport']);
+        Route::get('operations/recalculations',      ['as' => 'api.operations.recalculations',      'uses' => 'Ui\V2\OperationsController@recalculations']);
+        Route::get('operations/progress',            ['as' => 'api.operations.progress',            'uses' => 'Ui\V2\OperationsController@progress']);
+        Route::get('operations/recalculate/preview', ['as' => 'api.operations.recalculate_preview', 'uses' => 'Ui\V2\OperationsController@recalculatePreview']);
+        Route::post('operations/recalculate',        ['as' => 'api.operations.recalculate',         'uses' => 'Ui\V2\OperationsController@recalculate']);
+        Route::post('operations',                    ['as' => 'api.operations.store',               'uses' => 'Ui\V2\OperationsController@store']);
+        Route::put('operations/{id}',                ['as' => 'api.operations.update',              'uses' => 'Ui\V2\OperationsController@update'])->where('id', '[0-9]+');
+        Route::post('operations/{id}/toggle',        ['as' => 'api.operations.toggle',              'uses' => 'Ui\V2\OperationsController@toggle'])->where('id', '[0-9]+');
+        Route::delete('operations/{id}',             ['as' => 'api.operations.destroy',             'uses' => 'Ui\V2\OperationsController@destroy'])->where('id', '[0-9]+');
+        // Fase 2: motivos de parada y justificacion
+        Route::get('operations/stop-reasons',        ['as' => 'api.operations.reasons',             'uses' => 'Ui\V2\OperationsController@reasons']);
+        Route::put('operations/stop-reasons',        ['as' => 'api.operations.reasons.save',        'uses' => 'Ui\V2\OperationsController@saveReasons']);
+        Route::post('operations/stops/{id}/justify', ['as' => 'api.operations.stops.justify',       'uses' => 'Ui\V2\OperationsController@justifyStop'])->where('id', '[0-9]+');
+        // Seguridad: control de flota (tarjetas, resumen diario, estado en vivo, ajustes, exportacion)
+        Route::get('security/meta',         ['as' => 'api.security.meta',        'uses' => 'Ui\V2\SecurityController@meta']);
+        Route::get('security/data',         ['as' => 'api.security.data',        'uses' => 'Ui\V2\SecurityController@data']);
+        Route::post('security/settings',    ['as' => 'api.security.settings',    'uses' => 'Ui\V2\SecurityController@saveSettings']);
+        Route::post('security/recalculate', ['as' => 'api.security.recalculate', 'uses' => 'Ui\V2\SecurityController@recalculate']);
+        Route::get('security/export',       ['as' => 'api.security.export',      'uses' => 'Ui\V2\SecurityController@export']);
+        Route::put('routes/{id}/checkpoints',    ['as' => 'api.routes.checkpoints.save',    'uses' => 'Ui\V2\RouteSchedulesController@saveCheckpoints'])->where('id', '[0-9]+');
+
+        Route::get('expenses',        ['as' => 'api.expenses',        'uses' => 'Ui\V2\ExpensesController@data']);
+        Route::get('expenses/meta',   ['as' => 'api.expenses.meta',   'uses' => 'Ui\V2\ExpensesController@meta']);
+        Route::post('expenses',       ['as' => 'api.expenses.store',  'uses' => 'Ui\V2\ExpensesController@store']);
+        Route::put('expenses/{id}',   ['as' => 'api.expenses.update', 'uses' => 'Ui\V2\ExpensesController@update'])->where('id', '[0-9]+');
+        Route::delete('expenses/{id}',['as' => 'api.expenses.destroy','uses' => 'Ui\V2\ExpensesController@destroy'])->where('id', '[0-9]+');
+        Route::get('forwards',        ['as' => 'api.forwards',        'uses' => 'Ui\V2\ForwardsController@data']);
+        Route::post('forwards',       ['as' => 'api.forwards.store',  'uses' => 'Ui\V2\ForwardsController@store']);
+        Route::put('forwards/{id}',   ['as' => 'api.forwards.update', 'uses' => 'Ui\V2\ForwardsController@update'])->where('id', '[0-9]+');
+        Route::delete('forwards/{id}',['as' => 'api.forwards.destroy','uses' => 'Ui\V2\ForwardsController@destroy'])->where('id', '[0-9]+');
+        Route::get('events',         ['as' => 'api.events',        'uses' => 'Ui\V2\EventsController@data']);
+        Route::delete('events/all',  ['as' => 'api.events.destroy_all', 'uses' => 'Ui\V2\EventsController@destroy']);
+        Route::delete('events/{id}', ['as' => 'api.events.destroy',     'uses' => 'Ui\V2\EventsController@destroy'])->where('id', '[0-9]+');
+        Route::get('events/map',     ['as' => 'api.events.map',    'uses' => 'Ui\V2\EventsController@mapData']);
+        Route::get('events/live',    ['as' => 'api.events.live',   'uses' => 'Ui\V2\EventsController@live']);
+        Route::get('pois',           ['as' => 'api.pois',          'uses' => 'Ui\V2\MapLayersController@pois']);
+        Route::get('pois/form',      ['as' => 'api.pois.form',     'uses' => 'Ui\V2\MapLayersController@poiForm']);
+        Route::get('pois/{id}/form', ['as' => 'api.pois.form_edit', 'uses' => 'Ui\V2\MapLayersController@poiForm'])->where('id', '[0-9]+');
+        Route::post('pois',          ['as' => 'api.pois.store',    'uses' => 'Ui\V2\MapLayersController@storePoi']);
+        Route::put('pois/{id}',      ['as' => 'api.pois.update',   'uses' => 'Ui\V2\MapLayersController@updatePoi'])->where('id', '[0-9]+');
+        Route::delete('pois/{id}',   ['as' => 'api.pois.destroy',  'uses' => 'Ui\V2\MapLayersController@destroyPoi'])->where('id', '[0-9]+');
+        Route::post('pois/{id}/toggle', ['as' => 'api.pois.toggle', 'uses' => 'Ui\V2\MapLayersController@togglePoi'])->where('id', '[0-9]+');
+        Route::post('pois/import',      ['as' => 'api.pois.import', 'uses' => 'Ui\V2\MapLayersController@importPois']);
+        Route::get('hitos',          ['as' => 'api.hitos',         'uses' => 'Ui\V2\MapLayersController@hitos']);
+        Route::get('hitos/nearest',  ['as' => 'api.hitos.nearest', 'uses' => 'Ui\V2\MapLayersController@hitoNearest']);
+        Route::get('routes',         ['as' => 'api.routes',        'uses' => 'Ui\V2\MapLayersController@routes']);
+        Route::post('routes',        ['as' => 'api.routes.store',   'uses' => 'Ui\V2\MapLayersController@storeRoute']);
+        Route::put('routes/{id}',    ['as' => 'api.routes.update',  'uses' => 'Ui\V2\MapLayersController@updateRoute'])->where('id', '[0-9]+');
+        Route::post('routes/{id}/toggle', ['as' => 'api.routes.toggle', 'uses' => 'Ui\V2\MapLayersController@toggleRoute'])->where('id', '[0-9]+');
+        Route::delete('routes/{id}', ['as' => 'api.routes.destroy', 'uses' => 'Ui\V2\MapLayersController@destroyRoute'])->where('id', '[0-9]+');
+        // Grupos de rutas
+        // Grupos de geocercas y de POIs (paridad GeofencesGroups/PoisGroups legacy)
+        Route::post('zone-groups',         ['as' => 'api.zone_groups.store',    'uses' => 'Ui\V2\ZonesController@storeGroup']);
+        Route::put('zone-groups/{id}',     ['as' => 'api.zone_groups.update',   'uses' => 'Ui\V2\ZonesController@updateGroup'])->where('id', '[0-9]+');
+        Route::delete('zone-groups/{id}',  ['as' => 'api.zone_groups.destroy',  'uses' => 'Ui\V2\ZonesController@destroyGroup'])->where('id', '[0-9]+');
+        Route::post('zone-groups/toggle',  ['as' => 'api.zone_groups.toggle',   'uses' => 'Ui\V2\ZonesController@toggleGroup']);
+        Route::post('poi-groups',          ['as' => 'api.poi_groups.store',     'uses' => 'Ui\V2\MapLayersController@storePoiGroup']);
+        Route::put('poi-groups/{id}',      ['as' => 'api.poi_groups.update',    'uses' => 'Ui\V2\MapLayersController@updatePoiGroup'])->where('id', '[0-9]+');
+        Route::delete('poi-groups/{id}',   ['as' => 'api.poi_groups.destroy',   'uses' => 'Ui\V2\MapLayersController@destroyPoiGroup'])->where('id', '[0-9]+');
+        Route::post('poi-groups/toggle',   ['as' => 'api.poi_groups.toggle',    'uses' => 'Ui\V2\MapLayersController@togglePoiGroup']);
+        Route::post('route-groups',        ['as' => 'api.route_groups.store',   'uses' => 'Ui\V2\MapLayersController@storeRouteGroup']);
+        Route::put('route-groups/{id}',    ['as' => 'api.route_groups.update',  'uses' => 'Ui\V2\MapLayersController@updateRouteGroup'])->where('id', '[0-9]+');
+        Route::delete('route-groups/{id}', ['as' => 'api.route_groups.destroy', 'uses' => 'Ui\V2\MapLayersController@destroyRouteGroup'])->where('id', '[0-9]+');
+        Route::get('history',        ['as' => 'api.history',       'uses' => 'Ui\V2\HistoryController@data']);
+        Route::get('history/devices', ['as' => 'api.history.devices', 'uses' => 'Ui\V2\HistoryController@devices']);
+        Route::get('history/messages', ['as' => 'api.history.messages', 'uses' => 'Ui\V2\HistoryController@messages']);
+        Route::delete('history/positions',       ['as' => 'api.history.positions.destroy', 'uses' => 'Ui\V2\HistoryController@destroyPositions']);
+        // Reportes (tabs guardados/logs + modal Generar/Guardar sobre helpers legacy)
+        Route::get('reports/meta',         ['as' => 'api.reports.meta',        'uses' => 'Ui\V2\ReportsController@meta']);
+        Route::get('reports/saved',        ['as' => 'api.reports.saved',       'uses' => 'Ui\V2\ReportsController@saved']);
+        Route::get('reports/logs',         ['as' => 'api.reports.logs',        'uses' => 'Ui\V2\ReportsController@logs']);
+        Route::get('reports/{id}/item',    ['as' => 'api.reports.item',        'uses' => 'Ui\V2\ReportsController@item'])->where('id', '[0-9]+');
+        Route::post('reports',             ['as' => 'api.reports.store',       'uses' => 'Ui\V2\ReportsController@store']);
+        Route::delete('reports/{id}',      ['as' => 'api.reports.destroy',     'uses' => 'Ui\V2\ReportsController@destroy'])->where('id', '[0-9]+');
+        Route::delete('reports/logs/{id}', ['as' => 'api.reports.logs.destroy', 'uses' => 'Ui\V2\ReportsController@logDestroy'])->where('id', '[0-9]+');
+        Route::get('copilot/insights', ['as' => 'api.copilot.insights', 'uses' => 'Ui\V2\CopilotController@insights']);
+        Route::get('copilot/ask',      ['as' => 'api.copilot.ask',      'uses' => 'Ui\V2\CopilotController@ask']);
+
+        // Alerts CRUD
+        Route::get('alerts/meta',         ['as' => 'api.alerts.meta',    'uses' => 'Ui\V2\AlertsController@meta']);
+        Route::post('alerts/commands',    ['as' => 'api.alerts.commands', 'uses' => 'Ui\V2\AlertsController@commands']);
+        Route::post('alerts',             ['as' => 'api.alerts.store',   'uses' => 'Ui\V2\AlertsController@store']);
+        Route::get('alert-templates',            ['as' => 'api.alert_templates',         'uses' => 'Ui\V2\AlertsController@templates']);
+        Route::post('alerts/{id}/template',      ['as' => 'api.alerts.template',         'uses' => 'Ui\V2\AlertsController@templateStore'])->where('id', '[0-9]+');
+        Route::put('alert-templates/{id}',       ['as' => 'api.alert_templates.update',  'uses' => 'Ui\V2\AlertsController@templateUpdate'])->where('id', '[0-9]+');
+        Route::delete('alert-templates/{id}',    ['as' => 'api.alert_templates.destroy', 'uses' => 'Ui\V2\AlertsController@templateDestroy'])->where('id', '[0-9]+');
+        Route::get('alerts/{id}/edit',    ['as' => 'api.alerts.edit',    'uses' => 'Ui\V2\AlertsController@editData'])->where('id', '[0-9]+');
+        Route::put('alerts/{id}',         ['as' => 'api.alerts.update',  'uses' => 'Ui\V2\AlertsController@update'])->where('id', '[0-9]+');
+        Route::post('alerts/{id}/toggle', ['as' => 'api.alerts.toggle',  'uses' => 'Ui\V2\AlertsController@toggle'])->where('id', '[0-9]+');
+        Route::delete('alerts/{id}',      ['as' => 'api.alerts.destroy', 'uses' => 'Ui\V2\AlertsController@destroy'])->where('id', '[0-9]+');
+
+        // Zones CRUD
+        Route::get('zones/meta',          ['as' => 'api.zones.meta',     'uses' => 'Ui\V2\ZonesController@meta']);
+        Route::post('zones',              ['as' => 'api.zones.store',    'uses' => 'Ui\V2\ZonesController@store']);
+        Route::get('zones/{id}/edit',     ['as' => 'api.zones.edit',     'uses' => 'Ui\V2\ZonesController@editData'])->where('id', '[0-9]+');
+        Route::put('zones/{id}',          ['as' => 'api.zones.update',   'uses' => 'Ui\V2\ZonesController@update'])->where('id', '[0-9]+');
+        Route::delete('zones/{id}',       ['as' => 'api.zones.destroy',  'uses' => 'Ui\V2\ZonesController@destroy'])->where('id', '[0-9]+');
+        Route::post('zones/{id}/toggle',   ['as' => 'api.zones.toggle',   'uses' => 'Ui\V2\ZonesController@toggle'])->where('id', '[0-9]+');
+        Route::post('zones/import',       ['as' => 'api.zones.import',   'uses' => 'Ui\V2\ZonesController@import']);
+        Route::get('zones/export-items',  ['as' => 'api.zones.export_items', 'uses' => 'Ui\V2\ZonesController@exportItems']);
+
+        // Devices CRUD modal (shared by Live, Fleet, Admin → Fleet)
+        Route::get('devices/form',        ['as' => 'api.devices.form_new', 'uses' => 'Ui\V2\DevicesController@form']);
+        Route::get('devices/{id}/form',   ['as' => 'api.devices.form',    'uses' => 'Ui\V2\DevicesController@form'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/image',        ['as' => 'api.devices.image.store',   'uses' => 'Ui\V2\DevicesController@deviceImageStore'])->where('id', '[0-9]+');
+        Route::delete('devices/{id}/image',      ['as' => 'api.devices.image.destroy', 'uses' => 'Ui\V2\DevicesController@deviceImageDestroy'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/template-webhook', ['as' => 'api.devices.template_webhook', 'uses' => 'Ui\V2\DevicesController@templateWebhookSend'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/changes',       ['as' => 'api.devices.changes',       'uses' => 'Ui\V2\DevicesController@deviceChanges'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/widgets', ['as' => 'api.devices.widgets', 'uses' => 'Ui\V2\DevicesController@widgets'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/address', ['as' => 'api.devices.address', 'uses' => 'Ui\V2\DevicesController@address'])->where('id', '[0-9]+');
+        Route::get('devices/updates',     ['as' => 'api.devices.updates', 'uses' => 'Ui\V2\DevicesController@updates']);
+        Route::get('devices/filter-ids',  ['as' => 'api.devices.filter_ids', 'uses' => 'Ui\V2\DevicesController@filterIds']);
+        Route::post('devices',            ['as' => 'api.devices.store',   'uses' => 'Ui\V2\DevicesController@store']);
+        Route::put('devices/{id}',        ['as' => 'api.devices.update',  'uses' => 'Ui\V2\DevicesController@update'])->where('id', '[0-9]+');
+        Route::delete('devices/{id}',     ['as' => 'api.devices.destroy', 'uses' => 'Ui\V2\DevicesController@destroy'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/lock-command',   ['as' => 'api.devices.lock_command',   'uses' => 'Ui\V2\DevicesController@lockCommand'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/lock-history',     ['as' => 'api.devices.lock_history',   'uses' => 'Ui\V2\DevicesController@lockHistory'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/lock-templates',   ['as' => 'api.devices.lock_templates', 'uses' => 'Ui\V2\DevicesController@lockTemplates'])->where('id', '[0-9]+');
+
+        // Grupos de dispositivos (pivot user_device_pivot.group_id por usuario)
+        Route::get('device-groups',             ['as' => 'api.device_groups.list',    'uses' => 'Ui\V2\DevicesController@deviceGroupsList']);
+        Route::post('device-groups',            ['as' => 'api.device_groups.store',   'uses' => 'Ui\V2\DevicesController@storeDeviceGroup']);
+        Route::get('device-groups/{id}/items',  ['as' => 'api.device_groups.items',   'uses' => 'Ui\V2\DevicesController@deviceGroupItems'])->where('id', '[0-9]+');
+        Route::put('device-groups/{id}',        ['as' => 'api.device_groups.update',  'uses' => 'Ui\V2\DevicesController@updateDeviceGroup'])->where('id', '[0-9]+');
+        Route::delete('device-groups/{id}',     ['as' => 'api.device_groups.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceGroup'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/plans',          ['as' => 'api.devices.plans',               'uses' => 'Ui\V2\DevicesController@plans'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/vehicle-states',['as' => 'api.devices.vehicle_states',      'uses' => 'Ui\V2\DevicesController@vehicleStates'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/vehicle-state', ['as' => 'api.devices.change_vehicle_state', 'uses' => 'Ui\V2\DevicesController@changeVehicleState'])->where('id', '[0-9]+');
+
+        // Sensores del modal device (tab Sensores — CRUD vía SensorModalHelper)
+        Route::get('devices/{id}/sensors',       ['as' => 'api.devices.sensors',       'uses' => 'Ui\V2\DevicesController@sensorsList'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/sensors/form',  ['as' => 'api.devices.sensors.form',  'uses' => 'Ui\V2\DevicesController@sensorFormCreate'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/sensors',      ['as' => 'api.devices.sensors.store', 'uses' => 'Ui\V2\DevicesController@sensorStore'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/sensors/copy-targets', ['as' => 'api.devices.sensors.copy_targets', 'uses' => 'Ui\V2\DevicesController@sensorCopyTargets'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/sensors/copy',  ['as' => 'api.devices.sensors.copy',  'uses' => 'Ui\V2\DevicesController@sensorsCopy'])->where('id', '[0-9]+');
+        Route::post('sensors/preview',           ['as' => 'api.sensors.preview',       'uses' => 'Ui\V2\DevicesController@sensorPreview']);
+        Route::post('sensors/calibrations/import', ['as' => 'api.sensors.calibrations.import', 'uses' => 'Ui\V2\DevicesController@sensorCalibrationsImport']);
+        Route::get('sensors/icons',              ['as' => 'api.sensors.icons',         'uses' => 'Ui\V2\DevicesController@sensorIcons']);
+        Route::get('devices/icons',              ['as' => 'api.devices.icons',         'uses' => 'Ui\V2\DevicesController@deviceIcons']);
+        // Beacons (plugin beacons): kind = KIND_BEACON, validador propio
+        // Selector de idioma (catálogo activo + cambio)
+        Route::get('languages',  ['as' => 'api.languages',        'uses' => 'Ui\V2\AccountController@languages']);
+        Route::post('languages', ['as' => 'api.languages.update', 'uses' => 'Ui\V2\AccountController@updateLanguage']);
+        // Checklists y sus plantillas (addon checklists)
+        Route::get('checklist-templates',        ['as' => 'api.checklist_templates',        'uses' => 'Ui\V2\ChecklistsController@templates']);
+        Route::post('checklist-templates',       ['as' => 'api.checklist_templates.store',  'uses' => 'Ui\V2\ChecklistsController@storeTemplate']);
+        Route::put('checklist-templates/{id}',   ['as' => 'api.checklist_templates.update', 'uses' => 'Ui\V2\ChecklistsController@updateTemplate'])->where('id', '[0-9]+');
+        Route::delete('checklist-templates/{id}',['as' => 'api.checklist_templates.destroy','uses' => 'Ui\V2\ChecklistsController@destroyTemplate'])->where('id', '[0-9]+');
+        Route::get('services/{id}/checklists',   ['as' => 'api.checklists',                 'uses' => 'Ui\V2\ChecklistsController@index'])->where('id', '[0-9]+');
+        Route::post('services/{id}/checklists',  ['as' => 'api.checklists.store',           'uses' => 'Ui\V2\ChecklistsController@store'])->where('id', '[0-9]+');
+        Route::delete('checklists/{id}',         ['as' => 'api.checklists.destroy',         'uses' => 'Ui\V2\ChecklistsController@destroy'])->where('id', '[0-9]+');
+        Route::put('checklist-rows/{id}',        ['as' => 'api.checklist_rows.update',      'uses' => 'Ui\V2\ChecklistsController@updateRow'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/checklist-qr',  ['as' => 'api.checklists.qr',              'uses' => 'Ui\V2\ChecklistsController@qrCode'])->where('id', '[0-9]+');
+        Route::post('checklists/{id}/sign',      ['as' => 'api.checklists.sign',            'uses' => 'Ui\V2\ChecklistsController@sign'])->where('id', '[0-9]+');
+        Route::post('checklist-rows/{id}/image',   ['as' => 'api.checklist_rows.image',        'uses' => 'Ui\V2\ChecklistsController@uploadRowImage'])->where('id', '[0-9]+');
+        Route::delete('checklist-images/{id}',     ['as' => 'api.checklist_images.destroy',    'uses' => 'Ui\V2\ChecklistsController@destroyRowImage'])->where('id', '[0-9]+');
+        // Galería de medios del vehículo (fotos de cámara en disco)
+        Route::get('devices/media-devices', ['as' => 'api.devices.media_devices', 'uses' => 'Ui\V2\DevicesController@mediaDevices']);
+        Route::get('devices/{id}/media',    ['as' => 'api.devices.media',        'uses' => 'Ui\V2\DevicesController@deviceMedia'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/media/convert', ['as' => 'api.devices.media.convert', 'uses' => 'Ui\V2\DevicesController@convertDeviceMedia'])->where('id', '[0-9]+');
+        Route::delete('devices/{id}/media', ['as' => 'api.devices.media.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceMedia'])->where('id', '[0-9]+');
+        // Columnas configurables de la lista de flota (ajuste compartido con el legacy)
+        Route::get('fleet/columns',  ['as' => 'api.fleet.columns',        'uses' => 'Ui\V2\DevicesController@fleetColumns']);
+        Route::put('fleet/columns',  ['as' => 'api.fleet.columns.update', 'uses' => 'Ui\V2\DevicesController@updateFleetColumns']);
+        // Configuración remota del GPS por SMS (DeviceConfig)
+        Route::get('device-config/meta',   ['as' => 'api.device_config.meta',      'uses' => 'Ui\V2\DevicesController@deviceConfigMeta']);
+        Route::post('device-config',       ['as' => 'api.device_config.configure', 'uses' => 'Ui\V2\DevicesController@deviceConfigure']);
+        // Alertas del vehículo con vigencia por pivote (DeviceAlerts)
+        Route::get('devices/{id}/alerts',  ['as' => 'api.devices.alerts',        'uses' => 'Ui\V2\DevicesController@deviceAlerts'])->where('id', '[0-9]+');
+        Route::put('devices/{id}/alerts/{alert}/period', ['as' => 'api.devices.alerts.period', 'uses' => 'Ui\V2\DevicesController@updateDeviceAlertPeriod'])->where(['id' => '[0-9]+', 'alert' => '[0-9]+']);
+        // Tipos de trayecto por periodo (privado/negocio) — DeviceRouteType
+        Route::get('devices/{id}/route-types',    ['as' => 'api.devices.route_types',        'uses' => 'Ui\V2\DevicesController@routeTypes'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/route-types',   ['as' => 'api.devices.route_types.store',  'uses' => 'Ui\V2\DevicesController@storeRouteType'])->where('id', '[0-9]+');
+        Route::put('route-types/{id}',            ['as' => 'api.route_types.update',         'uses' => 'Ui\V2\DevicesController@updateRouteType'])->where('id', '[0-9]+');
+        Route::delete('route-types/{id}',         ['as' => 'api.route_types.destroy',        'uses' => 'Ui\V2\DevicesController@destroyRouteType'])->where('id', '[0-9]+');
+        Route::post('beacons',      ['as' => 'api.beacons.store',  'uses' => 'Ui\V2\DevicesController@storeBeacon']);
+        Route::put('beacons/{id}',  ['as' => 'api.beacons.update', 'uses' => 'Ui\V2\DevicesController@updateBeacon'])->where('id', '[0-9]+');
+
+        // Cámaras y gastos del modal device
+        Route::get('devices/{id}/cameras',   ['as' => 'api.devices.cameras',        'uses' => 'Ui\V2\DevicesController@camerasList'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/cameras',  ['as' => 'api.devices.cameras.store',  'uses' => 'Ui\V2\DevicesController@cameraStore'])->where('id', '[0-9]+');
+        Route::put('cameras/{id}',           ['as' => 'api.cameras.update',         'uses' => 'Ui\V2\DevicesController@cameraUpdate'])->where('id', '[0-9]+');
+        Route::delete('cameras/{id}',        ['as' => 'api.cameras.destroy',        'uses' => 'Ui\V2\DevicesController@cameraDestroy'])->where('id', '[0-9]+');
+        Route::get('devices/{id}/expenses',  ['as' => 'api.devices.expenses',       'uses' => 'Ui\V2\DevicesController@expensesList'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/expenses', ['as' => 'api.devices.expenses.store', 'uses' => 'Ui\V2\DevicesController@expenseStore'])->where('id', '[0-9]+');
+        // URI propia (devices/expenses/{id}): antes era expenses/{id} y COLISIONABA
+        // con las rutas de la página Gastos (ExpensesController) — la última ganaba
+        // y la página acababa en el handler con gate de otro módulo.
+        Route::put('devices/expenses/{id}',    ['as' => 'api.devices.expenses.update',  'uses' => 'Ui\V2\DevicesController@expenseUpdate'])->where('id', '[0-9]+');
+        Route::delete('devices/expenses/{id}', ['as' => 'api.devices.expenses.destroy', 'uses' => 'Ui\V2\DevicesController@expenseDestroy'])->where('id', '[0-9]+');
+        Route::get('sensors/{id}/form',          ['as' => 'api.sensors.form',          'uses' => 'Ui\V2\DevicesController@sensorFormEdit'])->where('id', '[0-9]+');
+        Route::put('sensors/{id}',               ['as' => 'api.sensors.update',        'uses' => 'Ui\V2\DevicesController@sensorUpdate'])->where('id', '[0-9]+');
+        Route::delete('sensors/{id}',            ['as' => 'api.sensors.destroy',       'uses' => 'Ui\V2\DevicesController@sensorDestroy'])->where('id', '[0-9]+');
+
+        // Enviar comando (modal compartido GPRS/SMS + hub schedules/logs/plantillas)
+        Route::get('commands/meta',   ['as' => 'api.commands.meta',  'uses' => 'Ui\V2\CommandsController@meta']);
+        Route::post('commands/list',  ['as' => 'api.commands.list',  'uses' => 'Ui\V2\CommandsController@commands']);
+        Route::post('commands/send',  ['as' => 'api.commands.send',  'uses' => 'Ui\V2\CommandsController@send']);
+        Route::get('commands/schedules',         ['as' => 'api.commands.schedules',          'uses' => 'Ui\V2\CommandsController@schedules']);
+        Route::post('commands/schedules',        ['as' => 'api.commands.schedules.store',    'uses' => 'Ui\V2\CommandsController@storeSchedule']);
+        Route::put('commands/schedules/{id}',    ['as' => 'api.commands.schedules.update',   'uses' => 'Ui\V2\CommandsController@updateSchedule'])->where('id', '[0-9]+');
+        Route::delete('commands/schedules/{id}', ['as' => 'api.commands.schedules.destroy',  'uses' => 'Ui\V2\CommandsController@destroySchedule'])->where('id', '[0-9]+');
+        Route::get('commands/schedules/{id}/logs', ['as' => 'api.commands.schedules.logs',  'uses' => 'Ui\V2\CommandsController@scheduleLogs'])->where('id', '[0-9]+');
+        Route::get('commands/pendings',          ['as' => 'api.commands.pendings',           'uses' => 'Ui\V2\CommandsController@pendings']);
+        Route::delete('commands/pendings/{id}',  ['as' => 'api.commands.pendings.destroy',   'uses' => 'Ui\V2\CommandsController@destroyPending'])->where('id', '[0-9]+');
+        Route::get('commands/logs',              ['as' => 'api.commands.logs',               'uses' => 'Ui\V2\CommandsController@logs']);
+        Route::get('commands/templates',         ['as' => 'api.commands.templates',          'uses' => 'Ui\V2\CommandsController@templates']);
+        Route::post('commands/templates',        ['as' => 'api.commands.templates.store',    'uses' => 'Ui\V2\CommandsController@storeTemplate']);
+        Route::put('commands/templates/{id}',    ['as' => 'api.commands.templates.update',   'uses' => 'Ui\V2\CommandsController@updateTemplate'])->where('id', '[0-9]+');
+        Route::delete('commands/templates/{id}', ['as' => 'api.commands.templates.destroy',  'uses' => 'Ui\V2\CommandsController@destroyTemplate'])->where('id', '[0-9]+');
+
+        // Compartir (links públicos por vehículo — CRUD sobre SharingService legacy)
+        Route::get('sharing',         ['as' => 'api.sharing',         'uses' => 'Ui\V2\SharingController@data']);
+        Route::get('sharing/meta',    ['as' => 'api.sharing.meta',    'uses' => 'Ui\V2\SharingController@meta']);
+        Route::post('sharing',        ['as' => 'api.sharing.store',   'uses' => 'Ui\V2\SharingController@store']);
+        Route::put('sharing/{id}',    ['as' => 'api.sharing.update',  'uses' => 'Ui\V2\SharingController@update'])->where('id', '[0-9]+');
+        Route::delete('sharing/{id}', ['as' => 'api.sharing.destroy', 'uses' => 'Ui\V2\SharingController@destroy'])->where('id', '[0-9]+');
+
+        // Ajustes de cuenta (modal con tabs; reutiliza validadores/servicios legacy)
+        Route::get('account/meta',       ['as' => 'api.account.meta',     'uses' => 'Ui\V2\AccountController@meta']);
+        Route::post('account/locale',    ['as' => 'api.account.locale',   'uses' => 'Ui\V2\AccountController@updateLocale']);
+        Route::post('account/client',    ['as' => 'api.account.client',   'uses' => 'Ui\V2\AccountController@updateClient']);
+        Route::post('account/password',  ['as' => 'api.account.password', 'uses' => 'Ui\V2\AccountController@changePassword']);
+        Route::post('account/sms',       ['as' => 'api.account.sms',      'uses' => 'Ui\V2\AccountController@updateSms']);
+        Route::post('account/sms/test',  ['as' => 'api.account.sms_test',  'uses' => 'Ui\V2\AccountController@testSms']);
+        Route::post('account/sms/queue', ['as' => 'api.account.sms_queue', 'uses' => 'Ui\V2\AccountController@clearSmsQueue']);
+        // Categorías de medios (addon media_categories) y credenciales secundarias
+        Route::get('account/media-categories',         ['as' => 'api.account.media_categories',        'uses' => 'Ui\V2\AccountController@mediaCategories']);
+        Route::post('account/media-categories',        ['as' => 'api.account.media_categories.store',  'uses' => 'Ui\V2\AccountController@storeMediaCategory']);
+        Route::put('account/media-categories/{id}',    ['as' => 'api.account.media_categories.update', 'uses' => 'Ui\V2\AccountController@updateMediaCategory'])->where('id', '[0-9]+');
+        Route::delete('account/media-categories/{id}', ['as' => 'api.account.media_categories.destroy','uses' => 'Ui\V2\AccountController@destroyMediaCategory'])->where('id', '[0-9]+');
+        Route::get('account/secondary',         ['as' => 'api.account.secondary',        'uses' => 'Ui\V2\AccountController@secondaryCredentials']);
+        Route::post('account/secondary',        ['as' => 'api.account.secondary.store',  'uses' => 'Ui\V2\AccountController@storeSecondaryCredential']);
+        Route::put('account/secondary/{id}',    ['as' => 'api.account.secondary.update', 'uses' => 'Ui\V2\AccountController@updateSecondaryCredential'])->where('id', '[0-9]+');
+        Route::delete('account/secondary/{id}', ['as' => 'api.account.secondary.destroy','uses' => 'Ui\V2\AccountController@destroySecondaryCredential'])->where('id', '[0-9]+');
+        Route::post('account/widgets',   ['as' => 'api.account.widgets',  'uses' => 'Ui\V2\AccountController@updateWidgets']);
+        Route::post('account/dashboard', ['as' => 'api.account.dashboard','uses' => 'Ui\V2\AccountController@updateDashboard']);
+        Route::post('account/map',       ['as' => 'api.account.map',      'uses' => 'Ui\V2\AccountController@updateMap']);
+        // Confirmación de email (código único, paridad EmailConfirmation legacy)
+        Route::post('account/email-confirmation',        ['as' => 'api.account.email_confirm', 'uses' => 'Ui\V2\AccountController@confirmEmail']);
+        Route::post('account/email-confirmation/resend', ['as' => 'api.account.email_resend',  'uses' => 'Ui\V2\AccountController@resendEmailCode']);
+
+        // Chat con dispositivos (JSON sobre Chat/ChatService legacy)
+        Route::get('chat/conversations', ['as' => 'api.chat.conversations', 'uses' => 'Ui\V2\ChatController@conversations']);
+        Route::get('chat/unread',        ['as' => 'api.chat.unread',        'uses' => 'Ui\V2\ChatController@unread']);
+        Route::get('chat/open/{deviceId}', ['as' => 'api.chat.open',        'uses' => 'Ui\V2\ChatController@open'])->where('deviceId', '[0-9]+');
+        Route::get('chat/{chatId}/messages', ['as' => 'api.chat.messages',  'uses' => 'Ui\V2\ChatController@messages'])->where('chatId', '[0-9]+');
+        Route::post('chat/{chatId}/send',  ['as' => 'api.chat.send',        'uses' => 'Ui\V2\ChatController@send'])->where('chatId', '[0-9]+');
+
+        // Acciones de llamada (CRUD sobre CallAction legacy)
+        Route::get('call-actions',         ['as' => 'api.call_actions',         'uses' => 'Ui\V2\CallActionsController@data']);
+        Route::get('call-actions/meta',    ['as' => 'api.call_actions.meta',    'uses' => 'Ui\V2\CallActionsController@meta']);
+        Route::get('call-actions/events',  ['as' => 'api.call_actions.events',  'uses' => 'Ui\V2\CallActionsController@events']);
+        Route::post('call-actions',        ['as' => 'api.call_actions.store',   'uses' => 'Ui\V2\CallActionsController@store']);
+        Route::put('call-actions/{id}',    ['as' => 'api.call_actions.update',  'uses' => 'Ui\V2\CallActionsController@update'])->where('id', '[0-9]+');
+        Route::delete('call-actions/{id}', ['as' => 'api.call_actions.destroy', 'uses' => 'Ui\V2\CallActionsController@destroy'])->where('id', '[0-9]+');
+
+        // Tipos de vehículo (tab del modal de cuenta)
+        Route::get('vehicle-types',         ['as' => 'api.vehicle_types',         'uses' => 'Ui\V2\VehicleTypesController@data']);
+        Route::post('vehicle-types',        ['as' => 'api.vehicle_types.store',   'uses' => 'Ui\V2\VehicleTypesController@store']);
+        Route::put('vehicle-types/{id}',    ['as' => 'api.vehicle_types.update',  'uses' => 'Ui\V2\VehicleTypesController@update'])->where('id', '[0-9]+');
+        Route::delete('vehicle-types/{id}', ['as' => 'api.vehicle_types.destroy', 'uses' => 'Ui\V2\VehicleTypesController@destroy'])->where('id', '[0-9]+');
+
+        // Eventos personalizados (tab del modal de cuenta)
+        Route::get('custom-events',         ['as' => 'api.custom_events',         'uses' => 'Ui\V2\CustomEventsController@data']);
+        Route::get('custom-events/meta',    ['as' => 'api.custom_events.meta',    'uses' => 'Ui\V2\CustomEventsController@meta']);
+        Route::post('custom-events',        ['as' => 'api.custom_events.store',   'uses' => 'Ui\V2\CustomEventsController@store']);
+        Route::put('custom-events/{id}',    ['as' => 'api.custom_events.update',  'uses' => 'Ui\V2\CustomEventsController@update'])->where('id', '[0-9]+');
+        Route::delete('custom-events/{id}', ['as' => 'api.custom_events.destroy', 'uses' => 'Ui\V2\CustomEventsController@destroy'])->where('id', '[0-9]+');
+
+        // Conductores (CRUD sobre UserDriverModalHelper legacy)
+        Route::get('drivers',         ['as' => 'api.drivers',         'uses' => 'Ui\V2\DriversController@data']);
+        Route::get('drivers/meta',    ['as' => 'api.drivers.meta',    'uses' => 'Ui\V2\DriversController@meta']);
+        Route::post('drivers',        ['as' => 'api.drivers.store',   'uses' => 'Ui\V2\DriversController@store']);
+        Route::put('drivers/{id}',    ['as' => 'api.drivers.update',  'uses' => 'Ui\V2\DriversController@update'])->where('id', '[0-9]+');
+        Route::delete('drivers/{id}', ['as' => 'api.drivers.destroy', 'uses' => 'Ui\V2\DriversController@destroy'])->where('id', '[0-9]+');
+        Route::get('drivers/{id}/activity-log', ['as' => 'api.drivers.activity_log',     'uses' => 'Ui\V2\DriversController@activityLog'])->where('id', '[0-9]+');
+        Route::put('drivers/multiple',          ['as' => 'api.drivers.update_multiple', 'uses' => 'Ui\V2\DriversController@updateMultiple']);
+
+        // Tareas (CRUD sobre TaskUserService legacy)
+        Route::get('tasks',         ['as' => 'api.tasks',         'uses' => 'Ui\V2\TasksController@data']);
+        Route::get('tasks/meta',    ['as' => 'api.tasks.meta',    'uses' => 'Ui\V2\TasksController@meta']);
+        Route::post('tasks',        ['as' => 'api.tasks.store',   'uses' => 'Ui\V2\TasksController@store']);
+        Route::post('tasks/assign', ['as' => 'api.tasks.assign',  'uses' => 'Ui\V2\TasksController@assign']);
+        Route::post('tasks/import/fields', ['as' => 'api.tasks.import_fields', 'uses' => 'Ui\V2\TasksController@importFields']);
+        Route::post('tasks/import',        ['as' => 'api.tasks.import',        'uses' => 'Ui\V2\TasksController@import']);
+        Route::get('tasks/sets',           ['as' => 'api.tasks.sets',          'uses' => 'Ui\V2\TasksController@taskSets']);
+        Route::post('tasks/sets',          ['as' => 'api.tasks.sets.store',    'uses' => 'Ui\V2\TasksController@taskSetStore']);
+        Route::put('tasks/sets/{id}',      ['as' => 'api.tasks.sets.update',   'uses' => 'Ui\V2\TasksController@taskSetUpdate'])->where('id', '[0-9]+');
+        Route::delete('tasks/sets/{id}',   ['as' => 'api.tasks.sets.destroy',  'uses' => 'Ui\V2\TasksController@taskSetDestroy'])->where('id', '[0-9]+');
+        Route::put('tasks/{id}',    ['as' => 'api.tasks.update',  'uses' => 'Ui\V2\TasksController@update'])->where('id', '[0-9]+');
+        Route::delete('tasks/{id}', ['as' => 'api.tasks.destroy', 'uses' => 'Ui\V2\TasksController@destroy'])->where('id', '[0-9]+');
+
+        // Servicios / Mantenimiento (modales compartidos + página global)
+        Route::get('services',              ['as' => 'api.services',          'uses' => 'Ui\V2\ServicesController@data']);
+        Route::get('services/meta',         ['as' => 'api.services.meta',     'uses' => 'Ui\V2\ServicesController@formMeta']);
+        Route::get('services/device/{id}',  ['as' => 'api.services.device',   'uses' => 'Ui\V2\ServicesController@deviceServices'])->where('id', '[0-9]+');
+        Route::post('services',             ['as' => 'api.services.store',    'uses' => 'Ui\V2\ServicesController@store']);
+        Route::put('services/{id}',         ['as' => 'api.services.update',   'uses' => 'Ui\V2\ServicesController@update'])->where('id', '[0-9]+');
+        Route::delete('services/{id}',      ['as' => 'api.services.destroy',  'uses' => 'Ui\V2\ServicesController@destroy'])->where('id', '[0-9]+');
+    });
+});

@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Frekvence',
         'unit' => 'Jednotka',
         'noreply_email' => 'Výchozí emailová adresa',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Podpis',
         'use_smtp_server' => 'Používejte server SMTP',
         'smtp_server_host' => 'Hostitel SMTP serveru',

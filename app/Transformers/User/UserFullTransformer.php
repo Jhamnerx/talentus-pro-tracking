@@ -11,11 +11,24 @@ class UserFullTransformer extends BaseTransformer
 {
     protected array $includesLoadMap = [
         'client' => 'client',
+        'permissions' => [
+            'userPermissions',
+            'billingPlanPermissions',
+            'manager',
+            'manager.userPermissions',
+            'manager.billingPlanPermissions',
+        ],
     ];
 
     protected $availableIncludes = [
         'client',
+        'permissions',
     ];
+
+    protected static function requireLoads()
+    {
+        return ['manager', 'billing_plan'];
+    }
 
     public function transform(?User $entity): array
     {
@@ -74,5 +87,12 @@ class UserFullTransformer extends BaseTransformer
     public function includeClient(User $entity): Item
     {
         return $this->item($entity->client, new UserClientFullTransformer(), false);
+    }
+
+    public function includePermissions(User $entity): Item
+    {
+        $permissions = $entity->getPermissions();
+
+        return $this->item($permissions, fn ($item) => $item, false);
     }
 }

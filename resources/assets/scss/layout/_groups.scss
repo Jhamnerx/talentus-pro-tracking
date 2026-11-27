@@ -59,7 +59,7 @@
       top: auto;
 
       @extend .ico;
-      @extend .ico-minus:before;
+      content: "\e92e";
 
       font-size: $group-collapse-status-collapse-font-size;
       font-weight: $group-collapse-status-collapse-font-weight;
@@ -70,7 +70,7 @@
       color: $group-heading-collapse-color;
 
       &:after {
-        @extend .ico-plus:before;
+        content: "\e901";
         color: $group-collapse-status-color;
         font-size: $group-collapse-status-font-size;
         font-weight: $group-collapse-status-font-weight;

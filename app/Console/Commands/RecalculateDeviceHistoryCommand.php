@@ -35,7 +35,9 @@ class RecalculateDeviceHistoryCommand extends Command
         $this->processManager = new ProcessManager('device_history:recalculate', 300, 2);
 
         do {
-            $items = DB::table('history_recalculations')->limit(10)->get();
+            $items = DB::table('history_recalculations')
+                ->limit(10)
+                ->get();
 
             foreach ($items as $item) {
                 $id = $item->device_id;
@@ -80,21 +82,40 @@ class RecalculateDeviceHistoryCommand extends Command
         if (empty($oldData->id))
             return;
 
+        $initial = $conn->table($posTable)
+            ->select(['id', 'latitude', 'longitude'])
+            ->where('time', '<', $time)
+            ->where('valid', '>', 0)
+            ->orderBy('time', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->first();
+
+        $initId = $initial->id ?? 'NULL';
+        $initLat = $initial->latitude ?? 'NULL';
+        $initLon = $initial->longitude ?? 'NULL';
+
         $conn->statement("
                 UPDATE $posTable pos
-            INNER JOIN (  SELECT IFNULL(DEGREES(ACOS( 
-                                           COS(RADIANS(p.latitude)) 
-                                         * COS(RADIANS(prev.latitude)) 
-                                         * COS(RADIANS(prev.longitude) - RADIANS(p.longitude))       
-                                         + SIN(RADIANS(p.latitude)) 
-                                         * SIN(RADIANS(prev.latitude))
-                                       )) * 111.045, 0
+            INNER JOIN (  SELECT p.id,
+                                 IF(
+                                     @prev_id IS NULL OR (p.latitude = @prev_lat AND p.longitude = @prev_lon), 
+                                     0, 
+                                     IFNULL(
+                                         DEGREES(ACOS(
+                                             COS(RADIANS(p.latitude)) * COS(RADIANS(@prev_lat)) *
+                                             COS(RADIANS(@prev_lon) - RADIANS(p.longitude)) +
+                                             SIN(RADIANS(p.latitude)) * SIN(RADIANS(@prev_lat))
+                                         )) * 111.045, 
+                                         0
+                                     )
                                  ) AS distance,
-                                 p.id
-                            FROM $posTable p
-                       LEFT JOIN $posTable prev ON prev.id = p.id - 1
-                           WHERE p.time > ? AND p.valid > 0
-                        ORDER BY p.id DESC, p.time DESC
+                                 @prev_id := p.id,
+                                 @prev_lat := p.latitude,
+                                 @prev_lon := p.longitude
+                            FROM (SELECT @prev_id := $initId, @prev_lat := $initLat, @prev_lon := $initLon) vars,
+                                 $posTable p
+                           WHERE p.time >= ? AND p.valid > 0
+                        ORDER BY p.time, p.id
                        ) t ON t.id = pos.id
                    SET pos.distance = t.distance
                  WHERE ROUND(t.distance, 5) != ROUND(pos.distance, 5)", [$time]);

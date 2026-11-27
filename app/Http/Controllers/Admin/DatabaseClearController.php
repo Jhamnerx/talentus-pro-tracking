@@ -1,6 +1,4 @@
-<?php
-
-namespace App\Http\Controllers\Admin;
+<?php namespace App\Http\Controllers\Admin;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
@@ -11,32 +9,29 @@ use Tobuli\Services\DatabaseConnectionService;
 use Tobuli\Services\DatabaseService;
 use Tobuli\Validation\AdminDatabaseClearFormValidator;
 
-class DatabaseClearController extends BaseController
-{
+class DatabaseClearController extends BaseController {
 
     /**
      * @var AdminDatabaseClearFormValidator
      */
     private $adminBackupsFormValidator;
 
-    function __construct(AdminDatabaseClearFormValidator $adminDatabaseClearFormValidator)
-    {
+    function __construct(AdminDatabaseClearFormValidator $adminDatabaseClearFormValidator) {
         parent::__construct();
         $this->adminDatabaseClearFormValidator = $adminDatabaseClearFormValidator;
     }
 
-    public function panel()
-    {
+    public function panel() {
         $settings = settings('db_clear');
 
         return View::make('admin::DatabaseClear.panel')->with(compact('settings'));
     }
 
-    public function save()
-    {
+    public function save() {
         $input = Request::all();
 
-        try {
+        try
+        {
             $this->adminDatabaseClearFormValidator->validate('update', $input);
 
             $data = [
@@ -48,7 +43,9 @@ class DatabaseClearController extends BaseController
             settings('db_clear', $data);
 
             return Redirect::route('admin.tools.index')->withSuccess(trans('front.successfully_saved'));
-        } catch (ValidationException $e) {
+        }
+        catch (ValidationException $e)
+        {
             return Redirect::route('admin.tools.index')->withInput()->withErrors($e->getErrors());
         }
     }
@@ -61,15 +58,15 @@ class DatabaseClearController extends BaseController
 
         return response()->json([
             'total' => [
-                'size' => formatBytes($total),
+                'size' => formatBytes( $total ),
                 'percentage' => 100,
             ],
             'used' => [
-                'size' => formatBytes($total - $reserved),
+                'size' => formatBytes( $total - $reserved ),
                 'percentage' => $total ? ($total - $reserved) * 100 / $total : 0,
             ],
             'reserved' => [
-                'size' => formatBytes($reserved),
+                'size' => formatBytes( $reserved ),
                 'percentage' => $total ? $reserved * 100 / $total : 0,
             ]
         ]);

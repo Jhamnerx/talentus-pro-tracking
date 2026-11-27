@@ -183,6 +183,7 @@ return array(
         'frequency' => 'სიხშირე',
         'unit' => 'ერთეული',
         'noreply_email' => 'მეილი პასუხის გაცემის გარეშე',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'ხელმოწერა',
         'use_smtp_server' => 'SMTP სერვერის გამოყენება',
         'smtp_server_host' => 'SMTP სერვერის ჰოსტი',

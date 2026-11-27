@@ -11,7 +11,7 @@ class DeviceServicesTransformer extends DeviceTransformer {
 
         foreach ($entity->services as $service)
         {
-            $service->setSensors($entity->sensors);
+            $service->setDevice($entity)->setSensors($entity->sensors);
 
             $result[] = [
                 'id'       => (int)$service->id,

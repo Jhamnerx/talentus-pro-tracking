@@ -42,6 +42,14 @@ class Logical extends Sensor
         return null;
     }
 
+    protected function valueTypeConvert($value)
+    {
+        if (is_null($value))
+            return null;
+
+        return boolval($value);
+    }
+
     public function getValueFormatted($value)
     {
         return $value

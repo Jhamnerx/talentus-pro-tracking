@@ -10,6 +10,7 @@ use App\Events\PositionResultRetrieved;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Tobuli\Entities\Device;
 use Tobuli\Entities\DeviceSensor;
 use Tobuli\Entities\EpsCenter;
@@ -19,8 +20,10 @@ use Tobuli\Helpers\Alerts\Check\Checker;
 use Tobuli\Helpers\LbsLocation\LbsManager;
 use Tobuli\Helpers\LbsLocation\Service\LbsInterface;
 use Tobuli\Services\EventWriteService;
+use Tobuli\Services\Operations\OperationChecker;
 use Tobuli\Services\Unigis\UnigisEventMapper;
 use Tobuli\Services\Securitas\SecuritasEventMapper;
+use Tobuli\Helpers\Teltonika\TeltonikaEvents;
 
 class PositionsWriter
 {
@@ -46,6 +49,9 @@ class PositionsWriter
     protected $drivers = [];
 
     protected $alertChecker = null;
+
+    /** @var OperationChecker|null evaluacion de vueltas (modulo de Operaciones), una por lote */
+    protected $operationChecker = null;
 
     protected $debug;
 
@@ -170,6 +176,7 @@ class PositionsWriter
         ], $data);
 
         $data['speed'] = floatval($data['speed']) * 1.852;
+        $data['altitude'] = floatval($data['altitude']);
 
         if ($data['ack']) {
             if (! empty($data['deviceTime'])) {
@@ -183,6 +190,14 @@ class PositionsWriter
 
         if (is_null($data['device_time'])) {
             $data['device_time'] = $this->device->getDeviceTime() ?? date('Y-m-d H:i:s');
+        }
+
+        if (in_array($data['protocol'], ['gt06', 'gt062', 'h02'])) {
+            $current = strtotime($data['device_time']);
+
+            //2007-01-01
+            if ($current < 1167609600)
+                $data['device_time'] = date('Y-m-d H:i:s', $current + 619315200);
         }
 
         $data['time'] = $data['device_time'];
@@ -231,7 +246,7 @@ class PositionsWriter
         $parameters[Position::VIRTUAL_ENGINE_HOURS_KEY] = 0;
 
         if ($this->apply_network_data && $networkData = Arr::get($data, 'network.cellTowers.0')) {
-            $parameters = array_merge($parameters, $networkData);
+            $parameters = array_merge($parameters, $this->networkParameters($networkData));
         }
 
         $gsmSignal = Arr::get($data, 'network.cellTowers.0.signalStrength');
@@ -293,6 +308,42 @@ class PositionsWriter
         $data['longitude'] = $response['lng'];
         $data['accuracy'] = $response['accuracy'];
         $data['valid'] = 1;
+    }
+
+    /**
+     * Normaliza la celda GSM de `network.cellTowers.0` a parametros en
+     * minusculas, siguiendo la misma convencion que el resto de atributos.
+     *
+     * Protocolos como gt06 mandan mcc y mnc por separado y nunca el numero de
+     * operador plano; Teltonika (I/O 241) manda el concatenado. Aqui se rearma
+     * para que ambos casos alimenten el mismo parametro `operator`.
+     */
+    protected function networkParameters(array $cellTower): array
+    {
+        $map = [
+            'mobileCountryCode' => 'mcc',
+            'mobileNetworkCode' => 'mnc',
+            'locationAreaCode'  => 'lac',
+            'cellId'            => 'cellid',
+            'radioType'         => 'radiotype',
+        ];
+
+        $parameters = [];
+
+        foreach ($map as $from => $to) {
+            $value = Arr::get($cellTower, $from);
+
+            if (is_null($value) || $value === '')
+                continue;
+
+            $parameters[$to] = $value;
+        }
+
+        // mcc * 100 + mnc solo es reversible con mnc de 2 digitos.
+        if (isset($parameters['mcc'], $parameters['mnc']) && $parameters['mnc'] < 100)
+            $parameters['operator'] = $parameters['mcc'] * 100 + $parameters['mnc'];
+
+        return $parameters;
     }
 
     protected function isHistory($time = null)
@@ -548,6 +599,9 @@ class PositionsWriter
             }
         }
 
+        // Detectar solución GNSS corrupta (saltos imposibles de altitud/velocidad/posición)
+        $this->detectGnssGlitch($lastValidPosition);
+
         //tmp
         if (! $this->position->isValid()) {
             $this->position->distance = 0;
@@ -594,6 +648,11 @@ class PositionsWriter
         // Detectar salto de posición desde parada (jump from stop)
         $this->detectJumpFromStop($distance, $lastValidPosition);
 
+        // Registrar (modo sombra, solo log) el evento nativo de exceso de velocidad
+        // en geocerca que reporta el propio equipo Teltonika (AVL 157 en FTC927,
+        // AVL por zona en familia FMB/FMC/FMU/FMM incl. FMC920)
+        $this->detectNativeGeofenceSpeedEvent();
+
         $totalDistance = $lastValidPosition ? $lastValidPosition->getParameter('totaldistance', 0) : 0;
 
         if ($this->position->isValid()) {
@@ -610,6 +669,8 @@ class PositionsWriter
         if ($this->checkableAlerts()) {
             $this->alerts();
         }
+
+        $this->operations();
 
         if ($this->events || $this->isChanged($this->position, $this->getPrevPosition())) {
             $this->addPosition($this->position);
@@ -666,7 +727,7 @@ class PositionsWriter
         if ($this->device->consatel) {
             //REGISTRAR BASE DE DATOS COMSATEL
 
-            $this->position->protocol == 'teltonika' ? $this->saveDataComsatel($this->device, $this->position) : Log::info('No se pudo registrar en la base de datos Comsatel la placa: ' . $this->device->plate_number);
+            $this->position->protocol == 'teltonika' ? $this->saveDataComsatel($this->device, $this->position) : \Log::info('No se pudo registrar en la base de datos Comsatel la placa: ' . $this->device->plate_number);
         }
 
         if ($this->device->wisetrack) {
@@ -865,34 +926,41 @@ class PositionsWriter
     public function saveDataComsatel($device, $position)
     {
         $evento = 1;
+        $params = $position->parameters;
 
-        if ($position->getParameter('event') == "239" && $position->getParameter('ignition') == true) {
-            $evento = 3;
-        } elseif ($position->getParameter('event') == "239" && $position->getParameter('ignition') == false) {
-            $evento = 2;
-        }
+        // Los parámetros vuelven del XML como texto: ignition llega "true" /
+        // "false", y en PHP "false" == true. Por eso se compara el texto.
+        // El decoder del fork no deja io246/io249/io252/io253: los pasa a
+        // alarm (tow, jamming, powerCut, hardAcceleration…) y solo cuando el
+        // valor es > 0. TeltonikaEvents lo resuelve, con io{ID} de respaldo.
+        switch ((int) $position->getParameter('event')) {
+            case 239:
+                $ignition = strtolower(trim((string) $position->getParameter('ignition')));
+                $evento = in_array($ignition, ['1', 'true'], true) ? 3 : 2;
+                break;
 
+            case 252:
+                $evento = TeltonikaEvents::isActive(252, $params) ? 7 : 6; // 7 desconectada, 6 reconectada
+                break;
 
-        if ($position->getParameter('event') == "252" && $position->getParameter('io252') == 0) {
-            $evento = 6;
-        } elseif ($position->getParameter('event') == "252" && $position->getParameter('io252') == 1) {
-            $evento = 7;
-        }
+            case 246:
+                if (TeltonikaEvents::isActive(246, $params)) {
+                    $evento = 11;
+                }
+                break;
 
-        if ($position->getParameter('event') == "246" && $position->getParameter('io246') == 1) {
-            $evento = 11;
-        }
+            case 249:
+                $evento = TeltonikaEvents::isActive(249, $params) ? 12 : 13;
+                break;
 
-        if ($position->getParameter('event') == "249" && $position->getParameter('io249') == 1) {
-            $evento = 12;
-        } elseif ($position->getParameter('event') == "249" && $position->getParameter('io249') == 0) {
-            $evento = 13;
-        }
-
-        if ($position->getParameter('event') == "253" && $position->getParameter('io253') == 1) {
-            $evento = 16;
-        } else if ($position->getParameter('event') == "253" && $position->getParameter('io253') == 2) {
-            $evento = 17;
+            case 253:
+                $type = TeltonikaEvents::greenDrivingType($params);
+                if ($type === 1) {
+                    $evento = 16;
+                } elseif ($type === 2) {
+                    $evento = 17;
+                }
+                break;
         }
 
 
@@ -1196,6 +1264,28 @@ class PositionsWriter
         }
     }
 
+    /**
+     * Modulo de Operaciones (control de vueltas). Misma forma que alerts():
+     * el checker se construye una vez por lote y su primera llamada hace una
+     * consulta indexada; sin fila de estado, el resto del lote no cuesta nada.
+     * Las tramas atrasadas no mueven el estado: acumulan un recalculo que se
+     * escribe en write().
+     */
+    protected function operations()
+    {
+        if (! OperationChecker::enabled())
+            return;
+
+        if (is_null($this->operationChecker))
+            $this->operationChecker = new OperationChecker($this->device);
+
+        if ($this->checkableAlerts() && ! $this->isHistory()) {
+            $this->operationChecker->check($this->position, $this->device->positionTraccar());
+        } else {
+            $this->operationChecker->late($this->position);
+        }
+    }
+
     protected function alerts()
     {
         if (is_null($this->alertChecker)) {
@@ -1290,11 +1380,15 @@ class PositionsWriter
                         ];
                     }
 
+                    $engineHoursValue = $this->position->getParameter(Position::VIRTUAL_ENGINE_HOURS_KEY, 0) / 3600;
+
+                    $sensor->setValue(round($engineHoursValue, 2), $this->position);
+
                     continue;
                 }
 
-                if ($sensor->isUpdatable() && ! $this->isHistory()) {
-                    $sensorValue = $sensor->getValue($this->position->other);
+                if ($sensor->isUpdatable()) {
+                    $sensorValue = $sensor->getValue($this->position->other, false);
                     $sensor->setValue($sensorValue, $this->position);
                 }
 
@@ -1514,10 +1608,17 @@ class PositionsWriter
             return;
         }
 
+        // moving started earlier
+        if (!($this->device->traccar->move_at > $this->device->traccar->move_begin_at)) {
+            return;
+        }
+
         $stopDuration = strtotime($position->time) - strtotime($this->device->traccar->stop_begin_at);
 
         if ($stopDuration >= self::PARKED_MIN_DURATION) {
             $this->device->traccar->parked_end_at = $position->time;
+
+            $this->addDeviceTrip($position);
         }
     }
 
@@ -1601,6 +1702,14 @@ class PositionsWriter
         return $position->speed >= $this->device->min_moving_speed;
     }
 
+    protected function addDeviceTrip($position): void
+    {
+        DB::table('device_trips')->insert([
+            'device_id' => $this->device->id,
+            'date'      => $position->time,
+        ]);
+    }
+
     protected function addPosition($position)
     {
         $this->positions[] = $position;
@@ -1648,6 +1757,9 @@ class PositionsWriter
 
         $this->registerHistoryRecalculation();
         $this->updateOdometer();
+
+        if ($this->operationChecker)
+            $this->operationChecker->flush();
 
 
         foreach ($this->device->sensors as $sensor) {
@@ -1866,8 +1978,18 @@ class PositionsWriter
         $jumpByDistance = $distanceMeters > $maxJumpMeters;
 
         // Criterio 2: avg_speed > current_speed cuando se arrancó desde 0
-        //  (la velocidad media no puede superar la velocidad final en una aceleración desde reposo)
-        $jumpByAvgSpeed = $currentSpeed > 0 && $avgSpeedKph > $currentSpeed * 1.1;
+        //  (la velocidad media no puede superar, con margen razonable, la velocidad final
+        //  en una aceleración desde reposo). El margen original (x1.1, sin tolerancia
+        //  absoluta) invalidaba arranques normales: con reporte cada 30s, el ruido típico
+        //  entre velocidad GPS instantánea y velocidad media calculada por distancia/tiempo
+        //  ya supera ese 10% sin que haya ningún salto real (ej. 95m/30s=11.4 kph vs
+        //  speed=10 kph reportado -> antes se invalidaba por solo 0.4 kph de diferencia).
+        //  Se usa un multiplicador más laxo + un margen absoluto en kph para absorber ese
+        //  ruido y solo invalidar cuando la diferencia es lo bastante grande como para ser
+        //  una teleportación real.
+        $avgSpeedMultiplier = (float) config('tobuli.from_stop_avg_speed_multiplier', 1.3);
+        $avgSpeedMarginKph  = (float) config('tobuli.from_stop_avg_speed_margin_kph', 5);
+        $jumpByAvgSpeed = $currentSpeed > 0 && $avgSpeedKph > ($currentSpeed * $avgSpeedMultiplier + $avgSpeedMarginKph);
 
         if (! $jumpByDistance && ! $jumpByAvgSpeed) {
             return;
@@ -1888,6 +2010,374 @@ class PositionsWriter
         if ($jumpByAvgSpeed) {
             $this->position->valid = 0;
         }
+    }
+
+    /**
+     * Detecta una solución GNSS corrupta (GNSS glitch).
+     *
+     * Con buena cobertura (33–36 satélites) el equipo puede entregar durante unos
+     * segundos datos físicamente imposibles: velocidad alternando 4 → 123 → 4 km/h,
+     * altitud de -1.963 a 19.489 m y saltos de cientos de metros en 2 s.
+     * Ninguno de los filtros anteriores lo detecta (sat, max_speed, salto > 1 km...).
+     *
+     * Siempre se compara contra la ÚLTIMA POSICIÓN VÁLIDA y solo si tiene como
+     * máximo 'max_age_seconds' de antigüedad (no afecta reanudaciones tras paradas
+     * largas ni historial fuera de orden). Reglas en evaluateGnssGlitch().
+     *
+     * En modo sombra (enforce = false) solo marca el parámetro 'gnss_glitch' y
+     * registra en el log 'validaciones_tecnicas'. Con enforce = true además invalida
+     * la posición y restaura velocidad/altitud de la última válida, de modo que no
+     * suma kilometraje ni dispara alertas (las alertas ignoran valid = 0).
+     *
+     * Caso reportado: CJN-824 (FTC927) 25/09/2026, 16 falsos excesos de 42–140 km/h.
+     */
+    protected function detectGnssGlitch($lastValidPosition): void
+    {
+        $cfg = (array) config('tobuli.gnss_glitch', []);
+
+        if (empty($cfg['enabled']) || ! $lastValidPosition) {
+            return;
+        }
+
+        $metrics = [];
+        $reasons = self::evaluateGnssGlitch(
+            [
+                'time'      => $this->position->time,
+                'speed'     => $this->position->speed,
+                'altitude'  => $this->position->altitude,
+                'latitude'  => $this->position->latitude,
+                'longitude' => $this->position->longitude,
+            ],
+            [
+                'time'      => $lastValidPosition->time,
+                'speed'     => $lastValidPosition->speed,
+                'altitude'  => $lastValidPosition->altitude,
+                'latitude'  => $lastValidPosition->latitude,
+                'longitude' => $lastValidPosition->longitude,
+            ],
+            $cfg,
+            $metrics
+        );
+
+        $enforce = filter_var($cfg['enforce'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $logContext = [
+            'device_id'           => $this->device->id,
+            'imei'                => $this->device->imei,
+            'plate_number'        => $this->device->plate_number,
+            'time'                => $this->position->time,
+            'lat'                 => $this->position->latitude,
+            'lng'                 => $this->position->longitude,
+            'speed'               => $this->position->speed,
+            'altitude'            => $this->position->altitude,
+            'last_valid_time'     => $lastValidPosition->time,
+            'last_valid_speed'    => $lastValidPosition->speed,
+            'last_valid_altitude' => $lastValidPosition->altitude,
+            'dt'                  => $metrics['dt'] ?? null,
+            'dAlt'                => $metrics['dAlt'] ?? null,
+            'accel'               => $metrics['accel'] ?? null,
+            'distM'               => $metrics['distM'] ?? null,
+            'impliedKph'          => $metrics['impliedKph'] ?? null,
+            'stationary'          => $metrics['stationary'] ?? false,
+            'accelCorroborated'   => $metrics['accelCorroborated'] ?? false,
+            'reasons'             => $reasons,
+            'enforce'             => $enforce,
+        ];
+
+        if (empty($reasons)) {
+            // Salto de altitud descartado por vehículo detenido: se registra para auditar en modo sombra
+            if (! empty($metrics['stationary'])) {
+                \Log::channel('validaciones_tecnicas')->info('GNSS glitch alt descartado (detenido)', $logContext);
+            }
+
+            // Aceleración "imposible" descartada porque el desplazamiento GPS real coincide
+            // con la velocidad actual reportada: la velocidad ANTERIOR (last_valid_speed) es
+            // la sospechosa, no esta posición. Se registra para auditar en modo sombra.
+            if (! empty($metrics['accelCorroborated'])) {
+                \Log::channel('validaciones_tecnicas')->info('GNSS glitch acc descartado (desplazamiento real coincide)', $logContext);
+            }
+
+            return;
+        }
+
+        $this->line(sprintf(
+            'GNSS glitch detectado [%s]: speed=%.1f kph (última válida %.1f), dAlt=%.1fm, dist=%.1fm en %ds (implícita %.1f kph) en %s%s',
+            implode('|', $reasons),
+            floatval($this->position->speed),
+            floatval($lastValidPosition->speed),
+            $metrics['dAlt'] ?? 0,
+            $metrics['distM'] ?? 0,
+            $metrics['dt'] ?? 0,
+            $metrics['impliedKph'] ?? 0,
+            $this->position->time,
+            $enforce ? '' : ' (modo sombra)'
+        ));
+
+        $this->position->setParameter('gnss_glitch', implode('|', $reasons));
+
+        \Log::channel('validaciones_tecnicas')->warning('GNSS glitch detectado', $logContext);
+
+        if (! $enforce) {
+            return;
+        }
+
+        $this->position->valid = 0;
+        $this->position->speed = floatval($lastValidPosition->speed);
+        $this->position->altitude = $lastValidPosition->altitude;
+    }
+
+    /**
+     * Reglas puras del filtro GNSS glitch (sin estado, testeable).
+     *
+     * $current / $lastValid: ['time', 'speed', 'altitude', 'latitude', 'longitude'].
+     * Devuelve las razones detectadas ('alt', 'acc', 'tele'); vacío si la posición es plausible.
+     * $metrics recibe los valores calculados (dt, dAlt, accel, distM, impliedKph) para el log.
+     *
+     * - alt:  |Δaltitud| > alt_min_jump_m y |Δaltitud|/dt > alt_max_rate_ms, salvo vehículo
+     *         detenido (speed y última speed <= alt_stationary_speed_kph y distancia
+     *         <= alt_stationary_max_dist_m); en ese caso $metrics['stationary'] = true.
+     * - acc:  aceleración positiva > accel_max_kph_s y velocidad actual > accel_min_speed_kph.
+     * - tele: distancia > tele_min_distance_m y velocidad implícita por la distancia
+     *         > max(speed * tele_speed_factor, speed + tele_speed_margin).
+     *
+     * dt = max(dtRaw, 1): el equipo manda varios registros en el mismo segundo.
+     */
+    public static function evaluateGnssGlitch(array $current, array $lastValid, array $cfg, array &$metrics = []): array
+    {
+        $metrics = [];
+
+        $dtRaw = strtotime($current['time']) - strtotime($lastValid['time']);
+
+        if ($dtRaw < 0 || $dtRaw > (float) ($cfg['max_age_seconds'] ?? 30)) {
+            return [];
+        }
+
+        $dt = max($dtRaw, 1);
+        $speed = floatval($current['speed'] ?? 0);
+        $lastSpeed = floatval($lastValid['speed'] ?? 0);
+
+        $reasons = [];
+
+        // Distancia con las coordenadas crudas (la usan la corroboración de 'alt' y la regla 'tele')
+        $distM = getDistance(
+            $current['latitude'] ?? null,
+            $current['longitude'] ?? null,
+            $lastValid['latitude'] ?? null,
+            $lastValid['longitude'] ?? null
+        ) * 1000;
+
+        // Vehículo detenido: velocidad actual y última válida bajo el umbral, y sin desplazamiento real
+        $stationarySpeed = (float) ($cfg['alt_stationary_speed_kph'] ?? 3);
+        $isStationary = $speed <= $stationarySpeed
+            && $lastSpeed <= $stationarySpeed
+            && $distM <= (float) ($cfg['alt_stationary_max_dist_m'] ?? 10);
+
+        // Velocidad implícita por el desplazamiento GPS real (la usan la corroboración de
+        // 'acc' y la regla 'tele')
+        $impliedKph = ($distM / $dt) * 3.6;
+
+        // 1) Salto de altitud imposible
+        $dAlt = null;
+        $stationary = false;
+        if (isset($current['altitude'], $lastValid['altitude'])) {
+            $dAlt = abs(floatval($current['altitude']) - floatval($lastValid['altitude']));
+
+            if ($dAlt > (float) ($cfg['alt_min_jump_m'] ?? 40) && ($dAlt / $dt) > (float) ($cfg['alt_max_rate_ms'] ?? 20)) {
+                // Detenido: el salto de altitud no se considera glitch (heartbeat/keep-alive sin fix de
+                // elevación). En particular altitude === 0 es el valor por defecto del equipo sin fix
+                // completo: con el vehículo parado es una lectura de baja confianza, no un salto real.
+                // En movimiento, altitude = 0 SÍ se evalúa para no ocultar glitches reales.
+                if ($isStationary) {
+                    $stationary = true;
+                } else {
+                    $reasons[] = 'alt';
+                }
+            }
+        }
+
+        // 2) Aceleración imposible (solo positiva; las frenadas no cuentan)
+        //
+        // Corroboración: si el desplazamiento GPS real (distM/impliedKph) ya es consistente
+        // con la velocidad ACTUAL reportada, el vehículo de verdad recorrió esa distancia a
+        // esa velocidad — el salto no es un problema de ESTA posición, sino de que la
+        // velocidad ANTERIOR (last_valid_speed) no era confiable (caso muy frecuente en
+        // producción: last_valid_speed = 0 justo antes, típicamente por una lectura con
+        // pocos satélites que congela coordenadas y pone speed=0 sin invalidar la posición,
+        // o el primer reporte del equipo tras arrancar). Marcar 'acc' aquí invalidaría la
+        // posición CORRECTA (con enforce=true) y dejaría pasar el dato malo (el "0"
+        // anterior) — justo al revés de lo que se busca.
+        //
+        // Solo se corrobora si hubo desplazamiento real (> alt_stationary_max_dist_m): si
+        // casi no hay desplazamiento pese al salto de velocidad, NO se corrobora — ahí sí
+        // hay contradicción real entre posición y velocidad (glitch genuino).
+        $accel = ($speed - $lastSpeed) / $dt;
+        $accelCorroborated = false;
+
+        if ($accel > (float) ($cfg['accel_max_kph_s'] ?? 10) && $speed > (float) ($cfg['accel_min_speed_kph'] ?? 25)) {
+            $tolerancePct = (float) ($cfg['accel_corroboration_tolerance_pct'] ?? 0.35);
+            $tolerance = max($speed * $tolerancePct, 10);
+
+            if ($distM > (float) ($cfg['alt_stationary_max_dist_m'] ?? 10) && abs($impliedKph - $speed) <= $tolerance) {
+                $accelCorroborated = true;
+            } else {
+                $reasons[] = 'acc';
+            }
+        }
+
+        // 3) Teleportación: la distancia recorrida no es compatible con la velocidad reportada
+        $maxPlausibleKph = max(
+            $speed * (float) ($cfg['tele_speed_factor'] ?? 2),
+            $speed + (float) ($cfg['tele_speed_margin'] ?? 40)
+        );
+
+        if ($distM > (float) ($cfg['tele_min_distance_m'] ?? 50) && $impliedKph > $maxPlausibleKph) {
+            $reasons[] = 'tele';
+        }
+
+        $metrics = [
+            'dt'                => $dt,
+            'dAlt'              => $dAlt === null ? null : round($dAlt, 1),
+            'accel'             => round($accel, 2),
+            'distM'             => round($distM, 1),
+            'impliedKph'        => round($impliedKph, 1),
+            'stationary'        => $stationary,
+            'accelCorroborated' => $accelCorroborated,
+        ];
+
+        return $reasons;
+    }
+
+    /**
+     * Registra (SOLO LOG, modo sombra) el evento nativo de exceso de velocidad en
+     * geocerca que reporta el propio equipo Teltonika, con la duración exacta de
+     * hardware entre el inicio y el fin del exceso. No dispara ni modifica ninguna
+     * alerta — corre en paralelo al método actual de la plataforma
+     * (GeofenceAlertCheck::checkOverspeedDuration(), que sigue siendo la única
+     * fuente real de las alertas) para poder auditar si ambos coinciden antes de
+     * decidir si el nativo se usa como fuente autoritativa.
+     *
+     * Semántica por modelo (config('tobuli.native_geofence_speed')):
+     * - FTC927 (plataforma FT): AVL 157 = flag start(1)/stop(0) de exceso; AVL 155 =
+     *   ID de geocerca configurado en el equipo (valor + 1).
+     * - Familia FMB/FMC/FMU/FMM, incluido FMC920 (Codec8 clásico): cada geocerca
+     *   tiene su propio AVL ID dedicado (zone_avl_map), con valor 0-3 por evento:
+     *   0=salió de zona, 1=entró a zona, 2=fin de exceso, 3=inicio de exceso.
+     *
+     * IMPORTANTE: el "ID de geocerca" aquí es el número de geocerca configurado
+     * DENTRO DEL EQUIPO (slot 1-50), no necesariamente el id de nuestra entidad
+     * Geofence en la plataforma — no hay (todavía) una tabla que relacione uno con
+     * el otro, así que la comparación contra checkOverspeedDuration() debe hacerse
+     * manualmente por ahora cruzando el log con la configuración del dispositivo.
+     */
+    protected function detectNativeGeofenceSpeedEvent(): void
+    {
+        $cfg = (array) config('tobuli.native_geofence_speed', []);
+
+        if (empty($cfg['enabled'])) {
+            return;
+        }
+
+        $event = $this->position->getParameter('event');
+
+        if ($event === null) {
+            return;
+        }
+
+        $eventId = (int) $event;
+        $isFtc = stripos((string) $this->device->device_model, (string) ($cfg['ftc_model_match'] ?? 'ftc')) !== false;
+
+        $deviceZoneId = null;
+        $eventType    = null; // 'start' | 'stop'
+
+        if ($isFtc) {
+            if ($eventId !== 157) {
+                return;
+            }
+
+            $flag = $this->position->getParameter('io157');
+
+            if ($flag === null) {
+                return;
+            }
+
+            $eventType = ((int) $flag === 1) ? 'start' : 'stop';
+
+            $rawZone = $this->position->getParameter('io155');
+            $deviceZoneId = $rawZone !== null ? ((int) $rawZone + 1) : null;
+        } else {
+            $zoneMap = (array) ($cfg['zone_avl_map'] ?? []);
+
+            if (! array_key_exists($eventId, $zoneMap)) {
+                return;
+            }
+
+            $value = $this->position->getParameter('io' . $eventId);
+
+            if ($value === null) {
+                return;
+            }
+
+            $value = (int) $value;
+
+            // 0 = salió de zona, 1 = entró a zona: no son eventos de velocidad
+            if (! in_array($value, [2, 3], true)) {
+                return;
+            }
+
+            $eventType    = ($value === 3) ? 'start' : 'stop';
+            $deviceZoneId = $zoneMap[$eventId];
+        }
+
+        $positionTime = strtotime($this->position->time);
+        $cacheKey     = 'native_geofence_speed_start_' . $this->device->id . '_' . $deviceZoneId;
+        $maxGap       = (int) config('tobuli.overspeed_tracking_max_gap', 300);
+
+        $logBase = [
+            'device_id'      => $this->device->id,
+            'imei'           => $this->device->imei,
+            'plate_number'   => $this->device->plate_number,
+            'device_model'   => $this->device->device_model,
+            'device_zone_id' => $deviceZoneId,
+            'event_type'     => $eventType,
+            'time'           => $this->position->time,
+            'speed'          => $this->position->speed,
+        ];
+
+        if ($eventType === 'start') {
+            Cache::put($cacheKey, $positionTime, now()->addHours(24));
+
+            \Log::channel('validaciones_tecnicas')->info('Exceso nativo en geocerca: inicio', $logBase);
+
+            return;
+        }
+
+        // $eventType === 'stop'
+        $startTime = Cache::get($cacheKey);
+        Cache::forget($cacheKey);
+
+        if (! $startTime || $positionTime < $startTime) {
+            \Log::channel('validaciones_tecnicas')->info(
+                'Exceso nativo en geocerca: fin sin inicio previo registrado (se descarta)',
+                $logBase
+            );
+
+            return;
+        }
+
+        $nativeDuration = $positionTime - $startTime;
+
+        if ($nativeDuration > $maxGap) {
+            \Log::channel('validaciones_tecnicas')->info(
+                'Exceso nativo en geocerca: fin descartado por gap mayor a overspeed_tracking_max_gap',
+                $logBase + ['native_duration' => $nativeDuration, 'max_gap' => $maxGap]
+            );
+
+            return;
+        }
+
+        \Log::channel('validaciones_tecnicas')->warning(
+            'Exceso nativo en geocerca: fin (comparar manualmente con checkOverspeedDuration())',
+            $logBase + ['native_duration' => $nativeDuration]
+        );
     }
 
     /**
@@ -1939,7 +2429,8 @@ class PositionsWriter
         $relevant = [];
         foreach ($attributes as $key => $value) {
             $lower = strtolower((string) $key);
-            if (str_contains($lower, 'out')
+            if (
+                str_contains($lower, 'out')
                 || str_contains($lower, 'in1')
                 || str_contains($lower, 'adc')
                 || $lower === 'io9'
@@ -1954,7 +2445,8 @@ class PositionsWriter
         $outActive = false;
         foreach ($relevant as $key => $value) {
             $lower = strtolower((string) $key);
-            if (in_array($lower, ['out1', 'dout1'], true)
+            if (
+                in_array($lower, ['out1', 'dout1'], true)
                 && ($value === true || $value === 1 || $value === '1' || $value === 'true')
             ) {
                 $outActive = true;

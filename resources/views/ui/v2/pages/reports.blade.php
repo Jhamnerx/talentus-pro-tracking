@@ -1,0 +1,128 @@
+@extends('ui.v2.layout')
+
+@section('title', $pageTitle ?? trans('front.reports'))
+@section('rail-active', 'reports')
+
+@push('head')
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/services.css') }}">
+    <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/device-modal.css') }}">
+@endpush
+
+@section('workspace-class', 'tp-workspace--full')
+
+@section('workspace')
+    <div class="tp-maint" id="tp-reports-page"
+        data-meta-url="{{ route('ui.v2.api.reports.meta') }}"
+        data-saved-url="{{ route('ui.v2.api.reports.saved') }}"
+        data-logs-url="{{ route('ui.v2.api.reports.logs') }}"
+        data-item-url="{{ url('/ui/v2/api/reports') . '/{id}/item' }}"
+        data-store-url="{{ route('ui.v2.api.reports.store') }}"
+        data-destroy-url="{{ url('/ui/v2/api/reports') . '/{id}' }}"
+        data-log-destroy-url="{{ url('/ui/v2/api/reports/logs') . '/{id}' }}"
+        data-open-modal="{{ !empty($openModal) ? 1 : 0 }}"
+        data-can-create="{{ !empty($canCreate) ? 1 : 0 }}"
+        data-can-remove="{{ !empty($canRemove) ? 1 : 0 }}">
+
+        <header class="tp-maint__head">
+            <h2 class="tp-maint__title">
+                <span class="tp-maint__title-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5" />
+                    </svg>
+                </span>
+                {{ trans('front.reports') }}
+            </h2>
+            @if (!empty($canCreate))
+                {{-- Acción principal en la cabecera, icono + texto (QA V2) --}}
+                <div class="tp-maint__tools">
+                    <button type="button" class="tp-btn tp-btn--primary" id="tp-rep-add">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+                        <span>{{ trans('ui.new_report') }}</span>
+                    </button>
+                </div>
+            @endif
+        </header>
+
+        {{-- Tabs: definiciones guardadas | logs de programados enviados --}}
+        <div class="tp-tabs__nav tp-tabs__nav--page" role="tablist" aria-label="{{ trans('front.reports') }}">
+            <button type="button" class="tp-tabs__tab tp-rep-tab is-active" role="tab" id="tp-rep-tab-saved"
+                aria-selected="true" aria-controls="tp-rep-panel-saved" data-rep-tab="saved">
+                {{ trans('ui.generated_reports') }}</button>
+            <button type="button" class="tp-tabs__tab tp-rep-tab" role="tab" id="tp-rep-tab-logs"
+                aria-selected="false" aria-controls="tp-rep-panel-logs" data-rep-tab="logs">
+                {{ trans('ui.scheduled_logs') }}</button>
+        </div>
+
+        <div class="tp-maint__card">
+            <div style="display:flex;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border-default,#eef2f7);">
+                <input type="text" class="tp-input" id="tp-rep-search" aria-label="{{ trans('front.search') }}" placeholder="{{ trans('front.search') }}…"
+                    autocomplete="off" style="max-width: 240px; border-radius: 999px;">
+                <select class="tp-input" id="tp-rep-type-filter" style="width: 260px"></select>
+            </div>
+
+            <div class="tp-maint__wrap" role="tabpanel" id="tp-rep-panel-saved" aria-labelledby="tp-rep-tab-saved" data-rep-panel="saved">
+                <table class="tp-svc-table">
+                    <thead>
+                        <tr>
+                            <th>{{ trans('validation.attributes.title') }}</th>
+                            <th>{{ trans('front.type') }}</th>
+                            <th>{{ trans('front.format') }}</th>
+                            <th>{{ trans('front.devices') }}</th>
+                            <th>{{ trans('front.geofences') }}</th>
+                            <th>{{ trans('ui.scheduling') }}</th>
+                            <th class="tp-svc-table__actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tp-rep-saved-rows">
+                        <tr><td colspan="7" class="tp-svc-table__empty">…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tp-maint__wrap" role="tabpanel" id="tp-rep-panel-logs" aria-labelledby="tp-rep-tab-logs" data-rep-panel="logs" hidden>
+                <table class="tp-svc-table">
+                    <thead>
+                        <tr>
+                            <th>{{ trans('validation.attributes.name') }}</th>
+                            <th>{{ trans('front.type') }}</th>
+                            <th>{{ trans('front.format') }}</th>
+                            <th>{{ trans('front.file_size') }}</th>
+                            <th>{{ trans('global.is_send') }}</th>
+                            <th class="tp-svc-table__actions"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tp-rep-logs-rows">
+                        <tr><td colspan="6" class="tp-svc-table__empty">…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <footer class="tp-maint__foot">
+                <label class="tp-svc-list__limit">{{ trans('front.rows_per_page') }}
+                    <select class="tp-select" id="tp-rep-limit">
+                        <option>20</option>
+                        <option>50</option>
+                        <option>100</option>
+                    </select>
+                </label>
+                <div class="tp-svc-list__pager">
+                    <span id="tp-rep-range">—</span>
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-rep-prev"
+                        aria-label="{{ trans('front.previous') }}">‹</button>
+                    <button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" id="tp-rep-next"
+                        aria-label="{{ trans('front.next') }}">›</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+@endsection
+
+@push('scripts')
+    {{-- tp-services aporta el toggle global del kebab (.tp-svc-kebab) --}}
+    @include('ui.v2.partials.services-config')
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-services.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/tp-chips-select.js') }}" defer></script>
+    <script src="{{ asset_resource('assets/ui/v2/js/reports.js') }}" defer></script>
+@endpush

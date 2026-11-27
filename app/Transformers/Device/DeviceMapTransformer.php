@@ -30,6 +30,47 @@ class DeviceMapTransformer extends DeviceTransformer
         }];
     }
 
+    /**
+     * Clasificacion (tipo + estado de vehiculo) del usuario actuante, filtrada
+     * por su id: el mismo dispositivo puede tener distinta clasificacion para
+     * cada usuario. Sin usuario actuante no se carga nada y el transform emite
+     * nulos.
+     */
+    protected function requireUserLoads()
+    {
+        if (! $this->user) {
+            return [];
+        }
+
+        return [Device::classificationRelationFor((int) $this->user->id)];
+    }
+
+    /**
+     * Config de color de marcador de la unidad, o null si no lo usa.
+     *
+     * Solo se incluye lo que difiere de los valores por defecto: si el
+     * vehiculo no define rangos propios, el navegador usa los de la pagina.
+     */
+    protected function markerColors(Device $entity): ?array
+    {
+        if (! $entity->marker_colors_enabled) {
+            return null;
+        }
+
+        $rangos = json_decode((string) ($entity->marker_speed_ranges ?? ''), true);
+
+        return array_filter([
+            'ranges' => is_array($rangos) && $rangos ? $rangos : null,
+            'margin' => $entity->marker_geofence_margin !== null
+                ? (int) $entity->marker_geofence_margin
+                : null,
+            'near'   => $entity->marker_geofence_near_color ?: null,
+            'over'   => $entity->marker_geofence_over_color ?: null,
+        ], function ($v) {
+            return $v !== null;
+        });
+    }
+
     public function transform(Device $entity)
     {
         // Si los sensores no están cargados, los cargamos explícitamente
@@ -42,6 +83,20 @@ class DeviceMapTransformer extends DeviceTransformer
             : null;
 
         $status = $entity->getStatus();
+
+        // Estado del sensor blocked (por device): null = no tiene sensor, true =
+        // bloqueado, false = desbloqueado. Alimenta el candado rojo/verde de la lista.
+        $blockedState = null;
+        if (Blocked::isEnabled()) {
+            $blockedSensor = $entity->getSensorByType('blocked');
+            if ($blockedSensor) {
+                $blockedState = (bool) $blockedSensor->getValueCurrent($entity)->getValue();
+            }
+        }
+
+        // Clasificacion del usuario actuante (null si no hay usuario o no clasifico).
+        $classification = $this->user ? $entity->classificationFor((int) $this->user->id) : null;
+        $vehicleState = $classification ? $classification->vehicleState : null;
 
         if ($entity->speed > 90) {
             $tailColor = '#FF0000'; // Rojo
@@ -65,12 +120,35 @@ class DeviceMapTransformer extends DeviceTransformer
             'tail_color' => $tailColor,
             'icon_color' => $entity->getStatusColor($status),
             'icon_colors' => $entity->icon_colors,
+            // 'active'  = pivote  -> se dibuja en MI mapa (la casilla del sidebar)
+            // 'enabled' = device  -> el equipo esta de alta. El legacy, cuando
+            //   esta de baja, escribe "Desactivado" y NO muestra fecha.
             'active' => $entity->pivot ? (bool)$entity->pivot->active : null,
+            'enabled' => (bool) $entity->active,
             'group_id' => $entity->pivot ? (int)$entity->pivot->group_id : 0,
             'online' => $status,
+            'blocked' => $blockedState,
+            // Estado de vehículo (tipo con estados: VACÍO/CARGADO…) → badge junto
+            // al nombre. label corto (fallback al name) + color (fallback gris).
+            'vehicle_state' => $vehicleState ? [
+                'name'  => (string) $vehicleState->name,
+                'label' => (string) ($vehicleState->label ?: $vehicleState->name),
+                'color' => (string) ($vehicleState->color ?: '#64748b'),
+            ] : null,
+            // Color del marcador por velocidad. Solo viaja si la unidad lo
+            // tiene activado, para no engordar el feed de 1.400 vehiculos con
+            // una config que casi nadie personaliza; los valores por defecto
+            // los manda la pagina una sola vez (mapConfig.markerColors).
+            'marker_colors' => $this->markerColors($entity),
+            // Tipo y estado de vehiculo (clasificacion del usuario actuante): el
+            // navegador los necesita para resolver el limite de la geocerca,
+            // que puede diferenciarlos.
+            'vehicle_type_id'  => ($classification && $classification->vehicle_type_id) ? (int) $classification->vehicle_type_id : null,
+            'vehicle_state_id' => ($classification && $classification->vehicle_state_id) ? (int) $classification->vehicle_state_id : null,
             'lat' => $entity->lat,
             'lng' => $entity->lng,
             'speed' => $entity->speed,
+            'speed_text' => Formatter::speed()->human($entity->getSpeed()),
             'course' => $entity->course,
             'altitude' => $entity->altitude,
             'time' => $entity->time,
@@ -78,6 +156,15 @@ class DeviceMapTransformer extends DeviceTransformer
             'acktimestamp' => (int)$entity->acktimestamp,
             'engine_status' => $entity->getEngineStatus(),
             'inaccuracy' => is_null($inaccuracy) ? null : intval($inaccuracy),
+
+            // Video a bordo: lo necesita el widget "Video en vivo", que es una
+            // sola caja compartida y reacciona al vehiculo seleccionado, asi
+            // que no puede decidirlo en servidor como hace el menu del objeto.
+            // Canales solo con permiso device_video (canView => DevicePropertiesPolicy).
+            'camera_channels' => $entity->hasVideo() && $this->canView($entity, 'camera_channels')
+                ? array_values(array_map('intval', (array)$entity->camera_channels))
+                : [],
+            'video' => $entity->hasVideo() && $this->canView($entity, 'camera_channels'),
 
             'moved_timestamp'    => (int)$entity->moved_timestamp,
             'stop_duration_sec'  => $entity->getStopDuration(),

@@ -10,6 +10,7 @@ use Tobuli\Traits\Nameable;
 use Tobuli\Traits\Chattable;
 use App\Events\DeviceCreated;
 use App\Events\DeviceDeleted;
+use App\Events\DeviceImeiChanged;
 use Tobuli\Traits\ChangeLogs;
 use Tobuli\Traits\Filterable;
 use Tobuli\Traits\Includable;
@@ -23,6 +24,7 @@ use Tobuli\Traits\FcmTokensTrait;
 use Illuminate\Support\Facades\DB;
 use Laravel\Passport\HasApiTokens;
 use App\Jobs\DeviceCameraDirChange;
+use App\Jobs\SyncTraccarDeviceModel;
 use App\Events\Device\DeviceEnabled;
 use App\Events\Device\DeviceDisabled;
 use Illuminate\Support\Facades\Redis;
@@ -97,6 +99,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     const STOP_DURATION_OFFSET = 10;
 
+    /** Video JT1078: canales posibles y roles de cada canal. */
+    const VIDEO_MAX_CHANNELS = 8;
+    const VIDEO_CHANNEL_ROLES = ['front', 'driver', 'cabin', 'rear', 'left', 'right', 'other'];
+
     public static array $displayField = ['imei', 'name'];
 
     protected $table = 'devices';
@@ -112,10 +118,21 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'fuel_measurement_id',
         'fuel_quantity',
         'fuel_price',
+        'fuel_type',
+        'fuel_emissions',
+        'custom_data',
         'fuel_per_km',
+        // Costo estimado por kilómetro del vehículo (ver el reporte de costo
+        // de operación: el real sale de Gastos, este es el supuesto).
+        'cost_per_km',
         'sim_number',
         'operator_sim',
         'device_model',
+        // Video JT1078: camara, canales habilitados ([1, 2, ...]) y rol de cada canal.
+        // `video_channels` (numero de canales) esta deprecada: se migro a estas columnas.
+        'has_camera',
+        'camera_channels',
+        'camera_channel_roles',
         'plate_number',
         'vin',
         'registration_number',
@@ -124,6 +141,15 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         'comment',
         'expiration_date',
         'tail_color',
+        'route_color_type',
+        'route_color',
+        'route_speed_ranges',
+        'marker_colors_enabled',
+        'marker_speed_ranges',
+        'marker_geofence_margin',
+        'marker_geofence_near_color',
+        'marker_geofence_over_color',
+        'route_sensor_id',
         'tail_length',
         'engine_hours',
         'detect_engine',
@@ -181,7 +207,12 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
 
     protected $casts = [
         'currents' => 'array',
-        'icon_colors' => 'array'
+        'icon_colors' => 'array',
+        'custom_data' => 'array',
+        'has_camera' => 'boolean',
+        'camera_channels' => 'array',
+        'camera_channel_roles' => 'array',
+        'camera_attributes' => 'array',
     ];
 
     protected $searchable = [
@@ -263,6 +294,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 ]);
             }
 
+            if ($device->isDirty('imei')) {
+                event(new DeviceImeiChanged($device));
+            }
+
             if ($device->isDirty('timezone_id')) {
                 $device->applyPositionsTimezone();
             }
@@ -303,6 +338,10 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
                 DeviceModelCache::setDevice($device, $device->getOriginal('imei'));
             } elseif ($isImeiDirty || $device->isDirty('model_id')) {
                 DeviceModelCache::setDevice($device);
+            }
+
+            if ($isImeiDirty || $device->isDirty('device_model')) {
+                dispatch(new SyncTraccarDeviceModel($device));
             }
 
             // if ($device->isDirty('forward'))
@@ -454,6 +493,11 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasMany('Tobuli\Entities\DeviceService', 'device_id');
     }
 
+    public function tags()
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
+
     public function expenses()
     {
         return $this->hasMany('Tobuli\Entities\DeviceExpense', 'device_id');
@@ -484,14 +528,145 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
         return $this->hasOne('Tobuli\Entities\DeviceType', 'id', 'device_type_id');
     }
 
+    /**
+     * @deprecated La clasificacion es por usuario: usar vehicleTypeFor($userId).
+     *             Columna global devices.vehicle_type_id, se mantiene por compatibilidad.
+     */
     public function vehicleType()
     {
         return $this->hasOne('Tobuli\Entities\VehicleType', 'id', 'vehicle_type_id');
     }
 
+    /**
+     * @deprecated La clasificacion es por usuario: usar vehicleStateFor($userId).
+     *             Columna global devices.vehicle_state_id, se mantiene por compatibilidad.
+     */
     public function vehicleState()
     {
         return $this->hasOne('Tobuli\Entities\VehicleState', 'id', 'vehicle_state_id');
+    }
+
+    /**
+     * Clasificaciones (tipo + estado de vehiculo) de este dispositivo, una por usuario.
+     * No anida vehicleType/vehicleState por defecto: para cargarlas (filtradas por
+     * usuario y con sus relaciones) usar el scope withClassificationFor($userId).
+     */
+    public function classifications(): HasMany
+    {
+        return $this->hasMany(DeviceVehicleClassification::class, 'device_id', 'id');
+    }
+
+    /** Cache por usuario de classificationFor(); false = consultado y sin fila. */
+    private array $classificationByUser = [];
+
+    /**
+     * Nombre de la relacion dinamica (hasOne) con la clasificacion de un usuario
+     * concreto; se registra la primera vez que se pide. Como el usuario va en el
+     * nombre, una vez cargada es autoritativa: null significa "sin clasificacion"
+     * y no hace falta volver a consultar (0 consultas extra en listados).
+     */
+    public static function classificationRelationFor(int $userId): string
+    {
+        $name = 'classificationForUser' . $userId;
+
+        if (!isset(static::$relationResolvers[static::class][$name])) {
+            static::resolveRelationUsing($name, function (Device $device) use ($userId) {
+                return $device->hasOne(DeviceVehicleClassification::class, 'device_id', 'id')
+                    ->where('user_id', $userId)
+                    ->with('vehicleType', 'vehicleState');
+            });
+        }
+
+        return $name;
+    }
+
+    /**
+     * Clasificacion que un usuario concreto asigno a este dispositivo.
+     * Si la relacion dinamica del usuario esta cargada (scopeWithClassificationFor)
+     * es autoritativa, haya fila o no. Si no, y la relacion generica
+     * `classifications` esta cargada y contiene la fila del usuario, no consulta
+     * la base; si no la contiene (p. ej. se cargo filtrada para otro usuario)
+     * consulta igualmente: esa coleccion es cache para aciertos, nunca autoridad
+     * para fallos. Alertas e historial recorren geocercas de varios dueños sobre
+     * el mismo dispositivo, por eso el resultado se memoriza por usuario (null incluido).
+     */
+    public function classificationFor(int $userId): ?DeviceVehicleClassification
+    {
+        if (array_key_exists($userId, $this->classificationByUser))
+            return $this->classificationByUser[$userId] ?: null;
+
+        $relation = static::classificationRelationFor($userId);
+
+        if ($this->relationLoaded($relation)) {
+            $classification = $this->getRelation($relation);
+            $this->classificationByUser[$userId] = $classification ?: false;
+
+            return $classification;
+        }
+
+        $classification = $this->relationLoaded('classifications')
+            ? $this->classifications->firstWhere('user_id', $userId)
+            : null;
+
+        if (!$classification) {
+            $classification = $this->classifications()
+                ->where('user_id', $userId)
+                ->with('vehicleType', 'vehicleState')
+                ->first();
+        }
+
+        $this->classificationByUser[$userId] = $classification ?: false;
+
+        return $classification;
+    }
+
+    public function vehicleTypeFor(int $userId): ?VehicleType
+    {
+        $classification = $this->classificationFor($userId);
+
+        return $classification ? $classification->vehicleType : null;
+    }
+
+    public function vehicleStateFor(int $userId): ?VehicleState
+    {
+        $classification = $this->classificationFor($userId);
+
+        return $classification ? $classification->vehicleState : null;
+    }
+
+    /**
+     * Olvida la cache por usuario de classificationFor() y las relaciones de
+     * clasificacion ya cargadas (tras escribir una clasificacion).
+     */
+    public function forgetClassificationCache(): void
+    {
+        $this->classificationByUser = [];
+
+        foreach (array_keys($this->getRelations()) as $name) {
+            if ($name === 'classifications' || strpos($name, 'classificationForUser') === 0) {
+                $this->unsetRelation($name);
+            }
+        }
+    }
+
+    /**
+     * Carga anticipada de la clasificacion de un usuario (evita N+1 en listados):
+     * relacion dinamica por usuario, con vehicleType y vehicleState anidados.
+     */
+    public function scopeWithClassificationFor($query, int $userId)
+    {
+        return $query->with(static::classificationRelationFor($userId));
+    }
+
+    /** Programaciones de ruta asignadas a esta unidad. */
+    public function routeSchedules()
+    {
+        return $this->belongsToMany(
+            'Tobuli\Entities\RouteSchedule',
+            'device_route_schedule',
+            'device_id',
+            'route_schedule_id'
+        );
     }
 
     public function subscriptions()
@@ -1016,6 +1191,27 @@ class Device extends AbstractEntity implements DisplayInterface, FcmTokenableInt
     public function getProtocolAttribute()
     {
         return $this->traccar->protocol ?? null;
+    }
+
+    /**
+     * Video JT1078 solo en protocolos que lo implementan en el fork del tracker (config video.protocols, por
+     * defecto jt808; Howen se activa anadiendo `howen` a VIDEO_PROTOCOLS cuando el fork lo soporte).
+     * Si el equipo nunca se conecto todavia no hay protocolo y se permite configurarlo.
+     */
+    public function supportsVideo(): bool
+    {
+        $protocol = $this->protocol;
+
+        return ! $protocol || in_array($protocol, (array)config('video.protocols', ['jt808']));
+    }
+
+    /**
+     * El equipo ofrece video: camara con canales y protocolo con video en el fork (supportsVideo()).
+     * No mira permisos: eso lo hace cada pantalla con perm('device_video', 'view').
+     */
+    public function hasVideo(): bool
+    {
+        return $this->has_camera && ! empty($this->camera_channels) && $this->supportsVideo();
     }
 
     public function getDeviceTime()

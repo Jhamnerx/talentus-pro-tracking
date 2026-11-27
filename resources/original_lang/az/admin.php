@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diem dərəcələri',
     'forwards' => 'Hücumçular',
     'group_6' => 'Nəzarətçi',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'İstifadəçi günlərdən əvvəl yaradılmışdır',
     'reminders_trans' => 'Xatırlatma tərcümələri',
     'passwords_trans' => 'Parolların tərcümələri',

@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Частота',
         'unit' => 'Единица',
         'noreply_email' => 'Email без ответа',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Подпись',
         'use_smtp_server' => 'Используйте SMTP сервер',
         'smtp_server_host' => 'Хост SMTP сервера',

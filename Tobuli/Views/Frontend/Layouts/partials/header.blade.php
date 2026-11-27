@@ -18,6 +18,15 @@
 
             <div class="collapse navbar-collapse" id="bs-header-navbar-collapse">
                 <ul class="nav navbar-nav navbar-right">
+                    {{-- Cambiar a la nueva interfaz (UI v2) — siempre al mapa Live (equivalente a objects) --}}
+                    <li>
+                        <a href="{!! route('ui.v2.switch') !!}" role="button" rel="tooltip" data-placement="bottom"
+                            title="Nueva interfaz (v2)">
+                            <span class="icon icon-fa fa-rocket"></span>
+                            <span class="text">Nueva UI</span>
+                        </a>
+                    </li>
+
                     @if (isAdmin())
                         <li>
                             <a href="{!! route('admin') !!}" role="button" rel="tooltip" data-placement="bottom"
@@ -70,6 +79,13 @@
                                     <a href="javascript:" onclick="app.routes.list();app.openTab('routes_tab');">
                                         <span class="icon routes"></span>
                                         <span class="text">{!! trans('front.routes') !!}</span>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="javascript:" data-url="{!! route('route_schedules.index') !!}"
+                                       data-modal="route_schedules" role="button">
+                                        <span class="icon routes"></span>
+                                        <span class="text">{!! trans('front.route_schedules') !!}</span>
                                     </a>
                                 </li>
                             @endif
@@ -272,6 +288,12 @@
                                         <span class="icon password"></span>
                                         <span class="text">{!! trans('front.change_password') !!}</span>
                                     </a>
+                                    @if (config('google2fa.enabled') && !Auth::user()->is2faEnabled())
+                                        <a href="{!! route('google_2fa_setup.create') !!}">
+                                            <span class="icon lock"></span>
+                                            <span class="text">{!! trans('front.setup_2fa') !!}</span>
+                                        </a>
+                                    @endif
                                 @endif
                             </li>
                             <li>

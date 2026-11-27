@@ -1,0 +1,77 @@
+{{--
+    TalentusPro · Device modal — formulario tabbed
+    -----------------------------------------------------------------
+    Render server-side. Mismo set de variables que DeviceModalHelper
+    (createData() / editData()), por lo que los `name=` coinciden con
+    la validación legacy y NO hay duplicación de catálogos.
+    Variables disponibles:
+      $item, $device_groups, $device_types, $timezones, $device_icons,
+      $device_icons_grouped, $icons_type, $device_icon_colors,
+      $fuel_detect_sec_after_stop_options, $models, $caps
+--}}
+@php
+    $caps = $caps ?? [];
+    $isEdit = !empty($item->id);
+    // Mismo orden de tabs que el legacy (Devices/edit.blade.php):
+    // Main, Users, Icons, Advanced, Sensors, Services, Accuracy, Tail,
+    // Video, Servicios Web, Expenses, Cameras.
+    // Beacon: el legacy usa otra vista (edit_beacon/create_beacon) con un
+    // subconjunto de tabs — sin Servicios, Exactitud, Servicios Web, Cámaras
+    // ni Historial, porque un beacon no reporta posición propia.
+    $isBeacon = !empty($caps['is_beacon']);
+    $tabs = collect([
+        ['key' => 'principal', 'label' => trans('front.main')],
+        ['key' => 'usuarios', 'label' => trans('front.users'), 'if' => !empty($caps['can_edit_users'])],
+        ['key' => 'iconos', 'label' => trans('front.icons')],
+        ['key' => 'informacion', 'label' => trans('front.advanced')],
+        ['key' => 'sensores', 'label' => trans('front.sensors'), 'if' => !empty($caps['can_view_sensors'])],
+        ['key' => 'servicios', 'label' => trans('front.services')],
+        ['key' => 'exactitud', 'label' => trans('front.accuracy')],
+        ['key' => 'cola', 'label' => trans('front.tail')],
+        // Video JT1078 (tras Cola, como en el legacy): mismo gate que el legacy (Devices/edit.blade ⇒ can('view', $item, 'has_camera') ⇒ device_video.view)
+        ['key' => 'video', 'label' => trans('front.video'), 'if' => auth()->user()->can('view', $item, 'has_camera')],
+        ['key' => 'webservices', 'label' => trans('ui.web_services'), 'if' => !empty($caps['can_view_webservices'])],
+        ['key' => 'gastos', 'label' => trans('front.expenses'), 'if' => !empty($caps['has_expenses'])],
+        ['key' => 'camaras', 'label' => trans('front.cameras'), 'if' => !empty($caps['can_view_cameras'])],
+        // Campos personalizados: mismo gate que el legacy (Devices/edit.blade)
+        ['key' => 'personalizados', 'label' => trans('admin.custom_fields'), 'if' => !empty($caps['has_custom_fields'])],
+        // Historial de mantenimientos/suspensiones (solo en edición, como el legacy)
+        ['key' => 'historial', 'label' => trans('ui.history_tab'), 'if' => $isEdit],
+    ])
+        ->filter(function ($t) {
+            return !array_key_exists('if', $t) || $t['if'];
+        })
+        ->filter(function ($t) use ($isBeacon) {
+            if (! $isBeacon) {
+                return true;
+            }
+
+            return in_array(
+                $t['key'],
+                ['principal', 'usuarios', 'iconos', 'informacion', 'sensores', 'cola', 'gastos'],
+                true
+            );
+        })
+        ->values();
+@endphp
+
+<form class="tp-form tp-device-form" autocomplete="off" novalidate data-device-id="{{ $isEdit ? (int) $item->id : '' }}"
+    @if ($isBeacon) data-beacon="1" @endif>
+    <div class="tp-tabs">
+        <div class="tp-tabs__nav" role="tablist">
+            @foreach ($tabs as $i => $t)
+                <button type="button" class="tp-tabs__tab{{ $i === 0 ? ' is-active' : '' }}" role="tab"
+                    aria-selected="{{ $i === 0 ? 'true' : 'false' }}"
+                    data-tp-tab="{{ $t['key'] }}">{{ $t['label'] }}</button>
+            @endforeach
+        </div>
+
+        <div class="tp-tabs__panels">
+            @foreach ($tabs as $i => $t)
+                <div class="tp-tabs__panel{{ $i === 0 ? ' is-active' : '' }}" data-tp-panel="{{ $t['key'] }}">
+                    @includeIf('ui.v2.modals.devices.partials.' . $t['key'])
+                </div>
+            @endforeach
+        </div>
+    </div>
+</form>

@@ -1,0 +1,262 @@
+/* ============================================================
+   TalentusPro · Notifications JS v1.0
+   ------------------------------------------------------------
+   Fetches notifications from backend; renders into tray.
+   Polling fallback while WebSocket wiring is in Phase 2.
+   ============================================================ */
+(function () {
+  "use strict";
+
+  var T = window.Talentus || {};
+  var list = document.getElementById("tp-notif-list");
+  var badge = document.getElementById("tp-notif-count");
+  var markAll = document.getElementById("tp-notif-mark-all");
+  var filterButtons = document.querySelectorAll("[data-notif-filter]");
+
+  if (!list) return;
+
+  var currentFilter = "all";
+  var data = [];
+  var pollMs = 30000;
+
+  // Estado "leído": el servidor guarda en la cuenta el id del último evento
+  // visto (users.settings → tp_notif_seen_id) y manda cada aviso ya con
+  // `read`, así se sincroniza entre navegadores y dispositivos. Solo en cuentas
+  // demo (seen_id = null) se resuelve aquí con un instante en localStorage,
+  // como las demás preferencias de la demo.
+  var SEEN_KEY = "tp_notif_seen";
+  var demo = false;
+  function getSeen() {
+    try {
+      return parseInt(localStorage.getItem(SEEN_KEY), 10) || 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+  function setSeen(ms) {
+    try {
+      localStorage.setItem(SEEN_KEY, String(ms));
+    } catch (e) {}
+  }
+  function applySeen() {
+    if (!demo) return;
+    var seen = getSeen();
+    data.forEach(function (n) {
+      if (n.read) return;
+      var t = n.created_at ? new Date(n.created_at).getTime() : 0;
+      n.read = t > 0 && t <= seen;
+    });
+  }
+
+  // Iconos SVG por variante (antes emoji → inconsistentes entre plataformas).
+  // Usan currentColor; el color por variante lo pone shell.css.
+  var SVG = function (inner) {
+    return (
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      inner +
+      "</svg>"
+    );
+  };
+  var iconByVariant = {
+    critical: SVG(
+      '<polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    ),
+    warning: SVG(
+      '<path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    ),
+    success: SVG('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
+    info: SVG('<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'),
+    danger: SVG('<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>'),
+  };
+
+  // Relativo («hace 5 min») en el idioma de la página; pasadas 24 h, la
+  // hora que ya manda el servidor con la zona y el formato del usuario
+  // (n.time), la misma que Eventos. toLocaleString() usaba la zona y el
+  // formato del navegador.
+  var relFmt = null;
+  try {
+    relFmt = new Intl.RelativeTimeFormat(document.documentElement.lang || undefined, {
+      numeric: "auto",
+      style: "short",
+    });
+  } catch (e) {}
+  function fmtTime(n) {
+    var iso = n.created_at;
+    if (!iso) return n.time || "";
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return n.time || iso;
+    var diff = Math.max(0, (Date.now() - d.getTime()) / 1000);
+    if (diff < 86400 && relFmt) {
+      if (diff < 60) return relFmt.format(-Math.floor(diff), "second");
+      if (diff < 3600) return relFmt.format(-Math.floor(diff / 60), "minute");
+      return relFmt.format(-Math.floor(diff / 3600), "hour");
+    }
+    return n.time || tpFmt.fromDate(d);
+  }
+
+  function render() {
+    var filtered = data.filter(function (n) {
+      if (currentFilter === "all") return true;
+      if (currentFilter === "critical")
+        return n.variant === "critical" || n.variant === "danger";
+      if (currentFilter === "alerts")
+        return ["critical", "warning", "danger"].indexOf(n.variant) !== -1;
+      if (currentFilter === "system")
+        return n.category === "system" || n.variant === "info";
+      return true;
+    });
+
+    if (!filtered.length) {
+      list.innerHTML =
+        '<div class="tp-tray__empty"><div class="tp-text-muted">' + tpT('ui.no_notifications_for_filter') + '</div></div>';
+      return;
+    }
+
+    list.innerHTML = filtered
+      .map(function (n) {
+        var classes = ["tp-notif-item"];
+        if (!n.read) classes.push("is-unread");
+        if (n.variant) classes.push("tp-notif-item--" + n.variant);
+        var icon = iconByVariant[n.variant] || "•";
+        return (
+          '<div class="' +
+          classes.join(" ") +
+          '" data-id="' +
+          escapeAttr(n.id) +
+          '" ' +
+          (n.url ? 'data-url="' + escapeAttr(n.url) + '"' : "") +
+          ">" +
+          '<div class="tp-notif-item__icon">' +
+          icon +
+          "</div>" +
+          '<div class="tp-notif-item__main">' +
+          '<div class="tp-notif-item__title">' +
+          escapeHtml(n.title || "") +
+          "</div>" +
+          (n.description
+            ? '<div class="tp-notif-item__desc">' +
+              escapeHtml(n.description) +
+              "</div>"
+            : "") +
+          '<div class="tp-notif-item__time">' +
+          escapeHtml(fmtTime(n)) +
+          "</div>" +
+          "</div>" +
+          "</div>"
+        );
+      })
+      .join("");
+
+    list.querySelectorAll(".tp-notif-item").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var url = el.getAttribute("data-url");
+        if (url) window.location.href = url;
+      });
+    });
+  }
+
+  function refreshBadge() {
+    var unread = data.filter(function (n) {
+      return !n.read;
+    }).length;
+    if (!badge) return;
+    if (unread > 0) {
+      badge.textContent = unread > 99 ? "99+" : String(unread);
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+  }
+
+  function fetchNotifications() {
+    if (!T.routes || !T.routes.notifications) {
+      // No endpoint wired yet — render empty state.
+      data = [];
+      render();
+      refreshBadge();
+      return;
+    }
+    fetch(T.routes.notifications, {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then(function (r) {
+        return r.ok ? r.json() : Promise.reject(r.status);
+      })
+      .then(function (json) {
+        data = (json && json.notifications) || [];
+        demo = !!json && json.seen_id === null;
+        applySeen();
+        render();
+        refreshBadge();
+      })
+      .catch(function () {
+        /* silent */
+      });
+  }
+
+  filterButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      filterButtons.forEach(function (b) {
+        b.setAttribute("aria-selected", b === btn ? "true" : "false");
+      });
+      currentFilter = btn.getAttribute("data-notif-filter") || "all";
+      render();
+    });
+  });
+
+  if (markAll) {
+    markAll.addEventListener("click", function () {
+      if (demo) {
+        setSeen(Date.now());
+      } else if (data.length && T.routes && T.routes.notificationsSeen) {
+        // El id más alto de la bandeja: todo lo anterior queda leído.
+        var lastId = data.reduce(function (m, n) { return Math.max(m, n.id || 0); }, 0);
+        fetch(T.routes.notificationsSeen, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+            "X-CSRF-TOKEN": T.csrf || "",
+          },
+          body: JSON.stringify({ last_id: lastId }),
+        }).catch(function () { /* el próximo sondeo lo corrige */ });
+      }
+      data.forEach(function (n) {
+        n.read = true;
+      });
+      render();
+      refreshBadge();
+      window.tpToast &&
+        window.tpToast({
+          title: tpT('ui.notifications_marked_read'),
+          variant: "success",
+          duration: 2000,
+        });
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s);
+  }
+
+  // Initial fetch + polling
+  fetchNotifications();
+  setInterval(fetchNotifications, pollMs);
+
+  // Expose for debugging
+  window.tpNotifications = { refresh: fetchNotifications };
+})();

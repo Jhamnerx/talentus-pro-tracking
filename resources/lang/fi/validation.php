@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Taajuus',
         'unit' => 'Yksikkä',
         'noreply_email' => 'ei vastaus sähköpostiosoite',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Allekirjoitus',
         'use_smtp_server' => 'Käytä SMTP palvelinta',
         'smtp_server_host' => 'SMTP palvelin ',

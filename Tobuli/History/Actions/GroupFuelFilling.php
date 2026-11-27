@@ -25,6 +25,9 @@ class GroupFuelFilling extends ActionGroup
 
         $group = new Group('fuel_filling');
         $group->sensor_name = $position->fuel_filling['name'];
+        // La recarga se marca en una sola trama (el pico); aqui va la hora en
+        // que empezo a subir el nivel, para quien necesite la duracion.
+        $group->fuel_started_at = $position->fuel_filling['start_time'] ?? null;
 
         $sensorUnit = $position->fuel_filling['unit'];
         $fuelFormatter = clone Formatter::capacity();

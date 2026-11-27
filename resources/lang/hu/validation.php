@@ -183,6 +183,7 @@ return array(
         'frequency' => 'Frekvencia',
         'unit' => 'Egység',
         'noreply_email' => 'Nincs válasz e-mail cím',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'Aláírás',
         'use_smtp_server' => 'Használjon SMTP szervert',
         'smtp_server_host' => 'SMTP kiszolgáló állomás',

@@ -8,7 +8,7 @@
             'multiple' => 'multiple',
             'data-live-search' => 'true',
             'data-actions-box' => 'true',
-            'data-ajax' => $ajax_url ?? route('devices.index'),
+            'data-ajax' => $ajax_url ?? route('devices.index', ['grouped' => true]),
             'data-selected' => $device_id ?? null,
         ]) !!}
     </div>

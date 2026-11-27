@@ -183,6 +183,7 @@ return array(
         'frequency' => 'அதிர்வெண்',
         'unit' => 'அலகு',
         'noreply_email' => 'பதில் மின்னஞ்சல் முகவரி இல்லை',
+        'reply_to_email' => 'Reply-To email',
         'signature' => 'கையொப்பம்',
         'use_smtp_server' => 'SMTP சேவையகத்தைப் பயன்படுத்தவும்',
         'smtp_server_host' => 'SMTP சேவையக ஹோஸ்ட்',

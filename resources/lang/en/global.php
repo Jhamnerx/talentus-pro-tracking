@@ -109,4 +109,6 @@ return [
     'show_more' => 'Show more',
     'show_less' => 'Show less',
     'link_is_expired' => 'Link is expired',
+    'verified_email' => 'Your email has been successfully verified!',
+    'verified_phone' => 'Your phone has been successfully verified!',
 ];

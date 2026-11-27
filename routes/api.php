@@ -53,9 +53,44 @@ Route::group(['middleware' => ['auth.api', 'active_subscription'], 'namespace' =
     Route::get('devices/{device_id}/media/file/{filename}', ['as' => 'api.device.media.get', 'uses' => 'DeviceMediaController@getFile']);
     Route::delete('devices/{device_id}/media/{filename?}', ['as' => 'api.device.media.delete', 'uses' => 'DeviceMediaController@remove']);
 
-    # Device video (Howen / JT808 live video via commands/send)
-    Route::post('devices/{device_id}/video/live/start', ['as' => 'api.device_video.live.start', 'uses' => 'DeviceVideoController@liveStart']);
-    Route::post('devices/{device_id}/video/live/stop', ['as' => 'api.device_video.live.stop', 'uses' => 'DeviceVideoController@liveStop']);
+    # Device video (JT1078): mismos endpoints que la web, más la configuración del reproductor para la app.
+    Route::get('devices/video/{id}/config', ['as' => 'api.devices.video.config', 'uses' => 'DeviceVideoController@config']);
+    Route::post('devices/video/{id}/start', ['as' => 'api.devices.video.start', 'uses' => 'DeviceVideoController@start']);
+    Route::post('devices/video/{id}/ping', ['as' => 'api.devices.video.ping', 'uses' => 'DeviceVideoController@ping']);
+    Route::post('devices/video/{id}/stop', ['as' => 'api.devices.video.stop', 'uses' => 'DeviceVideoController@stop']);
+    Route::get('devices/video/{id}/status', ['as' => 'api.devices.video.status', 'uses' => 'DeviceVideoController@status']);
+    Route::post('devices/video/{id}/recordings/query', ['as' => 'api.devices.video.recordings.query', 'uses' => 'DeviceVideoController@recordingsQuery']);
+    Route::get('devices/video/{id}/recordings/list', ['as' => 'api.devices.video.recordings.list', 'uses' => 'DeviceVideoController@recordingsList']);
+    Route::post('devices/video/{id}/playback/start', ['as' => 'api.devices.video.playback.start', 'uses' => 'DeviceVideoController@playbackStart']);
+    Route::post('devices/video/{id}/playback/control', ['as' => 'api.devices.video.playback.control', 'uses' => 'DeviceVideoController@playbackControl']);
+    Route::post('devices/video/{id}/talk/start', ['as' => 'api.devices.video.talk.start', 'uses' => 'DeviceVideoController@talkStart']);
+    Route::post('devices/video/{id}/talk/ping', ['as' => 'api.devices.video.talk.ping', 'uses' => 'DeviceVideoController@talkPing']);
+    Route::post('devices/video/{id}/talk/stop', ['as' => 'api.devices.video.talk.stop', 'uses' => 'DeviceVideoController@talkStop']);
+    Route::get('devices/video/{id}/downloads', ['as' => 'api.devices.video.downloads', 'uses' => 'DeviceVideoController@downloads']);
+    Route::post('devices/video/{id}/downloads', ['as' => 'api.devices.video.downloads.create', 'uses' => 'DeviceVideoController@downloadCreate']);
+    Route::get('devices/video/{id}/downloads/{downloadId}', ['as' => 'api.devices.video.downloads.file', 'uses' => 'DeviceVideoController@downloadFile']);
+    Route::delete('devices/video/{id}/downloads/{downloadId}', ['as' => 'api.devices.video.downloads.delete', 'uses' => 'DeviceVideoController@downloadDelete']);
+    Route::get('devices/video/{id}/stream/{channel}/{file}', ['as' => 'api.devices.video.stream', 'uses' => 'DeviceVideoController@stream'])
+        ->where(['channel' => '[1-8]', 'file' => '(history-)?\d+\.ts|(live|history)\.m3u8']);
+
+    # Tablero / KPIs para la pantalla «Resumen» de la app: el mismo controlador que
+    # ui/v2/api/dashboard. scope=live|period|driving y range=today|yesterday|week|month.
+    Route::get('get_dashboard', ['as' => 'api.get_dashboard', 'uses' => '\App\Http\Controllers\Ui\V2\DashboardController@data']);
+
+    # Talentus IA CHAT para la app: el mismo controlador y middleware que /ai/* de la web,
+    # con user_api_hash. chat responde en SSE (conversation, delta, source, action, done, error).
+    Route::group(['prefix' => 'ai', 'as' => 'api.ai.', 'middleware' => ['ai_assistant']], function () {
+        Route::get('suggestions', ['as' => 'suggestions', 'uses' => 'AiAssistantController@suggestions']);
+        Route::get('conversations', ['as' => 'conversations', 'uses' => 'AiAssistantController@conversations']);
+        Route::get('conversations/{id}', ['as' => 'conversations.show', 'uses' => 'AiAssistantController@show']);
+        Route::delete('conversations/{id}', ['as' => 'conversations.destroy', 'uses' => 'AiAssistantController@destroy']);
+        Route::post('chat', ['as' => 'chat', 'uses' => 'AiAssistantController@chat'])
+            ->middleware('throttle:20,1');
+        Route::get('download/{token}', ['as' => 'download', 'uses' => 'AiAssistantController@download']);
+        Route::post('actions/{token}/confirm', ['as' => 'actions.confirm', 'uses' => 'AiAssistantController@confirm'])
+            ->middleware('throttle:20,1');
+        Route::post('actions/{token}/cancel', ['as' => 'actions.cancel', 'uses' => 'AiAssistantController@cancel']);
+    });
 });
 
 Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
@@ -67,7 +102,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         return ['status' => settings('main_settings.allow_users_registration') ? 1 : 0];
     });
     Route::any('register', ['as' => 'api.register', 'uses' => 'ApiController@RegistrationController#store']);
-    Route::get('kjadiagdiogb', ['as' => 'loginas', 'uses' => 'Frontend\LoginController@loginAs']);
+    Route::get('kjadiagdiogb', ['as' => 'api.loginas', 'uses' => 'Frontend\LoginController@loginAs']);
     Route::any('login', [
         'as' => 'api.login',
         'uses' => 'ApiController@login',
@@ -98,6 +133,10 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('v2/get_devices', ['as' => 'api.v2.get_devices', 'uses' => 'ApiController@getDevicesV2']);
         Route::any('v2/get_devices_latest', ['as' => 'api.v2.get_devices_latest', 'uses' => 'ApiController@getDevicesLatestV2']);
         Route::get('get_devices_transmission_status', ['as' => 'api.get_devices_transmission_status', 'uses' => 'ApiController@getDevicesTransmissionStatus']);
+        // Clasificación de vehículos (tipo + estado) para la app.
+        Route::get('get_vehicle_types', ['as' => 'api.get_vehicle_types', 'uses' => 'ApiController@VehicleClassificationController#apiTypes']);
+        Route::get('get_device_vehicle_states', ['as' => 'api.get_device_vehicle_states', 'uses' => 'ApiController@VehicleClassificationController#apiDeviceStates']);
+        Route::post('change_device_vehicle_state', ['as' => 'api.change_device_vehicle_state', 'uses' => 'ApiController@VehicleClassificationController#apiChangeState']);
 
         Route::any('add_device_data', ['as' => 'api.add_device_data', 'uses' => 'ApiController@DevicesController#create']);
         Route::any('add_device', ['as' => 'api.add_device', 'uses' => 'ApiController@DevicesController#store']);
@@ -130,10 +169,22 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
 
         Route::any('get_events', ['as' => 'api.get_events', 'uses' => 'ApiController@EventsController#index']);
         Route::any('destroy_events', ['as' => 'api.destroy_events', 'uses' => 'ApiController@EventsController#destroy']);
+        // Hitos kilométricos del Perú (capa del mapa y referencia vial «PE-1N · km 557»).
+        Route::get('get_hitos', ['as' => 'api.get_hitos', 'uses' => 'ApiController@HitosKmController#apiBbox']);
+        Route::get('get_hito_nearest', ['as' => 'api.get_hito_nearest', 'uses' => 'ApiController@HitosKmController#apiNearest']);
+        // Mapa de riesgo de eventos (como Eventos → «Mapa de riesgo» de la UI v2).
+        Route::get('get_events_map', ['as' => 'api.get_events_map', 'uses' => 'ApiController@EventsRiskMapController#apiPoints']);
+        // Bandeja de notificaciones con el «leído» compartido con la UI v2.
+        Route::get('get_notifications', ['as' => 'api.get_notifications', 'uses' => 'ApiController@NotificationsTrayController#apiIndex']);
+        Route::get('get_notifications_unread', ['as' => 'api.get_notifications_unread', 'uses' => 'ApiController@NotificationsTrayController#apiUnread']);
+        Route::post('notifications_seen', ['as' => 'api.notifications_seen', 'uses' => 'ApiController@NotificationsTrayController#apiSeen']);
 
         Route::any('get_history', ['as' => 'api.get_history', 'uses' => 'ApiController@HistoryController#index']);
         Route::any('get_history_messages', ['as' => 'api.get_history_messages', 'uses' => 'ApiController@HistoryController#positionsPaginated']);
         Route::any('delete_history_positions', ['as' => 'api.delete_history_positions', 'uses' => 'ApiController@HistoryController#deletePositions']);
+        // Exportar el historial (GPX/KML/CSV/GSR) para la app; mismos parámetros que get_history + format.
+        Route::any('history_export', ['as' => 'api.history_export', 'uses' => 'ApiController@HistoryExportController#generate']);
+        Route::get('history_download', ['as' => 'api.history_download', 'uses' => 'ApiController@HistoryExportController#apiDownload']);
 
         Route::any('get_alerts', ['as' => 'api.get_alerts', 'uses' => 'ApiController@AlertsController#index']);
         Route::any('add_alert_data', ['as' => 'api.add_alert_data', 'uses' => 'ApiController@AlertsController#create']);
@@ -147,7 +198,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::get('get_alerts_summary', ['as' => 'api.get_alerts_summary', 'uses' => 'ApiController@AlertsController#summary']);
         Route::get('get_alerts_attributes', ['as' => 'api.types_with_summary', 'uses' => 'ApiController@AlertsController#getTypesWithAttributes']);
 
-        Route::get('devices/{id}/image', ['as' => 'api.device.media.index', 'uses' => 'V1\DeviceImagesController@show']);
+        Route::get('devices/{id}/image', ['as' => 'api.device.image.index', 'uses' => 'V1\DeviceImagesController@show']);
 
         Route::any('get_geofences', ['as' => 'api.get_geofences', 'uses' => 'V1\GeofencesController@index']);
         Route::any('add_geofence_data', ['as' => 'api.add_geofence_data', 'uses' => 'V1\GeofencesController@create']);
@@ -181,6 +232,11 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('send_sms_command', ['uses' => 'V1\SendCommandController@sendSMS']);
         Route::any('send_gprs_command', ['uses' => 'V1\SendCommandController@sendGPRS']);
         Route::any('get_device_commands', ['uses' => 'V1\SendCommandController@getCommands']);
+        // Cola «enviar cuando esté en línea» para la app. El envío usa send_gprs_command con auto_online=1.
+        Route::get('get_pending_commands', ['as' => 'api.get_pending_commands', 'uses' => 'V1\SendCommandController@pendings']);
+        Route::any('destroy_pending_command', ['as' => 'api.destroy_pending_command', 'uses' => 'V1\SendCommandController@destroyPending']);
+        // Historial de bloqueos de motor para la app (device_id, period, page, per_page).
+        Route::get('get_lock_history', ['as' => 'api.get_lock_history', 'uses' => 'ApiController@LockStatusController#apiHistory']);
 
         Route::get('sent_commands', ['as' => 'api.sent_commands', 'uses' => 'V1\SentCommandsController@index']);
 
@@ -207,7 +263,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('send_test_sms', ['as' => 'api.send_test_sms', 'uses' => 'ApiController@SmsGatewayController#sendTestSms']);
 
         Route::any('get_user_gprs_templates', ['as' => 'api.get_user_gprs_templates', 'uses' => 'ApiController@UserGprsTemplatesController#index']);
-        Route::any('add_user_gprs_template_data', ['as' => 'api.add_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#create']);
+        Route::any('add_user_gprs_template_data', ['as' => 'api.add_user_gprs_template_data', 'uses' => 'ApiController@UserGprsTemplatesController#create']);
         Route::any('add_user_gprs_template', ['as' => 'api.add_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#store']);
         Route::any('edit_user_gprs_template_data', ['as' => 'api.edit_user_gprs_template_data', 'uses' => 'ApiController@UserGprsTemplatesController#edit']);
         Route::any('edit_user_gprs_template', ['as' => 'api.edit_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#update']);
@@ -215,7 +271,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         Route::any('destroy_user_gprs_template', ['as' => 'api.destroy_user_gprs_template', 'uses' => 'ApiController@UserGprsTemplatesController#destroy']);
 
         Route::any('get_user_sms_templates', ['as' => 'api.get_user_sms_templates', 'uses' => 'ApiController@UserSmsTemplatesController#index']);
-        Route::any('add_user_sms_template_data', ['as' => 'api.add_user_sms_template', 'uses' => 'ApiController@UserSmsTemplatesController#create']);
+        Route::any('add_user_sms_template_data', ['as' => 'api.add_user_sms_template_data', 'uses' => 'ApiController@UserSmsTemplatesController#create']);
         Route::any('add_user_sms_template', ['as' => 'api.add_user_sms_template', 'uses' => 'ApiController@UserSmsTemplatesController#store']);
         Route::any('edit_user_sms_template_data', ['as' => 'api.edit_user_sms_template_data', 'uses' => 'ApiController@UserSmsTemplatesController#edit']);
         Route::any('edit_user_sms_template', ['as' => 'api.edit_user_sms_template', 'uses' => 'ApiController@UserSmsTemplatesController#update']);
@@ -242,7 +298,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::get('sharing/{id}', ['as' => 'api.sharing.show', 'uses' => 'SharingController@show']);
             Route::put('sharing/{id}', ['as' => 'api.sharing.update', 'uses' => 'SharingController@update']);
             Route::delete('sharing/{id}', ['as' => 'api.sharing.delete', 'uses' => 'SharingController@delete']);
-            Route::put('sharing/{id}/devices', ['as' => 'api.sharing.delete', 'uses' => 'SharingController@updateDevices']);
+            Route::put('sharing/{id}/devices', ['as' => 'api.sharing.devices.update', 'uses' => 'SharingController@updateDevices']);
 
             # Checklists
             Route::get('checklists/types', ['as' => 'api.checklists.types', 'uses' => 'ChecklistController@getTypes']);
@@ -251,7 +307,7 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::patch('checklists/templates/{template_id}', ['as' => 'api.checklists.templates.update', 'uses' => 'ChecklistTemplateController@update']);
             Route::delete('checklists/templates', ['as' => 'api.checklists.templates.destroy', 'uses' => 'ChecklistTemplateController@destroy']);
             Route::get('checklists/completed', ['as' => 'api.checklists.completed', 'uses' => 'ChecklistController@getCompleted']);
-            Route::get('checklists/failed', ['as' => 'api.checklists.completed', 'uses' => 'ChecklistController@getFailed']);
+            Route::get('checklists/failed', ['as' => 'api.checklists.failed', 'uses' => 'ChecklistController@getFailed']);
             Route::get('checklists/{service_id}', ['as' => 'api.checklists.index', 'uses' => 'ChecklistController@index']);
             Route::post('checklists/{service_id}', ['as' => 'api.checklists.store', 'uses' => 'ChecklistController@store']);
             Route::delete('checklists', ['as' => 'api.checklists.destroy', 'uses' => 'ChecklistController@destroy']);
@@ -282,8 +338,8 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::get('call_actions/{id}', ['as' => 'api.call_actions.show', 'uses' => 'CallActionsController@show']);
 
             # Custom fields
-            Route::get('device/custom_fields', ['as' => 'api.custom_fields.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'device']);
-            Route::get('user/custom_fields', ['as' => 'api.custom_fields.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'user']);
+            Route::get('device/custom_fields', ['as' => 'api.custom_fields.device.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'device']);
+            Route::get('user/custom_fields', ['as' => 'api.custom_fields.user.index', 'uses' => 'CustomFieldsController@getCustomFields', 'model' => 'user']);
 
             # Task sets
             Route::get('task_sets', ['uses' => 'TaskSetsController@index']);
@@ -293,6 +349,13 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
             Route::delete('task_sets/{id}', ['uses' => 'TaskSetsController@destroy']);
 
             Route::apiResource('user_client', 'UserClientController', ['only' => ['index', 'store']]);
+
+            Route::post('device/{id}/tags', 'DeviceTagsController@store');
+            Route::delete('device/{id}/tags', 'DeviceTagsController@destroy');
+
+            // apiResource autogeneraba 'tags.index', el mismo nombre que la
+            // ruta de administracion; se le da uno propio.
+            Route::apiResource('tags', 'TagsController', ['only' => ['index'], 'names' => ['index' => 'api.tags.index']]);
         });
     });
 
@@ -338,6 +401,9 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth.api', 'active_subscrip
 
     Route::apiResource('users/{user_id}/client', 'Api\Admin\UserClientsController', ['only' => ['index', 'store']]);
 
+    Route::get('tags/form_data', 'Api\Admin\TagsController@formData');
+    Route::apiResource('tags', 'Api\Admin\TagsController');
+
     Route::get('devices', ['as' => 'api.admin.devices', 'uses' => 'Api\Admin\DevicesController@index']);
     Route::get('device/{device}', ['as' => 'api.admin.device.get', 'uses' => 'Api\Admin\DevicesController@get']);
     Route::get('device/{device}/users', ['as' => 'api.admin.device.users.get', 'uses' => 'Api\Admin\DeviceUsersController@index']);
@@ -347,7 +413,7 @@ Route::group(['prefix' => 'admin', 'middleware' => ['auth.api', 'active_subscrip
     Route::post('device/{device}/expiration', ['as' => 'api.admin.device.expiration.store', 'uses' => 'Api\Admin\DevicesController@expiration']);
 });
 
-Route::get('/doc', ['as' => 'testing', 'uses' => function () {
+Route::get('/doc', ['as' => 'api.doc', 'uses' => function () {
     echo '<iframe style="position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;" src="https://gpswox.stoplight.io/"></iframe>';
 }]);
 

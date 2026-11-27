@@ -39,6 +39,17 @@
         @endif
         <span data-device="status" style="background-color: {{ $item->getStatusColor() }}"
             title="{{ trans('global.' . $item->getStatus()) }}">{{ $item->getStatus() }}</span>
+        {{-- Estado del vehiculo (clasificacion del usuario actual): etiqueta y color,
+             como en la v2. DevicesSidebarController la carga con withClassificationFor. --}}
+        @php
+            $vehicleState = $item->vehicleStateFor(Auth::id());
+        @endphp
+        @if ($vehicleState)
+            <span data-device="vehicle_state" title="{{ $vehicleState->name }}"
+                style="display:inline-block;margin-left:4px;padding:1px 7px;border-radius:999px;font-size:10px;font-weight:600;line-height:16px;color:#fff;background-color: {{ $vehicleState->color ?: '#64748b' }};">
+                {{ $vehicleState->label ?: $vehicleState->name }}
+            </span>
+        @endif
 
         <div class="btn-group dropleft droparrow" data-position="fixed">
             <i class="btn icon options" data-toggle="dropdown" data-position="fixed" aria-haspopup="true"
@@ -99,7 +110,7 @@
                         </a>
                     </li>
                 @endif
-                @if (Auth::User()->perm('devices', 'edit') && $item->vehicle_type_id)
+                @if (Auth::User()->perm('devices', 'edit') && $item->vehicleTypeFor(Auth::id()))
                     <li>
                         <a href="javascript:" data-url="{{ route('devices.vehicle_state_form', $item->id) }}"
                             data-modal="devices_change_vehicle_state">
@@ -215,19 +226,24 @@
                     </li>
                 @endif
 
-                @if (in_array($item->protocol, ['jt808', 'howen']) && $item->traccar_device_id)
+                {{-- Video JT1078 (fork): camara con canales, protocolo con video y permiso device_video. --}}
+                @if (Auth::User()->perm('device_video', 'view') && $item->hasVideo())
                     <li>
-                        <a href="javascript:" data-url="{{ route('device_video.live.modal', $item->id) }}"
-                            data-modal="device_video_live_{{ $item->id }}" role="button">
-                            <span class="icon play"></span>
-                            <span class="text">{{ trans('front.live_video') }}</span>
+                        <a href="javascript:"
+                           onclick="app.deviceVideo.open({{ $item->id }}, {{ json_encode(array_values((array)$item->camera_channels)) }});"
+                           role="button"
+                        >
+                            <span class="icon camera"></span>
+                            <span class="text">{{ trans('front.video_live') }}</span>
                         </a>
                     </li>
                     <li>
-                        <a href="javascript:" data-url="{{ route('device_video.playback.modal', $item->id) }}"
-                            data-modal="device_video_playback_{{ $item->id }}" role="button">
+                        <a href="javascript:"
+                           onclick="app.deviceVideo.recordings({{ $item->id }});"
+                           role="button"
+                        >
                             <span class="icon history"></span>
-                            <span class="text">Reproducción</span>
+                            <span class="text">{{ trans('front.video_recordings') }}</span>
                         </a>
                     </li>
                 @endif

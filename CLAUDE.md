@@ -479,27 +479,196 @@ Procesa las posiciones de un dispositivo **una por una** para construir el histo
 
 ## Tipos/Estados de Vehículo y Límites de Velocidad por Geocerca
 
-> Funcionalidad en desarrollo activo (migraciones `2026_06_19_*`). Permite límites de velocidad por geocerca diferenciados por **tipo** y **estado** de vehículo (ej. "Cisterna / cargado" vs "Cisterna / vacío").
+> Permite límites de velocidad por geocerca diferenciados por **tipo** y **estado** de vehículo
+> (ej. "Cisterna / cargado" vs "Cisterna / vacío"). Desde oct-2026 la clasificación de cada
+> vehículo es **por usuario** (rama `clasificacion-por-usuario`, migración `2026_10_20_000001`):
+> un vehículo compartido entre cuentas puede llevar un tipo/estado distinto para cada una.
 
-**Entidades nuevas:**
+**Entidades:**
 
-| Entidad                     | Tabla                            | Notas                                                              |
-| --------------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| `VehicleType`               | `vehicle_types`                  | Pertenece a un `User`; `hasMany` estados.                          |
-| `VehicleState`              | `vehicle_states`                 | Pertenece a un `VehicleType`.                                      |
-| `GeofenceVehicleSpeedLimit` | `geofence_vehicle_speed_limits`  | `unique(geofence_id, vehicle_type_id, vehicle_state_id)`; `state` nullable. |
+| Entidad                       | Tabla                             | Notas                                                              |
+| ----------------------------- | --------------------------------- | ------------------------------------------------------------------ |
+| `VehicleType`                 | `vehicle_types`                   | Pertenece a un `User`; `hasMany` estados.                          |
+| `VehicleState`                | `vehicle_states`                  | Pertenece a un `VehicleType`.                                      |
+| `GeofenceVehicleSpeedLimit`   | `geofence_vehicle_speed_limits`   | `unique(geofence_id, vehicle_type_id, vehicle_state_id)`; `state` nullable. |
+| `DeviceVehicleClassification` | `device_vehicle_classifications`  | `(device_id, user_id, vehicle_type_id, vehicle_state_id)`; `unique(device_id, user_id)`; tipo y estado son del catálogo de `user_id`. FK cascade en device/user/tipo, `set null` en estado. |
 
-- `devices` gana `vehicle_type_id` + `vehicle_state_id` (FK `set null`). `Device::vehicleType()` / `vehicleState()`.
-- **CRUD de tipos**: `VehicleTypesController` (`Route::resource('vehicle_types')` + `vehicle_types/table`). Los estados se editan anidados en el form del tipo (`add_state[]`, `edit_state[id]`); validación con `VehicleTypeFormValidator`. Vistas en `Tobuli/Views/Frontend/VehicleTypes/`.
-- **Asignación rápida de estado a un objeto**: `DevicesController::vehicleStateForm()` + `changeVehicleState()` → `DeviceModalHelper::changeVehicleState()` (valida que el estado pertenezca al tipo del device).
+### Clasificación por usuario (modelo actual)
+
+- **Lectura en `Device`:** `classifications()` (hasMany), `classificationFor(int $userId)`,
+  `vehicleTypeFor($userId)`, `vehicleStateFor($userId)`. El resultado se memoriza por usuario en la
+  instancia (incluido el `null`) porque alertas e historial recorren geocercas de varios dueños
+  sobre el mismo device; `forgetClassificationCache()` lo limpia tras escribir.
+- **Eager load (evitar N+1):** scope `Device::withClassificationFor($userId)`. Carga una **relación
+  dinámica por usuario** `classificationForUser{N}` (registrada con `resolveRelationUsing`, hasOne
+  filtrada por `user_id` con `vehicleType`/`vehicleState` anidados; nombre vía
+  `Device::classificationRelationFor($userId)`). Una vez cargada es autoritativa: `null` = sin
+  clasificación, 0 consultas extra. La relación genérica `classifications` solo sirve de caché para
+  aciertos; si no contiene al usuario, `classificationFor()` consulta la BD.
+  ⚠️ **Serialización:** al estar cargada, `classificationForUser{N}` aparece como clave en
+  `$device->toArray()` / `toJson()`. No volcar el device entero a JSON tras `withClassificationFor`;
+  exponer los campos desde un transformer (`DeviceMapTransformer` usa `requireUserLoads()` de
+  `BaseTransformer` para cargarla con el usuario actuante).
+- **Escritura: SIEMPRE por `Tobuli\Services\DeviceClassificationService`** (nunca escribir la tabla
+  a mano): `validate($user, $typeId, $stateId)` (resuelve sin escribir: tipo del usuario, estado del
+  tipo; lanza `ValidationException` con claves `vehicle_type_id`/`vehicle_state_id`),
+  `set($user, $device, $typeId, $stateId)` (`updateOrCreate`; tipo vacío = `clear`),
+  `setState($user, $device, $stateId)` (exige clasificación previa; sin tipo y estado vacío es no-op),
+  `clear($user, $device)`. Escritores: `DeviceModalHelper` (formularios legacy, v2 y API v1: valida
+  **antes** de guardar el device y clasifica **después**, solo si las claves vienen en el request) y
+  los dos «Cambiar estado» (`DevicesController::changeVehicleState()` legacy y `Ui\V2\DevicesController`).
+- **Regla de resolución del límite: "el dueño de la geocerca resuelve".**
+  `Geofence::speedLimitForDevice(Device $device)` = `speedLimitFor($device->vehicleTypeFor($this->user_id),
+  $device->vehicleStateFor($this->user_id))`. Toda geocerca tiene dueño, así que alertas, historial,
+  reportes y Seguridad no necesitan pasar ningún usuario extra. Geocerca sin `user_id` ⇒ solo el legacy.
+- **Regla de visualización: "usuario actual".** Listas, ficha, mapa (`DeviceMapTransformer`, incluido
+  el enlace público de Compartir con el dueño del enlace como usuario actuante), sidebar legacy
+  (`Objects/item.blade.php`), Seguridad (filtro «Tipo», tablas, Excel) muestran
+  `$device->classificationFor($user->id)`. Los selects de los formularios solo ofrecen los tipos del
+  usuario que edita.
+- **Columnas deprecadas:** `devices.vehicle_type_id` / `vehicle_state_id` y los accessors
+  `Device::vehicleType()` / `vehicleState()` (marcados `@deprecated`) **ya no se escriben ni se leen**.
+  La migración copió su valor a la tabla nueva para el **dueño del tipo** (estado de otro tipo ⇒ `null`).
+  Se eliminarán en una migración posterior cuando pruebas confirme; no usarlos en código nuevo.
+- **JS espejo:** `live-zones.js` y `tp-map-layers.js` replican `speedLimitFor` con los
+  `vehicle_type_id`/`vehicle_state_id` que manda el transformer (ya son los de la clasificación del
+  usuario actuante), por eso no cambiaron.
+
+### Catálogo y límites por geocerca
+
+- **CRUD de tipos**: `VehicleTypesController` (`Route::resource('vehicle_types')` + `vehicle_types/table`). Los estados se editan anidados en el form del tipo (`add_state[]`, `edit_state[id]`); validación con `VehicleTypeFormValidator`. Vistas en `Tobuli/Views/Frontend/VehicleTypes/`. Borrar un tipo borra (cascade) solo las clasificaciones de esa cuenta.
+- **Asignación rápida de estado a un objeto**: `DevicesController::vehicleStateForm()` + `changeVehicleState()` → `DeviceModalHelper::changeVehicleState()` → `DeviceClassificationService::setState()`. El formulario ofrece los estados del tipo **de la clasificación del usuario**.
 - **En la geocerca**: partial `Geofences/partials/vehicle_speed_limits.blade.php`. El form envía `vehicle_speed_limits[<type_id>][<state_id>] = velocidad` (clave de estado `0` = límite por defecto del tipo, `vehicle_state_id` null). `GeofenceService::syncVehicleSpeedLimits()` borra y recrea los límites; `normalize()` convierte unidades.
-- **Resolución del límite → `Geofence::speedLimitFor($vehicleType, $vehicleState)`** con fallback en 3 niveles:
+- **`Geofence::speedLimitFor($vehicleType, $vehicleState)`** (lo llama `speedLimitForDevice`) con fallback en 3 niveles:
   1. límite exacto (tipo + estado),
   2. límite por defecto del tipo (estado `null`),
   3. columna legacy `geofences.speed_limit`.
-- **Consumidores** de `speedLimitFor()`: `GeofenceAlertCheck` (alertas), reportes overspeed-en-geocerca, y acciones de History `AppendSpeedLimitGeofence`, `AppendSpeedLimitGeofenceByPriority`, `AppendSpeedLimitGeofenceMulti`.
+- **Consumidores** de `speedLimitForDevice()`: `GeofenceAlertCheck` (alertas), reportes overspeed-en-geocerca (904-906, RAG), y acciones de History `AppendSpeedLimitGeofence`, `AppendSpeedLimitGeofenceByPriority` (clave de caché por dueño+geocerca, no por ids del device), `AppendSpeedLimitGeofenceMulti`. En reportes/pipeline pre-cargar la clasificación del usuario del reporte antes del bucle (una consulta por device, no una por posición).
 - **Prioridad con geocercas solapadas**: se elige la de **menor área** (`Geofence::approxAreaSqMeters()`), vía `Geofence::pickBySpeedLimitPriority()` o la acción `…ByPriority`.
-- ⚠️ **Pendiente**: el export/import GEXP de geocercas (sección 6/7) **aún no** serializa la relación `vehicleSpeedLimits` (solo el `speed_limit` legacy). Tenerlo en cuenta al exportar/importar.
+- **Export/import GEXP de geocercas** (sección 6/7): el `.gexp` lleva `speed_limit`, `additional` y los límites por tipo/estado **por nombre**; el importador los resuelve contra el catálogo del usuario o crea los tipos (19-oct-2026). La clasificación por usuario de los devices **no** viaja en el GEXP de geocercas.
+
+---
+
+## Vídeo JT1078 (cámaras de a bordo)
+
+Portado de master-tracking (14-nov-2026; plan `docs/superpowers/plans/2026-11-14-video-jt1078-ui-v2.md`,
+documentación de la fuente en `docs/video/`). Exige el **fork de Traccar** (rama `talentus`): la web manda
+comandos (`videoStart`, `videoResourceQuery`, `videoPlayback`, `videoFileUpload`…) y lee `api/stream/imei/...`.
+
+- **Equipo:** `has_camera`, `camera_channels` (json `[1,2,…]`, máx. `Device::VIDEO_MAX_CHANNELS` = 8),
+  `camera_channel_roles` (`{canal: rol}`), `camera_attributes` (0x1003). `Device::supportsVideo()` (protocolo en
+  `config('video.protocols')`, por defecto `jt808`) y `Device::hasVideo()` (cámara + canales + protocolo).
+  `devices.video_channels` está **deprecada** (migrada a `has_camera`/`camera_channels`); no usarla.
+- **Permiso `device_video`** (view/edit), no se da a todos: la migración lo concedió a dueños de equipos con
+  cámara, sus managers, sus planes y admins. Gatea endpoints, menú, widget y la pestaña Vídeo de la ficha
+  (`DevicePropertiesPolicy` ⇒ `has_camera`/`camera_channels`/`camera_channel_roles`).
+- **Backend:** `Tobuli\Services\DeviceVideoService` (espectadores en Redis `process`, URLs FLV firmadas HMAC,
+  hablar, grabaciones, FTP 0x9206) + `DeviceVideoController` (rutas `devices/video/{id}/*`, también en `api.php`
+  para la app). Descargas: `DeviceVideoDownload`, jobs `RecordVideoDownload`/`FtpVideoDownload` en la cola
+  **`video`** (worker propio en `Kernel`, `--timeout=3900`), `video:clean-downloads`, `video:ftp-user`.
+  Config en `config/video.php` (`VIDEO_*`).
+- **Howen:** el adaptador viejo (`api/howen/*`, `streamProxy`, rutas `device_video/*`) se eliminó. Howen entrará por el
+  fork con el mismo contrato: se activa con `VIDEO_PROTOCOLS=jt808,howen` (no va por defecto).
+- **UI:** el reproductor es uno solo, `DeviceVideo/player.blade.php` (iframe). Legacy: `controller/deviceVideo.js`
+  (`app.deviceVideo.open/recordings`, bundle `app.js`). v2: `ui-v2/js/tp-device-video.js`
+  (`tpDeviceVideo.open/recordings`, lee `devices/video/{id}/config`) + `css/device-video.css`; kebab
+  `data-act="device_video(_recordings)"`, widget del drawer `data-tp-video`, pestaña `modals/devices/partials/video`.
+
+## Talentus IA CHAT (asistente IA)
+
+Portado de AirBot (airpatrol, 18-nov-2026; rama `feature/talentus-ia-chat`). Solo UI v2. API de Claude por HTTP
+(`App\Services\Ai\ClaudeClient`, sin SDK: el SDK pide PHP 8.1). Costos por proveedor en `docs/ia-proveedores-costos.md`.
+
+- **Ajustes en Admin > Configuración > Talentus IA CHAT** (`admin/ai_assistant`): nombre visible, interruptor, clave
+  de la API (cifrada con `encrypt()`, nunca vuelve a la vista), modelo del chat, modelo de resúmenes, esfuerzo y
+  **modelo por plan**; cuotas por plan y tope USD. `App\Services\Ai\AiSettings` (grupo `configs.ai_provider`) vuelca
+  lo guardado en `config('ai.*')` con `apply()`; lo vacío cae a `config/ai.php` (.env). Para leer la clave o el
+  modelo usar `AiSettings::isConfigured()` / `chatModelFor($user)`, no `config('ai.*')` sin `apply()`.
+- **Modelos elegibles:** `config('ai.models')` (cada uno con precio en `ai.pricing`). El `fallbacks` del servidor y su
+  beta solo se mandan a Sonnet/Opus 5.5 (`AiSettings::supportsFallbacks`); Haiku 5.5 no lo tiene. Costo con
+  `AiPricing::cost()` (incluye caché de 1 h y el 5x de Haiku por encima de 100k tokens de prompt).
+- **Backend:** `AiAgent` (ciclo de herramientas, streaming SSE), 23 herramientas de consulta + 5 acciones con
+  confirmación en `app/Services/Ai/Tools` (`AiToolRegistry`; cambiar el orden invalida el caché de prompts),
+  `SystemPrompt` (usa `{{nombre}}`), `AiFeatures` (explicar reporte, resumen en correos, tablero, digest),
+  `AiQuota`. Permiso `ai_assistant` (view = chat, edit = acciones), apagado por defecto. Rutas `/ai/*`
+  (middleware `ai_assistant`). Tablas `ai_conversations`, `ai_messages`, `ai_usage_logs`, `ai_action_logs`.
+- **Permisos:** el modelo solo ve lo que la cuenta puede hacer: acciones con `allowed()` en `AiToolRegistry`,
+  enums de `atajo_ui`/`abrir_pantalla` filtrados por permiso, y guías con `BuscarGuiaTool::PERMS` (sin permiso
+  responde `permitido: false`). Además el `<contexto>` de cada pregunta lista lo que la cuenta NO tiene
+  (`AiToolRegistry::deniedFeatures()`), porque quitar la opción sola no basta: el modelo inventaba los pasos.
+  Va en el mensaje y no en el system para no partir el caché de 1 h. Revisar con
+  `php artisan ai:compare --user=<id> --show-tools` (sin API).
+- **Cuota:** límite por usuario (`ai_assistant.user_quotas`) > por plan > general (Admin) > `.env`.
+- **Clave por reseller** (tabla `ai_reseller_settings`, panel `admin/ai_reseller` para el grupo 3): el reseller del
+  usuario (él mismo o subiendo por `manager_id`, `AiSettings::resellerFor()`) con clave propia ⇒ se usan su clave,
+  modelos, esfuerzo, cuotas (`user_quotas` > `default_quota` > las principales) y tope. Sin clave ⇒ la principal
+  solo si `allow_main_key` (lo marca el admin en su panel, tabla Resellers). Toda llamada se construye con
+  `AiSettings::configFor($user)` y se registra con `ai_usage_logs.key_owner_id` (NULL = principal); el tope
+  principal solo cuenta `key_owner_id NULL` (`AiQuota::spent()`). Gates: `isConfiguredFor($user)`, nunca
+  `isConfigured()` para decidir si un usuario ve la IA.
+- **Manual de uso** que consulta el asistente: `resources/ai/guides.php` (pantallas de la UI v2). Las claves de
+  `pantalla` deben existir en `AbrirPantallaTool::SCREENS`, que lleva la ruta v2 de cada una.
+- **UI v2:** `partials/ai-chat.blade.php` + `ui-v2/js/tp-ai-chat.js` + `ui-v2/css/ai-chat.css`; ventana flotante
+  sobre todo (z-index 2147483000; los `<dialog>` de tpModal quedan encima por el top layer) con botón flotante
+  abajo a la derecha (`#tpai-fab`, punto de aviso si responde minimizado), botón del topbar `[data-tpai-open]` y
+  Ctrl+I; gate `$tpaiOn` en `layout.blade.php`. Abierto/minimizado y conversación siguen entre pantallas
+  (`sessionStorage` `tpai_state`). Los botones de la respuesta solo navegan a `/ui/v2/...` (`live?device=`,
+  `history?device=&from=&to=`) o ejecutan un **atajo** de la lista fija `SHORTCUTS` (herramienta `atajo_ui`:
+  editar vehículo, video, fotos, compartir, servicios, configurar equipo, regla, sin transmitir, cuenta…; el
+  servidor valida permiso y unidad). Si la pantalla no carga la API del atajo (`window.tpDeviceModal`…), abre
+  `live?device=` y lo ejecuta al cargar (`tpai_pending`). Atajo nuevo = entrada en `AtajoUiTool::shortcuts()` y
+  en `SHORTCUTS` del JS. Tarjeta de
+  resumen en el tablero (`#tpai-dash`) y botón "Explicar con…" en el visor de reportes
+  (`Reports/partials/layout`, solo `view=1`).
+- **Prueba de modelos:** `php artisan ai:compare --user=<correo>` (banco en `resources/ai/compare-questions.php`;
+  informe en `storage/app/ai-compare/`; cada pregunta en una transacción que se deshace; cuesta dinero).
+  `--check-tools` ejecuta todas las herramientas sin API.
+
+## Backups (FTP + Google Drive)
+
+`Tobuli/Helpers/Backup/`. Cada archivo se genera en un temporal, se valida y se sube a cada destino
+(`BackupDestination`: `BackupFtp` con ncftpput, `DriveDestination` con rclone) desde
+`MultiDestinationUploader`. El estado por destino está en `backups.destinations`.
+
+- **Índice:** `_completo.json` en cada copia terminada; guarda el rango de posiciones por device y
+  marca la copia como completa.
+- **Retención (solo Drive):** `backup:prune`, se ejecuta tras cada backup correcto en Drive. Las copias
+  antiguas sin posiciones pasan de `backup_…` a `soloweb_…`. `.conservar` protege una carpeta.
+- **Guía de puesta en marcha:** `docs/backups-google-drive.md`.
+
+---
+
+## Módulo Operaciones (control de vueltas y reporte de turno)
+
+Solo UI v2 (`/ui/v2/operations`, `tp-operations.js`, `tp-operations-shift.js`); el legacy solo
+recibe la categoría de geocerca. Apagado con `OPERATIONS_ENABLED=false` (`tobuli.operations_enabled`).
+Plan original en `plan de operaciones.md`; reporte de turno en
+`docs/superpowers/plans/2026-10-21-operaciones-reporte-de-turno.md`; despliegue en
+`docs/guia-actualizacion-operaciones.md` §10.
+
+- **Entidades** (`Tobuli/Entities/Operation*.php`): `Operation` (turnos, descansos, `day_start`,
+  `vehicle_type_id/loaded_state_id/empty_state_id`), `OperationShift` + `OperationShiftBreak`
+  (`scheduled|fatigue`), `OperationPoint` (versionado), `OperationCycle` → `OperationLeg`
+  (`outbound` = cargado, `inbound` = vacío) → `OperationStop` (justificada con
+  `OperationStopReason`, `state = maint|standby`), `OperationVisit`, `OperationDeviceState`
+  (estado en vivo en BD), y las agregadas `OperationShiftSummary`, `OperationHourStat`
+  (`device_id` NULL = flota), `OperationRefueling`.
+- **Servicios** (`Tobuli/Services/Operations/`): `OperationService` (CRUD + validación de turnos,
+  descansos y tipo/estados), `OperationChecker` (por lote en `PositionsWriter`, como las alertas;
+  modo vivo → cambia el estado cargado/vacío con `DeviceClassificationService`),
+  `OperationCycleWriter`, `OperationLegCalculator`, `OperationRebuildService` (recálculo, nunca
+  cambia estados), `OperationShiftSummaryService` + `ShiftPositionScan` (una pasada por las
+  posiciones del turno), `OperationShiftReport` (payload de la pestaña Turno y del Excel,
+  solo desde las tablas agregadas), `Tobuli/Exports/Operations/ShiftReportExport` (PhpSpreadsheet
+  con gráficos nativos).
+- **Comandos** (lista explícita en `app/Console/Kernel.php`): `operations:process` (cada minuto;
+  cierra turnos 10–70 min después de su fin), `operations:summaries` (manual, por rango),
+  `operations:clean` (lo llama `server:autoclean` con los días de Admin → Herramientas).
+- **Reglas que no son obvias:** descansos y día operativo se configuran en la operación (nada de
+  horarios en código); horómetro y odómetro SOLO del sensor (sin sensor, NULL); DELAY = ralentí,
+  STANDBY = motor apagado o descanso, MAINT = geocerca taller o motivo `maint`; un hueco entre
+  tramas sin desplazamiento y < 1 h es parado, no «sin datos»; abastecimiento = subida de nivel
+  del pipeline de combustible con umbrales del device; velocidades se guardan en km/h.
 
 ---
 
@@ -571,6 +740,7 @@ $this->user->perm('geofences', 'edit')        // retorna bool
 - **Migraciones:** estilo Laravel 8 con **clase anónima** (`return new class extends Migration { … };`). Seguir ese patrón en migraciones nuevas.
 - **Posiciones por dispositivo:** no consultar una tabla `positions` global; usar `$device->positions()` (tabla dinámica por device).
 - **`speedLimitFor()` sobre colecciones cargadas:** si `vehicleSpeedLimits` ya está eager-loaded, `Geofence::speedLimitFor()` filtra en memoria; si no, consulta a BD. En reportes/pipeline, hacer `->with('vehicleSpeedLimits')` para evitar N+1.
+- **Clasificación de vehículo por usuario:** nunca leer `devices.vehicle_type_id`/`vehicle_state_id` ni `$device->vehicleType`; usar `classificationFor($userId)` (mostrar = usuario actual, resolver límite = `Geofence::speedLimitForDevice()`, es decir, el dueño de la geocerca). En listados, `withClassificationFor($userId)`; escribir solo con `DeviceClassificationService`.
 
 ---
 

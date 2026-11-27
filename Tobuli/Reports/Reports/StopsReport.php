@@ -15,6 +15,8 @@ class StopsReport extends DrivesStopsReport
 {
     const TYPE_ID = 40;
 
+    protected bool $viewable = true;
+
     public function typeID()
     {
         return self::TYPE_ID;
@@ -31,7 +33,6 @@ class StopsReport extends DrivesStopsReport
             DriveStop::class,
             Duration::class,
             Distance::class,
-            Speed::class,
             Fuel::class,
             EngineHours::class,
             Drivers::class,
@@ -44,5 +45,21 @@ class StopsReport extends DrivesStopsReport
             $list[] = GeofencesIn::class;
 
         return $list;
+    }
+
+    protected function getTableKeys(): array
+    {
+        return array_merge(parent::getTableKeys(), ['latitude', 'longitude']);
+    }
+
+    protected function generateDevice($device)
+    {
+        $data = parent::generateDevice($device);
+
+        if ($data && empty($data['error'])) {
+            $data['device'] = $this->getDeviceMarker($device);
+        }
+
+        return $data;
     }
 }

@@ -122,6 +122,7 @@ return array(
     'diem_rates' => 'Diem tarieven',
     'forwards' => 'Vooruit',
     'group_6' => 'Leidinggevende',
+    'group_7' => 'Monitoreo',
     'user_created_before_days' => 'Gebruiker gemaakt vóór dagen',
     'reminders_trans' => 'Herinneringen vertalingen',
     'passwords_trans' => 'Wachtwoorden vertalingen',

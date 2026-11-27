@@ -36,15 +36,35 @@
             </div>
             <div class="form-group">
                 {!!Form::label('last_service', trans('validation.attributes.last_service').':')!!}
-                {!!Form::text('last_service', $item->last_service, ['class' => 'form-control service-datepicker'])!!}
+                {!!Form::text(
+                    'last_service',
+                    $item->last_service && !is_numeric($item->last_service)
+                        ? Formatter::time()->convert($item->last_service, 'Y-m-d')
+                        : $item->last_service,
+                    ['class' => 'form-control service-datepicker']
+                )!!}
             </div>
             <div class="form-group">
                 {!!Form::label('trigger_event_left', trans('validation.attributes.trigger_event_left').':')!!}
                 {!!Form::text('trigger_event_left', $item->trigger_event_left, ['class' => 'form-control'])!!}
             </div>
-            <div class="form-group">
-                {!!Form::label('renew_after_expiration', trans('validation.attributes.renew_after_expiration').':')!!}
-                {!!Form::checkbox('renew_after_expiration', 1, $item->renew_after_expiration)!!}
+            <div class="row">
+                <div class="col-md-6 col-sm-6 col-xs-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!!Form::checkbox('renew_after_expiration', 1, $item->renew_after_expiration)!!}
+                            {!!Form::label('renew_after_expiration', trans('validation.attributes.renew_after_expiration'))!!}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-6 col-xs-6">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            {!!Form::checkbox('allow_expired_value', 1)!!}
+                            {!!Form::label('allow_expired_value', trans('validation.attributes.allow_expired_value'))!!}
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="row">
                 <div class="col-md-6 col-sm-6 col-xs-6">

@@ -184,6 +184,7 @@ return array(
         'frequency' => 'Freqüência',
         'unit' => 'Unidade',
         'noreply_email' => 'No adres e-mail odpowiedź',
+        'reply_to_email' => 'E-mail de resposta (Reply-To)',
         'signature' => 'Podpis',
         'use_smtp_server' => 'Użyj serwera SMTP',
         'smtp_server_host' => 'Hosta serwera SMTP',

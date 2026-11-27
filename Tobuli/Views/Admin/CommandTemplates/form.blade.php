@@ -44,3 +44,9 @@
     {!! Form::label('message', trans('validation.attributes.message') . ':') !!}
     {!! Form::textarea('message', $item->message ?? null, ['class' => 'form-control']) !!}
 </div>
+
+<div class="form-group">
+    {!! Form::label('lock_action', 'Uso en bloqueo de motor:') !!}
+    {!! Form::select('lock_action', ['' => 'Ninguno', 'block' => 'Cortar (bloquear)', 'unblock' => 'Restablecer (desbloquear)'], $item->lock_action ?? null, ['class' => 'form-control']) !!}
+    <span class="help-block small">Marca la plantilla (GPRS) como comando de Cortar o Restablecer del widget de bloqueo. El equipo la elige según su tipo de dispositivo.</span>
+</div>

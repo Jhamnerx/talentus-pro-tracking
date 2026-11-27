@@ -24,6 +24,7 @@ use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
 use Laravel\Passport\HasApiTokens;
 use Bugsnag\BugsnagLaravel\Facades\Bugsnag as Bugsnag;
 use Tobuli\Helpers\Settings\Settingable;
+use Tobuli\Helpers\SMS\SMSGatewayManager;
 use Tobuli\Relations\HasManyTable;
 use Tobuli\Services\NotificationService;
 use Tobuli\Traits\ChangeLogs;
@@ -45,6 +46,7 @@ class User extends AbstractEntity implements
     SecondaryCredentialsInterface
 {
     const VERIFY_EMAIL_TIMEOUT_MIN = 5;
+    const VERIFY_PHONE_TIMEOUT = 300;
 
     use Authenticatable,
         CanResetPassword,
@@ -88,7 +90,7 @@ class User extends AbstractEntity implements
      *
      * @var array
      */
-    protected $hidden = ['remember_token', 'api_hash', 'password', 'login_token', 'untouchable'];
+    protected $hidden = ['remember_token', 'api_hash', 'password', 'login_token', 'untouchable', 'google2fa_secret'];
 
     protected $fillable = array(
         'id',
@@ -180,6 +182,14 @@ class User extends AbstractEntity implements
         static::created(function (User $user) {
             if (settings('main_settings.email_verification') && !$user->hasVerifiedEmail()) {
                 $user->sendEmailVerificationNotification();
+            }
+
+            // Alertas por defecto del plan. Va en try/catch a proposito: si
+            // sembrar falla, el alta del usuario NO se cae por eso.
+            try {
+                (new \Tobuli\Services\AlertTemplateService())->applyToUser($user);
+            } catch (\Throwable $e) {
+                report($e);
             }
         });
 
@@ -393,7 +403,16 @@ class User extends AbstractEntity implements
     public function getAvailableMapsAttribute($value)
     {
         try {
-            $list = unserialize($value);
+            // unserialize() devuelve FALSE con valor vacio o corrupto, y
+            // array_filter(false) lanza un TypeError, que NO es Exception: se
+            // escapaba de este catch y tumbaba cualquier lectura del usuario
+            // (por ejemplo al registrar sus cambios al crearlo).
+            $list = @unserialize((string) $value);
+
+            if (! is_array($list)) {
+                return [];
+            }
+
             $maps = array_keys(getAvailableMaps());
 
             $list = array_filter($list, function ($id) use ($maps) {
@@ -401,7 +420,7 @@ class User extends AbstractEntity implements
             });
 
             return array_values($list);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return [];
         }
     }
@@ -459,6 +478,16 @@ class User extends AbstractEntity implements
     public function billing_plan()
     {
         return $this->hasOne('Tobuli\Entities\BillingPlan', 'id', 'billing_plan_id');
+    }
+
+    public function userPermissions(): HasMany
+    {
+        return $this->hasMany(UserPermission::class);
+    }
+
+    public function billingPlanPermissions(): HasMany
+    {
+        return $this->hasMany(UserBillingPlanPermission::class, 'plan_id', 'billing_plan_id');
     }
 
     public function alerts()
@@ -1069,6 +1098,57 @@ class User extends AbstractEntity implements
     {
         $this->email_verified_at = date('Y-m-d H:i:s');
         $this->save();
+    }
+
+    public function hasVerifiedPhone(): bool
+    {
+        return $this->phone_verified_at !== null;
+    }
+
+    public function reset2fa(): self
+    {
+        $this->google2fa_secret = null;
+
+        return $this;
+    }
+
+    public function is2faSetup(): bool
+    {
+        return $this->google2fa_secret !== null;
+    }
+
+    public function is2faEnabled(): bool
+    {
+        return $this->is2faSetup() && $this->google2fa_secret;
+    }
+
+    public function markPhoneAsVerified()
+    {
+        $this->phone_verified_at = date('Y-m-d H:i:s');
+        $this->save();
+    }
+
+    public function sendPhoneVerificationNotification(): void
+    {
+        if (!$this->phone_number) {
+            return;
+        }
+
+        if (Cache::get('user_' . $this->id . '_phone_verification_reminder')) {
+            return;
+        }
+
+        /** @var SmsTemplate $smsTemplate */
+        $smsTemplate = SmsTemplate::getTemplate('phone_verification', $this);
+
+        $token = sha1($this->phone_number) . ';' . $this->id;
+
+        $sms = $smsTemplate->buildTemplate($token);
+
+        $smsSenderService = (new SMSGatewayManager())->loadSender($this, ['request_method' => 'system']);
+        $smsSenderService->send($this->phone_number, $sms['body']);
+
+        Cache::put('user_' . $this->id . '_phone_verification_reminder', 1, self::VERIFY_PHONE_TIMEOUT);
     }
 
     public function sendEmailVerificationNotification()

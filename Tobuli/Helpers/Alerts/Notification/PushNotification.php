@@ -48,17 +48,8 @@ class PushNotification extends AbstractNotification implements InputAwareInterfa
         switch ($sendQueue->type) {
             case 'expiring_user':
             case 'expired_user':
-                $type = 'front.'.$sendQueue->type;
-                $title = trans($type).' '.$sendQueue->user->email;
-                $body = $sendQueue->user->email;
-                break;
-            case 'expiring_device':
-            case 'expired_device':
-            case 'expiring_sim':
-            case 'expired_sim':
-                $type = 'front.'.$sendQueue->type;
-                $title = trans($type).' '.$device->name;
-                $body = $device->name;
+                $title = $sendQueue->data->email;
+                $body = '';
                 break;
             default:
                 $title = ($device->name ?? '') . ' ' . $sendQueue->data->message;
@@ -73,10 +64,9 @@ class PushNotification extends AbstractNotification implements InputAwareInterfa
         }
 
         $data = $sendQueue->data ? $sendQueue->data->toArray() : [];
-        $type = $sendQueue->type;
 
         try {
-            $this->fcmService->send($sendQueue->user, $title, $body, $data, $type);
+            $this->fcmService->send($sendQueue->user, $title, $body, $data);
         } catch (ConnectException | ClientException | ServerException $e) {
             throw new SendException($e->getMessage(), $e->getCode(), $e);
         }

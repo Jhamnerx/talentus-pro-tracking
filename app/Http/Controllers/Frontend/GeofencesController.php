@@ -52,7 +52,7 @@ class GeofencesController extends Controller
     {
         $this->checkException('geofences', 'view');
 
-        $items = Geofence::userOwned($this->user)->paginate(500);
+        $items = Geofence::userOwned($this->user)->withCount('routeCheckpoints')->paginate(500);
 
         return response()->json(
             FractalTransformer::paginate($items, GeofenceMapTransformer::class)->toArray()
@@ -88,7 +88,11 @@ class GeofencesController extends Controller
 
     private function getFormData()
     {
-        $geofenceTypes = ['polygon' => trans('front.polygon'), 'circle' => trans('front.circle')];
+        $geofenceTypes = [
+            'polygon' => trans('front.polygon'),
+            'circle'  => trans('front.circle'),
+            'line'    => trans('front.corridor'),
+        ];
 
         $geofenceGroups = GeofenceGroup::userOwned($this->user)
             ->pluck('title', 'id')
