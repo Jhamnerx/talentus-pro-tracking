@@ -1702,6 +1702,67 @@
     );
   }
 
+  /**
+   * Esfera pequeña estilo cuadro de instrumentos (opcion A del rediseño):
+   * bisel, marcas y numeros, zona de alerta en rojo, aguja con brillo y el
+   * valor en una pantallita DEBAJO del eje. El arco es de 240° y termina por
+   * encima de la pantallita, asi que la aguja nunca pasa sobre el numero.
+   * o = { label, min, max, step, fmt(v) (texto de la escala), red (desde),
+   *       low (hasta), color, texto (valor), unidad, alerta (bool) }
+   */
+  var esferaN = 0;
+  function esferaPro(valor, o) {
+    var id = "tpg" + ++esferaN;
+    var A0 = -210, A1 = 30, cx = 100, cy = 100;
+    function rad(d) { return (d * Math.PI) / 180; }
+    function pt(r, d) { return [cx + r * Math.cos(rad(d)), cy + r * Math.sin(rad(d))]; }
+    function ang(v) {
+      var f = (Math.min(Math.max(v, o.min), o.max) - o.min) / (o.max - o.min || 1);
+      return A0 + (A1 - A0) * f;
+    }
+    function arco(r, d0, d1) {
+      var a = pt(r, d0), b = pt(r, d1);
+      return "M" + a[0].toFixed(1) + " " + a[1].toFixed(1) + " A" + r + " " + r + " 0 " + (d1 - d0 > 180 ? 1 : 0) + " 1 " + b[0].toFixed(1) + " " + b[1].toFixed(1);
+    }
+    var marcas = "", numeros = "";
+    var paso = o.step, menor = paso / 5;
+    for (var v = o.min; v <= o.max + 1e-6; v += menor) {
+      var mayor = Math.abs((v - o.min) / paso - Math.round((v - o.min) / paso)) < 1e-6;
+      var d = ang(v), a = pt(82, d), b = pt(mayor ? 71 : 76, d);
+      marcas += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) +
+        '" class="' + (mayor ? "tp-g__tick" : "tp-g__tick tp-g__tick--minor") + '"/>';
+      if (mayor) {
+        var n = pt(60, d);
+        numeros += '<text x="' + n[0].toFixed(1) + '" y="' + (n[1] + 4).toFixed(1) + '" class="tp-g__num">' + esc(o.fmt(v)) + "</text>";
+      }
+    }
+    var zona = "";
+    if (o.red != null) zona = '<path d="' + arco(78, ang(o.red), A1) + '" class="tp-g__zone"/>';
+    else if (o.low != null) zona = '<path d="' + arco(78, A0, ang(o.low)) + '" class="tp-g__zone"/>';
+    var dv = ang(valor), p = pt(74, dv), b1 = pt(3, dv + 90), b2 = pt(3, dv - 90);
+    return (
+      '<svg class="tp-g" viewBox="0 0 200 200" role="img" aria-label="' + esc(o.label) + ": " + esc(o.texto) + " " + esc(o.unidad) + '"' +
+      ' style="--tp-g-color:' + o.color + '">' +
+      "<defs>" +
+      '<radialGradient id="' + id + 'f" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#1f2c4f"/><stop offset="1" stop-color="#080d1c"/></radialGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c6b8e"/><stop offset=".5" stop-color="#1b2440"/><stop offset="1" stop-color="#3b4766"/></linearGradient>' +
+      '<filter id="' + id + 'g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      "</defs>" +
+      '<circle cx="100" cy="100" r="96" fill="url(#' + id + 'b)"/>' +
+      '<circle cx="100" cy="100" r="89" fill="url(#' + id + 'f)"/>' +
+      zona +
+      '<path d="' + arco(78, A0, dv) + '" class="tp-g__fill" filter="url(#' + id + 'g)"/>' +
+      marcas + numeros +
+      '<polygon points="' + b1[0].toFixed(1) + "," + b1[1].toFixed(1) + " " + p[0].toFixed(1) + "," + p[1].toFixed(1) + " " + b2[0].toFixed(1) + "," + b2[1].toFixed(1) +
+      '" class="tp-g__needle" filter="url(#' + id + 'g)"/>' +
+      '<circle cx="100" cy="100" r="9" class="tp-g__hub"/><circle cx="100" cy="100" r="3" class="tp-g__hub-dot"/>' +
+      '<rect x="58" y="138" width="84" height="34" rx="7" class="tp-g__lcd"/>' +
+      '<text x="100" y="163" class="tp-g__read' + (o.alerta ? " tp-g__read--alert" : "") + '" filter="url(#' + id + 'g)">' + esc(o.texto) +
+      '<tspan class="tp-g__unit"> ' + esc(o.unidad) + "</tspan></text>" +
+      "</svg>"
+    );
+  }
+
   function testigo(nombre, etiqueta, encendido, icono) {
     // null = el vehiculo no lleva ese sensor: no se dibuja el testigo
     if (encendido === null || encendido === undefined) return "";
@@ -1782,22 +1843,39 @@
 
     html += "</div>";
 
-    // Esferas pequeñas: solo las que el vehiculo reporta
+    // Esferas pequeñas: solo las que el vehiculo reporta. Estilo cuadro de
+    // instrumentos (esferaPro): el valor va en su pantallita, sin aguja encima.
     var chicas = "";
     if (dash.rpm) {
-      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">' + tpT('ui.engine_rpm') + '</div>' +
-        esfera(G_CHICA, apagado ? 0 : dash.rpm.value, dash.rpm.max, String(dash.rpm.value), "rpm",
-               dash.rpm.value >= dash.rpm.max * 0.75 ? "bad" : "info") + "</div>";
+      var rpmMax = dash.rpm.max || 4000;
+      chicas += '<div class="tp-dash__small tp-dash__small--pro"><div class="tp-dash__small-label">' + esc(tpT('ui.engine_rpm')) + '</div>' +
+        esferaPro(apagado ? 0 : dash.rpm.value, {
+          label: tpT('ui.engine_rpm'), min: 0, max: rpmMax, step: 1000,
+          fmt: function (v) { return Math.round(v / 1000); },
+          red: rpmMax * 0.75, color: "#38bdf8",
+          texto: String(apagado ? 0 : dash.rpm.value), unidad: "rpm",
+          alerta: dash.rpm.value >= rpmMax * 0.75,
+        }) + "</div>";
     }
     if (dash.fuel) {
-      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">COMBUSTIBLE</div>' +
-        esfera(G_CHICA, dash.fuel.value, 100, dash.fuel.value + (dash.fuel.unit === "%" ? "%" : ""), "combustible",
-               dash.fuel.value <= 15 ? "bad" : dash.fuel.value <= 30 ? "warn" : "ok") + "</div>";
+      chicas += '<div class="tp-dash__small tp-dash__small--pro"><div class="tp-dash__small-label">COMBUSTIBLE</div>' +
+        esferaPro(dash.fuel.value, {
+          label: "COMBUSTIBLE", min: 0, max: 100, step: 25,
+          fmt: function (v) { return v; },
+          low: 15, color: "#22c55e",
+          texto: String(dash.fuel.value), unidad: dash.fuel.unit === "%" ? "%" : (dash.fuel.unit || ""),
+          alerta: dash.fuel.value <= 15,
+        }) + "</div>";
     }
     if (dash.temp) {
-      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">TEMPERATURA</div>' +
-        esfera(G_CHICA, dash.temp.value, 120, dash.temp.value + "°", "temperatura",
-               dash.temp.value >= 95 ? "bad" : dash.temp.value >= 80 ? "warn" : "ok") + "</div>";
+      chicas += '<div class="tp-dash__small tp-dash__small--pro"><div class="tp-dash__small-label">TEMPERATURA</div>' +
+        esferaPro(dash.temp.value, {
+          label: "TEMPERATURA", min: 40, max: 120, step: 20,
+          fmt: function (v) { return v; },
+          red: 95, color: "#f59e0b",
+          texto: String(dash.temp.value), unidad: "°C",
+          alerta: dash.temp.value >= 95,
+        }) + "</div>";
     }
     if (chicas) html += '<div class="tp-dash__row">' + chicas + "</div>";
 

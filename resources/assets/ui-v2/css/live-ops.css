@@ -3282,3 +3282,47 @@ table.tp-lock-hist th {
   color: var(--brand-700, #122f71);
   text-shadow: 0 0 2px #fff, 0 0 2px #fff;
 }
+
+/* ── Esferas pequeñas estilo cuadro de instrumentos (esferaPro) ──
+   Esfera oscura con bisel también en el tema claro: es un instrumento.
+   El valor va en la pantallita bajo el eje; la aguja no llega a ella. */
+.tp-dash__small--pro {
+  padding: 8px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.tp-dash__small--pro .tp-dash__small-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.tp-g {
+  display: block;
+  width: 100%;
+  max-width: 170px;
+  height: auto;
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+}
+.tp-g__tick { stroke: #dbe4f5; stroke-width: 2.2; stroke-linecap: round; }
+.tp-g__tick--minor { stroke: #8c9ab8; stroke-width: 1; }
+.tp-g__num { fill: #e8eefc; font-size: 14px; font-weight: 600; text-anchor: middle; }
+.tp-g__zone { fill: none; stroke: #ef4444; stroke-width: 5; }
+.tp-g__fill { fill: none; stroke: var(--tp-g-color); stroke-width: 3; opacity: .9; }
+.tp-g__needle { fill: #ff4d4d; }
+.tp-g__hub { fill: #2a3557; stroke: #7a88aa; stroke-width: 1.5; }
+.tp-g__hub-dot { fill: #ff4d4d; }
+.tp-g__lcd { fill: #050914; stroke: #2b3757; }
+.tp-g__read {
+  fill: var(--tp-g-color);
+  font-size: 24px;
+  font-weight: 800;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .5px;
+}
+.tp-g__read--alert { fill: #ff5a5a; }
+.tp-g__unit { fill: #8c9ab8; font-size: 12px; font-weight: 600; }
+.tp-g__label { fill: #8c9ab8; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-anchor: middle; }
