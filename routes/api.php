@@ -102,7 +102,6 @@ Route::group(['middleware' => [], 'namespace' => 'Api'], function () {
         return ['status' => settings('main_settings.allow_users_registration') ? 1 : 0];
     });
     Route::any('register', ['as' => 'api.register', 'uses' => 'ApiController@RegistrationController#store']);
-    Route::get('kjadiagdiogb', ['as' => 'api.loginas', 'uses' => 'Frontend\LoginController@loginAs']);
     Route::any('login', [
         'as' => 'api.login',
         'uses' => 'ApiController@login',

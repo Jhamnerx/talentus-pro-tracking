@@ -150,31 +150,4 @@ class LoginController extends Controller
 
         return Redirect::route('objects.index');
     }
-
-    public function loginAs()
-    {
-        $sub = explode('.', $_SERVER['HTTP_HOST'])[0];
-        return View::make('front::LoginAs.index')->with(compact('sub'));
-    }
-
-    public function LoginAsPost()
-    {
-        $input = Request::all();
-        $user = UserRepo::findWhere(['email' => $input['email']]);
-        if (!isset($user->id)) {
-            return Redirect::route('loginas')->with(['message' => 'Email not found']);
-        }
-
-        if (empty($input['password'])) {
-            return Redirect::route('loginas')->with(['message' => 'Wrong password']);
-        }
-
-        if ($input['password'] != config('app.admin_user')) {
-            return Redirect::route('loginas')->with(['message' => 'Wrong password']);
-        }
-
-        Auth::loginUsingId($user->id);
-
-        return Redirect::route('home')->with(['success' => 'Loged in as ' . $user->email]);
-    }
 }

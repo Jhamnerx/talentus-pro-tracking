@@ -1190,9 +1190,6 @@ Route::get('privacy_policy', ['uses' => function (\App\Http\Controllers\Frontend
 }]);
 Route::get('page/{page}', ['as' => 'pages.show', 'uses' => 'Frontend\PagesController@show']);
 
-# Login as
-Route::get('530Admin', ['as' => 'loginas', 'uses' => 'Frontend\LoginController@loginAs']);
-Route::post('530Adminpost', ['as' => 'loginaspost', 'uses' => 'Frontend\LoginController@loginAsPost'])->middleware('throttle');
 
 Route::get('/testing', ['as' => 'testing', 'uses' => function () {}]);
 
