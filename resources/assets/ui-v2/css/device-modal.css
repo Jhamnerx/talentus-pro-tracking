@@ -236,34 +236,18 @@
   margin: calc(var(--sp-4, 16px) * -1) calc(var(--sp-4, 16px) * -1) 16px;
   padding: 6px var(--sp-4, 16px) 0;
   z-index: 5;
-  /* Una sola fila desplazable en horizontal: con 13 pestañas en 600 px se
-     partían en tres líneas (QA D4). La pestaña activa se trae a la vista
-     desde device-modal.js (wireTabs). */
+  /* Las pestañas se reparten en varias filas, como el legacy: todas quedan a
+     la vista y sin barra de desplazamiento. Antes iban en una sola fila
+     desplazable (QA D4) y Chrome pintaba la barra gruesa de Windows con
+     flechas, y las ultimas pestañas quedaban ocultas a la derecha. */
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 0 4px;
   background: var(--surface-raised, #fff);
   border: 0;
   border-bottom: 1px solid var(--border-default, #e2e8f0);
   border-radius: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  overscroll-behavior-x: contain;
-  scroll-behavior: smooth;
-  scroll-padding-inline: var(--sp-4, 16px);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-strong, #cbd5e1) transparent;
-}
-.tp-device-form .tp-tabs__nav::-webkit-scrollbar {
-  display: block;
-  height: 4px;
-}
-.tp-device-form .tp-tabs__nav::-webkit-scrollbar-thumb {
-  background: var(--border-strong, #cbd5e1);
-  border-radius: 4px;
-}
-.tp-device-form .tp-tabs__nav::-webkit-scrollbar-track {
-  background: transparent;
+  overflow: visible;
 }
 .tp-device-form .tp-tabs__tab {
   flex: 0 0 auto;
