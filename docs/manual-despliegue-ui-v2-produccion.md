@@ -35,8 +35,7 @@ en las dos ramas.
 ### 2.1 Arreglo de `master` que faltaba en `nuevo-tema` (hecho)
 
 `1c169698 fix(devices): no congelar la duración de estacionado con un ack viejo` estaba en producción
-y no en `nuevo-tema`. Se trajo con `cherry-pick` el 26-nov-2026 (commit `4e543f3c`, solo local: falta
-`git push origin nuevo-tema`). Desplegar desde un commit anterior a ese devuelve el fallo.
+y no en `nuevo-tema`. Se trajo con `cherry-pick` el 26-nov-2026 (commit `4e543f3c`, ya en `origin/nuevo-tema`). Desplegar desde un commit anterior a ese devuelve el fallo.
 
 Los otros ocho commits propios de `master` ya estaban en `nuevo-tema` (cuatro idénticos; `dout`, UNIGIS,
 normas y Securitas con otro hash y cambios posteriores encima).
@@ -466,7 +465,7 @@ Vueltas atrás parciales, sin tocar código:
 
 ## 10. Resumen de una página
 
-1. En desarrollo: subir `4e543f3c` (arreglo de estacionado ya traído), resolver la fusión con `master`, probar.
+1. En desarrollo: resolver la fusión con `master`, probar.
 2. En el servidor, días antes: PHP ≥ 8.0.2, `git status`, puertos de socket, ruta del `.ini`, usuario del cron.
 3. `artisan down` → `queue:restart` → `supervisorctl stop` → esperar a `insert:run`.
 4. Respaldo de la base web, `.env`, `storage/langs`, logo y commit actual.
