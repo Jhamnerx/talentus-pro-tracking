@@ -110,7 +110,8 @@ Qué mirar:
 
 ## 4. Variables de entorno
 
-No existe `.env.example`. Ninguna variable existente cambió de nombre (siguen `QUEUE_DRIVER`,
+La plantilla completa está en `.env.example` (todas las variables que lee el código, con su valor
+por defecto). Ninguna variable existente cambió de nombre (siguen `QUEUE_DRIVER`,
 `CACHE_DRIVER`, `SESSION_DRIVER`; no hay `MAIL_MAILER` ni `FILESYSTEM_DISK`). El correo se configura
 desde la base de datos como hasta ahora.
 
