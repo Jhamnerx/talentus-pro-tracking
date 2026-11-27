@@ -276,7 +276,13 @@
     // ~190 px corrido. Se le avisa cada vez que el contenedor cambia.
     if (typeof ResizeObserver === "function") {
       new ResizeObserver(function () {
-        if (state.map) state.map.invalidateSize({ pan: false });
+        if (!state.map) return;
+        state.map.invalidateSize({ pan: false });
+        // La ficha se abre con transicion y el mapa termina de encogerse
+        // DESPUES de centrar: se vuelve a centrar el vehiculo seguido.
+        // Mientras dura el acercamiento inicial se pide el mismo zoom (getZoom
+        // aun da el de antes y lo dejaria a medio camino).
+        if (state.followSelected && state.selectedId != null) centerOnSelected(state.centerZoom || undefined);
       }).observe(state.map.getContainer());
     }
     // Arrastrar el mapa deja de seguir al vehiculo (legacy: dragstart →
@@ -1591,7 +1597,13 @@
     // vehiculo se acerca a nivel calle y queda SIGUIENDOLO en cada
     // actualizacion hasta que el usuario arrastra el mapa.
     state.followSelected = true;
-    if (d && d.lat != null) centerOnSelected(SELECT_ZOOM);
+    if (d && d.lat != null) {
+      state.centerZoom = SELECT_ZOOM;
+      centerOnSelected(SELECT_ZOOM);
+      state.map.once("moveend", function () {
+        state.centerZoom = null;
+      });
+    }
     var drawer = document.getElementById("tp-live-drawer");
     if (drawer) {
       drawer.setAttribute("aria-hidden", "false");
