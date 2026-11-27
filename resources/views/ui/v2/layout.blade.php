@@ -116,8 +116,10 @@
             // Los puertos por defecto son los de socket/socket.js (9001/9002),
             // NO 3000/3001: con esos la v2 no conectaba con nada.
             socket: {
-                port: {{ (int) env('SOCKET_PORT', 9001) }},
-                sslPort: {{ (int) env('SOCKET_SSL_PORT', 9002) }},
+                // Fijos, igual que el legacy (controller/app.js: socket_port / socket_ssl_port).
+                // Sin env(): con config:cache devuelve siempre el valor por defecto.
+                port: 9001,
+                sslPort: 9002,
                 channel: @json($user ? $user->getSocketChannel() : null)
             }
         };

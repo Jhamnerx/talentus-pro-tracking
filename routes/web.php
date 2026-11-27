@@ -1429,6 +1429,7 @@ Route::group(['middleware' => ['auth'], 'prefix' => 'ui/v2', 'as' => 'ui.v2.'], 
         // Galería de medios del vehículo (fotos de cámara en disco)
         Route::get('devices/media-devices', ['as' => 'api.devices.media_devices', 'uses' => 'Ui\V2\DevicesController@mediaDevices']);
         Route::get('devices/{id}/media',    ['as' => 'api.devices.media',        'uses' => 'Ui\V2\DevicesController@deviceMedia'])->where('id', '[0-9]+');
+        Route::post('devices/{id}/media/convert', ['as' => 'api.devices.media.convert', 'uses' => 'Ui\V2\DevicesController@convertDeviceMedia'])->where('id', '[0-9]+');
         Route::delete('devices/{id}/media', ['as' => 'api.devices.media.destroy', 'uses' => 'Ui\V2\DevicesController@destroyDeviceMedia'])->where('id', '[0-9]+');
         // Columnas configurables de la lista de flota (ajuste compartido con el legacy)
         Route::get('fleet/columns',  ['as' => 'api.fleet.columns',        'uses' => 'Ui\V2\DevicesController@fleetColumns']);

@@ -305,6 +305,32 @@
     return { limit: mejor.limit, zoneId: mejor.zoneId, zoneName: mejor.zoneName };
   }
 
+  /* Geocerca movil recolocada por el servidor (evento geofence_updated): se
+     actualiza la geometria en DATOS para que limitFor() y el siguiente
+     dibujar() usen la posicion nueva. Las capas ya dibujadas no se mueven.
+     tp-socket.js va con defer: puede no existir todavia. */
+  function alTenerSocket(fn) {
+    if (window.tpSocket) return fn();
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.tpSocket) fn();
+    });
+  }
+
+  alTenerSocket(function () {
+    window.tpSocket.on("geofence_updated", function (data) {
+      var n = data && data.geofence;
+      if (!n || n.id == null) return;
+
+      DATOS.zones.forEach(function (g) {
+        if (String(g.id) !== String(n.id)) return;
+
+        ["type", "coordinates", "center", "radius"].forEach(function (k) {
+          if (n[k] !== undefined) g[k] = n[k];
+        });
+      });
+    });
+  });
+
   window.tpMapLayers = {
     cargar: cargar,
     dibujar: dibujar,

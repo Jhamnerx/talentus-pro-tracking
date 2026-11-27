@@ -1266,6 +1266,9 @@ class DevicesController extends BaseController
                     'size'       => $file->size,
                     'created_at' => $file->created_at ? \Formatter::time()->convert($file->created_at) : null,
                     'is_video'   => (bool) $file->isVideo(),
+                    // Formato que el navegador no reproduce (h265 de dualcam): la
+                    // galería pide la conversión en vez de abrir el archivo.
+                    'convertable' => (bool) $file->isConvertable(),
                     'camera'     => (string) ($file->camera_name ?? ''),
                     'category'   => (string) ($file->category ?? ''),
                     // Rutas legacy: sirven el binario con los mismos permisos.
@@ -1297,6 +1300,38 @@ class DevicesController extends BaseController
             'categories' => $categories,
             'can_remove' => (bool) $this->user->perm('camera', 'remove'),
         ]);
+    }
+
+    /**
+     * Pide la conversión de un vídeo que el navegador no reproduce (h265 de
+     * dualcam). Es lo que hace el legacy al abrir el archivo
+     * (DeviceMediaController@getImage): encola VideoConvert, y el resultado
+     * llega por el socket (media_converted / media_convert_fail).
+     */
+    public function convertDeviceMedia(Request $request, $id): JsonResponse
+    {
+        $this->checkException('camera', 'view');
+
+        $device = DeviceRepo::find((int) $id);
+        $this->checkException('devices', 'show', $device);
+
+        try {
+            $file = \Tobuli\Entities\File\DeviceCameraMedia::setEntity($device)->find((string) $request->input('file'));
+        } catch (\Throwable $e) {
+            $file = null; // ref manipulado o archivo que ya no existe
+        }
+
+        if (! $file) {
+            return response()->json(['ok' => false, 'error' => 'not_found'], 404);
+        }
+
+        if (! $file->isConvertable()) {
+            return response()->json(['ok' => false, 'error' => 'not_convertable'], 422);
+        }
+
+        dispatch(new \App\Jobs\VideoConvert($file->path, $device, $this->user));
+
+        return response()->json(['ok' => true]);
     }
 
     public function destroyDeviceMedia(Request $request, $id): JsonResponse

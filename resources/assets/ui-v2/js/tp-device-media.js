@@ -83,7 +83,9 @@
                       // La selección sirve para descargar en ZIP y para borrar;
                       // solo el botón Eliminar depende del permiso.
                       '<label class="tp-media-card__sel"><input type="checkbox" data-media-ref="' + esc(f.ref) + '"></label>' +
-                      '<a href="' + esc(f.url) + '" target="_blank" rel="noopener" class="tp-media-card__thumb">' +
+                      '<a href="' + esc(f.url) + '" target="_blank" rel="noopener" class="tp-media-card__thumb"' +
+                      // h265: el navegador no lo reproduce; el clic pide la conversion
+                      (f.convertable ? ' data-media-convert="' + esc(f.ref) + '"' : "") + ">" +
                       (f.is_video
                         ? '<span class="tp-media-card__video">▶</span>'
                         : '<img src="' + esc(f.url) + '" alt="" loading="lazy">') +
@@ -137,6 +139,30 @@
           if (e.target.closest("[data-media-next]")) {
             state.page = Math.min(state.pages, state.page + 1);
             return load();
+          }
+          var conv = e.target.closest("[data-media-convert]");
+          if (conv) {
+            e.preventDefault();
+            if (conv.getAttribute("data-media-converting")) return; // ya pedida
+
+            conv.setAttribute("data-media-converting", "1");
+            tpModal
+              .fetchJSON(BASE + "/" + deviceId + "/media/convert", {
+                method: "POST",
+                json: { file: conv.getAttribute("data-media-convert") },
+              })
+              .then(function (res) {
+                if (res.ok && res.data && res.data.ok) {
+                  // El aviso de fin llega por el socket (media_converted) y recarga la galeria
+                  var ico = conv.querySelector(".tp-media-card__video");
+                  if (ico) ico.textContent = "…";
+                  tpModal.toast(tpT('ui.media_converting'), "info");
+                } else {
+                  conv.removeAttribute("data-media-converting");
+                  tpModal.toast(tpT('ui.media_convert_error'), "error");
+                }
+              });
+            return;
           }
           if (e.target.closest("[data-media-zip]")) {
             var zrefs = [];
@@ -332,6 +358,26 @@
         abierta.recarga();
       } else if (window.tpModal) {
         tpModal.toast(tpT('ui.new_camera_photo'), "info");
+      }
+    });
+
+    /* Video convertido a un formato reproducible (job VideoConvert). El legacy
+       recarga su tabla y carga el fichero; aqui se recarga la galeria de ese
+       vehiculo si esta abierta y, si no, se avisa. */
+    tpSocket.on("media_converted", function (msg) {
+      var id = msg && msg.device_id;
+
+      if (abierta && (id == null || String(abierta.deviceId) === String(id))) {
+        abierta.recarga();
+      } else if (window.tpModal) {
+        tpModal.toast(tpT('ui.media_converted'), "info");
+      }
+    });
+
+    /* La conversion fallo: el mensaje lo trae el servidor, igual que en el legacy. */
+    tpSocket.on("media_convert_fail", function (msg) {
+      if (msg && msg.message && window.tpModal) {
+        tpModal.toast(msg.message, "warning");
       }
     });
   }

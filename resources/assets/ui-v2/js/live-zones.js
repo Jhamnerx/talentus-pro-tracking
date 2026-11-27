@@ -1431,6 +1431,41 @@
     },
   };
 
+  /* Geocerca movil (ligada a un vehiculo): el servidor la recoloca y avisa por
+     el socket, igual que en el legacy (controller/geofences.js). Solo cambia la
+     geometria; el resto de campos del item son los de /ui/v2/api/zones.
+     tp-socket.js va con defer y este script no, asi que puede no existir aun. */
+  function alTenerSocket(fn) {
+    if (window.tpSocket) return fn();
+    document.addEventListener("DOMContentLoaded", function () {
+      if (window.tpSocket) fn();
+    });
+  }
+
+  alTenerSocket(function () {
+    window.tpSocket.on("geofence_updated", function (data) {
+      var n = data && data.geofence;
+      if (!n || n.id == null || !S.loaded) return;
+
+      // No pisar la forma que el usuario esta editando en este momento
+      if (S.editId != null && String(S.editId) === String(n.id)) return;
+
+      var g = S.byId[n.id];
+      if (!g) {
+        load(true); // geocerca que esta sesion aun no conocia
+        return;
+      }
+
+      ["type", "coordinates", "center", "radius"].forEach(function (k) {
+        if (n[k] !== undefined) g[k] = n[k];
+      });
+
+      // Redibujar solo si la capa esta a la vista (renderLayers la anadiria al mapa)
+      var m = map();
+      if (m && S.layer && m.hasLayer(S.layer)) renderLayers();
+    });
+  });
+
   // Si llegamos con el panel de Geocercas ya abierto (deep-link ?panel=zones),
   // live.js hizo switchPanel antes de cargar este script: auto-activar.
   var zp = document.getElementById("tp-panel-zones");
