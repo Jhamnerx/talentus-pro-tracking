@@ -196,7 +196,16 @@
   }
   function stopDurationText(d) {
     var v = stopDuration(d);
-    return typeof v === "number" ? fmtDuration(v) : v;
+    if (typeof v !== "number") return v;
+    // Mas de un dia detenido: en dias y horas ("52d 1h"). Con horas a secas
+    // salia "1249h 57min 51s", que no cabe en la tarjeta ni se lee de un
+    // vistazo. Por debajo de un dia, el formato de la cuenta.
+    if (v >= 86400) {
+      var dias = Math.floor(v / 86400),
+        horas = Math.floor((v % 86400) / 3600);
+      return dias + "d" + (horas ? " " + horas + tpT("front.hour_short") : "");
+    }
+    return fmtDuration(v);
   }
 
   function classify(d) {
