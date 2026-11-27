@@ -3947,8 +3947,15 @@
       if (state.toggles[key]) applyToggle(key);
     });
   }
+  // Sondeo de cambios. Sigue aunque la pagina no este a la vista, como el
+  // legacy (app.check): antes se cortaba con la pestaña oculta y Chrome en
+  // Windows da por oculta una ventana tapada por otra, asi que al volver la
+  // v2 iba por detras del legacy. El navegador ya espacia los temporizadores
+  // de las pestañas ocultas. `polling` evita solapar dos consultas.
+  var polling = false;
   function pollUpdates() {
-    if (document.visibilityState !== "visible") return;
+    if (polling) return;
+    polling = true;
     fetch(CFG.updatesUrl + "?time=" + encodeURIComponent(state.checkTime || "") + "&_=" + Date.now(), {
       credentials: "same-origin",
       headers: { Accept: "application/json" },
@@ -3994,7 +4001,10 @@
           if (cambiados[state.selectedId]) refreshDrawerWidgets(state.selectedId);
         }
       })
-      .catch(function () {});
+      .catch(function () {})
+      .then(function () {
+        polling = false;
+      });
   }
 
   // -----------------------------------------------------------
