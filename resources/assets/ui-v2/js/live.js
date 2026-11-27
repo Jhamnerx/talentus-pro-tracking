@@ -202,6 +202,11 @@
         : Object.keys(state.baseLayers)[0];
     if (firstId) setBaseLayer(firstId);
     state.deviceLayer = L.layerGroup().addTo(state.map);
+    // Arrastrar el mapa deja de seguir al vehiculo (legacy: dragstart →
+    // disableFitBounds). Volver a elegirlo reanuda el seguimiento.
+    state.map.on("dragstart", function () {
+      state.followSelected = false;
+    });
     // Preferencias de marcador (Ajustes de cuenta → Mapa)
     var mt = MAP_CFG.toggles || {};
     state.map.getContainer().classList.toggle("tp-show-speed", !!mt.showSpeed);
@@ -1150,6 +1155,40 @@
     if (row) row.classList.add("is-selected");
   }
 
+  // Zoom al seleccionar un vehiculo: el mismo 18 que el legacy, recortado al
+  // maximo de la capa base activa (fitBounds ya lo respeta).
+  var SELECT_ZOOM = 18;
+
+  /**
+   * Centra el mapa en el vehiculo seleccionado dejando fuera la ficha (drawer),
+   * que tapa la parte derecha del mapa: con setView a secas el marcador
+   * quedaba debajo de la ficha y parecia que no se centraba.
+   * `zoom` = nivel a usar; sin el se conserva el actual (seguimiento).
+   */
+  function centerOnSelected(zoom) {
+    var d = state.selectedId != null ? state.index[state.selectedId] : null;
+    if (!d || d.lat == null || d.lng == null || !state.map) return;
+    var ll = L.latLng(parseFloat(d.lat), parseFloat(d.lng));
+    var derecha = 0;
+    var dw = document.getElementById("tp-live-drawer");
+    if (dw && root.getAttribute("data-drawer-open") === "true") {
+      var m = state.map.getContainer().getBoundingClientRect();
+      var r = dw.getBoundingClientRect();
+      if (r.width && r.left < m.right && r.right > m.left) derecha = Math.max(0, m.right - r.left);
+    }
+    state.map.fitBounds(L.latLngBounds(ll, ll), {
+      paddingTopLeft: [40, 40],
+      paddingBottomRight: [derecha + 40, 40],
+      maxZoom: zoom || state.map.getZoom(),
+      animate: true,
+    });
+  }
+
+  /** Sigue al vehiculo seleccionado tras cada actualizacion (legacy: refreshCluster → fitBounds(true)). */
+  function followSelected() {
+    if (state.followSelected && state.selectedId != null) centerOnSelected();
+  }
+
   function selectDevice(id) {
     var prev = state.selectedId;
     state.selectedId = id;
@@ -1162,9 +1201,12 @@
     refreshMarkerIcon(id);
     if (state.markers[id]) state.markers[id].setZIndexOffset(1000);
     var d = state.index[id];
-    if (d && d.lat != null)
-      state.map.setView([parseFloat(d.lat), parseFloat(d.lng)], Math.max(state.map.getZoom(), 14));
     root.setAttribute("data-drawer-open", "true");
+    // Paridad legacy (devices.select → fitBounds con maxZoom 18): al elegir un
+    // vehiculo se acerca a nivel calle y queda SIGUIENDOLO en cada
+    // actualizacion hasta que el usuario arrastra el mapa.
+    state.followSelected = true;
+    if (d && d.lat != null) centerOnSelected(SELECT_ZOOM);
     var drawer = document.getElementById("tp-live-drawer");
     if (drawer) {
       drawer.setAttribute("aria-hidden", "false");
@@ -3248,6 +3290,7 @@
     renderList();
     renderMarkers();
     updateFollows();
+    followSelected();
     if (!state.bootstrapped && state.filtered.length) {
       fitToFleet();
       state.bootstrapped = true;
@@ -3355,6 +3398,7 @@
         renderList();
         renderMarkers();
         updateFollows();
+        followSelected();
 
         // El drawer no se refrescaba con el sondeo: si lo tenias abierto, la
         // velocidad se quedaba congelada en el momento de abrirlo.
@@ -3815,6 +3859,7 @@
         }
         var prev = state.selectedId;
         state.selectedId = null;
+        state.followSelected = false;
         markSelectedRow(null);
         if (prev != null) {
           refreshMarkerIcon(prev);
