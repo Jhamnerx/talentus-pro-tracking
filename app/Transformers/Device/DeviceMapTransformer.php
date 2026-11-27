@@ -116,6 +116,12 @@ class DeviceMapTransformer extends DeviceTransformer
             'device_model'  => $entity->device_model,
             'sim_number'    => $entity->sim_number,
             'imei'          => $entity->imei,
+            // Resto de campos que busca el legacy (Device::search) para que el
+            // buscador de la v2 encuentre lo mismo.
+            'vin'                 => $entity->vin,
+            'registration_number' => $entity->registration_number,
+            'object_owner'        => $entity->object_owner,
+            'additional_notes'    => $entity->additional_notes,
             'tail'  => $entity->tail,
             'tail_color' => $tailColor,
             'icon_color' => $entity->getStatusColor($status),

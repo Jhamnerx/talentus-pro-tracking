@@ -21,6 +21,10 @@
     geoUrl: root.getAttribute("data-geo-url") || "",
     fullAddress: root.getAttribute("data-widget-full-address") === "1",
     pollInterval: parseInt(root.getAttribute("data-poll-interval"), 10) || 15000,
+    // Segundos sin datos para pasar a «sin conexion» (legacy: app.offlineTimeout).
+    offlineTimeout: parseInt(root.getAttribute("data-offline-timeout"), 10) || 0,
+    groupToggleUrl: root.getAttribute("data-group-toggle-url") || "",
+    deviceFullUrl: root.getAttribute("data-device-full-url") || "",
     // 'standart' (975h 30min 44s) o 'hh:mm:ss' (975:30:44), de la cuenta.
     durationFormat: root.getAttribute("data-duration-format") || "standart",
     // Atajos del popup/ficha (paridad popup legacy): perm history.view y
@@ -99,6 +103,7 @@
     pollHandle: null,
     bootstrapped: false,
     popup: null,
+    popupId: null,
     toggles: {},
     autoFit: false,
     geoMarker: null,
@@ -131,6 +136,69 @@
   // es SOLO para el motor encendido sin moverse. Un vehiculo parado con el
   // motor apagado (ack) es "detenido" y va en gris; juntarlos hacia que la
   // v2 dijera ralenti de cualquier vehiculo quieto.
+  /**
+   * Paso a «sin conexion» en el navegador. Port de Device.checkOffline del
+   * legacy (model/device.js): el sondeo solo trae los equipos que cambiaron,
+   * asi que uno que deja de transmitir no vuelve a llegar y hay que vencerlo
+   * aqui con el mismo tiempo limite.
+   * `now` = hora del servidor del ultimo sondeo (segundos).
+   */
+  function checkOffline(d, now, timeout) {
+    if (!timeout || !d || d.online === "offline" || d.online === "expired") return false;
+    var online = d.online,
+      diff = now - (parseInt(d.timestamp, 10) || 0),
+      ackDiff = now - (parseInt(d.acktimestamp, 10) || 0);
+    if (diff >= timeout && ackDiff < timeout) online = "ack";
+    if (diff >= timeout && ackDiff >= timeout) online = "offline";
+    if (online === d.online) return false;
+    d.online = online;
+    d.speed = 0;
+    // Legacy: al pasar a «sin conexion» pone en falso los sensores de
+    // encendido (acc, ignition, engine). Aqui viven en tres sitios: el estado
+    // del motor del feed, los testigos de la ficha y los sensores del popup.
+    if (online === "offline") {
+      d.engine_status = false;
+      var dash = typeof dashData !== "undefined" && dashData[d.id];
+      if (dash && dash.telltales) {
+        dash.telltales.engine = false;
+        dash.telltales.ignition = false;
+      }
+      var fc = fullCache[d.id] && fullCache[d.id].data;
+      if (fc && fc.sensors)
+        fc.sensors.forEach(function (sn) {
+          if (sn.type === "acc" || sn.type === "ignition" || sn.type === "engine") sn.val = false;
+        });
+    }
+    if (d.speed_text) d.speed_text = String(d.speed_text).replace(/^[\d.,\s]+/, "0 ");
+    return true;
+  }
+  function checkOfflineAll(now) {
+    var changed = false;
+    state.devices.forEach(function (d) {
+      if (checkOffline(d, now, CFG.offlineTimeout)) changed = true;
+    });
+    return changed;
+  }
+
+  /**
+   * Tiempo detenido que sigue corriendo entre sondeos. Port de
+   * Device.calcStopDuration del legacy: suma lo transcurrido desde que llego
+   * el dato (`_recibido`). Devuelve segundos, o un texto ya hecho.
+   */
+  function stopDuration(d) {
+    if (!d) return null;
+    if (d.online === "online") return 0;
+    if (!parseInt(d.timestamp, 10)) return "-";
+    if (!parseInt(d.moved_timestamp, 10)) return "12+h";
+    var offset = d._recibido ? Math.floor((Date.now() - d._recibido) / 1000) : 0;
+    var stop = (parseInt(d.stop_duration_sec, 10) || 0) + offset;
+    return stop < 60 ? 0 : stop;
+  }
+  function stopDurationText(d) {
+    var v = stopDuration(d);
+    return typeof v === "number" ? fmtDuration(v) : v;
+  }
+
   function classify(d) {
     switch (d && d.online) {
       case "online":
@@ -206,6 +274,7 @@
     // disableFitBounds). Volver a elegirlo reanuda el seguimiento.
     state.map.on("dragstart", function () {
       state.followSelected = false;
+      setAutoFit(false);
     });
     // Preferencias de marcador (Ajustes de cuenta → Mapa)
     var mt = MAP_CFG.toggles || {};
@@ -457,6 +526,38 @@
     });
   }
 
+  // Circulo de imprecision del GPS (addon.inaccuracy): el servidor solo manda
+  // `inaccuracy` (metros) con el addon activo. Mismo estilo que el legacy.
+  var inaccuracies = {}; // id → L.circle
+  function syncInaccuracy(d) {
+    var r = parseInt(d.inaccuracy, 10) || 0;
+    var m = state.markers[d.id];
+    var visible = r > 0 && m && state.toggles.devices !== false && d.active !== false;
+    var c = inaccuracies[d.id];
+    if (!visible) {
+      if (c) {
+        c.remove();
+        delete inaccuracies[d.id];
+      }
+      return;
+    }
+    if (!c) {
+      inaccuracies[d.id] = L.circle(m.getLatLng(), {
+        radius: r,
+        color: "#98c4ec",
+        weight: 3,
+        opacity: 1,
+        fill: true,
+        fillOpacity: 0.3,
+        fillColor: "#98c4ec",
+        interactive: false,
+      }).addTo(state.map);
+    } else {
+      c.setRadius(r);
+      c.setLatLng(m.getLatLng());
+    }
+  }
+
   function renderMarkers() {
     if (!state.map) return;
     var seen = {};
@@ -474,8 +575,18 @@
         moverMarcador(m, ll);
       } else {
         m = L.marker(ll, { icon: deviceIcon(d) });
+        m.options.deviceId = d.id;
+        // La cola sigue al marcador mientras se desliza (legacy moveTail).
+        m.on("move", function () {
+          moveTail(d.id);
+          var c = inaccuracies[d.id];
+          if (c) c.setLatLng(m.getLatLng());
+        });
         m.on("click", function () {
           openDevicePopup(d.id);
+          // Legacy (onLayerClick): ademas del popup, el bottombar pasa a este
+          // equipo aunque no se seleccione.
+          if (state.selectedId == null) loadBottomWidgets(d.id);
         });
         cont.addLayer(m);
         state.markers[d.id] = m;
@@ -488,7 +599,16 @@
         delete state.markers[id];
       }
     });
-    if (state.toggles.tails) renderTails();
+    Object.keys(inaccuracies).forEach(function (id) {
+      if (!seen[id]) {
+        inaccuracies[id].remove();
+        delete inaccuracies[id];
+      }
+    });
+    state.mapFiltered.forEach(function (d) {
+      if (seen[d.id]) syncInaccuracy(d);
+    });
+    renderTails();
   }
 
   // Contenedor activo de marcadores: cluster o layerGroup normal.
@@ -539,7 +659,8 @@
         chunkedLoading: true,
         maxClusterRadius: 50,
         showCoverageOnHover: false,
-        spiderfyOnMaxZoom: true,
+        // Legacy: sin "araña"; en el zoom maximo se abre la lista de equipos.
+        spiderfyOnMaxZoom: false,
         iconCreateFunction: function (cluster) {
           var n = cluster.getChildCount();
           var tier = n < 10 ? "sm" : n < 100 ? "md" : "lg";
@@ -551,7 +672,42 @@
           });
         },
       });
+    if (!state.clusterWired) {
+      state.clusterWired = true;
+      // Legacy (devices.js clusterclick): pulsar un grupo deja de seguir y, en
+      // el zoom maximo, abre la lista de sus equipos.
+      state.clusterGroup.on("clusterclick", function (e) {
+        state.followSelected = false;
+        setAutoFit(false);
+        if (state.map.getZoom() >= state.map.getMaxZoom()) clusterPopup(e.layer);
+      });
+    }
     return state.clusterGroup;
+  }
+  /** Lista de equipos de un cluster (legacy clusterPopup): nombre, velocidad y estado. */
+  function clusterPopup(cluster) {
+    var html = '<ul class="tp-cluster-list">';
+    cluster.getAllChildMarkers().forEach(function (mk) {
+      var d = state.index[mk.options.deviceId];
+      if (!d) return;
+      html +=
+        '<li><button type="button" data-cl-dev="' + d.id + '">' +
+        '<span class="tp-cluster-list__name">' + esc(d.name || "#" + d.id) + "</span>" +
+        '<span class="tp-cluster-list__meta">' +
+        esc(d.speed_text || (Math.round(parseFloat(d.speed) || 0) + " km/h")) + " · " +
+        esc(STATUS_LABELS[d.online] || d.online || "") + "</span></button></li>";
+    });
+    html += "</ul>";
+    var pop = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" })
+      .setLatLng(cluster.getLatLng())
+      .setContent(html)
+      .openOn(state.map);
+    var el = pop.getElement();
+    if (el)
+      el.addEventListener("click", function (ev) {
+        var b = ev.target.closest("[data-cl-dev]");
+        if (b) openDevicePopup(parseInt(b.getAttribute("data-cl-dev"), 10));
+      });
   }
   function setClusterMode(on) {
     var m = state.map;
@@ -583,6 +739,13 @@
     renderMarkers();
   }
 
+  /** Enciende o apaga «Auto-seguir flota» y su boton. */
+  function setAutoFit(on) {
+    state.autoFit = !!on;
+    var af = document.getElementById("tp-live-autofollow");
+    if (af) af.setAttribute("aria-pressed", state.autoFit ? "true" : "false");
+  }
+
   function fitToFleet() {
     var pts = state.mapFiltered
       .filter(function (d) {
@@ -606,6 +769,7 @@
     tails: "m_show_tails",
     traffic: "m_traffic",
     hitos: "m_hitos",
+    aircraft: "m_aircraft",
   };
   // Persiste el toggle en user->map_controls (estado compartido con la UI legacy).
   function persistToggle(key, val) {
@@ -623,6 +787,8 @@
       var cont = markerContainer();
       if (on) cont.addTo(m);
       else m.removeLayer(cont);
+      // Legacy (addTail): sin objetos no se pintan colas.
+      renderTails();
     } else if (key === "cluster") {
       setClusterMode(on);
     } else if (key === "geofences") {
@@ -650,6 +816,8 @@
       m.getContainer().classList.toggle("tp-show-names", on);
     } else if (key === "tails") {
       renderTails();
+    } else if (key === "aircraft") {
+      aircraftSetVisible(on);
     } else if (key === "hitos") {
       // Hitos kilométricos (capa compartida tp-hitos.js)
       if (window.tpHitos) {
@@ -659,36 +827,130 @@
     }
   }
 
+  // Aviones en vivo. Port de model/aircraft.js del legacy: cada 5 s pide a
+  // /flights los aviones en 250 millas alrededor del centro del mapa (el
+  // servidor los saca de opendata.adsb.fi y los guarda 60 s) y pinta los que
+  // caen dentro de la vista, girados segun su rumbo. Con zoom 6 o menos no
+  // pide nada: el radio del servicio no cubre la vista.
+  var aircraft = { layer: null, timer: null };
+  function aircraftFetch() {
+    var m = state.map;
+    if (!m || !aircraft.layer) return;
+    if (m.getZoom() <= 6) {
+      aircraft.layer.clearLayers();
+      return;
+    }
+    var c = m.getCenter();
+    fetch("/flights?lat=" + c.lat.toFixed(5) + "&lon=" + c.lng.toFixed(5), {
+      credentials: "same-origin",
+      headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!aircraft.timer) return;
+        aircraft.layer.clearLayers();
+        var bounds = m.getBounds();
+        ((data && data.aircraft) || []).forEach(function (ac) {
+          if (!ac.lat || !ac.lon || !bounds.contains([ac.lat, ac.lon])) return;
+          var icon = L.divIcon({
+            className: "tp-aircraft",
+            html: '<div style="transform:rotate(' + (ac.track || 0) + 'deg)">✈</div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
+          L.marker([ac.lat, ac.lon], { icon: icon })
+            .bindPopup(
+              '<dl class="tp-dev-popup__defs" style="margin:0">' +
+                "<dt>Vuelo</dt><dd>" + esc((ac.flight || "").trim() || "N/A") + "</dd>" +
+                "<dt>Aeronave</dt><dd>" + esc(ac.desc || ac.t || "N/A") + "</dd>" +
+                (ac.alt_baro != null ? "<dt>Altitud</dt><dd>" + esc(ac.alt_baro) + " ft</dd>" : "") +
+                "</dl>",
+              { className: "tp-dev-popup-wrap" },
+            )
+            .addTo(aircraft.layer);
+        });
+      })
+      .catch(function () {});
+  }
+  function aircraftSetVisible(on) {
+    if (!state.map) return;
+    if (!aircraft.layer) aircraft.layer = L.layerGroup().addTo(state.map);
+    if (on) {
+      if (aircraft.timer) return;
+      aircraft.timer = setInterval(aircraftFetch, 5000);
+      aircraftFetch();
+    } else {
+      clearInterval(aircraft.timer);
+      aircraft.timer = null;
+      aircraft.layer.clearLayers();
+    }
+  }
+
   // Cola de recorrido (tail): polilínea de las últimas posiciones de cada device.
+  // Port de getTailPoints/addTail/moveTail del legacy (model/device.js): el
+  // ultimo punto es la posicion ACTUAL del marcador, y la cola se mueve con el
+  // en cada paso del deslizamiento, para que no quede despegada del icono.
+  var tails = {}; // id → L.polyline
+  function tailPoints(d) {
+    var tail = d.tail;
+    if (typeof tail === "string") {
+      try {
+        tail = JSON.parse(tail);
+      } catch (e) {
+        tail = null;
+      }
+    }
+    if (!tail || !tail.length) return null;
+    var pts = tail
+      .map(function (p) {
+        return [parseFloat(p.lat), parseFloat(p.lng)];
+      })
+      .filter(function (x) {
+        return !isNaN(x[0]) && !isNaN(x[1]);
+      });
+    pts.pop();
+    var m = state.markers[d.id];
+    var ll = m ? m.getLatLng() : d.lat != null ? L.latLng(parseFloat(d.lat), parseFloat(d.lng)) : null;
+    if (ll) pts.push([ll.lat, ll.lng]);
+    return pts.length >= 2 ? pts : null;
+  }
+  function moveTail(id) {
+    var t = tails[id],
+      d = state.index[id];
+    if (!t || !d) return;
+    var pts = tailPoints(d);
+    if (pts) t.setLatLngs(pts);
+  }
   function renderTails() {
     var m = state.map;
     if (!state.tailLayer) state.tailLayer = L.layerGroup();
-    if (!state.toggles.tails) {
+    // Legacy: sin "Objetos" o sin "Cola" no hay colas.
+    if (!state.toggles.tails || state.toggles.devices === false) {
       if (m.hasLayer(state.tailLayer)) m.removeLayer(state.tailLayer);
+      state.tailLayer.clearLayers();
+      tails = {};
       return;
     }
     if (!m.hasLayer(state.tailLayer)) state.tailLayer.addTo(m);
-    state.tailLayer.clearLayers();
+    var vivos = {};
     state.mapFiltered.forEach(function (d) {
       if (d.active === false) return;
-      var tail = d.tail;
-      if (typeof tail === "string") {
-        try {
-          tail = JSON.parse(tail);
-        } catch (e) {
-          tail = null;
-        }
+      var pts = tailPoints(d);
+      if (!pts) return;
+      vivos[d.id] = true;
+      var color = d.tail_color || "#1e88e5";
+      if (tails[d.id]) {
+        tails[d.id].setLatLngs(pts);
+        tails[d.id].setStyle({ color: color });
+      } else {
+        tails[d.id] = L.polyline(pts, { color: color, weight: 2, opacity: 0.8 }).addTo(state.tailLayer);
       }
-      if (!tail || tail.length < 2) return;
-      var pts = tail
-        .map(function (p) {
-          return [parseFloat(p.lat), parseFloat(p.lng)];
-        })
-        .filter(function (x) {
-          return !isNaN(x[0]) && !isNaN(x[1]);
-        });
-      if (pts.length < 2) return;
-      L.polyline(pts, { color: d.tail_color || "#1e88e5", weight: 2, opacity: 0.8 }).addTo(state.tailLayer);
+    });
+    Object.keys(tails).forEach(function (id) {
+      if (!vivos[id]) {
+        state.tailLayer.removeLayer(tails[id]);
+        delete tails[id];
+      }
     });
   }
 
@@ -806,7 +1068,8 @@
   var addrCache = {};
   function fetchAddr(d, cb) {
     if (!CFG.geoUrl || d.lat == null) return cb("");
-    if (addrCache[d.id]) return cb(addrCache[d.id]);
+    var clave = d.id + "@" + d.lat + "," + d.lng;
+    if (addrCache[clave] !== undefined) return cb(addrCache[clave]);
     fetch(
       CFG.geoUrl +
         (CFG.geoUrl.indexOf("?") === -1 ? "?" : "&") +
@@ -827,46 +1090,116 @@
           var j = JSON.parse(t);
           t = j.address || j.name || t;
         } catch (e) {}
-        addrCache[d.id] = t;
+        addrCache[clave] = t;
         cb(t);
       })
       .catch(function () {
         cb("");
       });
   }
-  function openDevicePopup(id) {
+  // Datos completos del equipo para el popup (sensores, servicios, protocolo,
+  // vencimiento): el mismo endpoint y transformer que usa el legacy al abrir
+  // el popup o los widgets (objects/items?id=&full=1 → DeviceMapFullTransformer).
+  var fullCache = {};
+  function loadFull(id, cb) {
+    var c = fullCache[id];
+    if (c && Date.now() - c.t < 15000) return cb(c.data);
+    if (!CFG.deviceFullUrl) return cb(c ? c.data : null);
+    fetch(CFG.deviceFullUrl + "?id=" + encodeURIComponent(id) + "&full=1", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var row = j && j.data && j.data.length ? j.data[0] : null;
+        fullCache[id] = { t: Date.now(), data: row };
+        cb(row);
+      })
+      .catch(function () { cb(c ? c.data : null); });
+  }
+
+  function popRow(dt, dd, attrs) {
+    return "<dt>" + esc(dt) + "</dt><dd" + (attrs || "") + ">" + dd + "</dd>";
+  }
+
+  /**
+   * Popup del marcador con los datos del popup del legacy (model/device.js
+   * openPopup): direccion, hora, tiempo detenido y sensores arriba; posicion
+   * (enlace al mapa externo), velocidad, altitud, angulo, modelo, placa,
+   * protocolo y servicios en el bloque desplegable; video si hay canales.
+   * `refresco` = repintado desde el sondeo (legacy updatePopup): se recoloca
+   * y conserva abierto el bloque desplegable.
+   */
+  function openDevicePopup(id, refresco) {
     var d = state.index[id];
     if (!d || d.lat == null) return;
+    var abierto = false;
+    if (refresco && state.popup && state.popup.getElement()) {
+      var det = state.popup.getElement().querySelector("details[data-pop-more]");
+      abierto = !!(det && det.open);
+    }
+    var f = (fullCache[id] && fullCache[id].data) || {};
     var status = classify(d);
     var speed = d.speed_text || (Math.round(parseFloat(d.speed) || 0) + " km/h");
+    var lat = parseFloat(d.lat),
+      lng = parseFloat(d.lng);
+    var coords = lat.toFixed(6) + ", " + lng.toFixed(6);
+    var sensores = "";
+    (f.sensors || []).forEach(function (sn) {
+      sensores += popRow(sn.name, sn.value == null || sn.value === "" ? "—" : sn.value);
+    });
+    var servicios = "";
+    (f.services || []).forEach(function (sv) {
+      servicios += popRow(sv.name, esc(sv.value));
+    });
+    var canales = d.camera_channels && d.camera_channels.length ? d.camera_channels : f.camera_channels;
     var html =
-      '<div class="tp-dev-popup" data-status="' +
-      status +
-      '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"' +
+      '<div class="tp-dev-popup" data-status="' + status + '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"' +
       // Igual que la fila y la ficha: manda el color del vehiculo.
       (statusVar(d.icon_color) ? ' style="background:' + statusVar(d.icon_color) + '"' : "") +
       "></span>" +
-      '<span class="tp-dev-popup__name">' +
-      esc(d.name || "#" + d.id) +
-      "</span></div>" +
-      '<div class="tp-dev-popup__status">' +
-      esc(STATUS_LABELS[d.online] || d.online || "—") +
-      "</div><dl class=\"tp-dev-popup__defs\">" +
-      (d.plate_number ? "<dt>" + tpT('ui.plate') + "</dt><dd>" + esc(d.plate_number) + "</dd>" : "") +
-      "<dt>" + tpT('front.speed') + "</dt><dd>" +
-      esc(speed) +
-      "</dd><dt>" + tpT('front.hour') + "</dt><dd>" +
-      esc(d.time || "—") +
-      '</dd><dt>' + tpT('front.location') + '</dt><dd data-pop-addr class="' +
-      (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
-      '">' + tpT('ui.loading_ellipsis') + '</dd></dl>' +
+      '<span class="tp-dev-popup__name">' + esc(d.name || "#" + d.id) + "</span>" +
+      (canales && canales.length && window.tpDeviceVideo
+        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-pop-video title="' + esc(tpT("front.video_live")) + '" aria-label="' + esc(tpT("front.video_live")) + '">' +
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></button>'
+        : "") +
+      "</div>" +
+      '<div class="tp-dev-popup__status">' + esc(STATUS_LABELS[d.online] || d.online || "—") + "</div>" +
+      '<dl class="tp-dev-popup__defs">' +
+      popRow(tpT("front.address"), tpT("ui.loading_ellipsis"), ' data-pop-addr class="' + (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") + '"') +
+      popRow(tpT("front.time"), esc(d.time || "—")) +
+      popRow(tpT("front.stop_duration"), esc(stopDurationText(d) || "—")) +
+      popRow(tpT("front.speed"), esc(speed)) +
+      sensores +
+      (f.expiration_date ? popRow(tpT("front.expiration_date"), esc(f.expiration_date)) : "") +
+      "</dl>" +
+      '<details class="tp-dev-popup__more" data-pop-more' + (abierto ? " open" : "") + "><summary>" + esc(tpT("front.show_more")) + "</summary>" +
+      '<dl class="tp-dev-popup__defs">' +
+      popRow(tpT("front.position"),
+        '<a href="https://www.google.com/maps/search/?api=1&query=' + lat + "," + lng + '" target="_blank" rel="noopener">' + coords + "</a>") +
+      popRow(tpT("front.altitude"), esc(d.altitude != null ? Math.round(d.altitude) + " m" : "—")) +
+      popRow(tpT("front.angle"), esc(d.course != null ? Math.round(d.course) + "°" : "—")) +
+      popRow(tpT("front.driver"), esc((f.driver && f.driver.name) || "—")) +
+      popRow(tpT("front.model"), esc(d.device_model || f.device_model || "—")) +
+      popRow(tpT("ui.plate"), esc(d.plate_number || "—")) +
+      popRow(tpT("front.protocol"), esc(f.protocol || "—")) +
+      servicios +
+      "</dl></details>" +
       devShortcutsHtml() +
       '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>' + tpT('ui.see_details') + '</button></div>';
-    if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
-    state.popup.setLatLng([parseFloat(d.lat), parseFloat(d.lng)]).setContent(html).openOn(state.map);
+    if (!state.popup) {
+      state.popup = L.popup({ maxWidth: 300, className: "tp-dev-popup-wrap" });
+      state.popup.on("remove", function () {
+        state.popupId = null;
+      });
+    }
+    state.popupId = id;
+    state.popup.setLatLng([lat, lng]).setContent(html);
+    if (!state.popup.isOpen()) state.popup.openOn(state.map);
+    else state.popup.update();
     var el = state.popup.getElement();
     fetchAddr(d, function (a) {
-      if (!state.popup || !state.popup.isOpen()) return;
+      if (!state.popup || !state.popup.isOpen() || state.popupId !== id) return;
       var slot = el && el.querySelector("[data-pop-addr]");
       if (slot) slot.textContent = a || "—";
     });
@@ -875,7 +1208,25 @@
       btn.addEventListener("click", function () {
         selectDevice(id);
       });
+    var vb = el && el.querySelector("[data-pop-video]");
+    if (vb)
+      vb.addEventListener("click", function () {
+        window.tpDeviceVideo.open(id, { name: d.name });
+      });
     bindDevShortcuts(el, id);
+
+    // Sensores y demas datos completos: llegan aparte y se repinta.
+    if (!refresco || !fullCache[id] || Date.now() - fullCache[id].t >= 15000) {
+      loadFull(id, function () {
+        if (state.popupId === id && state.popup && state.popup.isOpen()) openDevicePopup(id, true);
+      });
+    }
+  }
+
+  /** Recoloca y repinta el popup abierto (legacy: updatePopup en cada update). */
+  function refreshOpenPopup() {
+    if (state.popupId == null || !state.popup || !state.popup.isOpen()) return;
+    openDevicePopup(state.popupId, true);
   }
 
   /* ===========================================================
@@ -1061,29 +1412,19 @@
       '<div class="tp-follow__foot"><span data-f-speed>—</span><span data-f-time></span></div>';
     root.appendChild(el);
 
-    // Mini-mapa con SU PROPIA capa base (una TileLayer solo puede vivir en un
-    // mapa; tpBasemaps.build crea instancias frescas).
-    var mm = L.map(el.querySelector(".tp-follow__map"), {
-      zoomControl: false,
-      attributionControl: true,
-    });
-    var lyr = null;
-    try {
-      if (window.tpBasemaps && tpBasemaps.build) {
-        var bms = tpBasemaps.build(MAP_CFG);
-        var bid = tpBasemaps.defaultId ? tpBasemaps.defaultId(bms, MAP_CFG) : null;
-        if (bid && bms[bid]) lyr = bms[bid].layer;
-      }
-    } catch (e) {}
-    if (!lyr)
-      lyr = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 });
-    lyr.addTo(mm);
+    // Dentro va la MISMA pagina de seguimiento del legacy
+    // (devices/follow_map/{id}, la que abre devices.follow en un iframe): trae
+    // su selector de capa base, la cola, el nombre, el popup del marcador y su
+    // propio sondeo. La ventana se puede redimensionar desde la esquina.
+    var mapBox = el.querySelector(".tp-follow__map");
+    var frame = document.createElement("iframe");
+    frame.className = "tp-follow__frame";
+    frame.title = tpT("front.follow");
+    frame.src = "/devices/follow_map/" + id;
+    mapBox.appendChild(frame);
 
-    follows[id] = { el: el, map: mm, marker: null };
-    setTimeout(function () {
-      mm.invalidateSize();
-      updateFollow(id);
-    }, 60);
+    follows[id] = { el: el, map: null, marker: null, frame: frame };
+    updateFollow(id);
 
     // Arrastre por la cabecera (pointer events)
     var head = el.querySelector(".tp-follow__head");
@@ -1094,6 +1435,7 @@
       el.style.left = el.offsetLeft + "px";
       el.style.right = "auto";
       drag = { x: e.clientX, y: e.clientY, left: el.offsetLeft, top: el.offsetTop };
+      el.classList.add("is-dragging");
       head.setPointerCapture(e.pointerId);
       e.preventDefault();
     });
@@ -1104,6 +1446,7 @@
     });
     head.addEventListener("pointerup", function () {
       drag = null;
+      el.classList.remove("is-dragging");
     });
     el.addEventListener("pointerdown", function () {
       el.style.zIndex = ++followZ;
@@ -1117,7 +1460,9 @@
   function closeFollow(id) {
     var f = follows[id];
     if (!f) return;
-    try { f.map.remove(); } catch (e) {}
+    if (f.map) {
+      try { f.map.remove(); } catch (e) {}
+    }
     f.el.remove();
     delete follows[id];
   }
@@ -1127,7 +1472,9 @@
     var d = state.index[id];
     if (!f || !d || d.lat == null || d.lng == null) return;
     var ll = [parseFloat(d.lat), parseFloat(d.lng)];
-    if (!f.marker) {
+    if (!f.map) {
+      // La pagina del legacy se actualiza sola; aqui solo el pie.
+    } else if (!f.marker) {
       f.marker = L.marker(ll, { icon: deviceIcon(d) }).addTo(f.map);
       f.map.setView(ll, 16);
     } else {
@@ -1187,6 +1534,33 @@
   /** Sigue al vehiculo seleccionado tras cada actualizacion (legacy: refreshCluster → fitBounds(true)). */
   function followSelected() {
     if (state.followSelected && state.selectedId != null) centerOnSelected();
+  }
+
+  // Quita la seleccion: cierra la ficha y deja de seguir al vehiculo.
+  function deselectDevice() {
+    root.removeAttribute("data-drawer-open");
+    root.removeAttribute("data-bottombar-open");
+    // Cerrado es invisible (opacity 0) y silenciado (aria-hidden): con
+    // `inert` sus botones dejan tambien de recibir el foco con Tab.
+    var dw = document.getElementById("tp-live-drawer");
+    if (dw) {
+      // El foco estaba dentro (el boton Cerrar): se devuelve al mapa
+      // (Leaflet le da tabindex=0) antes de volver inerte el panel.
+      if (dw.contains(document.activeElement)) {
+        var back = document.getElementById("tp-live-map");
+        if (back && back.focus) back.focus({ preventScroll: true });
+      }
+      dw.setAttribute("aria-hidden", "true");
+      dw.setAttribute("inert", "");
+    }
+    var prev = state.selectedId;
+    state.selectedId = null;
+    state.followSelected = false;
+    markSelectedRow(null);
+    if (prev != null) {
+      refreshMarkerIcon(prev);
+      if (state.markers[prev]) state.markers[prev].setZIndexOffset(0);
+    }
   }
 
   function selectDevice(id) {
@@ -1434,7 +1808,7 @@
       celda(tpT('ui.odometer'), dash.odometer, null) +
       celda(tpT('ui.hour_meter'), dash.engine_hours, null) +
       celda(tpT('heading'), d.course != null ? Math.round(d.course) + "°" : null, null) +
-      celda(tpT('front.stopped'), fmtDuration(d.stop_duration_sec), null) +
+      celda(tpT('front.stopped'), stopDurationText(d), null) +
       (dash.show_total_distance ? celda(tpT('front.distance'), d.total_distance, "km") : "");
 
     if (stats) html += '<div class="tp-dash__stats">' + stats + "</div>";
@@ -1624,10 +1998,19 @@
   }
 
   // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
-  function loadDrawerWidgets(id) {
-    var box = document.getElementById("tp-drawer-widgets");
+  /**
+   * Widgets del equipo (ficha + barra inferior).
+   * opts.bottomOnly: solo la barra inferior, para un equipo NO seleccionado
+   *   (legacy: clic en el marcador → updateWitgets sin seleccionar).
+   * opts.silent: refresco desde el sondeo, sin el «Cargando…».
+   */
+  var widgetsDe = null;
+  function loadDrawerWidgets(id, opts) {
+    opts = opts || {};
+    var box = opts.bottomOnly ? null : document.getElementById("tp-drawer-widgets");
     var bottom = document.getElementById("tp-live-bottombar-cards");
-    if (box) box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">' + tpT('ui.loading_ellipsis') + '</div>';
+    widgetsDe = id;
+    if (box && !opts.silent) box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">' + tpT('ui.loading_ellipsis') + '</div>';
     var base = CFG.devicesUrl || "/ui/v2/api/devices";
     fetch(base + "/" + id + "/widgets", {
       headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -1637,13 +2020,13 @@
         return r.json();
       })
       .then(function (res) {
-        if (state.selectedId != id) return;
+        if (opts.bottomOnly ? widgetsDe != id || state.selectedId != null : state.selectedId != id) return;
 
         // Lecturas del tablero: se guardan y se repinta ya, sin esperar al
         // siguiente refresco del feed.
         if (res && res.dashboard) {
           dashData[id] = res.dashboard;
-          if (state.index[id]) renderDashboard(state.index[id]);
+          if (state.index[id] && !opts.bottomOnly) renderDashboard(state.index[id]);
         }
 
         var sideHtml = "",
@@ -1677,6 +2060,24 @@
         renderFuelCharts(bottom);
       })
       .catch(function () {});
+  }
+
+  function loadBottomWidgets(id) {
+    loadDrawerWidgets(id, { bottomOnly: true });
+  }
+
+  // Refresco de los widgets con el sondeo (legacy refreshWitgets en cada
+  // update), con un respiro para no pedirlos cada 5 s si el equipo manda
+  // datos seguidos.
+  var widgetsRefrescados = {};
+  function refreshDrawerWidgets(id) {
+    var t = widgetsRefrescados[id] || 0;
+    if (Date.now() - t < 20000) {
+      pintarDireccion(id);
+      return;
+    }
+    widgetsRefrescados[id] = Date.now();
+    loadDrawerWidgets(id, { silent: true });
   }
 
   // Gráfico de combustible: canvas propio (sin flot), serie {t,v} de 24 h.
@@ -1784,7 +2185,10 @@
       else counts.offline++;
       if (sf !== "all" && c !== sf) return false;
       if (q) {
-        var hay = (d.name || "") + " " + (d.plate_number || "") + " " + (d.imei || "");
+        var hay = [
+          d.name, d.imei, d.sim_number, d.vin, d.plate_number, d.registration_number,
+          d.object_owner, d.device_model, d.additional_notes,
+        ].join(" ");
         if (hay.toLowerCase().indexOf(q) === -1) return false;
       }
       return true;
@@ -2520,6 +2924,22 @@
             '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>";
         }
 
+        // Casilla de visibilidad del grupo entero (legacy groups.blade:
+        // multiCheckbox → deviceChangeActive {group_id}). Mira TODOS los
+        // equipos del grupo, no solo los que pasan el filtro.
+        var delGrupo = state.devices.filter(function (x) {
+          return (x.group_id || 0) === g;
+        });
+        var visibles = delGrupo.filter(function (x) {
+          return x.active !== false;
+        }).length;
+        var casilla =
+          '<label class="tp-live__group-active" title="' + esc(tpT("ui.show_on_map") || "") + '">' +
+          '<input type="checkbox" data-gid-active="' + g + '"' +
+          (visibles === delGrupo.length && delGrupo.length ? " checked" : "") +
+          (visibles > 0 && visibles < delGrupo.length ? ' data-indeterminate="1"' : "") +
+          ' aria-label="' + esc(groupTitle(g)) + '"></label>';
+
         html +=
           '<div class="tp-live__group-box"' +
           (collapsed ? ' data-collapsed="1"' : "") +
@@ -2527,7 +2947,7 @@
           g +
           '"' +
           (collapsed ? ' data-collapsed="1"' : "") +
-          '><svg class="tp-live__group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg><span class="tp-live__group-title">' +
+          ">" + casilla + '<svg class="tp-live__group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg><span class="tp-live__group-title">' +
           esc(groupTitle(g)) +
           '</span><span class="tp-live__group-count">' +
           byG[g].length +
@@ -2541,6 +2961,9 @@
       html = state.filtered.map(rowTemplate).join("");
     }
     listEl.innerHTML = html;
+    Array.prototype.forEach.call(listEl.querySelectorAll("[data-indeterminate]"), function (cb) {
+      cb.indeterminate = true;
+    });
   }
 
   // -----------------------------------------------------------
@@ -2872,6 +3295,18 @@
       ""
     );
   }
+  function persistGroupActive(groupId, active) {
+    var fd = new FormData();
+    fd.append("group_id", groupId);
+    fd.append("active", active ? "1" : "0");
+    fetch("/devices/change_active", {
+      method: "POST",
+      body: fd,
+      credentials: "same-origin",
+      headers: { "X-CSRF-TOKEN": csrf(), "X-Requested-With": "XMLHttpRequest" },
+    }).catch(function () {});
+  }
+
   function persistActive(id, active) {
     var fd = new FormData();
     fd.append("id", id);
@@ -3245,11 +3680,19 @@
       // El botón ⋮ lo maneja el delegado global de tp-services (no colapsar)
       if (e.target.closest(".tp-svc-kebab")) return;
 
+      if (e.target.closest(".tp-live__group-active")) return;
       var gh = e.target.closest(".tp-live__group");
       if (gh) {
         var g = parseInt(gh.getAttribute("data-gid"), 10);
         state.collapsedGroups[g] = !state.collapsedGroups[g];
         renderList();
+        // Se recuerda en el servidor, como el legacy (devices.toggleGroup →
+        // objects/change_group_status): el mismo dato para las dos UIs.
+        if (CFG.groupToggleUrl)
+          fetch(CFG.groupToggleUrl + (CFG.groupToggleUrl.indexOf("?") === -1 ? "?" : "&") + "id=" + g, {
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          }).catch(function () {});
         return;
       }
       if (e.target.closest(".tp-live__row-active")) return;
@@ -3260,10 +3703,29 @@
         return;
       }
       var row = e.target.closest(".tp-live__row");
-      if (row) selectDevice(parseInt(row.getAttribute("data-id"), 10));
+      if (!row) return;
+      var rid = parseInt(row.getAttribute("data-id"), 10);
+      // Paridad legacy (devices.select): un clic selecciona y otro sobre el
+      // mismo vehiculo lo deselecciona y vuelve a encuadrar la flota.
+      if (state.selectedId === rid) {
+        deselectDevice();
+        fitToFleet();
+        return;
+      }
+      selectDevice(rid);
     });
     listEl.addEventListener("change", function (e) {
       var cb = e.target;
+      if (cb.matches && cb.matches("[data-gid-active]")) {
+        var gid = parseInt(cb.getAttribute("data-gid-active"), 10);
+        state.devices.forEach(function (x) {
+          if ((x.group_id || 0) === gid) x.active = cb.checked;
+        });
+        renderList();
+        renderMarkers();
+        persistGroupActive(gid, cb.checked);
+        return;
+      }
       if (!cb.matches || !cb.matches('.tp-live__row-active input[type="checkbox"]')) return;
       var id = parseInt(cb.getAttribute("data-id"), 10);
       var d = state.index[id];
@@ -3283,7 +3745,9 @@
     state.devices = rows;
     state.total = total || rows.length;
     state.index = {};
+    var ahora = Date.now();
     rows.forEach(function (d) {
+      d._recibido = ahora;
       state.index[d.id] = d;
     });
     recompute();
@@ -3331,7 +3795,16 @@
         })
         .then(function (j) {
           acc = acc.concat((j && j.data) || []);
-          if (j && Array.isArray(j.groups)) state.groups = j.groups;
+          if (j && Array.isArray(j.groups)) {
+            state.groups = j.groups;
+            if (!state.groupsSeeded) {
+              state.groupsSeeded = true;
+              j.groups.forEach(function (g) {
+                if (g.open === false) state.collapsedGroups[g.id] = true;
+              });
+              if (j.ungrouped_open === false) state.collapsedGroups[0] = true;
+            }
+          }
           var pg = (j && j.pagination) || null;
           if (pg && pg.total != null) total = pg.total;
           if (pg && pg.current_page < pg.last_page) {
@@ -3385,8 +3858,11 @@
       .then(function (res) {
         if (res && res.time) state.checkTime = res.time;
         var items = (res && res.items) || [];
-        if (!items.length) return;
+        var ahora = Date.now();
+        var cambiados = {};
         items.forEach(function (d) {
+          d._recibido = ahora;
+          cambiados[d.id] = true;
           if (state.index[d.id]) {
             for (var k in d) if (Object.prototype.hasOwnProperty.call(d, k)) state.index[d.id][k] = d[k];
           } else {
@@ -3394,16 +3870,27 @@
             state.devices.push(d);
           }
         });
-        recompute();
-        renderList();
-        renderMarkers();
-        updateFollows();
-        followSelected();
+        // Equipos que dejaron de transmitir (legacy: checkOfflineTimeout en
+        // cada check, con la hora del servidor).
+        var vencidos = checkOfflineAll(parseInt(res && res.time, 10) || Math.floor(ahora / 1000));
 
-        // El drawer no se refrescaba con el sondeo: si lo tenias abierto, la
-        // velocidad se quedaba congelada en el momento de abrirlo.
+        if (items.length || vencidos) {
+          recompute();
+          renderList();
+          renderMarkers();
+          updateFollows();
+          followSelected();
+          refreshOpenPopup();
+          if (state.autoFit && state.selectedId == null) fitToFleet();
+        }
+
+        // La ficha se repinta en cada sondeo: el tiempo detenido corre aunque
+        // el equipo no mande nada nuevo (legacy: updateStopDuration).
         if (state.selectedId && state.index[state.selectedId]) {
           fillDrawer(state.index[state.selectedId]);
+          // Widgets de abajo (sensores, direccion, eventos, combustible): el
+          // legacy los recarga en cada update del equipo (refreshWitgets).
+          if (cambiados[state.selectedId]) refreshDrawerWidgets(state.selectedId);
         }
       })
       .catch(function () {});
@@ -3436,6 +3923,7 @@
           state.searchQuery = search.value || "";
           recompute();
           renderList();
+          renderMarkers();
         }, 120);
       });
     var gt = document.getElementById("tp-live-group-toggle");
@@ -3565,9 +4053,12 @@
     var af = document.getElementById("tp-live-autofollow");
     if (af)
       af.addEventListener("click", function () {
-        state.autoFit = !state.autoFit;
-        af.setAttribute("aria-pressed", state.autoFit ? "true" : "false");
-        if (state.autoFit) fitToFleet();
+        setAutoFit(!state.autoFit);
+        if (state.autoFit) {
+          // Seguir a la flota y a un vehiculo a la vez se pelean: manda la flota.
+          state.followSelected = false;
+          fitToFleet();
+        }
       });
 
     // Toggles de capa: el estado inicial viene de la DB (MAP_CFG.toggles =
@@ -3596,7 +4087,7 @@
     // (fitBounds hecho) y no quedan sin dibujar.
     applyToggle("devices");
     setTimeout(function () {
-      ["cluster", "names", "tails", "traffic"].forEach(function (key) {
+      ["cluster", "names", "tails", "traffic", "aircraft"].forEach(function (key) {
         if (state.toggles[key]) applyToggle(key);
       });
     }, 0);
@@ -3840,32 +4331,8 @@
     sincronizaTirador();
 
     var dc = document.getElementById("tp-drawer-close");
-    if (dc)
-      dc.addEventListener("click", function () {
-        root.removeAttribute("data-drawer-open");
-        root.removeAttribute("data-bottombar-open");
-        // Cerrado es invisible (opacity 0) y silenciado (aria-hidden): con
-        // `inert` sus botones dejan tambien de recibir el foco con Tab.
-        var dw = document.getElementById("tp-live-drawer");
-        if (dw) {
-          // El foco estaba dentro (el boton Cerrar): se devuelve al mapa
-          // (Leaflet le da tabindex=0) antes de volver inerte el panel.
-          if (dw.contains(document.activeElement)) {
-            var back = document.getElementById("tp-live-map");
-            if (back && back.focus) back.focus({ preventScroll: true });
-          }
-          dw.setAttribute("aria-hidden", "true");
-          dw.setAttribute("inert", "");
-        }
-        var prev = state.selectedId;
-        state.selectedId = null;
-        state.followSelected = false;
-        markSelectedRow(null);
-        if (prev != null) {
-          refreshMarkerIcon(prev);
-          if (state.markers[prev]) state.markers[prev].setZIndexOffset(0);
-        }
-      });
+    if (dc) dc.addEventListener("click", deselectDevice);
+
 
     // Conmutador de paneles
     Array.prototype.forEach.call(document.querySelectorAll(".tp-live__paneltab"), function (t) {
@@ -3908,6 +4375,14 @@
     if (window.tpLiveZones && name === "zones") window.tpLiveZones.activate();
     if (window.tpLivePois && name === "pois") window.tpLivePois.activate();
     if (window.tpLiveRoutes && name === "routes") window.tpLiveRoutes.activate();
+    if (name === "objects" && state.map) {
+      if (state.selectedId != null) {
+        state.followSelected = true;
+        centerOnSelected(SELECT_ZOOM);
+      } else {
+        fitToFleet();
+      }
+    }
     setRailActive(name);
   }
   // Sincroniza el ítem activo del rail al cambiar de panel SIN recargar

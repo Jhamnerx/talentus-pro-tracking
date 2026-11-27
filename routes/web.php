@@ -97,6 +97,10 @@ Route::group(['middleware' => ['auth', 'active_subscription'], 'namespace' => 'F
     Route::get('objects/sidebar', ['as' => 'objects.sidebar', 'uses' => 'DevicesSidebarController@index']);
 
     Route::get('objects/items', ['as' => 'objects.items', 'uses' => 'ObjectsController@items']);
+    // Aviones en vivo (addon.flights_info + permiso flights_info): la capa del
+    // legacy (model/aircraft.js) y la de la v2 piden aqui. El controlador ya
+    // existia pero faltaba la ruta, asi que la capa no podia cargar nada.
+    Route::get('flights', ['as' => 'flights', 'uses' => 'FlightsController']);
     Route::get('objects/itemsSimple', ['as' => 'objects.items_simple', 'uses' => 'ObjectsController@itemsSimple']);
 
     Route::get('objects/items_json', ['as' => 'objects.items_json', 'uses' => 'ObjectsController@itemsJson']);

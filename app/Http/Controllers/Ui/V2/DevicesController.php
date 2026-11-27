@@ -142,13 +142,17 @@ class DevicesController extends BaseController
         // Solo en la primera página (no cambian entre páginas). El group_id de
         // cada device viene del pivot vía DeviceMapTransformer.
         if ($page === 1) {
+            // `open`: grupo plegado o no, el mismo dato que guarda el legacy
+            // (objects/change_group_status → UserOpenGroupService). El 0 es
+            // «Sin grupo», que vive en users.ungrouped_open.
             $payload['groups'] = $this->user->deviceGroups()
                 ->orderBy('title')
-                ->get(['id', 'title'])
+                ->get(['id', 'title', 'open'])
                 ->map(function ($g) {
-                    return ['id' => (int) $g->id, 'title' => $g->title];
+                    return ['id' => (int) $g->id, 'title' => $g->title, 'open' => (bool) $g->open];
                 })
                 ->all();
+            $payload['ungrouped_open'] = (bool) ($this->user->ungrouped_open[\Tobuli\Entities\DeviceGroup::keyUngrouped()] ?? false);
         }
 
         return response()->json($payload);
