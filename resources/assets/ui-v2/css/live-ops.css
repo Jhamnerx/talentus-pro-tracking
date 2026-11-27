@@ -3326,3 +3326,50 @@ table.tp-lock-hist th {
 .tp-g__read--alert { fill: #ff5a5a; }
 .tp-g__unit { fill: #8c9ab8; font-size: 12px; font-weight: 600; }
 .tp-g__label { fill: #8c9ab8; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-anchor: middle; }
+
+/* ── Variante A2 del panel del vehículo ──────────────────────
+   Velocímetro oscuro de instrumento; testigos y datos en tarjetas claras
+   con un icono de color por dato. */
+.tp-dash__main--pro {
+  padding: 8px;
+  background: radial-gradient(120% 120% at 50% 0%, #1d2a4a 0%, #0b1226 70%);
+  border-color: #1f2a47;
+}
+.tp-g--speed { max-width: 300px; margin: 0 auto; }
+.tp-g__num--big { font-size: 15px; font-weight: 700; }
+.tp-g__zone--speed { stroke-width: 7; opacity: .85; }
+.tp-g__fill--speed { stroke: #38bdf8; stroke-width: 4; }
+.tp-g__read--speed { font-size: 36px; fill: #38bdf8; }
+.tp-g__read--speed.tp-g__read--alert { fill: #ff5a5a; }
+.tp-g__read--off { fill: #5f6d8e; }
+.tp-g__sign { fill: #fff; stroke: #dc2626; stroke-width: 6; }
+.tp-g__sign-num { fill: #0e2157; font-size: 19px; font-weight: 900; text-anchor: middle; }
+.tp-dash__main--pro .tp-dash__zone { margin-top: 8px; }
+
+.tp-dash__tells {
+  background: var(--surface-sunken, #f6f8fc);
+}
+.tp-dash__tell[data-on="1"] svg { filter: drop-shadow(0 0 3px color-mix(in srgb, currentColor 45%, transparent)); }
+
+.tp-dash__stat--ic {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, var(--dash-bg), color-mix(in srgb, var(--dash-bg) 92%, #e8eef8));
+}
+.tp-dash__stat-body { min-width: 0; }
+.tp-dash__stat-ic {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.tp-dash__stat-ic svg { width: 18px; height: 18px; }
+.tp-dash__stat-ic--odo { background: #2563eb; }
+.tp-dash__stat-ic--hrs { background: #7c3aed; }
+.tp-dash__stat-ic--dir { background: #0891b2; }
+.tp-dash__stat-ic--stop { background: #d97706; }
+.tp-dash__stat-ic--dist { background: #16a34a; }

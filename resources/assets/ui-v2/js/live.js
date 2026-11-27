@@ -1763,6 +1763,60 @@
     );
   }
 
+  /**
+   * Velocimetro grande estilo cuadro de instrumentos (variante A2): misma
+   * esfera que esferaPro, escala cada 20 con marcas cada 5, la velocidad en
+   * una pantalla bajo el eje y, si hay limite de geocerca, el tramo desde el
+   * limite en rojo y la señal de transito con el numero en la esquina.
+   */
+  function velocimetroPro(v, max, unidad, limite, apagado) {
+    var id = "tpv" + ++esferaN;
+    var A0 = -210, A1 = 30, cx = 150, cy = 150;
+    function rad(d) { return (d * Math.PI) / 180; }
+    function pt(r, d) { return [cx + r * Math.cos(rad(d)), cy + r * Math.sin(rad(d))]; }
+    function ang(x) { return A0 + (A1 - A0) * Math.min(Math.max(x, 0), max) / max; }
+    function arco(r, d0, d1) {
+      var a = pt(r, d0), b = pt(r, d1);
+      return "M" + a[0].toFixed(1) + " " + a[1].toFixed(1) + " A" + r + " " + r + " 0 " + (d1 - d0 > 180 ? 1 : 0) + " 1 " + b[0].toFixed(1) + " " + b[1].toFixed(1);
+    }
+    var paso = max > 200 ? 40 : 20, menor = paso / 4, marcas = "";
+    for (var x = 0; x <= max + 1e-6; x += menor) {
+      var mayor = Math.abs(x / paso - Math.round(x / paso)) < 1e-6;
+      var d = ang(x), a = pt(124, d), b = pt(mayor ? 108 : 116, d);
+      marcas += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) +
+        '" class="' + (mayor ? "tp-g__tick" : "tp-g__tick tp-g__tick--minor") + '"/>';
+      if (mayor) {
+        var n = pt(92, d);
+        marcas += '<text x="' + n[0].toFixed(1) + '" y="' + (n[1] + 5).toFixed(1) + '" class="tp-g__num tp-g__num--big">' + Math.round(x) + "</text>";
+      }
+    }
+    var dv = ang(v), p = pt(112, dv), b1 = pt(4, dv + 90), b2 = pt(4, dv - 90);
+    var sobre = limite && v > limite;
+    return (
+      '<svg class="tp-g tp-g--speed" viewBox="0 0 300 250" role="img" aria-label="' + esc(Math.round(v) + " " + unidad) + '">' +
+      "<defs>" +
+      '<radialGradient id="' + id + 'f" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#1f2c4f"/><stop offset="1" stop-color="#080d1c"/></radialGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c6b8e"/><stop offset=".5" stop-color="#1b2440"/><stop offset="1" stop-color="#3b4766"/></linearGradient>' +
+      '<filter id="' + id + 'g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      "</defs>" +
+      '<circle cx="150" cy="150" r="146" fill="url(#' + id + 'b)"/><circle cx="150" cy="150" r="137" fill="url(#' + id + 'f)"/>' +
+      (limite ? '<path d="' + arco(119, ang(limite), A1) + '" class="tp-g__zone tp-g__zone--speed"/>' : "") +
+      '<path d="' + arco(119, A0, dv) + '" class="tp-g__fill tp-g__fill--speed" filter="url(#' + id + 'g)"/>' +
+      marcas +
+      '<polygon points="' + b1[0].toFixed(1) + "," + b1[1].toFixed(1) + " " + p[0].toFixed(1) + "," + p[1].toFixed(1) + " " + b2[0].toFixed(1) + "," + b2[1].toFixed(1) +
+      '" class="tp-g__needle" filter="url(#' + id + 'g)"/>' +
+      '<circle cx="150" cy="150" r="13" class="tp-g__hub"/><circle cx="150" cy="150" r="4" class="tp-g__hub-dot"/>' +
+      '<rect x="95" y="176" width="110" height="48" rx="9" class="tp-g__lcd"/>' +
+      '<text x="150" y="212" class="tp-g__read tp-g__read--speed' + (sobre ? " tp-g__read--alert" : "") + (apagado ? " tp-g__read--off" : "") +
+      '" filter="url(#' + id + 'g)">' + Math.round(v) + "</text>" +
+      '<text x="150" y="240" class="tp-g__label">' + esc(String(unidad).toUpperCase()) + "</text>" +
+      (limite
+        ? '<g transform="translate(266 34)"><circle r="24" class="tp-g__sign"/><text y="7" class="tp-g__sign-num">' + esc(limite) + "</text></g>"
+        : "") +
+      "</svg>"
+    );
+  }
+
   function testigo(nombre, etiqueta, encendido, icono) {
     // null = el vehiculo no lleva ese sensor: no se dibuja el testigo
     if (encendido === null || encendido === undefined) return "";
@@ -1784,7 +1838,21 @@
     satelite: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20a8 8 0 0 0-8-8"/><path d="M12 20a12 12 0 0 0-12-12" opacity="0.45"/><circle cx="19" cy="17" r="2"/></svg>',
   };
 
-  function celda(etiqueta, valor, unidad) {
+  // Icono y color de cada dato de la ficha (variante A2 del rediseño).
+  var DATO_ICONO = {
+    odo: '<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/>',
+    hrs: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>',
+    dir: '<circle cx="12" cy="12" r="9"/><path d="m12 7 3 8-3-2-3 2z"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    dist: '<path d="M6 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M8.6 14.5 15.4 9.5"/>',
+  };
+  function rumboCardinal(g) {
+    if (g == null || isNaN(g)) return "";
+    var p = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+    return p[Math.round(((+g % 360) + 360) % 360 / 45) % 8];
+  }
+
+  function celda(etiqueta, valor, unidad, tipo) {
     if (valor === null || valor === undefined || valor === "") return "";
 
     var texto = String(valor).trim();
@@ -1792,6 +1860,13 @@
     // Algunos valores llegan ya formateados por el sensor, con la unidad
     // pegada ("271161 Km"). Se separa para que numero y unidad compartan
     // linea en vez de partirse por ese espacio.
+    // Duracion ("488h 14min 0s"): las dos unidades mayores, la primera
+    // grande y la segunda como unidad, para que quepa en la tarjeta.
+    if (tipo === "stop" && /\s/.test(texto)) {
+      var partes = texto.split(/\s+/);
+      texto = partes[0];
+      unidad = partes[1] || "";
+    }
     if (!unidad) {
       var m = texto.match(/^(.*?)\s+([^\s\d]+)$/);
       if (m) {
@@ -1800,13 +1875,18 @@
       }
     }
 
+    var icono = tipo && DATO_ICONO[tipo]
+      ? '<span class="tp-dash__stat-ic tp-dash__stat-ic--' + tipo + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        DATO_ICONO[tipo] + "</svg></span>"
+      : "";
     return (
-      '<div class="tp-dash__stat">' +
+      '<div class="tp-dash__stat' + (icono ? " tp-dash__stat--ic" : "") + '">' + icono +
+      '<div class="tp-dash__stat-body">' +
       '<div class="tp-dash__stat-label">' + esc(etiqueta) + "</div>" +
       '<div class="tp-dash__stat-value">' +
       '<span class="tp-dash__stat-num">' + esc(texto) + "</span>" +
       (unidad ? '<span class="tp-dash__stat-unit">' + esc(unidad) + "</span>" : "") +
-      "</div></div>"
+      "</div></div></div>"
     );
   }
 
@@ -1822,14 +1902,13 @@
     var max = dash.speed_max || 140;
     var nivel = apagado ? "off" : v >= max * 0.85 ? "bad" : v >= max * 0.6 ? "warn" : "ok";
 
-    var html = '<div class="tp-dash__main">' +
-      esfera(G_GRANDE, apagado ? 0 : v, max, apagado ? "0" : String(Math.round(v)),
-             dash.speed_unit || "km/h", nivel, "tp-dash__gauge--big");
-
     // Limite de la geocerca, si el vehiculo esta dentro de una
     var gf = !apagado && window.tpLiveZones && tpLiveZones.limitFor
       ? tpLiveZones.limitFor(d.lat, d.lng, d.vehicle_type_id, d.vehicle_state_id)
       : null;
+
+    var html = '<div class="tp-dash__main tp-dash__main--pro">' +
+      velocimetroPro(apagado ? 0 : v, max, dash.speed_unit || "km/h", gf && gf.limit ? gf.limit : null, apagado);
 
     if (gf && gf.limit) {
       var dif = Math.round(v - gf.limit);
@@ -1906,11 +1985,11 @@
     // se enseña. Esa decision la toma el servidor (show_total_distance), que
     // mira tambien el interruptor del plugin, como el legacy.
     var stats =
-      celda(tpT('ui.odometer'), dash.odometer, null) +
-      celda(tpT('ui.hour_meter'), dash.engine_hours, null) +
-      celda(tpT('heading'), d.course != null ? Math.round(d.course) + "°" : null, null) +
-      celda(tpT('front.stopped'), stopDurationText(d), null) +
-      (dash.show_total_distance ? celda(tpT('front.distance'), d.total_distance, "km") : "");
+      celda(tpT('ui.odometer'), dash.odometer, null, "odo") +
+      celda(tpT('ui.hour_meter'), dash.engine_hours, null, "hrs") +
+      celda(tpT('heading'), d.course != null ? Math.round(d.course) + "°" : null, d.course != null ? rumboCardinal(d.course) : null, "dir") +
+      celda(tpT('front.stopped'), stopDurationText(d), null, "stop") +
+      (dash.show_total_distance ? celda(tpT('front.distance'), d.total_distance, "km", "dist") : "");
 
     if (stats) html += '<div class="tp-dash__stats">' + stats + "</div>";
 
