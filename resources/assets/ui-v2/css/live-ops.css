@@ -3373,3 +3373,136 @@ table.tp-lock-hist th {
 .tp-dash__stat-ic--dir { background: #0891b2; }
 .tp-dash__stat-ic--stop { background: #d97706; }
 .tp-dash__stat-ic--dist { background: #16a34a; }
+
+/* ── Ficha del vehículo: Objeto, Ubicación y Sensores (mosaico) ── */
+.tp-info { background: linear-gradient(180deg, var(--surface-raised, #fff), color-mix(in srgb, var(--surface-raised, #fff) 94%, #e8eef8)); }
+.tp-info__ttl {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 0 10px;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--fg-tertiary, #64748b);
+}
+.tp-info__ttl svg { width: 15px; height: 15px; }
+.tp-info__count {
+  margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: 0;
+  background: var(--surface-sunken, #eef2f7); border-radius: 20px; padding: 1px 8px;
+}
+.tp-info__ic {
+  flex: none; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; color: #fff; background: #64748b;
+}
+.tp-info__ic svg { width: 18px; height: 18px; }
+.tp-info__ic--pin { background: #dc2626; }
+.tp-info__state { display: flex; align-items: center; gap: 10px; }
+.tp-info__state-txt { min-width: 0; display: flex; flex-direction: column; }
+.tp-info__state-txt strong { font-size: 15px; color: var(--fg-primary, #0f172a); }
+.tp-info__state-txt span { font-size: 11px; color: var(--fg-tertiary, #64748b); }
+.tp-info__chip {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: auto;
+  font-size: 11px; font-weight: 700; border-radius: 20px; padding: 3px 9px; white-space: nowrap;
+}
+.tp-sens .tp-info__chip { margin-left: 0; margin-top: 3px; padding: 1px 8px; }
+.tp-info__chip--on { background: #dcfce7; color: #15803d; }
+.tp-info__chip--off { background: var(--surface-sunken, #eef2f7); color: #64748b; }
+.tp-info__chip--alert { background: #fee2e2; color: #b91c1c; }
+[data-theme="dark"] .tp-info__chip--on { background: rgba(34,197,94,.18); color: #4ade80; }
+[data-theme="dark"] .tp-info__chip--alert { background: rgba(239,68,68,.18); color: #f87171; }
+.tp-info__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent); }
+.tp-info__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.tp-info__fact { background: var(--surface-sunken, #f6f8fc); border-radius: 10px; padding: 7px 9px; min-width: 0; }
+.tp-info__fact--wide { grid-column: 1 / -1; }
+.tp-info__fact span, .tp-info__driver > div > span, .tp-info__addr-line span {
+  display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--fg-tertiary, #64748b);
+}
+.tp-info__fact b { display: block; font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-info__driver, .tp-info__addr-line {
+  display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--border-default, #e3e8f1);
+}
+.tp-info__driver b, .tp-info__addr-line b { font-size: 13px; }
+.tp-info__avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  background: #e0e7ff; color: #3730a3;
+}
+.tp-info__addr { display: flex; gap: 10px; }
+.tp-info__addr-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tp-info__addr-txt strong { font-size: 14px; line-height: 1.3; color: var(--fg-primary, #0f172a); }
+.tp-info__addr-txt > span { font-size: 11.5px; color: var(--fg-tertiary, #64748b); }
+.tp-info__crumbs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.tp-info__crumbs span { font-size: 11px; background: var(--surface-sunken, #eef2f7); color: var(--fg-secondary, #334155); border-radius: 6px; padding: 2px 7px; }
+.tp-info__crumbs span:empty { display: none; }
+.tp-info__coords {
+  display: flex; align-items: center; gap: 7px; margin-top: 10px;
+  background: var(--surface-sunken, #f6f8fc); border-radius: 10px; padding: 7px 9px; font-size: 12px;
+}
+.tp-info__coords > svg { width: 14px; height: 14px; color: var(--fg-tertiary, #64748b); flex: none; }
+.tp-info__coords a { margin-left: auto; color: var(--brand-600, #1f5fbf); font-weight: 700; font-size: 11px; text-decoration: none; white-space: nowrap; }
+.tp-info__copy {
+  border: 1px solid var(--border-default, #dbe3ef); background: var(--surface-raised, #fff); border-radius: 7px;
+  width: 26px; height: 26px; display: grid; place-items: center; color: var(--fg-secondary, #475569); cursor: pointer; flex: none;
+}
+.tp-info__copy svg { width: 14px; height: 14px; }
+.tp-info__copy.is-done { color: #16a34a; border-color: #86efac; }
+
+.tp-sens__grp {
+  font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--fg-muted, #94a3b8); margin: 10px 0 6px;
+}
+.tp-sens__grp:first-of-type { margin-top: 0; }
+.tp-sens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.tp-sens__tile {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  border: 1px solid var(--border-subtle, #e9eef6); border-radius: 11px; padding: 8px 9px;
+  background: var(--surface-raised, #fff);
+}
+.tp-sens__ic {
+  flex: none; width: 28px; height: 28px; border-radius: 8px;
+  display: grid; place-items: center; color: #fff;
+}
+.tp-sens__ic .tp-sensor-ico { width: 15px; height: 15px; stroke-width: 2; color: #fff; }
+/* Imagen asignada al valor en la Cartografía del sensor (logo del
+   operador, icono de estado…): se ve entera y más grande, sin el cuadrado
+   de color. */
+.tp-sens__ic--img {
+  width: 34px; height: 34px; background: #fff;
+  border: 1px solid var(--border-subtle, #e3e8f1); padding: 3px;
+}
+.tp-sens__ic--img img { width: 100%; height: 100%; object-fit: contain; }
+.tp-sens__body { min-width: 0; flex: 1; }
+.tp-sens__name { font-size: 10.5px; font-weight: 600; color: var(--fg-tertiary, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-sens__val {
+  font-size: 15px; font-weight: 800; color: var(--fg-primary, #0f172a); margin-top: 1px;
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tp-sens__val small { font-size: 11px; font-weight: 600; color: var(--fg-tertiary, #64748b); margin-left: 3px; }
+.tp-sens__bar { height: 5px; border-radius: 4px; background: var(--surface-sunken, #e9eef6); margin-top: 4px; overflow: hidden; }
+.tp-sens__bar i { display: block; height: 100%; border-radius: 4px; }
+
+/* Acciones de la ficha: centrar como botón principal, historial con icono */
+#tp-drawer-center { background: var(--brand-800, #0e2157); color: #fff; border-color: transparent; }
+#tp-drawer-center:hover { background: var(--brand-700, #122f71); }
+#tp-drawer-history { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+#tp-drawer-history .tp-btn {
+  border: 1px solid var(--border-default, #dbe3ef); border-radius: 10px; background: var(--surface-raised, #fff);
+  height: auto; padding: 8px 4px; font-weight: 600;
+}
+#tp-drawer-route-report { border: 1px solid var(--border-default, #dbe3ef); border-radius: 10px; }
+.tp-info__avatar--none { background: var(--surface-sunken, #eef2f7); color: var(--fg-tertiary, #94a3b8); }
+.tp-info__avatar svg { width: 17px; height: 17px; }
+.tp-info__addr-txt [hidden] { display: none; }
+/* Tarjetas de datos del tablero: el número largo (296428.3 H) no se sale */
+.tp-dash__stat--ic { gap: 8px; padding: 9px 9px; }
+.tp-dash__stat--ic .tp-dash__stat-ic { width: 30px; height: 30px; border-radius: 9px; }
+.tp-dash__stat--ic .tp-dash__stat-ic svg { width: 16px; height: 16px; }
+.tp-dash__stat--ic .tp-dash__stat-body { flex: 1; overflow: hidden; }
+.tp-dash__stat--ic .tp-dash__stat-num { font-size: 16px; overflow: hidden; text-overflow: ellipsis; }
+.tp-dash__stat--ic .tp-dash__stat-unit { font-size: 11px; }
+/* Coordenadas en una sola línea */
+.tp-info__coords .tp-text-mono { white-space: nowrap; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Copiar y abrir en el mapa como botones de icono, a la derecha: las
+   coordenadas caben enteras */
+.tp-info__coords .tp-info__copy:first-of-type { margin-left: auto; }
+.tp-info__coords a.tp-info__copy { margin-left: 0; color: var(--brand-600, #1f5fbf); }
+.tp-info__coords .tp-text-mono { overflow: visible; text-overflow: clip; }

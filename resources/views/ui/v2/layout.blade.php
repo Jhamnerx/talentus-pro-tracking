@@ -71,6 +71,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.0.18/index.css" />
 
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/tokens.css') }}" />
+    {{-- Colores de estado por categoria desde el BACKEND, no fijos en el CSS:
+         settings('device.status_colors.colors') es el mismo valor por defecto
+         que usa Device::getStatusColor() cuando el vehiculo no tiene color
+         propio (legacy). Se usa la variante -ink porque estos tokens tambien
+         pintan texto; un hex propio va tal cual. Filtros, contadores, popup,
+         Copilot, tablero y Seguridad leen --status-*. --}}
+    @php
+        $tpScDef = (array) settings('device.status_colors.colors');
+        $tpScNom = ['green', 'yellow', 'orange', 'red', 'blue', 'cyan', 'gray', 'black', 'white'];
+        $tpScVar = function ($c) use ($tpScNom) {
+            $c = strtolower(trim((string) $c));
+            if (in_array($c, $tpScNom, true)) return 'var(--sc-' . $c . '-ink)';
+            return preg_match('/^#[0-9a-f]{3,8}$/', $c) ? $c : null;
+        };
+        $tpScCss = '';
+        foreach (['moving' => 'moving', 'idle' => 'engine', 'stopped' => 'stopped', 'offline' => 'offline'] as $tpTok => $tpKey) {
+            if ($tpV = $tpScVar($tpScDef[$tpKey] ?? null)) {
+                $tpScCss .= '--status-' . $tpTok . ':' . $tpV . ';';
+            }
+        }
+    @endphp
+    @if ($tpScCss)
+        <style>:root,[data-theme="light"],[data-theme="dark"]{ {!! $tpScCss !!} }</style>
+    @endif
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/components.css') }}" />
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/shell.css') }}" />
     <link rel="stylesheet" href="{{ asset_resource('assets/ui/v2/css/modal.css') }}" />

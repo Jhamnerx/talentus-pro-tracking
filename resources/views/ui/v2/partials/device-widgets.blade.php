@@ -12,27 +12,107 @@
 {{-- ════════ GRUPO LATERAL (drawer) ════════ --}}
 <div class="tp-dw tp-dw--side">
 
-    {{-- Objeto (ficha unificada: fusiona la antigua Telemetría). Velocidad/Rumbo/
-         Detenido/Distancia están arriba en las KPI del drawer (no se repiten aquí). --}}
+    {{-- Objeto (ficha unificada). Velocidad/Rumbo/Detenido/Distancia van arriba
+         en el tablero (no se repiten aqui). Rediseño: estado con icono de color,
+         etiqueta de motor y datos en cajitas. --}}
     @isset($device_info)
-        <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">{{ trans('front.object') }}</h4>
-            <dl class="tp-defs">
-                <dt>{{ trans('front.state') }}</dt><dd>{{ $device_info['status_text'] ?? '—' }}</dd>
-                {{-- La direccion llega en una peticion aparte (ver DevicesController::address):
-                     el geocodificador es externo y retrasaba todo el drawer. --}}
-                <dt>{{ trans('front.address') }}</dt><dd data-tp-addr="address">…</dd>
-                <dt>{{ trans('ui.last_signal') }}</dt><dd>{{ $device_info['time'] ?? '—' }}</dd>
-                <dt>{{ trans('front.coordinates') }}</dt><dd class="tp-text-mono">{{ $device_info['coords'] ?? '—' }}</dd>
-                <dt>{{ trans('front.altitude') }}</dt><dd>{{ $device_info['altitude'] ?? '—' }}</dd>
-                <dt>{{ trans('front.engine') }}</dt><dd>{{ $device_info['engine'] ?? '—' }}</dd>
-                <dt>{{ trans('front.driver') }}</dt><dd>{{ $device_info['driver'] ?? '—' }}</dd>
-                @if (!empty($device_info['is_admin']))
-                    <dt>IMEI</dt><dd class="tp-text-mono">{{ $device_info['imei'] ?? '—' }}</dd>
-                    <dt>{{ trans('front.model') }}</dt><dd>{{ $device_info['model'] ?? '—' }}</dd>
-                    <dt>SIM</dt><dd class="tp-text-mono">{{ $device_info['sim'] ?? '—' }}</dd>
+        @php
+            // Color del estado: Device::getStatusColor() (los icon_colors del
+            // vehiculo), con los mismos tokens --sc-* que la lista y el
+            // marcador. Un hex propio se usa tal cual.
+            $tpSc = strtolower(trim($device_info['status_color'] ?? ''));
+            $tpScNombres = ['green', 'yellow', 'orange', 'red', 'blue', 'cyan', 'gray', 'black', 'white'];
+            if (in_array($tpSc, $tpScNombres, true)) {
+                $tpEstEstilo = 'background:var(--sc-' . $tpSc . ');color:var(--sc-' . $tpSc . '-on)';
+            } elseif (preg_match('/^#[0-9a-f]{3,8}$/', $tpSc)) {
+                $tpEstEstilo = 'background:' . $tpSc . ';color:#fff';
+            } else {
+                $tpEstEstilo = '';
+            }
+            $tpMotor = $device_info['engine'] ?? null;
+        @endphp
+        <section class="tp-card tp-card--flat tp-mb-4 tp-info">
+            <h4 class="tp-info__ttl">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16V11l2-5h10l2 5v5"/><path d="M3 16h18v3H3z"/></svg>
+                {{ trans('front.object') }}
+            </h4>
+            <div class="tp-info__state">
+                <span class="tp-info__ic" style="{{ $tpEstEstilo }}" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </span>
+                <div class="tp-info__state-txt">
+                    <strong>{{ $device_info['status_text'] ?? '—' }}</strong>
+                    <span>{{ trans('ui.last_signal') }} {{ $device_info['time'] ?? '—' }}</span>
+                </div>
+                @if ($tpMotor)
+                    <span class="tp-info__chip tp-info__chip--{{ $tpMotor === 'Encendido' ? 'on' : 'off' }}" title="{{ trans('front.engine') }}: {{ $tpMotor }}">
+                        <span class="tp-info__dot"></span>{{ trans('front.engine') }}
+                    </span>
                 @endif
-            </dl>
+            </div>
+            <div class="tp-info__facts">
+                <div class="tp-info__fact"><span>{{ trans('front.speed') }}</span><b>{{ $device_info['speed'] ?? '—' }}</b></div>
+                <div class="tp-info__fact"><span>{{ trans('front.altitude') }}</span><b>{{ $device_info['altitude'] ?? '—' }}</b></div>
+                @if (!empty($device_info['is_admin']))
+                    <div class="tp-info__fact"><span>{{ trans('front.model') }}</span><b>{{ $device_info['model'] ?: '—' }}</b></div>
+                    <div class="tp-info__fact"><span>SIM</span><b class="tp-text-mono">{{ $device_info['sim'] ?: '—' }}</b></div>
+                    <div class="tp-info__fact tp-info__fact--wide"><span>IMEI</span><b class="tp-text-mono">{{ $device_info['imei'] ?? '—' }}</b></div>
+                @endif
+            </div>
+            <div class="tp-info__driver">
+                <span class="tp-info__avatar{{ $device_info['driver'] ? '' : ' tp-info__avatar--none' }}" aria-hidden="true">
+                    @if ($device_info['driver'])
+                        {{ mb_strtoupper(mb_substr($device_info['driver'], 0, 1)) }}
+                    @else
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                    @endif
+                </span>
+                <div>
+                    <span>{{ trans('front.driver') }}</span>
+                    <b>{{ $device_info['driver'] ?? trans('ui.no_driver_assigned') }}</b>
+                </div>
+            </div>
+        </section>
+
+        {{-- Ubicación: tarjeta propia SIEMPRE (como la propuesta), no mezclada
+             con Objeto. Via destacada, la direccion completa debajo y, con el
+             widget Ubicación activo, las etiquetas de ciudad y pais. Los
+             data-tp-addr los rellena live.js con devices/{id}/address. --}}
+        <section class="tp-card tp-card--flat tp-mb-4 tp-info">
+            <h4 class="tp-info__ttl">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                {{ trans('front.location') }}
+            </h4>
+            <div class="tp-info__addr">
+                <span class="tp-info__ic tp-info__ic--pin" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                </span>
+                <div class="tp-info__addr-txt">
+                    <strong data-tp-addr="road">…</strong>
+                    <span data-tp-addr="address">…</span>
+                    @isset($location)
+                        <div class="tp-info__crumbs">
+                            <span data-tp-addr="city"></span>
+                            <span data-tp-addr="country"></span>
+                        </div>
+                    @endisset
+                </div>
+            </div>
+            @if (!empty($device_info['coords']))
+                @php $tpCoords = str_replace(' ', '', $device_info['coords']); @endphp
+                <div class="tp-info__coords">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                    <span class="tp-text-mono">{{ $device_info['coords'] }}</span>
+                    <button type="button" class="tp-info__copy" data-tp-copy="{{ $tpCoords }}"
+                        title="{{ trans('ui.copy_coordinates') }}" aria-label="{{ trans('ui.copy_coordinates') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+                    </button>
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ $tpCoords }}" target="_blank" rel="noopener"
+                        class="tp-info__copy" title="{{ trans('ui.open_in_map') }}" aria-label="{{ trans('ui.open_in_map') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
+                    </a>
+                </div>
+            @endif
         </section>
     @endisset
 
@@ -53,46 +133,107 @@
         </section>
     @endisset
 
-    {{-- Ubicación --}}
-    @isset($location)
-        <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">{{ trans('front.location') }}</h4>
-            {{-- Igual que arriba: los cuatro campos los rellena live.js con la
-                 respuesta de devices/{id}/address. --}}
-            <dl class="tp-defs">
-                <dt>{{ trans('front.city') }}</dt><dd data-tp-addr="city">…</dd>
-                <dt>{{ trans('ui.street') }}</dt><dd data-tp-addr="road">…</dd>
-                <dt>{{ trans('front.country') }}</dt><dd data-tp-addr="country">…</dd>
-                <dt>{{ trans('front.address') }}</dt><dd data-tp-addr="address">…</dd>
-            </dl>
-        </section>
-    @endisset
-
-    {{-- Sensores --}}
+    {{-- Sensores en mosaico, agrupados por tipo. TODOS los tipos del sistema
+         (Tobuli/Sensors/Types) tienen grupo y color; uno nuevo cae en «Otros».
+         Los logicos se ven como etiqueta ON/OFF; los de % llevan barra. --}}
     @isset($sensors)
-        <section class="tp-card tp-card--flat tp-mb-4">
-            <h4 class="tp-h6 tp-mb-3">{{ trans('front.sensors') }}</h4>
+        @php
+            // tipo => [grupo, color del icono]
+            $tpSensorMeta = [
+                // Estado (encendido/apagado)
+                'acc' => ['state', '#16a34a'], 'ignition' => ['state', '#16a34a'], 'engine' => ['state', '#16a34a'],
+                'blocked' => ['state', '#dc2626'], 'door' => ['state', '#0891b2'], 'seatbelt' => ['state', '#0e7490'],
+                'plugged' => ['state', '#16a34a'], 'anonymizer' => ['state', '#64748b'], 'logical' => ['state', '#0891b2'],
+                'drive_business' => ['state', '#2563eb'], 'drive_private' => ['state', '#7c3aed'],
+                'harsh_acceleration' => ['state', '#dc2626'], 'harsh_breaking' => ['state', '#dc2626'], 'harsh_turning' => ['state', '#dc2626'],
+                // Energía
+                'battery' => ['energy', '#7c3aed'], 'battery_external' => ['energy', '#16a34a'],
+                // Motor y recorrido
+                'odometer' => ['engine', '#2563eb'], 'engine_hours' => ['engine', '#7c3aed'],
+                'speed_ecm' => ['engine', '#0ea5e9'], 'tachometer' => ['engine', '#0ea5e9'],
+                // Combustible y medidas
+                'fuel_tank' => ['measures', '#d97706'], 'fuel_consumption' => ['measures', '#d97706'],
+                'temperature' => ['measures', '#ea580c'], 'load' => ['measures', '#a16207'],
+                'counter' => ['measures', '#0e2157'], 'numerical' => ['measures', '#0e2157'],
+                // Comunicación
+                'gsm' => ['comms', '#db2777'], 'satellites' => ['comms', '#0891b2'],
+                // Identificación
+                'rfid' => ['ident', '#4f46e5'], 'vin' => ['ident', '#334155'], 'textual' => ['ident', '#334155'],
+                'datetime' => ['ident', '#475569'],
+                'route_color' => ['ident', '#9333ea'], 'route_color_2' => ['ident', '#9333ea'], 'route_color_3' => ['ident', '#9333ea'],
+            ];
+            // Variantes con calibracion: mismo grupo que su base
+            foreach (['fuel_tank_calibration' => 'fuel_tank', 'temperature_calibration' => 'temperature', 'load_calibration' => 'load'] as $k => $base) {
+                $tpSensorMeta[$k] = $tpSensorMeta[$base];
+            }
+            $tpGrupos = ['state', 'energy', 'engine', 'measures', 'comms', 'ident', 'other'];
+            $tpPorGrupo = array_fill_keys($tpGrupos, []);
+            foreach ($sensors as $sn) {
+                $meta = $tpSensorMeta[$sn['type'] ?? ''] ?? ['other', '#64748b'];
+                $sn['color'] = $meta[1];
+                $txt = trim((string) ($sn['formated'] ?? ''));
+                // Numero y unidad separados ("287196 Km" → "287196" + "Km")
+                $sn['num'] = $txt; $sn['unit'] = '';
+                if (preg_match('/^(-?[\d.,]+)\s*(\S.*)?$/u', $txt, $mm)) {
+                    $sn['num'] = $mm[1];
+                    $sn['unit'] = $mm[2] ?? '';
+                }
+                // Logicos: etiqueta encendido/apagado; los de alerta en rojo
+                $sn['chip'] = null;
+                if ($meta[0] === 'state') {
+                    $on = is_bool($sn['raw'] ?? null) ? $sn['raw'] : (in_array(mb_strtolower($txt), ['on', 'si', 'sí', 'yes', 'true', '1']));
+                    $alerta = in_array($sn['type'], ['blocked', 'harsh_acceleration', 'harsh_breaking', 'harsh_turning']);
+                    $sn['chip'] = $on ? ($alerta ? 'alert' : 'on') : 'off';
+                }
+                // Barra de nivel para los porcentajes
+                $sn['bar'] = null;
+                if ($sn['chip'] === null && trim($sn['unit']) === '%' && is_numeric(str_replace(',', '.', $sn['num']))) {
+                    $sn['bar'] = max(0, min(100, (float) str_replace(',', '.', $sn['num'])));
+                } elseif (($sn['type'] ?? '') === 'gsm' && is_numeric($sn['raw'] ?? null)) {
+                    // Señal GSM: el legacy pinta el escalon con valor/20 (0-100)
+                    $sn['bar'] = max(0, min(100, (float) $sn['raw']));
+                }
+                $tpPorGrupo[$meta[0]][] = $sn;
+            }
+        @endphp
+        <section class="tp-card tp-card--flat tp-mb-4 tp-info">
+            <h4 class="tp-info__ttl">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20h2M6 20v-4M10 20v-8M14 20V8M18 20V4"/></svg>
+                {{ trans('front.sensors') }}
+                @if (count($sensors))<span class="tp-info__count">{{ count($sensors) }}</span>@endif
+            </h4>
             @if (count($sensors))
-                <dl class="tp-defs tp-defs--sensors">
-                    @foreach ($sensors as $sensor)
-                        {{-- Icono: personalizado del mapeo de valores (admin/sensor_icons)
-                             o el SVG del tipo, igual que el legacy --}}
-                        <dt>
-                            {{-- Icono personalizado del mapeo de valores (admin →
-                                 sensor_icons) si lo hay; si no, el icono de trazo
-                                 del tipo, que hereda el color del texto. Los SVG
-                                 del tema legacy traen colores fijos y desentonaban. --}}
-                            @if (!empty($sensor['custom_icon']))
-                                <img class="tp-sensor-icon" src="{{ $sensor['custom_icon'] }}"
-                                    alt="" loading="lazy" aria-hidden="true">
-                            @else
-                                @include('ui.v2.partials.sensor-icon', ['type' => $sensor['type'] ?? ''])
-                            @endif
-                            <span>{{ $sensor['name'] }}</span>
-                        </dt>
-                        <dd>{{ $sensor['formated'] }}</dd>
-                    @endforeach
-                </dl>
+                @foreach ($tpPorGrupo as $grupo => $lista)
+                    @if (count($lista))
+                        <div class="tp-sens__grp">{{ trans('ui.sensors_group_' . $grupo) }}</div>
+                        <div class="tp-sens">
+                            @foreach ($lista as $sn)
+                                <div class="tp-sens__tile">
+                                    @if (!empty($sn['custom_icon']))
+                                        <span class="tp-sens__ic tp-sens__ic--img" aria-hidden="true">
+                                            <img src="{{ $sn['custom_icon'] }}" alt="" loading="lazy">
+                                        </span>
+                                    @else
+                                        <span class="tp-sens__ic" style="background:{{ $sn['color'] }}" aria-hidden="true">
+                                            @include('ui.v2.partials.sensor-icon', ['type' => $sn['type'] ?? ''])
+                                        </span>
+                                    @endif
+                                    <div class="tp-sens__body">
+                                        <div class="tp-sens__name" title="{{ $sn['name'] }}">{{ $sn['name'] }}</div>
+                                        @if ($sn['chip'])
+                                            <span class="tp-info__chip tp-info__chip--{{ $sn['chip'] }}">{{ $sn['formated'] }}</span>
+                                        @else
+                                            <div class="tp-sens__val">{{ $sn['num'] }}@if ($sn['unit'] !== '')<small>{{ $sn['unit'] }}</small>@endif</div>
+                                        @endif
+                                        @if ($sn['bar'] !== null)
+                                            <div class="tp-sens__bar"><i style="width:{{ $sn['bar'] }}%;background:{{ $sn['color'] }}"></i></div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                @endforeach
             @else
                 <p class="tp-text-xs tp-text-muted tp-mb-0">{{ trans('ui.no_sensors_configured') }}</p>
             @endif

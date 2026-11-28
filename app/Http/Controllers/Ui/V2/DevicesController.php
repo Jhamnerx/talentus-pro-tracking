@@ -3191,6 +3191,9 @@ class DevicesController extends BaseController
             $data['device_info'] = [
                 'status'      => $device->getStatus(),
                 'status_text' => $this->estadoTexto($device->getStatus()),
+                // Color del estado del propio vehiculo (icon_colors), el mismo
+                // que usan el legacy, la lista y el marcador.
+                'status_color' => (string) $device->getStatusColor(),
                 'address'     => $address['address'] ?? null,
                 // Device::getTimeAttribute() ya devuelve la hora formateada con
                 // la zona del usuario, o un texto de estado («Desactivado»,
@@ -3204,6 +3207,7 @@ class DevicesController extends BaseController
                     ? round((float) $device->altitude) . ' m'
                     : null,
                 'engine'      => $engineText,
+                'speed'       => \Formatter::speed()->human($device->getSpeed()),
                 'model'       => $device->device_model,
                 'imei'        => $device->imei,
                 'sim'         => $device->sim_number,
@@ -3272,10 +3276,12 @@ class DevicesController extends BaseController
             foreach ($device->sensors as $sensor) {
                 $formatted = '-';
                 $icon = null;
+                $raw = null;
                 try {
                     if ($traccar) {
                         $value = $sensor->getValueCurrent($traccar);
                         $formatted = $value->getFormatted();
+                        $raw = $value->getValue();
                         // Paridad legacy (DeviceMapFullTransformer::formatSensors +
                         // device.js dataSensorsDOM): 1) icono personalizado del mapeo
                         // de valores (admin → sensor_icons), 2) si no hay, el SVG del
@@ -3293,6 +3299,9 @@ class DevicesController extends BaseController
                     'formated' => $this->sensorTexto($sensor, $formatted),
                     'type'        => (string) $sensor->type,
                     'custom_icon' => $icon,
+                    // Valor crudo para el mosaico: encendido/apagado en los
+                    // sensores logicos y el nivel de la barra en los de %.
+                    'raw'         => is_bool($raw) || is_numeric($raw) ? $raw : null,
                 ];
             }
             $data['sensors'] = $rows;

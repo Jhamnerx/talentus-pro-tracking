@@ -1969,6 +1969,14 @@
 
     // Testigos
     var t = dash.telltales || {};
+    // Sin conexion, motor e ignicion se muestran apagados aunque el ultimo
+    // dato los dejara encendidos: el legacy hace lo mismo (setOffline pone en
+    // falso acc/ignition/engine), tambien al cargar un equipo ya desconectado.
+    if (apagado) {
+      t = Object.assign({}, t);
+      if (t.engine != null) t.engine = false;
+      if (t.ignition != null) t.ignition = false;
+    }
     var tells =
       testigo(tpT('front.engine'), tpT('engine_upper'), t.engine, ICONOS.motor) +
       testigo(tpT('ui.ignition'), tpT('ui.ignition_upper'), t.ignition, ICONOS.ignicion) +
@@ -2024,7 +2032,13 @@
     var sr = document.getElementById("tp-drawer-status-row");
     if (sr) {
       var lbl = STATUS_LABELS[d.online] || d.online || "—";
-      sr.innerHTML = '<span class="tp-chip" data-status="' + classify(d) + '">' + esc(lbl) + "</span>";
+      // Color del estado del propio vehiculo (icon_color = getStatusColor()
+      // del backend), como el punto de la ficha y la lista; la clase por
+      // categoria queda solo de reserva si no llega color.
+      var cSr = statusVar(d.icon_color), cSrOn = statusVar(d.icon_color, "on");
+      sr.innerHTML = '<span class="tp-chip tp-chip--status" data-status="' + classify(d) + '"' +
+        (cSr ? ' style="background:' + cSr + ";color:" + cSrOn + ";border-color:" + cSr + '"' : "") +
+        ">" + esc(lbl) + "</span>";
     }
   }
   // El handle "Widgets" (botón para reabrir la barra inferior) solo debe verse
@@ -2157,7 +2171,15 @@
     function poner(a) {
       Array.prototype.forEach.call(huecos, function (el) {
         var k = el.getAttribute("data-tp-addr");
-        el.textContent = (a && a[k]) || "—";
+        var v = (a && a[k]) || "";
+        // En la tarjeta Ubicación la via y las etiquetas se ocultan si no hay
+        // dato (sin un «—» suelto); el resto de huecos muestra la raya.
+        if (k === "road" || el.closest(".tp-info__crumbs")) {
+          el.textContent = v;
+          el.hidden = !v;
+        } else {
+          el.textContent = v || "—";
+        }
       });
     }
 
@@ -4614,6 +4636,19 @@
     },
     selectDevice: selectDevice,
   };
+
+  // Copiar coordenadas de la ficha (boton data-tp-copy).
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-tp-copy]");
+    if (!b) return;
+    var txt = b.getAttribute("data-tp-copy");
+    var ok = function () {
+      b.classList.add("is-done");
+      setTimeout(function () { b.classList.remove("is-done"); }, 1500);
+      if (window.tpModal && tpModal.toast) tpModal.toast(tpT("ui.copied"), "success");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, function () {});
+  });
 
   // -----------------------------------------------------------
   // Init

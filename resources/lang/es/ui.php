@@ -1587,4 +1587,15 @@ return [
     'lit_search_address_enter'           => 'Buscar dirección… (Enter)',
     'lit_reading_columns'                => 'Leyendo columnas…',
     'lit_custom'                         => 'Personalizado',
+    // Ficha del vehiculo: sensores en mosaico y ubicacion
+    'sensors_group_state' => 'Estado',
+    'sensors_group_energy' => 'Energía',
+    'sensors_group_engine' => 'Motor y recorrido',
+    'sensors_group_measures' => 'Combustible y medidas',
+    'sensors_group_comms' => 'Comunicación',
+    'sensors_group_ident' => 'Identificación',
+    'sensors_group_other' => 'Otros',
+    'open_in_map' => 'Abrir en mapa',
+    'copy_coordinates' => 'Copiar coordenadas',
+    'copied' => 'Copiado',
 ];

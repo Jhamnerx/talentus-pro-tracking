@@ -1087,4 +1087,15 @@ return [
     'ops_trips'                           => 'Trips',
     'ops_points_none'                     => 'No points',
     'ops_legs_open'                       => 'Open leg',
+    // Ficha del vehiculo: sensores en mosaico y ubicacion
+    'sensors_group_state' => 'Status',
+    'sensors_group_energy' => 'Power',
+    'sensors_group_engine' => 'Engine and trip',
+    'sensors_group_measures' => 'Fuel and measures',
+    'sensors_group_comms' => 'Communication',
+    'sensors_group_ident' => 'Identification',
+    'sensors_group_other' => 'Other',
+    'open_in_map' => 'Open in map',
+    'copy_coordinates' => 'Copy coordinates',
+    'copied' => 'Copied',
 ];
