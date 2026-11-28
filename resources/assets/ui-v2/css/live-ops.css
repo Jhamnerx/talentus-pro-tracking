@@ -3682,3 +3682,14 @@ a.tp-pop__mini { color: var(--brand-600, #1f5fbf); }
 .tp-gprsw__status.is-ok { color: #15803d; }
 .tp-gprsw__status.is-err { color: #b91c1c; }
 .tp-gprsw + .tp-gprsw__status + .tp-wcard__main { margin-top: 2px; }
+
+/* Avisos (tpModal.toast / shell): fijos arriba a la derecha de la ventana. Con
+   la ficha del vehiculo abierta quedaban encima de ella; en escritorio se
+   corren a la izquierda de la ficha y de la columna de controles del mapa. */
+@media (min-width: 901px) {
+  body:has(.tp-live[data-drawer-open="true"]) .tp-toast-host {
+    right: calc(var(--live-drawer-w, 380px) + 64px);
+    top: calc(var(--topbar-h, 52px) + 52px); /* debajo de la fila de estados del mapa */
+    transition: right var(--dur-base, .2s) var(--ease-out, ease-out);
+  }
+}
