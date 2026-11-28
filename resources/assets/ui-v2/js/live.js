@@ -1619,7 +1619,22 @@
    * quedaba debajo de la ficha y parecia que no se centraba.
    * `zoom` = nivel a usar; sin el se conserva el actual (seguimiento).
    */
+  // Un zoom animado de Leaflet arranca en el SIGUIENTE frame: si se centra
+  // antes, la animacion pendiente (p. ej. el encuadre de la flota) llega
+  // despues y deja el mapa en su zoom. Se espera un frame y, si para entonces
+  // hay un zoom animandose (_tryAnimatedZoom descartaria el nuestro), a su fin.
   function centerOnSelected(zoom) {
+    requestAnimationFrame(function () {
+      if (state.map && state.map._animatingZoom) {
+        state.map.once("zoomend", function () {
+          centerOnSelectedNow(zoom);
+        });
+        return;
+      }
+      centerOnSelectedNow(zoom);
+    });
+  }
+  function centerOnSelectedNow(zoom) {
     var d = state.selectedId != null ? state.index[state.selectedId] : null;
     if (!d || d.lat == null || d.lng == null || !state.map) return;
     // Tamaño real del mapa antes de centrar (la ficha recien abierta lo encoge).
@@ -4075,9 +4090,21 @@
     updateFollows();
     followSelected();
     if (!state.bootstrapped && state.filtered.length) {
-      fitToFleet();
+      // Con ?device=N el primer encuadre es el del vehiculo (focusInitialDevice):
+      // encuadrar antes la flota animaba un zoom que se tragaba el del vehiculo.
+      var pedido = initialDeviceDone ? null : urlDeviceId();
+      if (pedido == null || !state.index[pedido]) fitToFleet();
       state.bootstrapped = true;
     }
+  }
+  function urlDeviceId() {
+    var id;
+    try {
+      id = parseInt(new URLSearchParams(location.search).get("device"), 10);
+    } catch (e) {
+      id = NaN;
+    }
+    return isNaN(id) || !id ? null : id;
   }
   // Enfoca un vehículo al abrir /ui/v2/live?device=N (resultado del buscador
   // global). Se ejecuta una sola vez, tras el primer load COMPLETO de la lista
@@ -4086,13 +4113,14 @@
   function focusInitialDevice() {
     if (initialDeviceDone) return;
     initialDeviceDone = true;
-    var id;
-    try {
-      id = parseInt(new URLSearchParams(location.search).get("device"), 10);
-    } catch (e) {
-      id = NaN;
+    var id = urlDeviceId();
+    if (id && state.index && state.index[id]) {
+      selectDevice(id);
+      // Sin posicion no hay a donde ir: se encuadra la flota como siempre.
+      if (state.index[id].lat == null) fitToFleet();
     }
-    if (id && !isNaN(id) && state.index && state.index[id]) selectDevice(id);
+    // Pedido pero no esta en la flota (sin permiso o borrado): encuadre normal.
+    else if (id) fitToFleet();
   }
 
   function fetchDevices(manual) {
