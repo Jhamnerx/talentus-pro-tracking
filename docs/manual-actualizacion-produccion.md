@@ -7,7 +7,7 @@ y aquí se cita como [MC §n].
 
 Servidor: AlmaLinux 9, Apache, MariaDB 10.5, Redis, supervisor con usuario `apache`.
 Aplicación en `/var/www/html`. Los comandos se ejecutan como `root` (sin `sudo -u apache`); por eso
-antes de abrir se devuelven los archivos a `apache` con `chown` (§9).
+antes de arrancar los workers se devuelven los archivos a `apache` con `chown` (§7.2).
 
 > **Qué rama se despliega:** `master` (`origin/master`). Desde el 27-nov-2026 incluye
 > `fix/live-paridad-legacy` (paridad del mapa en vivo con el legacy, historial nuevo, comandos GPRS).
@@ -55,13 +55,14 @@ WHERE completed_at IS NULL AND failed_at IS NULL
 cd /var/www/html
 php artisan down
 php artisan queue:restart
-sudo supervisorctl status                                 # ver los nombres reales de los grupos
-sudo supervisorctl stop laravel-core:* laravel-webservices:*
+sudo supervisorctl stop all
 sleep 70; pgrep -af 'artisan (insert:run|queue:work)'    # debe quedar vacío
 ```
 
-Ejecutar cada línea por separado. Si `stop` responde `ERROR (no such group)`, usar los nombres que
-muestra `status` (por ejemplo `sudo supervisorctl stop 'laravel-worker-tracker:*'`), y los mismos en §8 y §10.
+Ejecutar cada línea por separado. Se usa `stop all` porque en producción todos los programas de
+supervisor son workers de Laravel, y no todos están en `laravel-core` / `laravel-webservices`:
+UNIGIS y Securitas corren en sus propios grupos (`laravel-ws-unigis`, `laravel-ws-securitas`).
+Un `stop laravel-core:* laravel-webservices:*` los dejaría corriendo.
 
 Las posiciones que llegan mientras tanto esperan en Redis y se procesan al volver. La base de
 Traccar (posiciones) no se toca.
@@ -164,10 +165,13 @@ php artisan route:clear
 Añadir (ver todas las opciones en [MC §4] y `.env.example`):
 
 ```dotenv
-APPLY_NETWORK_DATA=false
 OPERATIONS_ENABLED=false
 SECURITY_ENABLED=false
 ```
+
+`APPLY_NETWORK_DATA`: producción ya tiene `APPLY_NETWORK_DATA=true`. Dejarlo como está: el
+comportamiento no cambia. Solo si la línea no existiera habría que decidir (el valor por defecto
+pasó de `false` a `true`).
 
 ## 6. Migraciones
 
@@ -188,28 +192,65 @@ php artisan map-icons:refresh --dry-run     # revisar antes
 php artisan map-icons:refresh --generate
 php artisan server:translations
 cp -a /root/respaldos/logo-$STAMP.png public/images/logo.png   # solo si había logo propio
-sudo chown -R apache:apache storage bootstrap/cache public/images
-php artisan config:cache                    # solo si en §0 existía config.php
+php artisan config:cache                    # producción sí lo usa (había bootstrap/cache/config.php)
+```
+
+### 7.1 Hitos kilométricos
+
+Las migraciones crean `hitos_km` y `rutas_viales` vacías. Este comando las llena desde los CSV que
+vienen en git: `storage/hitos_km_peru_2025.csv` (unos 31 700 hitos de Provías) y
+`storage/rutas_nombres.csv` (nombres legibles de las vías, por ejemplo «Panamericana Norte»).
+
+```bash
+cd /var/www/html
+php artisan hitos:import
+```
+
+Debe decir `Hitos importados: 31723 (versión 2025-07)` y `Nombres de vías importados: …`. Se puede
+repetir sin duplicar: borra la versión y la vuelve a cargar. Para comprobar:
+
+```bash
+mariadb -u root -p -e "SELECT version, COUNT(*) FROM gpswox_web.hitos_km GROUP BY version; SELECT COUNT(*) FROM gpswox_web.rutas_viales;"
+```
+
+En la v2, la capa «Hitos» del mapa (Live, Historial, Eventos) y la referencia vial en los popups
+(«PE-1N · km 520») salen de estas tablas.
+
+### 7.2 Permisos de archivos (antes de arrancar los workers)
+
+Todo lo anterior corrió como `root` y deja a su nombre el log del día y las cachés. Los workers
+corren como `apache`: si arrancan antes de este `chown`, mueren al primer intento de escribir en el
+log (tracker y Sidersales quedan en `FATAL` «Exited too quickly», como pasó el 28-nov-2026).
+
+```bash
+chown -R apache:apache storage bootstrap/cache public/images
+ls -l storage/logs | grep -v ' apache apache '   # solo la línea "total"
 ```
 
 ## 8. Supervisor (worker nuevo de backups)
 
 ```bash
-INI=<ruta del .ini que dio el grep de §0>
-sudo cp -a $INI $INI.bak
+INI=/etc/supervisord.d/laravel-worker-core.ini
+sudo cp -a $INI /root/respaldos/laravel-worker-core.ini.bak
 diff $INI /var/www/html/laravel-worker-core.ini   # solo debe aparecer laravel-worker-backups
 sudo cp /var/www/html/laravel-worker-core.ini $INI
 sudo supervisorctl reread && sudo supervisorctl update
-sudo supervisorctl start laravel-core:* laravel-webservices:*
-sudo supervisorctl status                                  # todo RUNNING, incluido laravel-worker-backups_00
+sudo supervisorctl start all
+sleep 10; sudo supervisorctl status | grep -v RUNNING     # no debe salir nada
 ```
 
-Si el `diff` muestra ajustes propios del servidor (`numprocs`, rutas), pasarlos al archivo nuevo antes de copiar.
+Si algún worker queda en `FATAL` o `BACKOFF`, mirar su log (`storage/logs/worker-<cola>.log`),
+repetir el `chown` de §7.2 y `sudo supervisorctl start all`.
+
+Producción ya tiene las rutas `/var/www/html` y los mismos `numprocs` que el repositorio
+(tracker 3, default 2, service 1, send 1). Si el `diff` muestra otra cosa, pasarla al archivo nuevo antes de copiar.
+
+`laravel-worker-webservices.ini` **no** se copia: el del repositorio mete UNIGIS y Securitas en el
+grupo `laravel-webservices`, y en producción corren aparte. Funciona igual de las dos formas.
 
 ## 9. Abrir y verificar
 
 ```bash
-chown -R apache:apache storage bootstrap/cache public/images   # lo creado como root (logs, cachés) vuelve a apache
 sudo systemctl reload httpd
 php artisan up
 php artisan --version                      # Laravel Framework 9.52.x
@@ -235,7 +276,7 @@ Al día siguiente, comprobar que el backup nocturno trae `gpswox_web` con tamañ
 ```bash
 cd /var/www/html
 php artisan down
-sudo supervisorctl stop laravel-core:* laravel-webservices:*
+sudo supervisorctl stop all
 git checkout -- resources/lang resources/original_lang
 git checkout $(cat /root/respaldos/commit-<STAMP>)
 rm -f bootstrap/cache/*.php
@@ -245,10 +286,11 @@ cp -a /root/respaldos/env-<STAMP> .env
 # Restaurar gpswox_web (reemplaza el contenido actual de la base)
 zcat /root/respaldos/gpswox_web-<STAMP>.sql.gz | mariadb -u root -p --max-allowed-packet=512M gpswox_web
 
-sudo cp $INI.bak $INI && sudo supervisorctl reread && sudo supervisorctl update
+sudo cp /root/respaldos/laravel-worker-core.ini.bak /etc/supervisord.d/laravel-worker-core.ini && sudo supervisorctl reread && sudo supervisorctl update
 php artisan view:clear
-php artisan config:cache                    # si se usaba
-sudo supervisorctl start laravel-core:* laravel-webservices:*
+php artisan config:cache
+chown -R apache:apache storage bootstrap/cache public/images
+sudo supervisorctl start all
 php artisan up
 ```
 
