@@ -1098,4 +1098,5 @@ return [
     'open_in_map' => 'Open in map',
     'copy_coordinates' => 'Copy coordinates',
     'copied' => 'Copied',
+    'time_ago' => ':time ago',
 ];

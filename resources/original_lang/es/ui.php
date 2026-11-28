@@ -1099,4 +1099,5 @@ return [
     'open_in_map' => 'Abrir en mapa',
     'copy_coordinates' => 'Copiar coordenadas',
     'copied' => 'Copiado',
+    'time_ago' => 'hace :time',
 ];

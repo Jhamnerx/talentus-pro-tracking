@@ -1146,13 +1146,44 @@
     return "<dt>" + esc(dt) + "</dt><dd" + (attrs || "") + ">" + dd + "</dd>";
   }
 
+  // Iconos del popup (trazo, heredan el color)
+  var POP_IC = {
+    follow: '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+    send_command: '<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+    edit: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+    share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+    device_media: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/>',
+    device_alerts: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+    video: '<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>',
+    street: '<circle cx="12" cy="5" r="2"/><path d="M10 22v-6l-2-1V9h8v6l-2 1v6"/>',
+    details: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+    close: '<path d="M18 6 6 18M6 6l12 12"/>',
+    pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+    ext: '<path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
+    speed: '<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    sat: '<path d="M12 20a8 8 0 0 0-8-8"/><path d="M12 20a12 12 0 0 0-12-12"/><circle cx="19" cy="17" r="2"/>',
+    alt: '<path d="m3 20 6-10 4 6 3-4 5 8z"/>',
+  };
+  function popIcon(k) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (POP_IC[k] || "") + "</svg>";
+  }
+  // Tipos logicos (ON/OFF) y los que en ON son alerta: mismo reparto que el
+  // mosaico de Sensores de la ficha.
+  var SENS_LOGICOS = { acc: 1, ignition: 1, engine: 1, blocked: 1, door: 1, seatbelt: 1, plugged: 1, anonymizer: 1,
+    logical: 1, drive_business: 1, drive_private: 1, harsh_acceleration: 1, harsh_breaking: 1, harsh_turning: 1 };
+  var SENS_ALERTA = { blocked: 1, harsh_acceleration: 1, harsh_breaking: 1, harsh_turning: 1 };
+
   /**
-   * Popup del marcador con los datos del popup del legacy (model/device.js
-   * openPopup): direccion, hora, tiempo detenido y sensores arriba; posicion
-   * (enlace al mapa externo), velocidad, altitud, angulo, modelo, placa,
-   * protocolo y servicios en el bloque desplegable; video si hay canales.
-   * `refresco` = repintado desde el sondeo (legacy updatePopup): se recoloca
-   * y conserva abierto el bloque desplegable.
+   * Popup del marcador. Organizacion de la referencia, en el estilo de la
+   * ficha: cabecera con estado y botones (video, street view, detalles,
+   * cerrar), fila de atajos con las MISMAS acciones y permisos del menu del
+   * vehiculo, hora relativa, direccion con copiar y abrir en el mapa, tres
+   * cifras (velocidad, detenido, satelites o altitud), sensores en dos
+   * columnas con su valor coloreado, el bloque desplegable del legacy y los
+   * atajos de historial. Datos del popup del legacy (objects/items?full=1).
+   * `refresco` = repintado desde el sondeo (legacy updatePopup).
    */
   function openDevicePopup(id, refresco) {
     var d = state.index[id];
@@ -1168,39 +1199,86 @@
     var lat = parseFloat(d.lat),
       lng = parseFloat(d.lng);
     var coords = lat.toFixed(6) + ", " + lng.toFixed(6);
+    var cEst = statusVar(d.icon_color);
+    var acc = accionesDisponibles(id);
+    var canales = d.camera_channels && d.camera_channels.length ? d.camera_channels : f.camera_channels;
+
+    // Atajos: los del menu del vehiculo que la cuenta tiene, con su texto.
+    var atajos = "";
+    ["follow", "send_command", "edit", "share", "device_media", "device_alerts"].forEach(function (k) {
+      if (!acc[k]) return;
+      atajos += '<button type="button" class="tp-pop__act" data-pop-act="' + k + '" title="' + esc(acc[k]) + '" aria-label="' + esc(acc[k]) + '">' + popIcon(k) + "</button>";
+    });
+
+    // Satelites: del sensor si lo hay; si no, la altitud.
+    var sat = null;
+    (f.sensors || []).forEach(function (sn) {
+      if (sn.type === "satellites" && sat == null) sat = sn.value;
+    });
+
     var sensores = "";
     (f.sensors || []).forEach(function (sn) {
-      sensores += popRow(sn.name, sn.value == null || sn.value === "" ? "—" : sn.value);
+      if (sn.type === "satellites") return;
+      var txt = sn.value == null || sn.value === "" ? "—" : String(sn.value);
+      var clase = "tp-pop__sv";
+      if (SENS_LOGICOS[sn.type]) {
+        var on = sn.val === true || sn.val === 1 || sn.val === "1";
+        // Sin conexion, encendido/motor/acc se ven apagados (legacy setOffline)
+        if (status === "offline" && (sn.type === "acc" || sn.type === "ignition" || sn.type === "engine")) on = false;
+        clase += on ? (SENS_ALERTA[sn.type] ? " is-alert" : " is-on") : " is-off";
+      }
+      sensores += '<div class="tp-pop__sensor"><span class="tp-pop__sn">' + esc(sn.name) + '</span><span class="' + clase + '">' + txt + "</span></div>";
     });
     var servicios = "";
     (f.services || []).forEach(function (sv) {
       servicios += popRow(sv.name, esc(sv.value));
     });
-    var canales = d.camera_channels && d.camera_channels.length ? d.camera_channels : f.camera_channels;
+
+    var ts = parseInt(d.timestamp, 10) || 0;
+    var hace = ts ? fmtTimeAgo(ts) : "";
+    var street = "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + lat + "," + lng;
+    var gmaps = "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng;
+
     var html =
-      '<div class="tp-dev-popup" data-status="' + status + '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"' +
-      // Igual que la fila y la ficha: manda el color del vehiculo.
-      (statusVar(d.icon_color) ? ' style="background:' + statusVar(d.icon_color) + '"' : "") +
-      "></span>" +
-      '<span class="tp-dev-popup__name">' + esc(d.name || "#" + d.id) + "</span>" +
+      '<div class="tp-pop" data-status="' + status + '">' +
+      // Cabecera
+      '<div class="tp-pop__head">' +
+      '<span class="tp-pop__dot"' + (cEst ? ' style="background:' + cEst + '"' : "") + "></span>" +
+      '<div class="tp-pop__title"><strong>' + esc(d.name || "#" + d.id) + "</strong>" +
+      '<span style="' + (cEst ? "color:" + statusVar(d.icon_color, true) : "") + '">' + esc(STATUS_LABELS[d.online] || d.online || "—") + "</span></div>" +
+      '<div class="tp-pop__tabs">' +
       (canales && canales.length && window.tpDeviceVideo
-        ? '<button type="button" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm" data-pop-video title="' + esc(tpT("front.video_live")) + '" aria-label="' + esc(tpT("front.video_live")) + '">' +
-          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></button>'
+        ? '<button type="button" data-pop-video title="' + esc(tpT("front.video_live")) + '" aria-label="' + esc(tpT("front.video_live")) + '">' + popIcon("video") + "</button>"
         : "") +
+      '<a href="' + street + '" target="_blank" rel="noopener" title="' + esc(tpT("front.street_view")) + '" aria-label="' + esc(tpT("front.street_view")) + '">' + popIcon("street") + "</a>" +
+      '<button type="button" data-pop-details title="' + esc(tpT("ui.see_details")) + '" aria-label="' + esc(tpT("ui.see_details")) + '">' + popIcon("details") + "</button>" +
+      '<button type="button" data-pop-close title="' + esc(tpT("global.close")) + '" aria-label="' + esc(tpT("global.close")) + '">' + popIcon("close") + "</button>" +
+      "</div></div>" +
+      // Atajos
+      (atajos ? '<div class="tp-pop__acts">' + atajos + "</div>" : "") +
+      // Hora
+      '<div class="tp-pop__time">' + (hace ? '<b>' + esc(tpT("ui.time_ago").replace(":time", hace)) + "</b> · " : "") + esc(d.time || "—") + "</div>" +
+      // Direccion
+      '<div class="tp-pop__addr">' + popIcon("pin") +
+      '<span data-pop-addr class="' + (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") + '">' + tpT("ui.loading_ellipsis") + "</span>" +
+      '<button type="button" class="tp-pop__mini" data-tp-copy="' + lat + "," + lng + '" title="' + esc(tpT("ui.copy_coordinates")) + '" aria-label="' + esc(tpT("ui.copy_coordinates")) + '">' + popIcon("copy") + "</button>" +
+      '<a class="tp-pop__mini" href="' + gmaps + '" target="_blank" rel="noopener" title="' + esc(tpT("ui.open_in_map")) + '" aria-label="' + esc(tpT("ui.open_in_map")) + '">' + popIcon("ext") + "</a>" +
       "</div>" +
-      '<div class="tp-dev-popup__status">' + esc(STATUS_LABELS[d.online] || d.online || "—") + "</div>" +
-      '<dl class="tp-dev-popup__defs">' +
-      popRow(tpT("front.address"), tpT("ui.loading_ellipsis"), ' data-pop-addr class="' + (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") + '"') +
-      popRow(tpT("front.time"), esc(d.time || "—")) +
-      popRow(tpT("front.stop_duration"), esc(stopDurationText(d) || "—")) +
-      popRow(tpT("front.speed"), esc(speed)) +
-      sensores +
-      (f.expiration_date ? popRow(tpT("front.expiration_date"), esc(f.expiration_date)) : "") +
-      "</dl>" +
+      // Cifras
+      '<div class="tp-pop__stats">' +
+      '<div>' + popIcon("speed") + "<b>" + esc(speed) + "</b></div>" +
+      '<div title="' + esc(tpT("front.stop_duration")) + '">' + popIcon("stop") + "<b>" + esc(stopDurationText(d) || "—") + "</b></div>" +
+      (sat != null
+        ? '<div title="' + esc(tpT("satellites")) + '">' + popIcon("sat") + "<b>" + esc(sat) + "</b></div>"
+        : '<div title="' + esc(tpT("front.altitude")) + '">' + popIcon("alt") + "<b>" + esc(d.altitude != null ? Math.round(d.altitude) + " m" : "—") + "</b></div>") +
+      "</div>" +
+      // Sensores
+      (sensores ? '<div class="tp-pop__sec">' + esc(tpT("front.sensors")) + '</div><div class="tp-pop__sensors">' + sensores + "</div>" : "") +
+      (f.expiration_date ? '<div class="tp-pop__exp">' + esc(tpT("front.expiration_date")) + ": <b>" + esc(f.expiration_date) + "</b></div>" : "") +
+      // Desplegable (legacy #device-side-params)
       '<details class="tp-dev-popup__more" data-pop-more' + (abierto ? " open" : "") + "><summary>" + esc(tpT("front.show_more")) + "</summary>" +
       '<dl class="tp-dev-popup__defs">' +
-      popRow(tpT("front.position"),
-        '<a href="https://www.google.com/maps/search/?api=1&query=' + lat + "," + lng + '" target="_blank" rel="noopener">' + coords + "</a>") +
+      popRow(tpT("front.position"), '<span class="tp-text-mono">' + coords + "</span>") +
       popRow(tpT("front.altitude"), esc(d.altitude != null ? Math.round(d.altitude) + " m" : "—")) +
       popRow(tpT("front.angle"), esc(d.course != null ? Math.round(d.course) + "°" : "—")) +
       popRow(tpT("front.driver"), esc((f.driver && f.driver.name) || "—")) +
@@ -1210,9 +1288,10 @@
       servicios +
       "</dl></details>" +
       devShortcutsHtml() +
-      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>' + tpT('ui.see_details') + '</button></div>';
+      "</div>";
+
     if (!state.popup) {
-      state.popup = L.popup({ maxWidth: 300, className: "tp-dev-popup-wrap" });
+      state.popup = L.popup({ maxWidth: 340, minWidth: 300, className: "tp-dev-popup-wrap tp-pop-wrap", closeButton: false });
       state.popup.on("remove", function () {
         state.popupId = null;
       });
@@ -1227,16 +1306,20 @@
       var slot = el && el.querySelector("[data-pop-addr]");
       if (slot) slot.textContent = a || "—";
     });
-    var btn = el && el.querySelector("[data-pop-details]");
-    if (btn)
-      btn.addEventListener("click", function () {
-        selectDevice(id);
+    if (el) {
+      var q = function (sel, fn) {
+        var n = el.querySelector(sel);
+        if (n) n.addEventListener("click", fn);
+      };
+      q("[data-pop-details]", function () { selectDevice(id); });
+      q("[data-pop-close]", function () { state.map.closePopup(state.popup); });
+      q("[data-pop-video]", function () { window.tpDeviceVideo.open(id, { name: d.name }); });
+      Array.prototype.forEach.call(el.querySelectorAll("[data-pop-act]"), function (b) {
+        b.addEventListener("click", function () {
+          runDeviceAction(b.getAttribute("data-pop-act"), id, b);
+        });
       });
-    var vb = el && el.querySelector("[data-pop-video]");
-    if (vb)
-      vb.addEventListener("click", function () {
-        window.tpDeviceVideo.open(id, { name: d.name });
-      });
+    }
     bindDevShortcuts(el, id);
 
     // Sensores y demas datos completos: llegan aparte y se repinta.
@@ -3406,22 +3489,12 @@
     rowMenu.style.visibility = "";
   }
 
-  function openRowMenu(btn, id) {
-    closeRowMenu();
-    rowMenu = document.createElement("div");
-    rowMenu.className = "tp-row-menu";
-    rowMenu.style.position = "fixed";
-    rowMenu.style.left = "0px";
-    rowMenu.style.top = "0px";
-    // Oculto mientras se mide: si se pinta en 0,0 se ve dar el salto.
-    rowMenu.style.visibility = "hidden";
-    document.body.appendChild(rowMenu);
-    rowMenu.addEventListener("click", function (e) {
-      var it = e.target.closest(".tp-row-menu__item");
-      if (!it) return;
-      var act = it.getAttribute("data-act");
-      closeRowMenu();
-      if (act === "history") goHistory(id, it.getAttribute("data-range"));
+  /**
+   * Acciones del vehiculo (menu de la lista y atajos del popup). `it` es el
+   * boton pulsado, por si la accion lleva datos (data-range del historial).
+   */
+  function runDeviceAction(act, id, it) {
+      if (act === "history") goHistory(id, (it && it.getAttribute("data-range")) || "today");
       else if (act === "route_report") openRouteReport(id);
       else if (act === "follow") openFollow(id);
       else if (act === "device_video" || act === "device_video_recordings") {
@@ -3485,6 +3558,36 @@
         resetAppUuid(id);
       } else if (act === "pending" && window.tpModal && tpModal.toast)
         tpModal.toast(tpT('ui.feature_coming_soon'), "info");
+  }
+
+  /** Acciones del menu que la cuenta puede usar con este vehiculo (mismos permisos). */
+  function accionesDisponibles(id) {
+    var frag = buildRowMenu(id);
+    var out = {};
+    if (frag)
+      Array.prototype.forEach.call(frag.querySelectorAll("[data-act]"), function (b) {
+        // El texto del boton (ya traducido) sirve de titulo del atajo.
+        out[b.getAttribute("data-act")] = (b.textContent || "").replace(/\s+/g, " ").trim() || true;
+      });
+    return out;
+  }
+
+  function openRowMenu(btn, id) {
+    closeRowMenu();
+    rowMenu = document.createElement("div");
+    rowMenu.className = "tp-row-menu";
+    rowMenu.style.position = "fixed";
+    rowMenu.style.left = "0px";
+    rowMenu.style.top = "0px";
+    // Oculto mientras se mide: si se pinta en 0,0 se ve dar el salto.
+    rowMenu.style.visibility = "hidden";
+    document.body.appendChild(rowMenu);
+    rowMenu.addEventListener("click", function (e) {
+      var it = e.target.closest(".tp-row-menu__item");
+      if (!it) return;
+      var act = it.getAttribute("data-act");
+      closeRowMenu();
+      runDeviceAction(act, id, it);
     });
     // Clonado del template: síncrono e instantáneo, sin petición.
     var built = buildRowMenu(id);
