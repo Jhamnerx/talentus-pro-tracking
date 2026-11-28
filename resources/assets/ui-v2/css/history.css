@@ -1771,12 +1771,13 @@
   box-shadow: 0 0 0 3px var(--surface-page, #fff);
 }
 .tp-htl__node svg { width: 12px; height: 12px; }
-.tp-htl__head { display: flex; align-items: center; gap: 8px; cursor: pointer; min-width: 0; }
-.tp-htl__title { font-weight: 800; font-size: 13px; color: var(--tc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* Título + play en la primera línea; la hora (con rango en 12 h no cabe al lado) en la segunda. */
+.tp-htl__head { display: flex; flex-wrap: wrap; align-items: center; gap: 1px 8px; cursor: pointer; min-width: 0; }
+.tp-htl__title { flex: 1 1 0; min-width: 0; font-weight: 800; font-size: 13px; color: var(--tc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tp-htl__it--start .tp-htl__title, .tp-htl__it--end .tp-htl__title { color: var(--fg-primary, #0f172a); }
-.tp-htl__hora { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--fg-tertiary, #64748b); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tp-htl__hora { order: 2; flex-basis: 100%; font-size: 11.5px; font-weight: 600; color: var(--fg-tertiary, #64748b); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .tp-scope .tp-htl__play {
-  position: static; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0;
+  position: static; order: 1; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0;
   background: var(--brand-800, #0e2157); color: #fff; font-size: 10px; display: grid; place-items: center; cursor: pointer;
 }
 .tp-htl__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
