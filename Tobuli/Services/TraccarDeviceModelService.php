@@ -51,13 +51,18 @@ class TraccarDeviceModelService
             return null;
         }
 
-        $devices = $this->request('GET', 'api/devices?uniqueId=' . urlencode($device->imei));
+        // ?uniqueId= filtra por los equipos asignados al usuario y la cuenta de servicio no tiene ninguno:
+        // siempre volvía vacío. Con all=true un administrador busca en todos; keyword es un LIKE sobre varias
+        // columnas, así que se elige el que coincide exacto en uniqueId.
+        $devices = $this->request('GET', 'api/devices?all=true&keyword=' . urlencode($device->imei));
 
         if ($devices === null) {
             throw new \RuntimeException("Traccar: no se pudo consultar el equipo {$device->imei}");
         }
 
-        $traccarDevice = $devices[0] ?? null;
+        $traccarDevice = collect($devices)->first(function ($item) use ($device) {
+            return ($item['uniqueId'] ?? null) === (string) $device->imei;
+        });
 
         if (! $traccarDevice) {
             return null;
