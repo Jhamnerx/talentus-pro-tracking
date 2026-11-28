@@ -3166,3 +3166,519 @@ table.tp-lock-hist th {
 @media (prefers-reduced-motion: reduce) {
   .tp-live__spinner { animation-duration: 2.4s; }
 }
+
+/* Con los nombres ocultos, el marcador bajo el cursor sí enseña su nombre
+   (legacy: .leaflet-hidden-name .leaflet-hover en layout/_map.scss). */
+.leaflet-container:not(.tp-show-names) .tp-lmarker:hover {
+  z-index: 10000 !important;
+}
+.leaflet-container:not(.tp-show-names) .tp-lmarker:hover .tp-lmarker__name {
+  display: block;
+}
+.leaflet-container:not(.tp-show-names) .tp-lmarker:hover .tp-lmarker__title {
+  display: inline;
+}
+
+/* Casilla de visibilidad del grupo entero (legacy groups.blade). */
+.tp-live__group-active {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  cursor: pointer;
+}
+.tp-live__group-active input {
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* Bloque desplegable del popup del marcador (legacy #device-side-params). */
+.tp-dev-popup__head [data-pop-video] {
+  margin-left: auto;
+}
+.tp-dev-popup__more {
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+.tp-dev-popup__more summary {
+  cursor: pointer;
+  color: var(--fg-secondary, #5b6170);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.tp-dev-popup__more a {
+  color: var(--brand-primary, #0a84e8);
+}
+
+/* Lista de equipos de un cluster en el zoom máximo (legacy clusterPopup). */
+.tp-cluster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.tp-cluster-list button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.tp-cluster-list button:hover,
+.tp-cluster-list button:focus-visible {
+  background: var(--surface-sunken, #f1f3f7);
+}
+.tp-cluster-list__name {
+  font-weight: 600;
+  font-size: 13px;
+}
+.tp-cluster-list__meta {
+  font-size: 11px;
+  color: var(--fg-tertiary, #8a90a0);
+}
+
+/* Ventana de seguimiento: lleva dentro la página del legacy (iframe) y se
+   redimensiona desde la esquina, como el diálogo del legacy. */
+.tp-follow {
+  resize: both;
+  height: 360px;
+  min-width: 280px;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+.tp-follow__map {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 160px;
+}
+.tp-follow__frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+/* Mientras se arrastra, el iframe no se queda con el puntero. */
+.tp-follow.is-dragging .tp-follow__frame {
+  pointer-events: none;
+}
+
+/* Aviones en vivo (legacy .aircraft-icon). */
+.tp-aircraft {
+  background: none;
+  border: 0;
+}
+.tp-aircraft div {
+  font-size: 18px;
+  line-height: 20px;
+  text-align: center;
+  color: var(--brand-700, #122f71);
+  text-shadow: 0 0 2px #fff, 0 0 2px #fff;
+}
+
+/* ── Esferas pequeñas estilo cuadro de instrumentos (esferaPro) ──
+   Esfera oscura con bisel también en el tema claro: es un instrumento.
+   El valor va en la pantallita bajo el eje; la aguja no llega a ella. */
+.tp-dash__small--pro {
+  padding: 8px 6px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.tp-dash__small--pro .tp-dash__small-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.tp-g {
+  display: block;
+  width: 100%;
+  max-width: 170px;
+  height: auto;
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+}
+.tp-g__tick { stroke: #dbe4f5; stroke-width: 2.2; stroke-linecap: round; }
+.tp-g__tick--minor { stroke: #8c9ab8; stroke-width: 1; }
+.tp-g__num { fill: #e8eefc; font-size: 14px; font-weight: 600; text-anchor: middle; }
+.tp-g__zone { fill: none; stroke: #ef4444; stroke-width: 5; }
+.tp-g__fill { fill: none; stroke: var(--tp-g-color); stroke-width: 3; opacity: .9; }
+.tp-g__needle { fill: #ff4d4d; }
+.tp-g__hub { fill: #2a3557; stroke: #7a88aa; stroke-width: 1.5; }
+.tp-g__hub-dot { fill: #ff4d4d; }
+.tp-g__lcd { fill: #050914; stroke: #2b3757; }
+.tp-g__read {
+  fill: var(--tp-g-color);
+  font-size: 24px;
+  font-weight: 800;
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .5px;
+}
+.tp-g__read--alert { fill: #ff5a5a; }
+.tp-g__unit { fill: #8c9ab8; font-size: 12px; font-weight: 600; }
+.tp-g__label { fill: #8c9ab8; font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-anchor: middle; }
+
+/* ── Variante A2 del panel del vehículo ──────────────────────
+   Velocímetro oscuro de instrumento; testigos y datos en tarjetas claras
+   con un icono de color por dato. */
+.tp-dash__main--pro {
+  padding: 8px;
+  background: radial-gradient(120% 120% at 50% 0%, #1d2a4a 0%, #0b1226 70%);
+  border-color: #1f2a47;
+}
+.tp-g--speed { max-width: 300px; margin: 0 auto; }
+.tp-g__num--big { font-size: 15px; font-weight: 700; }
+.tp-g__zone--speed { stroke-width: 7; opacity: .85; }
+.tp-g__fill--speed { stroke: #38bdf8; stroke-width: 4; }
+.tp-g__read--speed { font-size: 36px; fill: #38bdf8; }
+.tp-g__read--speed.tp-g__read--alert { fill: #ff5a5a; }
+.tp-g__read--off { fill: #5f6d8e; }
+.tp-g__sign { fill: #fff; stroke: #dc2626; stroke-width: 6; }
+.tp-g__sign-num { fill: #0e2157; font-size: 19px; font-weight: 900; text-anchor: middle; }
+.tp-dash__main--pro .tp-dash__zone { margin-top: 8px; }
+
+.tp-dash__tells {
+  background: var(--surface-sunken, #f6f8fc);
+}
+.tp-dash__tell[data-on="1"] svg { filter: drop-shadow(0 0 3px color-mix(in srgb, currentColor 45%, transparent)); }
+
+.tp-dash__stat--ic {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, var(--dash-bg), color-mix(in srgb, var(--dash-bg) 92%, #e8eef8));
+}
+.tp-dash__stat-body { min-width: 0; }
+.tp-dash__stat-ic {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.tp-dash__stat-ic svg { width: 18px; height: 18px; }
+.tp-dash__stat-ic--odo { background: #2563eb; }
+.tp-dash__stat-ic--hrs { background: #7c3aed; }
+.tp-dash__stat-ic--dir { background: #0891b2; }
+.tp-dash__stat-ic--stop { background: #d97706; }
+.tp-dash__stat-ic--dist { background: #16a34a; }
+
+/* ── Ficha del vehículo: Objeto, Ubicación y Sensores (mosaico) ── */
+.tp-info { background: linear-gradient(180deg, var(--surface-raised, #fff), color-mix(in srgb, var(--surface-raised, #fff) 94%, #e8eef8)); }
+.tp-info__ttl {
+  display: flex; align-items: center; gap: 7px;
+  margin: 0 0 10px;
+  font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--fg-tertiary, #64748b);
+}
+.tp-info__ttl svg { width: 15px; height: 15px; }
+.tp-info__count {
+  margin-left: auto; font-size: 11px; font-weight: 700; letter-spacing: 0;
+  background: var(--surface-sunken, #eef2f7); border-radius: 20px; padding: 1px 8px;
+}
+.tp-info__ic {
+  flex: none; width: 34px; height: 34px; border-radius: 10px;
+  display: grid; place-items: center; color: #fff; background: #64748b;
+}
+.tp-info__ic svg { width: 18px; height: 18px; }
+.tp-info__ic--pin { background: #dc2626; }
+.tp-info__state { display: flex; align-items: center; gap: 10px; }
+.tp-info__state-txt { min-width: 0; display: flex; flex-direction: column; }
+.tp-info__state-txt strong { font-size: 15px; color: var(--fg-primary, #0f172a); }
+.tp-info__state-txt span { font-size: 11px; color: var(--fg-tertiary, #64748b); }
+.tp-info__chip {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: auto;
+  font-size: 11px; font-weight: 700; border-radius: 20px; padding: 3px 9px; white-space: nowrap;
+}
+.tp-sens .tp-info__chip { margin-left: 0; margin-top: 3px; padding: 1px 8px; }
+.tp-info__chip--on { background: #dcfce7; color: #15803d; }
+.tp-info__chip--off { background: var(--surface-sunken, #eef2f7); color: #64748b; }
+.tp-info__chip--alert { background: #fee2e2; color: #b91c1c; }
+[data-theme="dark"] .tp-info__chip--on { background: rgba(34,197,94,.18); color: #4ade80; }
+[data-theme="dark"] .tp-info__chip--alert { background: rgba(239,68,68,.18); color: #f87171; }
+.tp-info__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 25%, transparent); }
+.tp-info__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.tp-info__fact { background: var(--surface-sunken, #f6f8fc); border-radius: 10px; padding: 7px 9px; min-width: 0; }
+.tp-info__fact--wide { grid-column: 1 / -1; }
+.tp-info__fact span, .tp-info__driver > div > span, .tp-info__addr-line span {
+  display: block; font-size: 9.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--fg-tertiary, #64748b);
+}
+.tp-info__fact b { display: block; font-size: 13px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-info__driver, .tp-info__addr-line {
+  display: flex; align-items: center; gap: 10px; margin-top: 10px; padding-top: 10px;
+  border-top: 1px dashed var(--border-default, #e3e8f1);
+}
+.tp-info__driver b, .tp-info__addr-line b { font-size: 13px; }
+.tp-info__avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  background: #e0e7ff; color: #3730a3;
+}
+.tp-info__addr { display: flex; gap: 10px; }
+.tp-info__addr-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tp-info__addr-txt strong { font-size: 14px; line-height: 1.3; color: var(--fg-primary, #0f172a); }
+.tp-info__addr-txt > span { font-size: 11.5px; color: var(--fg-tertiary, #64748b); }
+.tp-info__crumbs { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.tp-info__crumbs span { font-size: 11px; background: var(--surface-sunken, #eef2f7); color: var(--fg-secondary, #334155); border-radius: 6px; padding: 2px 7px; }
+.tp-info__crumbs span:empty { display: none; }
+.tp-info__coords {
+  display: flex; align-items: center; gap: 7px; margin-top: 10px;
+  background: var(--surface-sunken, #f6f8fc); border-radius: 10px; padding: 7px 9px; font-size: 12px;
+}
+.tp-info__coords > svg { width: 14px; height: 14px; color: var(--fg-tertiary, #64748b); flex: none; }
+.tp-info__coords a { margin-left: auto; color: var(--brand-600, #1f5fbf); font-weight: 700; font-size: 11px; text-decoration: none; white-space: nowrap; }
+.tp-info__copy {
+  border: 1px solid var(--border-default, #dbe3ef); background: var(--surface-raised, #fff); border-radius: 7px;
+  width: 26px; height: 26px; display: grid; place-items: center; color: var(--fg-secondary, #475569); cursor: pointer; flex: none;
+}
+.tp-info__copy svg { width: 14px; height: 14px; }
+.tp-info__copy.is-done { color: #16a34a; border-color: #86efac; }
+
+.tp-sens__grp {
+  font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--fg-muted, #94a3b8); margin: 10px 0 6px;
+}
+.tp-sens__grp:first-of-type { margin-top: 0; }
+.tp-sens { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.tp-sens__tile {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  border: 1px solid var(--border-subtle, #e9eef6); border-radius: 11px; padding: 8px 9px;
+  background: var(--surface-raised, #fff);
+}
+.tp-sens__ic {
+  flex: none; width: 28px; height: 28px; border-radius: 8px;
+  display: grid; place-items: center; color: #fff;
+}
+.tp-sens__ic .tp-sensor-ico { width: 15px; height: 15px; stroke-width: 2; color: #fff; }
+/* Imagen asignada al valor en la Cartografía del sensor (logo del
+   operador, icono de estado…): se ve entera y más grande, sin el cuadrado
+   de color. */
+.tp-sens__ic--img {
+  width: 34px; height: 34px; background: #fff;
+  border: 1px solid var(--border-subtle, #e3e8f1); padding: 3px;
+}
+.tp-sens__ic--img img { width: 100%; height: 100%; object-fit: contain; }
+.tp-sens__body { min-width: 0; flex: 1; }
+.tp-sens__name { font-size: 10.5px; font-weight: 600; color: var(--fg-tertiary, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-sens__val {
+  font-size: 15px; font-weight: 800; color: var(--fg-primary, #0f172a); margin-top: 1px;
+  font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tp-sens__val small { font-size: 11px; font-weight: 600; color: var(--fg-tertiary, #64748b); margin-left: 3px; }
+.tp-sens__bar { height: 5px; border-radius: 4px; background: var(--surface-sunken, #e9eef6); margin-top: 4px; overflow: hidden; }
+.tp-sens__bar i { display: block; height: 100%; border-radius: 4px; }
+
+/* Acciones de la ficha: centrar como botón principal, historial con icono */
+#tp-drawer-center { background: var(--brand-800, #0e2157); color: #fff; border-color: transparent; }
+#tp-drawer-center:hover { background: var(--brand-700, #122f71); }
+#tp-drawer-history { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+#tp-drawer-history .tp-btn {
+  border: 1px solid var(--border-default, #dbe3ef); border-radius: 10px; background: var(--surface-raised, #fff);
+  height: auto; padding: 8px 4px; font-weight: 600;
+}
+#tp-drawer-route-report { border: 1px solid var(--border-default, #dbe3ef); border-radius: 10px; }
+.tp-info__avatar--none { background: var(--surface-sunken, #eef2f7); color: var(--fg-tertiary, #94a3b8); }
+.tp-info__avatar svg { width: 17px; height: 17px; }
+.tp-info__addr-txt [hidden] { display: none; }
+/* Tarjetas de datos del tablero: el número largo (296428.3 H) no se sale */
+.tp-dash__stat--ic { gap: 8px; padding: 9px 9px; }
+.tp-dash__stat--ic .tp-dash__stat-ic { width: 30px; height: 30px; border-radius: 9px; }
+.tp-dash__stat--ic .tp-dash__stat-ic svg { width: 16px; height: 16px; }
+.tp-dash__stat--ic .tp-dash__stat-body { flex: 1; overflow: hidden; }
+.tp-dash__stat--ic .tp-dash__stat-num { font-size: 16px; overflow: hidden; text-overflow: ellipsis; }
+.tp-dash__stat--ic .tp-dash__stat-unit { font-size: 11px; }
+/* Coordenadas en una sola línea */
+.tp-info__coords .tp-text-mono { white-space: nowrap; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+
+/* Copiar y abrir en el mapa como botones de icono, a la derecha: las
+   coordenadas caben enteras */
+.tp-info__coords .tp-info__copy:first-of-type { margin-left: auto; }
+.tp-info__coords a.tp-info__copy { margin-left: 0; color: var(--brand-600, #1f5fbf); }
+.tp-info__coords .tp-text-mono { overflow: visible; text-overflow: clip; }
+
+/* ── Popup del vehículo (rediseño) ─────────────────────────── */
+.tp-pop-wrap .leaflet-popup-content { margin: 0; width: 320px !important; }
+.tp-pop-wrap .leaflet-popup-content-wrapper { padding: 0; border-radius: 14px; overflow: hidden; }
+.tp-pop { font-size: 12px; color: var(--fg-primary, #0f172a); }
+.tp-pop__head {
+  display: flex; align-items: center; gap: 9px; padding: 10px 10px 10px 12px;
+  background: var(--brand-800, #0e2157); color: #fff;
+}
+.tp-pop__dot { width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--status-offline); box-shadow: 0 0 0 3px rgba(255,255,255,.18); }
+.tp-pop__title { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.tp-pop__title strong { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-pop__title span { font-size: 11px; font-weight: 600; opacity: .85; filter: brightness(1.6); }
+.tp-pop__tabs { display: flex; gap: 2px; background: rgba(255,255,255,.1); border-radius: 9px; padding: 2px; }
+.tp-pop__tabs button, .tp-pop__tabs a {
+  width: 28px; height: 28px; border: 0; background: none; color: #fff; border-radius: 7px;
+  display: grid; place-items: center; cursor: pointer;
+}
+.tp-pop__tabs button:hover, .tp-pop__tabs a:hover { background: rgba(255,255,255,.18); }
+.tp-pop__tabs svg { width: 15px; height: 15px; }
+.tp-pop__acts {
+  display: flex; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--border-subtle, #e9eef6);
+  background: var(--surface-sunken, #f6f8fc);
+}
+.tp-pop__act {
+  width: 32px; height: 30px; border-radius: 8px; border: 1px solid var(--border-default, #dbe3ef);
+  background: var(--surface-raised, #fff); color: var(--brand-600, #1f5fbf);
+  display: grid; place-items: center; cursor: pointer;
+}
+.tp-pop__act:hover { background: var(--brand-50, #eef4ff); }
+.tp-pop__act svg { width: 15px; height: 15px; }
+.tp-pop__time { padding: 9px 12px 0; color: var(--fg-tertiary, #64748b); font-size: 11.5px; }
+.tp-pop__time b { color: var(--fg-primary, #0f172a); font-weight: 700; }
+.tp-pop__addr {
+  display: flex; align-items: flex-start; gap: 7px; margin: 8px 10px 0; padding: 8px 9px;
+  background: var(--surface-sunken, #f6f8fc); border-radius: 10px; line-height: 1.35;
+}
+.tp-pop__addr > svg { width: 15px; height: 15px; color: #dc2626; flex: none; margin-top: 1px; }
+.tp-pop__addr > span { flex: 1; min-width: 0; font-weight: 600; }
+.tp-pop__mini {
+  width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border-default, #dbe3ef);
+  background: var(--surface-raised, #fff); color: var(--fg-secondary, #475569);
+  display: grid; place-items: center; cursor: pointer; flex: none;
+}
+.tp-pop__mini svg { width: 13px; height: 13px; }
+a.tp-pop__mini { color: var(--brand-600, #1f5fbf); }
+.tp-pop__stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 8px 10px 0; }
+.tp-pop__stats > div {
+  display: flex; align-items: center; gap: 6px; padding: 7px 8px; border-radius: 10px;
+  border: 1px solid var(--border-subtle, #e9eef6); min-width: 0;
+}
+.tp-pop__stats svg { width: 15px; height: 15px; color: var(--fg-tertiary, #64748b); flex: none; }
+.tp-pop__stats b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-pop__sec {
+  margin: 10px 12px 5px; font-size: 10px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--fg-muted, #94a3b8);
+}
+.tp-pop__sensors {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 10px;
+  border: 1px solid var(--border-subtle, #e9eef6); border-radius: 10px; overflow: hidden;
+  max-height: 190px; overflow-y: auto;
+}
+.tp-pop__sensor {
+  display: flex; flex-direction: column; gap: 1px; padding: 6px 9px; min-width: 0;
+  border-bottom: 1px solid var(--border-subtle, #e9eef6);
+}
+.tp-pop__sensor:nth-child(odd) { border-right: 1px solid var(--border-subtle, #e9eef6); }
+.tp-pop__sn { font-size: 10.5px; color: var(--fg-tertiary, #64748b); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-pop__sv { font-weight: 700; color: var(--brand-600, #1f5fbf); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tp-pop__sv.is-on { color: #15803d; }
+.tp-pop__sv.is-off { color: var(--fg-tertiary, #64748b); }
+.tp-pop__sv.is-alert { color: #dc2626; }
+.tp-pop__exp { margin: 8px 12px 0; font-size: 11px; color: var(--fg-tertiary, #64748b); }
+.tp-pop .tp-dev-popup__more { margin: 8px 12px 0; }
+.tp-pop .tp-dev-shortcuts { margin: 8px 10px 10px; }
+.tp-pop .tp-dev-shortcuts__report { margin: 0 10px 10px; width: calc(100% - 20px); }
+
+/* ── Widgets inferiores (rediseño) ─────────────────────────────
+   Cada tarjeta lleva su color en --wc (inline en el blade): icono de la
+   cabecera en un cuadrado de ese color. */
+.tp-live__bottombar-cards > .tp-wcard {
+  height: 210px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-raised, #fff) 96%, transparent);
+  backdrop-filter: blur(8px);
+}
+.tp-wcard .tp-dw__card-title { font-weight: 700; font-size: 13.5px; gap: 9px; }
+.tp-wcard .tp-dw__card-title > svg {
+  width: 30px; height: 30px; padding: 7px; border-radius: 9px;
+  background: var(--wc, var(--brand-600)); color: #fff; stroke-width: 2;
+}
+.tp-wcard__act { border: 1px solid var(--border-default, #dbe3ef); border-radius: 8px; }
+.tp-wbadge { font-size: 10.5px; font-weight: 800; border-radius: 20px; padding: 2px 8px; white-space: nowrap; }
+.tp-wbadge--ok { background: #dcfce7; color: #15803d; }
+.tp-wbadge--warn { background: #fef3c7; color: #b45309; }
+.tp-wbadge--bad { background: #fee2e2; color: #b91c1c; }
+[data-theme="dark"] .tp-wbadge--ok { background: rgba(34,197,94,.18); color: #4ade80; }
+[data-theme="dark"] .tp-wbadge--warn { background: rgba(245,158,11,.18); color: #fbbf24; }
+[data-theme="dark"] .tp-wbadge--bad { background: rgba(239,68,68,.18); color: #f87171; }
+.tp-wbar { height: 6px; border-radius: 4px; background: var(--surface-sunken, #eef2f7); margin-top: 6px; overflow: hidden; }
+.tp-wbar i { display: block; height: 100%; border-radius: 4px; }
+.tp-wbar--ok { background: #16a34a; } .tp-wbar--warn { background: #d97706; } .tp-wbar--bad { background: #dc2626; }
+
+/* Servicios */
+.tp-svcw { display: flex; flex-direction: column; gap: 7px; }
+.tp-svcw__item { border: 1px solid var(--border-subtle, #eef2f7); border-radius: 11px; padding: 7px 9px; }
+.tp-svcw__top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.tp-svcw__name { font-size: 12.5px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-svcw__det { font-size: 11px; color: var(--fg-tertiary, #64748b); margin-top: 2px; }
+
+/* Eventos: línea de tiempo con punto de color */
+.tp-evtl { position: relative; list-style: none; margin: 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 9px; }
+.tp-evtl::before { content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--border-default, #e3e8f1); }
+.tp-evtl__item { position: relative; display: flex; flex-direction: column; gap: 1px; }
+.tp-evtl__item::before {
+  content: ""; position: absolute; left: -15px; top: 4px; width: 10px; height: 10px; border-radius: 50%;
+  background: #2563eb; box-shadow: 0 0 0 3px var(--surface-raised, #fff);
+}
+.tp-evtl__item[data-tone="bad"]::before { background: #dc2626; }
+.tp-evtl__item[data-tone="ok"]::before { background: #16a34a; }
+.tp-evtl__item[data-tone="mute"]::before { background: #94a3b8; }
+.tp-evtl__item[data-tone="info"]::before { background: #7c3aed; }
+.tp-evtl__title { font-size: 12.5px; font-weight: 700; }
+.tp-evtl__meta { font-size: 11px; color: var(--fg-tertiary, #64748b); }
+
+/* Vista de calle: la imagen ocupa la tarjeta */
+.tp-svw { width: 100%; height: 122px; border: 0; border-radius: 11px; display: block; }
+.tp-wcard .tp-dw__streetview img { border-radius: 11px; width: 100%; height: 122px; object-fit: cover; }
+
+/* Combustible */
+.tp-wcard .tp-fuel-w__val { font-size: 12px; color: var(--fg-tertiary, #64748b); }
+.tp-wcard .tp-fuel-w__val b { font-size: 20px; color: var(--fg-primary, #0f172a); margin-right: 2px; }
+
+/* Comando GPRS */
+.tp-wcard__hint { font-size: 12px; color: var(--fg-tertiary, #64748b); text-align: center; margin: 0 0 10px; }
+.tp-scope .tp-wcard__main { height: 38px; border-radius: 10px; }
+
+/* Bloqueo de motor: estado grande */
+.tp-lockw {
+  display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px;
+  background: var(--surface-sunken, #f6f8fc); border: 1px solid var(--border-subtle, #e3e8f1);
+}
+.tp-lockw__ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: #94a3b8; flex: none; }
+.tp-lockw__ic svg { width: 22px; height: 22px; }
+.tp-lockw b { font-size: 15px; }
+.tp-lockw[data-tone="off"] { background: #f0fdf4; border-color: #bbf7d0; }
+.tp-lockw[data-tone="off"] .tp-lockw__ic { background: #16a34a; }
+.tp-lockw[data-tone="off"] b { color: #15803d; }
+.tp-lockw[data-tone="on"] { background: #fef2f2; border-color: #fecaca; }
+.tp-lockw[data-tone="on"] .tp-lockw__ic { background: #dc2626; }
+.tp-lockw[data-tone="on"] b { color: #b91c1c; }
+[data-theme="dark"] .tp-lockw[data-tone="off"] { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.3); }
+[data-theme="dark"] .tp-lockw[data-tone="on"] { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); }
+.tp-lockw__btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+.tp-lockw__btns .tp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; }
+.tp-wcard__link {
+  display: block; width: 100%; margin-top: 8px; border: 0; background: none; cursor: pointer;
+  font-size: 11.5px; font-weight: 700; color: var(--brand-600, #1f5fbf); text-align: center;
+}
+
+/* Comandos rápidos del widget GPRS */
+.tp-gprsw { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tp-gprsw__cmd {
+  display: flex; align-items: center; gap: 7px; min-width: 0; padding: 7px 8px;
+  border: 1px solid var(--border-default, #dbe3ef); border-radius: 10px;
+  background: var(--surface-raised, #fff); color: var(--fg-primary, #0f172a);
+  font: 600 12px var(--font-sans, Inter, system-ui); cursor: pointer; text-align: left;
+}
+.tp-gprsw__cmd:hover { border-color: var(--wc, #7c3aed); }
+.tp-gprsw__cmd svg { width: 14px; height: 14px; flex: none; color: var(--wc, #7c3aed); }
+.tp-gprsw__cmd span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-gprsw__cmd.is-sending { opacity: .6; cursor: progress; }
+.tp-gprsw__status { font-size: 11px; color: var(--fg-tertiary, #64748b); margin: 6px 0; min-height: 14px; }
+.tp-gprsw__status.is-ok { color: #15803d; }
+.tp-gprsw__status.is-err { color: #b91c1c; }
+.tp-gprsw + .tp-gprsw__status + .tp-wcard__main { margin-top: 2px; }

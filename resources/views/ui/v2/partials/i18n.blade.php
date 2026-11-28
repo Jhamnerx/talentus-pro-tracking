@@ -41,6 +41,8 @@
         'last_hour', 'show_history', 'device_routes_report', 'generate',
         // Planes del equipo («Upgrade») y restablecer UUID de la app (menú de la lista)
         'upgrade', 'device_plans_no_data', 'duration', 'reset_app_uuid',
+        // Popup del marcador con los datos del legacy (model/device.js openPopup)
+        'angle', 'position', 'sensors', 'show_more', 'live_aircraft', 'follow',
     ];
     // Video JT1078 (tp-device-video.js): 'channel' y todas las front.video_*.
     $tpFront = array_merge($tpFront, ['channel'], preg_grep('/^video_/', array_keys(trans('front'))));

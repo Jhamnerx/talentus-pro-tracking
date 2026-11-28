@@ -106,6 +106,8 @@ abstract class BaseController extends Controller
                 'traffic'   => $tg('m_traffic', 'showTraffic'),
                 'cluster'   => $tg('m_objects_cluster', 'clusterDevice'),
                 'hitos'     => $tg('m_hitos', 'showHitos'),
+                // Aviones (legacy showAircraft, por defecto encendido en app.js).
+                'aircraft'  => array_key_exists('m_aircraft', $mc) ? (bool) $mc['m_aircraft'] : true,
                 // Preferencias del marcador (Ajustes de cuenta → Mapa)
                 'showSpeed'    => array_key_exists('m_show_speed', $mc)
                     ? (bool) $mc['m_show_speed']

@@ -238,6 +238,18 @@
   }
   function bindDatePicker() {
     $("#tp-hist-daterange").addEventListener("click", openDatePick);
+    // Atajos de fecha bajo el campo: fijan el rango y cargan al momento.
+    var chipsDia = $("#tp-hist-chips");
+    if (chipsDia)
+      chipsDia.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-quick-load]");
+        if (!b) return;
+        applyQuickRange(b.getAttribute("data-quick-load"));
+        commitRange();
+        chipsDia.querySelectorAll("[data-quick-load]").forEach(function (x) { x.classList.toggle("is-on", x === b); });
+        var cargar = $("#tp-hist-load");
+        if (cargar) cargar.click();
+      });
     var clearBtn = $("#tp-hist-daterange-clear");
     if (clearBtn)
       clearBtn.addEventListener("click", function (e) {
@@ -703,79 +715,117 @@
       "<span>" + label + ":</span><strong>" + esc(value == null || value === "" ? "—" : value) + "</strong></div>"
     );
   }
+  // Hora corta de un texto de fecha ya formateado ("27-11-2026 06:31:05 PM" → "06:31 PM")
+  function horaCorta(txt) {
+    var m = String(txt || "").match(/(\d{1,2}:\d{2})(?::\d{2})?(\s*[AaPp]\.?\s?[Mm]\.?)?/);
+    return m ? m[1] + (m[2] || "") : (txt || "");
+  }
+  function chip(txt) {
+    return txt == null || txt === "" ? "" : '<span class="tp-htl__chip">' + esc(txt) + "</span>";
+  }
+
+  /**
+   * Franja del recorrido: conduccion (verde) y paradas (rojo) a lo largo del
+   * rango con datos, a partir de la hora de la posicion inicial de cada tramo.
+   */
+  function franjaDia() {
+    var P = state.positions;
+    if (!P.length || !P[0].ts || !P[P.length - 1].ts) return "";
+    var t0 = P[0].ts, t1 = P[P.length - 1].ts, total = t1 - t0;
+    if (total <= 0) return "";
+    var tramos = state.timeline.filter(function (it) {
+      return (it.status === S_DRIVE || it.status === S_STOP) && it.start_idx != null;
+    });
+    var html = "";
+    tramos.forEach(function (it, k) {
+      var a = P[it.start_idx] && P[it.start_idx].ts;
+      var sig = tramos[k + 1];
+      var b = sig && P[sig.start_idx] ? P[sig.start_idx].ts : t1;
+      if (!a || b <= a) return;
+      html += '<i class="tp-htl__band-' + (it.status === S_DRIVE ? "drive" : "stop") + '" style="left:' +
+        ((a - t0) / total * 100).toFixed(2) + "%;width:" + Math.max(0.6, (b - a) / total * 100).toFixed(2) + '%"></i>';
+    });
+    return (
+      '<div class="tp-htl__day">' +
+      '<div class="tp-htl__band">' + html + "</div>" +
+      '<div class="tp-htl__bandl"><span>' + esc(horaCorta(P[0].timeLabel || fmtTime(P[0].t))) + "</span><span>" +
+      esc(horaCorta(P[P.length - 1].timeLabel || fmtTime(P[P.length - 1].t))) + "</span></div>" +
+      '<div class="tp-htl__legend"><span class="is-drive">' + esc(T("drive", tpT("ui.driving"))) + '</span><span class="is-stop">' +
+      esc(T("stop", "Estacionado")) + "</span></div></div>"
+    );
+  }
+
+  /**
+   * Linea de tiempo compacta (opcion A del rediseño): una fila por tramo con
+   * su nodo de color, la hora de inicio y fin, y sus datos en etiquetas. El
+   * detalle (conductor, distancia, consumo…) se despliega con «Detalle».
+   * Se mantienen .tp-hist-tl[data-idx], __head, __play y __more: el foco en el
+   * mapa, la reproduccion y el desplegable los usan.
+   */
   function renderTimeline() {
     var host = $("#tp-hist-timeline");
     if (!state.timeline.length) { host.innerHTML = '<div class="tp-hist__side-empty"><span class="tp-text-muted tp-text-sm">' + esc(T("no_data", tpT('front.no_data'))) + "</span></div>"; return; }
     var sum = state.summary || {};
-    // Fila de la CABECERA (fechas junto al riel de puntos)
-    function hRow(label, value) {
-      return '<span class="tp-hist-tl__hrow"><span>' + label + ':</span><strong>' + esc(value == null || value === "" ? "—" : value) + "</strong></span>";
-    }
-    host.innerHTML = state.timeline.map(function (it, i) {
+    var vel = gUnitSpeed() || "km/h";
+
+    var filas = state.timeline.map(function (it, i) {
       var m = statusMeta(it.status);
-      var rows = "", headRows = "", hasExtra = true, sub = it.from || "";
+      var rows = "", chips = "", hora = "", titulo = m.label;
       var startPos = it.start_idx != null ? state.positions[it.start_idx] : null;
 
       if (it.status === S_START || it.status === S_END) {
-        // Totales del recorrido (como la referencia)
+        hora = horaCorta(it.from);
+        if (it.status === S_START) chips = chip(sum.distance);
         rows += tlRow(T("driver", "Conductor"), tripDriver());
         rows += tlRow(T("route_length", "Longitud de ruta"), sum.distance);
-        rows += tlRow(T("move_duration", tpT('ui.moving_duration')), sum.move_duration, true);
-        rows += tlRow(T("stop_duration", tpT('ui.parked_duration')), sum.stop_duration, true);
-        rows += tlRow(T("top_speed", tpT('ui.max_speed')), sum.top_speed, true);
-        rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", sum.fuel, true);
-        rows += tlRow(T("engine_hours", "Horas del motor"), sum.engine_hours, true);
+        rows += tlRow(T("move_duration", tpT('ui.moving_duration')), sum.move_duration);
+        rows += tlRow(T("stop_duration", tpT('ui.parked_duration')), sum.stop_duration);
+        rows += tlRow(T("top_speed", tpT('ui.max_speed')), sum.top_speed);
+        rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", sum.fuel);
+        rows += tlRow(T("engine_hours", "Horas del motor"), sum.engine_hours);
       } else if (it.status === S_STOP) {
-        headRows = hRow(T("start", "Inicio"), it.from) + hRow(T("end", "Fin"), it.to);
+        hora = horaCorta(it.from) + " → " + horaCorta(it.to);
+        chips = chip(it.duration) + chip("0 " + vel);
+        rows += tlRow(T("start", "Inicio"), it.from);
+        rows += tlRow(T("end", "Fin"), it.to);
         rows += tlRow(T("driver", "Conductor"), it.driver);
-        rows += tlRow(T("speed", "Velocidad"), "0 " + (gUnitSpeed() || "km/h"));
-        rows += tlRow(T("altitude", "Altitud"), startPos && startPos.alt != null ? Math.round(startPos.alt) + " m" : "0 m", true);
-        rows += tlRow(T("duration", tpT('ui.duration')), it.duration, true);
-        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel(), true);
-        if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours), true);
-        sub = "";
+        rows += tlRow(T("altitude", "Altitud"), startPos && startPos.alt != null ? Math.round(startPos.alt) + " m" : "0 m");
+        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
+        if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
       } else if (it.status === S_DRIVE) {
-        headRows = hRow(T("drive_start", "Inicio del viaje"), it.from) + hRow(T("drive_end", "Fin de viaje"), it.to);
+        titulo = m.label + (it.index ? " " + it.index : "");
+        hora = horaCorta(it.from) + " → " + horaCorta(it.to);
+        chips = chip(it.duration) + chip(it.distance != null ? it.distance + " km" : null) +
+          chip(it.top_speed != null ? "máx " + it.top_speed + " " + vel : null);
+        rows += tlRow(T("drive_start", "Inicio del viaje"), it.from);
+        rows += tlRow(T("drive_end", "Fin de viaje"), it.to);
         rows += tlRow(T("driver", "Conductor"), it.driver);
-        rows += tlRow(T("top_speed", tpT('ui.max_speed')), it.top_speed != null ? it.top_speed + " " + (gUnitSpeed() || "km/h") : null);
-        rows += tlRow(T("route_length", "Longitud de ruta"), it.distance != null ? it.distance + " km" : null, true);
-        rows += tlRow(T("duration", tpT('ui.duration')), it.duration, true);
-        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel(), true);
-        if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours), true);
-        sub = "";
+        if (it.average_speed != null) rows += tlRow(T("average_speed", tpT('ui.avg_speed')), it.average_speed + " " + vel);
+        if (it.fuel_consumption != null) rows += tlRow(T("fuel_consumption", "Consumo de combustible") + " (GPS)", it.fuel_consumption + " " + gUnitFuel());
+        if (it.engine_hours != null) rows += tlRow(T("engine_hours", "Horas del motor"), fmtDur(it.engine_hours));
       } else {
+        hora = horaCorta(it.from);
+        titulo = it.message || m.label;
         rows += tlRow(T("time", "Hora"), it.from);
-        rows += tlRow(T("event", "Evento"), it.message);
-        hasExtra = false;
-        sub = "";
       }
 
-      // Columna izquierda: badge y, en tarjetas con riel (stop/drive),
-      // dos puntos con el NÚMERO del tramo entre ellos.
-      var left = m.railed
-        ? '<span class="tp-hist-tl__rail" style="color:' + m.color + '">' +
-          '<span class="tp-hist-tl__badge" style="background:' + m.color + '">' + m.sym + "</span>" +
-          '<span class="tp-hist-tl__railline"><i class="tp-hist-tl__dot"></i>' +
-          (it.index ? '<i class="tp-hist-tl__num">' + it.index + "</i>" : "") +
-          '<i class="tp-hist-tl__dot"></i></span></span>'
-        : '<span class="tp-hist-tl__badge" style="background:' + m.color + '">' + m.sym + "</span>";
-
+      var nodo = it.status === S_DRIVE && it.index ? String(it.index) : m.sym;
       return (
-        '<div class="tp-hist-tl tp-hist-tl--' + m.cls + '" data-idx="' + i + '">' +
-        '<div class="tp-hist-tl__head' + (m.railed ? " tp-hist-tl__head--rail" : "") + '" role="button" tabindex="0">' +
-        left +
-        '<span class="tp-hist-tl__headtxt"><span class="tp-hist-tl__title"' +
-        (m.railed ? ' style="color:' + m.color + '"' : "") + ">" + esc(m.label) + "</span>" +
-        (sub ? '<span class="tp-hist-tl__time">' + esc(sub) + "</span>" : "") +
-        headRows +
-        "</span>" +
-        (it.status === S_DRIVE ? '<button type="button" class="tp-hist-tl__play" title="' + tpT('ui.lit_play_trip') + '">▶</button>' : "") +
+        '<div class="tp-hist-tl tp-htl__it tp-htl__it--' + m.cls + '" data-idx="' + i + '" style="--tc:' + m.color + '">' +
+        '<span class="tp-htl__node" aria-hidden="true">' + nodo + "</span>" +
+        '<div class="tp-hist-tl__head tp-htl__head" role="button" tabindex="0">' +
+        '<span class="tp-htl__title">' + esc(titulo) + "</span>" +
+        '<span class="tp-htl__hora">' + esc(hora) + "</span>" +
+        (it.status === S_DRIVE ? '<button type="button" class="tp-hist-tl__play tp-htl__play" title="' + tpT('ui.lit_play_trip') + '" aria-label="' + tpT('ui.lit_play_trip') + '">▶</button>' : "") +
         "</div>" +
-        '<div class="tp-hist-tl__box">' + rows +
-        (hasExtra ? '<button type="button" class="tp-hist-tl__more" title="' + tpT('ui.see_more_info') + '" aria-expanded="false"><span></span><span></span><span></span></button>' : "") +
-        "</div></div>"
+        (chips ? '<div class="tp-htl__chips">' + chips + "</div>" : "") +
+        (rows ? '<button type="button" class="tp-hist-tl__more tp-htl__more" aria-expanded="false">' + esc(tpT('ui.see_more_info')) + " ▾</button>" +
+          '<div class="tp-hist-tl__box tp-htl__box">' + rows + "</div>" : "") +
+        "</div>"
       );
     }).join("");
+
+    host.innerHTML = franjaDia() + '<div class="tp-htl">' + filas + "</div>";
   }
   $("#tp-hist-timeline").addEventListener("click", function (e) {
     var more = e.target.closest(".tp-hist-tl__more");

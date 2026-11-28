@@ -142,13 +142,17 @@ class DevicesController extends BaseController
         // Solo en la primera página (no cambian entre páginas). El group_id de
         // cada device viene del pivot vía DeviceMapTransformer.
         if ($page === 1) {
+            // `open`: grupo plegado o no, el mismo dato que guarda el legacy
+            // (objects/change_group_status → UserOpenGroupService). El 0 es
+            // «Sin grupo», que vive en users.ungrouped_open.
             $payload['groups'] = $this->user->deviceGroups()
                 ->orderBy('title')
-                ->get(['id', 'title'])
+                ->get(['id', 'title', 'open'])
                 ->map(function ($g) {
-                    return ['id' => (int) $g->id, 'title' => $g->title];
+                    return ['id' => (int) $g->id, 'title' => $g->title, 'open' => (bool) $g->open];
                 })
                 ->all();
+            $payload['ungrouped_open'] = (bool) ($this->user->ungrouped_open[\Tobuli\Entities\DeviceGroup::keyUngrouped()] ?? false);
         }
 
         return response()->json($payload);
@@ -3187,6 +3191,9 @@ class DevicesController extends BaseController
             $data['device_info'] = [
                 'status'      => $device->getStatus(),
                 'status_text' => $this->estadoTexto($device->getStatus()),
+                // Color del estado del propio vehiculo (icon_colors), el mismo
+                // que usan el legacy, la lista y el marcador.
+                'status_color' => (string) $device->getStatusColor(),
                 'address'     => $address['address'] ?? null,
                 // Device::getTimeAttribute() ya devuelve la hora formateada con
                 // la zona del usuario, o un texto de estado («Desactivado»,
@@ -3200,6 +3207,7 @@ class DevicesController extends BaseController
                     ? round((float) $device->altitude) . ' m'
                     : null,
                 'engine'      => $engineText,
+                'speed'       => \Formatter::speed()->human($device->getSpeed()),
                 'model'       => $device->device_model,
                 'imei'        => $device->imei,
                 'sim'         => $device->sim_number,
@@ -3258,6 +3266,31 @@ class DevicesController extends BaseController
         // envío de comando (tp-commands) para este device.
         if ($has('gprs_command') && $this->user->perm('send_command', 'view')) {
             $data['gprs_command'] = true;
+
+            // Comandos rapidos del widget, igual que el legacy
+            // (DeviceWidgetsController::gprsCommands): los que no piden
+            // parametros y las plantillas, con los valores por defecto de sus
+            // atributos. Se envian a device/widgets/gprs_command/{id}.
+            try {
+                $data['gprs_commands'] = (new \Tobuli\Services\Commands\CommandService($this->user))
+                    ->getGprsCommands($device)
+                    ->filter(function ($command) {
+                        return ! (isset($command['attributes']) && strpos($command['type'], 'template_') !== 0);
+                    })
+                    ->map(function ($command) {
+                        $attrs = [];
+                        foreach ($command['attributes'] ?? [] as $attribute) {
+                            $attrs[$attribute->getName()] = $attribute->getDefault();
+                        }
+
+                        return ['type' => $command['type'], 'title' => $command['title'], 'attrs' => $attrs];
+                    })
+                    ->values()
+                    ->all();
+            } catch (\Throwable $e) {
+                $data['gprs_commands'] = [];
+            }
+            $data['gprs_send_url'] = route('device.widgets.gprs_command_send', $device->id);
         }
 
         if ($has('sensors')) {
@@ -3268,10 +3301,12 @@ class DevicesController extends BaseController
             foreach ($device->sensors as $sensor) {
                 $formatted = '-';
                 $icon = null;
+                $raw = null;
                 try {
                     if ($traccar) {
                         $value = $sensor->getValueCurrent($traccar);
                         $formatted = $value->getFormatted();
+                        $raw = $value->getValue();
                         // Paridad legacy (DeviceMapFullTransformer::formatSensors +
                         // device.js dataSensorsDOM): 1) icono personalizado del mapeo
                         // de valores (admin → sensor_icons), 2) si no hay, el SVG del
@@ -3289,6 +3324,9 @@ class DevicesController extends BaseController
                     'formated' => $this->sensorTexto($sensor, $formatted),
                     'type'        => (string) $sensor->type,
                     'custom_icon' => $icon,
+                    // Valor crudo para el mosaico: encendido/apagado en los
+                    // sensores logicos y el nivel de la barra en los de %.
+                    'raw'         => is_bool($raw) || is_numeric($raw) ? $raw : null,
                 ];
             }
             $data['sensors'] = $rows;

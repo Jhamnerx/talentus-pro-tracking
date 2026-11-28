@@ -1674,6 +1674,10 @@ function getJsConfig()
             'showPoi' => Arr::get($user->map_controls, 'm_poi', $mapControls['showPoi'] ?? null),
             'showTail' => Arr::get($user->map_controls, 'm_show_tails', $mapControls['showTail'] ?? null),
             'showNames' => Arr::get($user->map_controls, 'm_show_names', $mapControls['showNames'] ?? null),
+            // Capa de aviones (model/aircraft.js): sin estas dos claves la capa
+            // nunca se encendia (isEnabled() leia undefined).
+            'aircraftEnabled' => (bool) ($user && $user->able('flights_info')),
+            'showAircraft' => (bool) Arr::get($user->map_controls, 'm_aircraft', true),
             'showHistoryRoute' => Arr::get($user->map_controls, 'history_control_route ', $mapControls['showHistoryRoute'] ?? null),
             'showHistoryArrow' => Arr::get($user->map_controls, 'history_control_arrows', $mapControls['showHistoryArrow'] ?? null),
             'showHistoryStop' => Arr::get($user->map_controls, 'history_control_stops ', $mapControls['showHistoryStop'] ?? null),

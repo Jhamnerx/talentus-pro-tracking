@@ -21,6 +21,10 @@
     geoUrl: root.getAttribute("data-geo-url") || "",
     fullAddress: root.getAttribute("data-widget-full-address") === "1",
     pollInterval: parseInt(root.getAttribute("data-poll-interval"), 10) || 15000,
+    // Segundos sin datos para pasar a «sin conexion» (legacy: app.offlineTimeout).
+    offlineTimeout: parseInt(root.getAttribute("data-offline-timeout"), 10) || 0,
+    groupToggleUrl: root.getAttribute("data-group-toggle-url") || "",
+    deviceFullUrl: root.getAttribute("data-device-full-url") || "",
     // 'standart' (975h 30min 44s) o 'hh:mm:ss' (975:30:44), de la cuenta.
     durationFormat: root.getAttribute("data-duration-format") || "standart",
     // Atajos del popup/ficha (paridad popup legacy): perm history.view y
@@ -99,6 +103,7 @@
     pollHandle: null,
     bootstrapped: false,
     popup: null,
+    popupId: null,
     toggles: {},
     autoFit: false,
     geoMarker: null,
@@ -131,6 +136,78 @@
   // es SOLO para el motor encendido sin moverse. Un vehiculo parado con el
   // motor apagado (ack) es "detenido" y va en gris; juntarlos hacia que la
   // v2 dijera ralenti de cualquier vehiculo quieto.
+  /**
+   * Paso a «sin conexion» en el navegador. Port de Device.checkOffline del
+   * legacy (model/device.js): el sondeo solo trae los equipos que cambiaron,
+   * asi que uno que deja de transmitir no vuelve a llegar y hay que vencerlo
+   * aqui con el mismo tiempo limite.
+   * `now` = hora del servidor del ultimo sondeo (segundos).
+   */
+  function checkOffline(d, now, timeout) {
+    if (!timeout || !d || d.online === "offline" || d.online === "expired") return false;
+    var online = d.online,
+      diff = now - (parseInt(d.timestamp, 10) || 0),
+      ackDiff = now - (parseInt(d.acktimestamp, 10) || 0);
+    if (diff >= timeout && ackDiff < timeout) online = "ack";
+    if (diff >= timeout && ackDiff >= timeout) online = "offline";
+    if (online === d.online) return false;
+    d.online = online;
+    d.speed = 0;
+    // Legacy: al pasar a «sin conexion» pone en falso los sensores de
+    // encendido (acc, ignition, engine). Aqui viven en tres sitios: el estado
+    // del motor del feed, los testigos de la ficha y los sensores del popup.
+    if (online === "offline") {
+      d.engine_status = false;
+      var dash = typeof dashData !== "undefined" && dashData[d.id];
+      if (dash && dash.telltales) {
+        dash.telltales.engine = false;
+        dash.telltales.ignition = false;
+      }
+      var fc = fullCache[d.id] && fullCache[d.id].data;
+      if (fc && fc.sensors)
+        fc.sensors.forEach(function (sn) {
+          if (sn.type === "acc" || sn.type === "ignition" || sn.type === "engine") sn.val = false;
+        });
+    }
+    if (d.speed_text) d.speed_text = String(d.speed_text).replace(/^[\d.,\s]+/, "0 ");
+    return true;
+  }
+  function checkOfflineAll(now) {
+    var changed = false;
+    state.devices.forEach(function (d) {
+      if (checkOffline(d, now, CFG.offlineTimeout)) changed = true;
+    });
+    return changed;
+  }
+
+  /**
+   * Tiempo detenido que sigue corriendo entre sondeos. Port de
+   * Device.calcStopDuration del legacy: suma lo transcurrido desde que llego
+   * el dato (`_recibido`). Devuelve segundos, o un texto ya hecho.
+   */
+  function stopDuration(d) {
+    if (!d) return null;
+    if (d.online === "online") return 0;
+    if (!parseInt(d.timestamp, 10)) return "-";
+    if (!parseInt(d.moved_timestamp, 10)) return "12+h";
+    var offset = d._recibido ? Math.floor((Date.now() - d._recibido) / 1000) : 0;
+    var stop = (parseInt(d.stop_duration_sec, 10) || 0) + offset;
+    return stop < 60 ? 0 : stop;
+  }
+  function stopDurationText(d) {
+    var v = stopDuration(d);
+    if (typeof v !== "number") return v;
+    // Mas de un dia detenido: en dias y horas ("52d 1h"). Con horas a secas
+    // salia "1249h 57min 51s", que no cabe en la tarjeta ni se lee de un
+    // vistazo. Por debajo de un dia, el formato de la cuenta.
+    if (v >= 86400) {
+      var dias = Math.floor(v / 86400),
+        horas = Math.floor((v % 86400) / 3600);
+      return dias + "d" + (horas ? " " + horas + tpT("front.hour_short") : "");
+    }
+    return fmtDuration(v);
+  }
+
   function classify(d) {
     switch (d && d.online) {
       case "online":
@@ -202,10 +279,26 @@
         : Object.keys(state.baseLayers)[0];
     if (firstId) setBaseLayer(firstId);
     state.deviceLayer = L.layerGroup().addTo(state.map);
+    // El mapa cambia de tamaño sin que la ventana cambie (al abrir la ficha en
+    // pantalla ancha, plegar la lista…). Leaflet guarda el tamaño y, sin
+    // avisarle, centraba con el ancho viejo: el vehiculo seguido quedaba
+    // ~190 px corrido. Se le avisa cada vez que el contenedor cambia.
+    if (typeof ResizeObserver === "function") {
+      new ResizeObserver(function () {
+        if (!state.map) return;
+        state.map.invalidateSize({ pan: false });
+        // La ficha se abre con transicion y el mapa termina de encogerse
+        // DESPUES de centrar: se vuelve a centrar el vehiculo seguido.
+        // Mientras dura el acercamiento inicial se pide el mismo zoom (getZoom
+        // aun da el de antes y lo dejaria a medio camino).
+        if (state.followSelected && state.selectedId != null) centerOnSelected(state.centerZoom || undefined);
+      }).observe(state.map.getContainer());
+    }
     // Arrastrar el mapa deja de seguir al vehiculo (legacy: dragstart →
     // disableFitBounds). Volver a elegirlo reanuda el seguimiento.
     state.map.on("dragstart", function () {
       state.followSelected = false;
+      setAutoFit(false);
     });
     // Preferencias de marcador (Ajustes de cuenta → Mapa)
     var mt = MAP_CFG.toggles || {};
@@ -457,6 +550,38 @@
     });
   }
 
+  // Circulo de imprecision del GPS (addon.inaccuracy): el servidor solo manda
+  // `inaccuracy` (metros) con el addon activo. Mismo estilo que el legacy.
+  var inaccuracies = {}; // id → L.circle
+  function syncInaccuracy(d) {
+    var r = parseInt(d.inaccuracy, 10) || 0;
+    var m = state.markers[d.id];
+    var visible = r > 0 && m && state.toggles.devices !== false && d.active !== false;
+    var c = inaccuracies[d.id];
+    if (!visible) {
+      if (c) {
+        c.remove();
+        delete inaccuracies[d.id];
+      }
+      return;
+    }
+    if (!c) {
+      inaccuracies[d.id] = L.circle(m.getLatLng(), {
+        radius: r,
+        color: "#98c4ec",
+        weight: 3,
+        opacity: 1,
+        fill: true,
+        fillOpacity: 0.3,
+        fillColor: "#98c4ec",
+        interactive: false,
+      }).addTo(state.map);
+    } else {
+      c.setRadius(r);
+      c.setLatLng(m.getLatLng());
+    }
+  }
+
   function renderMarkers() {
     if (!state.map) return;
     var seen = {};
@@ -474,8 +599,18 @@
         moverMarcador(m, ll);
       } else {
         m = L.marker(ll, { icon: deviceIcon(d) });
+        m.options.deviceId = d.id;
+        // La cola sigue al marcador mientras se desliza (legacy moveTail).
+        m.on("move", function () {
+          moveTail(d.id);
+          var c = inaccuracies[d.id];
+          if (c) c.setLatLng(m.getLatLng());
+        });
         m.on("click", function () {
           openDevicePopup(d.id);
+          // Legacy (onLayerClick): ademas del popup, el bottombar pasa a este
+          // equipo aunque no se seleccione.
+          if (state.selectedId == null) loadBottomWidgets(d.id);
         });
         cont.addLayer(m);
         state.markers[d.id] = m;
@@ -488,7 +623,16 @@
         delete state.markers[id];
       }
     });
-    if (state.toggles.tails) renderTails();
+    Object.keys(inaccuracies).forEach(function (id) {
+      if (!seen[id]) {
+        inaccuracies[id].remove();
+        delete inaccuracies[id];
+      }
+    });
+    state.mapFiltered.forEach(function (d) {
+      if (seen[d.id]) syncInaccuracy(d);
+    });
+    renderTails();
   }
 
   // Contenedor activo de marcadores: cluster o layerGroup normal.
@@ -539,7 +683,8 @@
         chunkedLoading: true,
         maxClusterRadius: 50,
         showCoverageOnHover: false,
-        spiderfyOnMaxZoom: true,
+        // Legacy: sin "araña"; en el zoom maximo se abre la lista de equipos.
+        spiderfyOnMaxZoom: false,
         iconCreateFunction: function (cluster) {
           var n = cluster.getChildCount();
           var tier = n < 10 ? "sm" : n < 100 ? "md" : "lg";
@@ -551,7 +696,42 @@
           });
         },
       });
+    if (!state.clusterWired) {
+      state.clusterWired = true;
+      // Legacy (devices.js clusterclick): pulsar un grupo deja de seguir y, en
+      // el zoom maximo, abre la lista de sus equipos.
+      state.clusterGroup.on("clusterclick", function (e) {
+        state.followSelected = false;
+        setAutoFit(false);
+        if (state.map.getZoom() >= state.map.getMaxZoom()) clusterPopup(e.layer);
+      });
+    }
     return state.clusterGroup;
+  }
+  /** Lista de equipos de un cluster (legacy clusterPopup): nombre, velocidad y estado. */
+  function clusterPopup(cluster) {
+    var html = '<ul class="tp-cluster-list">';
+    cluster.getAllChildMarkers().forEach(function (mk) {
+      var d = state.index[mk.options.deviceId];
+      if (!d) return;
+      html +=
+        '<li><button type="button" data-cl-dev="' + d.id + '">' +
+        '<span class="tp-cluster-list__name">' + esc(d.name || "#" + d.id) + "</span>" +
+        '<span class="tp-cluster-list__meta">' +
+        esc(d.speed_text || (Math.round(parseFloat(d.speed) || 0) + " km/h")) + " · " +
+        esc(STATUS_LABELS[d.online] || d.online || "") + "</span></button></li>";
+    });
+    html += "</ul>";
+    var pop = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" })
+      .setLatLng(cluster.getLatLng())
+      .setContent(html)
+      .openOn(state.map);
+    var el = pop.getElement();
+    if (el)
+      el.addEventListener("click", function (ev) {
+        var b = ev.target.closest("[data-cl-dev]");
+        if (b) openDevicePopup(parseInt(b.getAttribute("data-cl-dev"), 10));
+      });
   }
   function setClusterMode(on) {
     var m = state.map;
@@ -583,6 +763,13 @@
     renderMarkers();
   }
 
+  /** Enciende o apaga «Auto-seguir flota» y su boton. */
+  function setAutoFit(on) {
+    state.autoFit = !!on;
+    var af = document.getElementById("tp-live-autofollow");
+    if (af) af.setAttribute("aria-pressed", state.autoFit ? "true" : "false");
+  }
+
   function fitToFleet() {
     var pts = state.mapFiltered
       .filter(function (d) {
@@ -606,6 +793,7 @@
     tails: "m_show_tails",
     traffic: "m_traffic",
     hitos: "m_hitos",
+    aircraft: "m_aircraft",
   };
   // Persiste el toggle en user->map_controls (estado compartido con la UI legacy).
   function persistToggle(key, val) {
@@ -623,6 +811,8 @@
       var cont = markerContainer();
       if (on) cont.addTo(m);
       else m.removeLayer(cont);
+      // Legacy (addTail): sin objetos no se pintan colas.
+      renderTails();
     } else if (key === "cluster") {
       setClusterMode(on);
     } else if (key === "geofences") {
@@ -650,6 +840,8 @@
       m.getContainer().classList.toggle("tp-show-names", on);
     } else if (key === "tails") {
       renderTails();
+    } else if (key === "aircraft") {
+      aircraftSetVisible(on);
     } else if (key === "hitos") {
       // Hitos kilométricos (capa compartida tp-hitos.js)
       if (window.tpHitos) {
@@ -659,36 +851,130 @@
     }
   }
 
+  // Aviones en vivo. Port de model/aircraft.js del legacy: cada 5 s pide a
+  // /flights los aviones en 250 millas alrededor del centro del mapa (el
+  // servidor los saca de opendata.adsb.fi y los guarda 60 s) y pinta los que
+  // caen dentro de la vista, girados segun su rumbo. Con zoom 6 o menos no
+  // pide nada: el radio del servicio no cubre la vista.
+  var aircraft = { layer: null, timer: null };
+  function aircraftFetch() {
+    var m = state.map;
+    if (!m || !aircraft.layer) return;
+    if (m.getZoom() <= 6) {
+      aircraft.layer.clearLayers();
+      return;
+    }
+    var c = m.getCenter();
+    fetch("/flights?lat=" + c.lat.toFixed(5) + "&lon=" + c.lng.toFixed(5), {
+      credentials: "same-origin",
+      headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!aircraft.timer) return;
+        aircraft.layer.clearLayers();
+        var bounds = m.getBounds();
+        ((data && data.aircraft) || []).forEach(function (ac) {
+          if (!ac.lat || !ac.lon || !bounds.contains([ac.lat, ac.lon])) return;
+          var icon = L.divIcon({
+            className: "tp-aircraft",
+            html: '<div style="transform:rotate(' + (ac.track || 0) + 'deg)">✈</div>',
+            iconSize: [20, 20],
+            iconAnchor: [10, 10],
+          });
+          L.marker([ac.lat, ac.lon], { icon: icon })
+            .bindPopup(
+              '<dl class="tp-dev-popup__defs" style="margin:0">' +
+                "<dt>Vuelo</dt><dd>" + esc((ac.flight || "").trim() || "N/A") + "</dd>" +
+                "<dt>Aeronave</dt><dd>" + esc(ac.desc || ac.t || "N/A") + "</dd>" +
+                (ac.alt_baro != null ? "<dt>Altitud</dt><dd>" + esc(ac.alt_baro) + " ft</dd>" : "") +
+                "</dl>",
+              { className: "tp-dev-popup-wrap" },
+            )
+            .addTo(aircraft.layer);
+        });
+      })
+      .catch(function () {});
+  }
+  function aircraftSetVisible(on) {
+    if (!state.map) return;
+    if (!aircraft.layer) aircraft.layer = L.layerGroup().addTo(state.map);
+    if (on) {
+      if (aircraft.timer) return;
+      aircraft.timer = setInterval(aircraftFetch, 5000);
+      aircraftFetch();
+    } else {
+      clearInterval(aircraft.timer);
+      aircraft.timer = null;
+      aircraft.layer.clearLayers();
+    }
+  }
+
   // Cola de recorrido (tail): polilínea de las últimas posiciones de cada device.
+  // Port de getTailPoints/addTail/moveTail del legacy (model/device.js): el
+  // ultimo punto es la posicion ACTUAL del marcador, y la cola se mueve con el
+  // en cada paso del deslizamiento, para que no quede despegada del icono.
+  var tails = {}; // id → L.polyline
+  function tailPoints(d) {
+    var tail = d.tail;
+    if (typeof tail === "string") {
+      try {
+        tail = JSON.parse(tail);
+      } catch (e) {
+        tail = null;
+      }
+    }
+    if (!tail || !tail.length) return null;
+    var pts = tail
+      .map(function (p) {
+        return [parseFloat(p.lat), parseFloat(p.lng)];
+      })
+      .filter(function (x) {
+        return !isNaN(x[0]) && !isNaN(x[1]);
+      });
+    pts.pop();
+    var m = state.markers[d.id];
+    var ll = m ? m.getLatLng() : d.lat != null ? L.latLng(parseFloat(d.lat), parseFloat(d.lng)) : null;
+    if (ll) pts.push([ll.lat, ll.lng]);
+    return pts.length >= 2 ? pts : null;
+  }
+  function moveTail(id) {
+    var t = tails[id],
+      d = state.index[id];
+    if (!t || !d) return;
+    var pts = tailPoints(d);
+    if (pts) t.setLatLngs(pts);
+  }
   function renderTails() {
     var m = state.map;
     if (!state.tailLayer) state.tailLayer = L.layerGroup();
-    if (!state.toggles.tails) {
+    // Legacy: sin "Objetos" o sin "Cola" no hay colas.
+    if (!state.toggles.tails || state.toggles.devices === false) {
       if (m.hasLayer(state.tailLayer)) m.removeLayer(state.tailLayer);
+      state.tailLayer.clearLayers();
+      tails = {};
       return;
     }
     if (!m.hasLayer(state.tailLayer)) state.tailLayer.addTo(m);
-    state.tailLayer.clearLayers();
+    var vivos = {};
     state.mapFiltered.forEach(function (d) {
       if (d.active === false) return;
-      var tail = d.tail;
-      if (typeof tail === "string") {
-        try {
-          tail = JSON.parse(tail);
-        } catch (e) {
-          tail = null;
-        }
+      var pts = tailPoints(d);
+      if (!pts) return;
+      vivos[d.id] = true;
+      var color = d.tail_color || "#1e88e5";
+      if (tails[d.id]) {
+        tails[d.id].setLatLngs(pts);
+        tails[d.id].setStyle({ color: color });
+      } else {
+        tails[d.id] = L.polyline(pts, { color: color, weight: 2, opacity: 0.8 }).addTo(state.tailLayer);
       }
-      if (!tail || tail.length < 2) return;
-      var pts = tail
-        .map(function (p) {
-          return [parseFloat(p.lat), parseFloat(p.lng)];
-        })
-        .filter(function (x) {
-          return !isNaN(x[0]) && !isNaN(x[1]);
-        });
-      if (pts.length < 2) return;
-      L.polyline(pts, { color: d.tail_color || "#1e88e5", weight: 2, opacity: 0.8 }).addTo(state.tailLayer);
+    });
+    Object.keys(tails).forEach(function (id) {
+      if (!vivos[id]) {
+        state.tailLayer.removeLayer(tails[id]);
+        delete tails[id];
+      }
     });
   }
 
@@ -806,7 +1092,8 @@
   var addrCache = {};
   function fetchAddr(d, cb) {
     if (!CFG.geoUrl || d.lat == null) return cb("");
-    if (addrCache[d.id]) return cb(addrCache[d.id]);
+    var clave = d.id + "@" + d.lat + "," + d.lng;
+    if (addrCache[clave] !== undefined) return cb(addrCache[clave]);
     fetch(
       CFG.geoUrl +
         (CFG.geoUrl.indexOf("?") === -1 ? "?" : "&") +
@@ -827,55 +1114,226 @@
           var j = JSON.parse(t);
           t = j.address || j.name || t;
         } catch (e) {}
-        addrCache[d.id] = t;
+        addrCache[clave] = t;
         cb(t);
       })
       .catch(function () {
         cb("");
       });
   }
-  function openDevicePopup(id) {
+  // Datos completos del equipo para el popup (sensores, servicios, protocolo,
+  // vencimiento): el mismo endpoint y transformer que usa el legacy al abrir
+  // el popup o los widgets (objects/items?id=&full=1 → DeviceMapFullTransformer).
+  var fullCache = {};
+  function loadFull(id, cb) {
+    var c = fullCache[id];
+    if (c && Date.now() - c.t < 15000) return cb(c.data);
+    if (!CFG.deviceFullUrl) return cb(c ? c.data : null);
+    fetch(CFG.deviceFullUrl + "?id=" + encodeURIComponent(id) + "&full=1", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        var row = j && j.data && j.data.length ? j.data[0] : null;
+        fullCache[id] = { t: Date.now(), data: row };
+        cb(row);
+      })
+      .catch(function () { cb(c ? c.data : null); });
+  }
+
+  function popRow(dt, dd, attrs) {
+    return "<dt>" + esc(dt) + "</dt><dd" + (attrs || "") + ">" + dd + "</dd>";
+  }
+
+  // Iconos del popup (trazo, heredan el color)
+  var POP_IC = {
+    follow: '<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+    send_command: '<path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/>',
+    edit: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>',
+    share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/>',
+    device_media: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/>',
+    device_alerts: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/>',
+    video: '<path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2"/>',
+    street: '<circle cx="12" cy="5" r="2"/><path d="M10 22v-6l-2-1V9h8v6l-2 1v6"/>',
+    details: '<path d="M4 6h16M4 12h16M4 18h10"/>',
+    close: '<path d="M18 6 6 18M6 6l12 12"/>',
+    pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+    copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+    ext: '<path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/>',
+    speed: '<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    sat: '<path d="M12 20a8 8 0 0 0-8-8"/><path d="M12 20a12 12 0 0 0-12-12"/><circle cx="19" cy="17" r="2"/>',
+    alt: '<path d="m3 20 6-10 4 6 3-4 5 8z"/>',
+  };
+  function popIcon(k) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (POP_IC[k] || "") + "</svg>";
+  }
+  // Tipos logicos (ON/OFF) y los que en ON son alerta: mismo reparto que el
+  // mosaico de Sensores de la ficha.
+  var SENS_LOGICOS = { acc: 1, ignition: 1, engine: 1, blocked: 1, door: 1, seatbelt: 1, plugged: 1, anonymizer: 1,
+    logical: 1, drive_business: 1, drive_private: 1, harsh_acceleration: 1, harsh_breaking: 1, harsh_turning: 1 };
+  var SENS_ALERTA = { blocked: 1, harsh_acceleration: 1, harsh_breaking: 1, harsh_turning: 1 };
+
+  /**
+   * Popup del marcador. Organizacion de la referencia, en el estilo de la
+   * ficha: cabecera con estado y botones (video, street view, detalles,
+   * cerrar), fila de atajos con las MISMAS acciones y permisos del menu del
+   * vehiculo, hora relativa, direccion con copiar y abrir en el mapa, tres
+   * cifras (velocidad, detenido, satelites o altitud), sensores en dos
+   * columnas con su valor coloreado, el bloque desplegable del legacy y los
+   * atajos de historial. Datos del popup del legacy (objects/items?full=1).
+   * `refresco` = repintado desde el sondeo (legacy updatePopup).
+   */
+  function openDevicePopup(id, refresco) {
     var d = state.index[id];
     if (!d || d.lat == null) return;
+    var abierto = false;
+    if (refresco && state.popup && state.popup.getElement()) {
+      var det = state.popup.getElement().querySelector("details[data-pop-more]");
+      abierto = !!(det && det.open);
+    }
+    var f = (fullCache[id] && fullCache[id].data) || {};
     var status = classify(d);
     var speed = d.speed_text || (Math.round(parseFloat(d.speed) || 0) + " km/h");
+    var lat = parseFloat(d.lat),
+      lng = parseFloat(d.lng);
+    var coords = lat.toFixed(6) + ", " + lng.toFixed(6);
+    var cEst = statusVar(d.icon_color);
+    var acc = accionesDisponibles(id);
+    var canales = d.camera_channels && d.camera_channels.length ? d.camera_channels : f.camera_channels;
+
+    // Atajos: los del menu del vehiculo que la cuenta tiene, con su texto.
+    var atajos = "";
+    ["follow", "send_command", "edit", "share", "device_media", "device_alerts"].forEach(function (k) {
+      if (!acc[k]) return;
+      atajos += '<button type="button" class="tp-pop__act" data-pop-act="' + k + '" title="' + esc(acc[k]) + '" aria-label="' + esc(acc[k]) + '">' + popIcon(k) + "</button>";
+    });
+
+    // Satelites: del sensor si lo hay; si no, la altitud.
+    var sat = null;
+    (f.sensors || []).forEach(function (sn) {
+      if (sn.type === "satellites" && sat == null) sat = sn.value;
+    });
+
+    var sensores = "";
+    (f.sensors || []).forEach(function (sn) {
+      if (sn.type === "satellites") return;
+      var txt = sn.value == null || sn.value === "" ? "—" : String(sn.value);
+      var clase = "tp-pop__sv";
+      if (SENS_LOGICOS[sn.type]) {
+        var on = sn.val === true || sn.val === 1 || sn.val === "1";
+        // Sin conexion, encendido/motor/acc se ven apagados (legacy setOffline)
+        if (status === "offline" && (sn.type === "acc" || sn.type === "ignition" || sn.type === "engine")) on = false;
+        clase += on ? (SENS_ALERTA[sn.type] ? " is-alert" : " is-on") : " is-off";
+      }
+      sensores += '<div class="tp-pop__sensor"><span class="tp-pop__sn">' + esc(sn.name) + '</span><span class="' + clase + '">' + txt + "</span></div>";
+    });
+    var servicios = "";
+    (f.services || []).forEach(function (sv) {
+      servicios += popRow(sv.name, esc(sv.value));
+    });
+
+    var ts = parseInt(d.timestamp, 10) || 0;
+    var hace = ts ? fmtTimeAgo(ts) : "";
+    var street = "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + lat + "," + lng;
+    var gmaps = "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng;
+
     var html =
-      '<div class="tp-dev-popup" data-status="' +
-      status +
-      '"><div class="tp-dev-popup__head"><span class="tp-dev-popup__dot"' +
-      // Igual que la fila y la ficha: manda el color del vehiculo.
-      (statusVar(d.icon_color) ? ' style="background:' + statusVar(d.icon_color) + '"' : "") +
-      "></span>" +
-      '<span class="tp-dev-popup__name">' +
-      esc(d.name || "#" + d.id) +
-      "</span></div>" +
-      '<div class="tp-dev-popup__status">' +
-      esc(STATUS_LABELS[d.online] || d.online || "—") +
-      "</div><dl class=\"tp-dev-popup__defs\">" +
-      (d.plate_number ? "<dt>" + tpT('ui.plate') + "</dt><dd>" + esc(d.plate_number) + "</dd>" : "") +
-      "<dt>" + tpT('front.speed') + "</dt><dd>" +
-      esc(speed) +
-      "</dd><dt>" + tpT('front.hour') + "</dt><dd>" +
-      esc(d.time || "—") +
-      '</dd><dt>' + tpT('front.location') + '</dt><dd data-pop-addr class="' +
-      (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") +
-      '">' + tpT('ui.loading_ellipsis') + '</dd></dl>' +
+      '<div class="tp-pop" data-status="' + status + '">' +
+      // Cabecera
+      '<div class="tp-pop__head">' +
+      '<span class="tp-pop__dot"' + (cEst ? ' style="background:' + cEst + '"' : "") + "></span>" +
+      '<div class="tp-pop__title"><strong>' + esc(d.name || "#" + d.id) + "</strong>" +
+      '<span style="' + (cEst ? "color:" + statusVar(d.icon_color, true) : "") + '">' + esc(STATUS_LABELS[d.online] || d.online || "—") + "</span></div>" +
+      '<div class="tp-pop__tabs">' +
+      (canales && canales.length && window.tpDeviceVideo
+        ? '<button type="button" data-pop-video title="' + esc(tpT("front.video_live")) + '" aria-label="' + esc(tpT("front.video_live")) + '">' + popIcon("video") + "</button>"
+        : "") +
+      '<a href="' + street + '" target="_blank" rel="noopener" title="' + esc(tpT("front.street_view")) + '" aria-label="' + esc(tpT("front.street_view")) + '">' + popIcon("street") + "</a>" +
+      '<button type="button" data-pop-details title="' + esc(tpT("ui.see_details")) + '" aria-label="' + esc(tpT("ui.see_details")) + '">' + popIcon("details") + "</button>" +
+      '<button type="button" data-pop-close title="' + esc(tpT("global.close")) + '" aria-label="' + esc(tpT("global.close")) + '">' + popIcon("close") + "</button>" +
+      "</div></div>" +
+      // Atajos
+      (atajos ? '<div class="tp-pop__acts">' + atajos + "</div>" : "") +
+      // Hora
+      '<div class="tp-pop__time">' + (hace ? '<b>' + esc(tpT("ui.time_ago").replace(":time", hace)) + "</b> · " : "") + esc(d.time || "—") + "</div>" +
+      // Direccion
+      '<div class="tp-pop__addr">' + popIcon("pin") +
+      '<span data-pop-addr class="' + (CFG.fullAddress ? "tp-addr--full" : "tp-addr--clip") + '">' + tpT("ui.loading_ellipsis") + "</span>" +
+      '<button type="button" class="tp-pop__mini" data-tp-copy="' + lat + "," + lng + '" title="' + esc(tpT("ui.copy_coordinates")) + '" aria-label="' + esc(tpT("ui.copy_coordinates")) + '">' + popIcon("copy") + "</button>" +
+      '<a class="tp-pop__mini" href="' + gmaps + '" target="_blank" rel="noopener" title="' + esc(tpT("ui.open_in_map")) + '" aria-label="' + esc(tpT("ui.open_in_map")) + '">' + popIcon("ext") + "</a>" +
+      "</div>" +
+      // Cifras
+      '<div class="tp-pop__stats">' +
+      '<div>' + popIcon("speed") + "<b>" + esc(speed) + "</b></div>" +
+      '<div title="' + esc(tpT("front.stop_duration")) + '">' + popIcon("stop") + "<b>" + esc(stopDurationText(d) || "—") + "</b></div>" +
+      (sat != null
+        ? '<div title="' + esc(tpT("satellites")) + '">' + popIcon("sat") + "<b>" + esc(sat) + "</b></div>"
+        : '<div title="' + esc(tpT("front.altitude")) + '">' + popIcon("alt") + "<b>" + esc(d.altitude != null ? Math.round(d.altitude) + " m" : "—") + "</b></div>") +
+      "</div>" +
+      // Sensores
+      (sensores ? '<div class="tp-pop__sec">' + esc(tpT("front.sensors")) + '</div><div class="tp-pop__sensors">' + sensores + "</div>" : "") +
+      (f.expiration_date ? '<div class="tp-pop__exp">' + esc(tpT("front.expiration_date")) + ": <b>" + esc(f.expiration_date) + "</b></div>" : "") +
+      // Desplegable (legacy #device-side-params)
+      '<details class="tp-dev-popup__more" data-pop-more' + (abierto ? " open" : "") + "><summary>" + esc(tpT("front.show_more")) + "</summary>" +
+      '<dl class="tp-dev-popup__defs">' +
+      popRow(tpT("front.position"), '<span class="tp-text-mono">' + coords + "</span>") +
+      popRow(tpT("front.altitude"), esc(d.altitude != null ? Math.round(d.altitude) + " m" : "—")) +
+      popRow(tpT("front.angle"), esc(d.course != null ? Math.round(d.course) + "°" : "—")) +
+      popRow(tpT("front.driver"), esc((f.driver && f.driver.name) || "—")) +
+      popRow(tpT("front.model"), esc(d.device_model || f.device_model || "—")) +
+      popRow(tpT("ui.plate"), esc(d.plate_number || "—")) +
+      popRow(tpT("front.protocol"), esc(f.protocol || "—")) +
+      servicios +
+      "</dl></details>" +
       devShortcutsHtml() +
-      '<button type="button" class="tp-btn tp-btn--accent tp-btn--sm tp-full" data-pop-details>' + tpT('ui.see_details') + '</button></div>';
-    if (!state.popup) state.popup = L.popup({ maxWidth: 280, className: "tp-dev-popup-wrap" });
-    state.popup.setLatLng([parseFloat(d.lat), parseFloat(d.lng)]).setContent(html).openOn(state.map);
+      "</div>";
+
+    if (!state.popup) {
+      state.popup = L.popup({ maxWidth: 340, minWidth: 300, className: "tp-dev-popup-wrap tp-pop-wrap", closeButton: false });
+      state.popup.on("remove", function () {
+        state.popupId = null;
+      });
+    }
+    state.popupId = id;
+    state.popup.setLatLng([lat, lng]).setContent(html);
+    if (!state.popup.isOpen()) state.popup.openOn(state.map);
+    else state.popup.update();
     var el = state.popup.getElement();
     fetchAddr(d, function (a) {
-      if (!state.popup || !state.popup.isOpen()) return;
+      if (!state.popup || !state.popup.isOpen() || state.popupId !== id) return;
       var slot = el && el.querySelector("[data-pop-addr]");
       if (slot) slot.textContent = a || "—";
     });
-    var btn = el && el.querySelector("[data-pop-details]");
-    if (btn)
-      btn.addEventListener("click", function () {
-        selectDevice(id);
+    if (el) {
+      var q = function (sel, fn) {
+        var n = el.querySelector(sel);
+        if (n) n.addEventListener("click", fn);
+      };
+      q("[data-pop-details]", function () { selectDevice(id); });
+      q("[data-pop-close]", function () { state.map.closePopup(state.popup); });
+      q("[data-pop-video]", function () { window.tpDeviceVideo.open(id, { name: d.name }); });
+      Array.prototype.forEach.call(el.querySelectorAll("[data-pop-act]"), function (b) {
+        b.addEventListener("click", function () {
+          runDeviceAction(b.getAttribute("data-pop-act"), id, b);
+        });
       });
+    }
     bindDevShortcuts(el, id);
+
+    // Sensores y demas datos completos: llegan aparte y se repinta.
+    if (!refresco || !fullCache[id] || Date.now() - fullCache[id].t >= 15000) {
+      loadFull(id, function () {
+        if (state.popupId === id && state.popup && state.popup.isOpen()) openDevicePopup(id, true);
+      });
+    }
+  }
+
+  /** Recoloca y repinta el popup abierto (legacy: updatePopup en cada update). */
+  function refreshOpenPopup() {
+    if (state.popupId == null || !state.popup || !state.popup.isOpen()) return;
+    openDevicePopup(state.popupId, true);
   }
 
   /* ===========================================================
@@ -1061,29 +1519,19 @@
       '<div class="tp-follow__foot"><span data-f-speed>—</span><span data-f-time></span></div>';
     root.appendChild(el);
 
-    // Mini-mapa con SU PROPIA capa base (una TileLayer solo puede vivir en un
-    // mapa; tpBasemaps.build crea instancias frescas).
-    var mm = L.map(el.querySelector(".tp-follow__map"), {
-      zoomControl: false,
-      attributionControl: true,
-    });
-    var lyr = null;
-    try {
-      if (window.tpBasemaps && tpBasemaps.build) {
-        var bms = tpBasemaps.build(MAP_CFG);
-        var bid = tpBasemaps.defaultId ? tpBasemaps.defaultId(bms, MAP_CFG) : null;
-        if (bid && bms[bid]) lyr = bms[bid].layer;
-      }
-    } catch (e) {}
-    if (!lyr)
-      lyr = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 });
-    lyr.addTo(mm);
+    // Dentro va la MISMA pagina de seguimiento del legacy
+    // (devices/follow_map/{id}, la que abre devices.follow en un iframe): trae
+    // su selector de capa base, la cola, el nombre, el popup del marcador y su
+    // propio sondeo. La ventana se puede redimensionar desde la esquina.
+    var mapBox = el.querySelector(".tp-follow__map");
+    var frame = document.createElement("iframe");
+    frame.className = "tp-follow__frame";
+    frame.title = tpT("front.follow");
+    frame.src = "/devices/follow_map/" + id;
+    mapBox.appendChild(frame);
 
-    follows[id] = { el: el, map: mm, marker: null };
-    setTimeout(function () {
-      mm.invalidateSize();
-      updateFollow(id);
-    }, 60);
+    follows[id] = { el: el, map: null, marker: null, frame: frame };
+    updateFollow(id);
 
     // Arrastre por la cabecera (pointer events)
     var head = el.querySelector(".tp-follow__head");
@@ -1094,6 +1542,7 @@
       el.style.left = el.offsetLeft + "px";
       el.style.right = "auto";
       drag = { x: e.clientX, y: e.clientY, left: el.offsetLeft, top: el.offsetTop };
+      el.classList.add("is-dragging");
       head.setPointerCapture(e.pointerId);
       e.preventDefault();
     });
@@ -1104,6 +1553,7 @@
     });
     head.addEventListener("pointerup", function () {
       drag = null;
+      el.classList.remove("is-dragging");
     });
     el.addEventListener("pointerdown", function () {
       el.style.zIndex = ++followZ;
@@ -1117,7 +1567,9 @@
   function closeFollow(id) {
     var f = follows[id];
     if (!f) return;
-    try { f.map.remove(); } catch (e) {}
+    if (f.map) {
+      try { f.map.remove(); } catch (e) {}
+    }
     f.el.remove();
     delete follows[id];
   }
@@ -1127,7 +1579,9 @@
     var d = state.index[id];
     if (!f || !d || d.lat == null || d.lng == null) return;
     var ll = [parseFloat(d.lat), parseFloat(d.lng)];
-    if (!f.marker) {
+    if (!f.map) {
+      // La pagina del legacy se actualiza sola; aqui solo el pie.
+    } else if (!f.marker) {
       f.marker = L.marker(ll, { icon: deviceIcon(d) }).addTo(f.map);
       f.map.setView(ll, 16);
     } else {
@@ -1168,6 +1622,8 @@
   function centerOnSelected(zoom) {
     var d = state.selectedId != null ? state.index[state.selectedId] : null;
     if (!d || d.lat == null || d.lng == null || !state.map) return;
+    // Tamaño real del mapa antes de centrar (la ficha recien abierta lo encoge).
+    state.map.invalidateSize({ pan: false });
     var ll = L.latLng(parseFloat(d.lat), parseFloat(d.lng));
     var derecha = 0;
     var dw = document.getElementById("tp-live-drawer");
@@ -1189,6 +1645,38 @@
     if (state.followSelected && state.selectedId != null) centerOnSelected();
   }
 
+  // Quita la seleccion: cierra la ficha y deja de seguir al vehiculo.
+  function deselectDevice() {
+    root.removeAttribute("data-drawer-open");
+    root.removeAttribute("data-bottombar-open");
+    // Sin vehiculo no hay widgets: el boton «Mostrar widgets» (solo visible
+    // con la barra abierta y plegada) se recalcula ya, si no se quedaba a la
+    // vista tras plegar la barra y cerrar la seleccion.
+    root.removeAttribute("data-bottombar-collapsed");
+    syncBottombarHandle();
+    // Cerrado es invisible (opacity 0) y silenciado (aria-hidden): con
+    // `inert` sus botones dejan tambien de recibir el foco con Tab.
+    var dw = document.getElementById("tp-live-drawer");
+    if (dw) {
+      // El foco estaba dentro (el boton Cerrar): se devuelve al mapa
+      // (Leaflet le da tabindex=0) antes de volver inerte el panel.
+      if (dw.contains(document.activeElement)) {
+        var back = document.getElementById("tp-live-map");
+        if (back && back.focus) back.focus({ preventScroll: true });
+      }
+      dw.setAttribute("aria-hidden", "true");
+      dw.setAttribute("inert", "");
+    }
+    var prev = state.selectedId;
+    state.selectedId = null;
+    state.followSelected = false;
+    markSelectedRow(null);
+    if (prev != null) {
+      refreshMarkerIcon(prev);
+      if (state.markers[prev]) state.markers[prev].setZIndexOffset(0);
+    }
+  }
+
   function selectDevice(id) {
     var prev = state.selectedId;
     state.selectedId = id;
@@ -1206,7 +1694,13 @@
     // vehiculo se acerca a nivel calle y queda SIGUIENDOLO en cada
     // actualizacion hasta que el usuario arrastra el mapa.
     state.followSelected = true;
-    if (d && d.lat != null) centerOnSelected(SELECT_ZOOM);
+    if (d && d.lat != null) {
+      state.centerZoom = SELECT_ZOOM;
+      centerOnSelected(SELECT_ZOOM);
+      state.map.once("moveend", function () {
+        state.centerZoom = null;
+      });
+    }
     var drawer = document.getElementById("tp-live-drawer");
     if (drawer) {
       drawer.setAttribute("aria-hidden", "false");
@@ -1305,6 +1799,121 @@
     );
   }
 
+  /**
+   * Esfera pequeña estilo cuadro de instrumentos (opcion A del rediseño):
+   * bisel, marcas y numeros, zona de alerta en rojo, aguja con brillo y el
+   * valor en una pantallita DEBAJO del eje. El arco es de 240° y termina por
+   * encima de la pantallita, asi que la aguja nunca pasa sobre el numero.
+   * o = { label, min, max, step, fmt(v) (texto de la escala), red (desde),
+   *       low (hasta), color, texto (valor), unidad, alerta (bool) }
+   */
+  var esferaN = 0;
+  function esferaPro(valor, o) {
+    var id = "tpg" + ++esferaN;
+    var A0 = -210, A1 = 30, cx = 100, cy = 100;
+    function rad(d) { return (d * Math.PI) / 180; }
+    function pt(r, d) { return [cx + r * Math.cos(rad(d)), cy + r * Math.sin(rad(d))]; }
+    function ang(v) {
+      var f = (Math.min(Math.max(v, o.min), o.max) - o.min) / (o.max - o.min || 1);
+      return A0 + (A1 - A0) * f;
+    }
+    function arco(r, d0, d1) {
+      var a = pt(r, d0), b = pt(r, d1);
+      return "M" + a[0].toFixed(1) + " " + a[1].toFixed(1) + " A" + r + " " + r + " 0 " + (d1 - d0 > 180 ? 1 : 0) + " 1 " + b[0].toFixed(1) + " " + b[1].toFixed(1);
+    }
+    var marcas = "", numeros = "";
+    var paso = o.step, menor = paso / 5;
+    for (var v = o.min; v <= o.max + 1e-6; v += menor) {
+      var mayor = Math.abs((v - o.min) / paso - Math.round((v - o.min) / paso)) < 1e-6;
+      var d = ang(v), a = pt(82, d), b = pt(mayor ? 71 : 76, d);
+      marcas += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) +
+        '" class="' + (mayor ? "tp-g__tick" : "tp-g__tick tp-g__tick--minor") + '"/>';
+      if (mayor) {
+        var n = pt(60, d);
+        numeros += '<text x="' + n[0].toFixed(1) + '" y="' + (n[1] + 4).toFixed(1) + '" class="tp-g__num">' + esc(o.fmt(v)) + "</text>";
+      }
+    }
+    var zona = "";
+    if (o.red != null) zona = '<path d="' + arco(78, ang(o.red), A1) + '" class="tp-g__zone"/>';
+    else if (o.low != null) zona = '<path d="' + arco(78, A0, ang(o.low)) + '" class="tp-g__zone"/>';
+    var dv = ang(valor), p = pt(74, dv), b1 = pt(3, dv + 90), b2 = pt(3, dv - 90);
+    return (
+      '<svg class="tp-g" viewBox="0 0 200 200" role="img" aria-label="' + esc(o.label) + ": " + esc(o.texto) + " " + esc(o.unidad) + '"' +
+      ' style="--tp-g-color:' + o.color + '">' +
+      "<defs>" +
+      '<radialGradient id="' + id + 'f" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#1f2c4f"/><stop offset="1" stop-color="#080d1c"/></radialGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c6b8e"/><stop offset=".5" stop-color="#1b2440"/><stop offset="1" stop-color="#3b4766"/></linearGradient>' +
+      '<filter id="' + id + 'g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      "</defs>" +
+      '<circle cx="100" cy="100" r="96" fill="url(#' + id + 'b)"/>' +
+      '<circle cx="100" cy="100" r="89" fill="url(#' + id + 'f)"/>' +
+      zona +
+      '<path d="' + arco(78, A0, dv) + '" class="tp-g__fill" filter="url(#' + id + 'g)"/>' +
+      marcas + numeros +
+      '<polygon points="' + b1[0].toFixed(1) + "," + b1[1].toFixed(1) + " " + p[0].toFixed(1) + "," + p[1].toFixed(1) + " " + b2[0].toFixed(1) + "," + b2[1].toFixed(1) +
+      '" class="tp-g__needle" filter="url(#' + id + 'g)"/>' +
+      '<circle cx="100" cy="100" r="9" class="tp-g__hub"/><circle cx="100" cy="100" r="3" class="tp-g__hub-dot"/>' +
+      '<rect x="58" y="138" width="84" height="34" rx="7" class="tp-g__lcd"/>' +
+      '<text x="100" y="163" class="tp-g__read' + (o.alerta ? " tp-g__read--alert" : "") + '" filter="url(#' + id + 'g)">' + esc(o.texto) +
+      '<tspan class="tp-g__unit"> ' + esc(o.unidad) + "</tspan></text>" +
+      "</svg>"
+    );
+  }
+
+  /**
+   * Velocimetro grande estilo cuadro de instrumentos (variante A2): misma
+   * esfera que esferaPro, escala cada 20 con marcas cada 5, la velocidad en
+   * una pantalla bajo el eje y, si hay limite de geocerca, el tramo desde el
+   * limite en rojo y la señal de transito con el numero en la esquina.
+   */
+  function velocimetroPro(v, max, unidad, limite, apagado) {
+    var id = "tpv" + ++esferaN;
+    var A0 = -210, A1 = 30, cx = 150, cy = 150;
+    function rad(d) { return (d * Math.PI) / 180; }
+    function pt(r, d) { return [cx + r * Math.cos(rad(d)), cy + r * Math.sin(rad(d))]; }
+    function ang(x) { return A0 + (A1 - A0) * Math.min(Math.max(x, 0), max) / max; }
+    function arco(r, d0, d1) {
+      var a = pt(r, d0), b = pt(r, d1);
+      return "M" + a[0].toFixed(1) + " " + a[1].toFixed(1) + " A" + r + " " + r + " 0 " + (d1 - d0 > 180 ? 1 : 0) + " 1 " + b[0].toFixed(1) + " " + b[1].toFixed(1);
+    }
+    var paso = max > 200 ? 40 : 20, menor = paso / 4, marcas = "";
+    for (var x = 0; x <= max + 1e-6; x += menor) {
+      var mayor = Math.abs(x / paso - Math.round(x / paso)) < 1e-6;
+      var d = ang(x), a = pt(124, d), b = pt(mayor ? 108 : 116, d);
+      marcas += '<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) +
+        '" class="' + (mayor ? "tp-g__tick" : "tp-g__tick tp-g__tick--minor") + '"/>';
+      if (mayor) {
+        var n = pt(92, d);
+        marcas += '<text x="' + n[0].toFixed(1) + '" y="' + (n[1] + 5).toFixed(1) + '" class="tp-g__num tp-g__num--big">' + Math.round(x) + "</text>";
+      }
+    }
+    var dv = ang(v), p = pt(112, dv), b1 = pt(4, dv + 90), b2 = pt(4, dv - 90);
+    var sobre = limite && v > limite;
+    return (
+      '<svg class="tp-g tp-g--speed" viewBox="0 0 300 250" role="img" aria-label="' + esc(Math.round(v) + " " + unidad) + '">' +
+      "<defs>" +
+      '<radialGradient id="' + id + 'f" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#1f2c4f"/><stop offset="1" stop-color="#080d1c"/></radialGradient>' +
+      '<linearGradient id="' + id + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5c6b8e"/><stop offset=".5" stop-color="#1b2440"/><stop offset="1" stop-color="#3b4766"/></linearGradient>' +
+      '<filter id="' + id + 'g" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      "</defs>" +
+      '<circle cx="150" cy="150" r="146" fill="url(#' + id + 'b)"/><circle cx="150" cy="150" r="137" fill="url(#' + id + 'f)"/>' +
+      (limite ? '<path d="' + arco(119, ang(limite), A1) + '" class="tp-g__zone tp-g__zone--speed"/>' : "") +
+      '<path d="' + arco(119, A0, dv) + '" class="tp-g__fill tp-g__fill--speed" filter="url(#' + id + 'g)"/>' +
+      marcas +
+      '<polygon points="' + b1[0].toFixed(1) + "," + b1[1].toFixed(1) + " " + p[0].toFixed(1) + "," + p[1].toFixed(1) + " " + b2[0].toFixed(1) + "," + b2[1].toFixed(1) +
+      '" class="tp-g__needle" filter="url(#' + id + 'g)"/>' +
+      '<circle cx="150" cy="150" r="13" class="tp-g__hub"/><circle cx="150" cy="150" r="4" class="tp-g__hub-dot"/>' +
+      '<rect x="95" y="176" width="110" height="48" rx="9" class="tp-g__lcd"/>' +
+      '<text x="150" y="212" class="tp-g__read tp-g__read--speed' + (sobre ? " tp-g__read--alert" : "") + (apagado ? " tp-g__read--off" : "") +
+      '" filter="url(#' + id + 'g)">' + Math.round(v) + "</text>" +
+      '<text x="150" y="240" class="tp-g__label">' + esc(String(unidad).toUpperCase()) + "</text>" +
+      (limite
+        ? '<g transform="translate(266 34)"><circle r="24" class="tp-g__sign"/><text y="7" class="tp-g__sign-num">' + esc(limite) + "</text></g>"
+        : "") +
+      "</svg>"
+    );
+  }
+
   function testigo(nombre, etiqueta, encendido, icono) {
     // null = el vehiculo no lleva ese sensor: no se dibuja el testigo
     if (encendido === null || encendido === undefined) return "";
@@ -1326,7 +1935,21 @@
     satelite: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20a8 8 0 0 0-8-8"/><path d="M12 20a12 12 0 0 0-12-12" opacity="0.45"/><circle cx="19" cy="17" r="2"/></svg>',
   };
 
-  function celda(etiqueta, valor, unidad) {
+  // Icono y color de cada dato de la ficha (variante A2 del rediseño).
+  var DATO_ICONO = {
+    odo: '<path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/>',
+    hrs: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/>',
+    dir: '<circle cx="12" cy="12" r="9"/><path d="m12 7 3 8-3-2-3 2z"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    dist: '<path d="M6 19a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M8.6 14.5 15.4 9.5"/>',
+  };
+  function rumboCardinal(g) {
+    if (g == null || isNaN(g)) return "";
+    var p = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+    return p[Math.round(((+g % 360) + 360) % 360 / 45) % 8];
+  }
+
+  function celda(etiqueta, valor, unidad, tipo) {
     if (valor === null || valor === undefined || valor === "") return "";
 
     var texto = String(valor).trim();
@@ -1334,6 +1957,13 @@
     // Algunos valores llegan ya formateados por el sensor, con la unidad
     // pegada ("271161 Km"). Se separa para que numero y unidad compartan
     // linea en vez de partirse por ese espacio.
+    // Duracion ("488h 14min 0s"): las dos unidades mayores, la primera
+    // grande y la segunda como unidad, para que quepa en la tarjeta.
+    if (tipo === "stop" && /\s/.test(texto)) {
+      var partes = texto.split(/\s+/);
+      texto = partes[0];
+      unidad = partes[1] || "";
+    }
     if (!unidad) {
       var m = texto.match(/^(.*?)\s+([^\s\d]+)$/);
       if (m) {
@@ -1342,13 +1972,18 @@
       }
     }
 
+    var icono = tipo && DATO_ICONO[tipo]
+      ? '<span class="tp-dash__stat-ic tp-dash__stat-ic--' + tipo + '" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        DATO_ICONO[tipo] + "</svg></span>"
+      : "";
     return (
-      '<div class="tp-dash__stat">' +
+      '<div class="tp-dash__stat' + (icono ? " tp-dash__stat--ic" : "") + '">' + icono +
+      '<div class="tp-dash__stat-body">' +
       '<div class="tp-dash__stat-label">' + esc(etiqueta) + "</div>" +
       '<div class="tp-dash__stat-value">' +
       '<span class="tp-dash__stat-num">' + esc(texto) + "</span>" +
       (unidad ? '<span class="tp-dash__stat-unit">' + esc(unidad) + "</span>" : "") +
-      "</div></div>"
+      "</div></div></div>"
     );
   }
 
@@ -1364,14 +1999,13 @@
     var max = dash.speed_max || 140;
     var nivel = apagado ? "off" : v >= max * 0.85 ? "bad" : v >= max * 0.6 ? "warn" : "ok";
 
-    var html = '<div class="tp-dash__main">' +
-      esfera(G_GRANDE, apagado ? 0 : v, max, apagado ? "0" : String(Math.round(v)),
-             dash.speed_unit || "km/h", nivel, "tp-dash__gauge--big");
-
     // Limite de la geocerca, si el vehiculo esta dentro de una
     var gf = !apagado && window.tpLiveZones && tpLiveZones.limitFor
       ? tpLiveZones.limitFor(d.lat, d.lng, d.vehicle_type_id, d.vehicle_state_id)
       : null;
+
+    var html = '<div class="tp-dash__main tp-dash__main--pro">' +
+      velocimetroPro(apagado ? 0 : v, max, dash.speed_unit || "km/h", gf && gf.limit ? gf.limit : null, apagado);
 
     if (gf && gf.limit) {
       var dif = Math.round(v - gf.limit);
@@ -1385,27 +2019,52 @@
 
     html += "</div>";
 
-    // Esferas pequeñas: solo las que el vehiculo reporta
+    // Esferas pequeñas: solo las que el vehiculo reporta. Estilo cuadro de
+    // instrumentos (esferaPro): el valor va en su pantallita, sin aguja encima.
     var chicas = "";
     if (dash.rpm) {
-      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">' + tpT('ui.engine_rpm') + '</div>' +
-        esfera(G_CHICA, apagado ? 0 : dash.rpm.value, dash.rpm.max, String(dash.rpm.value), "rpm",
-               dash.rpm.value >= dash.rpm.max * 0.75 ? "bad" : "info") + "</div>";
+      var rpmMax = dash.rpm.max || 4000;
+      chicas += '<div class="tp-dash__small tp-dash__small--pro"><div class="tp-dash__small-label">' + esc(tpT('ui.engine_rpm')) + '</div>' +
+        esferaPro(apagado ? 0 : dash.rpm.value, {
+          label: tpT('ui.engine_rpm'), min: 0, max: rpmMax, step: 1000,
+          fmt: function (v) { return Math.round(v / 1000); },
+          red: rpmMax * 0.75, color: "#38bdf8",
+          texto: String(apagado ? 0 : dash.rpm.value), unidad: "rpm",
+          alerta: dash.rpm.value >= rpmMax * 0.75,
+        }) + "</div>";
     }
     if (dash.fuel) {
-      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">COMBUSTIBLE</div>' +
-        esfera(G_CHICA, dash.fuel.value, 100, dash.fuel.value + (dash.fuel.unit === "%" ? "%" : ""), "combustible",
-               dash.fuel.value <= 15 ? "bad" : dash.fuel.value <= 30 ? "warn" : "ok") + "</div>";
+      chicas += '<div class="tp-dash__small tp-dash__small--pro"><div class="tp-dash__small-label">COMBUSTIBLE</div>' +
+        esferaPro(dash.fuel.value, {
+          label: "COMBUSTIBLE", min: 0, max: 100, step: 25,
+          fmt: function (v) { return v; },
+          low: 15, color: "#22c55e",
+          texto: String(dash.fuel.value), unidad: dash.fuel.unit === "%" ? "%" : (dash.fuel.unit || ""),
+          alerta: dash.fuel.value <= 15,
+        }) + "</div>";
     }
     if (dash.temp) {
-      chicas += '<div class="tp-dash__small"><div class="tp-dash__small-label">TEMPERATURA</div>' +
-        esfera(G_CHICA, dash.temp.value, 120, dash.temp.value + "°", "temperatura",
-               dash.temp.value >= 95 ? "bad" : dash.temp.value >= 80 ? "warn" : "ok") + "</div>";
+      chicas += '<div class="tp-dash__small tp-dash__small--pro"><div class="tp-dash__small-label">TEMPERATURA</div>' +
+        esferaPro(dash.temp.value, {
+          label: "TEMPERATURA", min: 40, max: 120, step: 20,
+          fmt: function (v) { return v; },
+          red: 95, color: "#f59e0b",
+          texto: String(dash.temp.value), unidad: "°C",
+          alerta: dash.temp.value >= 95,
+        }) + "</div>";
     }
     if (chicas) html += '<div class="tp-dash__row">' + chicas + "</div>";
 
     // Testigos
     var t = dash.telltales || {};
+    // Sin conexion, motor e ignicion se muestran apagados aunque el ultimo
+    // dato los dejara encendidos: el legacy hace lo mismo (setOffline pone en
+    // falso acc/ignition/engine), tambien al cargar un equipo ya desconectado.
+    if (apagado) {
+      t = Object.assign({}, t);
+      if (t.engine != null) t.engine = false;
+      if (t.ignition != null) t.ignition = false;
+    }
     var tells =
       testigo(tpT('front.engine'), tpT('engine_upper'), t.engine, ICONOS.motor) +
       testigo(tpT('ui.ignition'), tpT('ui.ignition_upper'), t.ignition, ICONOS.ignicion) +
@@ -1431,11 +2090,11 @@
     // se enseña. Esa decision la toma el servidor (show_total_distance), que
     // mira tambien el interruptor del plugin, como el legacy.
     var stats =
-      celda(tpT('ui.odometer'), dash.odometer, null) +
-      celda(tpT('ui.hour_meter'), dash.engine_hours, null) +
-      celda(tpT('heading'), d.course != null ? Math.round(d.course) + "°" : null, null) +
-      celda(tpT('front.stopped'), fmtDuration(d.stop_duration_sec), null) +
-      (dash.show_total_distance ? celda(tpT('front.distance'), d.total_distance, "km") : "");
+      celda(tpT('ui.odometer'), dash.odometer, null, "odo") +
+      celda(tpT('ui.hour_meter'), dash.engine_hours, null, "hrs") +
+      celda(tpT('heading'), d.course != null ? Math.round(d.course) + "°" : null, d.course != null ? rumboCardinal(d.course) : null, "dir") +
+      celda(tpT('front.stopped'), stopDurationText(d), null, "stop") +
+      (dash.show_total_distance ? celda(tpT('front.distance'), d.total_distance, "km", "dist") : "");
 
     if (stats) html += '<div class="tp-dash__stats">' + stats + "</div>";
 
@@ -1461,7 +2120,13 @@
     var sr = document.getElementById("tp-drawer-status-row");
     if (sr) {
       var lbl = STATUS_LABELS[d.online] || d.online || "—";
-      sr.innerHTML = '<span class="tp-chip" data-status="' + classify(d) + '">' + esc(lbl) + "</span>";
+      // Color del estado del propio vehiculo (icon_color = getStatusColor()
+      // del backend), como el punto de la ficha y la lista; la clase por
+      // categoria queda solo de reserva si no llega color.
+      var cSr = statusVar(d.icon_color), cSrOn = statusVar(d.icon_color, "on");
+      sr.innerHTML = '<span class="tp-chip tp-chip--status" data-status="' + classify(d) + '"' +
+        (cSr ? ' style="background:' + cSr + ";color:" + cSrOn + ";border-color:" + cSr + '"' : "") +
+        ">" + esc(lbl) + "</span>";
     }
   }
   // El handle "Widgets" (botón para reabrir la barra inferior) solo debe verse
@@ -1594,7 +2259,15 @@
     function poner(a) {
       Array.prototype.forEach.call(huecos, function (el) {
         var k = el.getAttribute("data-tp-addr");
-        el.textContent = (a && a[k]) || "—";
+        var v = (a && a[k]) || "";
+        // En la tarjeta Ubicación la via y las etiquetas se ocultan si no hay
+        // dato (sin un «—» suelto); el resto de huecos muestra la raya.
+        if (k === "road" || el.closest(".tp-info__crumbs")) {
+          el.textContent = v;
+          el.hidden = !v;
+        } else {
+          el.textContent = v || "—";
+        }
       });
     }
 
@@ -1624,10 +2297,19 @@
   }
 
   // Reparte los widgets del device: .tp-dw--side → drawer, .tp-dw--bottom → bottombar.
-  function loadDrawerWidgets(id) {
-    var box = document.getElementById("tp-drawer-widgets");
+  /**
+   * Widgets del equipo (ficha + barra inferior).
+   * opts.bottomOnly: solo la barra inferior, para un equipo NO seleccionado
+   *   (legacy: clic en el marcador → updateWitgets sin seleccionar).
+   * opts.silent: refresco desde el sondeo, sin el «Cargando…».
+   */
+  var widgetsDe = null;
+  function loadDrawerWidgets(id, opts) {
+    opts = opts || {};
+    var box = opts.bottomOnly ? null : document.getElementById("tp-drawer-widgets");
     var bottom = document.getElementById("tp-live-bottombar-cards");
-    if (box) box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">' + tpT('ui.loading_ellipsis') + '</div>';
+    widgetsDe = id;
+    if (box && !opts.silent) box.innerHTML = '<div class="tp-text-xs tp-text-muted" style="padding:8px;">' + tpT('ui.loading_ellipsis') + '</div>';
     var base = CFG.devicesUrl || "/ui/v2/api/devices";
     fetch(base + "/" + id + "/widgets", {
       headers: { "X-Requested-With": "XMLHttpRequest" },
@@ -1637,13 +2319,13 @@
         return r.json();
       })
       .then(function (res) {
-        if (state.selectedId != id) return;
+        if (opts.bottomOnly ? widgetsDe != id || state.selectedId != null : state.selectedId != id) return;
 
         // Lecturas del tablero: se guardan y se repinta ya, sin esperar al
         // siguiente refresco del feed.
         if (res && res.dashboard) {
           dashData[id] = res.dashboard;
-          if (state.index[id]) renderDashboard(state.index[id]);
+          if (state.index[id] && !opts.bottomOnly) renderDashboard(state.index[id]);
         }
 
         var sideHtml = "",
@@ -1677,6 +2359,24 @@
         renderFuelCharts(bottom);
       })
       .catch(function () {});
+  }
+
+  function loadBottomWidgets(id) {
+    loadDrawerWidgets(id, { bottomOnly: true });
+  }
+
+  // Refresco de los widgets con el sondeo (legacy refreshWitgets en cada
+  // update), con un respiro para no pedirlos cada 5 s si el equipo manda
+  // datos seguidos.
+  var widgetsRefrescados = {};
+  function refreshDrawerWidgets(id) {
+    var t = widgetsRefrescados[id] || 0;
+    if (Date.now() - t < 20000) {
+      pintarDireccion(id);
+      return;
+    }
+    widgetsRefrescados[id] = Date.now();
+    loadDrawerWidgets(id, { silent: true });
   }
 
   // Gráfico de combustible: canvas propio (sin flot), serie {t,v} de 24 h.
@@ -1784,7 +2484,10 @@
       else counts.offline++;
       if (sf !== "all" && c !== sf) return false;
       if (q) {
-        var hay = (d.name || "") + " " + (d.plate_number || "") + " " + (d.imei || "");
+        var hay = [
+          d.name, d.imei, d.sim_number, d.vin, d.plate_number, d.registration_number,
+          d.object_owner, d.device_model, d.additional_notes,
+        ].join(" ");
         if (hay.toLowerCase().indexOf(q) === -1) return false;
       }
       return true;
@@ -2520,6 +3223,22 @@
             '<div class="tp-svc-kebab__menu" role="menu" hidden>' + items + "</div></div>";
         }
 
+        // Casilla de visibilidad del grupo entero (legacy groups.blade:
+        // multiCheckbox → deviceChangeActive {group_id}). Mira TODOS los
+        // equipos del grupo, no solo los que pasan el filtro.
+        var delGrupo = state.devices.filter(function (x) {
+          return (x.group_id || 0) === g;
+        });
+        var visibles = delGrupo.filter(function (x) {
+          return x.active !== false;
+        }).length;
+        var casilla =
+          '<label class="tp-live__group-active" title="' + esc(tpT("ui.show_on_map") || "") + '">' +
+          '<input type="checkbox" data-gid-active="' + g + '"' +
+          (visibles === delGrupo.length && delGrupo.length ? " checked" : "") +
+          (visibles > 0 && visibles < delGrupo.length ? ' data-indeterminate="1"' : "") +
+          ' aria-label="' + esc(groupTitle(g)) + '"></label>';
+
         html +=
           '<div class="tp-live__group-box"' +
           (collapsed ? ' data-collapsed="1"' : "") +
@@ -2527,7 +3246,7 @@
           g +
           '"' +
           (collapsed ? ' data-collapsed="1"' : "") +
-          '><svg class="tp-live__group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg><span class="tp-live__group-title">' +
+          ">" + casilla + '<svg class="tp-live__group-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg><span class="tp-live__group-title">' +
           esc(groupTitle(g)) +
           '</span><span class="tp-live__group-count">' +
           byG[g].length +
@@ -2541,6 +3260,9 @@
       html = state.filtered.map(rowTemplate).join("");
     }
     listEl.innerHTML = html;
+    Array.prototype.forEach.call(listEl.querySelectorAll("[data-indeterminate]"), function (cb) {
+      cb.indeterminate = true;
+    });
   }
 
   // -----------------------------------------------------------
@@ -2772,22 +3494,12 @@
     rowMenu.style.visibility = "";
   }
 
-  function openRowMenu(btn, id) {
-    closeRowMenu();
-    rowMenu = document.createElement("div");
-    rowMenu.className = "tp-row-menu";
-    rowMenu.style.position = "fixed";
-    rowMenu.style.left = "0px";
-    rowMenu.style.top = "0px";
-    // Oculto mientras se mide: si se pinta en 0,0 se ve dar el salto.
-    rowMenu.style.visibility = "hidden";
-    document.body.appendChild(rowMenu);
-    rowMenu.addEventListener("click", function (e) {
-      var it = e.target.closest(".tp-row-menu__item");
-      if (!it) return;
-      var act = it.getAttribute("data-act");
-      closeRowMenu();
-      if (act === "history") goHistory(id, it.getAttribute("data-range"));
+  /**
+   * Acciones del vehiculo (menu de la lista y atajos del popup). `it` es el
+   * boton pulsado, por si la accion lleva datos (data-range del historial).
+   */
+  function runDeviceAction(act, id, it) {
+      if (act === "history") goHistory(id, (it && it.getAttribute("data-range")) || "today");
       else if (act === "route_report") openRouteReport(id);
       else if (act === "follow") openFollow(id);
       else if (act === "device_video" || act === "device_video_recordings") {
@@ -2851,6 +3563,36 @@
         resetAppUuid(id);
       } else if (act === "pending" && window.tpModal && tpModal.toast)
         tpModal.toast(tpT('ui.feature_coming_soon'), "info");
+  }
+
+  /** Acciones del menu que la cuenta puede usar con este vehiculo (mismos permisos). */
+  function accionesDisponibles(id) {
+    var frag = buildRowMenu(id);
+    var out = {};
+    if (frag)
+      Array.prototype.forEach.call(frag.querySelectorAll("[data-act]"), function (b) {
+        // El texto del boton (ya traducido) sirve de titulo del atajo.
+        out[b.getAttribute("data-act")] = (b.textContent || "").replace(/\s+/g, " ").trim() || true;
+      });
+    return out;
+  }
+
+  function openRowMenu(btn, id) {
+    closeRowMenu();
+    rowMenu = document.createElement("div");
+    rowMenu.className = "tp-row-menu";
+    rowMenu.style.position = "fixed";
+    rowMenu.style.left = "0px";
+    rowMenu.style.top = "0px";
+    // Oculto mientras se mide: si se pinta en 0,0 se ve dar el salto.
+    rowMenu.style.visibility = "hidden";
+    document.body.appendChild(rowMenu);
+    rowMenu.addEventListener("click", function (e) {
+      var it = e.target.closest(".tp-row-menu__item");
+      if (!it) return;
+      var act = it.getAttribute("data-act");
+      closeRowMenu();
+      runDeviceAction(act, id, it);
     });
     // Clonado del template: síncrono e instantáneo, sin petición.
     var built = buildRowMenu(id);
@@ -2872,6 +3614,18 @@
       ""
     );
   }
+  function persistGroupActive(groupId, active) {
+    var fd = new FormData();
+    fd.append("group_id", groupId);
+    fd.append("active", active ? "1" : "0");
+    fetch("/devices/change_active", {
+      method: "POST",
+      body: fd,
+      credentials: "same-origin",
+      headers: { "X-CSRF-TOKEN": csrf(), "X-Requested-With": "XMLHttpRequest" },
+    }).catch(function () {});
+  }
+
   function persistActive(id, active) {
     var fd = new FormData();
     fd.append("id", id);
@@ -3245,11 +3999,19 @@
       // El botón ⋮ lo maneja el delegado global de tp-services (no colapsar)
       if (e.target.closest(".tp-svc-kebab")) return;
 
+      if (e.target.closest(".tp-live__group-active")) return;
       var gh = e.target.closest(".tp-live__group");
       if (gh) {
         var g = parseInt(gh.getAttribute("data-gid"), 10);
         state.collapsedGroups[g] = !state.collapsedGroups[g];
         renderList();
+        // Se recuerda en el servidor, como el legacy (devices.toggleGroup →
+        // objects/change_group_status): el mismo dato para las dos UIs.
+        if (CFG.groupToggleUrl)
+          fetch(CFG.groupToggleUrl + (CFG.groupToggleUrl.indexOf("?") === -1 ? "?" : "&") + "id=" + g, {
+            credentials: "same-origin",
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+          }).catch(function () {});
         return;
       }
       if (e.target.closest(".tp-live__row-active")) return;
@@ -3260,10 +4022,29 @@
         return;
       }
       var row = e.target.closest(".tp-live__row");
-      if (row) selectDevice(parseInt(row.getAttribute("data-id"), 10));
+      if (!row) return;
+      var rid = parseInt(row.getAttribute("data-id"), 10);
+      // Paridad legacy (devices.select): un clic selecciona y otro sobre el
+      // mismo vehiculo lo deselecciona y vuelve a encuadrar la flota.
+      if (state.selectedId === rid) {
+        deselectDevice();
+        fitToFleet();
+        return;
+      }
+      selectDevice(rid);
     });
     listEl.addEventListener("change", function (e) {
       var cb = e.target;
+      if (cb.matches && cb.matches("[data-gid-active]")) {
+        var gid = parseInt(cb.getAttribute("data-gid-active"), 10);
+        state.devices.forEach(function (x) {
+          if ((x.group_id || 0) === gid) x.active = cb.checked;
+        });
+        renderList();
+        renderMarkers();
+        persistGroupActive(gid, cb.checked);
+        return;
+      }
       if (!cb.matches || !cb.matches('.tp-live__row-active input[type="checkbox"]')) return;
       var id = parseInt(cb.getAttribute("data-id"), 10);
       var d = state.index[id];
@@ -3283,7 +4064,9 @@
     state.devices = rows;
     state.total = total || rows.length;
     state.index = {};
+    var ahora = Date.now();
     rows.forEach(function (d) {
+      d._recibido = ahora;
       state.index[d.id] = d;
     });
     recompute();
@@ -3331,7 +4114,16 @@
         })
         .then(function (j) {
           acc = acc.concat((j && j.data) || []);
-          if (j && Array.isArray(j.groups)) state.groups = j.groups;
+          if (j && Array.isArray(j.groups)) {
+            state.groups = j.groups;
+            if (!state.groupsSeeded) {
+              state.groupsSeeded = true;
+              j.groups.forEach(function (g) {
+                if (g.open === false) state.collapsedGroups[g.id] = true;
+              });
+              if (j.ungrouped_open === false) state.collapsedGroups[0] = true;
+            }
+          }
           var pg = (j && j.pagination) || null;
           if (pg && pg.total != null) total = pg.total;
           if (pg && pg.current_page < pg.last_page) {
@@ -3373,8 +4165,15 @@
       if (state.toggles[key]) applyToggle(key);
     });
   }
+  // Sondeo de cambios. Sigue aunque la pagina no este a la vista, como el
+  // legacy (app.check): antes se cortaba con la pestaña oculta y Chrome en
+  // Windows da por oculta una ventana tapada por otra, asi que al volver la
+  // v2 iba por detras del legacy. El navegador ya espacia los temporizadores
+  // de las pestañas ocultas. `polling` evita solapar dos consultas.
+  var polling = false;
   function pollUpdates() {
-    if (document.visibilityState !== "visible") return;
+    if (polling) return;
+    polling = true;
     fetch(CFG.updatesUrl + "?time=" + encodeURIComponent(state.checkTime || "") + "&_=" + Date.now(), {
       credentials: "same-origin",
       headers: { Accept: "application/json" },
@@ -3385,8 +4184,11 @@
       .then(function (res) {
         if (res && res.time) state.checkTime = res.time;
         var items = (res && res.items) || [];
-        if (!items.length) return;
+        var ahora = Date.now();
+        var cambiados = {};
         items.forEach(function (d) {
+          d._recibido = ahora;
+          cambiados[d.id] = true;
           if (state.index[d.id]) {
             for (var k in d) if (Object.prototype.hasOwnProperty.call(d, k)) state.index[d.id][k] = d[k];
           } else {
@@ -3394,19 +4196,33 @@
             state.devices.push(d);
           }
         });
-        recompute();
-        renderList();
-        renderMarkers();
-        updateFollows();
-        followSelected();
+        // Equipos que dejaron de transmitir (legacy: checkOfflineTimeout en
+        // cada check, con la hora del servidor).
+        var vencidos = checkOfflineAll(parseInt(res && res.time, 10) || Math.floor(ahora / 1000));
 
-        // El drawer no se refrescaba con el sondeo: si lo tenias abierto, la
-        // velocidad se quedaba congelada en el momento de abrirlo.
+        if (items.length || vencidos) {
+          recompute();
+          renderList();
+          renderMarkers();
+          updateFollows();
+          followSelected();
+          refreshOpenPopup();
+          if (state.autoFit && state.selectedId == null) fitToFleet();
+        }
+
+        // La ficha se repinta en cada sondeo: el tiempo detenido corre aunque
+        // el equipo no mande nada nuevo (legacy: updateStopDuration).
         if (state.selectedId && state.index[state.selectedId]) {
           fillDrawer(state.index[state.selectedId]);
+          // Widgets de abajo (sensores, direccion, eventos, combustible): el
+          // legacy los recarga en cada update del equipo (refreshWitgets).
+          if (cambiados[state.selectedId]) refreshDrawerWidgets(state.selectedId);
         }
       })
-      .catch(function () {});
+      .catch(function () {})
+      .then(function () {
+        polling = false;
+      });
   }
 
   // -----------------------------------------------------------
@@ -3436,6 +4252,7 @@
           state.searchQuery = search.value || "";
           recompute();
           renderList();
+          renderMarkers();
         }, 120);
       });
     var gt = document.getElementById("tp-live-group-toggle");
@@ -3565,9 +4382,12 @@
     var af = document.getElementById("tp-live-autofollow");
     if (af)
       af.addEventListener("click", function () {
-        state.autoFit = !state.autoFit;
-        af.setAttribute("aria-pressed", state.autoFit ? "true" : "false");
-        if (state.autoFit) fitToFleet();
+        setAutoFit(!state.autoFit);
+        if (state.autoFit) {
+          // Seguir a la flota y a un vehiculo a la vez se pelean: manda la flota.
+          state.followSelected = false;
+          fitToFleet();
+        }
       });
 
     // Toggles de capa: el estado inicial viene de la DB (MAP_CFG.toggles =
@@ -3596,7 +4416,7 @@
     // (fitBounds hecho) y no quedan sin dibujar.
     applyToggle("devices");
     setTimeout(function () {
-      ["cluster", "names", "tails", "traffic"].forEach(function (key) {
+      ["cluster", "names", "tails", "traffic", "aircraft"].forEach(function (key) {
         if (state.toggles[key]) applyToggle(key);
       });
     }, 0);
@@ -3636,8 +4456,56 @@
           return;
         }
         var hist = e.target.closest("[data-lock-history]");
-        if (hist) openLockHistory(hist);
+        if (hist) {
+          openLockHistory(hist);
+          return;
+        }
+        // Comandos rapidos del widget GPRS (legacy sendGprsCommand): se
+        // envian al pulsar con device/widgets/gprs_command/{id}.
+        var cmd = e.target.closest("[data-gprs-cmd]");
+        if (cmd) enviarGprsRapido(cmd);
       });
+
+    function enviarGprsRapido(btn) {
+      var box = btn.closest("[data-gprs-url]");
+      if (!box || btn.disabled) return;
+      var estado = box.parentNode.querySelector("[data-gprs-status]");
+      var fd = new FormData();
+      fd.append("type", btn.getAttribute("data-gprs-cmd"));
+      var attrs = {};
+      try { attrs = JSON.parse(btn.getAttribute("data-gprs-attrs") || "{}") || {}; } catch (er) {}
+      Object.keys(attrs).forEach(function (k) { fd.append(k, attrs[k] == null ? "" : attrs[k]); });
+      btn.disabled = true;
+      btn.classList.add("is-sending");
+      if (estado) { estado.className = "tp-gprsw__status"; estado.textContent = tpT("ui.loading_ellipsis"); }
+      fetch(box.getAttribute("data-gprs-url"), {
+        method: "POST",
+        body: fd,
+        credentials: "same-origin",
+        headers: { "X-CSRF-TOKEN": csrf(), "X-Requested-With": "XMLHttpRequest", Accept: "application/json" },
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (res) {
+          var ok = res && res.status == 1;
+          var txt = ok ? (res.message || tpT("front.command_sent")) : ((res && (res.error || res.message)) || tpT("ui.save_failed"));
+          if (res && res.errors) {
+            var k = Object.keys(res.errors)[0];
+            if (k) txt = [].concat(res.errors[k])[0];
+          }
+          if (estado) {
+            estado.className = "tp-gprsw__status " + (ok ? "is-ok" : "is-err");
+            estado.textContent = btn.title + " · " + txt;
+          }
+          if (window.tpModal && tpModal.toast) tpModal.toast(txt, ok ? "success" : "error");
+        })
+        .catch(function () {
+          if (estado) { estado.className = "tp-gprsw__status is-err"; estado.textContent = tpT("ui.network_error"); }
+        })
+        .then(function () {
+          btn.disabled = false;
+          btn.classList.remove("is-sending");
+        });
+    }
 
     var bbCollapse = document.getElementById("tp-bottombar-collapse");
     if (bbCollapse)
@@ -3840,32 +4708,8 @@
     sincronizaTirador();
 
     var dc = document.getElementById("tp-drawer-close");
-    if (dc)
-      dc.addEventListener("click", function () {
-        root.removeAttribute("data-drawer-open");
-        root.removeAttribute("data-bottombar-open");
-        // Cerrado es invisible (opacity 0) y silenciado (aria-hidden): con
-        // `inert` sus botones dejan tambien de recibir el foco con Tab.
-        var dw = document.getElementById("tp-live-drawer");
-        if (dw) {
-          // El foco estaba dentro (el boton Cerrar): se devuelve al mapa
-          // (Leaflet le da tabindex=0) antes de volver inerte el panel.
-          if (dw.contains(document.activeElement)) {
-            var back = document.getElementById("tp-live-map");
-            if (back && back.focus) back.focus({ preventScroll: true });
-          }
-          dw.setAttribute("aria-hidden", "true");
-          dw.setAttribute("inert", "");
-        }
-        var prev = state.selectedId;
-        state.selectedId = null;
-        state.followSelected = false;
-        markSelectedRow(null);
-        if (prev != null) {
-          refreshMarkerIcon(prev);
-          if (state.markers[prev]) state.markers[prev].setZIndexOffset(0);
-        }
-      });
+    if (dc) dc.addEventListener("click", deselectDevice);
+
 
     // Conmutador de paneles
     Array.prototype.forEach.call(document.querySelectorAll(".tp-live__paneltab"), function (t) {
@@ -3908,6 +4752,14 @@
     if (window.tpLiveZones && name === "zones") window.tpLiveZones.activate();
     if (window.tpLivePois && name === "pois") window.tpLivePois.activate();
     if (window.tpLiveRoutes && name === "routes") window.tpLiveRoutes.activate();
+    if (name === "objects" && state.map) {
+      if (state.selectedId != null) {
+        state.followSelected = true;
+        centerOnSelected(SELECT_ZOOM);
+      } else {
+        fitToFleet();
+      }
+    }
     setRailActive(name);
   }
   // Sincroniza el ítem activo del rail al cambiar de panel SIN recargar
@@ -3940,6 +4792,19 @@
     },
     selectDevice: selectDevice,
   };
+
+  // Copiar coordenadas de la ficha (boton data-tp-copy).
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-tp-copy]");
+    if (!b) return;
+    var txt = b.getAttribute("data-tp-copy");
+    var ok = function () {
+      b.classList.add("is-done");
+      setTimeout(function () { b.classList.remove("is-done"); }, 1500);
+      if (window.tpModal && tpModal.toast) tpModal.toast(tpT("ui.copied"), "success");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(ok, function () {});
+  });
 
   // -----------------------------------------------------------
   // Init
