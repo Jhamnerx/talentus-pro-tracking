@@ -8,11 +8,12 @@ class SyncDeviceModelsCommand extends Command {
 
 	protected $signature = 'tracker:sync-models {--imei= : Solo este IMEI}';
 
-	protected $description = 'Copia "Modelo del dispositivo" de cada equipo a tc_devices.model de Traccar.';
+	protected $description = 'Copia "Modelo del dispositivo" y el estado activo/inactivo de cada equipo a tc_devices'
+		. ' (model, disabled) de Traccar.';
 
 	public function handle(TraccarDeviceModelService $service)
 	{
-		$query = Device::select(['id', 'imei', 'device_model']);
+		$query = Device::select(['id', 'imei', 'device_model', 'active']);
 
 		if ($imei = $this->option('imei')) {
 			$query->where('imei', $imei);
@@ -32,7 +33,8 @@ class SyncDeviceModelsCommand extends Command {
 
 				if ($result === true) {
 					$counts['updated']++;
-					$this->line("{$device->imei} -> " . ($service->resolveModel($device) ?? '(vacío)'));
+					$this->line("{$device->imei} -> " . ($service->resolveModel($device) ?? '(vacío)')
+						. ($service->resolveDisabled($device) ? ' · deshabilitado' : ' · habilitado'));
 				} elseif ($result === false) {
 					$counts['unchanged']++;
 				} else {

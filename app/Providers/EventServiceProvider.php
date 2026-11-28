@@ -66,9 +66,11 @@ class EventServiceProvider extends ServiceProvider
         ],
         'App\Events\Device\DeviceDisabled' => [
             'App\Listeners\SimProviderBlock',
+            'App\Listeners\SyncTraccarDeviceStatus',
         ],
         'App\Events\Device\DeviceEnabled' => [
             'App\Listeners\SimProviderUnblock',
+            'App\Listeners\SyncTraccarDeviceStatus',
         ],
         'App\Events\DevicePositionChanged' => [
             'App\Listeners\GeofenceMoveListener',
