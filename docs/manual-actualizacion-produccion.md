@@ -214,11 +214,8 @@ sudo -u apache php artisan config:cache                    # solo si en §0 exis
 ```bash
 INI=<ruta del .ini que dio el grep de §0>
 sudo cp -a $INI $INI.bak
-# El .ini del repositorio trae rutas /var/www/html/current: se corrigen al copiar.
-sed 's#/var/www/html/current#/var/www/html#g' /var/www/html/laravel-worker-core.ini > /tmp/laravel-worker-core.ini
-diff $INI /tmp/laravel-worker-core.ini        # solo debe aparecer laravel-worker-backups
-grep -c '/current' /tmp/laravel-worker-core.ini   # 0
-sudo cp /tmp/laravel-worker-core.ini $INI
+diff $INI /var/www/html/laravel-worker-core.ini   # solo debe aparecer laravel-worker-backups
+sudo cp /var/www/html/laravel-worker-core.ini $INI
 sudo supervisorctl reread && sudo supervisorctl update
 sudo supervisorctl start laravel-core:* laravel-webservices:*
 sudo supervisorctl status                                  # todo RUNNING, incluido laravel-worker-backups_00
