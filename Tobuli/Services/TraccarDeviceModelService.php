@@ -16,6 +16,9 @@ class TraccarDeviceModelService
 {
     private Tracker $tracker;
 
+    /** Código y respuesta de la última petición fallida, para el mensaje de error. */
+    private string $lastError = '';
+
     public function __construct()
     {
         $this->tracker = new Tracker();
@@ -57,7 +60,7 @@ class TraccarDeviceModelService
         $devices = $this->request('GET', 'api/devices?all=true&keyword=' . urlencode($device->imei));
 
         if ($devices === null) {
-            throw new \RuntimeException("Traccar: no se pudo consultar el equipo {$device->imei}");
+            throw new \RuntimeException("Traccar: no se pudo consultar el equipo {$device->imei} ({$this->lastError})");
         }
 
         $traccarDevice = collect($devices)->first(function ($item) use ($device) {
@@ -80,8 +83,12 @@ class TraccarDeviceModelService
         $traccarDevice['model']    = $model;
         $traccarDevice['disabled'] = $disabled;
 
+        // json_decode(..., true) deja "attributes": {} como [] y Traccar no acepta una lista donde espera
+        // un mapa (responde 400). Se reenvía como objeto.
+        $traccarDevice['attributes'] = (object) ($traccarDevice['attributes'] ?? []);
+
         if ($this->request('PUT', 'api/devices/' . $traccarDevice['id'], $traccarDevice) === null) {
-            throw new \RuntimeException("Traccar: no se pudo actualizar el equipo {$device->imei}");
+            throw new \RuntimeException("Traccar: no se pudo actualizar el equipo {$device->imei} ({$this->lastError})");
         }
 
         return true;
@@ -114,6 +121,8 @@ class TraccarDeviceModelService
         curl_close($ch);
 
         if ($code < 200 || $code >= 300 || $raw === false) {
+            $this->lastError = "HTTP {$code}: " . mb_substr(trim((string) $raw), 0, 200);
+
             return null;
         }
 
