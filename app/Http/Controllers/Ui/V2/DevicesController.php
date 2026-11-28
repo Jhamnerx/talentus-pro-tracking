@@ -3266,6 +3266,31 @@ class DevicesController extends BaseController
         // envío de comando (tp-commands) para este device.
         if ($has('gprs_command') && $this->user->perm('send_command', 'view')) {
             $data['gprs_command'] = true;
+
+            // Comandos rapidos del widget, igual que el legacy
+            // (DeviceWidgetsController::gprsCommands): los que no piden
+            // parametros y las plantillas, con los valores por defecto de sus
+            // atributos. Se envian a device/widgets/gprs_command/{id}.
+            try {
+                $data['gprs_commands'] = (new \Tobuli\Services\Commands\CommandService($this->user))
+                    ->getGprsCommands($device)
+                    ->filter(function ($command) {
+                        return ! (isset($command['attributes']) && strpos($command['type'], 'template_') !== 0);
+                    })
+                    ->map(function ($command) {
+                        $attrs = [];
+                        foreach ($command['attributes'] ?? [] as $attribute) {
+                            $attrs[$attribute->getName()] = $attribute->getDefault();
+                        }
+
+                        return ['type' => $command['type'], 'title' => $command['title'], 'attrs' => $attrs];
+                    })
+                    ->values()
+                    ->all();
+            } catch (\Throwable $e) {
+                $data['gprs_commands'] = [];
+            }
+            $data['gprs_send_url'] = route('device.widgets.gprs_command_send', $device->id);
         }
 
         if ($has('sensors')) {

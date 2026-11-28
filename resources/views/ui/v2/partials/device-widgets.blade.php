@@ -553,8 +553,23 @@
                     <span>{{ trans('front.gprs_command') }}</span>
                 </span>
             </h4>
-            <div class="tp-dw__card-body tp-dw__card-body--center">
-                <p class="tp-wcard__hint">{{ trans('ui.gprs_command_hint') }}</p>
+            <div class="tp-dw__card-body{{ empty($gprs_commands) ? ' tp-dw__card-body--center' : '' }}">
+                @if (!empty($gprs_commands))
+                    {{-- Comandos rapidos (legacy Widgets/gprs_command): uno por
+                         boton, se envian al pulsar con el endpoint del legacy. --}}
+                    <div class="tp-gprsw" data-gprs-url="{{ $gprs_send_url }}">
+                        @foreach ($gprs_commands as $cmd)
+                            <button type="button" class="tp-gprsw__cmd" data-gprs-cmd="{{ $cmd['type'] }}"
+                                data-gprs-attrs='@json($cmd['attrs'], JSON_HEX_APOS | JSON_HEX_QUOT)' title="{{ $cmd['title'] }}">
+                                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                                <span>{{ $cmd['title'] }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                    <div class="tp-gprsw__status" data-gprs-status aria-live="polite"></div>
+                @else
+                    <p class="tp-wcard__hint">{{ trans('ui.gprs_command_hint') }}</p>
+                @endif
                 <button type="button" class="tp-btn tp-btn--sm tp-full tp-dw__add tp-wcard__main" data-tp-commands
                     data-device-id="{{ $device->id }}">
                     <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"

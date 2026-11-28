@@ -3665,3 +3665,20 @@ a.tp-pop__mini { color: var(--brand-600, #1f5fbf); }
   display: block; width: 100%; margin-top: 8px; border: 0; background: none; cursor: pointer;
   font-size: 11.5px; font-weight: 700; color: var(--brand-600, #1f5fbf); text-align: center;
 }
+
+/* Comandos rápidos del widget GPRS */
+.tp-gprsw { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tp-gprsw__cmd {
+  display: flex; align-items: center; gap: 7px; min-width: 0; padding: 7px 8px;
+  border: 1px solid var(--border-default, #dbe3ef); border-radius: 10px;
+  background: var(--surface-raised, #fff); color: var(--fg-primary, #0f172a);
+  font: 600 12px var(--font-sans, Inter, system-ui); cursor: pointer; text-align: left;
+}
+.tp-gprsw__cmd:hover { border-color: var(--wc, #7c3aed); }
+.tp-gprsw__cmd svg { width: 14px; height: 14px; flex: none; color: var(--wc, #7c3aed); }
+.tp-gprsw__cmd span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-gprsw__cmd.is-sending { opacity: .6; cursor: progress; }
+.tp-gprsw__status { font-size: 11px; color: var(--fg-tertiary, #64748b); margin: 6px 0; min-height: 14px; }
+.tp-gprsw__status.is-ok { color: #15803d; }
+.tp-gprsw__status.is-err { color: #b91c1c; }
+.tp-gprsw + .tp-gprsw__status + .tp-wcard__main { margin-top: 2px; }

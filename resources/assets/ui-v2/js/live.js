@@ -4456,8 +4456,56 @@
           return;
         }
         var hist = e.target.closest("[data-lock-history]");
-        if (hist) openLockHistory(hist);
+        if (hist) {
+          openLockHistory(hist);
+          return;
+        }
+        // Comandos rapidos del widget GPRS (legacy sendGprsCommand): se
+        // envian al pulsar con device/widgets/gprs_command/{id}.
+        var cmd = e.target.closest("[data-gprs-cmd]");
+        if (cmd) enviarGprsRapido(cmd);
       });
+
+    function enviarGprsRapido(btn) {
+      var box = btn.closest("[data-gprs-url]");
+      if (!box || btn.disabled) return;
+      var estado = box.parentNode.querySelector("[data-gprs-status]");
+      var fd = new FormData();
+      fd.append("type", btn.getAttribute("data-gprs-cmd"));
+      var attrs = {};
+      try { attrs = JSON.parse(btn.getAttribute("data-gprs-attrs") || "{}") || {}; } catch (er) {}
+      Object.keys(attrs).forEach(function (k) { fd.append(k, attrs[k] == null ? "" : attrs[k]); });
+      btn.disabled = true;
+      btn.classList.add("is-sending");
+      if (estado) { estado.className = "tp-gprsw__status"; estado.textContent = tpT("ui.loading_ellipsis"); }
+      fetch(box.getAttribute("data-gprs-url"), {
+        method: "POST",
+        body: fd,
+        credentials: "same-origin",
+        headers: { "X-CSRF-TOKEN": csrf(), "X-Requested-With": "XMLHttpRequest", Accept: "application/json" },
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }); })
+        .then(function (res) {
+          var ok = res && res.status == 1;
+          var txt = ok ? (res.message || tpT("front.command_sent")) : ((res && (res.error || res.message)) || tpT("ui.save_failed"));
+          if (res && res.errors) {
+            var k = Object.keys(res.errors)[0];
+            if (k) txt = [].concat(res.errors[k])[0];
+          }
+          if (estado) {
+            estado.className = "tp-gprsw__status " + (ok ? "is-ok" : "is-err");
+            estado.textContent = btn.title + " · " + txt;
+          }
+          if (window.tpModal && tpModal.toast) tpModal.toast(txt, ok ? "success" : "error");
+        })
+        .catch(function () {
+          if (estado) { estado.className = "tp-gprsw__status is-err"; estado.textContent = tpT("ui.network_error"); }
+        })
+        .then(function () {
+          btn.disabled = false;
+          btn.classList.remove("is-sending");
+        });
+    }
 
     var bbCollapse = document.getElementById("tp-bottombar-collapse");
     if (bbCollapse)
