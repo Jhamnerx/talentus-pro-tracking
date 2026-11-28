@@ -1649,6 +1649,11 @@
   function deselectDevice() {
     root.removeAttribute("data-drawer-open");
     root.removeAttribute("data-bottombar-open");
+    // Sin vehiculo no hay widgets: el boton «Mostrar widgets» (solo visible
+    // con la barra abierta y plegada) se recalcula ya, si no se quedaba a la
+    // vista tras plegar la barra y cerrar la seleccion.
+    root.removeAttribute("data-bottombar-collapsed");
+    syncBottombarHandle();
     // Cerrado es invisible (opacity 0) y silenciado (aria-hidden): con
     // `inert` sus botones dejan tambien de recibir el foco con Tab.
     var dw = document.getElementById("tp-live-drawer");

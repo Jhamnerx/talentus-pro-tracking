@@ -306,7 +306,7 @@
 
     {{-- Servicios --}}
     @isset($services)
-        <section class="tp-card tp-card--flat">
+        <section class="tp-card tp-card--flat tp-wcard" style="--wc:#2563eb">
             {{-- Header: título + icono "3 rayitas" que abre la LISTA de servicios.
                  Los modales (lista + formulario + eliminar) son los COMPARTIDOS de
                  tp-services.js (mismos que /ui/v2/maintenance); backend
@@ -332,14 +332,37 @@
             </h4>
             <div class="tp-dw__card-body">
                 @if (count($services))
-                    <dl class="tp-defs">
+                    {{-- Cada servicio con lo que falta en una etiqueta de color
+                         (vencido / por vencer / al dia) y la barra de lo que queda
+                         del intervalo (DeviceService::getPercentage). --}}
+                    <div class="tp-svcw">
                         @foreach ($services as $service)
-                            <dt>{{ $service->name ?? ('#' . $service->id) }}</dt>
-                            <dd class="tp-text-muted">
-                                {{ $service instanceof \Tobuli\Entities\DeviceService ? $service->expiration() : $service->expiration_date ?? ($service->expires ?? '—') }}
-                            </dd>
+                            @php
+                                $esDs = $service instanceof \Tobuli\Entities\DeviceService;
+                                $tono = 'ok';
+                                if ($esDs) {
+                                    try {
+                                        $tono = $service->isExpired() ? 'bad' : ($service->isExpiring() ? 'warn' : 'ok');
+                                    } catch (\Throwable $e) { $tono = 'ok'; }
+                                }
+                                try { $resto = $esDs ? $service->left_formated() : null; } catch (\Throwable $e) { $resto = null; }
+                                try { $pct = $esDs ? $service->getPercentage() : null; } catch (\Throwable $e) { $pct = null; }
+                                $detalle = $esDs ? $service->expiration() : ($service->expiration_date ?? ($service->expires ?? '—'));
+                            @endphp
+                            <div class="tp-svcw__item">
+                                <div class="tp-svcw__top">
+                                    <span class="tp-svcw__name">{{ $service->name ?? ('#' . $service->id) }}</span>
+                                    @if ($resto !== null && $resto !== '')
+                                        <span class="tp-wbadge tp-wbadge--{{ $tono }}">{{ $resto }}</span>
+                                    @endif
+                                </div>
+                                <div class="tp-svcw__det">{{ $detalle }}</div>
+                                @if ($pct !== null)
+                                    <div class="tp-wbar"><i class="tp-wbar--{{ $tono }}" style="width:{{ max(2, (int) $pct) }}%"></i></div>
+                                @endif
+                            </div>
                         @endforeach
-                    </dl>
+                    </div>
                 @else
                     {{-- Estado vacío. El botón vive AQUÍ, como el .widget-empty del
                          legacy, que se esconde en cuanto la tabla tiene filas. Con
@@ -361,7 +384,7 @@
 
     {{-- Eventos recientes --}}
     @isset($recent_events)
-        <section class="tp-card tp-card--flat">
+        <section class="tp-card tp-card--flat tp-wcard" style="--wc:#d97706">
             <h4 class="tp-h6 tp-dw__card-head">
                 <span class="tp-dw__card-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -371,14 +394,27 @@
                     </svg>
                     <span>{{ trans('front.recent_events') }}</span>
                 </span>
+                <a href="{{ url('/ui/v2/events') }}" class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-wcard__act"
+                    title="{{ trans('front.events') }}" aria-label="{{ trans('front.events') }}">
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7M21 3l-9 9"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>
+                </a>
             </h4>
             <div class="tp-dw__card-body">
                 @if (count($recent_events))
-                    <ul class="tp-dw__events">
+                    {{-- Linea de tiempo: punto de color por tipo de evento --}}
+                    <ul class="tp-dw__events tp-evtl">
                         @foreach ($recent_events as $event)
-                            <li>
-                                <span class="tp-text-xs tp-text-muted">{{ $event->timePassed ?? '' }}</span>
-                                <span>{{ $event->title ?? '' }}</span>
+                            @php
+                                $tipo = (string) ($event->type ?? '');
+                                $tonoEv = str_contains($tipo, 'zone') || str_contains($tipo, 'geofence') && !str_contains($tipo, 'overspeed') ? 'zone'
+                                    : (str_contains($tipo, 'overspeed') || str_contains($tipo, 'harsh') || in_array($tipo, ['sos', 'accident', 'power_cut', 'jamming', 'fuel_theft', 'driver_unauthorized']) ? 'bad'
+                                    : (in_array($tipo, ['move_start', 'move_start_filtered', 'ignition_on', 'fuel_fill', 'driver_authorized']) ? 'ok'
+                                    : (str_contains($tipo, 'duration') || str_contains($tipo, 'stop') || str_contains($tipo, 'idle') ? 'mute' : 'info')));
+                            @endphp
+                            <li class="tp-evtl__item" data-tone="{{ $tonoEv }}">
+                                <span class="tp-evtl__title">{{ $event->title ?? '' }}</span>
+                                <span class="tp-evtl__meta">{{ $event->timePassed ?? '' }}@if (!empty($event->time)) · {{ \Formatter::time()->human($event->time) }}@endif</span>
                             </li>
                         @endforeach
                     </ul>
@@ -391,7 +427,7 @@
 
     {{-- Vista de calle --}}
     @isset($streetview)
-        <section class="tp-card tp-card--flat">
+        <section class="tp-card tp-card--flat tp-wcard" style="--wc:#dc2626">
             <h4 class="tp-h6 tp-dw__card-head">
                 <span class="tp-dw__card-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -401,13 +437,20 @@
                     </svg>
                     <span>{{ trans('ui.street_view') }}</span>
                 </span>
+                @if ($device->lat && $device->lng)
+                    <a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint={{ $device->lat }},{{ $device->lng }}" target="_blank" rel="noopener"
+                        class="tp-btn tp-btn--ghost tp-btn--icon tp-btn--sm tp-wcard__act" title="{{ trans('ui.open_in_map') }}" aria-label="{{ trans('ui.open_in_map') }}">
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                    </a>
+                @endif
             </h4>
             <div class="tp-dw__card-body">
                 @if (!empty($streetview_frame))
                     {{-- Embed interactivo (encuentra la panorámica más cercana, igual que el legacy). --}}
                     <iframe src="{{ $streetview_frame }}" title="Street View" loading="lazy"
                         referrerpolicy="no-referrer-when-downgrade" allowfullscreen
-                        style="width:100%;height:130px;border:0;border-radius:8px;display:block;"></iframe>
+                        class="tp-svw"></iframe>
                 @elseif ($streetview)
                     <div class="tp-dw__streetview">
                         <img src="{{ $streetview }}" alt="Street View" loading="lazy">
@@ -422,7 +465,7 @@
     {{-- Cámara --}}
     @isset($camera_images)
         @if (!empty($camera_images) || !empty($camera_device_image))
-            <section class="tp-card tp-card--flat">
+            <section class="tp-card tp-card--flat tp-wcard" style="--wc:#0891b2">
                 <h4 class="tp-h6 tp-dw__card-head">
                     <span class="tp-dw__card-title">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -456,7 +499,7 @@
 
     {{-- Combustible (valor actual de sensores fuel_tank) --}}
     @isset($fuel)
-        <section class="tp-card tp-card--flat">
+        <section class="tp-card tp-card--flat tp-wcard" style="--wc:#d97706">
             <h4 class="tp-h6 tp-dw__card-head">
                 <span class="tp-dw__card-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -475,7 +518,7 @@
                             <div class="tp-fuel-w__head">
                                 <span class="tp-fuel-w__name">{{ $f['name'] }}</span>
                                 @if (!is_null($f['last']))
-                                    <span class="tp-fuel-w__val">{{ round($f['last'], 1) }}{{ $f['unit'] }}</span>
+                                    <span class="tp-fuel-w__val"><b>{{ round($f['last'], 1) }}</b>{{ $f['unit'] }}</span>
                                 @endif
                             </div>
                             @if (!empty($f['values']))
@@ -499,7 +542,7 @@
 
     {{-- Comando GPRS (abre el modal de envío para este vehículo) --}}
     @isset($gprs_command)
-        <section class="tp-card tp-card--flat">
+        <section class="tp-card tp-card--flat tp-wcard" style="--wc:#7c3aed">
             <h4 class="tp-h6 tp-dw__card-head">
                 <span class="tp-dw__card-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
@@ -511,7 +554,8 @@
                 </span>
             </h4>
             <div class="tp-dw__card-body tp-dw__card-body--center">
-                <button type="button" class="tp-btn tp-btn--sm tp-full tp-dw__add" data-tp-commands
+                <p class="tp-wcard__hint">{{ trans('ui.gprs_command_hint') }}</p>
+                <button type="button" class="tp-btn tp-btn--sm tp-full tp-dw__add tp-wcard__main" data-tp-commands
                     data-device-id="{{ $device->id }}">
                     <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -530,7 +574,7 @@
             $lockLabel = is_null($lockSt) ? trans('front.unknown') : ($lockSt ? trans('front.locked') : trans('front.unlocked'));
             $lockTone = is_null($lockSt) ? 'unknown' : ($lockSt ? 'on' : 'off');
         @endphp
-        <section class="tp-card tp-card--flat" data-tp-locking data-device-id="{{ $device->id }}"
+        <section class="tp-card tp-card--flat tp-wcard" style="--wc:#0e2157" data-tp-locking data-device-id="{{ $device->id }}"
             data-command-url="{{ $locking['command_url'] }}" data-history-url="{{ $locking['history_url'] }}"
             data-templates-url="{{ $locking['templates_url'] }}" data-can-sms="{{ $locking['can_sms'] ? '1' : '' }}">
             <h4 class="tp-h6 tp-dw__card-head">
@@ -544,25 +588,36 @@
                 </span>
                 <span class="tp-lock-badge" data-lock-badge data-tone="{{ $lockTone }}">{{ $lockLabel }}</span>
             </h4>
-            <div class="tp-dw__card-body tp-dw__card-body--center">
-                <div style="display:flex;gap:8px;">
-                    <button type="button" class="tp-btn tp-btn--sm tp-btn--danger" style="flex:1;" data-lock-action="on">
-                        Cortar
+            <div class="tp-dw__card-body">
+                {{-- Estado grande con candado (cortado en rojo, habilitado en verde) --}}
+                <div class="tp-lockw" data-tone="{{ $lockTone }}">
+                    <span class="tp-lockw__ic" aria-hidden="true">
+                        @if ($lockTone === 'on')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+                        @else
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>
+                        @endif
+                    </span>
+                    <b>{{ $lockLabel }}</b>
+                </div>
+                <div class="tp-lockw__btns">
+                    <button type="button" class="tp-btn tp-btn--sm tp-btn--danger" data-lock-action="on">
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                        {{ trans('ui.cut_engine') }}
                     </button>
-                    <button type="button" class="tp-btn tp-btn--sm tp-btn--secondary" style="flex:1;" data-lock-action="off">
-                        Restablecer
+                    <button type="button" class="tp-btn tp-btn--sm tp-btn--secondary" data-lock-action="off">
+                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                        {{ trans('ui.restore_engine') }}
                     </button>
                 </div>
-                <button type="button" class="tp-btn tp-btn--ghost tp-btn--sm tp-full tp-mt-2" data-lock-history>
-                    {{ trans('front.history') }}
-                </button>
+                <button type="button" class="tp-wcard__link" data-lock-history>{{ trans('front.history') }} ↗</button>
             </div>
         </section>
     @endisset
 
     {{-- Video en vivo: JT1078 con el reproductor de la v2 (tp-device-video.js). --}}
     @isset($video_channels)
-        <section class="tp-card tp-card--flat">
+        <section class="tp-card tp-card--flat tp-wcard" style="--wc:#db2777">
             <h4 class="tp-h6 tp-dw__card-head">
                 <span class="tp-dw__card-title">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"

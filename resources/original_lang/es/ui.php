@@ -1100,4 +1100,5 @@ return [
     'copy_coordinates' => 'Copiar coordenadas',
     'copied' => 'Copiado',
     'time_ago' => 'hace :time',
+    'gprs_command_hint' => 'Envía un comando al equipo por GPRS o SMS.',
 ];

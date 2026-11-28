@@ -3582,3 +3582,86 @@ a.tp-pop__mini { color: var(--brand-600, #1f5fbf); }
 .tp-pop .tp-dev-popup__more { margin: 8px 12px 0; }
 .tp-pop .tp-dev-shortcuts { margin: 8px 10px 10px; }
 .tp-pop .tp-dev-shortcuts__report { margin: 0 10px 10px; width: calc(100% - 20px); }
+
+/* ── Widgets inferiores (rediseño) ─────────────────────────────
+   Cada tarjeta lleva su color en --wc (inline en el blade): icono de la
+   cabecera en un cuadrado de ese color. */
+.tp-live__bottombar-cards > .tp-wcard {
+  height: 210px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-raised, #fff) 96%, transparent);
+  backdrop-filter: blur(8px);
+}
+.tp-wcard .tp-dw__card-title { font-weight: 700; font-size: 13.5px; gap: 9px; }
+.tp-wcard .tp-dw__card-title > svg {
+  width: 30px; height: 30px; padding: 7px; border-radius: 9px;
+  background: var(--wc, var(--brand-600)); color: #fff; stroke-width: 2;
+}
+.tp-wcard__act { border: 1px solid var(--border-default, #dbe3ef); border-radius: 8px; }
+.tp-wbadge { font-size: 10.5px; font-weight: 800; border-radius: 20px; padding: 2px 8px; white-space: nowrap; }
+.tp-wbadge--ok { background: #dcfce7; color: #15803d; }
+.tp-wbadge--warn { background: #fef3c7; color: #b45309; }
+.tp-wbadge--bad { background: #fee2e2; color: #b91c1c; }
+[data-theme="dark"] .tp-wbadge--ok { background: rgba(34,197,94,.18); color: #4ade80; }
+[data-theme="dark"] .tp-wbadge--warn { background: rgba(245,158,11,.18); color: #fbbf24; }
+[data-theme="dark"] .tp-wbadge--bad { background: rgba(239,68,68,.18); color: #f87171; }
+.tp-wbar { height: 6px; border-radius: 4px; background: var(--surface-sunken, #eef2f7); margin-top: 6px; overflow: hidden; }
+.tp-wbar i { display: block; height: 100%; border-radius: 4px; }
+.tp-wbar--ok { background: #16a34a; } .tp-wbar--warn { background: #d97706; } .tp-wbar--bad { background: #dc2626; }
+
+/* Servicios */
+.tp-svcw { display: flex; flex-direction: column; gap: 7px; }
+.tp-svcw__item { border: 1px solid var(--border-subtle, #eef2f7); border-radius: 11px; padding: 7px 9px; }
+.tp-svcw__top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.tp-svcw__name { font-size: 12.5px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tp-svcw__det { font-size: 11px; color: var(--fg-tertiary, #64748b); margin-top: 2px; }
+
+/* Eventos: línea de tiempo con punto de color */
+.tp-evtl { position: relative; list-style: none; margin: 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 9px; }
+.tp-evtl::before { content: ""; position: absolute; left: 5px; top: 4px; bottom: 4px; width: 2px; border-radius: 2px; background: var(--border-default, #e3e8f1); }
+.tp-evtl__item { position: relative; display: flex; flex-direction: column; gap: 1px; }
+.tp-evtl__item::before {
+  content: ""; position: absolute; left: -15px; top: 4px; width: 10px; height: 10px; border-radius: 50%;
+  background: #2563eb; box-shadow: 0 0 0 3px var(--surface-raised, #fff);
+}
+.tp-evtl__item[data-tone="bad"]::before { background: #dc2626; }
+.tp-evtl__item[data-tone="ok"]::before { background: #16a34a; }
+.tp-evtl__item[data-tone="mute"]::before { background: #94a3b8; }
+.tp-evtl__item[data-tone="info"]::before { background: #7c3aed; }
+.tp-evtl__title { font-size: 12.5px; font-weight: 700; }
+.tp-evtl__meta { font-size: 11px; color: var(--fg-tertiary, #64748b); }
+
+/* Vista de calle: la imagen ocupa la tarjeta */
+.tp-svw { width: 100%; height: 122px; border: 0; border-radius: 11px; display: block; }
+.tp-wcard .tp-dw__streetview img { border-radius: 11px; width: 100%; height: 122px; object-fit: cover; }
+
+/* Combustible */
+.tp-wcard .tp-fuel-w__val { font-size: 12px; color: var(--fg-tertiary, #64748b); }
+.tp-wcard .tp-fuel-w__val b { font-size: 20px; color: var(--fg-primary, #0f172a); margin-right: 2px; }
+
+/* Comando GPRS */
+.tp-wcard__hint { font-size: 12px; color: var(--fg-tertiary, #64748b); text-align: center; margin: 0 0 10px; }
+.tp-scope .tp-wcard__main { height: 38px; border-radius: 10px; }
+
+/* Bloqueo de motor: estado grande */
+.tp-lockw {
+  display: flex; align-items: center; gap: 12px; padding: 9px 10px; border-radius: 12px;
+  background: var(--surface-sunken, #f6f8fc); border: 1px solid var(--border-subtle, #e3e8f1);
+}
+.tp-lockw__ic { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: #94a3b8; flex: none; }
+.tp-lockw__ic svg { width: 22px; height: 22px; }
+.tp-lockw b { font-size: 15px; }
+.tp-lockw[data-tone="off"] { background: #f0fdf4; border-color: #bbf7d0; }
+.tp-lockw[data-tone="off"] .tp-lockw__ic { background: #16a34a; }
+.tp-lockw[data-tone="off"] b { color: #15803d; }
+.tp-lockw[data-tone="on"] { background: #fef2f2; border-color: #fecaca; }
+.tp-lockw[data-tone="on"] .tp-lockw__ic { background: #dc2626; }
+.tp-lockw[data-tone="on"] b { color: #b91c1c; }
+[data-theme="dark"] .tp-lockw[data-tone="off"] { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.3); }
+[data-theme="dark"] .tp-lockw[data-tone="on"] { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); }
+.tp-lockw__btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+.tp-lockw__btns .tp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 10px; }
+.tp-wcard__link {
+  display: block; width: 100%; margin-top: 8px; border: 0; background: none; cursor: pointer;
+  font-size: 11.5px; font-weight: 700; color: var(--brand-600, #1f5fbf); text-align: center;
+}

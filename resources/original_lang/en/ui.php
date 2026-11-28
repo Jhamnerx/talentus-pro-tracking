@@ -1099,4 +1099,5 @@ return [
     'copy_coordinates' => 'Copy coordinates',
     'copied' => 'Copied',
     'time_ago' => ':time ago',
+    'gprs_command_hint' => 'Send a command to the device over GPRS or SMS.',
 ];
