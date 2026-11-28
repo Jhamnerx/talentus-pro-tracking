@@ -77,6 +77,14 @@
                         <button type="button" class="tp-hist__daterange-clear" id="tp-hist-daterange-clear"
                             title="{{ trans('front.reset_to_today') }}" aria-label="{{ trans('front.reset_to_today') }}">×</button>
                     </div>
+                    {{-- Atajos de fecha: fijan el rango y cargan al momento, como los
+                         atajos del popup y de la ficha (mismos rangos que el legacy). --}}
+                    <div class="tp-hist__chips" id="tp-hist-chips" role="group" aria-label="{{ trans('front.date') }}">
+                        <button type="button" data-quick-load="last_hour">{{ trans('front.last_hour') }}</button>
+                        <button type="button" data-quick-load="today">{{ trans('front.today') }}</button>
+                        <button type="button" data-quick-load="yesterday">{{ trans('front.yesterday') }}</button>
+                        <button type="button" data-quick-load="week">{{ trans('front.this_week') }}</button>
+                    </div>
 
                     {{-- Avanzado --}}
                     <button type="button" class="tp-hist__adv-toggle" id="tp-hist-adv-toggle" aria-expanded="false">

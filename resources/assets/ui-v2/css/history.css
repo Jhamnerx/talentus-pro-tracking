@@ -1737,3 +1737,56 @@
 .tp-history__fuel-tip-time {
   color: var(--fg-tertiary);
 }
+
+/* ── Historial: línea de tiempo compacta (rediseño, opción A) ── */
+.tp-hist__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tp-hist__chips button {
+  font: 700 12px var(--font-sans, Inter, system-ui); padding: 5px 11px; border-radius: 20px; cursor: pointer;
+  border: 1px solid var(--border-default, #dbe3ef); background: var(--surface-raised, #fff); color: var(--fg-secondary, #334155);
+}
+.tp-hist__chips button:hover { border-color: var(--brand-600, #1f5fbf); }
+.tp-hist__chips button.is-on { background: var(--brand-800, #0e2157); border-color: var(--brand-800, #0e2157); color: #fff; }
+
+.tp-htl__day { padding: 2px 2px 10px; }
+.tp-htl__band { position: relative; height: 12px; border-radius: 6px; overflow: hidden; background: var(--surface-sunken, #eef2f7); }
+.tp-htl__band i { position: absolute; top: 0; bottom: 0; }
+.tp-htl__band-drive { background: #16a34a; }
+.tp-htl__band-stop { background: #ef4444; }
+.tp-htl__bandl { display: flex; justify-content: space-between; font-size: 10px; color: var(--fg-muted, #94a3b8); margin-top: 3px; }
+.tp-htl__legend { display: flex; gap: 12px; font-size: 10.5px; color: var(--fg-tertiary, #64748b); margin-top: 4px; }
+.tp-htl__legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; background: #16a34a; }
+.tp-htl__legend .is-stop::before { background: #ef4444; }
+
+.tp-htl { position: relative; padding-left: 30px; display: flex; flex-direction: column; gap: 8px; }
+.tp-htl::before { content: ""; position: absolute; left: 12px; top: 10px; bottom: 10px; width: 2px; border-radius: 2px; background: var(--border-default, #e3e8f1); }
+.tp-hist-tl.tp-htl__it {
+  margin: 0; padding: 9px 10px; border-radius: 12px; background: var(--surface-raised, #fff);
+  border: 1px solid var(--border-subtle, #e9eef6); border-left: 3px solid var(--tc);
+}
+.tp-htl__it--start, .tp-htl__it--end { border-left-style: dashed; background: var(--surface-sunken, #f8fafc); }
+.tp-htl__it--stop { background: color-mix(in srgb, #ef4444 5%, var(--surface-raised, #fff)); }
+.tp-htl__node {
+  position: absolute; left: -30px; top: 8px; width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--tc); color: #fff; font-size: 11px; font-weight: 800;
+  box-shadow: 0 0 0 3px var(--surface-page, #fff);
+}
+.tp-htl__node svg { width: 12px; height: 12px; }
+.tp-htl__head { display: flex; align-items: center; gap: 8px; cursor: pointer; min-width: 0; }
+.tp-htl__title { font-weight: 800; font-size: 13px; color: var(--tc); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.tp-htl__it--start .tp-htl__title, .tp-htl__it--end .tp-htl__title { color: var(--fg-primary, #0f172a); }
+.tp-htl__hora { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--fg-tertiary, #64748b); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tp-scope .tp-htl__play {
+  position: static; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 0; padding: 0;
+  background: var(--brand-800, #0e2157); color: #fff; font-size: 10px; display: grid; place-items: center; cursor: pointer;
+}
+.tp-htl__chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.tp-htl__chip { font-size: 11px; font-weight: 600; border-radius: 6px; padding: 2px 7px; background: var(--surface-sunken, #f1f5f9); color: var(--fg-secondary, #334155); }
+.tp-scope .tp-htl__more {
+  position: static; display: inline-block; width: auto; height: auto; margin-top: 6px; padding: 0; border: 0; background: none;
+  font-size: 11px; font-weight: 700; color: var(--brand-600, #1f5fbf); cursor: pointer;
+}
+.tp-htl__box { display: none; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-default, #e3e8f1); }
+.tp-hist-tl.is-open .tp-htl__box { display: block; }
+.tp-htl__box .tp-hist-tl__row { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; padding: 2px 0; }
+.tp-htl__box .tp-hist-tl__row span { color: var(--fg-tertiary, #64748b); }
+.tp-hist-tl.tp-htl__it.is-selected { box-shadow: 0 0 0 2px var(--brand-600, #2563eb); border-color: var(--brand-600, #2563eb); border-left-color: var(--tc); }
